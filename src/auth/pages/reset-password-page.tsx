@@ -3,7 +3,7 @@ import { useAuth } from '@/auth/context/auth-context';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, Check, MoveLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,12 +21,14 @@ import {
   ResetRequestSchemaType,
 } from '../forms/reset-password-schema';
 import { Card, CardContent } from '@/components/ui/card';
+import { FormHeader } from '@/components/ui/form-header';
 
 export function ResetPasswordPage() {
   const { } = useAuth();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   const form = useForm<ResetRequestSchemaType>({
     resolver: zodResolver(getResetRequestSchema()),
@@ -43,6 +45,7 @@ export function ResetPasswordPage() {
       console.log('Submitting password reset for:', values.email);
 
 
+      navigate('/auth/otp-verify', { state: { email: values.email, from: 'reset-password' } });
 
       // Set success message
       setSuccessMessage(
@@ -67,7 +70,8 @@ export function ResetPasswordPage() {
           </CardContent>
         </Card> */}
   return (
-    <div className="flex flex-col items-center justify-center">
+    <div className="w-full flex flex-col items-center justify-center">
+      <FormHeader title="Reset your password" caption=' Enter your registered email used for the account you want to reset the password'/>
       <Card className="w-full max-w-[398px] overflow-y-auto flex flex-wrap border-[#DFDFDF]">
         <CardContent className="px-6 py-12">
           <Form {...form}>
@@ -98,10 +102,10 @@ export function ResetPasswordPage() {
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email</FormLabel>
+                      <FormLabel>Email *</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="your.email@example.com"
+                          placeholder="Enter email address"
                           type="email"
                           autoComplete="email"
                           {...field}
@@ -118,7 +122,7 @@ export function ResetPasswordPage() {
                       <LoaderCircleIcon className="h-4 w-4 animate-spin" /> Sending Link...
                     </span>
                   ) : (
-                    'Send Reset Link'
+                    'Send Code'
                   )}
                 </Button>
               </div>

@@ -34,7 +34,7 @@ export function SignInPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [login, { isLoading }] = useLoginMutation();
 
-   const [getProfile] = useLazyGetProfileQuery()
+  const [getProfile] = useLazyGetProfileQuery()
 
   // Check for success message from password reset or error messages
   useEffect(() => {
@@ -100,8 +100,8 @@ export function SignInPage() {
 
       const res = await login({ email: values.username, password: values.password }).unwrap();
       toast.success("User login successfully");
-       localStorage.setItem('token', res.access_token);
-    const profileData = await getProfile().unwrap();
+      localStorage.setItem('token', res.access_token);
+      const profileData = await getProfile().unwrap();
       dispatch(
         setCredentials({
           admin: profileData,
@@ -120,7 +120,7 @@ export function SignInPage() {
       // Use navigate for navigation
       navigate(nextPath);
     } catch (err) {
-      navigate('/auth/change-password');
+      navigate('/auth/reset-password');
 
       console.error('Unexpected sign-in error:', err);
       setError(
@@ -133,7 +133,7 @@ export function SignInPage() {
     }
   }
 
- 
+
 
   return (
     <Form {...form}>
@@ -141,9 +141,9 @@ export function SignInPage() {
         onSubmit={form.handleSubmit(onSubmit)}
         className="block w-full space-y-5"
       >
-       
 
-       
+
+
         {error && (
           <Alert
             variant="destructive"
@@ -173,7 +173,7 @@ export function SignInPage() {
             <FormItem>
               <FormLabel>User name *</FormLabel>
               <FormControl>
-                <Input placeholder="Enter user name" {...field}/>
+                <Input placeholder="Enter user name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -213,7 +213,7 @@ export function SignInPage() {
           )}
         />
 
-       
+
         <Button type="submit" className="w-full" disabled={isProcessing}>
           {isProcessing ? (
             <span className="flex items-center gap-2">
@@ -223,24 +223,25 @@ export function SignInPage() {
             'Sign In'
           )}
         </Button>
- <FormField
+        <div className="flex items-center justify-center">
+
+          <span className='text-text '>
+            Forgot Password?
+          </span>
+          <Link
+            to="/auth/forgot-password"
+            className="text-sm text-primary pl-2"
+          >
+
+            Reset Now
+          </Link>
+        </div>
+        <FormField
           control={form.control}
           name="rememberMe"
           render={({ field }) => (
             <FormItem className="flex flex-col space-y-2 justify-center">
-              <div className="flex items-center justify-center">
-                
-                <span className='text-text '>
-                  Forgot Password?
-                </span>
-                <Link
-                  to="/auth/reset-password"
-                  className="text-sm text-primary pl-2"
-                >
-                  
-                  Reset Now
-                </Link>
-              </div>
+
             </FormItem>
           )}
         />
