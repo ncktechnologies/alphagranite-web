@@ -19,23 +19,24 @@ export function BrandedLayout() {
       <div className=" branded-bg bg-no-repeat bg-cover min-h-screen bg-blend-overlay bg-black/70">
 
         <div className='max-w-5xl grid lg:grid-cols-2 grow lg:gap-2 mx-auto min-h-screen items-center'>
-          <div className=" hidden lg:flex flex-col justify-end ">
-            <div className="flex flex-col gap-4 w-full max-w-[341px]">
+          <div className=" hidden lg:flex flex-col justify-end w-full max-w-[341px]">
+            <div className="flex flex-col ">
               <Link to="/">
                 <img
                   src={toAbsoluteUrl('/images/logo/white-alpha-logo.svg')}
-                  className="h-[28px] max-w-none"
+                  className="h-[43px] max-w-none "
                   alt=""
                 />
               </Link>
 
-              <div className="flex flex-col ">
-                <h3 className="text-2xl text-white ">
+              <div className="flex flex-col space-y-1 mt-3 ">
+                <h3 className="text-4xl text-white ">
                   Welcome back!
                 </h3>
                 <span className='text-white/80 text-[16px]'>Please enter your login details to continue</span>
-                <hr className='text-white/20 my-5' />
-                <p className='text-white'>Need help?</p>
+                {/* <hr className='text-[#FFFFFF33] my-5 h-[1px]' /> */}
+                <div className='h-[1px] bg-[#FFFFFF33] w-full my-5'></div>
+                <p className='text-white pb-2'>Need help?</p>
                 <div className="text-white/80 flex items-center gap-2">
                   <img src="/images/icons/mail-line.svg" alt="" />
                   <span className="">
