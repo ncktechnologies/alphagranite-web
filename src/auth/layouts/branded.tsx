@@ -18,7 +18,7 @@ export function BrandedLayout() {
       </style>
       <div className=" branded-bg bg-no-repeat bg-cover min-h-screen bg-blend-overlay bg-black/70">
 
-        <div className='max-w-5xl grid lg:grid-cols-2 grow lg:gap-2 mx-auto min-h-screen items-center'>
+        <div className='max-w-5xl grid lg:grid-cols-3 grow  mx-auto min-h-screen items-center'>
           <div className=" hidden lg:flex flex-col justify-end w-full max-w-[341px]">
             <div className="flex flex-col ">
               <Link to="/">
@@ -29,7 +29,7 @@ export function BrandedLayout() {
                 />
               </Link>
 
-              <div className="flex flex-col space-y-1 mt-3 ">
+              <div className="flex flex-col space-y-2 mt-4 ">
                 <h3 className="text-4xl text-white ">
                   Welcome back!
                 </h3>
@@ -52,7 +52,7 @@ export function BrandedLayout() {
               </div>
             </div>
           </div>
-          <div className="flex flex-col justify-start items-center">
+          <div className="flex flex-col justify-start items-center lg:col-span-2 ">
              <Link to="/">
                 <img
                   src={toAbsoluteUrl('/images/logo/white-alpha-logo.svg')}
