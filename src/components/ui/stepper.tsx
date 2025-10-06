@@ -171,7 +171,7 @@ function StepperItem({
       <div
         data-slot="stepper-item"
         className={cn(
-          'group/step flex items-center justify-center group-data-[orientation=horizontal]/stepper-nav:flex-row group-data-[orientation=vertical]/stepper-nav:flex-col not-last:flex-1',
+          'group/step flex items-center justify-center group-data-[orientation=horizontal]/stepper-nav:flex-row group-data-[orientation=vertical]/stepper-nav:flex-col ',
           className,
         )}
         data-state={state}
@@ -282,7 +282,7 @@ function StepperIndicator({ children, className }: React.ComponentProps<'div'>) 
       data-slot="stepper-indicator"
       data-state={state}
       className={cn(
-        'relative flex items-center overflow-hidden justify-center size-6 shrink-0 border-background bg-accent text-accent-foreground rounded-full text-xs data-[state=completed]:bg-primary data-[state=completed]:text-primary-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground',
+        'relative flex items-center overflow-hidden justify-center size-8 shrink-0 bg-transparent text-foreground border border-text rounded-full text-xs data-[state=completed]:bg-primary data-[state=completed]:text-white data-[state=active]:bg-primary data-[state=active]:text-white data-[state=completed]:border-primary data-[state=active]:border-primary',
         className,
       )}
     >
@@ -321,7 +321,7 @@ function StepperTitle({ children, className }: React.ComponentProps<'h3'>) {
   const { state } = useStepItem();
 
   return (
-    <h3 data-slot="stepper-title" data-state={state} className={cn('text-sm font-medium leading-none', className)}>
+    <h3 data-slot="stepper-title" data-state={state} className={cn('text-sm font-normal text-text leading-loose data-[state=completed]:text-primary', className)}>
       {children}
     </h3>
   );

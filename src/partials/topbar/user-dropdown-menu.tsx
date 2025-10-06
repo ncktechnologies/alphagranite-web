@@ -40,7 +40,13 @@ import { useDispatch, useSelector } from "react-redux";
 
 export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
   // const { logout, user } = useAuth();
-  const user = useSelector((state: any) => state.user.user);
+  // const user = useSelector((state: any) => state.user.user);
+  const user ={
+    first_name: "Admin",
+    last_name: "User",
+    email: "admin@gmail.com",
+    role: "Administrator",
+  }
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -107,13 +113,13 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
 
         {/* Menu Items */}
         <DropdownMenuItem asChild>
-          <Link
+          {/* <Link
             to="/church-profile"
             className="flex items-center gap-2"
           >
             <IdCard />
             Church Profile
-          </Link>
+          </Link> */}
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link

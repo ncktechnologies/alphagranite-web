@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { n } from "node_modules/react-router/dist/development/index-react-server-client-2EDmGlsZ.d.mts";
+import { useStepper } from "@/components/ui/stepper";
 
 export function OtpVerifyPage() {
+     const { setActiveStep } = useStepper()
     const OTP_LENGTH = 6;
     const SPLIT_INDEX = 3; // Show hyphen after 3 digits
 
@@ -38,10 +39,6 @@ export function OtpVerifyPage() {
         if (value && index < OTP_LENGTH - 1) {
             inputRefs.current[index + 1]?.focus();
         }
-
-        // If all digits are filled, auto-submit
-        // const allFilled = updatedInputs.every((digit) => digit !== '');
-        // if (allFilled) handleSubmit(updatedInputs.join(''));
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
@@ -58,8 +55,8 @@ export function OtpVerifyPage() {
             // Simulate async submit
             await new Promise((res) => setTimeout(res, 1000));
             // Redirect or show success
+            setActiveStep(2);
             toast.success(`OTP Verified: ${otp}`);
-            navigate('/auth/reset-password');
         } catch (error) {
             console.error('OTP Error', error);
         } finally {

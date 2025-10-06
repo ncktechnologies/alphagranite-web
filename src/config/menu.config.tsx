@@ -54,6 +54,7 @@ import {
   Users,
   Briefcase as WorkIcon,
   Zap,
+  PersonStandingIcon,
 } from 'lucide-react';
 import { type MenuConfig } from './types';
 
@@ -70,19 +71,19 @@ export const MENU_SIDEBAR: MenuConfig = [
 
   // },
   {
-    title: 'Platform Members',
+    title: 'Employees',
     icon: PeopleIcon,
-    path: '/platform-members'
+    path: '/,'
   },
   {
-    title: 'Platform Churches',
-    icon: Network,
+    title: 'Department',
+    icon: PersonStandingIcon,
     path: '/platform-churches'
   },
   {
-    title: 'Transactions',
-    icon: TrendingUp,
-    path: '/transaction'
+    title: 'Settings',
+    icon: Settings,
+    path: '/s'
 
   },
 
@@ -121,11 +122,11 @@ export const MENU_SIDEBAR: MenuConfig = [
 
 
   // },
-  {
-    title: 'Financial Report',
-    icon: TrendingUp,
-    path: '/financial-report'
-  },
+  // {
+  //   title: 'Financial Report',
+  //   icon: TrendingUp,
+  //   path: '/financial-report'
+  // },
 
 ];
 

@@ -10,6 +10,8 @@ import { SignInPage } from './pages/signin-page';
 import { SignUpPage } from './pages/signup-page';
 import { ClassicLayout } from './layouts/classic';
 import { OtpVerifyPage } from './pages/otp-verify';
+import LoginStepper from './pages/steppers/login-stepper';
+import { CompleteProfilePage } from './pages/profile-settings/profilepage';
 
 // Define the auth routes
 export const authRoutes: RouteObject[] = [
@@ -63,7 +65,15 @@ export const authRoutes: RouteObject[] = [
       },
       {
         path: 'forgot-password',
-        element: <ResetPasswordPage />,
+        // element: <ResetPasswordPage />,
+        element: <LoginStepper/>,
+
+      },
+      {
+        path: 'update-profile',
+        // element: <ResetPasswordPage />,
+        element: <CompleteProfilePage/>,
+
       },
       {
         path: 'otp-verify',

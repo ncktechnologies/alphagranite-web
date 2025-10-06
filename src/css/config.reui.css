@@ -164,4 +164,28 @@
 
   --text-2xs: 0.6875rem;
   --text-2xs--line-height: calc(0.825 / 0.6875);
+
+}
+
+
+@theme {
+  /* Modern breakpoint system up to 2560px (Ultra-wide) */
+  --breakpoint-mobile: 375px;    /* Small mobile */
+  --breakpoint-mobile-lg: 428px; /* Large mobile */
+  --breakpoint-tablet: 768px;    /* Tablet portrait */
+  --breakpoint-tablet-lg: 1024px; /* Tablet landscape */
+  --breakpoint-laptop: 1280px;   /* Laptop */
+  --breakpoint-desktop: 1440px;  /* Standard desktop */
+  --breakpoint-desktop-lg: 1680px; /* Large desktop */
+  --breakpoint-wide: 1920px;     /* Full HD / Wide desktop */
+  --breakpoint-ultra: 2560px;    /* 2K / Ultra-wide */
+  
+  /* Alternative naming convention */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  --breakpoint-3xl: 1920px;
+  --breakpoint-4xl: 2560px;
 }

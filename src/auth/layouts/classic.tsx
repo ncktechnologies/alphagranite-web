@@ -5,7 +5,7 @@ export function ClassicLayout() {
   return (
     <>
 
-      <div className="flex flex-col items-center justify-center h-screen overflow-hidden bg-[#FBFDF4]">
+      <div className="flex flex-col items-center justify-center h-full min-h-screen overflow-hidden bg-[#FBFDF4] pb-5">
         <div className="m-2">
           <Link to="/">
             <img
