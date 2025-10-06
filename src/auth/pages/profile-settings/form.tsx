@@ -227,7 +227,7 @@ export default function ProfileForm() {
 
                 <Button
                     className="px-8"
-                    onClick={() => navigate('/dashboard')}
+                    onClick={() => navigate('/')}
                 >
                     Go to dashboard
                 </Button>
