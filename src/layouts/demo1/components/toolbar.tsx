@@ -35,7 +35,7 @@ function ToolbarBreadcrumbs() {
   return (
     <div className="flex [.header_&]:below-lg:hidden items-center gap-1.25 text-xs lg:text-sm font-medium mb-2.5 lg:mb-0">
       <div className="breadcrumb flex items-center gap-1">
-        {items.map((item, index) => {
+        {items?.map((item, index) => {
           const isLast = index === items.length - 1;
           const active = item.path ? isActive(item.path) : false;
 

@@ -2,6 +2,7 @@ import { AuthRouting } from '@/auth/auth-routing';
 import { RequireAuth } from '@/auth/require-auth';
 import { ErrorRouting } from '@/errors/error-routing';
 import { Demo1Layout } from '@/layouts/demo1/layout';
+import { DefaultPage } from '@/pages/dashboards';
 
 import { Navigate, Route, Routes } from 'react-router';
 
@@ -10,7 +11,7 @@ export function AppRoutingSetup() {
     <Routes>
       <Route element={<RequireAuth />}>
         <Route element={<Demo1Layout />}>
-          <Route path="/" element={<div>Good</div>} />
+          <Route path="/" element={<DefaultPage/>} />
 
           
           {/* <Route

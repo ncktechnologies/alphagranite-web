@@ -55,8 +55,13 @@ import {
   Briefcase as WorkIcon,
   Zap,
   PersonStandingIcon,
+  Building2,
+  ShoppingBag,
+  Store,
+  StoreIcon,
 } from 'lucide-react';
 import { type MenuConfig } from './types';
+import { RiBuilding2Line, RiBuildingLine, RiStoreLine } from '@remixicon/react';
 
 export const MENU_SIDEBAR: MenuConfig = [
   {
@@ -64,41 +69,37 @@ export const MENU_SIDEBAR: MenuConfig = [
     icon: LayoutGrid,
     path: '/'
   },
-  // {
-  //   title: 'Church profile',
-  //   icon: IdCard,
-  //   path: '/church-profile'
-
-  // },
+  { heading: 'Menu' },
   {
     title: 'Employees',
     icon: PeopleIcon,
-    path: '/,'
+    path: '/employees,'
   },
   {
     title: 'Department',
-    icon: PersonStandingIcon,
-    path: '/platform-churches'
+    icon: UserCircle,
+    path: '/department'
+  },
+   {
+    title: 'Jobs',
+    icon: RiBuilding2Line,
+    path: '/jobs'
+
+  },
+  {
+    title: 'Shop',
+    icon: RiStoreLine,
+    path: '/shop'
+
   },
   {
     title: 'Settings',
     icon: Settings,
-    path: '/s'
+    path: '/settings'
 
   },
 
-  // {
-  //   title: 'Bulletins',
-  //   icon: Briefcase,
-  //   path: '/bulletin'
-
-  // },
-  // {
-  //   title: 'Events',
-  //   icon: Briefcase,
-  //   path: '/event'
-
-  // },
+ 
   // {
   //   title: 'Online Service',
   //   icon: Network,

@@ -51,7 +51,7 @@ export function MegaMenu() {
         </NavigationMenuItem>
 
         {/* Public Profiles Item */}
-        {/* <NavigationMenuItem>
+        <NavigationMenuItem>
           <NavigationMenuTrigger
             className={cn(linkClass)}
             data-active={
@@ -63,10 +63,10 @@ export function MegaMenu() {
           <NavigationMenuContent className="p-0">
             <MegaMenuSubProfiles items={MENU_MEGA} />
           </NavigationMenuContent>
-        </NavigationMenuItem> */}
+        </NavigationMenuItem>
 
         {/* My Account Item */}
-        {/* <NavigationMenuItem>
+        <NavigationMenuItem>
           <NavigationMenuTrigger
             className={cn(linkClass)}
             data-active={hasActiveChild(myAccountItem.children) || undefined}
@@ -76,10 +76,10 @@ export function MegaMenu() {
           <NavigationMenuContent className="p-0">
             <MegaMenuSubAccount items={MENU_MEGA} />
           </NavigationMenuContent>
-        </NavigationMenuItem> */}
+        </NavigationMenuItem>
 
         {/* Network Item */}
-        {/* <NavigationMenuItem>
+        <NavigationMenuItem>
           <NavigationMenuTrigger
             className={cn(linkClass)}
             data-active={
@@ -91,10 +91,10 @@ export function MegaMenu() {
           <NavigationMenuContent className="p-0">
             <MegaMenuSubNetwork items={MENU_MEGA} />
           </NavigationMenuContent>
-        </NavigationMenuItem> */}
+        </NavigationMenuItem>
 
         {/* Store Item */}
-        {/* <NavigationMenuItem>
+        <NavigationMenuItem>
           <NavigationMenuTrigger
             className={cn(linkClass)}
             data-active={hasActiveChild(storeItem.children || []) || undefined}
@@ -104,10 +104,10 @@ export function MegaMenu() {
           <NavigationMenuContent className="p-0">
             <MegaMenuSubStore items={MENU_MEGA} />
           </NavigationMenuContent>
-        </NavigationMenuItem> */}
+        </NavigationMenuItem>
 
         {/* Authentication Item */}
-        {/* <NavigationMenuItem>
+        <NavigationMenuItem>
           <NavigationMenuTrigger
             className={cn(linkClass)}
             data-active={hasActiveChild(authItem.children) || undefined}
@@ -117,7 +117,7 @@ export function MegaMenu() {
           <NavigationMenuContent className="p-0">
             <MegaMenuSubAuth items={MENU_MEGA} />
           </NavigationMenuContent>
-        </NavigationMenuItem> */}
+        </NavigationMenuItem>
       </NavigationMenuList>
     </NavigationMenu>
   );

@@ -4,44 +4,40 @@ import { toAbsoluteUrl } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 import { useSettings } from '@/providers/settings-provider';
 import { Button } from '@/components/ui/button';
-import { useSelector } from 'react-redux';
 
 export function SidebarHeader() {
-  const { settings, storeOption } = useSettings();
-  const user = useSelector((state: any) => state.user.user);
-  // const { data: churches } = useGetChurchesQuery();
+  // const { settings, storeOption } = useSettings();
 
-  const handleToggleClick = () => {
-    storeOption(
-      'layouts.demo1.sidebarCollapse',
-      !settings.layouts.demo1.sidebarCollapse,
-    );
-  };
+  // const handleToggleClick = () => {
+  //   storeOption(
+  //     'layouts.demo1.sidebarCollapse',
+  //     !settings.layouts.demo1.sidebarCollapse,
+  //   );
+  // };
 
   return (
-    <div className="sidebar-header hidden lg:flex items-center relative justify-start px-3 lg:px-6 shrink-0">
+    <div className="sidebar-header hidden lg:flex items-center relative justify-between px-3 lg:px-6 shrink-0 bg-white">
       <Link to="/">
-        <div className="dark:hidden flex items-center gap-3">
+        <div className="dark:hidden">
           <img
-            src='/images/sidebar-logo.svg'
-            className="default-logo h-[30px] max-w-none"
+            src={toAbsoluteUrl('/images/logo/alpha-logo.svg')}
+            className="default-logo max-w-none"
             alt="Default Logo"
           />
           <img
-            src={toAbsoluteUrl('/images/logo.svg')}
+            src={toAbsoluteUrl('/images/logo/alpha-logo.svg')}
             className="small-logo h-[22px] max-w-none"
             alt="Mini Logo"
           />
-          
         </div>
         <div className="hidden dark:block">
           <img
-            src={toAbsoluteUrl('/media/app/default-logo-dark.svg')}
+            src={toAbsoluteUrl('/images/logo/alpha-logo.svg')}
             className="default-logo h-[22px] max-w-none"
             alt="Default Dark Logo"
           />
           <img
-            src={toAbsoluteUrl('/media/app/mini-logo.svg')}
+            src={toAbsoluteUrl('/images/logo/alpha-logo.svg')}
             className="small-logo h-[22px] max-w-none"
             alt="Mini Logo"
           />

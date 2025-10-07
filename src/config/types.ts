@@ -1,8 +1,9 @@
+import { RemixiconComponentType } from '@remixicon/react';
 import { type LucideIcon } from 'lucide-react';
 
 export interface MenuItem {
   title?: string;
-  icon?: LucideIcon;
+  icon?: LucideIcon | RemixiconComponentType;
   path?: string;
   rootPath?: string;
   childrenIndex?: number;

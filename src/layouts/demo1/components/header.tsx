@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useLocation } from 'react-router';
 import { Link } from 'react-router-dom';
-import { getInitials, toAbsoluteUrl } from '@/lib/helpers';
+import { toAbsoluteUrl } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useScrollPosition } from '@/hooks/use-scroll-position';
@@ -32,15 +32,11 @@ import { Breadcrumb } from './breadcrumb';
 import { MegaMenu } from './mega-menu';
 import { MegaMenuMobile } from './mega-menu-mobile';
 import { SidebarMenu } from './sidebar-menu';
-// import { Avatar } from '@/common/avatar/Avatar';
-import { useSelector } from 'react-redux';
-import { AvatarSingle } from '@/partials/common/avatar-single';
 
 export function Header() {
   const [isSidebarSheetOpen, setIsSidebarSheetOpen] = useState(false);
   const [isMegaMenuSheetOpen, setIsMegaMenuSheetOpen] = useState(false);
-  const user = useSelector((state: any) => state.user.user);
-  const name = getInitials(`${user?.first_name} ${user?.last_name}`)
+
   const { pathname } = useLocation();
   const mobileMode = useIsMobile();
 
@@ -57,20 +53,20 @@ export function Header() {
     <header
       className={cn(
         'header fixed top-0 z-10 start-0 flex items-stretch shrink-0 border-b border-transparent bg-background end-0 pe-[var(--removed-body-scroll-bar-size,0px)]',
-        headerSticky && 'border-b border-border',
+        headerSticky && 'border-b border-[#E2E4ED]',
       )}
     >
       <Container className="flex justify-between items-stretch lg:gap-4">
         {/* HeaderLogo */}
-        <div className="flex gap-1 lg:hidden items-center gap-2.5">
+        <div className="flex gap-1 lg:hidden items-center">
           <Link to="/" className="shrink-0">
             <img
-              src={toAbsoluteUrl('/images/logo.svg')}
+              src={toAbsoluteUrl('/images/logo/alpha-logo.svg')}
               className="h-[25px] w-full"
               alt="mini-logo"
             />
           </Link>
-          <div className="flex items-center ">
+          <div className="flex items-center">
             {mobileMode && (
               <Sheet
                 open={isSidebarSheetOpen}
@@ -78,22 +74,22 @@ export function Header() {
               >
                 <SheetTrigger asChild>
                   <Button variant="ghost" mode="icon">
-                    <Menu className="text-muted-foreground" />
+                    <Menu className="text-muted-foreground/70" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent
-                  className="p-0 gap-0 w-[275px] bg-primary "
+                  className="p-0 gap-0 w-[275px]"
                   side="left"
                   close={false}
                 >
                   <SheetHeader className="p-0 space-y-0" />
-                  <SheetBody className="p-0 overflow-y-auto bg-primary">
+                  <SheetBody className="p-0 overflow-y-auto">
                     <SidebarMenu />
                   </SheetBody>
                 </SheetContent>
               </Sheet>
             )}
-            {/* {mobileMode && (
+            {mobileMode && (
               <Sheet
                 open={isMegaMenuSheetOpen}
                 onOpenChange={setIsMegaMenuSheetOpen}
@@ -114,7 +110,7 @@ export function Header() {
                   </SheetBody>
                 </SheetContent>
               </Sheet>
-            )} */}
+            )}
           </div>
         </div>
 
@@ -122,7 +118,7 @@ export function Header() {
         {pathname.startsWith('/account') ? (
           <Breadcrumb />
         ) : (
-          !mobileMode && <MegaMenu />
+          !mobileMode && <Breadcrumb />
         )}
 
         {/* HeaderTopbar */}
@@ -132,27 +128,52 @@ export function Header() {
             <div></div>
           ) : (
             <>
-
-
-
+              {!mobileMode && (
+                <SearchDialog
+                  trigger={
+                    <Button
+                      variant="ghost"
+                      mode="icon"
+                      shape="circle"
+                      className="size-9 hover:bg-primary/10 hover:[&_svg]:text-primary"
+                    >
+                      <Search className="size-4.5!" />
+                    </Button>
+                  }
+                />
+              )}
+              <NotificationsSheet
+                trigger={
+                  <Button
+                    variant="ghost"
+                    mode="icon"
+                    shape="circle"
+                    className="size-9 hover:bg-primary/10 hover:[&_svg]:text-primary"
+                  >
+                    <Bell className="size-4.5!" />
+                  </Button>
+                }
+              />
+              <ChatSheet
+                trigger={
+                  <Button
+                    variant="ghost"
+                    mode="icon"
+                    shape="circle"
+                    className="size-9 hover:bg-primary/10 hover:[&_svg]:text-primary"
+                  >
+                    <MessageCircleMore className="size-4.5!" />
+                  </Button>
+                }
+              />
+              
               <UserDropdownMenu
                 trigger={
-                  // <img
-                  //   className="size-9 rounded-full border-2 border-green-500 shrink-0 cursor-pointer"
-                  //   src={toAbsoluteUrl('/media/avatars/300-2.png')}
-                  //   alt="User Avatar"
-                  // />
-                  // <Avatar size={40} name={`${user?.first_name} ${user?.first_name}`} />
-                  // <span className="text-white font-bold uppercase bg-primary ">{`${user?.first_name} ${user?.first_name}`}</span>
-                  <Button>
-                    <AvatarSingle
-                      // className='size-9 rounded-full border-2 border-green-500 shrink-0 cursor-pointer'
-                      image={user?.image}
-                      // imageClass={avatar?.imageClass}
-                      fallback={name}
-                    // badgeClass={avatar?.badgeClass}
-                    />
-                  </Button>
+                  <img
+                    className="size-9 rounded-full border-2 border-green-500 shrink-0 cursor-pointer"
+                    src={toAbsoluteUrl('/images/app/300-2.png')}
+                    alt="User Avatar"
+                  />
                 }
               />
             </>
