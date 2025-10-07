@@ -120,7 +120,7 @@ export function SignInPage() {
       // Use navigate for navigation
       navigate(nextPath);
     } catch (err) {
-      navigate('/auth/update-profile');
+      navigate('/auth/reset-password');
 
       console.error('Unexpected sign-in error:', err);
       setError(

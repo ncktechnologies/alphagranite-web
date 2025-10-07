@@ -37,8 +37,6 @@ export default function ProfileForm() {
             lastName: '',
             email: '',
             department: '',
-            address: '',
-            phone: '',
             gender: '',
         },
     });
@@ -132,7 +130,7 @@ export default function ProfileForm() {
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Email *</FormLabel>
+                                    <FormLabel>Personal email address *</FormLabel>
                                     <Input placeholder="Enter email address" {...field} />
                                     <FormMessage />
                                 </FormItem>
@@ -159,28 +157,8 @@ export default function ProfileForm() {
                                 </FormItem>
                             )}
                         />
-                        <FormField
-                            control={form.control}
-                            name="address"
-                            render={({ field }) => (
-                                <FormItem className="">
-                                    <FormLabel>Address *</FormLabel>
-                                    <Input placeholder="Enter home address" {...field} />
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="phone"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Phone Number *</FormLabel>
-                                    <Input placeholder="Enter phone number" {...field} />
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+
+
                         <FormField
                             control={form.control}
                             name="gender"
@@ -203,17 +181,19 @@ export default function ProfileForm() {
                             )}
                         />
                     </div>
+                    <div className='flex justify-end mt-6'>
+                        <Button type="submit" className="w-2/5" disabled={isSubmitting}>
+                            {isSubmitting ? (
+                                <span className="flex items-center gap-2">
+                                    <LoaderCircleIcon className="h-4 w-4 animate-spin" />
+                                    Saving profile...
+                                </span>
+                            ) : (
+                                'Proceed'
+                            )}
+                        </Button>
+                    </div>
 
-                    <Button type="submit" className="w-1/2 " disabled={isSubmitting}>
-                        {isSubmitting ? (
-                            <span className="flex items-center gap-2">
-                                <LoaderCircleIcon className="h-4 w-4 animate-spin" />
-                                Saving profile...
-                            </span>
-                        ) : (
-                            'Proceed'
-                        )}
-                    </Button>
                 </form>
             </Form>
             <Popup isOpen={showPopover}
@@ -225,12 +205,12 @@ export default function ProfileForm() {
                 <div className="flex flex-col items-center mt-4">
 
 
-                <Button
-                    className="px-8"
-                    onClick={() => navigate('/')}
-                >
-                    Go to dashboard
-                </Button>
+                    <Button
+                        className="px-8"
+                        onClick={() => navigate('/')}
+                    >
+                        Go to dashboard
+                    </Button>
                 </div>
             </Popup>
         </div>

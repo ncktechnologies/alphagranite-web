@@ -134,12 +134,12 @@ export function Header() {
                   <div className="relative">
                     <Search className="text-muted-foreground absolute top-1/2 start-3.5 -translate-y-1/2 size-4" />
                     <Input
-                      placeholder="Search"
+                      placeholder="Search for anything"
                       onChange={() => {}}
-                      className="px-9 min-w-0"
+                      className="px-9 min-w-0 h-8 w-[250px]"
                       value=""
                     />
-                    <span className="text-xs text-muted-foreground absolute end-3.5 top-1/2 -translate-y-1/2">
+                    <span className="text-xs bg-border absolute px-2 rounded-md end-3.5 top-1/2 -translate-y-1/2">
                       cmd + /
                     </span>
                   </div>

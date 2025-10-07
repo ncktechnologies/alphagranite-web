@@ -21,6 +21,7 @@ import {
 } from '../forms/reset-password-schema';
 import { Card, CardContent } from '@/components/ui/card';
 import { FormHeader } from '@/components/ui/form-header';
+import Popup from '@/components/ui/popup';
 
 export function ChangePasswordPage() {
   const navigate = useNavigate();
@@ -31,6 +32,7 @@ export function ChangePasswordPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showPopover, setShowPopover] = useState(false);
 
   const form = useForm<NewPasswordSchemaType>({
     resolver: zodResolver(getNewPasswordSchema()),
@@ -47,14 +49,14 @@ export function ChangePasswordPage() {
 
 
       setSuccessMessage('Password changed successfully!');
-
+      setShowPopover(true);
       // Reset form
       form.reset();
 
       // Redirect to login page after a successful password reset
-      setTimeout(() => {
-        navigate('/auth/signin');
-      }, 2000);
+      // setTimeout(() => {
+      //   navigate('/auth/update-profile');
+      // }, 2000);
     } catch (err) {
       console.error('Password reset error:', err);
       setError(
@@ -71,12 +73,12 @@ export function ChangePasswordPage() {
 
   return (
     <div className="w-full flex flex-col items-center justify-center">
-      <FormHeader title="Change password" caption='Please change your default password to a new desired password '/>
+      <FormHeader title="Change password" caption='Please change your default password to a new desired password ' />
       <Card className="w-full max-w-[398px] overflow-y-auto flex flex-wrap border-[#DFDFDF]">
         <CardContent className="px-6 py-12">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-             
+
 
               {error && (
                 <Alert variant="destructive">
@@ -174,12 +176,28 @@ export function ChangePasswordPage() {
                 )}
               </Button>
 
-              
+
             </form>
           </Form>
         </CardContent>
       </Card>
+      <Popup isOpen={showPopover}
+        title='Password updated'
+        description='Your password was updated successfully'
 
+      >
+
+        <div className="flex flex-col items-center mt-4">
+
+
+          <Button
+            className="px-8"
+            onClick={() => navigate('/auth/update-profile')}
+          >
+            Close
+          </Button>
+        </div>
+      </Popup>
     </div>
   );
 }
