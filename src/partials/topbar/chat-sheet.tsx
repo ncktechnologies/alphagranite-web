@@ -79,26 +79,26 @@ export function ChatSheet({ trigger }: { trigger: ReactNode }) {
       text: 'I have looked over the rollout plan, and everything seems spot on. I am ready on my end and can not wait for the user feedback.',
       in: true,
     },
-    {
-      avatar: '/media/avatars/300-2.png',
-      text: "Haven't seen the build yet, I'll look now.",
-      time: '15:52',
-      read: false,
-      out: true,
-    },
-    {
-      avatar: '/media/avatars/300-2.png',
-      text: 'Checking the build now',
-      time: '15:52',
-      read: false,
-      out: true,
-    },
-    {
-      avatar: '/media/avatars/300-4.png',
-      time: '17:40',
-      text: 'Tomorrow, I will send the link for the meeting',
-      in: true,
-    },
+    // {
+    //   avatar: '/media/avatars/300-2.png',
+    //   text: "Haven't seen the build yet, I'll look now.",
+    //   time: '15:52',
+    //   read: false,
+    //   out: true,
+    // },
+    // {
+    //   avatar: '/media/avatars/300-2.png',
+    //   text: 'Checking the build now',
+    //   time: '15:52',
+    //   read: false,
+    //   out: true,
+    // },
+    // {
+    //   avatar: '/media/avatars/300-4.png',
+    //   time: '17:40',
+    //   text: 'Tomorrow, I will send the link for the meeting',
+    //   in: true,
+    // },
   ];
 
   return (
@@ -112,19 +112,19 @@ export function ChatSheet({ trigger }: { trigger: ReactNode }) {
           <div className="border-b border-border p-3 shadow-xs">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <div className="w-11 h-11 rounded-full bg-accent/60 border border-border flex items-center justify-center">
+                {/* <div className="w-11 h-11 rounded-full bg-accent/60 border border-border flex items-center justify-center">
                   <img
                     src={toAbsoluteUrl('/media/brand-logos/gitlab.svg')}
                     className="w-7 h-7"
                     alt=""
                   />
-                </div>
+                </div> */}
                 <div>
                   <Link
                     to="#"
                     className="text-sm font-semibold text-mono hover:text-blue-600"
                   >
-                    HR Team
+                    Sales Team
                   </Link>
                   <span className="text-xs italic text-muted-foreground block">
                     Jessy is typing...
@@ -135,64 +135,16 @@ export function ChatSheet({ trigger }: { trigger: ReactNode }) {
                 <AvatarGroup
                   size="size-8"
                   group={[
-                    { path: '/media/avatars/300-4.png' },
-                    { path: '/media/avatars/300-1.png' },
-                    { path: '/media/avatars/300-2.png' },
+                    { path: '/images/app/300-2.png' },
+                    { path: '/images/app/300-2.png' },
+                    { path: '/images/app/300-2.png' },
                     {
                       fallback: '+10',
                       variant: 'bg-green-500 text-white',
                     },
                   ]}
                 />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" mode="icon" size="sm">
-                      <MoreVertical className="size-4!" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    className="w-44"
-                    side="bottom"
-                    align="end"
-                  >
-                    <DropdownMenuItem asChild>
-                      <Link to="/account/members/teams">
-                        <Users /> Invite Users
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuSub>
-                      <DropdownMenuSubTrigger>
-                        <Settings2 />
-                        <span>Team Settings</span>
-                      </DropdownMenuSubTrigger>
-                      <DropdownMenuPortal>
-                        <DropdownMenuSubContent className="w-44">
-                          <DropdownMenuItem asChild>
-                            <Link to="/account/members/import-members">
-                              <Shield />
-                              Find Members
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link to="/account/members/import-members">
-                              <Calendar /> Meetings
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link to="/account/members/import-members">
-                              <Shield /> Group Settings
-                            </Link>
-                          </DropdownMenuItem>
-                        </DropdownMenuSubContent>
-                      </DropdownMenuPortal>
-                    </DropdownMenuSub>
-                    <DropdownMenuItem asChild>
-                      <Link to="/account/security/privacy-settings">
-                        <Shield /> Group Settings
-                      </Link>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+               
               </div>
             </div>
           </div>
@@ -226,7 +178,7 @@ export function ChatSheet({ trigger }: { trigger: ReactNode }) {
                 <div className="relative">
                   <Avatar className="size-9">
                     <AvatarImage
-                      src={toAbsoluteUrl('/media/avatars//300-2.png')}
+                      src={toAbsoluteUrl('/images/app/300-2.png')}
                       alt=""
                     />
                     <AvatarFallback>CH</AvatarFallback>
@@ -256,47 +208,10 @@ export function ChatSheet({ trigger }: { trigger: ReactNode }) {
           )}
         </SheetBody>
         <SheetFooter className="block p-0 sm:space-x-0">
-          <div className="p-4 bg-accent/50 flex gap-2">
-            <Avatar className="size-9">
-              <AvatarImage
-                src={toAbsoluteUrl('/media/avatars//300-14.png')}
-                alt=""
-              />
-              <AvatarFallback>CH</AvatarFallback>
-              <AvatarIndicator className="-end-2 -bottom-2">
-                <AvatarStatus variant="online" className="size-2.5" />
-              </AvatarIndicator>
-            </Avatar>
-            <div className="flex-1 flex items-center justify-between gap-0.5">
-              <div className="flex flex-col">
-                <div className="inline-flex gap-0.5 text-sm">
-                  <Link
-                    to="#"
-                    className="font-semibold text-mono hover:text-primary"
-                  >
-                    Jane Perez
-                  </Link>
-                  <span className="text-muted-foreground">
-                    wants to join chat
-                  </span>
-                </div>
-                <span className="text-xs text-muted-foreground">
-                  1 day ago • Design Team
-                </span>
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline">
-                  Decline
-                </Button>
-                <Button size="sm" variant="mono">
-                  Accept
-                </Button>
-              </div>
-            </div>
-          </div>
+          
           <div className="p-5 flex items-center gap-2 relative">
             <img
-              src={toAbsoluteUrl('/media/avatars/300-2.png')}
+              src={toAbsoluteUrl('/images/app/300-2.png')}
               className="w-8 h-8 rounded-full absolute left-7 top-1/2 -translate-y-1/2"
               alt=""
             />

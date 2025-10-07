@@ -32,9 +32,9 @@ export function SidebarMenu() {
     root: 'lg:ps-1 space-y-3',
     group: 'gap-px',
     label:
-      'uppercase text-xs font-medium text-muted-foreground/70 pt-2.25 pb-px',
+      'uppercase text-xs font-medium text-muted-foreground/70 py-2.25 pb-px',
     separator: '',
-    item: 'h-8 hover:bg-transparent text-white hover:text-white/50 data-[selected=true]:text-primary data-[selected=true]:bg-muted data-[selected=true]:font-medium',
+    item: 'h-8 hover:bg-transparent text-white hover:text-white/50 data-[selected=true]:text-white data-[selected=true]:bg-muted data-[selected=true]:py-6',
     sub: '',
     subTrigger:
       'h-8 hover:bg-transparent text-white hover:text-white/50 data-[selected=true]:text-primary data-[selected=true]:bg-muted data-[selected=true]:font-medium',
@@ -79,13 +79,13 @@ export function SidebarMenu() {
         <AccordionMenuItem
           key={index}
           value={item.path || ''}
-          className="text-sm font-medium"
+          className="text-lg text-[#E2E4ED]"
         >
           <Link
             to={item.path || '#'}
             // className="flex items-center justify-between grow gap-2"
           >
-            {item.icon && <item.icon data-slot="accordion-menu-icon" />}
+            {item.icon && <item.icon data-slot="accordion-menu-icon" className='size-[20px]!'/>}
             <span data-slot="accordion-menu-title">{item.title}</span>
           </Link>
         </AccordionMenuItem>
@@ -176,7 +176,7 @@ export function SidebarMenu() {
         <AccordionMenuItem
           key={index}
           value={item.path || ''}
-          className="text-[13px]"
+          className="text-[16px]"
         >
           <Link to={item.path || '#'}>{item.title}</Link>
         </AccordionMenuItem>
@@ -206,7 +206,7 @@ export function SidebarMenu() {
   };
 
   const buildMenuHeading = (item: MenuItem, index: number): JSX.Element => {
-    return <AccordionMenuLabel key={index}>{item.heading}</AccordionMenuLabel>;
+    return <AccordionMenuLabel key={index} className='text-[#E6E9E7] text-[16px]'>{item.heading}</AccordionMenuLabel>;
   };
 
   return (

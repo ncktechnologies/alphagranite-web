@@ -136,36 +136,38 @@ export function Header() {
                     <Input
                       placeholder="Search for anything"
                       onChange={() => {}}
-                      className="px-9 min-w-0 h-8 w-[250px]"
+                      className="px-9 min-w-0 h-10 w-[250px] border border-[#E9ECEC]  focus:border-primary focus:ring-0"
                       value=""
                     />
-                    <span className="text-xs bg-border absolute px-2 rounded-md end-3.5 top-1/2 -translate-y-1/2">
-                      cmd + /
-                    </span>
+                    <div className="border border-[#F9F9F9] absolute p-2 rounded-md end-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                      <img src="/images/icons/c.svg" alt="" />
+                      <img src="/images/icons/k.svg" alt="" />
+
+                    </div>
                   </div>
                 </div>
               )}
-              <NotificationsSheet
-                trigger={
+              {/* <NotificationsSheet
+                trigger={ */}
                   <Button
                     variant="ghost"
                     mode="icon"
                     shape="circle"
-                    className="size-9 hover:bg-primary/10 hover:[&_svg]:text-primary"
+                    className="size-9 border-foreground hover:bg-primary/10 hover:[&_svg]:text-primary"
                   >
-                    <Bell className="size-4.5!" />
+                    <Bell className="size-6!" />
                   </Button>
-                }
-              />
+                {/* }
+              /> */}
               <ChatSheet
                 trigger={
                   <Button
                     variant="ghost"
                     mode="icon"
                     shape="circle"
-                    className="size-9 hover:bg-primary/10 hover:[&_svg]:text-primary"
+                    className="size-9 border-foreground hover:bg-primary/10 hover:[&_svg]:text-primary"
                   >
-                    <MessageCircleMore className="size-4.5!" />
+                    <MessageCircleMore className="size-6!" />
                   </Button>
                 }
               />

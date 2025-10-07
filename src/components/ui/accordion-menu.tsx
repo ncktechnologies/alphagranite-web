@@ -171,7 +171,7 @@ function AccordionMenuLabel({ children, className, ...props }: AccordionMenuLabe
     <div
       data-slot="accordion-menu-label"
       role="presentation"
-      className={cn('px-2 py-1.5 text-xs font-medium text-muted-foreground', classNames?.label, className)}
+      className={cn('px-2 py-2 text-xs font-medium ', classNames?.label, className)}
       {...props}
     >
       {children}
@@ -280,7 +280,7 @@ function AccordionMenuSubTrigger({
       <AccordionPrimitive.Trigger
         data-slot="accordion-menu-sub-trigger"
         className={cn(
-          'w-full relative flex items-center cursor-pointer select-none text-start rounded-lg gap-2 px-2 py-1.5 text-sm outline-hidden text-foreground transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground [&_svg]:pointer-events-none [&_svg:not([role=img]):not([class*=text-])]:opacity-60 [&_svg:not([class*=size-])]:size-4 [&_svg]:shrink-0',
+          'w-full relative flex items-center cursor-pointer select-none text-start rounded-lg gap-2 px-2 py-1.5 text-[16px] outline-hidden text-[#E2E4ED] transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:bg-accent focus-visible:text-accent-foreground [&_svg]:pointer-events-none [&_svg:not([role=img]):not([class*=text-])]:opacity-60 [&_svg:not([class*=size-])]:size-4 [&_svg]:shrink-0',
           classNames?.subTrigger,
           className,
         )}

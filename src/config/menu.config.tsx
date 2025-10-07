@@ -73,29 +73,29 @@ export const MENU_SIDEBAR: MenuConfig = [
   {
     title: 'Employees',
     icon: PeopleIcon,
-    path: '/employees,'
+    path: ''
   },
   {
     title: 'Department',
     icon: UserCircle,
-    path: '/department'
+    path: ''
   },
    {
     title: 'Jobs',
     icon: RiBuilding2Line,
-    path: '/jobs'
+    path: ''
 
   },
   {
     title: 'Shop',
     icon: RiStoreLine,
-    path: '/shop'
+    path: ''
 
   },
   {
     title: 'Settings',
     icon: Settings,
-    path: '/settings'
+    path: ''
 
   },
 
