@@ -3,65 +3,112 @@
 /** Colors **/
 :root {
   /** Base Colors **/
-  --background: oklch(1 0 0); /* --color-white */
-  --foreground: #09090B; /* --color-zinc-800 */
-  --text: #4B545D; /* --color-white */
-  --text-foreground: #7C8689; /* --color-zinc-800 */
+  --background: oklch(1 0 0);
+  /* --color-white */
+  --foreground: #09090B;
+  /* --color-zinc-800 */
+  --text: #4B545D;
+  /* --color-white */
+  --text-foreground: #7C8689;
+  /* --color-zinc-800 */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0); /* --color-white */
-  --popover-foreground: oklch(27.4% 0.006 286.033); /* --color-zinc-800 */
-  --primary: #9CC15E; /* custom color  */
-  --primary-foreground: oklch(1 0 0); /* --color-white */
-  --secondary: #807F94; /* --color-zinc-100 */
-  --secondary-foreground: oklch(44.6% 0.03 256.802); /* --color-zinc-600 */
-  --muted: oklch(96.7% 0.003 264.542); /* --color-zinc-100 */
-  --muted-foreground: oklch(70.5% 0.015 286.067); /* --color-zinc-400 */
-  --accent: oklch(96.7% 0.003 264.542); /* --color-zinc-100 */
-  --accent-foreground: oklch(21% 0.006 285.885); /* --color-zinc-900 */
-  --destructive: oklch(57.7% 0.245 27.325); /* --color-red-600 */
-  --destructive-foreground: oklch(1 0 0); /* --color-white */
-  --mono: oklch(14.1% 0.005 285.823); /* --color-zinc-950 */
-  --mono-foreground: oklch(1 0 0); /* --color-white */
+  --popover: oklch(1 0 0);
+  /* --color-white */
+  --popover-foreground: oklch(27.4% 0.006 286.033);
+  /* --color-zinc-800 */
+  --primary: #9CC15E;
+  /* custom color  */
+  --primary-foreground: oklch(1 0 0);
+  /* --color-white */
+  --secondary: #807F94;
+  /* --color-zinc-100 */
+  --secondary-foreground: oklch(44.6% 0.03 256.802);
+  /* --color-zinc-600 */
+  --muted: oklch(96.7% 0.003 264.542);
+  /* --color-zinc-100 */
+  --muted-foreground: oklch(70.5% 0.015 286.067);
+  /* --color-zinc-400 */
+  --accent: oklch(96.7% 0.003 264.542);
+  /* --color-zinc-100 */
+  --accent-foreground: oklch(21% 0.006 285.885);
+  /* --color-zinc-900 */
+  --destructive: oklch(57.7% 0.245 27.325);
+  /* --color-red-600 */
+  --destructive-foreground: oklch(1 0 0);
+  /* --color-white */
+  --mono: oklch(14.1% 0.005 285.823);
+  /* --color-zinc-950 */
+  --mono-foreground: oklch(1 0 0);
+  /* --color-white */
   --placeholder: #9C9BAB;
   /** Base Styles **/
-  --border: oklch(
-    94% 0.004 286.32
-  ); /* between --color-zinc-100 and --color-zinc-200 */
-  --input: #DFDFDF; /* --color-zinc-200 */
-  --ring: #9CC15E; /* --color-zinc-400 */
+  --border: oklch(94% 0.004 286.32);
+  /* between --color-zinc-100 and --color-zinc-200 */
+  --input: #DFDFDF;
+  /* --color-zinc-200 */
+  --ring: #9CC15E;
+  /* --color-zinc-400 */
   --radius: 0.5rem;
   --sidbar-muted: #667F0;
 }
 
+@font-face {
+  font-family: 'Proxima Nova';
+  src: url('/fonts/ProximaNova-Regular.otf') format('otf');
+  font-weight: normal;
+  font-style: normal;
+}
+
 .dark {
   /** Base Colors **/
-  --background: oklch(14.1% 0.005 285.823); /* --color-zinc-950 */
-  --foreground: oklch(98.5% 0 0); /* --color-zinc-50 */
-  --card: oklch(14.1% 0.005 285.823); /* --color-zinc-950 */
-  --card-foreground: oklch(98.5% 0 0); /* --color-zinc-50 */
-  --popover: oklch(14.1% 0.005 285.823); /* --color-zinc-950 */
-  --popover-foreground: oklch(98.5% 0 0); /* --color-zinc-50 */
-  --primary: #7A9705; /* custom color  */
-  --primary-foreground: oklch(1 0 0); /* --color-white */
-  --secondary: oklch(27.4% 0.006 286.033); /* --color-zinc-800 */
-  --secondary-foreground: oklch(70.5% 0.015 286.067); /* --color-zinc-400 */
-  --muted: oklch(21% 0.006 285.885); /* --color-zinc-900 */
-  --muted-foreground: oklch(55.2% 0.016 285.938); /* --color-zinc-500 */
-  --accent: oklch(21% 0.006 285.885); /* --color-zinc-900 */
-  --accent-foreground: oklch(98.5% 0 0); /* --color-zinc-50 */
-  --destructive: oklch(57.7% 0.245 27.325); /* --color-red-600 */
-  --destructive-foreground: oklch(1 0 0); /* --color-white */
-  --mono: oklch(87.1% 0.006 286.286); /* --color-zinc-300 */
-  --mono-foreground: oklch(0 0 0); /* --color-black */
+  --background: oklch(14.1% 0.005 285.823);
+  /* --color-zinc-950 */
+  --foreground: oklch(98.5% 0 0);
+  /* --color-zinc-50 */
+  --card: oklch(14.1% 0.005 285.823);
+  /* --color-zinc-950 */
+  --card-foreground: oklch(98.5% 0 0);
+  /* --color-zinc-50 */
+  --popover: oklch(14.1% 0.005 285.823);
+  /* --color-zinc-950 */
+  --popover-foreground: oklch(98.5% 0 0);
+  /* --color-zinc-50 */
+  --primary: #7A9705;
+  /* custom color  */
+  --primary-foreground: oklch(1 0 0);
+  /* --color-white */
+  --secondary: oklch(27.4% 0.006 286.033);
+  /* --color-zinc-800 */
+  --secondary-foreground: oklch(70.5% 0.015 286.067);
+  /* --color-zinc-400 */
+  --muted: oklch(21% 0.006 285.885);
+  /* --color-zinc-900 */
+  --muted-foreground: oklch(55.2% 0.016 285.938);
+  /* --color-zinc-500 */
+  --accent: oklch(21% 0.006 285.885);
+  /* --color-zinc-900 */
+  --accent-foreground: oklch(98.5% 0 0);
+  /* --color-zinc-50 */
+  --destructive: oklch(57.7% 0.245 27.325);
+  /* --color-red-600 */
+  --destructive-foreground: oklch(1 0 0);
+  /* --color-white */
+  --mono: oklch(87.1% 0.006 286.286);
+  /* --color-zinc-300 */
+  --mono-foreground: oklch(0 0 0);
+  /* --color-black */
   --placeholder: #9C9BAB;
 
   /** Base Styles **/
-  --border: oklch(27.4% 0.006 286.033); /* --color-zinc-800 */
-  --input: oklch(27.4% 0.006 286.033); /* --color-zinc-800 */
-  --ring: oklch(27.4% 0.006 286.033); /* --color-zinc-600 */
-  --sidbar-muted: #667F0;
- 
+  --border: oklch(27.4% 0.006 286.033);
+  /* --color-zinc-800 */
+  --input: oklch(27.4% 0.006 286.033);
+  /* --color-zinc-800 */
+  --ring: oklch(27.4% 0.006 286.033);
+  /* --color-zinc-600 */
+  --sidbar-muted: #667F01;
+
 
 }
 
@@ -74,7 +121,7 @@
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
 
-   --color-text: var(--text);
+  --color-text: var(--text);
   --color-text-foreground: var(--text-foreground);
 
   --color-popover: var(--popover);
@@ -102,7 +149,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
---color-sidebar-muted: var(--sidbar-muted);
+  --color-sidebar-muted: var(--sidbar-muted);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
@@ -118,40 +165,50 @@
     from {
       height: 0;
     }
+
     to {
       height: var(--radix-accordion-content-height);
     }
   }
+
   @keyframes accordion-up {
     from {
       height: var(--radix-accordion-content-height);
     }
+
     to {
       height: 0;
     }
   }
+
   @keyframes collapsible-down {
     from {
       height: 0;
     }
+
     to {
       height: var(--radix-collapsible-content-height);
     }
   }
+
   @keyframes collapsible-up {
     from {
       height: var(--radix-collapsible-content-height);
     }
+
     to {
       height: 0;
     }
   }
+
   @keyframes caret-blink {
+
     0%,
     70%,
     100% {
       opacity: 1;
     }
+
     20%,
     50% {
       opacity: 0;
@@ -172,16 +229,25 @@
 
 @theme {
   /* Modern breakpoint system up to 2560px (Ultra-wide) */
-  --breakpoint-mobile: 375px;    /* Small mobile */
-  --breakpoint-mobile-lg: 428px; /* Large mobile */
-  --breakpoint-tablet: 768px;    /* Tablet portrait */
-  --breakpoint-tablet-lg: 1024px; /* Tablet landscape */
-  --breakpoint-laptop: 1280px;   /* Laptop */
-  --breakpoint-desktop: 1440px;  /* Standard desktop */
-  --breakpoint-desktop-lg: 1680px; /* Large desktop */
-  --breakpoint-wide: 1920px;     /* Full HD / Wide desktop */
-  --breakpoint-ultra: 2560px;    /* 2K / Ultra-wide */
-  
+  --breakpoint-mobile: 375px;
+  /* Small mobile */
+  --breakpoint-mobile-lg: 428px;
+  /* Large mobile */
+  --breakpoint-tablet: 768px;
+  /* Tablet portrait */
+  --breakpoint-tablet-lg: 1024px;
+  /* Tablet landscape */
+  --breakpoint-laptop: 1280px;
+  /* Laptop */
+  --breakpoint-desktop: 1440px;
+  /* Standard desktop */
+  --breakpoint-desktop-lg: 1680px;
+  /* Large desktop */
+  --breakpoint-wide: 1920px;
+  /* Full HD / Wide desktop */
+  --breakpoint-ultra: 2560px;
+  /* 2K / Ultra-wide */
+
   /* Alternative naming convention */
   --breakpoint-sm: 640px;
   --breakpoint-md: 768px;
@@ -190,4 +256,21 @@
   --breakpoint-2xl: 1536px;
   --breakpoint-3xl: 1920px;
   --breakpoint-4xl: 2560px;
+}
+
+@theme {
+  --font-proxima: "Proxima Nova", sans-serif;
+  /* For local or Google Fonts */
+  /* Or for Google Fonts directly: */
+  /* --font-heading: "Roboto", sans-serif; */
+}
+ 
+body {
+  font-family: var(--font-proxima);
+  /* --font-sans */
+  background-color: white;
+  color: var(--color-text);
+  line-height: 1.5;
+  font-size: 1rem;
+  /* 16px */
 }

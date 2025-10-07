@@ -30,9 +30,10 @@ export function BrandedLayout() {
               </Link>
 
               <div className="flex flex-col space-y-2 mt-4 ">
-                <h3 className="text-4xl text-white ">
+                <h3 className="text-4xl text-white font-proxima">
                   Welcome back!
                 </h3>
+                
                 <span className='text-white/80 text-[16px]'>Please enter your login details to continue</span>
                 {/* <hr className='text-[#FFFFFF33] my-5 h-[1px]' /> */}
                 <div className='h-[1px] bg-[#FFFFFF33] w-full my-5'></div>
