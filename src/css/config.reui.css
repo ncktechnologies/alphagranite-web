@@ -15,7 +15,7 @@
   --primary-foreground: oklch(1 0 0); /* --color-white */
   --secondary: #807F94; /* --color-zinc-100 */
   --secondary-foreground: oklch(44.6% 0.03 256.802); /* --color-zinc-600 */
-  --muted: #667F01; /* --color-zinc-100 */
+  --muted: oklch(96.7% 0.003 264.542); /* --color-zinc-100 */
   --muted-foreground: oklch(70.5% 0.015 286.067); /* --color-zinc-400 */
   --accent: oklch(96.7% 0.003 264.542); /* --color-zinc-100 */
   --accent-foreground: oklch(21% 0.006 285.885); /* --color-zinc-900 */
@@ -31,6 +31,7 @@
   --input: #DFDFDF; /* --color-zinc-200 */
   --ring: #9CC15E; /* --color-zinc-400 */
   --radius: 0.5rem;
+  --sidbar-muted: #667F0;
 }
 
 .dark {
@@ -59,6 +60,7 @@
   --border: oklch(27.4% 0.006 286.033); /* --color-zinc-800 */
   --input: oklch(27.4% 0.006 286.033); /* --color-zinc-800 */
   --ring: oklch(27.4% 0.006 286.033); /* --color-zinc-600 */
+  --sidbar-muted: #667F0;
  
 
 }
@@ -100,7 +102,7 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-
+--color-sidebar-muted: var(--sidbar-muted);
   --radius-xl: calc(var(--radius) + 4px);
   --radius-lg: var(--radius);
   --radius-md: calc(var(--radius) - 2px);
