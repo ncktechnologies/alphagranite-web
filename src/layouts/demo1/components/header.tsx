@@ -32,6 +32,7 @@ import { Breadcrumb } from './breadcrumb';
 import { MegaMenu } from './mega-menu';
 import { MegaMenuMobile } from './mega-menu-mobile';
 import { SidebarMenu } from './sidebar-menu';
+import { Input } from '@/components/ui/input';
 
 export function Header() {
   const [isSidebarSheetOpen, setIsSidebarSheetOpen] = useState(false);
@@ -118,7 +119,7 @@ export function Header() {
         {pathname.startsWith('/account') ? (
           <Breadcrumb />
         ) : (
-          !mobileMode && <Breadcrumb />
+          !mobileMode && <div></div>
         )}
 
         {/* HeaderTopbar */}
@@ -129,18 +130,20 @@ export function Header() {
           ) : (
             <>
               {!mobileMode && (
-                <SearchDialog
-                  trigger={
-                    <Button
-                      variant="ghost"
-                      mode="icon"
-                      shape="circle"
-                      className="size-9 hover:bg-primary/10 hover:[&_svg]:text-primary"
-                    >
-                      <Search className="size-4.5!" />
-                    </Button>
-                  }
-                />
+                <div className="pt-2.5 px-3.5 mb-1">
+                  <div className="relative">
+                    <Search className="text-muted-foreground absolute top-1/2 start-3.5 -translate-y-1/2 size-4" />
+                    <Input
+                      placeholder="Search"
+                      onChange={() => {}}
+                      className="px-9 min-w-0"
+                      value=""
+                    />
+                    <span className="text-xs text-muted-foreground absolute end-3.5 top-1/2 -translate-y-1/2">
+                      cmd + /
+                    </span>
+                  </div>
+                </div>
               )}
               <NotificationsSheet
                 trigger={
@@ -166,7 +169,7 @@ export function Header() {
                   </Button>
                 }
               />
-              
+
               <UserDropdownMenu
                 trigger={
                   <img
