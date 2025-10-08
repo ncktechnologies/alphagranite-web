@@ -34,7 +34,7 @@ export function Demo1LightSidebarContent() {
         <div className='lg:col-span-1'>
            <Card className="p-2">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="">Finances</CardTitle>
+        <CardTitle className="">Finance</CardTitle>
        
       </CardHeader>
       <CardContent className="flex justify-center items-center relative py-2 ">

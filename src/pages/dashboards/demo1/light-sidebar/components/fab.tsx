@@ -46,9 +46,9 @@ const CommunityBadges = ({ cardTitle }: IFABProps) => {
       <CardHeader className="flex flex-row items-center justify-between ">
         <CardTitle className="">{cardTitle}</CardTitle>
         <Button
-          variant="outline"
-          size="sm"
-          className="text-primary text-sm font-medium hover:underline"
+          variant="inverse"
+          size="lg"
+          className="text-primary font-medium underline"
         >
           See all
         </Button>
@@ -60,8 +60,8 @@ const CommunityBadges = ({ cardTitle }: IFABProps) => {
             className="flex justify-between items-center py-3 px-4 border-0 rounded-lg bg-gradient-to-b from-[#EEEEEE] to-[#FCFCFC]"
           >
             <div className="space-y-1">
-              <h3 className="font-medium text-sm text-gray-900">{item.title}</h3>
-              <p className="text-xs text-gray-600">{item.subtitle}</p>
+              <h3 className="font-medium text-base text-[#111827]">{item.title}</h3>
+              <p className="text-xs text-text-foreground">{item.subtitle}</p>
             </div>
             <Badge 
               variant="secondary" 

@@ -59,7 +59,7 @@ const data: IData[] = [
     description: 'Preston Kitchen floor',
     siteName: '9999',
     date: 'Oct 06, 2025',
-    templater:"Esther Howard",
+    templater: "Esther Howard",
     isNew: true,
     isAssigned: true,
     isCompleted: true,
@@ -72,7 +72,7 @@ const data: IData[] = [
     description: 'Preston Kitchen floor',
     siteName: '8997',
     date: 'Oct 06, 2025',
-    templater:"Esther Howard",
+    templater: "Esther Howard",
     isNew: false,
     isAssigned: true,
     isCompleted: true,
@@ -84,7 +84,7 @@ const data: IData[] = [
     fabId: '60015',
     description: 'Preston Kitchen floor',
     siteName: '9989',
-    templater:"Esther Howard",
+    templater: "Esther Howard",
     date: 'Oct 06, 2025',
     isNew: true,
     isAssigned: false,
@@ -98,7 +98,7 @@ const data: IData[] = [
     description: 'Preston Kitchen floor',
     siteName: '9089',
     date: 'Oct 06, 2025',
-    templater:"Esther Howard",
+    templater: "Esther Howard",
     isNew: true,
     isAssigned: false,
     isCompleted: false,
@@ -292,7 +292,7 @@ const Teams = () => {
         skeleton: <Skeleton className="h-4 w-[40px]" />,
       },
     },
-    
+
     {
       id: 'stage',
       accessorFn: (row) => row.stage,
@@ -363,7 +363,13 @@ const Teams = () => {
                 <X />
               </Button>
             )} */}
-            <Link to="/">See all</Link>
+            <Button
+              variant="inverse"
+              size="lg"
+              className="text-primary font-medium underline"
+            >
+              See all
+            </Button>
           </CardToolbar>
         </CardHeader>
         <CardTable>

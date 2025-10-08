@@ -39,36 +39,37 @@ const ChannelStats = () => {
 
   const renderItem = (item: IChannelStatsItem, index: number) => {
     return (
-      <Card key={index}>
-        <CardContent className="p-0 py-8 flex flex items-start justify-between items-start gap-6 h-full bg-cover rtl:bg-[left_top_-1.7rem] bg-[right_top_-1.7rem] bg-no-repeat channel-stats-bg">
-          <div className={`size-[44px] ${item.bgColor} order-2 flex items-center justify-center mr-5  rounded-[8px]`}>
+      <Card key={index} className='shadow-[#00000008] shadow-sm rounded-lg hover:shadow-lg transition-shadow duration-300 ease-in-out'>
+        <CardContent className="p-0 py-6 flex  justify-between items-start gap-6 h-full bg-cover rtl:bg-[left_top_-1.7rem] bg-[right_top_-1.7rem] bg-no-repeat channel-stats-bg">
+          <div className={`${item.bgColor} size-[44px] order-2 flex items-center justify-center mr-5  rounded-[8px]`}>
             <img
               src={toAbsoluteUrl(`/images/icons/${item.logo}`)}
               className={`   `}
-              alt="image"
+              alt="image w-6 h-full max-h-5"
             />
           </div>
 
 
           <div className="flex flex-col gap-1  px-5 space-y-2  order-1">
-            <span className="text-sm font-semibold text-text">
+            <span className="text-sm font-semibold text-text-foreground">
               {item.title}
             </span>
-            <span className="text-3xl font-semibold text-mono">
+            <span className="text-3xl font-semibold text-black">
               {item.info}
             </span>
-            <p className="flex items-center gap-1 text-xs font-normal text-[#6B7280]">
+            <p className="flex items-center text-xs font-normal text-[#6B7280]">
               <span>
                 {item.desc.startsWith('+') ? (
-                  <span className="text-[#10B981]"><TrendingUp/></span>
+                  <span className="text-[#10B981]"><TrendingUp className='w-4 h-3'/></span>
                 ) : item.desc.startsWith('-') ? (
-                  <span className="text-[#EF4444]"><TrendingDown/></span>
+                  <span className="text-[#EF4444]"><TrendingDown className='w-4 h-3'/></span>
                 ) : (
                   <span className="text-[#6B7280]">■</span>
                 )}
               </span>
               <span className="">
-              {item.desc} this week
+                <span className={`${item.desc.startsWith('-') ? 'text-[#FF5F57]' : ''}`}>{item.desc}</span>
+               this week
             </span>
             </p>
             

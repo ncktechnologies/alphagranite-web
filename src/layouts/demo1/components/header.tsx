@@ -53,7 +53,7 @@ export function Header() {
   return (
     <header
       className={cn(
-        'header fixed top-0 z-10 start-0 flex items-stretch shrink-0 border-b border-transparent bg-background end-0 pe-[var(--removed-body-scroll-bar-size,0px)]',
+        'header fixed top-0 z-10 start-0 flex items-stretch shrink-0 border-b border-border bg-background end-0 pe-[var(--removed-body-scroll-bar-size,0px)]',
         headerSticky && 'border-b border-[#E2E4ED]',
       )}
     >
@@ -155,7 +155,7 @@ export function Header() {
                     shape="circle"
                     className="size-9 border-foreground hover:bg-primary/10 hover:[&_svg]:text-primary"
                   >
-                    <Bell className="size-6!" />
+                    <Bell className="size-5!" />
                   </Button>
                 {/* }
               /> */}
@@ -167,7 +167,8 @@ export function Header() {
                     shape="circle"
                     className="size-9 border-foreground hover:bg-primary/10 hover:[&_svg]:text-primary"
                   >
-                    <MessageCircleMore className="size-6!" />
+                    {/* <Message className="size-6!" /> */}
+                    <img src="/images/icons/messages.svg" alt="" />
                   </Button>
                 }
               />
