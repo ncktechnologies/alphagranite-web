@@ -45,3 +45,12 @@ export interface Settings {
     };
   };
 }
+
+export interface Role {
+  id: string;
+  name: string;
+  description: string;
+  status: 'Active' | 'Inactive';
+  members: number;
+  avatars: string[];
+}

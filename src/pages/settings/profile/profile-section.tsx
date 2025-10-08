@@ -7,10 +7,9 @@ const ProfileSection = () => {
       
       <Card>
         <CardHeader>
-          <CardTitle>Profile Information</CardTitle>
+          <CardTitle>Profile</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-600">Profile settings will be implemented here.</p>
         </CardContent>
       </Card>
     </div>

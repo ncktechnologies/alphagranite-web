@@ -10,7 +10,6 @@ const NotificationsSection = () => {
           <CardTitle>Notification Preferences</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-600">Notification settings will be implemented here.</p>
         </CardContent>
       </Card>
     </div>

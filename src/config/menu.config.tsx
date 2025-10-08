@@ -60,7 +60,7 @@ import {
   Store,
   StoreIcon,
 } from 'lucide-react';
-import { type MenuConfig } from './types';
+import { Role, type MenuConfig } from './types';
 import { RiBuilding2Line, RiBuildingLine, RiStoreLine } from '@remixicon/react';
 
 export const MENU_SIDEBAR: MenuConfig = [
@@ -130,6 +130,85 @@ export const MENU_SIDEBAR: MenuConfig = [
   // },
 
 ];
+
+export const SETTINGS_NAV:MenuConfig = [
+  {
+    title: "Profile",
+    icon: Users,
+    path:'/settings/profile'
+  },
+  {
+    title: "Roles & Permissions",
+    icon: Users,
+    path:'/settings/roles'
+  },
+  {
+    title: "Notifications",
+    icon: Users,
+    path:'/settings/notifications'
+  }
+];
+export const roles: Role[] = [
+    {
+      id: '1',
+      name: 'SALES',
+      description: 'Job pipeline, estimates pending approval',
+      status: 'Active',
+      members: 5,
+      avatars: ['AJ', 'SM']
+    },
+    {
+      id: '2',
+      name: 'PROJECT MANAGERS',
+      description: 'Active jobs, schedules, blockers',
+      status: 'Active',
+      members: 5,
+      avatars: ['DC', 'MG']
+    },
+    {
+      id: '3',
+      name: 'FABRICATION MANAGER',
+      description: 'Today\'s cut list, task queue',
+      status: 'Active',
+      members: 5,
+      avatars: ['JW', 'AB']
+    },
+    {
+      id: '4',
+      name: 'INSTALLERS',
+      description: 'Assigned jobs, route planning, customer details',
+      status: 'Inactive',
+      members: 5,
+      avatars: ['CD', 'EF']
+    },
+    {
+      id: '5',
+      name: 'ADMIN/EXECUTIVES',
+      description: 'Department KPIs, financial & operational insights',
+      status: 'Active',
+      members: 5,
+      avatars: ['GH', 'IJ']
+    }
+  ];
+
+   export const availableUsers = [
+    { id: '1', name: 'Alex Johnson', initials: 'AJ' },
+    { id: '2', name: 'Sarah Miller', initials: 'SM' },
+    { id: '3', name: 'David Chen', initials: 'DC' },
+    { id: '4', name: 'Maria Garcia', initials: 'MG' },
+    { id: '5', name: 'James Wilson', initials: 'JW' },
+  ];
+
+  export const modules = [
+    { key: 'dashboard', label: 'Dashboard' },
+    { key: 'job', label: 'Job' },
+    { key: 'employees', label: 'Employees' },
+    { key: 'sales', label: 'Sales' },
+    { key: 'fabrication', label: 'Fabrication' },
+    { key: 'installation', label: 'Installation' },
+    { key: 'report', label: 'Report' },
+    { key: 'settings', label: 'Settings' },
+  ];
 
 export const MENU_SIDEBAR_CUSTOM: MenuConfig = [
   {

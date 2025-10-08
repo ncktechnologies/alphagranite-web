@@ -9,66 +9,20 @@ import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { X, CheckCircle } from 'lucide-react';
 import { UsersSection } from './users-section';
+import { Role } from '@/config/types';
+import { availableUsers, modules, roles } from '@/config/menu.config';
 
-interface Role {
-  id: string;
-  name: string;
-  description: string;
-  status: 'Active' | 'Inactive';
-  members: number;
-  avatars: string[];
-}
 
-type ViewMode = 'empty' | 'details' | 'new' | 'edit';
+
+type ViewMode = 'details' | 'new' | 'edit' | "list";
 
 const RolesSection = () => {
-  const [viewMode, setViewMode] = useState<ViewMode>('empty');
+  const [viewMode, setViewMode] = useState<ViewMode>('details');
   const [selectedRole, setSelectedRole] = useState<Role | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
 
-  const roles: Role[] = [
-    {
-      id: '1',
-      name: 'SALES',
-      description: 'Job pipeline, estimates pending approval',
-      status: 'Active',
-      members: 5,
-      avatars: ['AJ', 'SM']
-    },
-    {
-      id: '2',
-      name: 'PROJECT MANAGERS',
-      description: 'Active jobs, schedules, blockers',
-      status: 'Active',
-      members: 5,
-      avatars: ['DC', 'MG']
-    },
-    {
-      id: '3',
-      name: 'FABRICATION MANAGER',
-      description: 'Today\'s cut list, task queue',
-      status: 'Active',
-      members: 5,
-      avatars: ['JW', 'AB']
-    },
-    {
-      id: '4',
-      name: 'INSTALLERS',
-      description: 'Assigned jobs, route planning, customer details',
-      status: 'Inactive',
-      members: 5,
-      avatars: ['CD', 'EF']
-    },
-    {
-      id: '5',
-      name: 'ADMIN/EXECUTIVES',
-      description: 'Department KPIs, financial & operational insights',
-      status: 'Active',
-      members: 5,
-      avatars: ['GH', 'IJ']
-    }
-  ];
+  
 
   const handleRoleSelect = (role: Role) => {
     setSelectedRole(role);
@@ -112,28 +66,7 @@ const RolesSection = () => {
       );
     }
 
-    if (viewMode === 'empty') {
-      return (
-        <div className="space-y-6">
-          {/* Did you know? Card (empty state) */}
-          <Card className="bg-green-50 border-green-200">
-            <CardContent className="p-6">
-              <div className="flex items-start gap-3">
-                <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <span className="text-green-600 text-sm font-bold">?</span>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-green-800 mb-1">What you need to know?</h3>
-                  <p className="text-sm text-green-700">
-                    Role-Based Access Control (RBAC) is a method of regulating access to computer or network resources based on the roles of individual users within your organization.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      );
-    }
+   
 
     if (viewMode === 'details') {
       return (
@@ -289,24 +222,7 @@ const RoleFormView = ({ mode, role, onBack }: { mode: 'new' | 'edit', role: Role
     settings: { create: true, read: true, update: true, delete: true },
   });
 
-  const availableUsers = [
-    { id: '1', name: 'Alex Johnson', initials: 'AJ' },
-    { id: '2', name: 'Sarah Miller', initials: 'SM' },
-    { id: '3', name: 'David Chen', initials: 'DC' },
-    { id: '4', name: 'Maria Garcia', initials: 'MG' },
-    { id: '5', name: 'James Wilson', initials: 'JW' },
-  ];
-
-  const modules = [
-    { key: 'dashboard', label: 'Dashboard' },
-    { key: 'job', label: 'Job' },
-    { key: 'employees', label: 'Employees' },
-    { key: 'sales', label: 'Sales' },
-    { key: 'fabrication', label: 'Fabrication' },
-    { key: 'installation', label: 'Installation' },
-    { key: 'report', label: 'Report' },
-    { key: 'settings', label: 'Settings' },
-  ];
+ 
 
   const handlePermissionChange = (module: string, action: string, checked: boolean) => {
     setPermissions(prev => ({
