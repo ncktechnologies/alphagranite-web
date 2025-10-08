@@ -12,7 +12,31 @@ interface IContributionsProps {
 const Contributions = ({ title }: IContributionsProps) => {
   const data: number[] = [55, 30, 15];
   const labels: string[] = ['Completed', 'In Progress', 'Paused'];
-  const colors: string[] = ['#9CC15E', '#51BCF4', '#EA3DB1']; // matches Figma’s green, blue, pink
+  const colors: string[] = ['#9CC15E', '#51BCF4', '#EA3DB1']; // matches Figma's green, blue, pink
+
+  // Calculate positions for percentage labels at the middle of each segment
+  const getLabelPosition = (index: number, radius: number = 85) => {
+    const total = data.reduce((sum, value) => sum + value, 0);
+    let cumulativeAngle = -90; // Start from top (-90 degrees)
+    
+    // Calculate cumulative angles for each segment
+    for (let i = 0; i < index; i++) {
+      cumulativeAngle += (data[i] / total) * 360;
+    }
+    
+    // Add half of current segment angle to position label at segment middle
+    const currentSegmentAngle = (data[index] / total) * 360;
+    const labelAngle = cumulativeAngle + (currentSegmentAngle / 2);
+    
+    // Convert angle to radians
+    const angleInRadians = (labelAngle * Math.PI) / 180;
+    
+    // Calculate x, y coordinates at middle of donut
+    const x = Math.cos(angleInRadians) * radius;
+    const y = Math.sin(angleInRadians) * radius;
+    
+    return { x: x + 100, y: y + 100 }; // Add 100 to center in 200x200 chart
+  };
 
   const options: ApexOptions = {
     series: data,
@@ -20,32 +44,29 @@ const Contributions = ({ title }: IContributionsProps) => {
     colors: colors,
     chart: {
       type: 'donut',
-      toolbar: { show: true },
+      toolbar: { show: false },
     },
      stroke: {
-      show: true,
-      width: 2,
+      show: false,
+      width: 0,
     },
     dataLabels: {
-      enabled: true,
+      enabled: false,
     },
     plotOptions: {
       pie: {
         donut: {
-          size: '80%',
+          size: '65%',
           background: 'transparent',
           labels: {
-            show: true,
+            show: false,
             name: { show: false },
             value: {
-              show: true,
-              fontSize: '24px',
-              fontWeight: 600,
-              color: '#000',
-              offsetY: 6,
-              formatter: () => '100%',
+              show: false,
             },
-            total: { show: false },
+            total: { 
+              show: false,
+            },
           },
         },
       },
@@ -68,28 +89,78 @@ const Contributions = ({ title }: IContributionsProps) => {
           }
         /> */}
       </CardHeader>
-      <CardContent className="flex justify-center items-center relative py-2">
-        <ApexChart
-          id="contributions_chart"
-          options={options}
-          series={options.series}
-          type="donut"
-          width="250"
-          height="250"
-        />
+      <CardContent className="flex flex-col items-center py-2">
+        <div className="relative">
+          <ApexChart
+            id="contributions_chart"
+            options={options}
+            series={options.series}
+            type="donut"
+            width="200"
+            height="200"
+          />
+          
+          {/* Custom center circle with shadow */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="bg-white rounded-full shadow-lg flex items-center justify-center" 
+                 style={{width: '80px', height: '80px'}}>
+              <span className="text-lg font-bold text-gray-800">100%</span>
+            </div>
+          </div>
 
-        {/* Floating labels (to mimic Figma’s % bubbles) */}
-        {/* <div className="absolute top-[15%] left-[55%] flex flex-col gap-3 text-sm font-medium">
-          <span className="bg-white px-2 py-1 rounded-full border border-[#6CD34C] text-[#6CD34C]">
-            55%
-          </span>
-          <span className="bg-white px-2 py-1 rounded-full border border-[#2AA7FF] text-[#2AA7FF]">
-            30%
-          </span>
-          <span className="bg-white px-2 py-1 rounded-full border border-[#E454E2] text-[#E454E2]">
-            15%
-          </span>
-        </div> */}
+          {/* Custom percentage labels positioned at segment centers */}
+          <div 
+            className="absolute transform -translate-x-1/2 -translate-y-1/2"
+            style={{
+              left: `${getLabelPosition(0).x}px`,
+              top: `${getLabelPosition(0).y}px`
+            }}
+          >
+            <div className="bg-white text-text rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap shadow-sm">
+              55%
+            </div>
+          </div>
+          
+          <div 
+            className="absolute transform -translate-x-1/2 -translate-y-1/2"
+            style={{
+              left: `${getLabelPosition(1).x}px`,
+              top: `${getLabelPosition(1).y}px`
+            }}
+          >
+            <div className="bg-white text-text rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap shadow-sm">
+              30%
+            </div>
+          </div>
+          
+          <div 
+            className="absolute transform -translate-x-1/2 -translate-y-1/2"
+            style={{
+              left: `${getLabelPosition(2).x}px`,
+              top: `${getLabelPosition(2).y}px`
+            }}
+          >
+            <div className="bg-white text-text rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap shadow-sm">
+              15%
+            </div>
+          </div>
+        </div>
+        
+        {/* Legend below chart - horizontal layout */}
+        <div className="flex flex-row gap-6 mt-4">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#9CC15E'}}></div>
+            <span className="text-sm text-text">Completed</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#51BCF4'}}></div>
+            <span className="text-sm text-text">In Progress</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#EA3DB1'}}></div>
+            <span className="text-sm text-text">Paused</span>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

@@ -9,7 +9,11 @@ interface ICommunityBadge {
   statusColor: string; // Tailwind classes like 'text-purple-600 bg-purple-100'
 }
 
-const CommunityBadges = () => {
+interface IFABProps {
+  cardTitle: string;
+}
+
+const CommunityBadges = ({ cardTitle }: IFABProps) => {
   const items: ICommunityBadge[] = [
     {
       title: 'Preston kitchen floor',
@@ -26,15 +30,21 @@ const CommunityBadges = () => {
     {
       title: 'Preston kitchen floor',
       subtitle: 'FAB ID: 34567',
+      status: 'Drafting',
+      statusColor: 'text-purple-600 bg-purple-100',
+    },
+    {
+      title: 'Preston kitchen floor',
+      subtitle: 'FAB ID: 34567',
       status: 'Programming',
-      statusColor: 'text-blue-600 bg-blue-100',
+      statusColor: 'bg-[#E2E4ED] text-[#4B5675]',
     },
   ];
 
   return (
     <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="text-base font-semibold">Newly Assigned FAB ID</CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between ">
+        <CardTitle className="">{cardTitle}</CardTitle>
         <Button
           variant="outline"
           size="sm"
@@ -43,17 +53,22 @@ const CommunityBadges = () => {
           See all
         </Button>
       </CardHeader>
-      <CardContent className="space-y-2">
+      <CardContent className="space-y-3">
         {items.map((item, index) => (
           <div
             key={index}
-            className="flex justify-between items-center p-4 border border-border rounded-lg bg-white"
+            className="flex justify-between items-center py-3 px-4 border-0 rounded-lg bg-gradient-to-b from-[#EEEEEE] to-[#FCFCFC]"
           >
-            <div className="space-y-0.5">
-              <h3 className="font-medium text-sm">{item.title}</h3>
-              <p className="text-xs text-muted-foreground">{item.subtitle}</p>
+            <div className="space-y-1">
+              <h3 className="font-medium text-sm text-gray-900">{item.title}</h3>
+              <p className="text-xs text-gray-600">{item.subtitle}</p>
             </div>
-            <Badge className={`text-xs ${item.statusColor}`}>{item.status}</Badge>
+            <Badge 
+              variant="secondary" 
+              className={`text-xs px-2 py-1 rounded-full font-medium ${item.statusColor}`}
+            >
+              {item.status}
+            </Badge>
           </div>
         ))}
       </CardContent>
@@ -61,4 +76,4 @@ const CommunityBadges = () => {
   );
 };
 
-export { CommunityBadges };
+export { CommunityBadges, type IFABProps };

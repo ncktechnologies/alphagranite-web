@@ -25,10 +25,10 @@ export function Demo1LightSidebarContent() {
       </div>
       <div className="grid lg:grid-cols-3 gap-5 lg:gap-7.5 items-stretch">
         <div className="lg:col-span-1">
-          <CommunityBadges />
+          <CommunityBadges cardTitle='Newly assigned FAB ID' />
         </div>
          <div className="lg:col-span-1">
-          <Contributions title='Overall Contributions' />
+          <Contributions title='Overall Statistics' />
           
         </div>
         <div className='lg:col-span-1'>
@@ -50,7 +50,7 @@ export function Demo1LightSidebarContent() {
           <EarningsChart />
         </div>
          <div className="lg:col-span-1">
-          <CommunityBadges />
+          <CommunityBadges cardTitle='Paused jobs' />
           
         </div>
       </div>

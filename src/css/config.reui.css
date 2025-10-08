@@ -25,7 +25,7 @@
   /* --color-zinc-100 */
   --secondary-foreground: oklch(44.6% 0.03 256.802);
   /* --color-zinc-600 */
-  --muted: oklch(96.7% 0.003 264.542);
+  --muted: #F9F9F9;
   /* --color-zinc-100 */
   --muted-foreground: oklch(70.5% 0.015 286.067);
   /* --color-zinc-400 */
@@ -269,7 +269,7 @@ body {
   font-family: var(--font-proxima);
   /* --font-sans */
   background-color: white;
-  color: var(--color-text);
+  /* color: var(--color-text); */
   line-height: 1.5;
   font-size: 1rem;
   /* 16px */

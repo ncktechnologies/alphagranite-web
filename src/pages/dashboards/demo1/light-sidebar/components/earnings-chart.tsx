@@ -12,13 +12,15 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 
-// Hardcoded dummy data for the earnings chart
-const dummyChartData: number[] = [
-  58, 64, 52, 45, 42, 38, 45, 53, 56, 65, 75, 85,
-];
+// Hardcoded dummy data for the performance overview chart
+const dummyChartData = {
+  inProgress: [32, 28, 35, 42, 38, 45, 40, 48, 52, 58, 62, 68],
+  paused: [12, 8, 10, 15, 18, 12, 8, 10, 8, 12, 15, 18],
+  completed: [24, 28, 22, 18, 20, 25, 24, 28, 30, 32, 35, 38],
+};
 
 const EarningsChart = () => {
-  const [chartData, setChartData] = useState<number[]>(dummyChartData);
+  const [chartData, setChartData] = useState(dummyChartData);
   const categories: string[] = [
     'Jan',
     'Feb',
@@ -42,8 +44,8 @@ const EarningsChart = () => {
   const options: ApexOptions = {
     series: [
       {
-        name: 'Earnings',
-        data: chartData ?? [],
+        name: 'Performance',
+        data: chartData.inProgress ?? [],
       },
     ],
     chart: {
@@ -63,7 +65,7 @@ const EarningsChart = () => {
       curve: 'smooth',
       show: true,
       width: 3,
-      colors: ['var(--color-primary)'],
+      colors: ['#EA3DB1'],
     },
     xaxis: {
       categories: categories,
@@ -74,6 +76,7 @@ const EarningsChart = () => {
         show: false,
       },
       labels: {
+        show: true,
         style: {
           colors: 'var(--color-secondary-foreground)',
           fontSize: '12px',
@@ -98,41 +101,45 @@ const EarningsChart = () => {
     },
     yaxis: {
       min: 0,
-      max: 100,
-      tickAmount: 5,
+      max: 80,
+      tickAmount: 4,
       axisTicks: {
         show: false,
       },
       labels: {
+        show: false,
         style: {
           colors: 'var(--color-secondary-foreground)',
           fontSize: '12px',
         },
         formatter: (defaultValue) => {
-          return `$${defaultValue}K`;
+          return `${defaultValue}`;
         },
       },
     },
     tooltip: {
       enabled: true,
       custom({ series, seriesIndex, dataPointIndex, w }) {
-        const number = parseInt(series[seriesIndex][dataPointIndex]) * 1000;
         const month = w.globals.seriesX[seriesIndex][dataPointIndex];
         const monthName = categories[month];
-
-        const formatter = new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-        });
-
-        const formattedNumber = formatter.format(number);
+        
+        // Get values for this specific month from our data
+        const inProgress = chartData.inProgress[dataPointIndex];
+        const paused = chartData.paused[dataPointIndex];
+        const completed = chartData.completed[dataPointIndex];
 
         return `
-          <div class="flex flex-col gap-2 p-3.5">
-            <div class="font-medium text-sm text-secondary-foreground">${monthName}, 2024 Sales</div>
-            <div class="flex items-center gap-1.5">
-              <div class="font-semibold text-base text-mono">${formattedNumber}</div>
-              <span class="rounded-full border border-green-200 font-medium dark:border-green-850 text-success-700 bg-green-100 dark:bg-green-950/30 text-[11px] leading-none px-1.25 py-1">+24%</span>
+          <div class="flex flex-col gap-2 p-6.5">
+            <div class="flex flex-col gap-1 space-y-3 pr-12">
+              <div class="flex items-center gap-2">
+                <span class="text-sm">In Progress: ${inProgress}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm">Paused: ${paused}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-sm">Completed: ${completed}</span>
+              </div>
             </div>
           </div>
           `;
@@ -141,7 +148,7 @@ const EarningsChart = () => {
     markers: {
       size: 0,
       colors: 'var(--color-white)',
-      strokeColors: 'var(--color-primary)',
+      strokeColors: '#EA3DB1',
       strokeWidth: 4,
       strokeOpacity: 1,
       strokeDashArray: 0,
@@ -159,9 +166,17 @@ const EarningsChart = () => {
       },
     },
     fill: {
+      type: 'gradient',
+      colors:['#EA3DB1'],
       gradient: {
-        opacityFrom: 0.25,
-        opacityTo: 0,
+        shade: 'vertical',
+        // type: 'linear',
+        shadeIntensity: 0.5,
+        gradientToColors: ['#ffffff'],
+        inverseColors: false,
+        opacityFrom: 0.70,
+        opacityTo: 0.12,
+        stops: [0, 100],
       },
     },
     grid: {
@@ -183,7 +198,7 @@ const EarningsChart = () => {
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Perfomance Overview</CardTitle>
+        <CardTitle>Performance Overview</CardTitle>
         <div className="flex gap-5">
           {/* <div className="flex items-center gap-2">
             <Label htmlFor="auto-update" className="text-sm">
@@ -204,15 +219,17 @@ const EarningsChart = () => {
           </Select>
         </div>
       </CardHeader>
-      <CardContent className="flex flex-col justify-end items-stretch grow px-3 py-1">
-        <ApexChart
-          id="earnings_chart"
-          options={options}
-          series={options.series}
-          type="area"
-          max-width="694"
-          height="250"
-        />
+      <CardContent className="flex flex-col justify-end items-stretch grow px-3 py-1 overflow-hidden">
+        <div className="w-full overflow-hidden">
+          <ApexChart
+            id="earnings_chart"
+            options={options}
+            series={options.series}
+            type="area"
+            width="100%"
+            height="250"
+          />
+        </div>
       </CardContent>
     </Card>
   );
