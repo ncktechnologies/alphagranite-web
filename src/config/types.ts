@@ -46,6 +46,7 @@ export interface Settings {
   };
 }
 
+// types/role.ts
 export interface Role {
   id: string;
   name: string;
@@ -53,4 +54,17 @@ export interface Role {
   status: 'Active' | 'Inactive';
   members: number;
   avatars: string[];
+}
+
+export type ViewMode = 'details' | 'new' | 'edit' | 'list';
+
+export interface Permission {
+  create: boolean;
+  read: boolean;
+  update: boolean;
+  delete: boolean;
+}
+
+export interface Permissions {
+  [key: string]: Permission;
 }
