@@ -1,18 +1,23 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Fragment } from 'react';
+import { PageMenu } from '../page-menu';
+import { Container } from '@/components/common/container';
 
 const NotificationsSection = () => {
   return (
-    <div className="space-y-6">
-      <h2 className="text-xl font-semibold text-gray-900">Notification Settings</h2>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Notification Preferences</CardTitle>
-        </CardHeader>
-        <CardContent>
-        </CardContent>
-      </Card>
-    </div>
+    <Fragment>
+      <PageMenu />
+
+      <Container>
+        <Card>
+          <CardHeader>
+            <CardTitle>Notification Settings</CardTitle>
+          </CardHeader>
+          <CardContent>
+          </CardContent>
+        </Card>
+      </Container>
+    </Fragment>
   );
 };
 

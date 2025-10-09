@@ -73,7 +73,7 @@ export const MENU_SIDEBAR: MenuConfig = [
   {
     title: 'Employees',
     icon: PeopleIcon,
-    path: ''
+    path: '/employees'
   },
   {
     title: 'Department',
@@ -95,43 +95,14 @@ export const MENU_SIDEBAR: MenuConfig = [
   {
     title: 'Settings',
     icon: Settings,
-    path: ''
+    path: '/settings/profile'
 
   },
-
- 
-  // {
-  //   title: 'Online Service',
-  //   icon: Network,
-  //   path: '/online-service'
-  // },
-  // {
-  //   title: 'Service Time',
-  //   icon: CalendarCheck,
-  //   path: '/service-time'
-  // },
-  // {
-  //   title: 'Prayer Requests',
-  //   icon: Bolt,
-  //   path: '/prayer-request'
-
-  // },
-  // {
-  //   title: 'Testimonies',
-  //   icon: HelpCircle,
-  //   path: '/testimonies'
-
-
-  // },
-  // {
-  //   title: 'Financial Report',
-  //   icon: TrendingUp,
-  //   path: '/financial-report'
-  // },
 
 ];
 
 export const SETTINGS_NAV:MenuConfig = [
+  
   {
     title: "Profile",
     icon: Users,

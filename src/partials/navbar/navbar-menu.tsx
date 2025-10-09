@@ -104,7 +104,7 @@ const NavbarMenu = ({ items }: { items: MenuConfig }) => {
   return (
     <div className="grid">
       <div className="kt-scrollable-x-auto">
-        <Menubar className="flex items-stretch gap-3 border-none bg-transparent p-0 h-auto">
+        <Menubar className="flex items-stretch gap-3 bg-transparent p-0 h-auto">
           {buildMenu(items)}
         </Menubar>
       </div>

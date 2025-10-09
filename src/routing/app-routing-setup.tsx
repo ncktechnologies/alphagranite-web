@@ -3,8 +3,8 @@ import { RequireAuth } from '@/auth/require-auth';
 import { ErrorRouting } from '@/errors/error-routing';
 import { Demo1Layout } from '@/layouts/demo1/layout';
 import { DefaultPage } from '@/pages/dashboards';
+import { EmployeePage } from '@/pages/employers';
 import { NotificationsSection, ProfileSection, RolesSection } from '@/pages/settings';
-import { SettingsPage } from '@/pages/settings/settings-page';
 
 import { Navigate, Route, Routes } from 'react-router';
 
@@ -14,14 +14,15 @@ export function AppRoutingSetup() {
       <Route element={<RequireAuth />}>
         <Route element={<Demo1Layout />}>
           <Route path="/" element={<DefaultPage/>} />
-          <Route path="/settings" element={<SettingsPage/>} />
-          <Route path="/settings/role" element={<RolesSection/>} />
+          {/* <Route path='/settings' element={<PageMenu/>}/> */}
+          <Route path="/settings/roles" element={<RolesSection/>} />
           <Route path="/settings/profile" element={<ProfileSection/>} />
-          <Route path="/settings/notification" element={<NotificationsSection/>} />
-          {/* <Route
-            path="/user-profile"
-            element={<ProfileUserPage/>}
-          /> */}
+          <Route path="/settings/notifications" element={<NotificationsSection/>} />
+
+          <Route
+            path="/employees"
+            element={<EmployeePage/>}
+          />
           
         </Route>
       </Route>

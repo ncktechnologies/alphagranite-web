@@ -1,3 +1,5 @@
+import { Badge } from "@/components/ui/badge";
+
 export const throttle = (
   func: (...args: unknown[]) => void,
   limit: number,

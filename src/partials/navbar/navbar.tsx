@@ -10,7 +10,7 @@ function Navbar({ children }: { children: ReactNode }) {
 
 function NavbarActions({ children }: { children: ReactNode }) {
   return (
-    <div className="flex items-center justify-end grow lg:grow-0 lg:pb-4 gap-2.5 mb-1.5 lg:mb-0">
+    <div className="flex items-center justify-end w-full grow lg:grow-0 lg:pb-4 gap-2.5 mb-1.5 lg:mb-0">
       {children}
     </div>
   );

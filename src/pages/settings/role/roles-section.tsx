@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,6 +11,8 @@ import { X, CheckCircle } from 'lucide-react';
 import { UsersSection } from './users-section';
 import { Role } from '@/config/types';
 import { availableUsers, modules, roles } from '@/config/menu.config';
+import { Container } from '@/components/common/container';
+import { PageMenu } from '../page-menu';
 
 
 
@@ -145,6 +147,9 @@ const RolesSection = () => {
   };
 
   return (
+    <Fragment>
+          <PageMenu />
+    <Container>
     <div className="flex h-full gap-6">
       {/* Left Sidebar - Roles List */}
       <div className="w-80 space-y-4 pr-6 border-r">
@@ -202,6 +207,8 @@ const RolesSection = () => {
         {renderRightContent()}
       </div>
     </div>
+    </Container>
+    </Fragment>
   );
 };
 

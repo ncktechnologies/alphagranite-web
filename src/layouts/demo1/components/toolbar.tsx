@@ -1,7 +1,7 @@
 import { Fragment, ReactNode } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import { MENU_SIDEBAR } from '@/config/menu.config';
+import { MENU_SIDEBAR, SETTINGS_NAV } from '@/config/menu.config';
 import { MenuItem } from '@/config/types';
 import { cn } from '@/lib/utils';
 import { useMenu } from '@/hooks/use-menu';
@@ -11,9 +11,9 @@ export interface ToolbarHeadingProps {
   description?: string | ReactNode;
 }
 
-function Toolbar({ children }: { children?: ReactNode }) {
+function Toolbar({ children, className }: { children?: ReactNode, className?: string }) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-5 pb-7.5">
+    <div className={cn("flex flex-wrap items-center justify-between gap-5 pb-7.5", className)}>
       {children}
     </div>
   );
@@ -26,7 +26,7 @@ function ToolbarActions({ children }: { children?: ReactNode }) {
 function ToolbarBreadcrumbs() {
   const { pathname } = useLocation();
   const { getBreadcrumb, isActive } = useMenu(pathname);
-  const items: MenuItem[] = getBreadcrumb(MENU_SIDEBAR);
+  const items: MenuItem[] = getBreadcrumb(SETTINGS_NAV);
 
   if (items.length === 0) {
     return null;
