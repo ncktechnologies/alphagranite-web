@@ -1,8 +1,10 @@
-import { Fragment, useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+'use client';
+
+import { Fragment, useEffect, useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -14,9 +16,7 @@ import { availableUsers, modules, roles } from '@/config/menu.config';
 import { Container } from '@/components/common/container';
 import { PageMenu } from '../page-menu';
 
-
-
-type ViewMode = 'details' | 'new' | 'edit' | "list";
+type ViewMode = 'details' | 'new' | 'edit' | 'list';
 
 const RolesSection = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('details');
@@ -24,7 +24,13 @@ const RolesSection = () => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
 
-  
+  // Automatically select the first role if none is selected
+  useEffect(() => {
+    if (!selectedRole && roles.length > 0) {
+      setSelectedRole(roles[0]);
+      setViewMode('details');
+    }
+  }, [selectedRole]);
 
   const handleRoleSelect = (role: Role) => {
     setSelectedRole(role);
@@ -43,8 +49,14 @@ const RolesSection = () => {
       setIsDeleted(true);
       setTimeout(() => {
         setIsDeleted(false);
-        setViewMode('list');
-        setSelectedRole(null);
+        // After deletion, go back to details of first role if available
+        if (roles.length > 0) {
+          setSelectedRole(roles[0]);
+          setViewMode('details');
+        } else {
+          setSelectedRole(null);
+          setViewMode('list');
+        }
       }, 2000);
     }, 1000);
   };
@@ -68,8 +80,6 @@ const RolesSection = () => {
       );
     }
 
-   
-
     if (viewMode === 'details') {
       return (
         <div className="space-y-6">
@@ -78,12 +88,28 @@ const RolesSection = () => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-900">{selectedRole?.name}</h3>
-                  <p className="text-xs text-gray-600">{selectedRole?.description}</p>
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    {selectedRole?.name}
+                  </h3>
+                  <p className="text-xs text-gray-600">
+                    {selectedRole?.description}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm" onClick={() => setViewMode('edit')}>Edit</Button>
-                  <Button variant="outline" size="sm">Deactivate role</Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setViewMode('edit')}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDelete}
+                  >
+                    Deactivate role
+                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -140,7 +166,20 @@ const RolesSection = () => {
     }
 
     if (viewMode === 'new' || viewMode === 'edit') {
-      return <RoleFormView mode={viewMode} role={selectedRole} onBack={() => setViewMode('list')} />;
+      return (
+        <RoleFormView
+          mode={viewMode}
+          role={selectedRole}
+          onBack={() => {
+            if (viewMode === 'new') {
+              setSelectedRole(roles[0]);
+              setViewMode('details');
+            } else if (viewMode === 'edit' && selectedRole) {
+              setViewMode('details');
+            }
+          }}
+        />
+      );
     }
 
     return null;
@@ -148,72 +187,98 @@ const RolesSection = () => {
 
   return (
     <Fragment>
-          <PageMenu />
-    <Container>
-    <div className="flex h-full gap-6">
-      {/* Left Sidebar - Roles List */}
-      <div className="w-80 space-y-4 pr-6 border-r">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">Roles</h2>
-          <Button onClick={handleNewRole} className="bg-green-600 hover:bg-green-700">
-            + New role
-          </Button>
-        </div>
+      <PageMenu />
+      <Container>
+        <div className="flex h-full gap-6">
+          {/* Left Sidebar - Roles List */}
+          <div className="w-80 space-y-4 pr-6 border-r">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">Roles</h2>
+              <Button
+                onClick={handleNewRole}
+                className="bg-green-600 hover:bg-green-700"
+              >
+                + New role
+              </Button>
+            </div>
 
-        <div className="space-y-2">
-          {roles.map((role) => (
-            <Card 
-              key={role.id} 
-              className={`cursor-pointer transition-all hover:shadow-md ${
-                selectedRole?.id === role.id ? 'ring-2 ring-green-500 bg-green-50' : ''
-              }`}
-              onClick={() => handleRoleSelect(role)}
-            >
-              <CardContent className="p-4">
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">{role.name}</h3>
-                    <Badge 
-                      variant={role.status === 'Active' ? 'default' : 'secondary'}
-                      className={role.status === 'Active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'}
-                    >
-                      {role.status}
-                    </Badge>
-                  </div>
-                  
-                  <p className="text-sm text-gray-600">{role.description}</p>
-                  
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">MEMBERS ({role.members}) +2</span>
-                    <div className="flex -space-x-2">
-                      {role.avatars.map((avatar, index) => (
-                        <Avatar key={index} className="w-6 h-6 border-2 border-white">
-                          <AvatarFallback className="text-xs bg-gray-200 text-gray-600">
-                            {avatar}
-                          </AvatarFallback>
-                        </Avatar>
-                      ))}
+            <div className="space-y-2">
+              {roles.map((role) => (
+                <Card
+                  key={role.id}
+                  className={`cursor-pointer transition-all hover:shadow-md ${
+                    selectedRole?.id === role.id
+                      ? 'ring-2 ring-green-500 bg-green-50'
+                      : ''
+                  }`}
+                  onClick={() => handleRoleSelect(role)}
+                >
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold text-gray-900">
+                          {role.name}
+                        </h3>
+                        <Badge
+                          variant={
+                            role.status === 'Active' ? 'default' : 'secondary'
+                          }
+                          className={
+                            role.status === 'Active'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-600'
+                          }
+                        >
+                          {role.status}
+                        </Badge>
+                      </div>
+
+                      <p className="text-sm text-gray-600">
+                        {role.description}
+                      </p>
+
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-600">
+                          MEMBERS ({role.members}) +2
+                        </span>
+                        <div className="flex -space-x-2">
+                          {role.avatars.map((avatar, index) => (
+                            <Avatar
+                              key={index}
+                              className="w-6 h-6 border-2 border-white"
+                            >
+                              <AvatarFallback className="text-xs bg-gray-200 text-gray-600">
+                                {avatar}
+                              </AvatarFallback>
+                            </Avatar>
+                          ))}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
 
-      {/* Right Content Area */}
-      <div className="flex-1 pl-6">
-        {renderRightContent()}
-      </div>
-    </div>
-    </Container>
+          {/* Right Content Area */}
+          <div className="flex-1 pl-6">{renderRightContent()}</div>
+        </div>
+      </Container>
     </Fragment>
   );
 };
 
 // Role Form Component
-const RoleFormView = ({ mode, role, onBack }: { mode: 'new' | 'edit', role: Role | null, onBack: () => void }) => {
+const RoleFormView = ({
+  mode,
+  role,
+  onBack,
+}: {
+  mode: 'new' | 'edit';
+  role: Role | null;
+  onBack: () => void;
+}) => {
   const [roleName, setRoleName] = useState(role?.name || '');
   const [description, setDescription] = useState(role?.description || '');
   const [isActive, setIsActive] = useState(role?.status === 'Active' || true);
@@ -229,28 +294,36 @@ const RoleFormView = ({ mode, role, onBack }: { mode: 'new' | 'edit', role: Role
     settings: { create: true, read: true, update: true, delete: true },
   });
 
- 
-
-  const handlePermissionChange = (module: string, action: string, checked: boolean) => {
-    setPermissions(prev => ({
+  const handlePermissionChange = (
+    module: string,
+    action: string,
+    checked: boolean
+  ) => {
+    setPermissions((prev) => ({
       ...prev,
       [module]: {
         ...prev[module as keyof typeof prev],
-        [action]: checked
-      }
+        [action]: checked,
+      },
     }));
   };
 
   const handleUserToggle = (userId: string) => {
-    setSelectedUsers(prev => 
-      prev.includes(userId) 
-        ? prev.filter(id => id !== userId)
+    setSelectedUsers((prev) =>
+      prev.includes(userId)
+        ? prev.filter((id) => id !== userId)
         : [...prev, userId]
     );
   };
 
   const handleSave = () => {
-    console.log('Saving role:', { roleName, description, isActive, selectedUsers, permissions });
+    console.log('Saving role:', {
+      roleName,
+      description,
+      isActive,
+      selectedUsers,
+      permissions,
+    });
     onBack();
   };
 
@@ -314,7 +387,10 @@ const RoleFormView = ({ mode, role, onBack }: { mode: 'new' | 'edit', role: Role
                       checked={selectedUsers.includes(user.id)}
                       onCheckedChange={() => handleUserToggle(user.id)}
                     />
-                    <Label htmlFor={user.id} className="flex items-center space-x-2">
+                    <Label
+                      htmlFor={user.id}
+                      className="flex items-center space-x-2"
+                    >
                       <Avatar className="w-6 h-6">
                         <AvatarFallback className="text-xs bg-gray-200 text-gray-600">
                           {user.initials}
@@ -336,46 +412,86 @@ const RoleFormView = ({ mode, role, onBack }: { mode: 'new' | 'edit', role: Role
             <table className="w-full border-collapse">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left py-2 font-medium text-gray-700">Module</th>
-                  <th className="text-center py-2 font-medium text-gray-700">Create</th>
-                  <th className="text-center py-2 font-medium text-gray-700">Read</th>
-                  <th className="text-center py-2 font-medium text-gray-700">Update</th>
-                  <th className="text-center py-2 font-medium text-gray-700">Delete</th>
+                  <th className="text-left py-2 font-medium text-gray-700">
+                    Module
+                  </th>
+                  <th className="text-center py-2 font-medium text-gray-700">
+                    Create
+                  </th>
+                  <th className="text-center py-2 font-medium text-gray-700">
+                    Read
+                  </th>
+                  <th className="text-center py-2 font-medium text-gray-700">
+                    Update
+                  </th>
+                  <th className="text-center py-2 font-medium text-gray-700">
+                    Delete
+                  </th>
                 </tr>
               </thead>
               <tbody>
                 {modules.map((module) => (
                   <tr key={module.key} className="border-b">
-                    <td className="py-2 font-medium text-gray-900">{module.label}</td>
+                    <td className="py-2 font-medium text-gray-900">
+                      {module.label}
+                    </td>
                     <td className="py-2 text-center">
                       <Checkbox
-                        checked={permissions[module.key as keyof typeof permissions].create}
-                        onCheckedChange={(checked) => 
-                          handlePermissionChange(module.key, 'create', checked as boolean)
+                        checked={
+                          permissions[module.key as keyof typeof permissions]
+                            .create
+                        }
+                        onCheckedChange={(checked) =>
+                          handlePermissionChange(
+                            module.key,
+                            'create',
+                            checked as boolean
+                          )
                         }
                       />
                     </td>
                     <td className="py-2 text-center">
                       <Checkbox
-                        checked={permissions[module.key as keyof typeof permissions].read}
-                        onCheckedChange={(checked) => 
-                          handlePermissionChange(module.key, 'read', checked as boolean)
+                        checked={
+                          permissions[module.key as keyof typeof permissions]
+                            .read
+                        }
+                        onCheckedChange={(checked) =>
+                          handlePermissionChange(
+                            module.key,
+                            'read',
+                            checked as boolean
+                          )
                         }
                       />
                     </td>
                     <td className="py-2 text-center">
                       <Checkbox
-                        checked={permissions[module.key as keyof typeof permissions].update}
-                        onCheckedChange={(checked) => 
-                          handlePermissionChange(module.key, 'update', checked as boolean)
+                        checked={
+                          permissions[module.key as keyof typeof permissions]
+                            .update
+                        }
+                        onCheckedChange={(checked) =>
+                          handlePermissionChange(
+                            module.key,
+                            'update',
+                            checked as boolean
+                          )
                         }
                       />
                     </td>
                     <td className="py-2 text-center">
                       <Checkbox
-                        checked={permissions[module.key as keyof typeof permissions].delete}
-                        onCheckedChange={(checked) => 
-                          handlePermissionChange(module.key, 'delete', checked as boolean)
+                        checked={
+                          permissions[module.key as keyof typeof permissions]
+                            .delete
+                        }
+                        onCheckedChange={(checked) =>
+                          handlePermissionChange(
+                            module.key,
+                            'delete',
+                            checked as boolean
+                          )
                         }
                       />
                     </td>
@@ -392,7 +508,10 @@ const RoleFormView = ({ mode, role, onBack }: { mode: 'new' | 'edit', role: Role
         <Button variant="outline" onClick={onBack}>
           Cancel
         </Button>
-        <Button onClick={handleSave} className="bg-green-600 hover:bg-green-700">
+        <Button
+          onClick={handleSave}
+          className="bg-green-600 hover:bg-green-700"
+        >
           Save role
         </Button>
       </div>
