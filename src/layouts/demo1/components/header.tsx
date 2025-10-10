@@ -72,6 +72,7 @@ export function Header() {
               <Sheet
                 open={isSidebarSheetOpen}
                 onOpenChange={setIsSidebarSheetOpen}
+                
               >
                 <SheetTrigger asChild>
                   <Button variant="ghost" mode="icon">
@@ -79,7 +80,7 @@ export function Header() {
                   </Button>
                 </SheetTrigger>
                 <SheetContent
-                  className="p-0 gap-0 w-[275px]"
+                  className="p-0 gap-0 w-[275px] bg-primary"
                   side="left"
                   close={false}
                 >
@@ -90,7 +91,7 @@ export function Header() {
                 </SheetContent>
               </Sheet>
             )}
-            {mobileMode && (
+            {/* {mobileMode && (
               <Sheet
                 open={isMegaMenuSheetOpen}
                 onOpenChange={setIsMegaMenuSheetOpen}
@@ -111,7 +112,7 @@ export function Header() {
                   </SheetBody>
                 </SheetContent>
               </Sheet>
-            )}
+            )} */}
           </div>
         </div>
 
