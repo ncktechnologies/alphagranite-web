@@ -229,7 +229,6 @@ export function SignInPage() {
             Forgot Password?
           </span>
           <a
-          _blank
             href="mailto:support@alphagranite.com?subject=Password%20Reset%20Assistance&body=Hello%20Support%2C%0A%0AI%27m%20having%20trouble%20accessing%20my%20account.%20Please%20assist."
             className="text-sm text-primary pl-2 hover:underline"
           >
