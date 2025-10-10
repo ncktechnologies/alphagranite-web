@@ -103,7 +103,7 @@ function DropdownMenuItem({
         'data-[active=true]:bg-accent data-[active=true]:text-accent-foreground',
         inset && 'ps-8',
         variant === 'destructive' &&
-          'text-destructive hover:text-destructive focus:text-destructive hover:bg-destructive/5 focus:bg-destructive/5 data-[active=true]:bg-destructive/5',
+          'text-destructive hover:text-primary focus:text-destructive hover:bg-[#9CC15E26] focus:bg-destructive/5 data-[active=true]:bg-destructive/5',
         className,
       )}
       {...props}

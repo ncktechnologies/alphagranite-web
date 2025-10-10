@@ -26,7 +26,7 @@ function AvatarGroup({ size, group, more, className }: AvatarGroupProp) {
       <Avatar key={index} className={cn(avatarSize)}>
         {each.filename || each.path ? (
           <AvatarImage
-            src={toAbsoluteUrl(each.path || `/media/avatars/${each.filename}`)}
+            src={toAbsoluteUrl(each.path || `/images/app/${each.filename}`)}
             alt="image"
             className={cn(' border-1 border-background hover:z-10',  each.variant)}
           />

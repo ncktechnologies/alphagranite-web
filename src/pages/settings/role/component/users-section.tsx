@@ -10,12 +10,13 @@ import {
   SortingState,
   useReactTable,
 } from '@tanstack/react-table';
-import { Search, X, CalendarIcon, Filter } from 'lucide-react';
+import { Search, X, CalendarIcon, Filter, UserRoundPlusIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
   CardFooter,
   CardHeader,
+  CardHeading,
   CardTable,
   CardTitle,
   CardToolbar,
@@ -36,6 +37,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface User {
   id: string;
@@ -49,7 +51,7 @@ const data: User[] = [
   { id: '2', name: 'Leslie Alexander', dateInvited: new Date('2024-01-16'), status: 'Pending' },
   { id: '3', name: 'Robert Fox', dateInvited: new Date('2024-01-17'), status: 'Active' },
   { id: '4', name: 'Jane Cooper', dateInvited: new Date('2024-01-18'), status: 'Inactive' },
-  
+
 ];
 
 const StatusBadge = ({ status }: { status: User['status'] }) => {
@@ -76,7 +78,7 @@ const UsersSection = () => {
   ]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [searchQuery, setSearchQuery] = useState('');
-  const [dateRange, setDateRange] = useState<{from: Date | undefined, to: Date | undefined}>({
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined, to: Date | undefined }>({
     from: undefined,
     to: undefined
   });
@@ -196,86 +198,54 @@ const UsersSection = () => {
       }}
     >
       <Card>
-        <CardHeader className="py-3.5">
-          {/* <CardTitle>Users</CardTitle> */}
-          <CardToolbar className="flex flex-wrap gap-4 items-center">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="size-4 text-text absolute start-3 top-1/2 -translate-y-1/2" />
-              <Input
-                placeholder="Search users..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="ps-9"
-              />
-              {searchQuery.length > 0 && (
-                <Button
-                  mode="icon"
-                  variant="ghost"
-                  className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                  onClick={() => setSearchQuery('')}
-                >
-                  <X />
-                </Button>
-              )}
-            </div>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <CalendarIcon className="w-4 h-4" />
-                  {dateRange.from ? format(dateRange.from, 'MMM dd') : 'Start date'} - 
-                  {dateRange.to ? format(dateRange.to, 'MMM dd') : 'End date'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="range"
-                  selected={dateRange}
-                  onSelect={(range) => setDateRange({from: range?.from, to: range?.to})}
-                  numberOfMonths={2}
+        <CardHeader className="py-3.5 ">
+          <CardHeading>
+            <div className="flex items-center gap-2.5">
+              <div className="relative">
+                <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                <Input
+                  placeholder="Search Users..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="ps-9 w-[230px] h-[34px]"
                 />
-              </PopoverContent>
-            </Popover>
-            
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Filter className="w-4 h-4" />
-                  Gender
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent>
-                <div className="space-y-2">
-                  <Button 
-                    variant={genderFilter === 'All' ? 'default' : 'ghost'} 
-                    size="sm" 
-                    onClick={() => setGenderFilter('All')}
-                    className="w-full justify-start"
+                {searchQuery.length > 0 && (
+                  <Button
+                    mode="icon"
+                    variant="ghost"
+                    className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                    onClick={() => setSearchQuery('')}
                   >
-                    All
+                    <X />
                   </Button>
-                  <Button 
-                    variant={genderFilter === 'Male' ? 'default' : 'ghost'} 
-                    size="sm" 
-                    onClick={() => setGenderFilter('Male')}
-                    className="w-full justify-start"
-                  >
-                    Male
-                  </Button>
-                  <Button 
-                    variant={genderFilter === 'Female' ? 'default' : 'ghost'} 
-                    size="sm" 
-                    onClick={() => setGenderFilter('Female')}
-                    className="w-full justify-start"
-                  >
-                    Female
-                  </Button>
-                </div>
-              </PopoverContent>
-            </Popover>
-            
-            <Button className="bg-green-600 hover:bg-green-700">
-              Assign role
+                )}
+              </div>
+              <Select >
+                <SelectTrigger className="w-[170px] h-[34px]">
+                  <SelectValue placeholder="2 June - 9 June" />
+                </SelectTrigger>
+                <SelectContent className="w-32">
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="disabled">Disabled</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select>
+                <SelectTrigger className="w-[100px] h-[34px]">
+                  <SelectValue placeholder="Gender" />
+                </SelectTrigger>
+                <SelectContent className="w-32">
+                  <SelectItem value="latest">Male</SelectItem>
+                  <SelectItem value="older">Female</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeading>
+          <CardToolbar>
+
+            <Button >
+              <UserRoundPlusIcon />
+              Assign Role
             </Button>
           </CardToolbar>
         </CardHeader>

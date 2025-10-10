@@ -30,70 +30,11 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { IEmployee } from '@/pages/employers/components/employer';
 
-export interface IEmployee {
-    id: number;
-    name: string;
-    email: string;
-    address: string;
-    department: string;
-    phone: string;
-    role: string;
-    status: 'Active' | 'Deactivated';
-}
 
-const employees: IEmployee[] = [
-    {
-        id: 1,
-        name: 'Cameron Williamson',
-        email: 'tim.jennings@example.com',
-        address: '8502 Preston Rd. Inglewood, Maine 98380',
-        department: 'Sales',
-        phone: '(704) 555-0113',
-        role: 'Sales',
-        status: 'Active',
-    },
-    {
-        id: 2,
-        name: 'Esther Howard',
-        email: 'willie.jennings@example.com',
-        address: '2715 Ash Dr. San Jose, South Dakota 83475',
-        department: 'Front office',
-        phone: '(704) 555-0112',
-        role: 'Front office',
-        status: 'Deactivated',
-    },
-    {
-        id: 3,
-        name: 'Leslie Alexander',
-        email: 'michelle.rivera@example.com',
-        address: '4140 Parker Rd. Allentown, New Mexico 31134',
-        department: 'CAD',
-        phone: '(684) 555-0108',
-        role: 'CAD',
-        status: 'Deactivated',
-    },
-    {
-        id: 4,
-        name: 'Jenny Wilson',
-        email: 'deanna.curtis@example.com',
-        address: '4140 Parker Rd. Allentown, New Mexico 31134',
-        department: 'Warehouse',
-        phone: '(704) 555-0120',
-        role: 'Warehouse',
-        status: 'Active',
-    },
-    {
-        id: 5,
-        name: 'Darlene Robertson',
-        email: 'felicia.reid@example.com',
-        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
-        department: 'Production',
-        phone: '(480) 555-0121',
-        role: 'Production',
-        status: 'Deactivated',
-    },
-];
+
+
 
 const StatusBadge = ({ status }: { status: IEmployee['status'] }) => {
     const colors: Record<IEmployee['status'], string> = {
@@ -110,7 +51,10 @@ const StatusBadge = ({ status }: { status: IEmployee['status'] }) => {
     );
 };
 
-const Employees = () => {
+interface employeeProps{
+    employees: IEmployee[];
+}
+const DepartmentTable = ({employees}:employeeProps) => {
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 5,
@@ -337,4 +281,4 @@ const Employees = () => {
     );
 };
 
-export { Employees };
+export { DepartmentTable };

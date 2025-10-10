@@ -11,52 +11,27 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-export function DropdownMenu5({ trigger }: { trigger: ReactNode }) {
+export function DropdownMenu5({ trigger, onView }: { trigger: ReactNode, onView?: () => void }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
-      <DropdownMenuContent className="w-[150px]" side="bottom" align="end">
-        <DropdownMenuItem asChild>
-          <Link to="/account/home/settings-plain">
-            <FilePlus />
-            <span>Add</span>
-          </Link>
+      <DropdownMenuContent className="w-[157px]" side="bottom" align="end">
+        <DropdownMenuItem onClick={onView} asChild>
+          {/* <Link to={`/department/${id}` } className='flex items-center gap-2'> */}
+            
+            <span>View</span>
+          {/* </Link> */}
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/account/members/import-members">
-            <FileDown />
-            <span>Import</span>
-          </Link>
+          
+            <span>Edit</span>
         </DropdownMenuItem>
-        <DropdownMenuSub>
-          <DropdownMenuSubTrigger>
-            <FileUp />
-            <span>Export</span>
-          </DropdownMenuSubTrigger>
-          <DropdownMenuSubContent className="w-[150px]">
-            <DropdownMenuItem asChild>
-              <Link to="/account/home/settings-sidebar">
-                <span>PDF</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/account/home/settings-sidebar">
-                <span>CSV</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link to="/account/home/settings-sidebar">
-                <span>Excel</span>
-              </Link>
-            </DropdownMenuItem>
-          </DropdownMenuSubContent>
-        </DropdownMenuSub>
         <DropdownMenuItem asChild>
-          <Link to="/account/security/privacy-settings">
-            <Settings />
-            <span>Settings</span>
-          </Link>
+          
+            <span className='text-[#FF383C]'>Delete</span>
         </DropdownMenuItem>
+       
+       
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -1,5 +1,5 @@
 // components/RoleCard.tsx
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Role } from '@/config/types';
@@ -46,6 +46,7 @@ export const RoleCard = ({ role, isSelected, onClick }: RoleCardProps) => {
           </div>
         </div>
       </CardContent>
+      
     </Card>
   );
 };

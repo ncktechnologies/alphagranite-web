@@ -3,6 +3,8 @@ import { RequireAuth } from '@/auth/require-auth';
 import { ErrorRouting } from '@/errors/error-routing';
 import { Demo1Layout } from '@/layouts/demo1/layout';
 import { DefaultPage } from '@/pages/dashboards';
+import { DepartmentPage } from '@/pages/departments';
+import { DepartmentDetailsPage } from '@/pages/departments/department-table/TablePage';
 import { EmployeePage } from '@/pages/employers';
 import { NotificationsSection, ProfileSection, RolesSection } from '@/pages/settings';
 
@@ -23,7 +25,14 @@ export function AppRoutingSetup() {
             path="/employees"
             element={<EmployeePage/>}
           />
-          
+          <Route
+          path='/departments'
+          element={<DepartmentPage/>}
+          />
+          <Route
+          path='/departments/:id'
+          element={<DepartmentDetailsPage/>}
+          />
         </Route>
       </Route>
       <Route path="error/*" element={<ErrorRouting />} />

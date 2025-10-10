@@ -78,7 +78,7 @@ export const MENU_SIDEBAR: MenuConfig = [
   {
     title: 'Department',
     icon: UserCircle,
-    path: ''
+    path: '/departments'
   },
    {
     title: 'Jobs',
