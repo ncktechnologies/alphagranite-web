@@ -123,7 +123,7 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link
-            to="/user-profile"
+            to="/settings/profile"
             className="flex items-center gap-2"
           >
             <UserCircle />

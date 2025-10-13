@@ -172,6 +172,7 @@ export const departments: Department[] = [
             { filename: "300-2.png", variant: "size-8" },
             { filename: "300-2.png", variant: "size-8" },
             { filename: "300-2.png", variant: "size-8" },
+            { filename: "300-2.png", variant: "size-8" },
             {
                 fallback: "+16",
                 variant: "text-primary-foreground size-8 ring-background bg-green-500",
@@ -291,10 +292,10 @@ const DepartmentCard = () => {
         navigate(`/departments/${department.id}`, { state: { department } });
     };
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {departments.map((dept) => (
-                <Card key={dept.id} className="flex flex-col gap-5 ">
-                    <div className="flex items-start justify-between  gap-1 p-4">
+                <Card key={dept.id} className="flex flex-col gap-3 w-[266px]">
+                    <div className="flex items-start justify-between gap-1 p-4">
                         <div className="space-y-2 ">
                             <img
                                 src={toAbsoluteUrl('/images/icons/department.svg')}
