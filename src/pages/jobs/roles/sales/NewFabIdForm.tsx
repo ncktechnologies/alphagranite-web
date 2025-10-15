@@ -22,7 +22,8 @@ import {
 } from '@/components/ui/form';
 import { ArrowLeft, Plus, AlertCircle, Check, LoaderCircleIcon, Search, ChevronDown, Info, InfoIcon } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import {  RiInformationFill } from '@remixicon/react';
+import { RiInformationFill } from '@remixicon/react';
+import { toast } from 'sonner';
 
 // Zod schema for form validation
 const fabIdFormSchema = z.object({
@@ -203,8 +204,23 @@ const NewFabIdForm = () => {
       // Simulate API call
       await new Promise((res) => setTimeout(res, 2000));
 
-      setSuccess('FAB ID submitted successfully for templating review!');
-      form.reset();
+      // toast.success('FAB ID submitted successfully for templating review!');
+      toast.custom(
+        () => (
+          <Alert variant="success" icon="success">
+            <AlertIcon>
+              <Check />
+            </AlertIcon>
+            <AlertTitle>
+              FAB ID submitted successfully for templating review!
+            </AlertTitle>
+          </Alert>
+        ),
+        {
+          position: 'top-right',
+        },
+      );
+      // form.reset();
 
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
@@ -259,23 +275,23 @@ const NewFabIdForm = () => {
                     <CardContent className='space-y-6'>
                       <div className="space-y-4 grid grid-cols-2 gap-x-4">
 
-                        {error && (
+                        {/* {error && (
                           <Alert variant="destructive">
                             <AlertIcon>
                               <AlertCircle className="h-4 w-4" />
                             </AlertIcon>
                             <AlertTitle>{error}</AlertTitle>
                           </Alert>
-                        )}
+                        )} */}
 
-                        {success && (
+                        {/* {success && (
                           <Alert>
                             <AlertIcon>
                               <Check className="h-4 w-4 text-green-500" />
                             </AlertIcon>
                             <AlertTitle>{success}</AlertTitle>
                           </Alert>
-                        )}
+                        )} */}
 
                         {/* FAB Type with Popover */}
                         <FormField
@@ -384,7 +400,7 @@ const NewFabIdForm = () => {
                                                 Add
                                               </Button>
                                             </div>
-                                            
+
                                           </div>
                                         </PopoverContent>
                                       </Popover>
