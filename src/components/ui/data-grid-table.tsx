@@ -411,72 +411,204 @@ function DataGridTableRowSelectAll({ size }: { size?: 'sm' | 'md' | 'lg' }) {
   );
 }
 
-function DataGridTable<TData>() {
+// function DataGridTable<TData>() {
+//   const { table, isLoading, props } = useDataGrid();
+//   const pagination = table.getState().pagination;
+
+//   return (
+//     <DataGridTableBase>
+//       <DataGridTableHead>
+//         {table.getHeaderGroups().map((headerGroup: HeaderGroup<TData>, index) => {
+//           return (
+//             <DataGridTableHeadRow headerGroup={headerGroup} key={index}>
+//               {headerGroup.headers.map((header, index) => {
+//                 const { column } = header;
+
+//                 return (
+//                   <DataGridTableHeadRowCell header={header} key={index}>
+//                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+//                     {props.tableLayout?.columnsResizable && column.getCanResize() && (
+//                       <DataGridTableHeadRowCellResize header={header} />
+//                     )}
+//                   </DataGridTableHeadRowCell>
+//                 );
+//               })}
+//             </DataGridTableHeadRow>
+//           );
+//         })}
+//       </DataGridTableHead>
+
+//       {(props.tableLayout?.stripped || !props.tableLayout?.rowBorder) && <DataGridTableRowSpacer />}
+
+//       <DataGridTableBody>
+//         {props.loadingMode === 'skeleton' && isLoading && pagination?.pageSize ? (
+//           Array.from({ length: pagination.pageSize }).map((_, rowIndex) => (
+//             <DataGridTableBodyRowSkeleton key={rowIndex}>
+//               {table.getVisibleFlatColumns().map((column, colIndex) => {
+//                 return (
+//                   <DataGridTableBodyRowSkeletonCell column={column} key={colIndex}>
+//                     {column.columnDef.meta?.skeleton}
+//                   </DataGridTableBodyRowSkeletonCell>
+//                 );
+//               })}
+//             </DataGridTableBodyRowSkeleton>
+//           ))
+//         ) : table.getRowModel().rows.length ? (
+//           table.getRowModel().rows.map((row: Row<TData>, index) => {
+//             return (
+//               <Fragment key={row.id}>
+//                 <DataGridTableBodyRow row={row} key={index}>
+//                   {row.getVisibleCells().map((cell: Cell<TData, unknown>, colIndex) => {
+//                     return (
+//                       <DataGridTableBodyRowCell cell={cell} key={colIndex}>
+//                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
+//                       </DataGridTableBodyRowCell>
+//                     );
+//                   })}
+//                 </DataGridTableBodyRow>
+//                 {row.getIsExpanded() && <DataGridTableBodyRowExpandded row={row} />}
+//               </Fragment>
+//             );
+//           })
+//         ) : (
+//           <DataGridTableEmpty />
+//         )
+//         }
+//       </DataGridTableBody>
+//     </DataGridTableBase>
+//   );
+// }
+// src/components/data-grid/DataGridTable.tsx
+
+ function DataGridTable<TData extends object>() {
   const { table, isLoading, props } = useDataGrid();
   const pagination = table.getState().pagination;
 
+  // Check if grouping is enabled
+  const groupByDate = (props as any).groupByDate;
+
+  // Group rows by date if enabled
+  const groupedRows = groupByDate
+    ? table.getRowModel().rows.reduce<Record<string, Row<TData>[]>>((acc, row) => {
+        const date = (row.original as any)?.date;
+        if (!date) return acc;
+        if (!acc[date]) acc[date] = [];
+        acc[date].push(row);
+        return acc;
+      }, {})
+    : null;
+
   return (
     <DataGridTableBase>
-      <DataGridTableHead>
-        {table.getHeaderGroups().map((headerGroup: HeaderGroup<TData>, index) => {
-          return (
-            <DataGridTableHeadRow headerGroup={headerGroup} key={index}>
-              {headerGroup.headers.map((header, index) => {
-                const { column } = header;
+      {/* When NOT grouped by date — render normally */}
+      {!groupByDate && (
+        <>
+          <DataGridTableHead>
+            {table.getHeaderGroups().map((headerGroup: HeaderGroup<TData>, index) => (
+              <DataGridTableHeadRow headerGroup={headerGroup} key={index}>
+                {headerGroup.headers.map((header, index) => {
+                  const { column } = header;
+                  return (
+                    <DataGridTableHeadRowCell header={header} key={index}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(header.column.columnDef.header, header.getContext())}
+                      {props.tableLayout?.columnsResizable && column.getCanResize() && (
+                        <DataGridTableHeadRowCellResize header={header} />
+                      )}
+                    </DataGridTableHeadRowCell>
+                  );
+                })}
+              </DataGridTableHeadRow>
+            ))}
+          </DataGridTableHead>
 
-                return (
-                  <DataGridTableHeadRowCell header={header} key={index}>
-                    {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                    {props.tableLayout?.columnsResizable && column.getCanResize() && (
-                      <DataGridTableHeadRowCellResize header={header} />
-                    )}
-                  </DataGridTableHeadRowCell>
-                );
-              })}
-            </DataGridTableHeadRow>
-          );
-        })}
-      </DataGridTableHead>
+          {(props.tableLayout?.stripped || !props.tableLayout?.rowBorder) && <DataGridTableRowSpacer />}
 
-      {(props.tableLayout?.stripped || !props.tableLayout?.rowBorder) && <DataGridTableRowSpacer />}
-
-      <DataGridTableBody>
-        {props.loadingMode === 'skeleton' && isLoading && pagination?.pageSize ? (
-          Array.from({ length: pagination.pageSize }).map((_, rowIndex) => (
-            <DataGridTableBodyRowSkeleton key={rowIndex}>
-              {table.getVisibleFlatColumns().map((column, colIndex) => {
-                return (
-                  <DataGridTableBodyRowSkeletonCell column={column} key={colIndex}>
-                    {column.columnDef.meta?.skeleton}
-                  </DataGridTableBodyRowSkeletonCell>
-                );
-              })}
-            </DataGridTableBodyRowSkeleton>
-          ))
-        ) : table.getRowModel().rows.length ? (
-          table.getRowModel().rows.map((row: Row<TData>, index) => {
-            return (
-              <Fragment key={row.id}>
-                <DataGridTableBodyRow row={row} key={index}>
-                  {row.getVisibleCells().map((cell: Cell<TData, unknown>, colIndex) => {
-                    return (
+          <DataGridTableBody>
+            {props.loadingMode === 'skeleton' && isLoading && pagination?.pageSize ? (
+              Array.from({ length: pagination.pageSize }).map((_, rowIndex) => (
+                <DataGridTableBodyRowSkeleton key={rowIndex}>
+                  {table.getVisibleFlatColumns().map((column, colIndex) => (
+                    <DataGridTableBodyRowSkeletonCell column={column} key={colIndex}>
+                      {column.columnDef.meta?.skeleton}
+                    </DataGridTableBodyRowSkeletonCell>
+                  ))}
+                </DataGridTableBodyRowSkeleton>
+              ))
+            ) : table.getRowModel().rows.length ? (
+              table.getRowModel().rows.map((row: Row<TData>, index) => (
+                <Fragment key={row.id}>
+                  <DataGridTableBodyRow row={row} key={index}>
+                    {row.getVisibleCells().map((cell: Cell<TData, unknown>, colIndex) => (
                       <DataGridTableBodyRowCell cell={cell} key={colIndex}>
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </DataGridTableBodyRowCell>
-                    );
-                  })}
-                </DataGridTableBodyRow>
-                {row.getIsExpanded() && <DataGridTableBodyRowExpandded row={row} />}
-              </Fragment>
-            );
-          })
-        ) : (
-          <DataGridTableEmpty />
-        )}
-      </DataGridTableBody>
+                    ))}
+                  </DataGridTableBodyRow>
+                  {row.getIsExpanded() && <DataGridTableBodyRowExpandded row={row} />}
+                </Fragment>
+              ))
+            ) : (
+              <DataGridTableEmpty />
+            )}
+          </DataGridTableBody>
+        </>
+      )}
+
+      {/* When grouped by date — custom render */}
+      {groupByDate && groupedRows && (
+        <div className="space-y-6">
+          {Object.entries(groupedRows).map(([date, rows]) => (
+            <div key={date}>
+              {/* Date comes first */}
+              <div className="text-sm font-normal text-text p-4 mb-3  bg-[#F6FFE7]">{date}</div>
+
+              {/* Then header */}
+              <DataGridTableHead>
+                {table.getHeaderGroups().map((headerGroup: HeaderGroup<TData>, index) => (
+                  <DataGridTableHeadRow headerGroup={headerGroup} key={index}>
+                    {headerGroup.headers.map((header, index) => {
+                      const { column } = header;
+                      return (
+                        <DataGridTableHeadRowCell header={header} key={index}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(header.column.columnDef.header, header.getContext())}
+                          {props.tableLayout?.columnsResizable && column.getCanResize() && (
+                            <DataGridTableHeadRowCellResize header={header} />
+                          )}
+                        </DataGridTableHeadRowCell>
+                      );
+                    })}
+                  </DataGridTableHeadRow>
+                ))}
+              </DataGridTableHead>
+
+              {/* Then rows */}
+              <DataGridTableBody>
+                {rows.map((row: Row<TData>, index) => (
+                  <Fragment key={row.id}>
+                    <DataGridTableBodyRow row={row} key={index}>
+                      {row.getVisibleCells().map((cell: Cell<TData, unknown>, colIndex) => (
+                        <DataGridTableBodyRowCell cell={cell} key={colIndex}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </DataGridTableBodyRowCell>
+                      ))}
+                    </DataGridTableBodyRow>
+                    {row.getIsExpanded() && <DataGridTableBodyRowExpandded row={row} />}
+                  </Fragment>
+                ))}
+              </DataGridTableBody>
+            </div>
+          ))}
+        </div>
+      )}
     </DataGridTableBase>
   );
 }
+
+
 
 export {
   DataGridTable,

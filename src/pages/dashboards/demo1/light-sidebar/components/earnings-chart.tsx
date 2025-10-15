@@ -122,7 +122,7 @@ const EarningsChart = () => {
       custom({ series, seriesIndex, dataPointIndex, w }) {
         const month = w.globals.seriesX[seriesIndex][dataPointIndex];
         const monthName = categories[month];
-        
+
         // Get values for this specific month from our data
         const inProgress = chartData.inProgress[dataPointIndex];
         const paused = chartData.paused[dataPointIndex];
@@ -221,14 +221,14 @@ const EarningsChart = () => {
       </CardHeader>
       <CardContent className="flex flex-col justify-end items-stretch grow px-3 py-1 overflow-hidden">
         <div className="w-full overflow-hidden">
-          <ApexChart
-            id="earnings_chart"
-            options={options}
-            series={options.series}
-            type="area"
+        <ApexChart
+          id="earnings_chart"
+          options={options}
+          series={options.series}
+          type="area"
             width="100%"
-            height="250"
-          />
+          height="250"
+        />
         </div>
       </CardContent>
     </Card>

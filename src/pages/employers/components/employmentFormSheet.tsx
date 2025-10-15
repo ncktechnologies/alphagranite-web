@@ -49,6 +49,7 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
             email: '',
             department: '',
             gender: '',
+            phone: '',
         },
     });
 
@@ -66,7 +67,7 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
             setShowPopover(true);
             form.reset();
             setIsSheetOpen(false); // Close sheet on success
-            
+
         } catch (err) {
             setError('An unexpected error occurred. Please try again.');
         } finally {
@@ -89,30 +90,30 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
                 <SheetContent className="gap-0 sm:w-[500px] sm:max-w-none inset-5 start-auto h-auto rounded-lg p-4 [&_[data-slot=sheet-close]]:top-4.5 [&_[data-slot=sheet-close]]:end-5">
                     <Form {...form}>
                         <form onSubmit={form.handleSubmit(onSubmit)} className="h-full flex flex-col">
-                            <SheetHeader className="mb-0">
+                            <SheetHeader className="mb-3 border-border pb-3.5 border-b">
                                 <SheetTitle>Add new employee</SheetTitle>
                             </SheetHeader>
-                            
+
                             <SheetBody className="flex-1">
                                 <ScrollArea className="h-full">
-                                    <div className="space-y-6">
-                                        {error && (
+                                    <div className="space-y-10">
+                                        {/* {error && (
                                             <Alert variant="destructive">
                                                 <AlertIcon>
                                                     <AlertCircle className="h-4 w-4" />
                                                 </AlertIcon>
                                                 <AlertTitle>{error}</AlertTitle>
                                             </Alert>
-                                        )}
+                                        )} */}
 
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 spzce-y-2">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
                                             <div className="space-y-2 col-span-2">
-                                                        <FormLabel>Upload photo *</FormLabel>
+                                                <FormLabel>Upload photo *</FormLabel>
                                                 <div className="flex items-center gap-4">
                                                     <AvatarInput />
                                                 </div>
                                             </div>
-                                            
+
                                             <FormField
                                                 control={form.control}
                                                 name="firstName"
@@ -126,7 +127,7 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
                                                     </FormItem>
                                                 )}
                                             />
-                                            
+
                                             <FormField
                                                 control={form.control}
                                                 name="lastName"
@@ -140,7 +141,7 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
                                                     </FormItem>
                                                 )}
                                             />
-                                            
+
                                             <FormField
                                                 control={form.control}
                                                 name="email"
@@ -154,7 +155,7 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
                                                     </FormItem>
                                                 )}
                                             />
-                                            
+
                                             <FormField
                                                 control={form.control}
                                                 name="department"
@@ -198,15 +199,22 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
                                                     </FormItem>
                                                 )}
                                             />
+                                            <FormField control={form.control} name="phone" render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Phone</FormLabel>
+                                                    <FormControl><Input placeholder="Your phone number" type="text" {...field} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )} />
                                         </div>
                                     </div>
                                 </ScrollArea>
                             </SheetBody>
-                            
+
                             <SheetFooter className="py-3.5 px-5 border-border flex justify-end gap-3 mt-auto">
-                                <Button 
-                                    type="submit" 
-                                    variant="primary" 
+                                <Button
+                                    type="submit"
+                                    variant="primary"
                                     disabled={isSubmitting}
                                     className="justify-center"
                                 >
@@ -219,9 +227,9 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
                                         'Save employee'
                                     )}
                                 </Button>
-                                <Button 
-                                    type="button" 
-                                    variant="outline" 
+                                <Button
+                                    type="button"
+                                    variant="outline"
                                     onClick={handleCancel}
                                     disabled={isSubmitting}
                                     className="justify-center"
@@ -233,18 +241,17 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
                     </Form>
                 </SheetContent>
             </Sheet>
-            
-            <Popup 
+
+            <Popup
                 isOpen={showPopover}
                 title='Employee added successfully'
-                description='The new employee has been added to the system.'
+                description='You have added a new employee successfully'
             >
                 <div className="flex flex-col items-center mt-4">
                     <Button
                         className="px-8"
                         onClick={() => {
                             setShowPopover(false);
-                            // Navigate to employees list or refresh data
                         }}
                     >
                         Close

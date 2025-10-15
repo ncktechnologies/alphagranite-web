@@ -56,6 +56,8 @@ export interface DataGridProps<TData extends object> {
   loadingMode?: 'skeleton' | 'spinner';
   loadingMessage?: ReactNode | string;
   emptyMessage?: ReactNode | string;
+  groupByDate?: boolean; 
+  dateKey?: keyof TData; 
   tableLayout?: {
     dense?: boolean;
     cellBorder?: boolean;

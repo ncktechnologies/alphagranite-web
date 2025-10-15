@@ -1,4 +1,4 @@
-import { EllipsisVertical, Building, Building2, Building2Icon, BuildingIcon } from "lucide-react";
+import { EllipsisVertical, Building, Building2, Building2Icon, BuildingIcon, Ellipsis } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter } from "@/components/ui/card";
@@ -45,55 +45,55 @@ export const departments: Department[] = [
         extraMembers: 3,
         users: [
             {
-        id: 1,
-        name: 'Cameron Williamson',
-        email: 'tim.jennings@example.com',
-        address: '8502 Preston Rd. Inglewood, Maine 98380',
-        department: 'Sales',
-        phone: '(704) 555-0113',
-        role: 'Sales',
-        status: 'Active',
-    },
-    {
-        id: 2,
-        name: 'Esther Howard',
-        email: 'willie.jennings@example.com',
-        address: '2715 Ash Dr. San Jose, South Dakota 83475',
-        department: 'Front office',
-        phone: '(704) 555-0112',
-        role: 'Front office',
-        status: 'Deactivated',
-    },
-    {
-        id: 3,
-        name: 'Leslie Alexander',
-        email: 'michelle.rivera@example.com',
-        address: '4140 Parker Rd. Allentown, New Mexico 31134',
-        department: 'CAD',
-        phone: '(684) 555-0108',
-        role: 'CAD',
-        status: 'Deactivated',
-    },
-    {
-        id: 4,
-        name: 'Jenny Wilson',
-        email: 'deanna.curtis@example.com',
-        address: '4140 Parker Rd. Allentown, New Mexico 31134',
-        department: 'Warehouse',
-        phone: '(704) 555-0120',
-        role: 'Warehouse',
-        status: 'Active',
-    },
-    {
-        id: 5,
-        name: 'Darlene Robertson',
-        email: 'felicia.reid@example.com',
-        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
-        department: 'Production',
-        phone: '(480) 555-0121',
-        role: 'Production',
-        status: 'Deactivated',
-    },
+                id: 1,
+                name: 'Cameron Williamson',
+                email: 'tim.jennings@example.com',
+                address: '8502 Preston Rd. Inglewood, Maine 98380',
+                department: 'Sales',
+                phone: '(704) 555-0113',
+                role: 'Sales',
+                status: 'Active',
+            },
+            {
+                id: 2,
+                name: 'Esther Howard',
+                email: 'willie.jennings@example.com',
+                address: '2715 Ash Dr. San Jose, South Dakota 83475',
+                department: 'Front office',
+                phone: '(704) 555-0112',
+                role: 'Front office',
+                status: 'Deactivated',
+            },
+            {
+                id: 3,
+                name: 'Leslie Alexander',
+                email: 'michelle.rivera@example.com',
+                address: '4140 Parker Rd. Allentown, New Mexico 31134',
+                department: 'CAD',
+                phone: '(684) 555-0108',
+                role: 'CAD',
+                status: 'Deactivated',
+            },
+            {
+                id: 4,
+                name: 'Jenny Wilson',
+                email: 'deanna.curtis@example.com',
+                address: '4140 Parker Rd. Allentown, New Mexico 31134',
+                department: 'Warehouse',
+                phone: '(704) 555-0120',
+                role: 'Warehouse',
+                status: 'Active',
+            },
+            {
+                id: 5,
+                name: 'Darlene Robertson',
+                email: 'felicia.reid@example.com',
+                address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
+                department: 'Production',
+                phone: '(480) 555-0121',
+                role: 'Production',
+                status: 'Deactivated',
+            },
         ]
     },
     {
@@ -110,57 +110,57 @@ export const departments: Department[] = [
                 variant: "text-primary-foreground size-8 ring-background bg-green-500",
             },
         ],
-         users: [
+        users: [
             {
-        id: 1,
-        name: 'Cameron Williamson',
-        email: 'tim.jennings@example.com',
-        address: '8502 Preston Rd. Inglewood, Maine 98380',
-        department: 'Sales',
-        phone: '(704) 555-0113',
-        role: 'Sales',
-        status: 'Active',
-    },
-    {
-        id: 2,
-        name: 'Esther Howard',
-        email: 'willie.jennings@example.com',
-        address: '2715 Ash Dr. San Jose, South Dakota 83475',
-        department: 'Front office',
-        phone: '(704) 555-0112',
-        role: 'Front office',
-        status: 'Deactivated',
-    },
-    {
-        id: 3,
-        name: 'Leslie Alexander',
-        email: 'michelle.rivera@example.com',
-        address: '4140 Parker Rd. Allentown, New Mexico 31134',
-        department: 'CAD',
-        phone: '(684) 555-0108',
-        role: 'CAD',
-        status: 'Deactivated',
-    },
-    {
-        id: 4,
-        name: 'Jenny Wilson',
-        email: 'deanna.curtis@example.com',
-        address: '4140 Parker Rd. Allentown, New Mexico 31134',
-        department: 'Warehouse',
-        phone: '(704) 555-0120',
-        role: 'Warehouse',
-        status: 'Active',
-    },
-    {
-        id: 5,
-        name: 'Darlene Robertson',
-        email: 'felicia.reid@example.com',
-        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
-        department: 'Production',
-        phone: '(480) 555-0121',
-        role: 'Production',
-        status: 'Deactivated',
-    },
+                id: 1,
+                name: 'Cameron Williamson',
+                email: 'tim.jennings@example.com',
+                address: '8502 Preston Rd. Inglewood, Maine 98380',
+                department: 'Sales',
+                phone: '(704) 555-0113',
+                role: 'Sales',
+                status: 'Active',
+            },
+            {
+                id: 2,
+                name: 'Esther Howard',
+                email: 'willie.jennings@example.com',
+                address: '2715 Ash Dr. San Jose, South Dakota 83475',
+                department: 'Front office',
+                phone: '(704) 555-0112',
+                role: 'Front office',
+                status: 'Deactivated',
+            },
+            {
+                id: 3,
+                name: 'Leslie Alexander',
+                email: 'michelle.rivera@example.com',
+                address: '4140 Parker Rd. Allentown, New Mexico 31134',
+                department: 'CAD',
+                phone: '(684) 555-0108',
+                role: 'CAD',
+                status: 'Deactivated',
+            },
+            {
+                id: 4,
+                name: 'Jenny Wilson',
+                email: 'deanna.curtis@example.com',
+                address: '4140 Parker Rd. Allentown, New Mexico 31134',
+                department: 'Warehouse',
+                phone: '(704) 555-0120',
+                role: 'Warehouse',
+                status: 'Active',
+            },
+            {
+                id: 5,
+                name: 'Darlene Robertson',
+                email: 'felicia.reid@example.com',
+                address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
+                department: 'Production',
+                phone: '(480) 555-0121',
+                role: 'Production',
+                status: 'Deactivated',
+            },
         ]
     },
     {
@@ -178,57 +178,57 @@ export const departments: Department[] = [
                 variant: "text-primary-foreground size-8 ring-background bg-green-500",
             },
         ],
-         users: [
+        users: [
             {
-        id: 1,
-        name: 'Cameron Williamson',
-        email: 'tim.jennings@example.com',
-        address: '8502 Preston Rd. Inglewood, Maine 98380',
-        department: 'Sales',
-        phone: '(704) 555-0113',
-        role: 'Sales',
-        status: 'Active',
-    },
-    {
-        id: 2,
-        name: 'Esther Howard',
-        email: 'willie.jennings@example.com',
-        address: '2715 Ash Dr. San Jose, South Dakota 83475',
-        department: 'Front office',
-        phone: '(704) 555-0112',
-        role: 'Front office',
-        status: 'Deactivated',
-    },
-    {
-        id: 3,
-        name: 'Leslie Alexander',
-        email: 'michelle.rivera@example.com',
-        address: '4140 Parker Rd. Allentown, New Mexico 31134',
-        department: 'CAD',
-        phone: '(684) 555-0108',
-        role: 'CAD',
-        status: 'Deactivated',
-    },
-    {
-        id: 4,
-        name: 'Jenny Wilson',
-        email: 'deanna.curtis@example.com',
-        address: '4140 Parker Rd. Allentown, New Mexico 31134',
-        department: 'Warehouse',
-        phone: '(704) 555-0120',
-        role: 'Warehouse',
-        status: 'Active',
-    },
-    {
-        id: 5,
-        name: 'Darlene Robertson',
-        email: 'felicia.reid@example.com',
-        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
-        department: 'Production',
-        phone: '(480) 555-0121',
-        role: 'Production',
-        status: 'Deactivated',
-    },
+                id: 1,
+                name: 'Cameron Williamson',
+                email: 'tim.jennings@example.com',
+                address: '8502 Preston Rd. Inglewood, Maine 98380',
+                department: 'Sales',
+                phone: '(704) 555-0113',
+                role: 'Sales',
+                status: 'Active',
+            },
+            {
+                id: 2,
+                name: 'Esther Howard',
+                email: 'willie.jennings@example.com',
+                address: '2715 Ash Dr. San Jose, South Dakota 83475',
+                department: 'Front office',
+                phone: '(704) 555-0112',
+                role: 'Front office',
+                status: 'Deactivated',
+            },
+            {
+                id: 3,
+                name: 'Leslie Alexander',
+                email: 'michelle.rivera@example.com',
+                address: '4140 Parker Rd. Allentown, New Mexico 31134',
+                department: 'CAD',
+                phone: '(684) 555-0108',
+                role: 'CAD',
+                status: 'Deactivated',
+            },
+            {
+                id: 4,
+                name: 'Jenny Wilson',
+                email: 'deanna.curtis@example.com',
+                address: '4140 Parker Rd. Allentown, New Mexico 31134',
+                department: 'Warehouse',
+                phone: '(704) 555-0120',
+                role: 'Warehouse',
+                status: 'Active',
+            },
+            {
+                id: 5,
+                name: 'Darlene Robertson',
+                email: 'felicia.reid@example.com',
+                address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
+                department: 'Production',
+                phone: '(480) 555-0121',
+                role: 'Production',
+                status: 'Deactivated',
+            },
         ]
     },
     {
@@ -294,7 +294,7 @@ const DepartmentCard = () => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {departments.map((dept) => (
-                <Card key={dept.id} className="flex flex-col gap-3 w-[266px]">
+                <Card key={dept.id} className="flex flex-col gap-3 ">
                     <div className="flex items-start justify-between gap-1 p-4">
                         <div className="space-y-2 ">
                             <img
@@ -310,7 +310,7 @@ const DepartmentCard = () => {
                                 >
                                     {dept.name}
                                 </Link>
-                                
+
                             </div>
                             <p className="text-xs text-text-foreground flex-grow">
                                 {dept.description}
@@ -320,15 +320,18 @@ const DepartmentCard = () => {
                         <DropdownMenu5
                             trigger={
                                 <Button variant="ghost" mode="icon">
-                                    <EllipsisVertical />
+                                    <Ellipsis />
                                 </Button>
                             }
-                            onView={ () => handleView(dept) }
+                            onView={() => handleView(dept)}
                         />
                     </div>
-                    <CardFooter className="p-4 pt-0">
+                    <CardFooter className="p-4  flex-col items-start space-y-2">
+                        <span className="text-xs text-secondary-foreground uppercase">
+                            member(s)
+                        </span>
                         <AvatarGroup group={dept.members}
-                        
+
                         />
                     </CardFooter>
                 </Card>

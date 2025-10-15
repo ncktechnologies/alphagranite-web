@@ -6,7 +6,6 @@ import {
     getPaginationRowModel,
     getSortedRowModel,
     PaginationState,
-    RowSelectionState,
     SortingState,
     useReactTable,
 } from '@tanstack/react-table';
@@ -17,7 +16,6 @@ import {
     CardHeader,
     CardHeading,
     CardTable,
-    CardTitle,
     CardToolbar,
 } from '@/components/ui/card';
 import { DataGrid } from '@/components/ui/data-grid';
@@ -26,55 +24,51 @@ import { DataGridPagination } from '@/components/ui/data-grid-pagination';
 import { DataGridTable, DataGridTableRowSelect, DataGridTableRowSelectAll } from '@/components/ui/data-grid-table';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { IEmployee } from '@/pages/employers/components/employer';
+import { IJob } from './job';
+import { groupData } from '@/lib/groupData';
 import { exportTableToCSV } from '@/lib/exportToCsv';
+import ActionsCell from '../roles/sales/action';
 
-
-
-
-
-const StatusBadge = ({ status }: { status: IEmployee['status'] }) => {
-    const colors: Record<IEmployee['status'], string> = {
-        Active: 'bg-green-100 text-green-700',
-        Deactivated: 'bg-gray-100 text-gray-600',
-    };
-
-    return (
-        <span
-            className={`px-2 py-0.5 text-xs font-medium rounded-full ${colors[status]}`}
-        >
-            {status}
-        </span>
-    );
-};
-
-interface employeeProps{
-    employees: IEmployee[];
+interface JobTableProps {
+    jobs: IJob[];
 }
-const DepartmentTable = ({employees}:employeeProps) => {
+
+// const StatusBadge = ({ status }: { status: IJob['status'] }) => {
+//   const colors: Record<IJob['status'], string> = {
+//     Open: 'bg-green-100 text-green-700',
+//     Closed: 'bg-gray-100 text-gray-600',
+//     Paused: 'bg-yellow-100 text-yellow-700',
+//   };
+
+//   return (
+//     <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${colors[status]}`}>
+//       {status}
+//     </span>
+//   );
+// };
+
+export const JobTable = ({ jobs }: JobTableProps) => {
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 5,
     });
     const [sorting, setSorting] = useState<SortingState>([]);
-    const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
 
     const filteredData = useMemo(() => {
-        if (!searchQuery) return employees;
-        return employees.filter(
-            (item) =>
-                item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.department.toLowerCase().includes(searchQuery.toLowerCase()),
+        if (!searchQuery) return jobs;
+        return jobs.filter(
+            (job) =>
+                job.job_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                job.fab_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                job.job_no.toLowerCase().includes(searchQuery.toLowerCase())
         );
-    }, [searchQuery]);
+    }, [searchQuery, jobs]);
 
-    const columns = useMemo<ColumnDef<IEmployee>[]>(
+    const columns = useMemo<ColumnDef<IJob>[]>(
         () => [
             {
                 accessorKey: 'id',
@@ -90,116 +84,100 @@ const DepartmentTable = ({employees}:employeeProps) => {
                 },
             },
             {
-                id: 'name',
-                accessorFn: (row) => row.name,
+
+                id: "fab_type",
+                accessorFn: (row) => row.fab_type,
                 header: ({ column }) => (
-                    <DataGridColumnHeader title="EMPLOYEE NAME" column={column} />
+                    <DataGridColumnHeader title="FAB TYPE" column={column} />
                 ),
-                cell: ({ row }) => (
-                    <div className="flex items-center truncate max-w-[200px]">
-                        <Avatar className="w-8 h-8 mr-3">
-                            <AvatarFallback className="bg-gray-200 text-gray-600">
-                                {row.original.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm  text-text">{row.original.name}</span>
-                    </div>
-                ),
-                enableSorting: true,
-                size: 200,
-                meta: {
-                    skeleton: <Skeleton className="h-5 w-[160px]" />,
-                },
+                cell: ({ row }) => <span className="text-sm">{row.original.fab_type}</span>,
             },
             {
-                id: 'email',
-                accessorFn: (row) => row.email,
+                id: "fab_id",
+                accessorFn: (row) => row.fab_id,
                 header: ({ column }) => (
-                    <DataGridColumnHeader title="EMAIL" column={column} />
+                    <DataGridColumnHeader title="FAB ID" column={column} />
+                ),
+                cell: ({ row }) => <span className="text-sm">{row.original.fab_id}</span>,
+            },
+            {
+                id: "job_name",
+                accessorFn: (row) => row.job_name,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="JOB NAME" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <span className="text-sm text-text truncate block max-w-[200px]">
-                        {row.original.email}
+                    <span className="text-sm truncate block max-w-[200px]">
+                        {row.original.job_name}
                     </span>
                 ),
-                enableSorting: true,
-                size: 200,
             },
             {
-                id: 'address',
-                accessorFn: (row) => row.address,
+                id: "job_no",
+                accessorFn: (row) => row.job_no,
                 header: ({ column }) => (
-                    <DataGridColumnHeader title="ADDRESS" column={column} />
+                    <DataGridColumnHeader title="JOB NO" column={column} />
+                ),
+                cell: ({ row }) => <span className="text-sm">{row.original.job_no}</span>,
+            },
+            {
+                id: "acct_name",
+                accessorFn: (row) => row.acct_name,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="ACCT NAME" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <span className="text-sm text-text truncate block max-w-[280px]">
-                        {row.original.address}
+                    <span className="text-sm truncate block max-w-[160px]">
+                        {row.original.acct_name}
                     </span>
                 ),
+            },
+            {
+                id: "template_schedule",
+                accessorFn: (row) => row.template_schedule,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="TEMPLATE SCHEDULE" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm">{row.original.template_schedule}</span>
+                ),
+            },
+            {
+                id: "template_received",
+                accessorFn: (row) => row.template_received,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="TEMPLATE RECEIVED" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm">{row.original.template_received}</span>
+                ),
+            },
+            {
+                id: "templater",
+                accessorFn: (row) => row.templater,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="TEMPLATER" column={column} />
+                ),
+                cell: ({ row }) => <span className="text-sm">{row.original.templater}</span>,
+            },
+            {
+                id: 'actions',
+                header: '',
+                cell: ({ row }) => <ActionsCell row={row} />,
                 enableSorting: false,
-                size: 280,
-            },
-            {
-                id: 'department',
-                accessorFn: (row) => row.department,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="DEPARTMENT" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text truncate block max-w-[140px]">{row.original.department}</span>
-                ),
-                enableSorting: true,
-                size: 140,
-            },
-            {
-                id: 'phone',
-                accessorFn: (row) => row.phone,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="PHONE NO" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text truncate block max-w-[130px]">{row.original.phone}</span>
-                ),
-                enableSorting: false,
-                size: 130,
-            },
-            {
-                id: 'role',
-                accessorFn: (row) => row.role,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="ROLE" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text truncate block max-w-[120px]">{row.original.role}</span>
-                ),
-                enableSorting: true,
-                size: 120,
-            },
-            {
-                id: 'status',
-                accessorFn: (row) => row.status,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="STATUS" column={column} />
-                ),
-                cell: ({ row }) => <StatusBadge status={row.original.status} />,
-                enableSorting: true,
-                size: 110,
+                size: 60,
             },
         ],
-        [],
+        []
     );
 
     const table = useReactTable({
         columns,
         data: filteredData,
-        pageCount: Math.ceil((filteredData?.length || 0) / pagination.pageSize),
-        getRowId: (row: IEmployee) => String(row.id),
-        state: { pagination, sorting, rowSelection },
-        columnResizeMode: 'onChange',
+        pageCount: Math.ceil(filteredData.length / pagination.pageSize),
+        state: { pagination, sorting },
         onPaginationChange: setPagination,
         onSortingChange: setSorting,
-        enableRowSelection: false,
-        onRowSelectionChange: setRowSelection,
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
@@ -209,7 +187,9 @@ const DepartmentTable = ({employees}:employeeProps) => {
     return (
         <DataGrid
             table={table}
-            recordCount={filteredData?.length || 0}
+            recordCount={filteredData.length}
+            groupByDate
+            dateKey="date"
             tableLayout={{
                 columnsPinnable: true,
                 columnsMovable: true,
@@ -224,12 +204,12 @@ const DepartmentTable = ({employees}:employeeProps) => {
                             <div className="relative">
                                 <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
                                 <Input
-                                    placeholder="Search Users..."
+                                    placeholder="Search Jobs..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="ps-9 w-[230px] h-[34px]"
                                 />
-                                {searchQuery.length > 0 && (
+                                {searchQuery && (
                                     <Button
                                         mode="icon"
                                         variant="ghost"
@@ -261,19 +241,20 @@ const DepartmentTable = ({employees}:employeeProps) => {
                             </Select>
                         </div>
                     </CardHeading>
-                    <CardToolbar>
 
-                        <Button variant="outline" onClick={() => exportTableToCSV(table, "dapartment-employees")}>
-                            Export CSV
-                        </Button>
+                    <CardToolbar>
+                        <Button variant="outline" onClick={() => exportTableToCSV(table, "FabId")}>Export CSV</Button>
                     </CardToolbar>
                 </CardHeader>
+
                 <CardTable>
                     <ScrollArea>
                         <DataGridTable />
                         <ScrollBar orientation="horizontal" />
+
                     </ScrollArea>
                 </CardTable>
+
                 <CardFooter>
                     <DataGridPagination />
                 </CardFooter>
@@ -281,5 +262,3 @@ const DepartmentTable = ({employees}:employeeProps) => {
         </DataGrid>
     );
 };
-
-export { DepartmentTable };

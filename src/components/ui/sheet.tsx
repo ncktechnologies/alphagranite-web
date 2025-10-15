@@ -92,7 +92,7 @@ function SheetHeader({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
       data-slot="sheet-header"
-      className={cn('flex flex-col space-y-1 text-center sm:text-start', className)}
+      className={cn('flex flex-col space-y-1 text-center sm:text-start text-text', className)}
       {...props}
     />
   );
@@ -116,7 +116,7 @@ function SheetTitle({ className, ...props }: React.ComponentProps<typeof SheetPr
   return (
     <SheetPrimitive.Title
       data-slot="sheet-title"
-      className={cn('text-base font-semibold text-foreground', className)}
+      className={cn('text-base text-text', className)}
       {...props}
     />
   );

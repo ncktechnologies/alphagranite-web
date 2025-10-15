@@ -30,6 +30,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { exportTableToCSV } from '@/lib/exportToCsv';
 
 export interface IEmployee {
     id: number;
@@ -93,6 +94,78 @@ const employees: IEmployee[] = [
         role: 'Production',
         status: 'Deactivated',
     },
+    {
+        id: 6,
+        name: 'Darlene Robertson',
+        email: 'felicia.reid@example.com',
+        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
+        department: 'Production',
+        phone: '(480) 555-0121',
+        role: 'Production',
+        status: 'Deactivated',
+    },
+    {
+        id: 7,
+        name: 'Darlene Robertson',
+        email: 'felicia.reid@example.com',
+        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
+        department: 'Production',
+        phone: '(480) 555-0121',
+        role: 'Production',
+        status: 'Deactivated',
+    },
+    {
+        id: 8,
+        name: 'Darlene Robertson',
+        email: 'felicia.reid@example.com',
+        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
+        department: 'Production',
+        phone: '(480) 555-0121',
+        role: 'Production',
+        status: 'Deactivated',
+    },
+    {
+        id: 9,
+        name: 'Darlene Robertson',
+        email: 'felicia.reid@example.com',
+        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
+        department: 'Production',
+        phone: '(480) 555-0121',
+        role: 'Production',
+        status: 'Deactivated',
+    },
+    {
+        id: 10,
+        name: 'Darlene Robertson',
+        email: 'felicia.reid@example.com',
+        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
+        department: 'Production',
+        phone: '(480) 555-0121',
+        role: 'Production',
+        status: 'Deactivated',
+    },
+    {
+        id: 11,
+        name: 'Darlene Robertson',
+        email: 'felicia.reid@example.com',
+        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
+        department: 'Production',
+        phone: '(480) 555-0121',
+        role: 'Production',
+        status: 'Deactivated',
+    },
+    {
+        id: 12,
+        name: 'Darlene Robertson',
+        email: 'felicia.reid@example.com',
+        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
+        department: 'Production',
+        phone: '(480) 555-0121',
+        role: 'Production',
+        status: 'Deactivated',
+    },
+   
+  
 ];
 
 const StatusBadge = ({ status }: { status: IEmployee['status'] }) => {
@@ -253,7 +326,7 @@ const Employees = () => {
         columnResizeMode: 'onChange',
         onPaginationChange: setPagination,
         onSortingChange: setSorting,
-        enableRowSelection: false,
+        enableRowSelection: true,
         onRowSelectionChange: setRowSelection,
         getCoreRowModel: getCoreRowModel(),
         getFilteredRowModel: getFilteredRowModel(),
@@ -318,7 +391,7 @@ const Employees = () => {
                     </CardHeading>
                     <CardToolbar>
 
-                        <Button variant="outline" onClick={() => alert('Export CSV')}>
+                        <Button variant="outline" onClick={(() => exportTableToCSV(table, "employees"))}>
                             Export CSV
                         </Button>
                     </CardToolbar>

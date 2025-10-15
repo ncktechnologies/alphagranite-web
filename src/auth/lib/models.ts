@@ -23,6 +23,7 @@ export interface UserModel {
   company_name?: string; // Using snake_case consistently
   phone?: string;
   roles?: number[]; // Array of role IDs
+  role?: string; // Single role as string
   pic?: string;
   language?: LanguageCode; // Maintain existing type
   is_admin?: boolean; // Added admin flag

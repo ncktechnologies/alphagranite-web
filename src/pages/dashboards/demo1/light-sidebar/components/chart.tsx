@@ -91,11 +91,11 @@ const Contributions = ({ title }: IContributionsProps) => {
       </CardHeader>
       <CardContent className="flex flex-col items-center py-2">
         <div className="relative">
-          <ApexChart
-            id="contributions_chart"
-            options={options}
-            series={options.series}
-            type="donut"
+        <ApexChart
+          id="contributions_chart"
+          options={options}
+          series={options.series}
+          type="donut"
             width="200"
             height="200"
           />
