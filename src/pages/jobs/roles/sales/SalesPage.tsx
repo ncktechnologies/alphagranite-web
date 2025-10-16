@@ -69,7 +69,7 @@ export function SalesPage() {
                         </Link>
                     </ToolbarActions>
                 </Toolbar>
-                < JobTable jobs={jobsData} path='sales'/>
+                < JobTable jobs={jobsData} path='templating'/>
             </Container>
         </div>
     );
