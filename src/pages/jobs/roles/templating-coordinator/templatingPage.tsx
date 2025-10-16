@@ -106,19 +106,19 @@ export function TemplatingPage() {
                 </TabsList>
 
                 <TabsContent value="all" className="mt-4">
-                    <JobTable jobs={jobsData} />
+                    <JobTable jobs={jobsData} path='templating' />
                 </TabsContent>
 
                 <TabsContent value="unscheduled" className="mt-4">
-                    <JobTable jobs={unscheduledJobs} />
+                    <JobTable jobs={unscheduledJobs} path='templating'/>
                 </TabsContent>
 
                 <TabsContent value="incomplete" className="mt-4">
-                    <JobTable jobs={incompleteJobs} />
+                    <JobTable jobs={incompleteJobs} path='templating'/>
                 </TabsContent>
 
                 <TabsContent value="completed" className="mt-4">
-                    <JobTable jobs={completedJobs} />
+                    <JobTable jobs={completedJobs} path='templating'/>
                 </TabsContent>
             </Tabs>
         </Container>

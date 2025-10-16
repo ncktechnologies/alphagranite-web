@@ -31,9 +31,11 @@ import { IJob } from './job';
 import { groupData } from '@/lib/groupData';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import ActionsCell from '../roles/sales/action';
+import { useNavigate } from 'react-router';
 
 interface JobTableProps {
     jobs: IJob[];
+    path:string
 }
 
 // const StatusBadge = ({ status }: { status: IJob['status'] }) => {
@@ -50,7 +52,7 @@ interface JobTableProps {
 //   );
 // };
 
-export const JobTable = ({ jobs }: JobTableProps) => {
+export const JobTable = ({ jobs, path }: JobTableProps) => {
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 5,
@@ -67,6 +69,11 @@ export const JobTable = ({ jobs }: JobTableProps) => {
                 job.job_no.toLowerCase().includes(searchQuery.toLowerCase())
         );
     }, [searchQuery, jobs]);
+    const navigate = useNavigate();
+
+    const handleView = (department: string) => {
+        navigate(`/job/${department}/id`);
+    };
 
     const columns = useMemo<ColumnDef<IJob>[]>(
         () => [
@@ -163,7 +170,7 @@ export const JobTable = ({ jobs }: JobTableProps) => {
             {
                 id: 'actions',
                 header: '',
-                cell: ({ row }) => <ActionsCell row={row} />,
+                cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(path)}/>,
                 enableSorting: false,
                 size: 60,
             },

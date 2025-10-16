@@ -16,10 +16,11 @@ import { IJob } from '../../components/job';
 
 interface ActionsCellProps {
 // id:string
-row: Row<IJob>
+row: Row<IJob>,
+onView?: () => void
 }
 
-function ActionsCell({  row}: ActionsCellProps) {
+function ActionsCell({  row,onView}: ActionsCellProps) {
   const bulletin = row.original;
   const [selectedBulletin, setSelectedBulletin] = useState<IJob | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -28,7 +29,7 @@ function ActionsCell({  row}: ActionsCellProps) {
 
   const handleViewDetails = () => {
     setSelectedBulletin(bulletin);
-    setDetailsOpen(true);
+    // setDetailsOpen(true);
   };
 
   return (
@@ -41,7 +42,7 @@ function ActionsCell({  row}: ActionsCellProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           {/* <DropdownMenuLabel>Actions</DropdownMenuLabel> */}
-          <DropdownMenuItem onClick={handleViewDetails}>
+          <DropdownMenuItem onClick={onView}>
            View details
           </DropdownMenuItem>
         </DropdownMenuContent>
