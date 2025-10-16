@@ -4,41 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { X, Download, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { FileViewerProps } from '@/pages/jobs/components/job';
 
-interface SchedulingNote {
-  id: string;
-  author: string;
-  avatar: string;
-  content: string;
-  timestamp: string;
-}
-
-interface JobDetails {
-  fabId: string;
-  customer: string;
-  jobNumber: string;
-  area: string;
-  fabType: string;
-  slabSmithUsed: boolean;
-}
-
-interface UploadedFile {
-  id: string;
-  name: string;
-  size: number;
-  type: string;
-  url?: string;
-}
-
-interface FileViewerProps {
-  // When inline is true, renders without Dialog wrapper
-  inline?: boolean;
-  isOpen?: boolean;
-  onClose?: () => void;
-  file: UploadedFile;
-  jobDetails: JobDetails;
-  schedulingNotes: SchedulingNote[];
-}
 
 export const FileViewer = ({
   inline = false,

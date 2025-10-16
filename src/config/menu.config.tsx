@@ -83,7 +83,12 @@ export const MENU_SIDEBAR: MenuConfig = [
    {
     title: 'Jobs',
     icon: RiBuilding2Line,
-    path: '/job/sales'
+    // path: '/job/sales',
+    children:[
+      { title: 'Sales', path: '/job/sales' },
+      { title: 'Drafter', path: '/job/templating' },
+    
+    ]
 
   },
   {

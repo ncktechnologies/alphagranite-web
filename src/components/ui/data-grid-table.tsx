@@ -562,7 +562,7 @@ function DataGridTableRowSelectAll({ size }: { size?: 'sm' | 'md' | 'lg' }) {
           {Object.entries(groupedRows).map(([date, rows]) => (
             <div key={date}>
               {/* Date comes first */}
-              <div className="text-sm font-normal text-text p-4 mb-3  bg-[#F6FFE7]">{date}</div>
+              <div className="text-sm font-normal text-text p-4  w-full bg-[#F6FFE7]">{date}</div>
 
               {/* Then header */}
               <DataGridTableHead>
