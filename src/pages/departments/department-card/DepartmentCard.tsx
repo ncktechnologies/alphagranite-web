@@ -2,12 +2,12 @@ import { EllipsisVertical, Building, Building2, Building2Icon, BuildingIcon, Ell
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardFooter } from "@/components/ui/card";
-import { DropdownMenu5 } from "@/partials/dropdown-menu/dropdown-menu-5";
 import { RiBuilding2Fill, RiBuildingLine } from "@remixicon/react";
 import { toAbsoluteUrl } from "@/lib/helpers";
 import { AvatarGroup } from "@/partials/common/avatar-group";
 import { Role } from "@/config/types";
 import { IEmployee } from "@/pages/employers/components/employer";
+import { DropdownMenu5 } from "./components/dropdown-menu-5";
 
 export interface Member {
     //   name?: string;
@@ -324,6 +324,7 @@ const DepartmentCard = () => {
                                 </Button>
                             }
                             onView={() => handleView(dept)}
+                            // dept={dept}
                         />
                     </div>
                     <CardFooter className="p-4  flex-col items-start space-y-2">

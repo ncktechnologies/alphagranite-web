@@ -229,7 +229,7 @@ const DepartmentTable = ({employees}:employeeProps) => {
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="ps-9 w-[230px] h-[34px]"
                                 />
-                                {searchQuery.length > 0 && (
+                                {searchQuery?.length > 0 && (
                                     <Button
                                         mode="icon"
                                         variant="ghost"

@@ -24,7 +24,7 @@ export function DepartmentDetailsPage() {
                         </Button>
                     </ToolbarActions> */}
                 </Toolbar>
-                < DepartmentTable employees={department?.users}/>
+                < DepartmentTable employees={department?.users || []}/>
             </Container>
         </div>
     );

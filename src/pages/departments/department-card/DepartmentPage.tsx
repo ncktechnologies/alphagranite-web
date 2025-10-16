@@ -3,6 +3,7 @@ import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/compone
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { DepartmentCard } from './DepartmentCard';
+import DepartmentFormSheet from './components/departmentSheet';
 
 export function DepartmentPage() {
     return (
@@ -14,10 +15,13 @@ export function DepartmentPage() {
                     <ToolbarHeading title=" Department" description="Manage all Alpha Granite departments" />
 
                     <ToolbarActions>
-                        <Button className="">
-                            <Plus/>
-                            New Department
-                        </Button>
+                        <DepartmentFormSheet trigger={
+
+                            <Button className="">
+                                <Plus />
+                                New Department
+                            </Button>
+                        } />
                     </ToolbarActions>
                 </Toolbar>
                 <DepartmentCard />
