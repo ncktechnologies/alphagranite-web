@@ -86,7 +86,7 @@ export const MENU_SIDEBAR: MenuConfig = [
     // path: '/job/sales',
     children:[
       { title: 'Sales', path: '/job/sales' },
-      { title: 'Drafter', path: '/job/templating' },
+      { title: 'Templating', path: '/job/templating' },
     
     ]
 
