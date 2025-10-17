@@ -11,7 +11,7 @@ import { JobPage } from '@/pages/job-flow/job-page';
 import { NewFabIdForm } from '@/pages/jobs';
 import { DrafterPage } from '@/pages/jobs/roles/drafters';
 import { SalesPage } from '@/pages/jobs/roles/sales/SalesPage';
-import { FabIdDetailsPage } from '@/pages/jobs/roles/templating-coordinator/details';
+import { FabIdDetailsPage } from '@/pages/jobs/roles/templating-coordinator/components/details';
 import { TemplatingPage } from '@/pages/jobs/roles/templating-coordinator/templatingPage';
 import { NotificationsSection, ProfileSection, RolesSection } from '@/pages/settings';
 

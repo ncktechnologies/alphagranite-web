@@ -1,11 +1,6 @@
 import { Container } from '@/components/common/container';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Separator } from '@/components/ui/separator';
-import {  Save, Undo2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { ReviewChecklistForm } from './ReviewChecklist';
 
 export function FabIdDetailsPage() {
     // Job Info data array
@@ -23,16 +18,7 @@ export function FabIdDetailsPage() {
         { label: 'Total square ft', value: '234 square ft' },
     ];
 
-    // Checklist items
-    const checklist = [
-        { label: 'Customer information verified', checked: true },
-        { label: 'Material specifications confirmed', checked: false },
-        { label: 'Stone type confirmed', checked: false },
-        { label: 'Stone type colour confirmed', checked: false },
-        { label: 'Total area size confirmed', checked: false },
-        { label: 'FAB type confirmed', checked: false },
-    ];
-
+    
     return (
         <Container className=" border-t">
             {/* Header / Breadcrumb */}
@@ -81,41 +67,7 @@ export function FabIdDetailsPage() {
                             </p>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-3">
-                                {checklist.map((item, index) => (
-                                    <label
-                                        key={index}
-                                        className="flex items-center space-x-2 text-sm"
-                                    >
-                                        <Checkbox checked={item.checked} />
-                                        <span
-                                        >
-                                            {item.label}
-                                        </span>
-                                    </label>
-                                ))}
-                            </div>
-
-                            <Separator className="my-4" />
-
-                            <div className="space-y-2">
-                                <p className="text-sm font-medium">Notes</p>
-                                <Textarea placeholder="Type here..." className="min-h-[100px]" />
-                            </div>
-
-                            <div className="space-y-3 mt-6">
-                                <Button className="w-full py-6 text-base">
-                                    Schedule for templating
-                                </Button>
-                                <Button variant="outline" className="w-full text-secondary font-bold py-6 text-base">
-                                   <Undo2/>
-                                    Return to sales
-                                </Button>
-                                <Button variant="ghost" className="w-full text-[#2B892B] underline py-6 text-base">
-                                    <Save/>
-                                    Save to draft
-                                </Button>
-                            </div>
+                            <ReviewChecklistForm/>
                         </CardContent>
                     </Card>
                 </div>
