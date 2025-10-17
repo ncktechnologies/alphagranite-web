@@ -28,7 +28,7 @@ const assignTechnicianSchema = z.object({
   technician: z.string().min(1, "Please select a technician"),
   date: z
     .string()
-    .min(1, { message: "Bulletin date is required." })
+    .min(1, { message: "date is required." })
     .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Date must be in YYYY-MM-DD format." }),
 
 });

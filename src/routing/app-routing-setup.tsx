@@ -11,6 +11,8 @@ import { JobPage } from '@/pages/job-flow/job-page';
 import { NewFabIdForm } from '@/pages/jobs';
 import { DrafterPage } from '@/pages/jobs/roles/drafters';
 import { SalesPage } from '@/pages/jobs/roles/sales/SalesPage';
+import { TechnicianDetailsPage } from '@/pages/jobs/roles/technician-templater/components/details';
+import { TechnicianPage } from '@/pages/jobs/roles/technician-templater/TechnicianPage';
 import { FabIdDetailsPage } from '@/pages/jobs/roles/templating-coordinator/components/details';
 import { TemplatingPage } from '@/pages/jobs/roles/templating-coordinator/templatingPage';
 import { NotificationsSection, ProfileSection, RolesSection } from '@/pages/settings';
@@ -56,11 +58,27 @@ export function AppRoutingSetup() {
               // </ProtectedRoute>
             }
           />
+          <Route
+            path="/job/templating-technician"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <TechnicianPage/>
+              // </ProtectedRoute>
+            }
+          />
            <Route
             path="/job/templating/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <FabIdDetailsPage/>
+              // </ProtectedRoute>
+            }
+          />
+           <Route
+            path="/job/technician/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <TechnicianDetailsPage/>
               // </ProtectedRoute>
             }
           />
