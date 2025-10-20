@@ -10,8 +10,7 @@ import {
 } from '@/components/ui/tooltip';
 import { ImageInput, ImageInputFile } from '@/components/image-input';
 
-export function 
-AvatarInput() {
+export function AvatarInput() {
    const [avatar, setAvatar] = useState<ImageInputFile[]>(() => {
     return [{ dataURL: toAbsoluteUrl(`/images/app/user-line.svg`) }]
   })

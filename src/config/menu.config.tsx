@@ -89,6 +89,8 @@ export const MENU_SIDEBAR: MenuConfig = [
       { title: 'Templating Coordinator', path: '/job/templating' },
       { title: 'Templating Technician', path: '/job/templating-technician' },
       { title: 'Predraft', path: '/job/predraft' },
+      { title: 'Draft', path: '/job/draft' },
+
 
     
     ]

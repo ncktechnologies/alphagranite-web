@@ -45,7 +45,8 @@ export const TimeTrackingComponent = ({
     }
   }, [currentTime, isDrafting, isPaused, startTime, onTimeUpdate]);
 
-  const formatTime = (date: Date) => {
+  const formatTime = (date?: Date | null) => {
+    if (!date) return '';
     return date.toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'short',
@@ -91,67 +92,72 @@ export const TimeTrackingComponent = ({
   };
 
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex items-center gap-6">
-          {/* Clock Icon */}
-          <div className="flex-shrink-0">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-              <Clock className="w-6 h-6 text-green-600" />
-            </div>
-          </div>
+    <div className='border-none'>
+      <div className="flex items-center gap-6 justify-between">
+        {/* Clock Icon */}
 
-          {/* Time Display */}
-          <div className="flex-1 space-y-2">
+
+        {/* Time Display */}
+        <div className="flex gap-10 space-y-2">
+ <div className="flex-shrink-0">
+              <div className="  flex items-center justify-center">
+                <img src="/images/app/clock.svg" alt="" />
+              </div>
+            </div>
+          <div className=''>
+           
+            <span className="text-sm font-medium text-gray-500">Start time & Date:</span>
+            <p className="text-sm text-gray-900">
+              {formatTime(startTime)}
+            </p>
+          </div>
+          {isPaused ? (
             <div>
-              <span className="text-sm font-medium text-gray-500">Start time & Date:</span>
-              <p className="text-sm text-gray-900">
-                {startTime ? formatTime(startTime) : '5th Oct, 2025 | 09:34 PM'}
-              </p>
+              <span className="text-sm font-medium text-gray-500">Paused time & Date:</span>
+              <p className="text-sm text-gray-900">{formatTime(pausedTime)}</p>
             </div>
-            {isPaused && pausedTime && (
-              <div>
-                <span className="text-sm font-medium text-gray-500">Paused time & Date:</span>
-                <p className="text-sm text-gray-900">{formatTime(pausedTime)}</p>
-              </div>
-            )}
-            {totalTime > 0 && (
-              <div>
-                <span className="text-sm font-medium text-gray-500">Total time:</span>
-                <p className="text-sm text-gray-900 font-mono">{formatDuration(totalTime)}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex gap-2">
-            {!isDrafting ? (
-              <Button onClick={handleStart} className="bg-green-600 hover:bg-green-700">
-                <Play className="w-4 h-4 mr-2" />
-                Start drafting
-              </Button>
-            ) : (
-              <>
-                {!isPaused ? (
-                  <Button onClick={handlePause} variant="outline">
-                    <Pause className="w-4 h-4 mr-2" />
-                    Pause
-                  </Button>
-                ) : (
-                  <Button onClick={handleResume} className="bg-green-600 hover:bg-green-700">
-                    <Play className="w-4 h-4 mr-2" />
-                    Resume
-                  </Button>
-                )}
-                <Button onClick={handleEnd} variant="destructive">
-                  <Square className="w-4 h-4 mr-2" />
-                  End
-                </Button>
-              </>
-            )}
-          </div>
+          ) :
+            <div>
+              <span className="text-sm font-medium text-gray-500">End time & Date:</span>
+              <p className="text-sm text-gray-900">00 00 | 00 00</p>
+            </div>
+          }
+          {totalTime > 0 && (
+            <div>
+              <span className="text-sm font-medium text-gray-500">Total time:</span>
+              <p className="text-sm text-gray-900 font-mono">{formatDuration(totalTime)}</p>
+            </div>
+          )}
         </div>
-      </CardContent>
-    </Card>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2">
+          {!isDrafting ? (
+            <Button onClick={handleStart} className="bg-green-600 hover:bg-green-700">
+              <Play className="w-4 h-4 mr-2" />
+              Start drafting
+            </Button>
+          ) : (
+            <>
+              {!isPaused ? (
+                <Button onClick={handlePause} variant="outline">
+                  <Pause className="w-4 h-4 mr-2" />
+                  Pause
+                </Button>
+              ) : (
+                <Button onClick={handleResume} className="bg-green-600 hover:bg-green-700">
+                  <Play className="w-4 h-4 mr-2" />
+                  Resume
+                </Button>
+              )}
+              <Button onClick={handleEnd} variant="destructive">
+                <Square className="w-4 h-4 mr-2" />
+                End
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };

@@ -108,6 +108,22 @@ export function AppRoutingSetup() {
               // </ProtectedRoute>
             }
           />
+          <Route
+            path="/job/draft"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <DrafterPage/>
+              // </ProtectedRoute>
+            }
+          />
+           <Route
+            path="/job/predraft/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <PreDraftDetailsPage/>
+              // </ProtectedRoute>
+            }
+          />
         </Route>
       </Route>
       <Route path="error/*" element={<ErrorRouting />} />

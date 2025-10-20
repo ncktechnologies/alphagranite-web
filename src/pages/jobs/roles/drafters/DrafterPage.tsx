@@ -9,23 +9,10 @@ import { FileUploadComponent } from './components/FileUploadComponent';
 import { FileViewer } from './components/FileViewer';
 import { SubmissionModal } from './components/SubmissionModal';
 import { jobDetails, schedulingNotes } from '../../components/job';
+import { ImageInput } from '@/components/image-input';
+import { UploadDocuments } from './components/fileUploads';
 
-interface SchedulingNote {
-  id: string;
-  author: string;
-  avatar: string;
-  content: string;
-  timestamp: string;
-}
 
-interface JobDetails {
-  fabId: string;
-  customer: string;
-  jobNumber: string;
-  area: string;
-  fabType: string;
-  slabSmithUsed: boolean;
-}
 
 const DrafterPage = () => {
   type ViewMode = 'activity' | 'file';
@@ -74,7 +61,7 @@ const DrafterPage = () => {
       {/* <Container> */}
         <div className="py-6">
           {/* Header */}
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">FAB ID: {jobDetails.fabId}</h1>
               <p className="text-sm text-gray-600 mt-1">Update drafting activity</p>
@@ -86,11 +73,20 @@ const DrafterPage = () => {
 
             {/* Right Column - Drafting Activity */}
             <div className="lg:col-span-2">
+               <Card className='my-4'>
+                        <CardHeader className='flex flex-col items-start py-4'>
+                            <CardTitle>Drafting activity</CardTitle>
+                            <p className="text-sm text-[#4B5563]">
+                                Update your templating activity here
+                            </p>
+                        </CardHeader>
+
+                    </Card>
               <Card>
-                <CardHeader>
+                {/* <CardHeader>
                   <CardTitle>Drafting activity</CardTitle>
                   <p className="text-sm text-gray-600">Update your templating activity here</p>
-                </CardHeader>
+                </CardHeader> */}
                 <CardContent className="space-y-6">
                   {viewMode === 'file' && activeFile ? (
                     <div className="space-y-4">
@@ -122,7 +118,7 @@ const DrafterPage = () => {
                       />
 
                       {/* File Upload Component */}
-                      <FileUploadComponent
+                      {/* <FileUploadComponent
                         uploadedFiles={uploadedFiles}
                         onFileUpload={handleFileUpload}
                         onRemoveFile={(index) => {
@@ -133,6 +129,10 @@ const DrafterPage = () => {
                         // When opening a file, switch view to file mode
                         // @ts-ignore - extend prop inline without changing child signature
                         onOpenFile={(file: any) => { setActiveFile(file); setViewMode('file'); }}
+                      /> */}
+                      <UploadDocuments
+                        onOpenFile={(file: any) => { setActiveFile(file); setViewMode('file'); }}
+                      
                       />
                     </>
                   )}
@@ -156,7 +156,7 @@ const DrafterPage = () => {
         </div>
 
         {/* Submission Modal */}
-        {/* {showSubmissionModal && (
+        {showSubmissionModal && (
           <SubmissionModal
             jobDetails={jobDetails}
             totalTime={totalTime}
@@ -164,7 +164,7 @@ const DrafterPage = () => {
             onClose={() => setShowSubmissionModal(false)}
             onSubmit={handleSubmitDraft}
           />
-        )} */}
+        )}
       {/* </Container> */}
     </div>
   );
