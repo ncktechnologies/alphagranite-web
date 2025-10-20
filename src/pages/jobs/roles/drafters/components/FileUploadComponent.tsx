@@ -200,7 +200,7 @@ export const FileUploadComponent = ({
 
       {/* File Viewer Modal */}
       {/* Fallback modal viewer when onOpenFile isn't provided */}
-      {selectedFile && !onOpenFile && jobDetails && schedulingNotes && (
+      {/* {selectedFile && !onOpenFile && jobDetails && schedulingNotes && (
         <FileViewer
           isOpen={!!selectedFile}
           onClose={() => setSelectedFile(null)}
@@ -208,7 +208,7 @@ export const FileUploadComponent = ({
           jobDetails={jobDetails}
           schedulingNotes={schedulingNotes}
         />
-      )}
+      )} */}
     </div>
   );
 };

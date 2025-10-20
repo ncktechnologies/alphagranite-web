@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { X, Download, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { FileViewerProps } from '@/pages/jobs/components/job';
+import { Card } from '@/components/ui/card';
 
 
 export const FileViewer = ({
@@ -12,8 +13,6 @@ export const FileViewer = ({
   isOpen = true,
   onClose,
   file,
-  jobDetails,
-  schedulingNotes
 }: FileViewerProps) => {
   const [zoom, setZoom] = useState(100);
   const [rotation, setRotation] = useState(0);
@@ -52,25 +51,15 @@ export const FileViewer = ({
     }
   };
 
-  const ShellStart = inline
-    ? ({ children }: { children: React.ReactNode }) => (
-        <div className="max-w-full max-h-[95vh] overflow-hidden p-0 bg-white rounded-lg border">
-          <div className="p-6 pb-0 border-b">
-            {children}
-          </div>
+  const ShellStart =
+    ({ children }: { children: React.ReactNode }) => (
+      <div className="">
+        <div className="p-6 pb-0 border-b">
+          {children}
         </div>
-      )
-    : ({ children }: { children: React.ReactNode }) => (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-          <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden p-0">
-            <DialogHeader className="p-6 pb-0">
-              {children}
-            </DialogHeader>
-  
-            {/* Header/children end marker will be balanced below */}
-          </DialogContent>
-        </Dialog>
-      );
+      </div>
+    )
+
 
   const ShellBodyStart = inline
     ? ({ children }: { children: React.ReactNode }) => <>{children}</>
@@ -84,23 +73,23 @@ export const FileViewer = ({
 
   return (
     <ShellStart>
-          <div className="flex items-center justify-between">
-            {/* <div>
+      <div className="flex items-center justify-between">
+        {/* <div>
               <div className="text-xl font-bold">FAB ID: {jobDetails.fabId}</div>
               <p className="text-sm text-gray-600 mt-1">Update drafting activity</p>
             </div> */}
-            {onClose && <CloseButton />}
-          </div>
-        <ShellBodyStart>
+        {/* {onClose && <CloseButton />} */}
+      </div>
+      <ShellBodyStart>
         <div className="flex h-[calc(95vh-120px)]">
           {/* Left Sidebar - Job Details & Notes */}
-        
+
 
           {/* Main Content - File Viewer */}
           <div className="flex-1 flex flex-col">
             {/* File Display Area */}
-            <div className="flex-1 bg-gray-50 flex items-center justify-center overflow-hidden relative">
-              <div 
+            <Card className="flex-1  flex items-center justify-center overflow-hidden relative max-w-[702px] mx-auto">
+              <div
                 className="max-w-full max-h-full transition-transform duration-200"
                 style={{
                   transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
@@ -142,13 +131,13 @@ export const FileViewer = ({
                           stroke="#000"
                           strokeWidth="2"
                         />
-                        
+
                         {/* Dimensions */}
                         <text x="50" y="120" fontSize="12" fill="#666">150 mm</text>
                         <text x="50" y="520" fontSize="12" fill="#666">452 mm</text>
                         <text x="450" y="520" fontSize="12" fill="#666">1.5m</text>
                         <text x="450" y="80" fontSize="12" fill="#666">1.4m</text>
-                        
+
                         {/* Inner details */}
                         <rect
                           x="200"
@@ -159,7 +148,7 @@ export const FileViewer = ({
                           stroke="#000"
                           strokeWidth="1"
                         />
-                        
+
                         {/* Cabinet outlines */}
                         <rect
                           x="220"
@@ -170,7 +159,7 @@ export const FileViewer = ({
                           stroke="#333"
                           strokeWidth="1"
                         />
-                        
+
                         <rect
                           x="320"
                           y="220"
@@ -180,7 +169,7 @@ export const FileViewer = ({
                           stroke="#333"
                           strokeWidth="1"
                         />
-                        
+
                         <rect
                           x="420"
                           y="220"
@@ -190,7 +179,7 @@ export const FileViewer = ({
                           stroke="#333"
                           strokeWidth="1"
                         />
-                        
+
                         {/* Counter lines */}
                         <line x1="200" y1="200" x2="600" y2="200" stroke="#666" strokeWidth="1" strokeDasharray="5,5" />
                         <line x1="200" y1="400" x2="600" y2="400" stroke="#666" strokeWidth="1" strokeDasharray="5,5" />
@@ -207,23 +196,33 @@ export const FileViewer = ({
                   </div>
                 )}
               </div>
-            </div>
+            </Card>
+            <p className="text-sm text-center mt-2 font-medium text-text-foreground">{file.name}</p>
 
             {/* Bottom Controls */}
-            <div className="border-t border-gray-200 p-4 bg-white">
-              <div className="flex items-center justify-between">
+            <div className="">
+              <div className="flex items-center justify-end">
                 {/* File Info */}
-                <div className="flex items-center gap-4">
+                {/* <div className="flex items-center gap-4">
                   <div>
                     <p className="text-sm font-medium text-gray-900">{file.name}</p>
                     <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
                   </div>
-                </div>
+                </div> */}
 
                 {/* Controls */}
+                <Button
+                  onClick={handleDownload}
+                  variant="outline"
+                  size="sm"
+                  className='text-[#7A9705] font-semibold'
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download
+                </Button>
                 <div className="flex items-center gap-2">
                   {/* Zoom Controls */}
-                  <div className="flex items-center gap-1 border border-gray-300 rounded">
+                  <div className="flex items-center gap-1 border rounded-[50px] ">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -246,38 +245,31 @@ export const FileViewer = ({
                   </div>
 
                   {/* Rotate Button */}
-                  <Button
+                  {/* <Button
                     variant="outline"
                     size="sm"
                     onClick={handleRotate}
                   >
                     <RotateCcw className="w-4 h-4" />
-                  </Button>
+                  </Button> */}
 
                   {/* Reset Button */}
-                  <Button
+                  {/* <Button
                     variant="outline"
                     size="sm"
                     onClick={handleResetZoom}
                   >
                     Reset
-                  </Button>
+                  </Button> */}
 
                   {/* Download Button */}
-                  <Button
-                    onClick={handleDownload}
-                    variant="outline"
-                    size="sm"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Download
-                  </Button>
+
                 </div>
               </div>
             </div>
           </div>
         </div>
-        </ShellBodyStart>
+      </ShellBodyStart>
     </ShellStart>
   );
 };

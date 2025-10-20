@@ -43,8 +43,7 @@ export interface FileViewerProps {
   isOpen?: boolean;
   onClose?: () => void;
   file: UploadedFile;
-  jobDetails: JobDetails;
-  schedulingNotes: SchedulingNote[];
+  
 }
 
 

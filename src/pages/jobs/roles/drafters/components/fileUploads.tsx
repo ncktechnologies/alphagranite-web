@@ -1,5 +1,3 @@
-'use client';
-
 import { useEffect, useState } from 'react';
 import {
   formatBytes,
@@ -25,12 +23,12 @@ import {
   Upload,
   VideoIcon,
   X,
+  Eye,
 } from 'lucide-react';
 import { toAbsoluteUrl } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router';
-import { P } from 'node_modules/framer-motion/dist/types.d-DsEeKk6G';
 
 interface FileUploadItem extends FileWithPreview {
   progress: number;
@@ -39,31 +37,21 @@ interface FileUploadItem extends FileWithPreview {
 }
 
 interface UploadBoxProps {
-  maxFiles?: number;
   maxSize?: number;
   accept?: string;
-  multiple?: boolean;
   className?: string;
   onFilesChange?: (files: FileWithPreview[]) => void;
+  onFileClick?: (file: FileMetadata) => void;
   simulateUpload?: boolean;
-}
-interface FileUploadComponentProps {
-  onOpenFile?: (file: any) => void;
 }
 
 export function UploadDocuments({
-  maxFiles = 10,
   maxSize = 50 * 1024 * 1024,
   accept = '*',
-  multiple = true,
   onFilesChange,
+  onFileClick,
   simulateUpload = true,
 }: UploadBoxProps) {
-  // Create default files using FileMetadata type
-
-  // Convert default files to FileUploadItem format
-
-
   const [uploadFiles, setUploadFiles] = useState<FileUploadItem[]>([]);
   const [uploadBoxes, setUploadBoxes] = useState([{ id: 1 }]);
 
@@ -80,11 +68,10 @@ export function UploadDocuments({
       getInputProps,
     },
   ] = useFileUpload({
-    maxFiles,
+    maxFiles: 1000,
     maxSize,
     accept,
-    multiple,
-    // initialFiles: defaultFiles,
+    multiple: true,
     onFilesChange: (newFiles) => {
       const newUploadFiles = newFiles.map((file) => {
         const existingFile = uploadFiles.find((existing) => existing.id === file.id);
@@ -150,15 +137,26 @@ export function UploadDocuments({
   };
 
   const addUploadBox = () => {
-    if (uploadFiles.length + uploadBoxes.length < maxFiles) {
-      const newId = uploadBoxes.length > 0 ? Math.max(...uploadBoxes.map(box => box.id)) + 1 : 1;
-      setUploadBoxes(prev => [...prev, { id: newId }]);
-    }
+    const newId = uploadBoxes.length > 0 ? Math.max(...uploadBoxes.map(box => box.id)) + 1 : 1;
+    setUploadBoxes(prev => [...prev, { id: newId }]);
   };
 
   const removeUploadBox = (id: number) => {
     if (uploadBoxes.length > 1) {
       setUploadBoxes(prev => prev.filter(box => box.id !== id));
+    }
+  };
+
+  const handleViewFile = (fileItem: FileUploadItem) => {
+    if (fileItem.status === 'completed' && fileItem.preview && onFileClick) {
+      const fileForViewer: FileMetadata = {
+        id: fileItem.id,
+        name: fileItem.file.name,
+        size: fileItem.file.size,
+        type: fileItem.file.type,
+        url: fileItem.preview,
+      };
+      onFileClick(fileForViewer);
     }
   };
 
@@ -254,13 +252,6 @@ export function UploadDocuments({
                 </div>
 
                 <div className="flex items-center gap-1">
-                  {/* {fileItem.preview && (
-                    <Button variant="ghost" size="icon" className="size-6" asChild>
-                      <Link to={fileItem.preview} target="_blank">
-                        <Download className="size-3" />
-                      </Link>
-                    </Button>
-                  )} */}
                   {fileItem.status === 'error' ? (
                     <Button
                       onClick={() => retryUpload(fileItem.id)}
@@ -283,17 +274,23 @@ export function UploadDocuments({
                 </div>
               </div>
 
-              {/* {fileItem.status === 'uploading' && (
-                <div className="w-full bg-muted rounded-full h-1.5">
-                  <div
-                    className="bg-primary h-1.5 rounded-full transition-all duration-300"
-                    style={{ width: `${fileItem.progress}%` }}
-                  />
+              {/* View File Button - Only show for completed files */}
+              {fileItem.status === 'completed' && (
+                <div className="mt-3">
+                  <Button
+                    onClick={() => handleViewFile(fileItem)}
+                    variant="outline"
+                    size="sm"
+                    className="w-full flex items-center gap-2"
+                  >
+                    <Eye className="size-3" />
+                    View File
+                  </Button>
                 </div>
-              )} */}
+              )}
 
               {fileItem.status === 'error' && (
-                <p className=" text-destructive mt-2">{fileItem.error}</p>
+                <p className="text-destructive mt-2">{fileItem.error}</p>
               )}
             </div>
           ))}
@@ -321,7 +318,6 @@ export function UploadDocuments({
                     isDragging ? 'border-primary bg-primary/10' : 'border-muted-foreground/25',
                   )}
                 >
-                  {/* <Upload className="h-5 w-5 text-muted-foreground" /> */}
                   <img src='/images/app/upload.svg' />
                 </div>
 
@@ -330,7 +326,6 @@ export function UploadDocuments({
                     Drop files here or click to{' '}
                     <button
                       type="button"
-                      // onClick={openFileDialog}
                       className="cursor-pointer text-primary underline-offset-4 hover:underline"
                     >
                       browse files
@@ -359,20 +354,16 @@ export function UploadDocuments({
             </div>
           ))}
 
-          {/* Add More Boxes Button */}
-          {uploadFiles.length + uploadBoxes.length < maxFiles && (
-            <Button
-              variant="outline"
-              className="h-auto min-h-[120px] w-[209px] border-dashed flex flex-col items-center gap-2"
-              onClick={addUploadBox}
-            >
-              <Plus className="size-6 text-muted-foreground" />
-              {/* <span className="text-sm font-medium">Add</span> */}
-            </Button>
-          )}
+          {/* Add More Boxes Button - Always show since there's no limit */}
+          <Button
+            variant="outline"
+            className="h-auto min-h-[120px] w-[209px] border-dashed flex flex-col items-center gap-2"
+            onClick={addUploadBox}
+          >
+            <Plus className="size-6 text-muted-foreground" />
+          </Button>
         </div>
 
-      
         {/* Error Messages */}
         {errors.length > 0 && (
           <Alert variant="destructive" appearance="light">

@@ -37,7 +37,7 @@ export const TimeTrackingComponent = ({
     return () => clearInterval(interval);
   }, []);
 
-  // Calculate elapsed time
+  // Calculate elapsed time when drafting and not paused
   useEffect(() => {
     if (isDrafting && !isPaused && startTime) {
       const elapsed = Math.floor((currentTime.getTime() - startTime.getTime()) / 1000);
@@ -46,7 +46,7 @@ export const TimeTrackingComponent = ({
   }, [currentTime, isDrafting, isPaused, startTime, onTimeUpdate]);
 
   const formatTime = (date?: Date | null) => {
-    if (!date) return '';
+    if (!date) return '--';
     return date.toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'short',
@@ -66,7 +66,9 @@ export const TimeTrackingComponent = ({
   };
 
   const handleStart = () => {
-    setStartTime(new Date());
+    const now = new Date();
+    setStartTime(now);
+    setPausedTime(null);
     onStart();
   };
 
@@ -76,53 +78,44 @@ export const TimeTrackingComponent = ({
   };
 
   const handleResume = () => {
-    if (startTime && pausedTime) {
-      // Adjust start time to account for paused duration
-      const pausedDuration = pausedTime.getTime() - startTime.getTime() - (totalTime * 1000);
-      setStartTime(new Date(Date.now() - totalTime * 1000 - pausedDuration));
-    }
     setPausedTime(null);
     onResume();
   };
 
   const handleEnd = () => {
-    setStartTime(null);
-    setPausedTime(null);
-    onEnd();
+    onEnd(); // This will trigger handleEndDrafting in DrafterPage
   };
 
   return (
     <div className='border-none'>
       <div className="flex items-center gap-6 justify-between">
         {/* Clock Icon */}
-
+        <div className="flex-shrink-0">
+          <div className="flex items-center justify-center">
+            <img src="/images/app/clock.svg" alt="" />
+          </div>
+        </div>
 
         {/* Time Display */}
-        <div className="flex gap-10 space-y-2">
- <div className="flex-shrink-0">
-              <div className="  flex items-center justify-center">
-                <img src="/images/app/clock.svg" alt="" />
-              </div>
-            </div>
+        <div className="flex gap-10 space-y-2 flex-1">
+          {/* Start Time - Always show when started */}
           <div className=''>
-           
             <span className="text-sm font-medium text-gray-500">Start time & Date:</span>
             <p className="text-sm text-gray-900">
-              {formatTime(startTime)}
+              {startTime ? formatTime(startTime) : '--'}
             </p>
           </div>
-          {isPaused ? (
+
+          {/* Paused Time - Only show when paused */}
+          {isPaused && pausedTime && (
             <div>
               <span className="text-sm font-medium text-gray-500">Paused time & Date:</span>
               <p className="text-sm text-gray-900">{formatTime(pausedTime)}</p>
             </div>
-          ) :
-            <div>
-              <span className="text-sm font-medium text-gray-500">End time & Date:</span>
-              <p className="text-sm text-gray-900">00 00 | 00 00</p>
-            </div>
-          }
-          {totalTime > 0 && (
+          )}
+
+          {/* Total Time - Only show when not drafting (ended) */}
+          {!isDrafting && totalTime > 0 && (
             <div>
               <span className="text-sm font-medium text-gray-500">Total time:</span>
               <p className="text-sm text-gray-900 font-mono">{formatDuration(totalTime)}</p>
@@ -140,12 +133,12 @@ export const TimeTrackingComponent = ({
           ) : (
             <>
               {!isPaused ? (
-                <Button onClick={handlePause} variant="outline">
+                <Button onClick={handlePause} variant="inverse" className='bg-red-900'>
                   <Pause className="w-4 h-4 mr-2" />
                   Pause
                 </Button>
               ) : (
-                <Button onClick={handleResume} className="bg-green-600 hover:bg-green-700">
+                <Button onClick={handleResume} variant="ghost">
                   <Play className="w-4 h-4 mr-2" />
                   Resume
                 </Button>
