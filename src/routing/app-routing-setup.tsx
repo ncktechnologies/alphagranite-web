@@ -10,6 +10,8 @@ import { EmployeePage } from '@/pages/employers';
 import { JobPage } from '@/pages/job-flow/job-page';
 import { NewFabIdForm } from '@/pages/jobs';
 import { DrafterPage } from '@/pages/jobs/roles/drafters';
+import { PreDraftDetailsPage } from '@/pages/jobs/roles/predraft/components/details';
+import { PredraftPage } from '@/pages/jobs/roles/predraft/PredraftPage';
 import { SalesPage } from '@/pages/jobs/roles/sales/SalesPage';
 import { TechnicianDetailsPage } from '@/pages/jobs/roles/technician-templater/components/details';
 import { TechnicianPage } from '@/pages/jobs/roles/technician-templater/TechnicianPage';
@@ -87,6 +89,22 @@ export function AppRoutingSetup() {
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <NewFabIdForm/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job/predraft"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <PredraftPage/>
+              // </ProtectedRoute>
+            }
+          />
+           <Route
+            path="/job/predraft/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <PreDraftDetailsPage/>
               // </ProtectedRoute>
             }
           />

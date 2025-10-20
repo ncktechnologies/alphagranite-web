@@ -11,16 +11,19 @@ import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { toast } from "sonner";
 
 const formSchema = z.object({
   status: z.enum(["completed", "not_completed"]),
   start_date: z.string().min(1, "Start date is required"),
   duration: z.string().min(1, "Duration is required"),
   notes: z.string().optional(),
+  square_ft: z.string().optional(),
 });
 
 export function TemplatingActivityForm() {
   const [openModal, setOpenModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -29,12 +32,16 @@ export function TemplatingActivityForm() {
       start_date: "",
       duration: "",
       notes: "",
+      square_ft: ''
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log("Form Submitted:", values);
-    // setOpenModal(true);
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsSubmitting(true);
+    await new Promise((r) => setTimeout(r, 1200));
+
+    toast.success("Checklist review completed successfully!");
+    setIsSubmitting(false);
   }
 
   return (
@@ -45,7 +52,7 @@ export function TemplatingActivityForm() {
           className=" space-y-6"
         >
           {/* Status */}
-           <FormField
+          <FormField
             control={form.control}
             name="status"
             render={({ field }) => (
@@ -127,8 +134,17 @@ export function TemplatingActivityForm() {
           </div>
 
           <div>
-            <FormLabel>Square Ft</FormLabel>
-            <Input value="146" disabled />
+
+            <FormField
+              control={form.control}
+              name="square_ft"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Square Ft</FormLabel>
+                  <Input placeholder="146" disabled {...field} />
+                </FormItem>
+              )}
+            />
           </div>
 
           <FormField

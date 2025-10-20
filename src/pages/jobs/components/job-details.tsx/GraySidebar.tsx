@@ -29,7 +29,7 @@ export default function GraySidebar({ sections, className = '' }: GraySidebarPro
             {sections.map((section, sectionIndex) => (
                 <section key={sectionIndex} className={`mb-8 ${section.className || ''}`}>
                     {/* Section Title */}
-                    <h3 className="font-semibold text-[#111827] mb-3">{section.title}</h3>
+                    <h3 className="font-semibold text-text mb-3">{section.title}</h3>
 
                     {/* Details Section */}
                     {section.type === 'details' && section.items && (
@@ -54,8 +54,8 @@ export default function GraySidebar({ sections, className = '' }: GraySidebarPro
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1">
-                                        <p className="text-sm text-gray-900 mb-1">{note.content}</p>
-                                        <p className="text-xs text-gray-500">
+                                        <p className="text-sm text-black mb-1 bg-[#F7F7F7] p-3 rounded-lg">{note.content}</p>
+                                        <p className="text-sm text-text-secondary">
                                             {note.author} • {note.timestamp}
                                         </p>
                                     </div>

@@ -35,22 +35,8 @@ import { useNavigate } from 'react-router';
 
 interface JobTableProps {
     jobs: IJob[];
-    path:string
+    path: string;
 }
-
-// const StatusBadge = ({ status }: { status: IJob['status'] }) => {
-//   const colors: Record<IJob['status'], string> = {
-//     Open: 'bg-green-100 text-green-700',
-//     Closed: 'bg-gray-100 text-gray-600',
-//     Paused: 'bg-yellow-100 text-yellow-700',
-//   };
-
-//   return (
-//     <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${colors[status]}`}>
-//       {status}
-//     </span>
-//   );
-// };
 
 export const JobTable = ({ jobs, path }: JobTableProps) => {
     const [pagination, setPagination] = useState<PaginationState>({
@@ -64,119 +50,153 @@ export const JobTable = ({ jobs, path }: JobTableProps) => {
         if (!searchQuery) return jobs;
         return jobs.filter(
             (job) =>
-                job.job_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                job.fab_type.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                job.job_no.toLowerCase().includes(searchQuery.toLowerCase())
+                job.job_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                job.fab_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                job.job_no?.toLowerCase().includes(searchQuery.toLowerCase())
         );
     }, [searchQuery, jobs]);
+
     const navigate = useNavigate();
 
-    const handleView = (department: string) => {
-        navigate(`/job/${department}/id`);
+    const handleView = (department: string, id: string) => {
+        navigate(`/job/${department}/${id}`);
     };
 
-    const columns = useMemo<ColumnDef<IJob>[]>(
-        () => [
-            {
-                accessorKey: 'id',
-                accessorFn: (row) => row.id,
-                header: () => <DataGridTableRowSelectAll />,
-                cell: ({ row }) => <DataGridTableRowSelect row={row} />,
-                enableSorting: false,
-                enableHiding: false,
-                enableResizing: false,
-                size: 48,
-                meta: {
-                    cellClassName: '',
-                },
-            },
-            {
 
-                id: "fab_type",
-                accessorFn: (row) => row.fab_type,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="FAB TYPE" column={column} />
-                ),
-                cell: ({ row }) => <span className="text-sm">{row.original.fab_type}</span>,
+    // Function to check if a column has any data
+    const columnHasData = (accessorKey: string) => {
+        return filteredData.some(job => {
+            const value = job[accessorKey as keyof IJob];
+            return value !== null && value !== undefined && value !== '';
+        });
+    };
+
+    const baseColumns = useMemo<ColumnDef<IJob>[]>(() => [
+        {
+            accessorKey: 'id',
+            accessorFn: (row: IJob) => row.id,
+            header: () => <DataGridTableRowSelectAll />,
+            cell: ({ row }) => <DataGridTableRowSelect row={row} />,
+            enableSorting: false,
+            enableHiding: false,
+            enableResizing: false,
+            size: 48,
+            meta: {
+                cellClassName: '',
             },
-            {
-                id: "fab_id",
-                accessorFn: (row) => row.fab_id,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="FAB ID" column={column} />
-                ),
-                cell: ({ row }) => <span className="text-sm">{row.original.fab_id}</span>,
-            },
-            {
-                id: "job_name",
-                accessorFn: (row) => row.job_name,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="JOB NAME" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm truncate block max-w-[200px]">
-                        {row.original.job_name}
-                    </span>
-                ),
-            },
-            {
-                id: "job_no",
-                accessorFn: (row) => row.job_no,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="JOB NO" column={column} />
-                ),
-                cell: ({ row }) => <span className="text-sm">{row.original.job_no}</span>,
-            },
-            {
-                id: "acct_name",
-                accessorFn: (row) => row.acct_name,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="ACCT NAME" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm truncate block max-w-[160px]">
-                        {row.original.acct_name}
-                    </span>
-                ),
-            },
-            {
-                id: "template_schedule",
-                accessorFn: (row) => row.template_schedule,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="TEMPLATE SCHEDULE" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm">{row.original.template_schedule}</span>
-                ),
-            },
-            {
-                id: "template_received",
-                accessorFn: (row) => row.template_received,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="TEMPLATE RECEIVED" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm">{row.original.template_received}</span>
-                ),
-            },
-            {
-                id: "templater",
-                accessorFn: (row) => row.templater,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="TEMPLATER" column={column} />
-                ),
-                cell: ({ row }) => <span className="text-sm">{row.original.templater}</span>,
-            },
-            {
-                id: 'actions',
-                header: '',
-                cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(path)}/>,
-                enableSorting: false,
-                size: 60,
-            },
-        ],
-        []
-    );
+        },
+        {
+            id: "fab_type",
+            accessorKey: "fab_type",
+            accessorFn: (row: IJob) => row.fab_type,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="FAB TYPE" column={column} />
+            ),
+            cell: ({ row }) => <span className="text-sm">{row.original.fab_type}</span>,
+        },
+        {
+            id: "fab_id",
+            accessorKey: "fab_id",
+            accessorFn: (row: IJob) => row.fab_id,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="FAB ID" column={column} />
+            ),
+            cell: ({ row }) => <span className="text-sm">{row.original.fab_id}</span>,
+        },
+        {
+            id: "job_name",
+            accessorKey: "job_name",
+            accessorFn: (row: IJob) => row.job_name,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="JOB NAME" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm truncate block max-w-[200px]">
+                    {row.original.job_name}
+                </span>
+            ),
+        },
+        {
+            id: "job_no",
+            accessorKey: "job_no",
+            accessorFn: (row: IJob) => row.job_no,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="JOB NO" column={column} />
+            ),
+            cell: ({ row }) => <span className="text-sm">{row.original.job_no}</span>,
+        },
+        {
+            id: "acct_name",
+            accessorKey: "acct_name",
+            accessorFn: (row: IJob) => row.acct_name,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="ACCT NAME" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm truncate block max-w-[160px]">
+                    {row.original.acct_name}
+                </span>
+            ),
+        },
+        {
+            id: "template_schedule",
+            accessorKey: "template_schedule",
+            accessorFn: (row: IJob) => row.template_schedule,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="TEMPLATE SCHEDULE" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm">{row.original.template_schedule}</span>
+            ),
+        },
+        {
+            id: "template_received",
+            accessorKey: "template_received",
+            accessorFn: (row: IJob) => row.template_received,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="TEMPLATE RECEIVED" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm">{row.original.template_received}</span>
+            ),
+        },
+        {
+            id: "templater",
+            accessorKey: "templater",
+            accessorFn: (row: IJob) => row.templater,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="TEMPLATER" column={column} />
+            ),
+            cell: ({ row }) => <span className="text-sm">{row.original.templater}</span>,
+        },
+        {
+            id: 'actions',
+            header: '',
+            cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(path, row.original.fab_id)} />,
+            enableSorting: false,
+            size: 60,
+        },
+    ], [path]);
+
+    // Filter columns based on data availability
+    const columns = useMemo<ColumnDef<IJob>[]>(() => {
+        return baseColumns.filter(column => {
+            // Always show these columns regardless of data
+            if (column.id === 'id' || column.id === 'actions') {
+                return true;
+            }
+
+            // For other columns, check if they have data
+            // accessorKey may not exist on all ColumnDef variants, so read it via a safe cast
+            const accessor = (column as any).accessorKey as string | undefined;
+            if (accessor) {
+                return columnHasData(accessor);
+            }
+
+            // Default to showing if we can't determine
+            return true;
+        });
+    }, [baseColumns, filteredData]);
 
     const table = useReactTable({
         columns,
@@ -258,7 +278,6 @@ export const JobTable = ({ jobs, path }: JobTableProps) => {
                     <ScrollArea>
                         <DataGridTable />
                         <ScrollBar orientation="horizontal" />
-
                     </ScrollArea>
                 </CardTable>
 
