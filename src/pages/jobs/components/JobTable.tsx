@@ -139,6 +139,71 @@ export const JobTable = ({ jobs, path }: JobTableProps) => {
             ),
         },
         {
+            id: "no_of_pieces",
+            accessorKey: "no_of_pieces",
+            accessorFn: (row: IJob) => row.no_of_pieces,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="No. of pieces" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm truncate block max-w-[160px]">
+                    {row.original.no_of_pieces}
+                </span>
+            ),
+        },
+        {
+            id: "total_sq_ft",
+            accessorKey: "total_sq_ft",
+            accessorFn: (row: IJob) => row.total_sq_ft,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="Total Sq ft " column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm truncate block max-w-[160px]">
+                    {row.original.total_sq_ft}
+                </span>
+            ),
+        },
+        {
+            id: "revenue",
+            accessorKey: "revenue",
+            accessorFn: (row: IJob) => row.revenue,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="Revenue" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm truncate block max-w-[160px]">
+                    {row.original.revenue}
+                </span>
+            ),
+        },
+        {
+            id: "revised",
+            accessorKey: "revised",
+            accessorFn: (row: IJob) => row.revised,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="Revised" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm truncate block max-w-[160px]">
+                    {row.original.revised}
+                </span>
+            ),
+        },
+        {
+            id: "sct_completed",
+            accessorKey: "sct_completed",
+            accessorFn: (row: IJob) => row.sct_completed,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="Sct Completed" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm truncate block max-w-[160px]">
+                    {row.original.sct_completed}
+                </span>
+            ),
+        },
+        {
             id: "template_schedule",
             accessorKey: "template_schedule",
             accessorFn: (row: IJob) => row.template_schedule,

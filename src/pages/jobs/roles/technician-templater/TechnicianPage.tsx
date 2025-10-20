@@ -1,7 +1,5 @@
 import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
-import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
 import { useLocation, Link } from 'react-router';
 import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';

@@ -1,1 +1,3 @@
-export { DrafterPage } from './DrafterDetailsPage';
+export { DrafterDetailsPage } from './DrafterDetailsPage';
+export *  from './DrafterPage';
+

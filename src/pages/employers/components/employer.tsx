@@ -31,6 +31,8 @@ import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { exportTableToCSV } from '@/lib/exportToCsv';
+import { Link } from 'react-router';
+import { toAbsoluteUrl } from '@/lib/helpers';
 
 export interface IEmployee {
     id: number;
@@ -164,8 +166,8 @@ const employees: IEmployee[] = [
         role: 'Production',
         status: 'Deactivated',
     },
-   
-  
+
+
 ];
 
 const StatusBadge = ({ status }: { status: IEmployee['status'] }) => {
@@ -217,26 +219,61 @@ const Employees = () => {
                     cellClassName: '',
                 },
             },
+            // {
+            //     id: 'name',
+            //     accessorFn: (row) => row.name,
+            //     header: ({ column }) => (
+            //         <DataGridColumnHeader title="EMPLOYEE NAME" column={column} />
+            //     ),
+            //     cell: ({ row }) => (
+            //         <div className="flex items-center truncate max-w-[200px]">
+            //             <Avatar className="w-8 h-8 mr-3">
+            //                 <AvatarFallback className="bg-gray-200 text-gray-600">
+            //                     {row.original.name.split(' ').map(n => n[0]).join('')}
+            //                 </AvatarFallback>
+            //             </Avatar>
+            //             <span className="text-sm  text-text">{row.original.name}</span>
+            //         </div>
+            //     ),
+            //     enableSorting: true,
+            //     size: 200,
+            //     meta: {
+            //         skeleton: <Skeleton className="h-5 w-[160px]" />,
+            //     },
+            // },
             {
-                id: 'name',
+                id: 'users',
                 accessorFn: (row) => row.name,
                 header: ({ column }) => (
-                    <DataGridColumnHeader title="EMPLOYEE NAME" column={column} />
+                    <DataGridColumnHeader title="Member" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <div className="flex items-center truncate max-w-[200px]">
+                    <div className="flex items-center gap-4">
                         <Avatar className="w-8 h-8 mr-3">
                             <AvatarFallback className="bg-gray-200 text-gray-600">
                                 {row.original.name.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
                         </Avatar>
-                        <span className="text-sm  text-text">{row.original.name}</span>
+                        <div className="flex flex-col gap-0.5">
+                            <Link
+                                to="#"
+                                className="text-sm font-medium text-mono hover:text-primary-active mb-px"
+                            >
+                                {row.original.name}
+                            </Link>
+                            <Link
+                                to="#"
+                                className="text-sm text-secondary-foreground font-normal hover:text-primary-active"
+                            >
+                                {row.original.email}
+                            </Link>
+                        </div>
                     </div>
                 ),
                 enableSorting: true,
-                size: 200,
+                size: 300,
                 meta: {
-                    skeleton: <Skeleton className="h-5 w-[160px]" />,
+                    headerClassName: '',
                 },
             },
             {

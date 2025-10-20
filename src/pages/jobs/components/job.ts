@@ -9,6 +9,11 @@ export interface IJob {
   template_schedule?: string;
   template_received?: string;
   templater?: string;
+  no_of_pieces?: string;
+  total_sq_ft? :string;
+  revenue?: string;
+  revised?:string;
+  sct_completed?:string
   date: string; // e.g. "08 October, 2025"
 }
 

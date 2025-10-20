@@ -188,11 +188,10 @@ export function UploadDocuments({
 
   return (
     <Card className='border-none'>
-      <CardHeader className="gap-2">
-      </CardHeader>
-      <CardContent className="space-y-5">
+      
+      <CardContent className="">
         {/* Upload Boxes Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Uploaded Files */}
           {uploadFiles.map((fileItem) => (
             <div
@@ -276,14 +275,14 @@ export function UploadDocuments({
 
               {/* View File Button - Only show for completed files */}
               {fileItem.status === 'completed' && (
-                <div className="mt-3">
+                <div className="">
                   <Button
                     onClick={() => handleViewFile(fileItem)}
-                    variant="outline"
+                    variant="inverse"
                     size="sm"
-                    className="w-full flex items-center gap-2"
+                    className="text-sm font-semibold text-center text-primary underline  absolute bottom-3 right-3 "
                   >
-                    <Eye className="size-3" />
+                    
                     View File
                   </Button>
                 </div>
@@ -300,7 +299,7 @@ export function UploadDocuments({
             <div
               key={box.id}
               className={cn(
-                'relative rounded-lg border border-dashed px-3 py-6 w-fit text-center transition-colors cursor-pointer group',
+                'relative rounded-lg border border-dashed px-3 py-5 min-w-fit text-center transition-colors cursor-pointer group',
                 isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-muted-foreground/50',
               )}
               onDragEnter={handleDragEnter}
@@ -322,7 +321,7 @@ export function UploadDocuments({
                 </div>
 
                 <div className="space-y-1">
-                  <p className="text-sm font-medium">
+                  <p className="text-sm text-text font-semibold ">
                     Drop files here or click to{' '}
                     <button
                       type="button"
@@ -331,7 +330,7 @@ export function UploadDocuments({
                       browse files
                     </button>
                   </p>
-                  <p className="text-xs text-primary underline">
+                  <p className="text-sm font-semibold text-center text-primary underline pt-3">
                     upload file
                   </p>
                 </div>

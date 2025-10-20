@@ -14,8 +14,9 @@ import { UploadDocuments } from './components/fileUploads';
 import { X } from 'lucide-react';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
+import { Separator } from '@/components/ui/separator';
 
-const DrafterPage = () => {
+const DrafterDetailsPage = () => {
   type ViewMode = 'activity' | 'file';
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const [isDrafting, setIsDrafting] = useState(false);
@@ -25,8 +26,8 @@ const DrafterPage = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('activity');
   const [activeFile, setActiveFile] = useState<any | null>(null);
 
-  
-   const handleFilesChange = (files: any[]) => {
+
+  const handleFilesChange = (files: any[]) => {
     setUploadedFiles(files);
   };
 
@@ -38,7 +39,6 @@ const DrafterPage = () => {
   const handleStartDrafting = () => {
     setIsDrafting(true);
     setIsPaused(false);
-    setEndTime(null);
   };
 
   const handlePauseDrafting = () => {
@@ -50,32 +50,20 @@ const DrafterPage = () => {
   };
 
   const handleEndDrafting = () => {
-    setEndTime(new Date());
-    setShowSubmissionModal(true);
+    setIsDrafting(false);
+    setIsPaused(false);
+    // setShowSubmissionModal(true);
   };
 
   const handleSubmitDraft = (submissionData: any) => {
     console.log('Draft submitted:', submissionData);
     setShowSubmissionModal(false);
-    setIsDrafting(false);
-    setIsPaused(false);
     setTotalTime(0);
-    setEndTime(null);
     setUploadedFiles([]);
   };
 
-  const formatTime = (date?: Date | null) => {
-    if (!date) return '--';
-    return date.toLocaleDateString('en-GB', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
-    }) + ' | ' + date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
-  };
+
+
 
   const sidebarSections = [
     {
@@ -114,17 +102,17 @@ const DrafterPage = () => {
   ];
   return (
     <>
-      <Container>
+      <Container className='lg:mx-0'>
         <Toolbar className=' '>
           <ToolbarHeading title="FAB ID: 4456" description="Update templating activity" />
         </Toolbar>
       </Container>
-      <div className=" border-t grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
+      <div className=" border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0  items-start">
         <div className="lg:col-span-3" >
           <GraySidebar sections={sidebarSections} />
 
         </div>
-        <Container className="lg:col-span-9">
+        <Container className="lg:col-span-9 px-0 mx-0">
           {viewMode === 'file' && activeFile ? (
             <div className="">
               <div className="flex justify-end">
@@ -174,8 +162,7 @@ const DrafterPage = () => {
                     onEnd={handleEndDrafting}
                     onTimeUpdate={setTotalTime}
                   />
-
-
+                  <Separator className='my-3' />
                   {/* Upload Documents with file viewing support */}
                   <UploadDocuments
                     onFileClick={handleFileClick}
@@ -190,7 +177,7 @@ const DrafterPage = () => {
                       <Button
                         onClick={handleEndDrafting}
                         className="bg-green-600 hover:bg-green-700"
-                        disabled={!isDrafting && totalTime === 0}
+                        disabled={isDrafting || totalTime === 0}
                       >
                         Submit draft
                       </Button>
@@ -217,4 +204,4 @@ const DrafterPage = () => {
   );
 };
 
-export { DrafterPage };
+export { DrafterDetailsPage };

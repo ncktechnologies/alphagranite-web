@@ -25,7 +25,7 @@ export function TechnicianDetailsPage() {
 
     return (
         <>
-        <Container>
+        <Container className='lg:mx-0'>
             <Toolbar className=' '>
                     <ToolbarHeading title="FAB ID: 4456" description="Update templating activity" />
                     
@@ -44,7 +44,7 @@ export function TechnicianDetailsPage() {
                 </div>
             </div>
 
-            <Container className='lg:col-span-9 '>
+            <Container className='lg:col-span-9 mx-0'>
                 {/* Header / Breadcrumb */}
                 {/* <div className="flex items-center justify-between mb-6">
                 <div>

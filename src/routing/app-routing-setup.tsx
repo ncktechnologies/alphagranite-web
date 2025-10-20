@@ -9,7 +9,8 @@ import { DepartmentDetailsPage } from '@/pages/departments/department-table/Tabl
 import { EmployeePage } from '@/pages/employers';
 import { JobPage } from '@/pages/job-flow/job-page';
 import { NewFabIdForm } from '@/pages/jobs';
-import { DrafterPage } from '@/pages/jobs/roles/drafters';
+import { DrafterDetailsPage } from '@/pages/jobs/roles/drafters';
+import DrafterPage from '@/pages/jobs/roles/drafters/DrafterPage';
 import { PreDraftDetailsPage } from '@/pages/jobs/roles/predraft/components/details';
 import { PredraftPage } from '@/pages/jobs/roles/predraft/PredraftPage';
 import { SalesPage } from '@/pages/jobs/roles/sales/SalesPage';
@@ -117,10 +118,10 @@ export function AppRoutingSetup() {
             }
           />
            <Route
-            path="/job/predraft/:id"
+            path="/job/draft/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <PreDraftDetailsPage/>
+                <DrafterDetailsPage/>
               // </ProtectedRoute>
             }
           />
