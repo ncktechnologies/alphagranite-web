@@ -18,6 +18,7 @@
     content: "*";
     color: red;
   }
+  
 }
 
 /* Metronic Components  */
@@ -34,3 +35,4 @@
 /** Dark/Light Theme Variant **/
 @custom-variant dark (&:is(.dark *));
 @custom-variant light (&:not(.dark *));
+

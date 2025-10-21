@@ -366,7 +366,7 @@ const Teams = () => {
             <Button
               variant="inverse"
               size="lg"
-              className="text-primary font-medium underline"
+              className="text-primary font-semibold text-[16px] font-[24px]  underline"
             >
               See all
             </Button>

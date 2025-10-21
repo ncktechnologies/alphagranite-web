@@ -42,13 +42,13 @@ const CommunityBadges = ({ cardTitle }: IFABProps) => {
   ];
 
   return (
-    <Card>
+    <Card className='h-full'>
       <CardHeader className="flex flex-row items-center justify-between ">
-        <CardTitle className="">{cardTitle}</CardTitle>
+        <CardTitle className="text-[20px] leading-[24px]">{cardTitle}</CardTitle>
         <Button
           variant="inverse"
           size="lg"
-          className="text-primary font-medium underline"
+          className="text-primary font-semibold text-[16px] font-[24px] underline"
         >
           See all
         </Button>

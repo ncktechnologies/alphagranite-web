@@ -27,31 +27,31 @@ export function Demo1LightSidebarContent() {
         <div className="lg:col-span-1">
           <CommunityBadges cardTitle='Newly assigned FAB ID' />
         </div>
-         <div className="lg:col-span-1">
+        <div className="lg:col-span-1">
           <Contributions title='Overall Statistics' />
-          
+
         </div>
         <div className='lg:col-span-1'>
-           <Card className="p-2">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="">Finance</CardTitle>
-       
-      </CardHeader>
-      <CardContent className="flex justify-center items-center relative py-2 ">
-       <div className='h-60'></div>
+          <Card className="p-2 h-full">
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="text-[20px] leading-[24px]">Finance</CardTitle>
 
-      
-      </CardContent>
-    </Card>
+            </CardHeader>
+            <CardContent className="flex justify-center items-center relative py-2 ">
+              <div className='h-60'></div>
+
+
+            </CardContent>
+          </Card>
         </div>
       </div>
       <div className="grid lg:grid-cols-3 gap-5 lg:gap-7.5 items-stretch">
         <div className="lg:col-span-2">
           <EarningsChart />
         </div>
-         <div className="lg:col-span-1">
+        <div className="lg:col-span-1">
           <CommunityBadges cardTitle='Paused jobs' />
-          
+
         </div>
       </div>
       <div className="grid lg:grid-cols-3 gap-5 lg:gap-7.5 items-stretch">

@@ -16,7 +16,7 @@ const ShopPage = () => {
                     <ToolbarActions>
                             <Button  className="">
                                 <Settings />
-                                Shop Seetings
+                                Shop Settings
                             </Button>
                     </ToolbarActions>
                 </Toolbar>

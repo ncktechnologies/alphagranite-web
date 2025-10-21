@@ -12,30 +12,26 @@ interface IContributionsProps {
 const Contributions = ({ title }: IContributionsProps) => {
   const data: number[] = [55, 30, 15];
   const labels: string[] = ['Completed', 'In Progress', 'Paused'];
-  const colors: string[] = ['#9CC15E', '#51BCF4', '#EA3DB1']; // matches Figma's green, blue, pink
+  const colors: string[] = ['#9CC15E', '#51BCF4', '#EA3DB1'];
 
-  // Calculate positions for percentage labels at the middle of each segment
-  const getLabelPosition = (index: number, radius: number = 85) => {
+  // Updated for larger chart - increased radius and center
+  const getLabelPosition = (index: number, radius: number = 120) => {
     const total = data.reduce((sum, value) => sum + value, 0);
-    let cumulativeAngle = -90; // Start from top (-90 degrees)
+    let cumulativeAngle = -90;
     
-    // Calculate cumulative angles for each segment
     for (let i = 0; i < index; i++) {
       cumulativeAngle += (data[i] / total) * 360;
     }
     
-    // Add half of current segment angle to position label at segment middle
     const currentSegmentAngle = (data[index] / total) * 360;
     const labelAngle = cumulativeAngle + (currentSegmentAngle / 2);
     
-    // Convert angle to radians
     const angleInRadians = (labelAngle * Math.PI) / 180;
     
-    // Calculate x, y coordinates at middle of donut
     const x = Math.cos(angleInRadians) * radius;
     const y = Math.sin(angleInRadians) * radius;
     
-    return { x: x + 100, y: y + 100 }; // Add 100 to center in 200x200 chart
+    return { x: x + 150, y: y + 150 }; // Updated center to 150 for 300x300 chart
   };
 
   const options: ApexOptions = {
@@ -46,7 +42,7 @@ const Contributions = ({ title }: IContributionsProps) => {
       type: 'donut',
       toolbar: { show: false },
     },
-     stroke: {
+    stroke: {
       show: false,
       width: 0,
     },
@@ -71,16 +67,15 @@ const Contributions = ({ title }: IContributionsProps) => {
         },
       },
     },
-    
     legend: {
       show: false,
     },
   };
 
   return (
-    <Card className="p-2">
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle className="">{title}</CardTitle>
+    <Card className="p-2 h-full flex flex-col">
+      <CardHeader className="flex flex-row items-center justify-between flex-shrink-0">
+        <CardTitle className="text-[20px] leading-[24px]">{title}</CardTitle>
         {/* <DropdownMenu7
           trigger={
             <Button variant="ghost" mode="icon" className="h-8 w-8 p-0">
@@ -89,76 +84,81 @@ const Contributions = ({ title }: IContributionsProps) => {
           }
         /> */}
       </CardHeader>
-      <CardContent className="flex flex-col items-center py-2">
-        <div className="relative">
-        <ApexChart
-          id="contributions_chart"
-          options={options}
-          series={options.series}
-          type="donut"
-            width="200"
-            height="200"
-          />
-          
-          {/* Custom center circle with shadow */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="bg-white rounded-full shadow-lg flex items-center justify-center" 
-                 style={{width: '80px', height: '80px'}}>
-              <span className="text-lg font-bold text-gray-800">100%</span>
+      <CardContent className="flex flex-col flex-1 py-2">
+        {/* Chart container - will grow to fill available space */}
+        <div className="flex-1 flex items-center justify-center min-h-0"> {/* Added min-h-0 for better flex behavior */}
+          <div className="relative">
+            <ApexChart
+              id="contributions_chart"
+              options={options}
+              series={options.series}
+              type="donut"
+              width="300"  
+              height="300" 
+            />
+            
+            {/* Custom center circle with shadow - increased size */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-white rounded-full shadow-lg flex items-center justify-center" 
+                   style={{width: '110px', height: '110px'}}> {/* Increased from 80px to 110px */}
+                <span className="text-xl font-bold text-gray-800">100%</span> {/* Increased font size */}
+              </div>
             </div>
-          </div>
 
-          {/* Custom percentage labels positioned at segment centers */}
-          <div 
-            className="absolute transform -translate-x-1/2 -translate-y-1/2"
-            style={{
-              left: `${getLabelPosition(0).x}px`,
-              top: `${getLabelPosition(0).y}px`
-            }}
-          >
-            <div className="bg-white text-text rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap shadow-sm">
-              55%
+            {/* Custom percentage labels positioned at segment centers - updated for larger chart */}
+            <div 
+              className="absolute transform -translate-x-1/2 -translate-y-1/2"
+              style={{
+                left: `${getLabelPosition(0).x}px`,
+                top: `${getLabelPosition(0).y}px`
+              }}
+            >
+              <div className="bg-white text-text rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap shadow-sm">
+                55%
+              </div>
             </div>
-          </div>
-          
-          <div 
-            className="absolute transform -translate-x-1/2 -translate-y-1/2"
-            style={{
-              left: `${getLabelPosition(1).x}px`,
-              top: `${getLabelPosition(1).y}px`
-            }}
-          >
-            <div className="bg-white text-text rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap shadow-sm">
-              30%
+            
+            <div 
+              className="absolute transform -translate-x-1/2 -translate-y-1/2"
+              style={{
+                left: `${getLabelPosition(1).x}px`,
+                top: `${getLabelPosition(1).y}px`
+              }}
+            >
+              <div className="bg-white text-text rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap shadow-sm">
+                30%
+              </div>
             </div>
-          </div>
-          
-          <div 
-            className="absolute transform -translate-x-1/2 -translate-y-1/2"
-            style={{
-              left: `${getLabelPosition(2).x}px`,
-              top: `${getLabelPosition(2).y}px`
-            }}
-          >
-            <div className="bg-white text-text rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap shadow-sm">
-              15%
+            
+            <div 
+              className="absolute transform -translate-x-1/2 -translate-y-1/2"
+              style={{
+                left: `${getLabelPosition(2).x}px`,
+                top: `${getLabelPosition(2).y}px`
+              }}
+            >
+              <div className="bg-white text-text rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap shadow-sm">
+                15%
+              </div>
             </div>
           </div>
         </div>
         
-        {/* Legend below chart - horizontal layout */}
-        <div className="flex flex-row gap-6 mt-4">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#9CC15E'}}></div>
-            <span className="text-sm text-text">Completed</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#51BCF4'}}></div>
-            <span className="text-sm text-text">In Progress</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#EA3DB1'}}></div>
-            <span className="text-sm text-text">Paused</span>
+        {/* Legend - always at the bottom */}
+        <div className="flex-shrink-0 mt-auto pt-6"> {/* Increased padding top */}
+          <div className="flex flex-row gap-6 justify-between">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#9CC15E'}}></div>
+              <span className="text-sm text-text">Completed</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#51BCF4'}}></div>
+              <span className="text-sm text-text">In Progress</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#EA3DB1'}}></div>
+              <span className="text-sm text-text">Paused</span>
+            </div>
           </div>
         </div>
       </CardContent>

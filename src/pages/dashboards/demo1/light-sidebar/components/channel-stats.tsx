@@ -40,7 +40,7 @@ const ChannelStats = () => {
   const renderItem = (item: IChannelStatsItem, index: number) => {
     return (
       <Card key={index} className='shadow-[#00000008] shadow-sm rounded-lg hover:shadow-lg transition-shadow duration-300 ease-in-out'>
-        <CardContent className="p-0 py-6 flex  justify-between items-start gap-6 h-full bg-cover rtl:bg-[left_top_-1.7rem] bg-[right_top_-1.7rem] bg-no-repeat channel-stats-bg">
+        <CardContent className="p-0 pt-6 pb-8 flex  justify-between items-start gap-6 h-full bg-cover rtl:bg-[left_top_-1.7rem] bg-[right_top_-1.7rem] bg-no-repeat channel-stats-bg">
           <div className={`${item.bgColor} size-[44px] order-2 flex items-center justify-center mr-5  rounded-[8px]`}>
             <img
               src={toAbsoluteUrl(`/images/icons/${item.logo}`)}
@@ -50,14 +50,14 @@ const ChannelStats = () => {
           </div>
 
 
-          <div className="flex flex-col gap-1  px-5 space-y-2  order-1">
-            <span className="text-sm font-semibold text-text-foreground">
+          <div className="flex flex-col gap-1  px-5 space-y-1  order-1">
+            <span className="text-[14px] leading-[14px] font-semibold text-text-foreground">
               {item.title}
             </span>
-            <span className="text-3xl font-semibold text-black">
+            <span className="text-[32px] leading-[32px] pt-3 font-semibold text-black">
               {item.info}
             </span>
-            <p className="flex items-center text-xs font-normal text-[#6B7280]">
+            <p className="flex items-center text-[12px] leading-[16px] font-normal text-[#6B7280]">
               <span>
                 {item.desc.startsWith('+') ? (
                   <span className="text-[#10B981]"><TrendingUp className='w-4 h-3'/></span>

@@ -6,7 +6,7 @@ import { useSettings } from '@/providers/settings-provider';
 const containerVariants = cva('w-full mx-auto px-4 lg:px-6', {
   variants: {
     width: {
-      fixed: 'max-w-[1320px]',
+      fixed: 'max-w-full',
       fluid: '',
     },
   },

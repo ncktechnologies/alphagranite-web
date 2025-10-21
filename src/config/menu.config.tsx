@@ -66,45 +66,45 @@ import { RiBuilding2Line, RiBuildingLine, RiStoreLine } from '@remixicon/react';
 export const MENU_SIDEBAR: MenuConfig = [
   {
     title: 'Dashboard',
-    icon: LayoutGrid,
+    icon: "dashboard.svg",
     path: '/'
   },
   { heading: 'Menu' },
   {
     title: 'Employees',
-    icon: PeopleIcon,
+    icon:'user-profile.svg',
     path: '/employees'
   },
   {
     title: 'Department',
-    icon: UserCircle,
+    icon: 'profile.svg',
     path: '/departments'
   },
    {
     title: 'Jobs',
-    icon: RiBuilding2Line,
-    // path: '/job/sales',
-    children:[
-      { title: 'Sales', path: '/job/sales' },
-      { title: 'Templating Coordinator', path: '/job/templating' },
-      { title: 'Templating Technician', path: '/job/templating-technician' },
-      { title: 'Predraft', path: '/job/predraft' },
-      { title: 'Draft', path: '/job/draft' },
+    icon: 'building.svg',
+    path: '/job/sales',
+    // children:[
+    //   { title: 'Sales', path: '/job/sales' },
+    //   { title: 'Templating Coordinator', path: '/job/templating' },
+    //   { title: 'Templating Technician', path: '/job/templating-technician' },
+    //   { title: 'Predraft', path: '/job/predraft' },
+    //   { title: 'Draft', path: '/job/draft' },
 
 
     
-    ]
+    // ]
 
   },
   {
     title: 'Shop',
-    icon: RiStoreLine,
+    icon: 'shop.svg',
     path: '/shop'
 
   },
   {
     title: 'Settings',
-    icon: Settings,
+    icon: 'settings.svg',
     path: '/settings/profile'
 
   },

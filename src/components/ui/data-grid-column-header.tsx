@@ -49,23 +49,21 @@ function DataGridColumnHeader<TData, TValue>({
   const { isLoading, table, props, recordCount } = useDataGrid();
 
   const moveColumn = (direction: 'left' | 'right') => {
-    const currentOrder = [...table.getState().columnOrder]; // Get current column order
-    const currentIndex = currentOrder.indexOf(column.id); // Get current index of the column
+    const currentOrder = [...table.getState().columnOrder];
+    const currentIndex = currentOrder.indexOf(column.id);
 
     if (direction === 'left' && currentIndex > 0) {
-      // Move column left
       const newOrder = [...currentOrder];
       const [movedColumn] = newOrder.splice(currentIndex, 1);
       newOrder.splice(currentIndex - 1, 0, movedColumn);
-      table.setColumnOrder(newOrder); // Update column order
+      table.setColumnOrder(newOrder);
     }
 
     if (direction === 'right' && currentIndex < currentOrder.length - 1) {
-      // Move column right
       const newOrder = [...currentOrder];
       const [movedColumn] = newOrder.splice(currentIndex, 1);
       newOrder.splice(currentIndex + 1, 0, movedColumn);
-      table.setColumnOrder(newOrder); // Update column order
+      table.setColumnOrder(newOrder);
     }
   };
 
@@ -84,11 +82,12 @@ function DataGridColumnHeader<TData, TValue>({
       <div
         className={cn(
           'text-accent-foreground font-normal inline-flex h-full items-center gap-1.5 text-[0.8125rem] leading-[calc(1.125/0.8125)] [&_svg]:size-3.5 [&_svg]:opacity-60',
+          'min-w-0 break-words', // Changed from truncate to break-words
           className,
         )}
       >
-        {icon && icon}
-        {title}
+        {icon && <span className="shrink-0">{icon}</span>}
+        <span className="break-words hyphens-auto">{title}</span> {/* Added hyphens-auto for better word breaking */}
       </div>
     );
   };
@@ -98,7 +97,8 @@ function DataGridColumnHeader<TData, TValue>({
       <Button
         variant="ghost"
         className={cn(
-          'text-foreground rounded-md font-normal -ms-2 px-2 h-7 hover:bg-secondary/5 data-[state=open]:bg-secondary hover:text-foreground data-[state=open]:text-foreground',
+          'text-[#7C8689] leading-[15px] text-[15px] rounded-md font-normal -ms-2 px-2 h-auto min-h-7 hover:bg-secondary/5 data-[state=open]:bg-secondary/5 hover:text-foreground data-[state=open]:text-foreground',
+          'min-w-0 max-w-full w-full justify-start', // Width constraints
           className,
         )}
         disabled={isLoading || recordCount === 0}
@@ -113,16 +113,18 @@ function DataGridColumnHeader<TData, TValue>({
           }
         }}
       >
-        {icon && icon}
-        {title}
+        <span className="flex items-center gap-1.5 min-w-0 flex-1 break-words hyphens-auto text-left"> {/* Added break-words and hyphens-auto */}
+          {icon && <span className="shrink-0 flex">{icon}</span>}
+          <span className="break-words hyphens-auto">{title}</span> {/* Proper word breaking */}
+        </span>
 
         {column.getCanSort() &&
           (column.getIsSorted() === 'desc' ? (
-            <ArrowDown className="size-[0.7rem]! mt-px" />
+            <ArrowDown className="size-[0.7rem]! mt-px shrink-0" />
           ) : column.getIsSorted() === 'asc' ? (
-            <ArrowUp className="size-[0.7rem]! mt-px" />
+            <ArrowUp className="size-[0.7rem]! mt-px shrink-0" />
           ) : (
-            <ChevronsUpDown className="size-[0.7rem]! mt-px" />
+            <ChevronsUpDown className="size-[0.7rem]! mt-px shrink-0" />
           ))}
       </Button>
     );
@@ -134,7 +136,7 @@ function DataGridColumnHeader<TData, TValue>({
         mode="icon"
         size="sm"
         variant="ghost"
-        className="-me-1 size-7 rounded-md"
+        className="-me-1 size-7 rounded-md shrink-0" // Added shrink-0
         onClick={() => column.pin(false)}
         aria-label={`Unpin ${title} column`}
         title={`Unpin ${title} column`}
@@ -146,9 +148,13 @@ function DataGridColumnHeader<TData, TValue>({
 
   const headerControls = () => {
     return (
-      <div className="flex items-center h-full gap-1.5 justify-between">
+      <div className="flex items-center h-full gap-1.5 justify-between min-w-0 w-full">
         <DropdownMenu>
-          <DropdownMenuTrigger asChild>{headerButton()}</DropdownMenuTrigger>
+          <DropdownMenuTrigger asChild>
+            <div className="min-w-0 flex-1"> {/* Wrapper for proper sizing */}
+              {headerButton()}
+            </div>
+          </DropdownMenuTrigger>
           <DropdownMenuContent className="w-40" align="start">
             {filter && <DropdownMenuLabel>{filter}</DropdownMenuLabel>}
 
@@ -275,7 +281,7 @@ function DataGridColumnHeader<TData, TValue>({
   }
 
   if (column.getCanSort() || (props.tableLayout?.columnsResizable && column.getCanResize())) {
-    return <div className="flex items-center h-full">{headerButton()}</div>;
+    return <div className="flex items-center h-full min-w-0 w-full">{headerButton()}</div>; // Added width constraints
   }
 
   return headerLabel();

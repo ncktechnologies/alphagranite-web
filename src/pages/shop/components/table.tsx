@@ -219,10 +219,10 @@ function ShopTableContent({ data }: { data: ShopData[] }) {
             id: 'wj_time',
             accessorFn: (row) => row.wj_time,
             header: ({ column }) => (
-                <DataGridColumnHeader title="WJ TIME (MINUTES)" column={column} className=' max-w-[50px]' />
+                <DataGridColumnHeader title="WJ TIME (MINUTES)" column={column} className='' />
             ),
             cell: ({ row }) => (
-                <span className="text-sm text-text max-w-[100px]">{row.original.wj_time}</span>
+                <span className="text-sm text-text max-w-[300px]">{row.original.wj_time}</span>
             ),
             enableSorting: true,
         },

@@ -85,7 +85,8 @@ export function SidebarMenu() {
             to={item.path || '#'}
             // className="flex items-center justify-between grow gap-2"
           >
-            {item.icon && <item.icon data-slot="accordion-menu-icon" className='size-[20px]!'/>}
+            {/* {item.icon && <item.icon data-slot="accordion-menu-icon" className='size-[20px]!'/>} */}
+            {item.icon && <img src={`/images/icons/${item.icon}`} />}
             <span data-slot="accordion-menu-title">{item.title}</span>
           </Link>
         </AccordionMenuItem>
@@ -206,7 +207,7 @@ export function SidebarMenu() {
   };
 
   const buildMenuHeading = (item: MenuItem, index: number): JSX.Element => {
-    return <AccordionMenuLabel key={index} className='text-[#E6E9E7] text-[16px]'>{item.heading}</AccordionMenuLabel>;
+    return <AccordionMenuLabel key={index} className='text-[#E6E9E7] text-[16px] leading-[24px] p-0'>{item.heading}</AccordionMenuLabel>;
   };
 
   return (

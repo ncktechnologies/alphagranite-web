@@ -198,7 +198,7 @@ const EarningsChart = () => {
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle>Performance Overview</CardTitle>
+        <CardTitle className="text-[20px] leading-[24px]">Performance Overview</CardTitle>
         <div className="flex gap-5">
           {/* <div className="flex items-center gap-2">
             <Label htmlFor="auto-update" className="text-sm">
