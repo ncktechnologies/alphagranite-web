@@ -99,7 +99,7 @@ export const MENU_SIDEBAR: MenuConfig = [
   {
     title: 'Shop',
     icon: RiStoreLine,
-    path: ''
+    path: '/shop'
 
   },
   {
