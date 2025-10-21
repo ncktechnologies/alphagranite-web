@@ -12,6 +12,7 @@ interface TimeTrackingComponentProps {
   onResume: () => void;
   onEnd: () => void;
   onTimeUpdate: (time: number) => void;
+  hasEnded:boolean
 }
 
 export const TimeTrackingComponent = ({
@@ -22,12 +23,14 @@ export const TimeTrackingComponent = ({
   onPause,
   onResume,
   onEnd,
-  onTimeUpdate
+  onTimeUpdate,
+  hasEnded
 }: TimeTrackingComponentProps) => {
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [pausedTime, setPausedTime] = useState<Date | null>(null);
+  const [endTime, setEndTime] = useState<Date | null>(null);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
-  const [hasEnded, setHasEnded] = useState(false);
+  // const [hasEnded, setHasEnded] = useState(false);
 
   // Update current time every second
   useEffect(() => {
@@ -70,7 +73,7 @@ export const TimeTrackingComponent = ({
     const now = new Date();
     setStartTime(now);
     setPausedTime(null);
-    setHasEnded(false);
+    // setHasEnded(false);
     onStart();
   };
 
@@ -85,7 +88,8 @@ export const TimeTrackingComponent = ({
   };
 
   const handleEnd = () => {
-    setHasEnded(true);
+    // setHasEnded(true);
+     setEndTime(new Date());
     onEnd();
   };
 
@@ -116,10 +120,10 @@ export const TimeTrackingComponent = ({
               <p className="text-[16px] text-text font-semibold">{formatTime(pausedTime)}</p>
             </div>
           )}
-           {!isPaused && pausedTime && hasEnded && (
+           {!isPaused && endTime && hasEnded && (
             <div>
               <span className="text-sm text-text-foreground">End time & Date:</span>
-              <p className="text-[16px] text-text font-semibold">{formatTime(pausedTime)}</p>
+              <p className="text-[16px] text-text font-semibold">{formatTime(endTime)}</p>
             </div>
           )}
 

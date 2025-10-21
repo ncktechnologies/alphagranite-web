@@ -19,6 +19,7 @@ import { TechnicianPage } from '@/pages/jobs/roles/technician-templater/Technici
 import { FabIdDetailsPage } from '@/pages/jobs/roles/templating-coordinator/components/details';
 import { TemplatingPage } from '@/pages/jobs/roles/templating-coordinator/templatingPage';
 import { NotificationsSection, ProfileSection, RolesSection } from '@/pages/settings';
+import ShopPage from '@/pages/shop/ShopPage';
 
 import { Navigate, Route, Routes } from 'react-router';
 
@@ -122,6 +123,14 @@ export function AppRoutingSetup() {
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <DrafterDetailsPage/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/shop"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <ShopPage/>
               // </ProtectedRoute>
             }
           />

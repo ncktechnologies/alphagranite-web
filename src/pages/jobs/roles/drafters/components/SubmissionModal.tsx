@@ -116,23 +116,23 @@ export const SubmissionModal = ({
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-bold">Draft</DialogTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
+        <DialogHeader className=''>
+          <div className="border-b">
+            <DialogTitle className="text-[15px] font-semibold py-2">Draft</DialogTitle>
+            {/* <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="w-4 h-4" />
-            </Button>
+            </Button> */}
           </div>
-          <div className="space-y-1">
-            <p className="font-semibold text-gray-900">FAB-2024-0845</p>
-            <p className="text-sm text-gray-600">Conference Table - Quartz</p>
+          <div className="space-y-1 mt-2">
+            <p className="font-semibold text-black leading-4">FAB-2024-0845</p>
+            <p className="text-sm text-black">Conference Table - Quartz</p>
           </div>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
             {/* Job Details */}
-            <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
+            {/* <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
               <div>
                 <Label className="text-sm font-medium text-gray-500">Customer:</Label>
                 <p className="text-sm text-gray-900">{jobDetails.customer}</p>
@@ -149,10 +149,10 @@ export const SubmissionModal = ({
                 <Label className="text-sm font-medium text-gray-500">FAB Type:</Label>
                 <Badge variant="outline">{jobDetails.fabType}</Badge>
               </div>
-            </div>
+            </div> */}
 
             {/* Form Fields */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="pt-3 space-y-4">
               <FormField
                 control={form.control}
                 name="totalSqFt"
@@ -183,7 +183,7 @@ export const SubmissionModal = ({
             </div>
 
             {/* Time Tracking Display */}
-            <div className="p-4 bg-green-50 rounded-lg">
+            {/* <div className="p-4 bg-green-50 rounded-lg">
               <div className="flex items-center justify-between">
                 <div>
                   <Label className="text-sm font-medium text-gray-500">Time Tracking:</Label>
@@ -198,7 +198,7 @@ export const SubmissionModal = ({
                   </Button>
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Draft Notes */}
             <FormField

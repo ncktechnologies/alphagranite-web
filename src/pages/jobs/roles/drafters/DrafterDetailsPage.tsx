@@ -25,7 +25,8 @@ const DrafterDetailsPage = () => {
   const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
   const [viewMode, setViewMode] = useState<ViewMode>('activity');
   const [activeFile, setActiveFile] = useState<any | null>(null);
-
+  const [hasEnded, setHasEnded] = useState(false);
+  const [resetTimeTracking, setResetTimeTracking] = useState(0);
 
   const handleFilesChange = (files: any[]) => {
     setUploadedFiles(files);
@@ -39,6 +40,8 @@ const DrafterDetailsPage = () => {
   const handleStartDrafting = () => {
     setIsDrafting(true);
     setIsPaused(false);
+    setHasEnded(false);
+
   };
 
   const handlePauseDrafting = () => {
@@ -52,14 +55,20 @@ const DrafterDetailsPage = () => {
   const handleEndDrafting = () => {
     setIsDrafting(false);
     setIsPaused(false);
+    setHasEnded(true);
+
     // setShowSubmissionModal(true);
   };
 
   const handleSubmitDraft = (submissionData: any) => {
     console.log('Draft submitted:', submissionData);
     setShowSubmissionModal(false);
+    setIsDrafting(false);
+    setIsPaused(false);
     setTotalTime(0);
     setUploadedFiles([]);
+    setHasEnded(false)
+    setResetTimeTracking(prev => prev + 1);
   };
 
 
@@ -153,6 +162,7 @@ const DrafterDetailsPage = () => {
 
                   {/* Time Tracking Component */}
                   <TimeTrackingComponent
+                    key={resetTimeTracking}
                     isDrafting={isDrafting}
                     isPaused={isPaused}
                     totalTime={totalTime}
@@ -161,6 +171,7 @@ const DrafterDetailsPage = () => {
                     onResume={handleResumeDrafting}
                     onEnd={handleEndDrafting}
                     onTimeUpdate={setTotalTime}
+                    hasEnded={hasEnded}
                   />
                   <Separator className='my-3' />
                   {/* Upload Documents with file viewing support */}
@@ -175,7 +186,7 @@ const DrafterDetailsPage = () => {
                   {viewMode === 'activity' && (
                     <div className="flex justify-end">
                       <Button
-                        onClick={handleEndDrafting}
+                        onClick={() => setShowSubmissionModal(true)}
                         className="bg-green-600 hover:bg-green-700"
                         disabled={isDrafting || totalTime === 0}
                       >
