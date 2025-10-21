@@ -81,24 +81,28 @@ function DataGridColumnHeader<TData, TValue>({
     return (
       <div
         className={cn(
-          'text-accent-foreground font-normal inline-flex h-full items-center gap-1.5 text-[0.8125rem] leading-[calc(1.125/0.8125)] [&_svg]:size-3.5 [&_svg]:opacity-60',
-          'min-w-0 break-words', // Changed from truncate to break-words
+          'text-accent-foreground font-normal inline-flex h-full items-center gap-1.5 text-[0.8125rem] leading-[calc(1.125/0.8125)] [&_svg]:size-3.5 [&_svg]:opacity-60 break-words whitespace-normal text-left',
           className,
         )}
       >
-        {icon && <span className="shrink-0">{icon}</span>}
-        <span className="break-words hyphens-auto">{title}</span> {/* Added hyphens-auto for better word breaking */}
+        {icon && icon}
+        <span className="block text-left truncate sm:whitespace-normal sm:break-words sm:truncate-0 max-w-full" title={title}>
+          {title}
+        </span>
+
+
+        {/* <span className="break-words whitespace-normal">{title}</span> */}
       </div>
     );
   };
+
 
   const headerButton = () => {
     return (
       <Button
         variant="ghost"
         className={cn(
-          'text-[#7C8689] leading-[15px] text-[15px] rounded-md font-normal -ms-2 px-2 h-auto min-h-7 hover:bg-secondary/5 data-[state=open]:bg-secondary/5 hover:text-foreground data-[state=open]:text-foreground',
-          'min-w-0 max-w-full w-full justify-start', // Width constraints
+          'text-[#7C8689] leading-[15px] ultra:text-[15px] rounded-md font-normal -ms-2 p-0 h-7 hover:bg-secondary/5 data-[state=open]:bg-secondary/5 hover:text-foreground data-[state=open]:text-foreground max-w-full text-left whitespace-normal break-words',
           className,
         )}
         disabled={isLoading || recordCount === 0}
@@ -113,10 +117,12 @@ function DataGridColumnHeader<TData, TValue>({
           }
         }}
       >
-        <span className="flex items-center gap-1.5 min-w-0 flex-1 break-words hyphens-auto text-left"> {/* Added break-words and hyphens-auto */}
-          {icon && <span className="shrink-0 flex">{icon}</span>}
-          <span className="break-words hyphens-auto">{title}</span> {/* Proper word breaking */}
+        {icon && icon}
+        {/* <span className="break-words whitespace-normal">{title}</span> */}
+        <span className="block text-left truncate sm:whitespace-normal sm:break-words sm:truncate-0 max-w-full" title={title}>
+          {title}
         </span>
+
 
         {column.getCanSort() &&
           (column.getIsSorted() === 'desc' ? (
@@ -129,6 +135,7 @@ function DataGridColumnHeader<TData, TValue>({
       </Button>
     );
   };
+
 
   const headerPin = () => {
     return (
