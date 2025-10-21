@@ -14,12 +14,13 @@ export const RolesSection = () => {
   const [isDeleted, setIsDeleted] = useState(false);
 
   // Set first role as active when component mounts
-  useEffect(() => {
-    if (roles.length > 0 && !selectedRole) {
-      setSelectedRole(roles[0]);
-      setViewMode('details');
-    }
-  }, [selectedRole]);
+ useEffect(() => {
+  if (roles.length > 0 && !selectedRole && viewMode !== 'new' && viewMode !== 'edit') {
+    setSelectedRole(roles[0]);
+    setViewMode('details');
+  }
+}, [selectedRole, viewMode]);
+
 
   const handleRoleSelect = (role: Role) => {
     setSelectedRole(role);
@@ -27,8 +28,8 @@ export const RolesSection = () => {
   };
 
   const handleNewRole = () => {
-    setSelectedRole(null);
     setViewMode('new');
+    setSelectedRole(null);
   };
 
   const handleEditRole = (role: Role) => {

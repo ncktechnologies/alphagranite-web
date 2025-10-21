@@ -8,6 +8,9 @@ import { X } from 'lucide-react';
 import { Permissions, Role } from '@/config/types';
 import { UserAssignment } from '../component/AssignUser';
 import { PermissionsTable } from '../component/PermisionsTable';
+import { FormLabel } from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 
 interface RoleFormProps {
     mode: 'new' | 'edit';
@@ -74,7 +77,7 @@ export const RoleForm = ({ mode, role, onBack, onSave }: RoleFormProps) => {
         <div className="space-y-6">
             {/* Header */}
             <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold text-gray-900">
+                <h2 className="text-lg font-normal text-black">
                     {mode === 'new' ? 'New Role:' : `Edit Role: ${role?.name}`}
                 </h2>
                 <Button variant="ghost" size="sm" onClick={onBack}>
@@ -86,7 +89,7 @@ export const RoleForm = ({ mode, role, onBack, onSave }: RoleFormProps) => {
             <div className="space-y-6">
                 {/* Role Name */}
                 <div className="space-y-2">
-                    <Label htmlFor="roleName">Role Name</Label>
+                    <Label htmlFor="roleName" className='font-normal text-secondary'>Role Name</Label>
                     <Input
                         id="roleName"
                         value={roleName}
@@ -97,45 +100,49 @@ export const RoleForm = ({ mode, role, onBack, onSave }: RoleFormProps) => {
 
                 {/* Description */}
                 <div className="space-y-2">
-                    <Label htmlFor="description">Description</Label>
-                    <Input
+                    <Label htmlFor="description" className='font-normal text-secondary'>Description</Label>
+                    <Textarea
                         id="description"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         placeholder="Department KPIs, financial, operational insights"
                     />
                 </div>
+                <h3 className="font-semibold text-black leading-6  ">Permissions</h3>
                 <PermissionsTable
                     permissions={permissions}
                     onPermissionChange={handlePermissionChange}
                 />
                 {/* Status */}
-                <div className="flex items-center space-x-2">
-                    <Switch
-                        id="status"
-                        checked={isActive}
-                        onCheckedChange={setIsActive}
-                    />
-                    <Label htmlFor="status">Status Active</Label>
-                </div>
+
 
                 {/* Assign Users */}
                 <UserAssignment
                     selectedUsers={selectedUsers}
                     onUserToggle={handleUserToggle}
                 />
-
+                <div className="flex items-center justify-between">
+                    <div className='flex gap-2 items-center'>
+                        <h3 className="font-semibold text-text leading-6  ">Status</h3>
+                        <Badge>Active</Badge>
+                    </div>
+                    <Switch
+                        id="status"
+                        checked={isActive}
+                        onCheckedChange={setIsActive}
+                    />
+                </div>
 
                 {/* Right Column - Permissions */}
 
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-6 border-t">
-                <Button variant="outline" onClick={onBack}>
+            <div className="flex justify-end gap-3 py-6 ">
+                <Button variant="outline" onClick={onBack} className=" px-3  text-base py-3 font-normal">
                     Cancel
                 </Button>
-                <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
+                <Button onClick={handleSubmit} className=" px-6 text-base py-3 font-normal">
                     Save role
                 </Button>
             </div>

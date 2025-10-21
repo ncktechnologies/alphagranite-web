@@ -1,4 +1,4 @@
-import { Fragment } from 'react';
+import { Fragment, useState } from 'react';
 import { UserHero } from '@/partials/common/user-hero';
 import { DropdownMenu9 } from '@/partials/dropdown-menu/dropdown-menu-9';
 import { Navbar, NavbarActions } from '@/partials/navbar/navbar';
@@ -16,8 +16,10 @@ import { Container } from '@/components/common/container';
 import { PageMenu } from '../page-menu';
 import { Breadcrumb } from '@/layouts/demo1/components/breadcrumb';
 import { Card } from '@/components/ui/card';
+import { ViewMode } from '@/config/types';
 
 const ProfileSection = () => {
+    const [viewMode, setViewMode] = useState<ViewMode>('details');
   const image = (
     <img
       src={toAbsoluteUrl('/images/app/300-2.png')}

@@ -406,10 +406,10 @@ const NewFabIdForm = () => {
                                       </Popover>
                                     </div>
                                     <div className="relative mb-2">
-                                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                      <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
                                       <Input
                                         placeholder="Search accounts"
-                                        className="pl-8"
+                                        className="ps-8"
                                         value={accountSearch}
                                         onChange={(e) => setAccountSearch(e.target.value)}
                                       />
@@ -593,10 +593,10 @@ const NewFabIdForm = () => {
                                       </Popover>
                                     </div>
                                     <div className="relative mb-2">
-                                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                      <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
                                       <Input
                                         placeholder="Search thickness"
-                                        className="pl-8"
+                                        className="ps-8"
                                         value={thicknessSearch}
                                         onChange={(e) => setThicknessSearch(e.target.value)}
                                       />

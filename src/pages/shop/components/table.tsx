@@ -15,7 +15,7 @@ import {
     SortingState,
     useReactTable,
 } from '@tanstack/react-table'
-import { DataGridTable } from '@/components/ui/data-grid-table'
+import { DataGridTable, DataGridTableRowSelect, DataGridTableRowSelectAll } from '@/components/ui/data-grid-table'
 import { DataGridPagination } from '@/components/ui/data-grid-pagination'
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
@@ -35,6 +35,7 @@ interface ShopData {
     confirmed: string
     revenue: string
     fp_complete: string
+    date: string
 }
 
 const dummyData: ShopData[] = [
@@ -50,6 +51,7 @@ const dummyData: ShopData[] = [
         confirmed: '9/10/2025',
         revenue: '$5,005.00',
         fp_complete: '9/10/2025',
+        date: '10 October, 2025',
     },
     {
         id: 2,
@@ -63,6 +65,7 @@ const dummyData: ShopData[] = [
         confirmed: '-',
         revenue: '-',
         fp_complete: 'No',
+        date: '10 October, 2025',
     },
     {
         id: 3,
@@ -76,16 +79,16 @@ const dummyData: ShopData[] = [
         confirmed: '-',
         revenue: '-',
         fp_complete: 'No',
+        date: '10 October, 2025',
     },
 ]
-  const salesPersons = [
+const salesPersons = [
     'Mike Rodriguez',
     'Sarah Johnson',
     'Bruno Pires',
     'Maria Garcia'
-  ];
+];
 
-// ---------------------- MAIN SHOP TABS ---------------------- //
 export default function ShopTabs() {
     const [tab, setTab] = useState('cutting')
 
@@ -126,7 +129,6 @@ export default function ShopTabs() {
     )
 }
 
-// ---------------------- SHOP TABLE CONTENT ---------------------- //
 function ShopTableContent({ data }: { data: ShopData[] }) {
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
@@ -143,6 +145,19 @@ function ShopTableContent({ data }: { data: ShopData[] }) {
     )
 
     const columns: ColumnDef<ShopData>[] = [
+        {
+            accessorKey: 'id',
+            accessorFn: (row: ShopData) => row.id,
+            header: () => <DataGridTableRowSelectAll/>,
+            cell: ({ row }) => <DataGridTableRowSelect row={row} />,
+            enableSorting: false,
+            enableHiding: false,
+            enableResizing: false,
+            size: 48,
+            meta: {
+                cellClassName: '',
+            },
+        },
         {
             id: 'fab_type',
             accessorFn: (row) => row.fab_type,
@@ -196,7 +211,7 @@ function ShopTableContent({ data }: { data: ShopData[] }) {
                 <DataGridColumnHeader title="TOTAL SQ FT" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm text-text">{row.original.total_sq_ft}</span>
+                <span className="text-sm text-text max-w-[200px]">{row.original.total_sq_ft}</span>
             ),
             enableSorting: true,
         },
@@ -204,10 +219,10 @@ function ShopTableContent({ data }: { data: ShopData[] }) {
             id: 'wj_time',
             accessorFn: (row) => row.wj_time,
             header: ({ column }) => (
-                <DataGridColumnHeader title="WJ TIME (MINUTES)" column={column} />
+                <DataGridColumnHeader title="WJ TIME (MINUTES)" column={column} className=' max-w-[50px]' />
             ),
             cell: ({ row }) => (
-                <span className="text-sm text-text">{row.original.wj_time}</span>
+                <span className="text-sm text-text max-w-[100px]">{row.original.wj_time}</span>
             ),
             enableSorting: true,
         },
@@ -218,7 +233,7 @@ function ShopTableContent({ data }: { data: ShopData[] }) {
                 <DataGridColumnHeader title="MACHINE" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm text-text">{row.original.machine}</span>
+                <span className="text-sm text-text max-w-[200px]">{row.original.machine}</span>
             ),
             enableSorting: true,
         },
@@ -229,7 +244,7 @@ function ShopTableContent({ data }: { data: ShopData[] }) {
                 <DataGridColumnHeader title="CONFIRMED" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm text-text">{row.original.confirmed}</span>
+                <span className="text-sm text-text max-w-[200px]">{row.original.confirmed}</span>
             ),
             enableSorting: true,
         },
@@ -240,7 +255,7 @@ function ShopTableContent({ data }: { data: ShopData[] }) {
                 <DataGridColumnHeader title="REVENUE" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm text-text">{row.original.revenue}</span>
+                <span className="text-sm text-text  max-w-[200px]">{row.original.revenue}</span>
             ),
             enableSorting: true,
         },
@@ -251,7 +266,7 @@ function ShopTableContent({ data }: { data: ShopData[] }) {
                 <DataGridColumnHeader title="FP COMPLETE" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm text-text">{row.original.fp_complete}</span>
+                <span className="text-sm text-text truncate block max-w-[200px]">{row.original.fp_complete}</span>
             ),
             enableSorting: true,
         },
@@ -279,6 +294,8 @@ function ShopTableContent({ data }: { data: ShopData[] }) {
         <DataGrid
             table={table}
             recordCount={filteredData.length}
+            groupByDate
+            dateKey="date"
             tableLayout={{
                 columnsPinnable: true,
                 columnsMovable: true,
