@@ -79,31 +79,33 @@ export function PreDraftDetailsPage() {
                             <Badge className='text-[#0BC33F] bg-[#0BC33F]/20 rounded-[50px] h-[30px] font-medium text-[14px] ml-2 px-2'>completed</Badge>
                         </div>
                     </div>
-                    <Card className="mt-6">
+                    <Card className="mt-6 pt-6">
                         <CardHeader>
-                            <CardTitle>Job Information</CardTitle>
+                            <CardTitle className='text-[#111827] leading-[32px] text-2xl font-bold'>Job Information</CardTitle>
                         </CardHeader>
                         <CardContent >
                             <div className="grid grid-cols-2 md:grid-cols-3 space-y-10">
                                 {jobInfo.map((item, index) => (
                                     <div key={index}>
-                                        <p className="text-sm text-foreground font-normal uppercase tracking-wide">
+                                        <p className="text-sm text-text-foreground font-normal uppercase tracking-wide">
                                             {item.label}
                                         </p>
-                                        <p className="font-semibold text-text text-base">{item.value}</p>
+                                        <p className="font-semibold text-text text-base leading-[28px] ">{item.value}</p>
                                     </div>
                                 ))}
                             </div>
                         </CardContent>
                     </Card>
-                    <GraySidebar sections={sidebarSections as any} className='bg-transparent border-none pl-0 w-[400px]' />
+                    <div className="w-full lg:w-[250px] XL:W-[300PX] 2xl:w-[400px]  lg:flex-shrink-0">
+                        <GraySidebar sections={sidebarSections as any} className='bg-transparent border-none pl-0' />
+                    </div>
 
                 </div>
 
                 {/* RIGHT: Review checklist */}
                 <div className=' bg-[#FAFAFA]'>
                     <Card className='border-none py-6'>
-                        <CardHeader className='border-b pb-4'>
+                        <CardHeader className='border-b pb-4 flex-col items-start'>
                             <CardTitle>Templating Review</CardTitle>
                             <p className="text-sm text-muted-foreground">
                                 Review and approve Complete tnmplate

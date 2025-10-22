@@ -116,9 +116,9 @@ const DrafterDetailsPage = () => {
           <ToolbarHeading title="FAB ID: 4456" description="Update templating activity" />
         </Toolbar>
       </Container>
-      <div className=" border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0  items-start">
-        <div className="lg:col-span-3" >
-          <GraySidebar sections={sidebarSections} />
+      <div className=" border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0  items-start lg:flex-shrink-0">
+        <div className="lg:col-span-3 w-full lg:w-[250px] XL:W-[300PX] 2xl:w-[400px]" >
+          <GraySidebar sections={sidebarSections as any} />
 
         </div>
         <Container className="lg:col-span-9 px-0 mx-0">

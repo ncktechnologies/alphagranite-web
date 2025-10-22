@@ -18,7 +18,7 @@ export function FabIdDetailsPage() {
         { label: 'Total square ft', value: '234 square ft' },
     ];
 
-    
+
     return (
         <Container className=" border-t">
             {/* Header / Breadcrumb */}
@@ -39,7 +39,7 @@ export function FabIdDetailsPage() {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 {/* LEFT: Job Info */}
-                <Card className="lg:col-span-2 mt-6">
+                {/* <Card className="lg:col-span-2 mt-6">
                     <CardHeader>
                         <CardTitle>Job Information</CardTitle>
                     </CardHeader>
@@ -51,6 +51,23 @@ export function FabIdDetailsPage() {
                                         {item.label}
                                     </p>
                                     <p className="font-semibold text-text text-base">{item.value}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card> */}
+                <Card className=" lg:col-span-2 mt-6 pt-6">
+                    <CardHeader>
+                        <CardTitle className='text-[#111827] leading-[32px] text-2xl font-bold'>Job Information</CardTitle>
+                    </CardHeader>
+                    <CardContent >
+                        <div className="grid grid-cols-2 md:grid-cols-3 space-y-10">
+                            {jobInfo.map((item, index) => (
+                                <div key={index}>
+                                    <p className="text-sm text-text-foreground font-normal uppercase tracking-wide">
+                                        {item.label}
+                                    </p>
+                                    <p className="font-semibold text-text text-base leading-[28px] ">{item.value}</p>
                                 </div>
                             ))}
                         </div>
@@ -67,7 +84,7 @@ export function FabIdDetailsPage() {
                             </p>
                         </CardHeader>
                         <CardContent>
-                            <ReviewChecklistForm/>
+                            <ReviewChecklistForm />
                         </CardContent>
                     </Card>
                 </div>

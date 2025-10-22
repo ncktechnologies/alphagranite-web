@@ -49,7 +49,7 @@ function DataGridTableBase({ children }: { children: ReactNode }) {
     <table
       data-slot="data-grid-table"
       className={cn(
-        'w-full align-middle caption-bottom text-left rtl:text-right text-foreground font-normal text-sm',
+        'w-full align-middle caption-bottom text-left rtl:text-right text-text font-normal text-[15px] leading-[15px]',
         !props.tableLayout?.columnsDraggable && 'border-separate border-spacing-0',
         props.tableLayout?.width === 'fixed' ? 'table-fixed' : 'table-auto',
         props.tableClassNames?.base,
@@ -347,7 +347,7 @@ function DataGridTableEmpty() {
 
   return (
     <tr>
-      <td colSpan={totalColumns} className="text-center text-muted-foreground py-6">
+      <td colSpan={totalColumns} className="text-center text-text py-6">
         {props.emptyMessage || 'No data available'}
       </td>
     </tr>
@@ -560,11 +560,11 @@ function DataGridTable<TData extends object>() {
 
   // Grouped by date view - each date gets its own table section
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {Object.entries(groupedRows).map(([date, rows]) => (
         <div key={date} className="border border-border rounded-lg overflow-hidden">
           {/* Date header - comes first */}
-          <div className="bg-[#F6FFE7] p-4 text-sm font-normal text-text border-b border-border">
+          <div className="bg-[#F6FFE7] p-4 text-[15px] leading-[15px] font-normal text-text border-b border-border">
             {date}
           </div>
           

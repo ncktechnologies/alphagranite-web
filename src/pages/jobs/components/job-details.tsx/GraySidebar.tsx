@@ -24,20 +24,20 @@ interface GraySidebarProps {
 export default function GraySidebar({ sections, className = '' }: GraySidebarProps) {
     return (
         <aside
-            className={`w-80 border-r border-gray-200 p-6 overflow-y-auto bg-[#FAFAFA] ${className}`}
+            className={` w-full border-r p-6 overflow-y-auto bg-[#FAFAFA] ${className}`}
         >
             {sections.map((section, sectionIndex) => (
-                <section key={sectionIndex} className={`mb-8 ${section.className || ''}`}>
+                <section key={sectionIndex} className={`mt-3 mb-8 ${section.className || ''}`}>
                     {/* Section Title */}
-                    <h3 className="font-semibold text-text mb-3">{section.title}</h3>
+                    <h3 className="font-semibold text-[#111827] my-5 text-xl leading-[24px] ">{section.title}</h3>
 
                     {/* Details Section */}
                     {section.type === 'details' && section.items && (
                         <div className="space-y-5 text-sm">
                             {section.items.map((item, index) => (
                                 <div key={index}>
-                                    <span className="font-medium text-foreground text-sm">{item.label}:</span>
-                                    <p className="text-text text-bold text-base">{item.value}</p>
+                                    <span className="font-medium text-text-foreground text-sm leading-[24px]">{item.label}:</span>
+                                    <p className="text-text text-bold text-base leading-[24px]">{item.value}</p>
                                 </div>
                             ))}
                         </div>
@@ -54,8 +54,8 @@ export default function GraySidebar({ sections, className = '' }: GraySidebarPro
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1">
-                                        <p className="text-sm text-black mb-1 bg-[#F7F7F7] p-3 rounded-lg">{note.content}</p>
-                                        <p className="text-sm text-text-secondary">
+                                        <p className="text-sm text-black mb-1 bg-[#FAFAFA] p-3 rounded-lg">{note.content}</p>
+                                        <p className="text-sm text-text-foreground">
                                             {note.author} • {note.timestamp}
                                         </p>
                                     </div>

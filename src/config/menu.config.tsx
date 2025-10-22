@@ -84,16 +84,16 @@ export const MENU_SIDEBAR: MenuConfig = [
     title: 'Jobs',
     icon: 'building.svg',
     path: '/job/sales',
-    // children:[
-    //   { title: 'Sales', path: '/job/sales' },
-    //   { title: 'Templating Coordinator', path: '/job/templating' },
-    //   { title: 'Templating Technician', path: '/job/templating-technician' },
-    //   { title: 'Predraft', path: '/job/predraft' },
-    //   { title: 'Draft', path: '/job/draft' },
+    children:[
+      { title: 'Sales', path: '/job/sales' },
+      { title: 'Templating Coordinator', path: '/job/templating' },
+      { title: 'Templating Technician', path: '/job/templating-technician' },
+      { title: 'Predraft', path: '/job/predraft' },
+      { title: 'Draft', path: '/job/draft' },
 
 
     
-    // ]
+    ]
 
   },
   {
