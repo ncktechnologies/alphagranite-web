@@ -79,7 +79,7 @@ export function ReviewChecklistForm() {
                                                 onCheckedChange={(checked) => field.onChange(checked)}
                                             />
                                         </FormControl>
-                                        <FormLabel className="font-normal">{label}</FormLabel>
+                                        <FormLabel className="font-normal text-text-foreground">{label}</FormLabel>
                                     </FormItem>
                                 )}
                             />

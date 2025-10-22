@@ -77,9 +77,9 @@ export function FabIdDetailsPage() {
                 {/* RIGHT: Review checklist */}
                 <div className='border-l'>
                     <Card className='border-none py-6'>
-                        <CardHeader className='border-b pb-4'>
-                            <CardTitle>FAB ID Review</CardTitle>
-                            <p className="text-sm text-muted-foreground">
+                        <CardHeader className='border-b pb-4 flex-col items-start'>
+                            <CardTitle className='font-semibold text-text'>FAB ID Review</CardTitle>
+                            <p className="text-sm text-text-foreground">
                                 Review and approve fabrication details
                             </p>
                         </CardHeader>

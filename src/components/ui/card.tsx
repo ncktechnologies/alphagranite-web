@@ -133,7 +133,7 @@ function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElem
   return (
     <h3
       data-slot="card-title"
-      className={cn('text-[20px] leading-[24px] text-[#404040] font-semibold leading-none tracking-tight', className)}
+      className={cn('text-[20px] leading-[24px] text-[#404040] font-semibold tracking-tight', className)}
       {...props}
     />
   );

@@ -9,20 +9,24 @@ const PageMenu = () => {
   if (SETTINGS_NAV) {
     return (
       <>
-       <Container className=''>
-        <Toolbar className='flex flex-col items-start '>
-        <ToolbarBreadcrumbs />
+        <Container className=''>
+          <Toolbar className='flex flex-col items-start '>
+            <ToolbarBreadcrumbs
+              menu={SETTINGS_NAV}
+              rootTitle="Settings"
+              rootPath="/"
+            />
 
-          <ToolbarHeading title=" Settings"/>
-           
-           
-        </Toolbar>
-      </Container>
-      <Container className='mb-6'>
-        
-        {/* <Breadcrumb /> */}
-        <NavbarMenu items={SETTINGS_NAV} />
-      </Container>
+            <ToolbarHeading title=" Settings" />
+
+
+          </Toolbar>
+        </Container>
+        <Container className='mb-6'>
+
+          {/* <Breadcrumb /> */}
+          <NavbarMenu items={SETTINGS_NAV} />
+        </Container>
       </>
     )
   } else {

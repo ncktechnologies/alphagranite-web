@@ -48,8 +48,8 @@ export function TechnicianDetailsPage() {
                         <div className='max-w-6xl w-full mx-auto lg:mr-auto'>
                             <Card className='my-4'>
                                 <CardHeader className='flex flex-col items-start py-4'>
-                                    <CardTitle>Template activity</CardTitle>
-                                    <p className="text-sm text-[#4B5563]">
+                                    <CardTitle className='text-[#111827]'>Template activity</CardTitle>
+                                    <p className="text-base text-[#4B5563]">
                                         Update your templating activity here
                                     </p>
                                 </CardHeader>

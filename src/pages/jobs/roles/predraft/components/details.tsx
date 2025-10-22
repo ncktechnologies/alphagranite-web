@@ -103,12 +103,12 @@ export function PreDraftDetailsPage() {
                 </div>
 
                 {/* RIGHT: Review checklist */}
-                <div className=' bg-[#FAFAFA]'>
-                    <Card className='border-none py-6'>
+                <div className=' bg-[#FAFAFA] min-h-screen pt-12 pb-3'>
+                    <Card className='border-none bg-transparent'>
                         <CardHeader className='border-b pb-4 flex-col items-start'>
-                            <CardTitle>Templating Review</CardTitle>
-                            <p className="text-sm text-muted-foreground">
-                                Review and approve Complete tnmplate
+                            <CardTitle className='text-text'>Templating Review</CardTitle>
+                            <p className="text-sm text-text-foreground leading-[20px]">
+                                Review and approve Complete template
                             </p>
                         </CardHeader>
                         <CardContent>

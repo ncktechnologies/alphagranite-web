@@ -3,7 +3,7 @@ import { type LucideIcon } from 'lucide-react';
 
 export interface MenuItem {
   title?: string;
-  icon?: LucideIcon | RemixiconComponentType;
+  icon?: LucideIcon | RemixiconComponentType | string;
   path?: string;
   rootPath?: string;
   childrenIndex?: number;
