@@ -14,10 +14,12 @@ const ShopPage = () => {
                     <ToolbarHeading title="Shop" description="View shop status list for jobs  " />
 
                     <ToolbarActions>
-                            <Button  className="">
+                        <Link to='/shop/settings'>
+                            <Button className="">
                                 <Settings />
                                 Shop Settings
                             </Button>
+                        </Link>
                     </ToolbarActions>
                 </Toolbar>
                 <ShopTable />

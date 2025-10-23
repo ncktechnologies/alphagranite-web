@@ -55,6 +55,18 @@ export interface Role {
   members: number;
   avatars: string[];
 }
+export interface Station {
+  id: string;
+  workstationName: string;
+  description?: string;
+  status?: 'Active' | 'Inactive';
+  members?: number;
+  avatars?: string[];
+  machine?: string
+  operators?: string[]
+  other?:string
+}
+
 
 export type ViewMode = 'details' | 'new' | 'edit' | 'list';
 

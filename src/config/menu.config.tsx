@@ -60,7 +60,7 @@ import {
   Store,
   StoreIcon,
 } from 'lucide-react';
-import { Role, type MenuConfig } from './types';
+import { Role, Station, type MenuConfig } from './types';
 import { RiBuilding2Line, RiBuildingLine, RiStoreLine } from '@remixicon/react';
 
 export const MENU_SIDEBAR: MenuConfig = [
@@ -129,6 +129,24 @@ export const SETTINGS_NAV:MenuConfig = [
     path:'/settings/notifications'
   }
 ];
+export const SHOP_NAV:MenuConfig = [
+  
+  {
+    title: "Shop settings",
+    icon: Users,
+    path:'/shop/settings'
+  },
+  {
+    title: "Roles & Permissions",
+    icon: Users,
+    path:'/settings/roles'
+  },
+  {
+    title: "Notifications",
+    icon: Users,
+    path:'/settings/notifications'
+  }
+];
 export const roles: Role[] = [
     {
       id: '1',
@@ -171,6 +189,37 @@ export const roles: Role[] = [
       avatars: ['GH', 'IJ']
     }
   ];
+  export const workStation: Station[] = [
+  {
+    id: 'ws-001',
+    workstationName: 'Cutting',
+    machine: 'Saw 1',
+    other: '',
+    avatars: ['AJ', 'SM']
+    // operators: [
+    //   { id: 'u-001', name: 'Alex Johnson', role: 'Operator' },
+    //   { id: 'u-002', name: 'Maria Lopez', role: 'Technician' },
+    // ],
+    // status: 'Active',
+    // createdAt: '2025-10-15T09:30:00Z',
+  },
+  {
+    id: 'ws-002',
+    workstationName: 'WATERJET',
+    machine: 'Grinder 2',
+    other: 'High-speed buffing',
+    avatars: ['AJ', 'SM']
+    // operators: [
+    //   { id: 'u-003', name: 'Samuel Kim', role: 'Operator' },
+    // ],
+    // status: 'Inactive',
+    // createdAt: '2025-10-12T14:20:00Z',
+  },
+  
+ 
+  
+];
+
 
    export const availableUsers = [
     { id: '1', name: 'Alex Johnson', initials: 'AJ' },
