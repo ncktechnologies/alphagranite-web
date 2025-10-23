@@ -61,7 +61,7 @@ import {
   StoreIcon,
 } from 'lucide-react';
 import { Role, Station, type MenuConfig } from './types';
-import { RiBuilding2Line, RiBuildingLine, RiStoreLine } from '@remixicon/react';
+import { RiBuilding2Line, RiBuildingLine, RiNodeTree, RiNotification3Line, RiStoreLine, RiUser3Line } from '@remixicon/react';
 
 export const MENU_SIDEBAR: MenuConfig = [
   {
@@ -115,17 +115,17 @@ export const SETTINGS_NAV:MenuConfig = [
   
   {
     title: "Profile",
-    icon: Users,
+    icon: RiUser3Line,
     path:'/settings/profile'
   },
   {
     title: "Roles & Permissions",
-    icon: Users,
+    icon: RiNodeTree,
     path:'/settings/roles'
   },
   {
     title: "Notifications",
-    icon: Users,
+    icon: RiNotification3Line,
     path:'/settings/notifications'
   }
 ];
@@ -206,7 +206,7 @@ export const roles: Role[] = [
   {
     id: 'ws-002',
     workstationName: 'WATERJET',
-    machine: 'Grinder 2',
+    machine: 'Saw 2',
     other: 'High-speed buffing',
     avatars: ['AJ', 'SM']
     // operators: [

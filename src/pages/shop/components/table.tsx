@@ -104,7 +104,7 @@ export default function ShopTabs() {
   const completed = dummyData.filter((d) => d.fp_complete !== 'No')
 
   return (
-    <Tabs value={tab} onValueChange={setTab} className="w-full" forceRender>
+    <Tabs value={tab} onValueChange={setTab} className="w-full" >
       <TabsList className="mb-3 bg-transparent p-2 border flex flex-wrap gap-2">
         <TabsTrigger value="cutting">Cutting plan</TabsTrigger>
         <TabsTrigger value="wj">WJ</TabsTrigger>

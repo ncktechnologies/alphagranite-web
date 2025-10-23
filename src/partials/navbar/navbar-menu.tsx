@@ -49,11 +49,11 @@ const NavbarMenu = ({ items }: { items: MenuConfig }) => {
             <MenubarTrigger
               asChild
               className={cn(
-                'flex items-center px-2 py-3.5 text-sm text-secondary-foreground px-3',
+                'flex items-center px-2 py-3.5 text-sm text-text-foreground px-3',
                 'rounded-none border-b-2 border-transparent bg-transparent!',
-                'hover:text-primary hover:bg-transparent',
-                'focus:text-primary focus:bg-transparent',
-                'data-[active=true]:text-primary data-[active=true]:border-primary',
+                'hover:text-text hover:bg-transparent',
+                'focus:text-text focus:bg-transparent',
+                'data-[active=true]:text-text data-[active=true]:font-semibold data-[active=true]:border-primary',
               )}
             >
               <Link
@@ -61,6 +61,7 @@ const NavbarMenu = ({ items }: { items: MenuConfig }) => {
                 data-active={isActive(item.path) || undefined}
                 data-here={hasActiveChild(item.children) || undefined}
               >
+                {item.icon && <item.icon data-slot="accordion-menu-icon" className='mr-2 h-[12px] w-[13px]'/>}
                 {item.title}
               </Link>
             </MenubarTrigger>
