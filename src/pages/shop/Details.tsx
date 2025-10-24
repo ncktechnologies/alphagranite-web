@@ -136,7 +136,7 @@ const ShopDetailsPage = () => {
 
                             <Card>
                                 <CardContent className="">
-                                    <h2 className='font-semibold'>Uploaded files</h2>
+                                    <h2 className='font-semibold text-sm py-3'>Uploaded files</h2>
                                     <Documents
                                         onFileClick={handleFileClick}
                                     />
