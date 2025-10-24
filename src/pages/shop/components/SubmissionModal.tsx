@@ -1,15 +1,16 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
+import { useState } from "react";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input, InputWrapper } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Form,
   FormControl,
@@ -17,278 +18,207 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
-import { X } from 'lucide-react';
+} from "@/components/ui/form";
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from "@/components/ui/select";
+import { CalendarIcon, Check } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { Alert, AlertIcon, AlertTitle } from "@/components/ui/alert";
+import { toast } from "sonner";
 
-interface JobDetails {
-  fabId: string;
-  customer: string;
-  jobNumber: string;
-  area: string;
-  fabType: string;
-}
-
-interface UploadedFile {
-  id: string;
-  name: string;
-  size: number;
-  type: string;
-  url?: string;
-}
-
-interface SubmissionModalProps {
-  jobDetails: JobDetails;
-  totalTime: number;
-  uploadedFiles: UploadedFile[];
-  onClose: () => void;
-  onSubmit: (data: any) => void;
-}
-
-const submissionSchema = z.object({
-  totalSqFt: z.string().min(1, 'Total Sq Ft is required'),
-  numberOfPieces: z.string().min(1, 'Number of pieces is required'),
-  draftNotes: z.string().optional(),
-  assignToSales: z.string().min(1, 'Sales person is required'),
-  templateReviewComplete: z.boolean(),
+const cuttingSchema = z.object({
+  workstation: z.string().min(1, "Workstation is required"),
+  hoursScheduled: z.string().min(1, "Hours are required"),
+  scheduleDate: z.date({ required_error: "Schedule date is required" }),
+  operator: z.string().min(1, "Operator is required"),
 });
 
-type SubmissionData = z.infer<typeof submissionSchema>;
+type CuttingFormValues = z.infer<typeof cuttingSchema>;
 
-export const SubmissionModal = ({
-  jobDetails,
-  totalTime,
-  uploadedFiles,
+interface ScheduleCuttingModalProps {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (data: CuttingFormValues) => void;
+}
+
+export const ScheduleCuttingModal = ({
+  open,
   onClose,
-  onSubmit
-}: SubmissionModalProps) => {
+  onSubmit,
+}: ScheduleCuttingModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<SubmissionData>({
-    resolver: zodResolver(submissionSchema),
+  const form = useForm<CuttingFormValues>({
+    resolver: zodResolver(cuttingSchema),
     defaultValues: {
-      totalSqFt: '',
-      numberOfPieces: '',
-      draftNotes: '',
-      assignToSales: '',
-      templateReviewComplete: false,
+      workstation: "",
+      hoursScheduled: "",
+      scheduleDate: undefined,
+      operator: "Mike Rodriguez",
     },
   });
 
-  const formatDuration = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const salesPersons = [
-    'Mike Rodriguez',
-    'Sarah Johnson',
-    'Bruno Pires',
-    'Maria Garcia'
-  ];
-
-  const handleSubmit = async (values: SubmissionData) => {
+  const handleSubmit = async (values: CuttingFormValues) => {
     try {
       setIsSubmitting(true);
-      
-      const submissionData = {
-        ...values,
-        jobDetails,
-        totalTime,
-        uploadedFiles,
-        submittedAt: new Date().toISOString(),
-      };
-
-      console.log('Submitting draft:', submissionData);
-      
-      // Simulate API call
-      await new Promise((res) => setTimeout(res, 2000));
-      
-      onSubmit(submissionData);
-    } catch (error) {
-      console.error('Error submitting draft:', error);
+      console.log("Scheduling cutting:", values);
+      await new Promise((r) => setTimeout(r, 1500));
+      toast.custom(
+        () => (
+          <Alert variant="success" icon="success">
+            <AlertIcon>
+              <Check />
+            </AlertIcon>
+            <AlertTitle>
+              Cutting scheduled successful <br />
+              Your cutting schedule was updated successfully
+            </AlertTitle>
+          </Alert>
+        ),
+        {
+          position: 'top-right',
+        },
+      );
+      onSubmit(values);
+      onClose();
+      form.reset();
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className=''>
-          <div className="border-b">
-            <DialogTitle className="text-[15px] font-semibold py-2">Draft</DialogTitle>
-            {/* <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="w-4 h-4" />
-            </Button> */}
-          </div>
-          <div className="space-y-1 mt-2">
-            <p className="font-semibold text-black leading-4">FAB-2024-0845</p>
-            <p className="text-sm text-black">Conference Table - Quartz</p>
-          </div>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="text-[15px] font-semibold py-2 border-b">
+            Schedule cutting
+          </DialogTitle>
         </DialogHeader>
 
+        <div className="space-y-2 pt-3 pb-6 border-b">
+          <p className="font-semibold text-black leading-4">FAB-2024-0845</p>
+          <p className="text-sm text-black">Conference Table – Quartz</p>
+        </div>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-            {/* Job Details */}
-            {/* <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-              <div>
-                <Label className="text-sm font-medium text-gray-500">Customer:</Label>
-                <p className="text-sm text-gray-900">{jobDetails.customer}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-500">Job #:</Label>
-                <p className="text-sm text-gray-900">{jobDetails.jobNumber}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-500">Area:</Label>
-                <p className="text-sm text-gray-900">{jobDetails.area}</p>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-500">FAB Type:</Label>
-                <Badge variant="outline">{jobDetails.fabType}</Badge>
-              </div>
-            </div> */}
-
-            {/* Form Fields */}
-            <div className="pt-3 space-y-4">
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 pt-3">
+            {/* Workstation */}
+            <div className="grid grid-cols-2 gap-5">
               <FormField
                 control={form.control}
-                name="totalSqFt"
+                name="workstation"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Total Sq Ft</FormLabel>
-                    <FormControl>
-                      <Input placeholder="(1)" {...field} />
-                    </FormControl>
+                    <FormLabel>Workstation</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select workstation" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="cutting">Cutting</SelectItem>
+                        {/* <SelectItem value="polishing">Polishing</SelectItem>
+                      <SelectItem value="packaging">Packaging</SelectItem> */}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
+              {/* Hours */}
               <FormField
                 control={form.control}
-                name="numberOfPieces"
+                name="hoursScheduled"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>No. of pieces</FormLabel>
+                    <FormLabel>Hours scheduled</FormLabel>
                     <FormControl>
-                      <Input placeholder="5" {...field} />
+                      <Input type="number" placeholder="Enter hours" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
             </div>
-
-            {/* Time Tracking Display */}
-            {/* <div className="p-4 bg-green-50 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label className="text-sm font-medium text-gray-500">Time Tracking:</Label>
-                  <p className="text-lg font-mono text-green-700">{formatDuration(totalTime)}</p>
-                </div>
-                <div className="flex gap-2">
-                  <Button type="button" variant="outline" size="sm">
-                    Pause
-                  </Button>
-                  <Button type="button" variant="destructive" size="sm">
-                    End
-                  </Button>
-                </div>
-              </div>
-            </div> */}
-
-            {/* Draft Notes */}
+            {/* Schedule Date */}
+            {/* Schedule Date */}
             <FormField
               control={form.control}
-              name="draftNotes"
+              name="scheduleDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Draft notes</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Square-foot bigger than what was templated initially."
-                      {...field}
-                      rows={4}
-                    />
-                  </FormControl>
+                  <FormLabel>Schedule date</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <InputWrapper className="cursor-pointer">
+                          <div className="flex items-center justify-between w-full px-3 py-2">
+                            <span className={cn("text-sm", !field.value && "text-muted-foreground")}>
+                              {field.value ? format(field.value, "PPP") : "Select date"}
+                            </span>
+                            <CalendarIcon className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        </InputWrapper>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent align="start" className="p-0" sideOffset={4}>
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        disabled={(date) => date < new Date()}
+                      />
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            {/* Assign to Sales */}
+
+            {/* Operator */}
             <FormField
               control={form.control}
-              name="assignToSales"
+              name="operator"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Assign to sales</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select sales person" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {salesPersons.map((person) => (
-                        <SelectItem key={person} value={person}>
-                          {person}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Template Review Complete Checkbox */}
-            <FormField
-              control={form.control}
-              name="templateReviewComplete"
-              render={({ field }) => (
-                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                  <FormLabel>Assigned operator</FormLabel>
                   <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormLabel>Template review complete</FormLabel>
-                </FormItem>
-              )}
-            />
-
-            {/* Uploaded Files Summary */}
-            {uploadedFiles.length > 0 && (
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Uploaded Files ({uploadedFiles.length})
-                </Label>
-                <div className="space-y-1">
-                  {uploadedFiles.map((file, index) => (
-                    <div key={index} className="text-sm text-gray-600">
-                      • {file.name}
+                    <div className="flex items-center gap-2 border rounded-md px-3 py-2 bg-muted/50">
+                      <img
+                        src="/images/app/300-2.png"
+                        alt="operator"
+                        className="size-6 rounded-full"
+                      />
+                      <span className="text-sm font-medium">{field.value}</span>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-            {/* Action Buttons */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
+            {/* Buttons */}
+            <div className="flex justify-end gap-3 pt-4 ">
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                className="bg-green-600 hover:bg-green-700"
+              <Button
+                type="submit"
+                className="bg-green-600 hover:bg-green-700 text-white"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? 'Submitting...' : 'Submit draft'}
+                {isSubmitting ? "Scheduling..." : "Schedule for cutting"}
               </Button>
             </div>
           </form>

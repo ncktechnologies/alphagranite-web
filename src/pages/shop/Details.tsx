@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Container } from '@/components/common/container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { SubmissionModal } from './components/SubmissionModal';
+import { ScheduleCuttingModal, SubmissionModal } from './components/SubmissionModal';
 import { X } from 'lucide-react';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Separator } from '@/components/ui/separator';
@@ -85,7 +85,7 @@ const ShopDetailsPage = () => {
             </Container>
             <div className=" border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0  items-start lg:flex-shrink-0">
                 <div className="lg:col-span-3 w-full lg:w-[250px] xl:w-[300px] ultra:w-[400px]" >
-                    <GraySidebar sections={sidebarSections as any} />
+                    <GraySidebar sections={sidebarSections as any} className='' />
 
                 </div>
                 <Container className="lg:col-span-9">
@@ -114,7 +114,7 @@ const ShopDetailsPage = () => {
                         </div>
                     ) : (
                         <>
-                            <div className='py-6'>
+                            <div className='pt-6'>
                                 <div className='text-black py-5'>
                                     <p className="font-bold text-base">FAB-2024-001</p>
                                     <p className='text-sm'>Conference Table - Quartz</p>
@@ -131,7 +131,7 @@ const ShopDetailsPage = () => {
                                 </div>
                             </div>
 
-                            <Separator />
+                            <Separator className='my-3' />
 
 
                             <Card>
@@ -147,7 +147,7 @@ const ShopDetailsPage = () => {
                                 <Button
                                     onClick={() => setShowSubmissionModal(true)}
                                     className="bg-green-600 hover:bg-green-700"
-                                    disabled={isDrafting || totalTime === 0}
+                                    // disabled={}
                                     size="lg"
                                 >
                                     Schedule for cutting
@@ -158,15 +158,13 @@ const ShopDetailsPage = () => {
                 </Container>
 
                 {/* Submission Modal */}
-                {showSubmissionModal && (
-                    <SubmissionModal
-                        jobDetails={jobDetails}
-                        totalTime={totalTime}
-                        uploadedFiles={uploadedFiles}
+                {/* {showSubmissionModal && ( */}
+                    <ScheduleCuttingModal
+                        open={showSubmissionModal}
                         onClose={() => setShowSubmissionModal(false)}
                         onSubmit={handleSubmitDraft}
                     />
-                )}
+                {/* )} */}
             </div>
         </>
     );
