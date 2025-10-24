@@ -2,9 +2,7 @@ import { Container } from '@/components/common/container';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ReviewChecklistForm } from './ReviewChecklist';
 
-export function FabIdDetailsPage() {
-    // Job Info data array
-    const jobInfo = [
+ export const jobInfo = [
         { label: 'FAB ID', value: 'FAB-2024-001' },
         { label: 'FAB Type', value: 'FAB-toilet tiles' },
         { label: 'Account', value: 'FAB-2024-001' },
@@ -17,6 +15,9 @@ export function FabIdDetailsPage() {
         { label: 'Edge', value: 'Flat edge' },
         { label: 'Total square ft', value: '234 square ft' },
     ];
+export function FabIdDetailsPage() {
+    // Job Info data array
+   
 
 
     return (

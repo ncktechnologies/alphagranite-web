@@ -3,7 +3,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 
 interface SidebarSection {
     title?: string
-    type?: 'details' | 'notes' | 'custom' 
+    type?: 'details' | 'notes' | 'custom'
     items?: { label: string; value: React.ReactNode }[]
     notes?: {
         id: number
@@ -14,6 +14,7 @@ interface SidebarSection {
     }[]
     finalNote?: string
     className?: string
+    sectionTitle?: string
 }
 
 interface GraySidebarProps {
@@ -29,11 +30,16 @@ export default function GraySidebar({ sections, className = '' }: GraySidebarPro
             {sections.map((section, sectionIndex) => (
                 <section key={sectionIndex} className={`mt-3 mb-8 ${section.className || ''}`}>
                     {/* Section Title */}
-                    <h3 className="font-semibold text-[#111827] my-5 text-xl leading-[24px] ">{section.title}</h3>
+                    <h3 className="font-semibold text-text my-5 text-base leading-[24px] ">{section.title}</h3>
 
                     {/* Details Section */}
                     {section.type === 'details' && section.items && (
+
                         <div className="space-y-5 text-sm">
+                            {section.sectionTitle && (
+                                <h4 className="font-semibold text-[#111827] my-5 text-xl leading-[24px] ">{section.sectionTitle}</h4>
+
+                            )}
                             {section.items.map((item, index) => (
                                 <div key={index}>
                                     <span className="font-medium text-text-foreground text-sm leading-[24px]">{item.label}:</span>
@@ -46,6 +52,10 @@ export default function GraySidebar({ sections, className = '' }: GraySidebarPro
                     {/* Notes Section */}
                     {section.type === 'notes' && section.notes && (
                         <div className="space-y-4">
+                            {section.sectionTitle && (
+                                <h4 className="font-semibold text-text my-5 text-base leading-[24px] ">{section.sectionTitle}</h4>
+
+                            )}
                             {section.notes.map((note) => (
                                 <div key={note.id} className="flex gap-3">
                                     <Avatar className="h-8 w-8">

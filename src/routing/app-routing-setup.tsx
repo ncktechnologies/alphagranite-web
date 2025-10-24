@@ -19,6 +19,7 @@ import { TechnicianPage } from '@/pages/jobs/roles/technician-templater/Technici
 import { FabIdDetailsPage } from '@/pages/jobs/roles/templating-coordinator/components/details';
 import { TemplatingPage } from '@/pages/jobs/roles/templating-coordinator/templatingPage';
 import { NotificationsSection, ProfileSection, RolesSection } from '@/pages/settings';
+import { ShopDetailsPage } from '@/pages/shop/Details';
 import SettingsPage from '@/pages/shop/settings/SettingsPage';
 import ShopPage from '@/pages/shop/ShopPage';
 
@@ -140,6 +141,14 @@ export function AppRoutingSetup() {
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <SettingsPage/>
+              // </ProtectedRoute>
+            }
+          />
+           <Route
+            path="/shop/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <ShopDetailsPage/>
               // </ProtectedRoute>
             }
           />

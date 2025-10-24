@@ -187,7 +187,7 @@ const NotificationsSection = () => {
       <PageMenu />
 
       <Container>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 ">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10 pb-10 ">
           {/* LEFT: Notifications List */}
           <div className="lg:col-span-2 w-full space-y-4">
             <Tabs value={tab} onValueChange={setTab} className="w-full" >
@@ -228,7 +228,7 @@ const NotificationsSection = () => {
           </div>
 
           {/* RIGHT: Preferences */}
-          <Card className=" border-none shadow h-screen bg-[#FBFDF4] max-w-[300px]">
+          <Card className=" border-none shadow h-screen bg-[#FBFDF4] w-full max-w-[350px]">
 
             <CardHeader className='border-b p-3 flex-col justify-center'>
               <CardTitle className='text-[#111827] leading-[28px] text-lg  font-bold'>Notification Preferences</CardTitle>
@@ -300,7 +300,7 @@ const NotificationsSection = () => {
               </div>
             </CardContent>
             <CardFooter>
-              <Button className="w-full mt-4 bg-lime-600 hover:bg-lime-700 text-white">
+              <Button className="w-full">
                 Save Preferences
               </Button>
             </CardFooter>
