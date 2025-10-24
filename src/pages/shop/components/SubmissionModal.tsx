@@ -99,7 +99,7 @@ export const ScheduleCuttingModal = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-[15px] font-semibold py-2 border-b">
+          <DialogTitle className="text-[15px] text-text font-semibold py-2 border-b">
             Schedule cutting
           </DialogTitle>
         </DialogHeader>
@@ -194,7 +194,7 @@ export const ScheduleCuttingModal = ({
                 <FormItem>
                   <FormLabel>Assigned operator</FormLabel>
                   <FormControl>
-                    <div className="flex items-center gap-2 border rounded-md px-3 py-2 bg-muted/50">
+                    <div className="flex items-center gap-2 border rounded-md px-3 py-2 bg-[#DFDFDF]">
                       <img
                         src="/images/app/300-2.png"
                         alt="operator"
