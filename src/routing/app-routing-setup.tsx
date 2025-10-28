@@ -9,10 +9,14 @@ import { DepartmentDetailsPage } from '@/pages/departments/department-table/Tabl
 import { EmployeePage } from '@/pages/employers';
 import { JobPage } from '@/pages/job-flow/job-page';
 import { NewFabIdForm } from '@/pages/jobs';
+import { AfterDraftSalesPage } from '@/pages/jobs/roles/back-to-sales/BackSalesPage';
+import { DraftReviewDetailsPage } from '@/pages/jobs/roles/back-to-sales/details';
 import { DrafterDetailsPage } from '@/pages/jobs/roles/drafters';
 import DrafterPage from '@/pages/jobs/roles/drafters/DrafterPage';
 import { PreDraftDetailsPage } from '@/pages/jobs/roles/predraft/components/details';
 import { PredraftPage } from '@/pages/jobs/roles/predraft/PredraftPage';
+import { DraftRevisionPage } from '@/pages/jobs/roles/revisiondraft/BackSalesPage';
+import { ReviewDetailsPage } from '@/pages/jobs/roles/revisiondraft/details';
 import { SalesPage } from '@/pages/jobs/roles/sales/SalesPage';
 import { TechnicianDetailsPage } from '@/pages/jobs/roles/technician-templater/components/details';
 import { TechnicianPage } from '@/pages/jobs/roles/technician-templater/TechnicianPage';
@@ -125,6 +129,38 @@ export function AppRoutingSetup() {
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <DrafterDetailsPage/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job/draft-review"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <AfterDraftSalesPage/>
+              // </ProtectedRoute>
+            }
+          />
+           <Route
+            path="/job/draft-review/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <DraftReviewDetailsPage/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job/revision"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <DraftRevisionPage/>
+              // </ProtectedRoute>
+            }
+          />
+           <Route
+            path="/job/revision/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <ReviewDetailsPage/>
               // </ProtectedRoute>
             }
           />

@@ -21,7 +21,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { ArrowLeft, Plus, AlertCircle, Check, LoaderCircleIcon, Search, ChevronDown, Info, InfoIcon } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { RiInformationFill } from '@remixicon/react';
 import { toast } from 'sonner';
 
@@ -53,6 +53,7 @@ const NewFabIdForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // Search states for dropdowns
   const [fabTypeSearch, setFabTypeSearch] = useState('');
@@ -220,7 +221,9 @@ const NewFabIdForm = () => {
           position: 'top-right',
         },
       );
-      // form.reset();
+      form.reset();
+        navigate('/job/templating');
+      
 
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');

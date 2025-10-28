@@ -164,7 +164,8 @@ function ShopTableContent({ data}: { data: ShopData[] }) {
     }, [data, searchQuery])
 
     // ✅ memoize columns once
-    const columns = useMemo<ColumnDef<ShopData>[]>(() => [
+    const columns = useMemo<ColumnDef<ShopData>[]>(
+        () => [
         {
             accessorKey: 'id',
             accessorFn: (row: ShopData) => row.id,

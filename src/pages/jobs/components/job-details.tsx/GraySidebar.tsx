@@ -25,7 +25,7 @@ interface GraySidebarProps {
 export default function GraySidebar({ sections, className = '' }: GraySidebarProps) {
     return (
         <aside
-            className={` w-full border-r p-6 overflow-y-auto bg-[#FAFAFA] h-screen  ${className}`}
+            className={` w-full border-r p-6 overflow-y-auto bg-[#FAFAFA] lg:h-screen  ${className}`}
         >
             {sections.map((section, sectionIndex) => (
                 <section key={sectionIndex} className={`mt-3 mb-8 ${section.className || ''}`}>

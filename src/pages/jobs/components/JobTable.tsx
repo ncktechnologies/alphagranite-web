@@ -143,7 +143,7 @@ export const JobTable = ({ jobs, path }: JobTableProps) => {
             accessorKey: "no_of_pieces",
             accessorFn: (row: IJob) => row.no_of_pieces,
             header: ({ column }) => (
-                <DataGridColumnHeader title="No. of pieces" column={column} />
+                <DataGridColumnHeader className='uppercase' title="No. of pieces" column={column} />
             ),
             cell: ({ row }) => (
                 <span className="text-sm truncate block max-w-[160px]">
@@ -156,7 +156,7 @@ export const JobTable = ({ jobs, path }: JobTableProps) => {
             accessorKey: "total_sq_ft",
             accessorFn: (row: IJob) => row.total_sq_ft,
             header: ({ column }) => (
-                <DataGridColumnHeader title="Total Sq ft " column={column} />
+                <DataGridColumnHeader className='uppercase' title="Total Sq ft " column={column} />
             ),
             cell: ({ row }) => (
                 <span className="text-sm truncate block max-w-[160px]">
@@ -169,7 +169,7 @@ export const JobTable = ({ jobs, path }: JobTableProps) => {
             accessorKey: "revenue",
             accessorFn: (row: IJob) => row.revenue,
             header: ({ column }) => (
-                <DataGridColumnHeader title="Revenue" column={column} />
+                <DataGridColumnHeader className='uppercase' title="Revenue" column={column} />
             ),
             cell: ({ row }) => (
                 <span className="text-sm truncate block max-w-[160px]">
@@ -182,7 +182,7 @@ export const JobTable = ({ jobs, path }: JobTableProps) => {
             accessorKey: "revised",
             accessorFn: (row: IJob) => row.revised,
             header: ({ column }) => (
-                <DataGridColumnHeader title="Revised" column={column} />
+                <DataGridColumnHeader className='uppercase' title="Revised" column={column} />
             ),
             cell: ({ row }) => (
                 <span className="text-sm truncate block max-w-[160px]">
@@ -195,11 +195,24 @@ export const JobTable = ({ jobs, path }: JobTableProps) => {
             accessorKey: "sct_completed",
             accessorFn: (row: IJob) => row.sct_completed,
             header: ({ column }) => (
-                <DataGridColumnHeader title="Sct Completed" column={column} />
+                <DataGridColumnHeader className='uppercase' title="Sct Completed" column={column} />
             ),
             cell: ({ row }) => (
                 <span className="text-sm truncate block max-w-[160px]">
                     {row.original.sct_completed}
+                </span>
+            ),
+        },
+        {
+            id: "draft_completed",
+            accessorKey: "draft_completed",
+            accessorFn: (row: IJob) => row.draft_completed,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="DRAFT COMPLETED" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm truncate block max-w-[160px]">
+                    {row.original.draft_completed}
                 </span>
             ),
         },
@@ -212,6 +225,17 @@ export const JobTable = ({ jobs, path }: JobTableProps) => {
             ),
             cell: ({ row }) => (
                 <span className="text-sm">{row.original.template_schedule}</span>
+            ),
+        },
+         {
+            id: "gp",
+            accessorKey: "gp",
+            accessorFn: (row: IJob) => row.gp,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="GP" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm">{row.original.gp}</span>
             ),
         },
         {

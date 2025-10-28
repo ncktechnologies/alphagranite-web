@@ -14,8 +14,13 @@ export interface IJob {
   revenue?: string;
   revised?:string;
   sct_completed?:string
+  draft_completed?:string
+  gp?:string
   date: string; // e.g. "08 October, 2025"
 }
+
+
+
 
 export interface SchedulingNote {
   id: string;
@@ -77,3 +82,4 @@ export interface FileViewerProps {
       timestamp: '1 hour ago'
     }
   ];
+

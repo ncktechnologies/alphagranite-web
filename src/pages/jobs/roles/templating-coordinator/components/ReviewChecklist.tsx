@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { AssignTechnicianModal } from "./AssignTech";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { useNavigate } from "react-router";
 
 const reviewChecklistSchema = z.object({
     customerInfo: z.boolean(),
@@ -32,6 +33,7 @@ type ReviewChecklistData = z.infer<typeof reviewChecklistSchema>;
 export function ReviewChecklistForm() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [openModal, setOpenModal] = useState(false);
+  const navigate = useNavigate();
 
     const form = useForm<ReviewChecklistData>({
         resolver: zodResolver(reviewChecklistSchema),
@@ -132,7 +134,7 @@ export function ReviewChecklistForm() {
             {openModal && (
                 <AssignTechnicianModal
                     open={openModal}
-                    onClose={() => setOpenModal(false)}
+                    onClose={() => {setOpenModal(false); navigate('/job/templating-technician')}}
                 // fabData={fabData}
                 />
             )}

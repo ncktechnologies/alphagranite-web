@@ -156,7 +156,7 @@ export const TimeTrackingComponent = ({
                   Resume
                 </Button>
               )}
-              <Button onClick={handleEnd} variant="destructive" className='text-red-100'>
+              <Button onClick={handleEnd} variant="inverse" className='text-[#EF4444] border border-[#EF4444]'>
                 <Square className="w-4 h-4 mr-2" />
                 End
               </Button>

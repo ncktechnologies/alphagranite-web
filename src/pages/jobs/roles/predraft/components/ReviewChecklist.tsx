@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { useNavigate } from "react-router";
 
 const reviewChecklistSchema = z.object({
     templatereview: z.boolean(),
@@ -33,7 +34,7 @@ type ReviewChecklistData = z.infer<typeof reviewChecklistSchema>;
 export function ReviewChecklistForm() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [openModal, setOpenModal] = useState(false);
-
+    const navigate = useNavigate()
     const form = useForm<ReviewChecklistData>({
         resolver: zodResolver(reviewChecklistSchema),
         defaultValues: {
@@ -49,6 +50,7 @@ export function ReviewChecklistForm() {
         toast.success("Checklist review completed successfully!");
         setOpenModal(false); // ✅ open modal when checklist passes
         setIsSubmitting(false);
+        navigate('/job/draft')
     };
     const technicians = ["John Doe", "Mary Smith", "Daniel Kim", "Sophia Brown"];
 

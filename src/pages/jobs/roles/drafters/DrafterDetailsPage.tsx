@@ -15,6 +15,7 @@ import { X } from 'lucide-react';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { Separator } from '@/components/ui/separator';
+import { useNavigate } from 'react-router';
 
 const DrafterDetailsPage = () => {
   type ViewMode = 'activity' | 'file';
@@ -27,7 +28,7 @@ const DrafterDetailsPage = () => {
   const [activeFile, setActiveFile] = useState<any | null>(null);
   const [hasEnded, setHasEnded] = useState(false);
   const [resetTimeTracking, setResetTimeTracking] = useState(0);
-
+   const navigate = useNavigate()
   const handleFilesChange = (files: any[]) => {
     setUploadedFiles(files);
   };
@@ -69,6 +70,7 @@ const DrafterDetailsPage = () => {
     setUploadedFiles([]);
     setHasEnded(false)
     setResetTimeTracking(prev => prev + 1);
+    navigate('/job/draft-review')
   };
 
 
@@ -116,8 +118,8 @@ const DrafterDetailsPage = () => {
           <ToolbarHeading title="FAB ID: 4456" description="Update templating activity" />
         </Toolbar>
       </Container>
-      <div className=" border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0  items-start lg:flex-shrink-0">
-        <div className="lg:col-span-3 w-full lg:w-[250px] XL:W-[300PX] 2xl:w-[400px]" >
+      <div className=" border-t grid grid-cols-1 lg:grid-cols-12 gap-3 ultra:gap-0  items-start lg:flex-shrink-0">
+        <div className="lg:col-span-3 w-full lg:w-[200px]  2xl:w-[286px]  ultra:w-[500px]" >
           <GraySidebar sections={sidebarSections as any} />
 
         </div>

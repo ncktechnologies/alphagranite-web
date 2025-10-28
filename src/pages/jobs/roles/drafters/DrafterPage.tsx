@@ -18,8 +18,8 @@ const DrafterPage = () => {
             no_of_pieces: "91 Hug × 15 Hug",
             total_sq_ft: "—",
             revenue: "—",
-            revised: "No",
-            sct_completed: "Yes",
+            gp: "-",
+            draft_completed: "Yes",
             date: '08 October, 2025',
         },
         {
@@ -32,8 +32,8 @@ const DrafterPage = () => {
             no_of_pieces: "91 Hug × 15 Hug",
             total_sq_ft: "—",
             revenue: "—",
-            revised: "No",
-            sct_completed: "Yes",
+            gp: "-",
+            draft_completed: "Yes",
             date: '08 October, 2025',
 
         },
@@ -47,8 +47,8 @@ const DrafterPage = () => {
             no_of_pieces: "91 Hug × 15 Hug",
             total_sq_ft: "—",
             revenue: "—",
-            revised: "No",
-            sct_completed: "Yes",
+            gp: "-",
+            draft_completed: "Yes",
             date: '10 October, 2025',
         },
     ]
@@ -56,7 +56,7 @@ const DrafterPage = () => {
         <div className="">
             <Container>
                 <Toolbar className=' '>
-                    <ToolbarHeading title="Templating" description="" />
+                    <ToolbarHeading title="Drafting" description="" />
                     {/* <ToolbarActions>
                                <Link to="/jobs/sales/new-fab-id">
                                    <Button className="">

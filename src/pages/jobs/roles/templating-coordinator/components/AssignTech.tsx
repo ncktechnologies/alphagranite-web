@@ -93,7 +93,7 @@ export function AssignTechnicianModal({
                         const formatted = date?.toISOString().split("T")[0] // "YYYY-MM-DD"
                         field.onChange(formatted)
                       }}
-                      placeholder="Schdule date"
+                      placeholder="Schedule date"
                     />
                   </FormControl>
                   <FormMessage>{fieldState.error?.message}</FormMessage>

@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { useNavigate } from "react-router";
 
 const formSchema = z.object({
   status: z.enum(["completed", "not_completed"]),
@@ -24,7 +25,7 @@ const formSchema = z.object({
 export function TemplatingActivityForm() {
   const [openModal, setOpenModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
+const navigate = useNavigate()
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -41,7 +42,9 @@ export function TemplatingActivityForm() {
     await new Promise((r) => setTimeout(r, 1200));
 
     toast.success("Checklist review completed successfully!");
+
     setIsSubmitting(false);
+    navigate('/job/predraft')
   }
 
   return (
