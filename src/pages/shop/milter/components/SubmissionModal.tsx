@@ -125,7 +125,7 @@ export const ScheduleCuttingModal = ({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="cutting">Cutting</SelectItem>
+                        <SelectItem value="milter">Miter</SelectItem>
                         {/* <SelectItem value="polishing">Polishing</SelectItem>
                       <SelectItem value="packaging">Packaging</SelectItem> */}
                       </SelectContent>
