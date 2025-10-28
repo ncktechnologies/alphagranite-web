@@ -33,6 +33,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Alert, AlertIcon, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
+import { useNavigate } from "react-router";
 
 const cuttingSchema = z.object({
   workstation: z.string().min(1, "Workstation is required"),
@@ -65,6 +66,7 @@ export const ScheduleCuttingModal = ({
       operator: "Mike Rodriguez",
     },
   });
+const navigate = useNavigate()
 
   const handleSubmit = async (values: CuttingFormValues) => {
     try {
@@ -78,8 +80,8 @@ export const ScheduleCuttingModal = ({
               <Check />
             </AlertIcon>
             <AlertTitle>
-              Cutting scheduled successful <br />
-              Your cutting schedule was updated successfully
+              Edging scheduled successful <br />
+              Your Edging schedule was updated successfully
             </AlertTitle>
           </Alert>
         ),
@@ -90,6 +92,7 @@ export const ScheduleCuttingModal = ({
       onSubmit(values);
       onClose();
       form.reset();
+      navigate('/shop/miter')
     } finally {
       setIsSubmitting(false);
     }

@@ -27,6 +27,8 @@ import CuttingPlanPage from '@/pages/shop/cutting-plan/CuttingPlanPage';
 import { ShopDetailsPage } from '@/pages/shop/cutting-plan/Details';
 import { EdgingDetailsPage } from '@/pages/shop/edging/Details';
 import EdgingPlanPage from '@/pages/shop/edging/EdgingPage';
+import { MiterDetailsPage } from '@/pages/shop/milter/Details';
+import MilterPlanPage from '@/pages/shop/milter/MilterPage';
 import SettingsPage from '@/pages/shop/settings/SettingsPage';
 import { WjDetailsPage } from '@/pages/shop/wj/Detail';
 import WJPlanPage from '@/pages/shop/wj/WjPage';
@@ -221,6 +223,22 @@ export function AppRoutingSetup() {
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <EdgingDetailsPage/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/shop/miter"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <MilterPlanPage/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/shop/miter/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <MiterDetailsPage/>
               // </ProtectedRoute>
             }
           />

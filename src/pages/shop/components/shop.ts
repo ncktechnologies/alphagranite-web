@@ -13,6 +13,8 @@ export interface ShopData {
     fp_complete: string
     date: string
     edging?:string
+    miter_planning?:string
+
 }
 export const dummyData: ShopData[] = [
     {

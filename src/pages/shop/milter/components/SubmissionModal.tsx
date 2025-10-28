@@ -78,8 +78,8 @@ export const ScheduleCuttingModal = ({
               <Check />
             </AlertIcon>
             <AlertTitle>
-              Cutting scheduled successful <br />
-              Your cutting schedule was updated successfully
+              Milter scheduled successful <br />
+              Your milter schedule was updated successfully
             </AlertTitle>
           </Alert>
         ),
@@ -100,7 +100,7 @@ export const ScheduleCuttingModal = ({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-[15px] text-text font-semibold py-2 border-b">
-            Schedule cutting
+            Milter cutting
           </DialogTitle>
         </DialogHeader>
 
@@ -218,7 +218,7 @@ export const ScheduleCuttingModal = ({
                 className="bg-green-600 hover:bg-green-700 text-white"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? "Scheduling..." : "Schedule for cutting"}
+                {isSubmitting ? "Scheduling..." : "Schedule for milter"}
               </Button>
             </div>
           </form>

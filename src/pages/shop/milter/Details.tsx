@@ -149,7 +149,7 @@ const MiterDetailsPage = () => {
                                     // disabled={}
                                     size="lg"
                                 >
-                                    Schedule for cutting
+                                    Schedule for milter
                                 </Button>
                             </div>
                         </>

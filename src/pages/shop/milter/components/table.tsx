@@ -73,7 +73,7 @@ const CuttingPlan = () => {
     }, [dummyData, searchQuery])
 
     const handleView = (id: string) => {
-        navigate(`/shop/${id}`);
+        navigate(`/shop/miter/${id}`);
     };
 
     const columns = useMemo<ColumnDef<ShopData>[]>(
@@ -185,6 +185,17 @@ const CuttingPlan = () => {
                 ),
                 cell: ({ row }) => (
                     <span className="text-sm text-text max-w-[200px]">{row.original.revenue}</span>
+                ),
+                enableSorting: true,
+            },
+            {
+                id: 'milter_planning',
+                accessorFn: (row) => row.miter_planning,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="Miter PlaninG" column={column} className='uppercase' />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text max-w-[200px]">{row.original.miter_planning}</span>
                 ),
                 enableSorting: true,
             },
