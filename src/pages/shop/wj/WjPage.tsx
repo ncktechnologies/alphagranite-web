@@ -5,7 +5,7 @@ import { Settings } from 'lucide-react';
 import { Link } from 'react-router';
 import { CuttingPlan } from './components/table';
 
-const CuttingPlanPage = () => {
+const WJPlanPage = () => {
     return (
         <div>
             <Container>
@@ -13,14 +13,14 @@ const CuttingPlanPage = () => {
 
                     <ToolbarHeading title="Shop" description="View shop status list for jobs  " />
 
-                    <ToolbarActions>
+                    {/* <ToolbarActions>
                         <Link to='/shop/settings'>
                             <Button className="">
                                 <Settings />
                                 Shop Settings
                             </Button>
                         </Link>
-                    </ToolbarActions>
+                    </ToolbarActions> */}
                 </Toolbar>
                 <CuttingPlan />
             </Container>
@@ -28,4 +28,4 @@ const CuttingPlanPage = () => {
     );
 }
 
-export default CuttingPlanPage;
+export default WJPlanPage;

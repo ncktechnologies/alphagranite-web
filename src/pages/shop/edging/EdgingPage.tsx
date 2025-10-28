@@ -5,22 +5,22 @@ import { Settings } from 'lucide-react';
 import { Link } from 'react-router';
 import { CuttingPlan } from './components/table';
 
-const CuttingPlanPage = () => {
+const EdgingPlanPage = () => {
     return (
         <div>
             <Container>
                 <Toolbar className=' '>
 
-                    <ToolbarHeading title="Shop" description="View shop status list for jobs  " />
+                    <ToolbarHeading title="Edging planning" description=" " />
 
-                    <ToolbarActions>
+                    {/* <ToolbarActions>
                         <Link to='/shop/settings'>
                             <Button className="">
                                 <Settings />
                                 Shop Settings
                             </Button>
                         </Link>
-                    </ToolbarActions>
+                    </ToolbarActions> */}
                 </Toolbar>
                 <CuttingPlan />
             </Container>
@@ -28,4 +28,4 @@ const CuttingPlanPage = () => {
     );
 }
 
-export default CuttingPlanPage;
+export default EdgingPlanPage;

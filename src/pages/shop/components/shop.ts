@@ -12,6 +12,7 @@ export interface ShopData {
     revenue: string
     fp_complete: string
     date: string
+    edging?:string
 }
 export const dummyData: ShopData[] = [
     {
@@ -52,6 +53,53 @@ export const dummyData: ShopData[] = [
         wj_time: '-',
         machine: '-',
         confirmed: '-',
+        revenue: '-',
+        fp_complete: 'No',
+        date: '10 October, 2025',
+    },
+]
+export const dummyData2: ShopData[] = [
+    {
+        id: 1,
+        fab_type: 'Standard',
+        fab_id: '14425',
+        job_no: '9999',
+        pieces: 14,
+        total_sq_ft: 171,
+        wj_time: '-',
+        machine: '-',
+        confirmed: '9/10/2025',
+        revenue: '$5,005.00',
+        edging: '-',
+        fp_complete: '9/10/2025',
+        date: '10 October, 2025',
+    },
+    {
+        id: 2,
+        fab_type: 'Standard',
+        fab_id: '33034',
+        job_no: '9999',
+        pieces: 16,
+        total_sq_ft: 28.5,
+        wj_time: '-',
+        machine: '-',
+        confirmed: '-',
+        revenue: '-',
+        fp_complete: 'No',
+        edging: '-',
+        date: '10 October, 2025',
+    },
+    {
+        id: 3,
+        fab_type: 'Standard',
+        fab_id: '33034',
+        job_no: '9999',
+        pieces: 5,
+        total_sq_ft: 28.5,
+        wj_time: '-',
+        machine: '-',
+        confirmed: '-',
+        edging: '-',
         revenue: '-',
         fp_complete: 'No',
         date: '10 October, 2025',

@@ -2,15 +2,14 @@ import { useState } from 'react';
 import { Container } from '@/components/common/container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ScheduleCuttingModal, SubmissionModal } from './components/SubmissionModal';
 import { X } from 'lucide-react';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Separator } from '@/components/ui/separator';
-import GraySidebar from '../jobs/components/job-details.tsx/GraySidebar';
-import { jobDetails } from '../jobs/components/job';
-import { jobInfo } from '../jobs/roles/templating-coordinator/components/details';
-import { Documents } from './components/files';
-import { FileViewer } from '../jobs/roles/drafters/components';
+import GraySidebar from '@/pages/jobs/components/job-details.tsx/GraySidebar';
+import { FileViewer } from '@/pages/jobs/roles/drafters/components';
+import { Documents } from '../components/files';
+import { ScheduleCuttingModal } from './components/SubmissionModal';
+import { jobInfo } from '@/pages/jobs/roles/templating-coordinator/components/details';
 
 const ShopDetailsPage = () => {
     type ViewMode = 'activity' | 'file';
@@ -150,7 +149,7 @@ const ShopDetailsPage = () => {
                                     // disabled={}
                                     size="lg"
                                 >
-                                    Schedule for WJ
+                                    Schedule for cutting
                                 </Button>
                             </div>
                         </>

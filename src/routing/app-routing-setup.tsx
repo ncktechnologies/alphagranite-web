@@ -23,9 +23,13 @@ import { TechnicianPage } from '@/pages/jobs/roles/technician-templater/Technici
 import { FabIdDetailsPage } from '@/pages/jobs/roles/templating-coordinator/components/details';
 import { TemplatingPage } from '@/pages/jobs/roles/templating-coordinator/templatingPage';
 import { NotificationsSection, ProfileSection, RolesSection } from '@/pages/settings';
-import { ShopDetailsPage } from '@/pages/shop/Details';
+import CuttingPlanPage from '@/pages/shop/cutting-plan/CuttingPlanPage';
+import { ShopDetailsPage } from '@/pages/shop/cutting-plan/Details';
+import { EdgingDetailsPage } from '@/pages/shop/edging/Details';
+import EdgingPlanPage from '@/pages/shop/edging/EdgingPage';
 import SettingsPage from '@/pages/shop/settings/SettingsPage';
-import ShopPage from '@/pages/shop/ShopPage';
+import { WjDetailsPage } from '@/pages/shop/wj/Detail';
+import WJPlanPage from '@/pages/shop/wj/WjPage';
 
 import { Navigate, Route, Routes } from 'react-router';
 
@@ -168,7 +172,7 @@ export function AppRoutingSetup() {
             path="/shop"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <ShopPage/>
+                <CuttingPlanPage/>
               // </ProtectedRoute>
             }
           />
@@ -185,6 +189,38 @@ export function AppRoutingSetup() {
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <ShopDetailsPage/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/shop/wj"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <WJPlanPage/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/shop/wj/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <WjDetailsPage/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/shop/edging"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <EdgingPlanPage/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/shop/edging/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <EdgingDetailsPage/>
               // </ProtectedRoute>
             }
           />
