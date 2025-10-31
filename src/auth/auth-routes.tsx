@@ -12,6 +12,7 @@ import { ClassicLayout } from './layouts/classic';
 import { OtpVerifyPage } from './pages/otp-verify';
 import LoginStepper from './pages/steppers/login-stepper';
 import { CompleteProfilePage } from './pages/profile-settings/profilepage';
+import { ProfileSettingsPage } from './pages/profile-settings';
 
 // Define the auth routes
 export const authRoutes: RouteObject[] = [
@@ -74,6 +75,10 @@ export const authRoutes: RouteObject[] = [
         // element: <ResetPasswordPage />,
         element: <CompleteProfilePage/>,
 
+      },
+      {
+        path: 'profile-settings',
+        element: <ProfileSettingsPage />,
       },
       {
         path: 'otp-verify',

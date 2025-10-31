@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '@/auth/context/auth-context';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, Check, Eye, EyeOff } from 'lucide-react';
 import { useForm } from 'react-hook-form';
@@ -22,58 +21,125 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { FormHeader } from '@/components/ui/form-header';
 import Popup from '@/components/ui/popup';
+import { useChangePasswordMutation } from '@/store/api/auth';
+import { toast } from 'sonner';
+import { useLazyGetProfileQuery } from '@/store/api/auth';
+import { useDispatch } from 'react-redux';
+import { setCredentials } from '@/store/slice';
 
 export function ChangePasswordPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { } = useAuth();
+  const dispatch = useDispatch();
+  const [currentPasswordVisible, setCurrentPasswordVisible] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showPopover, setShowPopover] = useState(false);
+  const [changePassword] = useChangePasswordMutation();
+  const [getProfile] = useLazyGetProfileQuery();
+
+  // Check if this is a first-time login
+  const isFirstTimeLogin = () => {
+    const token = localStorage.getItem('token');
+    return !!token;
+  };
 
   const form = useForm<NewPasswordSchemaType>({
     resolver: zodResolver(getNewPasswordSchema()),
     defaultValues: {
+      currentPassword: '',
       password: '',
       confirmPassword: '',
     },
   });
+
+  // Function to extract error message from API response
+  const getErrorMessage = (error: any): string => {
+    if (error?.data?.detail) {
+      if (Array.isArray(error.data.detail)) {
+        // Handle array of validation errors
+        return error.data.detail.map((err: any) => err.msg || JSON.stringify(err)).join(', ');
+      } else if (typeof error.data.detail === 'string') {
+        // Handle string error message
+        return error.data.detail;
+      } else {
+        // Handle object error message
+        return error.data.detail.msg || JSON.stringify(error.data.detail);
+      }
+    }
+    return error?.message || 'Failed to change password. Please try again.';
+  };
 
   async function onSubmit(values: NewPasswordSchemaType) {
     try {
       setIsProcessing(true);
       setError(null);
 
+      // Log the values being sent
+      console.log('Sending password change request:', {
+        current_password: values.currentPassword,
+        new_password: values.password,
+        confirm_password: values.confirmPassword
+      });
 
+      // Call the API to change password
+      await changePassword({ 
+        current_password: values.currentPassword,
+        new_password: values.password,
+        confirm_password: values.confirmPassword
+      }).unwrap();
+
+      toast.success('Password changed successfully!');
       setSuccessMessage('Password changed successfully!');
       setShowPopover(true);
+      
+      // For first-time login, we need to complete the login flow
+      if (isFirstTimeLogin()) {
+        // Get user profile
+        const profileData = await getProfile().unwrap();
+        const accessToken = localStorage.getItem('token');
+        
+        if (accessToken) {
+          dispatch(
+            setCredentials({
+              admin: profileData,
+              access_token: accessToken,
+            })
+          );
+        }
+      }
+
       // Reset form
       form.reset();
-
-      // Redirect to login page after a successful password reset
-      // setTimeout(() => {
-      //   navigate('/auth/update-profile');
-      // }, 2000);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Password reset error:', err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'An unexpected error occurred. Please try again.',
-      );
+      const errorMessage = getErrorMessage(err);
+      setError(errorMessage);
     } finally {
       setIsProcessing(false);
     }
   }
 
-
+  const handleClosePopup = () => {
+    setShowPopover(false);
+    // If this was a first-time login, redirect to update profile page
+    if (isFirstTimeLogin()) {
+      // Clear the temporary token and redirect to update profile page
+      localStorage.removeItem('token');
+      navigate('/auth/update-profile');
+    } else {
+      navigate('/');
+    }
+  };
 
   return (
     <div className="w-full flex flex-col items-center justify-center">
-      <FormHeader title="Change password" caption='Please change your default password to a new desired password ' />
+      <FormHeader title="Change password" caption={isFirstTimeLogin() 
+        ? 'Please change your default password to a new desired password' 
+        : 'Please change your password to a new desired password'} />
       <Card className="w-full max-w-[398px] overflow-y-auto flex flex-wrap border-[#DFDFDF]">
         <CardContent className="px-6 py-12">
           <Form {...form}>
@@ -99,6 +165,38 @@ export function ChangePasswordPage() {
               )}
 
               <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="currentPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Current Password *</FormLabel>
+                      <div className="relative">
+                        <Input
+                          placeholder="******************"
+                          type={currentPasswordVisible ? 'text' : 'password'}
+                          autoComplete="current-password"
+                          {...field}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          mode="icon"
+                          onClick={() => setCurrentPasswordVisible(!currentPasswordVisible)}
+                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                        >
+                          {currentPasswordVisible ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </Button>
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="password"
@@ -192,9 +290,9 @@ export function ChangePasswordPage() {
 
           <Button
             className="px-8"
-            onClick={() => navigate('/auth/update-profile')}
+            onClick={handleClosePopup}
           >
-            Close
+            Continue
           </Button>
         </div>
       </Popup>

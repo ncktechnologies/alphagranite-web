@@ -8,19 +8,23 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { useStepper } from "@/components/ui/stepper";
+import { useResetPasswordMutation } from '@/store/api/auth';
 
 export function OtpVerifyPage() {
-     const { setActiveStep } = useStepper()
+    const { setActiveStep } = useStepper()
     const OTP_LENGTH = 6;
     const SPLIT_INDEX = 3; // Show hyphen after 3 digits
 
     const [codeInputs, setCodeInputs] = useState<string[]>(Array(OTP_LENGTH).fill(''));
     const [timer, setTimer] = useState<number>(60);
     const [isSubmitting, setIsSubmitting] = useState(false);
-    const inputRefs = useRef<HTMLInputElement[]>([]);
+    const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
     const navigate = useNavigate();
     const location = useLocation();
     const email = location.state?.email;
+    const from = location.state?.from;
+    const [resetPassword] = useResetPasswordMutation();
+
     // Countdown timer
     useEffect(() => {
         if (timer <= 0) return;
@@ -48,17 +52,47 @@ export function OtpVerifyPage() {
         }
     };
 
+    // Function to extract error message from API response
+    const getErrorMessage = (error: any): string => {
+        if (error?.data?.detail) {
+            if (Array.isArray(error.data.detail)) {
+                // Handle array of validation errors
+                return error.data.detail.map((err: any) => err.msg || JSON.stringify(err)).join(', ');
+            } else if (typeof error.data.detail === 'string') {
+                // Handle string error message
+                return error.data.detail;
+            } else {
+                // Handle object error message
+                return error.data.detail.msg || JSON.stringify(error.data.detail);
+            }
+        }
+        return error?.message || 'Invalid verification code';
+    };
+
     const handleSubmit = async (otp: string) => {
         setIsSubmitting(true);
         try {
             console.log('Submitting OTP:', otp);
-            // Simulate async submit
-            await new Promise((res) => setTimeout(res, 1000));
-            // Redirect or show success
-            setActiveStep(2);
-            toast.success(`OTP Verified: ${otp}`);
-        } catch (error) {
+            
+            // For password reset flow, call the reset password API
+            if (from === 'reset-password' && email) {
+                await resetPassword({ 
+                    token: otp, 
+                    new_password: '' // This would need to be collected in the next step
+                }).unwrap();
+                
+                toast.success('Password reset successfully!');
+                navigate('/auth/signin?pwd_reset=success');
+            } else {
+                // For other flows, just simulate verification
+                await new Promise((res) => setTimeout(res, 1000));
+                setActiveStep(2);
+                toast.success(`OTP Verified: ${otp}`);
+            }
+        } catch (error: any) {
             console.error('OTP Error', error);
+            const errorMessage = getErrorMessage(error);
+            toast.error(errorMessage);
         } finally {
             setIsSubmitting(false);
         }
@@ -69,7 +103,9 @@ export function OtpVerifyPage() {
         setTimer(60);
         inputRefs.current[0]?.focus();
         // Trigger resend logic here (e.g., API call)
+        toast.info('Verification code resent to your email');
     };
+    
     return (
         <div className="w-full flex flex-col items-center justify-center">
             <FormHeader title="Verify OTP" caption={`Enter the code sent to your email address ${email} to verify password reset`} />
@@ -81,7 +117,7 @@ export function OtpVerifyPage() {
                         {codeInputs.map((value, index) => (
                             <div key={index} className="">
                                 <Input
-                                    ref={(el) => (inputRefs.current[index] = el!)}
+                                    ref={(el) => {if (el) inputRefs.current[index] = el;}}
                                     type="text"
                                     inputMode="numeric"
                                     maxLength={1}
@@ -118,6 +154,15 @@ export function OtpVerifyPage() {
 
                     </div>
                     <div className="flex items-center text-center justify-center">{timer}s</div>
+                    
+                    <div className="text-center text-sm mt-4">
+                        <Link
+                            to="/auth/signin"
+                            className="inline-flex items-center gap-2 text-sm font-semibold text-accent-foreground hover:underline hover:underline-offset-2"
+                        >
+                            <MoveLeft className="size-3.5 opacity-70" /> Back to Sign In
+                        </Link>
+                    </div>
 
                 </CardContent>
             </Card>

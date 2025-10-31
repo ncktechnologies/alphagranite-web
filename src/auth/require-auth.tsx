@@ -37,15 +37,15 @@ export const RequireAuth = () => {
   }
 
   // If not authenticated, redirect to login
-  // if (!token) {
+  if (!token) {
 
-  //   return (
-  //     <Navigate
-  //       to={`/auth/signin?next=${encodeURIComponent(location.pathname)}`}
-  //       replace
-  //     />
-  //   );
-  // }
+    return (
+      <Navigate
+        to={`/auth/signin?next=${encodeURIComponent(location.pathname)}`}
+        replace
+      />
+    );
+  }
 
   // If authenticated, render child routes
   return <Outlet />;

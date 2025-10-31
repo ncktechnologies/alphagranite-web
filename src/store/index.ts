@@ -7,8 +7,7 @@ import { userSliceReducer, paginationReducer } from "./slice";
 import { authApi } from "./api";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import userReducer from './slice/user';
-import { adminApi } from "./api/admin";
-import { financeApi } from "./api/financial";
+
 
 const persistConfig = {
     key: "root",
@@ -21,9 +20,7 @@ const rootReducer = combineReducers({
     user: userReducer,
     pagination: paginationReducer,
     [authApi.reducerPath]: authApi.reducer,
-    [adminApi.reducerPath]: adminApi.reducer,
-    [financeApi.reducerPath]: financeApi.reducer,
-
+   
 
 });
 
@@ -42,8 +39,7 @@ const store = configureStore({
         })
             .concat(
                 authApi.middleware,
-                adminApi.middleware,
-                financeApi.middleware
+               
             ),
 
 });

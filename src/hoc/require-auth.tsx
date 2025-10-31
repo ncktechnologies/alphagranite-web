@@ -12,7 +12,7 @@ export const RequireAuth = ({ children }: { children: ReactNode }) => {
 
     useEffect(() => {
         if (!token) {
-            router("/"); // Redirect to login page if not authenticated
+            router(`/auth/signin?next=${encodeURIComponent(location.pathname)}`); // Redirect to login page if not authenticated
         }
     }, [token, router]);
 

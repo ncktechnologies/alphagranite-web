@@ -79,14 +79,24 @@ export interface AuthResponse<T> {
 }
 
 export interface LoginRequest {
-  email: string;
+  username: string;
   password: string;
 }
 
+// Updated LoginResponse to handle both regular and first-time login responses
 export interface LoginResponse {
-  admin: AuthAdmin;
-  access_token: string;
-  refresh_token: string;
+  // Regular login properties
+  admin?: AuthAdmin;
+  access_token?: string;
+  refresh_token?: string;
+  // First-time login properties
+  success?: boolean;
+  message?: string;
+  data?: {
+    first_time: boolean;
+    access_token: string;
+    token_type: string;
+  };
 }
 
 export interface SignupRequest {
@@ -141,3 +151,49 @@ export interface InviteUsersRequest {
   emails: string[];
   role?: string;
 } 
+
+// Adding missing interfaces based on OpenAPI spec
+
+export interface PasswordChangeRequest {
+  current_password: string;
+  new_password: string;
+  confirm_password: string;
+}
+
+export interface PasswordResetRequest {
+  email: string;
+}
+
+export interface PasswordResetConfirm {
+  token: string;
+  new_password: string;
+}
+
+export interface UserProfileUpdate {
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone?: string;
+  // Add other profile fields as needed
+}
+
+export interface UserResponse {
+  id: number;
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  is_active: boolean;
+  is_superuser: boolean;
+  // Add other user fields as needed
+}
+
+export interface HTTPValidationError {
+  detail?: Array<ValidationError>;
+}
+
+export interface ValidationError {
+  loc: Array<string | number>;
+  msg: string;
+  type: string;
+}

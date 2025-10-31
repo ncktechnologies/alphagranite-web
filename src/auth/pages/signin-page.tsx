@@ -17,10 +17,12 @@ import { Input } from '@/components/ui/input';
 // import { Icons } from '@/components/common/icons';
 import { getSigninSchema, type SigninSchemaType } from '../forms/signin-schema';
 import { LoaderCircleIcon } from 'lucide-react';
-import { useLoginMutation, useLazyGetProfileQuery } from '@/store/api';
+import { useLoginMutation, useLazyGetProfileQuery } from '@/store/api/auth';
 import { toast } from 'sonner';
 import { useDispatch } from 'react-redux';
 import { setCredentials } from '@/store/slice';
+import type { LoginResponse } from '@/interfaces/pages/auth';
+import Popup from '@/components/ui/popup';
 
 export function SignInPage() {
   const [searchParams] = useSearchParams();
@@ -32,6 +34,7 @@ export function SignInPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showFirstTimeLoginPopup, setShowFirstTimeLoginPopup] = useState(false);
   const [login, { isLoading }] = useLoginMutation();
 
   const [getProfile] = useLazyGetProfileQuery()
@@ -85,55 +88,78 @@ export function SignInPage() {
     },
   });
 
+  // Function to extract error message from API response
+  const getErrorMessage = (error: any): string => {
+    if (error?.data?.detail) {
+      if (Array.isArray(error.data.detail)) {
+        // Handle array of validation errors
+        return error.data.detail.map((err: any) => err.msg || JSON.stringify(err)).join(', ');
+      } else if (typeof error.data.detail === 'string') {
+        // Handle string error message
+        return error.data.detail;
+      } else {
+        // Handle object error message
+        return error.data.detail.msg || JSON.stringify(error.data.detail);
+      }
+    }
+    return error?.message || 'Invalid username or password';
+  };
+
   async function onSubmit(values: SigninSchemaType) {
     try {
       setIsProcessing(true);
       setError(null);
 
-      console.log('Attempting to sign in with email:', values.username);
+      console.log('Attempting to sign in with username:', values.username);
 
       // Simple validation
       if (!values.username.trim() || !values.password) {
-        setError('User Name and password are required');
+        setError('Username and password are required');
         return;
       }
 
-      const res = await login({ email: values.username, password: values.password }).unwrap();
-      toast.success("User login successfully");
-      localStorage.setItem('token', res.access_token);
-      const profileData = await getProfile().unwrap();
-      dispatch(
-        setCredentials({
-          admin: profileData,
-          access_token: res.access_token,
-        })
-      );
-      // dispatch(
-      //   setCredentials({
-      //     admin: {name:"Joy"},
-      //     access_token: "jnvuhjkm",
-      //   })
-      // );
-      // Get the 'next' parameter from URL if it exists
-      const nextPath = searchParams.get('next') || '/';
-
-      // Use navigate for navigation
-      navigate(nextPath);
-    } catch (err) {
-      navigate('/auth/reset-password');
-
+      const res: LoginResponse = await login({ username: values.username, password: values.password }).unwrap();
+      
+      // Check if it's a first-time login (based on the response structure you provided)
+      if (res?.success === true && res?.data?.first_time === true && res?.data?.access_token) {
+        // Store the token for the change password flow
+        localStorage.setItem('token', res.data.access_token);
+        // Show popup instead of toast
+        setShowFirstTimeLoginPopup(true);
+        return;
+      }
+      console.log(res)
+      // Regular login flow
+      if (res?.data?.access_token) {
+        toast.success("User login successfully");
+        localStorage.setItem('token', res.data.access_token);
+        // const profileData = await getProfile().unwrap();
+        dispatch(
+          setCredentials({
+            admin: res.data.user,
+            access_token: res.data.access_token,
+          })
+        );
+        
+        const nextPath = searchParams.get('next') || '/';
+        // Use navigate for navigation
+        navigate(nextPath || '/');
+      } else {
+        setError('Login failed. Please try again.');
+      }
+    } catch (err: any) {
       console.error('Unexpected sign-in error:', err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'An unexpected error occurred. Please try again.',
-      );
+      const errorMessage = getErrorMessage(err);
+      setError(errorMessage);
     } finally {
       setIsProcessing(false);
     }
   }
 
-
+  const handleFirstTimeLoginRedirect = () => {
+    setShowFirstTimeLoginPopup(false);
+    navigate('/auth/reset-password');
+  };
 
   return (
     <Form {...form}>
@@ -171,9 +197,9 @@ export function SignInPage() {
           name="username"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>User name *</FormLabel>
+              <FormLabel>Username *</FormLabel>
               <FormControl>
-                <Input placeholder="Enter user name" {...field} />
+                <Input placeholder="Enter username" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -258,6 +284,21 @@ export function SignInPage() {
           </Link>
         </div> */}
       </form>
+
+      <Popup 
+        isOpen={showFirstTimeLoginPopup}
+        title="First Time Login"
+        description="Please change your default password to continue."
+      >
+        <div className="flex flex-col items-center mt-4">
+          <Button
+            className="px-8"
+            onClick={handleFirstTimeLoginRedirect}
+          >
+            Change Password
+          </Button>
+        </div>
+      </Popup>
     </Form>
   );
 }

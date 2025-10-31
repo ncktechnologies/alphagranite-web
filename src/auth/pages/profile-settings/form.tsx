@@ -63,6 +63,12 @@ export default function ProfileForm() {
         }
     }
 
+    const handlePopupClose = () => {
+        setShowPopover(false);
+        // Redirect to dashboard after profile setup
+        navigate('/');
+    };
+
     return (
         <div>
             <Form {...form}>
@@ -130,7 +136,7 @@ export default function ProfileForm() {
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Personal email address *</FormLabel>
+                                    <FormLabel>Work email address *</FormLabel>
                                     <Input placeholder="Enter email address" {...field} />
                                     <FormMessage />
                                 </FormItem>
@@ -207,7 +213,7 @@ export default function ProfileForm() {
 
                     <Button
                         className="px-8"
-                        onClick={() => navigate('/')}
+                        onClick={handlePopupClose}
                     >
                         Go to dashboard
                     </Button>
