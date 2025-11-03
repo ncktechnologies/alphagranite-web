@@ -61,6 +61,9 @@ export const authApi = createApi({
             forgotPassword: build.mutation<any, ForgotPasswordRequest>({
                 query: (data) => ({ url: "/users/forgot_password", method: "post", data })
             }),
+            refreshToken: build.mutation<LoginResponse, { refresh_token: string }>({
+                query: (data) => ({ url: "/auth/refresh", method: "post", data })
+            }),
            
         }
     }
@@ -78,4 +81,5 @@ export const {
     useUnlockAccountMutation,
     useGetDashboardWidgetsQuery,
     useForgotPasswordMutation,
+    useRefreshTokenMutation,
 } = authApi;

@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { FileDown, FilePlus, FileUp, Settings } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
@@ -11,35 +11,54 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import DepartmentFormSheet from './departmentSheet';
+import { DeleteDepartmentModal } from './delete-department-modal';
+import type { Department } from '@/store/api/department';
 import { Button } from '@/components/ui/button';
-import { Department } from '../DepartmentCard';
 
-export function DropdownMenu5({ trigger, onView }: { trigger: ReactNode, onView?: () => void}) {
+
+export function DropdownMenu5({ trigger, onView, department }: { trigger: ReactNode, onView?: () => void, department?: Department }) {
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [editSheetOpen, setEditSheetOpen] = useState(false);
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
-      <DropdownMenuContent className="w-[157px]" side="bottom" align="end">
-        <DropdownMenuItem onClick={onView} asChild>
-          {/* <Link to={`/department/${id}` } className='flex items-center gap-2'> */}
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
+        <DropdownMenuContent className="w-[157px]" side="bottom" align="end">
+          <DropdownMenuItem onClick={onView}>
+            <span>View</span>
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem onClick={() => setEditSheetOpen(true)}>
+            <span>Edit</span>
+          </DropdownMenuItem>
+          
+          <DropdownMenuItem 
+            // onClick={() => setDeleteModalOpen(true)} 
+            variant='destructive'
+          >
+            <span>Delete</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-          <span>View</span>
-          {/* </Link> */}
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          {/* <DepartmentFormSheet
-            trigger={<span>Edit</span>}
-            department={dept}
-          /> */}
+      {/* Edit Sheet */}
+      <DepartmentFormSheet
+        trigger={<div className="hidden" />} 
+        department={department}
+        open={editSheetOpen}
+        onOpenChange={setEditSheetOpen}
+        onSubmitSuccess={() => {
+          setEditSheetOpen(false);
+        }}
+      />
 
-          <span>Edit</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-
-          <span className='text-[#FF383C]'>Delete</span>
-        </DropdownMenuItem>
-
-
-      </DropdownMenuContent>
-    </DropdownMenu>
+      {/* Delete Modal */}
+      <DeleteDepartmentModal 
+        open={deleteModalOpen}
+        onOpenChange={setDeleteModalOpen}
+        department={department || null}
+      />
+    </>
   );
 }

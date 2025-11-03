@@ -7,6 +7,7 @@ import { userSliceReducer, paginationReducer } from "./slice";
 import { authApi } from "./api";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import userReducer from './slice/user';
+import { departmentApi } from "./api/department";
 
 
 const persistConfig = {
@@ -20,7 +21,8 @@ const rootReducer = combineReducers({
     user: userReducer,
     pagination: paginationReducer,
     [authApi.reducerPath]: authApi.reducer,
-   
+    [departmentApi.reducerPath]: departmentApi.reducer,
+
 
 });
 
@@ -39,7 +41,8 @@ const store = configureStore({
         })
             .concat(
                 authApi.middleware,
-               
+                departmentApi.middleware,
+
             ),
 
 });

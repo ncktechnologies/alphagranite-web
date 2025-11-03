@@ -18,6 +18,20 @@ interface P {
   headers?: AxiosRequestConfig['headers'];
 }
 
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 const instance = axios.create({
   headers: {
     'Content-Type': 'application/json',
@@ -38,7 +52,85 @@ instance.interceptors.response.use(
     return response;
   },
   async (err) => {
+    const originalRequest = err.config;
     const error = err.response;
+    
+    // Handle 401 errors (token expired)
+    if (error?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Queue the request while token is being refreshed
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            originalRequest.headers['Authorization'] = `Bearer ${token}`;
+            return instance(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      const refreshToken = localStorage.getItem('refresh_token');
+      
+      if (!refreshToken) {
+        // No refresh token available, logout user
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        localStorage.removeItem('refresh_token');
+        window.location.replace('/');
+        return Promise.reject(err);
+      }
+
+      try {
+        // Call refresh token endpoint
+        const response = await axios.post(
+          'https://alpha-granite.xyz-ntrinsic.com/auth/refresh',
+          { refresh_token: refreshToken },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        const { access_token, refresh_token: newRefreshToken } = response.data.data;
+        
+        // Update tokens in localStorage
+        localStorage.setItem('token', access_token);
+        if (newRefreshToken) {
+          localStorage.setItem('refresh_token', newRefreshToken);
+        }
+
+        // Update authorization header
+        instance.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+        originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
+
+        // Process queued requests
+        processQueue(null, access_token);
+        isRefreshing = false;
+
+        // Retry original request
+        return instance(originalRequest);
+      } catch (refreshError) {
+        // Refresh token failed, logout user
+        processQueue(refreshError, null);
+        isRefreshing = false;
+        
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        localStorage.removeItem('refresh_token');
+        toast.error('Your session has expired. Please login again.');
+        window.location.replace('/');
+        
+        return Promise.reject(refreshError);
+      }
+    }
+
+    // Handle other errors
     if (error?.status === 401) {
       const errorData = error?.data;
       const errorMessage =
@@ -47,14 +139,6 @@ instance.interceptors.response.use(
         errorData?.message ||
         'Your session has expired. Please login again.';
       toast.error(errorMessage);
-      if (
-        (errorData?.msg || errorData?.message || errorMessage) ===
-        'Could not validate credentials'
-      ) {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        window.location.replace('/');
-      }
     }
 
     return Promise.reject(err);

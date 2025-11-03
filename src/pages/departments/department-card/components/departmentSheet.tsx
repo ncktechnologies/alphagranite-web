@@ -18,7 +18,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Textarea } from "@/components/ui/textarea";
 import Popup from "@/components/ui/popup";
 import { LoaderCircleIcon } from "lucide-react";
-import { Department } from "../DepartmentCard";
+import type { Department } from "@/store/api/department";
+import { useCreateDepartmentMutation, useUpdateDepartmentMutation } from "@/store/api";
+import { toast } from "sonner";
 
 // ✅ Schema for validation
 const departmentSchema = z.object({
@@ -32,12 +34,22 @@ interface DepartmentFormSheetProps {
   trigger: ReactNode;
   department?: Department; // optional edit data
   onSubmitSuccess?: () => void; // optional callback for parent refresh
+  open?: boolean; // optional controlled open state
+  onOpenChange?: (open: boolean) => void; // optional controlled open change handler
 }
 
-const DepartmentFormSheet = ({ trigger, department, onSubmitSuccess }: DepartmentFormSheetProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
+const DepartmentFormSheet = ({ trigger, department, onSubmitSuccess, open: controlledOpen, onOpenChange }: DepartmentFormSheetProps) => {
   const [showPopover, setShowPopover] = useState(false);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  
+  // Use controlled state if provided, otherwise use internal state
+  const isSheetOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const setIsSheetOpen = onOpenChange || setInternalOpen;
+  
+  const [createDepartment, { isLoading: isCreating }] = useCreateDepartmentMutation();
+  const [updateDepartment, { isLoading: isUpdating }] = useUpdateDepartmentMutation();
+  
+  const isSubmitting = isCreating || isUpdating;
 
   const form = useForm<DepartmentFormType>({
     resolver: zodResolver(departmentSchema),
@@ -52,27 +64,41 @@ const DepartmentFormSheet = ({ trigger, department, onSubmitSuccess }: Departmen
     if (department) {
       form.reset({
         name: department.name,
-        description: department.description,
+        description: department.description || "",
+      });
+    } else {
+      form.reset({
+        name: "",
+        description: "",
       });
     }
-  }, [department, form]);
+  }, [department, form, isSheetOpen]);
 
   const isEditMode = !!department;
 
   async function onSubmit(values: DepartmentFormType) {
     try {
-      setIsSubmitting(true);
-      console.log(isEditMode ? "Updating department:" : "Creating department:", values);
-
-      // Simulate API call
-      await new Promise((res) => setTimeout(res, 1000));
+      if (isEditMode && department) {
+        // Update existing department
+        await updateDepartment({ 
+          id: department.id, 
+          data: values 
+        }).unwrap();
+        toast.success("Department updated successfully");
+      } else {
+        // Create new department
+        await createDepartment(values).unwrap();
+        toast.success("Department created successfully");
+      }
 
       setShowPopover(true);
       form.reset();
       setIsSheetOpen(false);
-      if (onSubmitSuccess) onSubmitSuccess(); // trigger refresh if parent wants
-    } finally {
-      setIsSubmitting(false);
+      if (onSubmitSuccess) onSubmitSuccess();
+    } catch (error: any) {
+      const errorMessage = error?.data?.detail || error?.data?.message || 
+        `Failed to ${isEditMode ? 'update' : 'create'} department`;
+      toast.error(errorMessage);
     }
   }
 

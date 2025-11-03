@@ -26,34 +26,37 @@ import { DataGridPagination } from '@/components/ui/data-grid-pagination';
 import { DataGridTable, DataGridTableRowSelect, DataGridTableRowSelectAll } from '@/components/ui/data-grid-table';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { IEmployee } from '@/pages/employers/components/employer';
 import { exportTableToCSV } from '@/lib/exportToCsv';
+import type { DepartmentUser } from '@/store/api/department';
 
 
 
 
 
-const StatusBadge = ({ status }: { status: IEmployee['status'] }) => {
-    const colors: Record<IEmployee['status'], string> = {
-        Active: 'bg-green-100 text-green-700',
-        Deactivated: 'bg-gray-100 text-gray-600',
+const StatusBadge = ({ gender }: { gender?: string }) => {
+    if (!gender) return <span className="text-xs text-muted-foreground">-</span>;
+    
+    const colors: Record<string, string> = {
+        male: 'bg-blue-100 text-blue-700',
+        female: 'bg-pink-100 text-pink-700',
+        other: 'bg-gray-100 text-gray-600',
     };
 
     return (
         <span
-            className={`px-2 py-0.5 text-xs font-medium rounded-full ${colors[status]}`}
+            className={`px-2 py-0.5 text-xs font-medium rounded-full ${colors[gender.toLowerCase()] || colors.other}`}
         >
-            {status}
+            {gender.charAt(0).toUpperCase() + gender.slice(1)}
         </span>
     );
 };
 
-interface employeeProps{
-    employees: IEmployee[];
+interface employeeProps {
+    employees: DepartmentUser[];
 }
 const DepartmentTable = ({employees}:employeeProps) => {
     const [pagination, setPagination] = useState<PaginationState>({
@@ -66,15 +69,16 @@ const DepartmentTable = ({employees}:employeeProps) => {
 
     const filteredData = useMemo(() => {
         if (!searchQuery) return employees;
+        const query = searchQuery.toLowerCase();
         return employees.filter(
             (item) =>
-                item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.department.toLowerCase().includes(searchQuery.toLowerCase()),
+                `${item.first_name} ${item.last_name}`.toLowerCase().includes(query) ||
+                item.email.toLowerCase().includes(query) ||
+                (item.phone && item.phone.toLowerCase().includes(query))
         );
-    }, [searchQuery]);
+    }, [searchQuery, employees]);
 
-    const columns = useMemo<ColumnDef<IEmployee>[]>(
+    const columns = useMemo<ColumnDef<DepartmentUser>[]>(
         () => [
             {
                 accessorKey: 'id',
@@ -91,20 +95,28 @@ const DepartmentTable = ({employees}:employeeProps) => {
             },
             {
                 id: 'name',
-                accessorFn: (row) => row.name,
+                accessorFn: (row) => `${row.first_name} ${row.last_name}`,
                 header: ({ column }) => (
                     <DataGridColumnHeader title="EMPLOYEE NAME" column={column} />
                 ),
-                cell: ({ row }) => (
-                    <div className="flex items-center truncate max-w-[200px]">
-                        <Avatar className="w-8 h-8 mr-3">
-                            <AvatarFallback className="bg-gray-200 text-gray-600">
-                                {row.original.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
-                        </Avatar>
-                        <span className="text-sm  text-text">{row.original.name}</span>
-                    </div>
-                ),
+                cell: ({ row }) => {
+                    const fullName = `${row.original.first_name} ${row.original.last_name}`;
+                    const initials = `${row.original.first_name[0]}${row.original.last_name[0]}`;
+                    
+                    return (
+                        <div className="flex items-center truncate max-w-[200px]">
+                            <Avatar className="w-8 h-8 mr-3">
+                                {row.original.profile_photo_url && (
+                                    <AvatarImage src={row.original.profile_photo_url} alt={fullName} />
+                                )}
+                                <AvatarFallback className="bg-gray-200 text-gray-600">
+                                    {initials}
+                                </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm text-text">{fullName}</span>
+                        </div>
+                    );
+                },
                 enableSorting: true,
                 size: 200,
                 meta: {
@@ -126,64 +138,28 @@ const DepartmentTable = ({employees}:employeeProps) => {
                 size: 200,
             },
             {
-                id: 'address',
-                accessorFn: (row) => row.address,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="ADDRESS" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text truncate block max-w-[280px]">
-                        {row.original.address}
-                    </span>
-                ),
-                enableSorting: false,
-                size: 280,
-            },
-            {
-                id: 'department',
-                accessorFn: (row) => row.department,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="DEPARTMENT" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text truncate block max-w-[140px]">{row.original.department}</span>
-                ),
-                enableSorting: true,
-                size: 140,
-            },
-            {
                 id: 'phone',
                 accessorFn: (row) => row.phone,
                 header: ({ column }) => (
                     <DataGridColumnHeader title="PHONE NO" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <span className="text-sm text-text truncate block max-w-[130px]">{row.original.phone}</span>
+                    <span className="text-sm text-text truncate block max-w-[130px]">
+                        {row.original.phone || '-'}
+                    </span>
                 ),
                 enableSorting: false,
                 size: 130,
             },
             {
-                id: 'role',
-                accessorFn: (row) => row.role,
+                id: 'gender',
+                accessorFn: (row) => row.gender,
                 header: ({ column }) => (
-                    <DataGridColumnHeader title="ROLE" column={column} />
+                    <DataGridColumnHeader title="GENDER" column={column} />
                 ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text truncate block max-w-[120px]">{row.original.role}</span>
-                ),
+                cell: ({ row }) => <StatusBadge gender={row.original.gender} />,
                 enableSorting: true,
                 size: 120,
-            },
-            {
-                id: 'status',
-                accessorFn: (row) => row.status,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="STATUS" column={column} />
-                ),
-                cell: ({ row }) => <StatusBadge status={row.original.status} />,
-                enableSorting: true,
-                size: 110,
             },
         ],
         [],
@@ -193,7 +169,7 @@ const DepartmentTable = ({employees}:employeeProps) => {
         columns,
         data: filteredData,
         pageCount: Math.ceil((filteredData?.length || 0) / pagination.pageSize),
-        getRowId: (row: IEmployee) => String(row.id),
+        getRowId: (row: DepartmentUser) => String(row.id),
         state: { pagination, sorting, rowSelection },
         columnResizeMode: 'onChange',
         onPaginationChange: setPagination,

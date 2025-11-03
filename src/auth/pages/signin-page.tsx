@@ -133,7 +133,12 @@ export function SignInPage() {
       if (res?.data?.access_token) {
         toast.success("User login successfully");
         localStorage.setItem('token', res.data.access_token);
-        // const profileData = await getProfile().unwrap();
+        
+        // Store refresh token if available
+        if (res?.data?.refresh_token) {
+          localStorage.setItem('refresh_token', res.data.refresh_token);
+        }
+        
         dispatch(
           setCredentials({
             admin: res.data.user,

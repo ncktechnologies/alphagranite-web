@@ -96,6 +96,8 @@ export interface LoginResponse {
     first_time: boolean;
     access_token: string;
     token_type: string;
+    refresh_token?: string;
+    user?: any;
   };
 }
 
