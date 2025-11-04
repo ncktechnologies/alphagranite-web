@@ -40,13 +40,8 @@ import { useDispatch, useSelector } from "react-redux";
 
 export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
   // const { logout, user } = useAuth();
-  // const user = useSelector((state: any) => state.user.user);
-  const user ={
-    first_name: "Admin",
-    last_name: "User",
-    email: "admin@gmail.com",
-    role: "Administrator",
-  }
+  const user = useSelector((state: any) => state.user.user);
+ 
   const dispatch = useDispatch();
   const navigate = useNavigate();
 

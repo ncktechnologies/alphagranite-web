@@ -64,6 +64,16 @@ export const authApi = createApi({
             refreshToken: build.mutation<LoginResponse, { refresh_token: string }>({
                 query: (data) => ({ url: "/auth/refresh", method: "post", data })
             }),
+            uploadImage: build.mutation<{ id: number; url: string; filename: string }, FormData>({
+                query: (formData) => ({
+                    url: "/files/upload",
+                    method: "post",
+                    data: formData,
+                    headers: {
+                        'Content-Type': 'multipart/form-data',
+                    },
+                })
+            }),
            
         }
     }
@@ -82,4 +92,5 @@ export const {
     useGetDashboardWidgetsQuery,
     useForgotPasswordMutation,
     useRefreshTokenMutation,
+    useUploadImageMutation,
 } = authApi;

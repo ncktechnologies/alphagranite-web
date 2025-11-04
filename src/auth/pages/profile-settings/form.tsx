@@ -35,7 +35,7 @@ export default function ProfileForm() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [showPopover, setShowPopover] = useState(false);
-    
+
     // Debug: Log profile query state
     useEffect(() => {
         console.log('Profile Query State:', { data: profile, isLoading, isError, error: queryError });
@@ -43,7 +43,7 @@ export default function ProfileForm() {
             console.error('Profile fetch error:', queryError);
         }
     }, [profile, isLoading, isError, queryError]);
-    
+
     const form = useForm<CompleteProfileSchemaType>({
         resolver: zodResolver(getCompleteProfileSchema()),
         mode: 'onChange', // Enable validation on change
@@ -79,9 +79,9 @@ export default function ProfileForm() {
             // Convert department string to number for API
             const payload = {
                 ...values,
-                department_id: parseInt(values.department, 10),
+                department: parseInt(values.department, 10),
             };
-            
+
             // Remove the department string field as we're sending department_id
             const { department, ...updateData } = payload;
 
@@ -107,7 +107,9 @@ export default function ProfileForm() {
     return (
         <div>
             <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                <form
+                    id="profile-edit-form"
+                    onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     {error && (
                         <Alert variant="destructive">
                             <AlertIcon>

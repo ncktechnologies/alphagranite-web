@@ -177,6 +177,7 @@ export interface UserProfileUpdate {
   email?: string;
   phone?: string;
   department_id?: number;
+  department?: number;
   gender?: string;
   // Add other profile fields as needed
 }
@@ -188,6 +189,7 @@ export interface UserResponse {
   last_name: string;
   phone?: string;
   gender?: string;
+  department?: number;
   department_id?: number;
   is_active: boolean;
   is_superuser: boolean;
