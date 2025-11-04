@@ -176,6 +176,8 @@ export interface UserProfileUpdate {
   last_name?: string;
   email?: string;
   phone?: string;
+  department_id?: number;
+  gender?: string;
   // Add other profile fields as needed
 }
 
@@ -185,6 +187,8 @@ export interface UserResponse {
   first_name: string;
   last_name: string;
   phone?: string;
+  gender?: string;
+  department_id?: number;
   is_active: boolean;
   is_superuser: boolean;
   // Add other user fields as needed

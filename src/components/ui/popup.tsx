@@ -23,8 +23,8 @@ const Popup: React.FC<PopupProps> = ({
   const ref = useRef<HTMLDivElement>(null);
 
   const handleBackdropClick = (event: React.MouseEvent) => {
-    if (event.target === event.currentTarget) {
-      onClose?.();
+    if (event.target === event.currentTarget && onClose) {
+      onClose();
     }
   };
 
@@ -69,7 +69,7 @@ const Popup: React.FC<PopupProps> = ({
               </div>
             )}
 
-            <div className="p-6">{children}</div>
+            <div className="p-6" onClick={(e) => e.stopPropagation()}>{children}</div>
           </motion.div>
         </motion.div>
       )}

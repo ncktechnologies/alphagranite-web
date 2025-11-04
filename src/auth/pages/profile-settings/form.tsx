@@ -1,8 +1,10 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 // pages/complete-profile-page.tsx
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useGetProfileQuery, useUpdateProfileMutation } from '@/store/api/auth';
+import { useGetDepartmentsQuery } from '@/store/api/department';
 
 import {
     Form,
@@ -26,38 +28,71 @@ import { FormHeader } from '@/components/ui/form-header';
 
 export default function ProfileForm() {
     const navigate = useNavigate();
+    const { data: profile, isLoading, isError, error: queryError } = useGetProfileQuery();
+    const { data: departmentsData, isLoading: isDepartmentsLoading } = useGetDepartmentsQuery();
+    const [updateProfile, { isLoading: isUpdating }] = useUpdateProfileMutation();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [showPopover, setShowPopover] = useState(false);
+    
+    // Debug: Log profile query state
+    useEffect(() => {
+        console.log('Profile Query State:', { data: profile, isLoading, isError, error: queryError });
+        if (isError) {
+            console.error('Profile fetch error:', queryError);
+        }
+    }, [profile, isLoading, isError, queryError]);
+    
     const form = useForm<CompleteProfileSchemaType>({
         resolver: zodResolver(getCompleteProfileSchema()),
+        mode: 'onChange', // Enable validation on change
         defaultValues: {
-            firstName: '',
-            lastName: '',
+            first_name: '',
+            last_name: '',
             email: '',
             department: '',
             gender: '',
+            phone: '',
         },
     });
+
+    // Populate form with profile data when it loads
+    useEffect(() => {
+        if (profile) {
+            form.reset({
+                first_name: profile.first_name || '',
+                last_name: profile.last_name || '',
+                email: profile.email || '',
+                phone: profile.phone || '',
+                department: profile.department?.toString() || '',
+                gender: profile.gender || '',
+            });
+        }
+    }, [profile, form]);
 
     async function onSubmit(values: CompleteProfileSchemaType) {
         try {
             setIsSubmitting(true);
             setError(null);
 
-            console.log('Profile data submitted:', values);
+            // Convert department string to number for API
+            const payload = {
+                ...values,
+                department_id: parseInt(values.department, 10),
+            };
+            
+            // Remove the department string field as we're sending department_id
+            const { department, ...updateData } = payload;
 
-            // Simulate API call
-            await new Promise((res) => setTimeout(res, 1000));
-
+            await updateProfile(updateData).unwrap();
             setSuccess('Profile setup complete!');
             setShowPopover(true);
-            form.reset();
 
             // Redirect after delay
         } catch (err) {
             setError('An unexpected error occurred. Please try again.');
+            console.error('Profile update error:', err);
         } finally {
             setIsSubmitting(false);
         }
@@ -78,7 +113,7 @@ export default function ProfileForm() {
                             <AlertIcon>
                                 <AlertCircle className="h-4 w-4" />
                             </AlertIcon>
-                            <AlertTitle>{error}</AlertTitle>
+                            <AlertTitle>{String(error)}</AlertTitle>
                         </Alert>
                     )}
 
@@ -111,7 +146,7 @@ export default function ProfileForm() {
                         </div>
                         <FormField
                             control={form.control}
-                            name="firstName"
+                            name="first_name"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>First Name *</FormLabel>
@@ -122,7 +157,7 @@ export default function ProfileForm() {
                         />
                         <FormField
                             control={form.control}
-                            name="lastName"
+                            name="last_name"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Last Name *</FormLabel>
@@ -144,19 +179,33 @@ export default function ProfileForm() {
                         />
                         <FormField
                             control={form.control}
+                            name="phone"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Phone Number</FormLabel>
+                                    <Input placeholder="Enter phone number" {...field} />
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
                             name="department"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Department *</FormLabel>
-                                    <Select value={field.value} onValueChange={field.onChange}>
+                                    <Select value={field.value} onValueChange={field.onChange} disabled={isDepartmentsLoading}>
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select Department" />
+                                                <SelectValue placeholder={isDepartmentsLoading ? "Loading departments..." : "Select Department"} />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="drafter">Drafter</SelectItem>
-                                            <SelectItem value="sales-person">Sales person</SelectItem>
+                                            {departmentsData?.items?.map((dept) => (
+                                                <SelectItem key={dept.id} value={dept.id.toString()}>
+                                                    {dept.name}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />

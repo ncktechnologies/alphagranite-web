@@ -127,8 +127,6 @@ export function ChangePasswordPage() {
     setShowPopover(false);
     // If this was a first-time login, redirect to update profile page
     if (isFirstTimeLogin()) {
-      // Clear the temporary token and redirect to update profile page
-      localStorage.removeItem('token');
       navigate('/auth/update-profile');
     } else {
       navigate('/');
