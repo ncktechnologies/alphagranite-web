@@ -18,16 +18,13 @@ import {
     SelectItem,
 } from '@/components/ui/select';
 import { LoaderCircleIcon } from 'lucide-react';
-import {
-    CompleteProfileSchemaType,
-    getCompleteProfileSchema,
-} from '@/auth/pages/profile-settings/profile-schema';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { AvatarInput } from './avatar-input';
 import { useGetProfileQuery, useUpdateProfileMutation, useUploadImageMutation } from '@/store/api/auth';
 import { useGetDepartmentsQuery } from '@/store/api/department';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Check } from 'lucide-react';
+import { CompleteProfileSchemaType, getCompleteProfileSchema } from './profile-schema';
 
 interface ProfileFormSectionProps {
     onSave: (data: CompleteProfileSchemaType) => void;

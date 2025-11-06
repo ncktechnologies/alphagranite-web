@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useMemo } from 'react'
 // pages/complete-profile-page.tsx
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -44,32 +44,39 @@ export default function ProfileForm() {
         }
     }, [profile, isLoading, isError, queryError]);
     
-    const form = useForm<CompleteProfileSchemaType>({
-        resolver: zodResolver(getCompleteProfileSchema()),
-        mode: 'onChange', // Enable validation on change
-        defaultValues: {
-            first_name: '',
-            last_name: '',
-            email: '',
-            department: '',
-            gender: '',
-            phone: '',
-        },
-    });
+       const defaultValues = useMemo(() => {
+           if (profile) {
+               return {
+                   first_name: profile.first_name || '',
+                   last_name: profile.last_name || '',
+                   email: profile.email || '',
+                   phone: profile.phone || '',
+                   department: profile.department?.toString() || '',
+                   gender: profile.gender || '',
+               };
+           }
+           return {
+               first_name: '',
+               last_name: '',
+               email: '',
+               department: '',
+               gender: '',
+               phone: '',
+           };
+       }, [profile]);
+   
+       const form = useForm<CompleteProfileSchemaType>({
+           resolver: zodResolver(getCompleteProfileSchema()),
+           mode: 'onChange',
+           defaultValues,
+       });
 
     // Populate form with profile data when it loads
-    useEffect(() => {
+  useEffect(() => {
         if (profile) {
-            form.reset({
-                first_name: profile.first_name || '',
-                last_name: profile.last_name || '',
-                email: profile.email || '',
-                phone: profile.phone || '',
-                department: profile.department?.toString() || '',
-                gender: profile.gender || '',
-            });
+            form.reset(defaultValues);
         }
-    }, [profile, form]);
+    }, [defaultValues, form]);
 
     async function onSubmit(values: CompleteProfileSchemaType) {
         try {
