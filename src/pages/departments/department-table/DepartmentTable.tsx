@@ -37,20 +37,22 @@ import type { DepartmentUser } from '@/store/api/department';
 
 
 
-const StatusBadge = ({ gender }: { gender?: string }) => {
-    if (!gender) return <span className="text-xs text-muted-foreground">-</span>;
-    
+const StatusBadge = ({ status }: { status?: string | number }) => {
+    const s = status === undefined || status === null ? undefined : String(status);
+    if (!s) return <span className="text-xs text-muted-foreground">-</span>;
+
     const colors: Record<string, string> = {
-        male: 'bg-blue-100 text-blue-700',
-        female: 'bg-pink-100 text-pink-700',
-        other: 'bg-gray-100 text-gray-600',
+        '1': 'bg-blue-100 text-blue-700',
+        '0': 'bg-pink-100 text-pink-700',
     };
+
+    const colorClass = colors[s] ?? 'bg-gray-100 text-gray-600';
 
     return (
         <span
-            className={`px-2 py-0.5 text-xs font-medium rounded-full ${colors[gender.toLowerCase()] || colors.other}`}
+            className={`px-2 py-0.5 text-xs font-medium rounded-full ${colorClass}`}
         >
-            {gender.charAt(0).toUpperCase() + gender.slice(1)}
+            {s === '1' ? 'Active' : s === '0' ? 'Inactive' : s}
         </span>
     );
 };
@@ -58,7 +60,7 @@ const StatusBadge = ({ gender }: { gender?: string }) => {
 interface employeeProps {
     employees: DepartmentUser[];
 }
-const DepartmentTable = ({employees}:employeeProps) => {
+const DepartmentTable = ({ employees }: employeeProps) => {
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 5,
@@ -102,12 +104,12 @@ const DepartmentTable = ({employees}:employeeProps) => {
                 cell: ({ row }) => {
                     const fullName = `${row.original.first_name} ${row.original.last_name}`;
                     const initials = `${row.original.first_name[0]}${row.original.last_name[0]}`;
-                    
+
                     return (
                         <div className="flex items-center truncate max-w-[200px]">
                             <Avatar className="w-8 h-8 mr-3">
-                                {row.original.profile_photo_url && (
-                                    <AvatarImage src={row.original.profile_photo_url} alt={fullName} />
+                                {row.original.profile_image_id && (
+                                    <AvatarImage src={row.original.profile_image_id} alt={fullName} />
                                 )}
                                 <AvatarFallback className="bg-gray-200 text-gray-600">
                                     {initials}
@@ -138,6 +140,20 @@ const DepartmentTable = ({employees}:employeeProps) => {
                 size: 200,
             },
             {
+                id: 'address',
+                accessorFn: (row) => row.home_address,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="ADDRESS" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text truncate block max-w-[280px]">
+                        {row.original.home_address}
+                    </span>
+                ),
+                enableSorting: false,
+                size: 280,
+            },
+            {
                 id: 'phone',
                 accessorFn: (row) => row.phone,
                 header: ({ column }) => (
@@ -151,15 +167,27 @@ const DepartmentTable = ({employees}:employeeProps) => {
                 enableSorting: false,
                 size: 130,
             },
-            {
-                id: 'gender',
-                accessorFn: (row) => row.gender,
+ {
+                id: 'role',
+                accessorFn: (row) => row.role,
                 header: ({ column }) => (
-                    <DataGridColumnHeader title="GENDER" column={column} />
+                    <DataGridColumnHeader title="ROLE" column={column} />
                 ),
-                cell: ({ row }) => <StatusBadge gender={row.original.gender} />,
+                cell: ({ row }) => (
+                    <span className="text-sm text-text truncate block max-w-[120px]">{row.original.role}</span>
+                ),
                 enableSorting: true,
                 size: 120,
+            },
+            {
+                id: 'status',
+                accessorFn: (row) => row.status,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="STATUS" column={column} />
+                ),
+                cell: ({ row }) => <StatusBadge status={row.original.status} />,
+                enableSorting: true,
+                size: 110,
             },
         ],
         [],

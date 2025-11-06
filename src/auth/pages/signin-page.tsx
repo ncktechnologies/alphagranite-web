@@ -37,7 +37,6 @@ export function SignInPage() {
   const [showFirstTimeLoginPopup, setShowFirstTimeLoginPopup] = useState(false);
   const [login, { isLoading }] = useLoginMutation();
 
-  const [getProfile] = useLazyGetProfileQuery()
 
   // Check for success message from password reset or error messages
   useEffect(() => {
@@ -93,16 +92,16 @@ export function SignInPage() {
     if (error?.data?.detail) {
       if (Array.isArray(error.data.detail)) {
         // Handle array of validation errors
-        return error.data.detail.map((err: any) => err.msg || JSON.stringify(err)).join(', ');
+        return error.data.detail.map((err: any) => err.message || JSON.stringify(err)).join(', ');
       } else if (typeof error.data.detail === 'string') {
         // Handle string error message
-        return error.data.detail;
+        return error.data.detail.message;
       } else {
         // Handle object error message
-        return error.data.detail.msg || JSON.stringify(error.data.detail);
+        return error.data.detail.message;
       }
     }
-    return error?.message || 'Invalid username or password';
+    return  'Invalid username or password';
   };
 
   async function onSubmit(values: SigninSchemaType) {
@@ -115,6 +114,7 @@ export function SignInPage() {
       // Simple validation
       if (!values.username.trim() || !values.password) {
         setError('Username and password are required');
+        setIsProcessing(false);
         return;
       }
 
@@ -126,6 +126,7 @@ export function SignInPage() {
         localStorage.setItem('token', res.data.access_token);
         // Show popup instead of toast
         setShowFirstTimeLoginPopup(true);
+        setIsProcessing(false);
         return;
       }
       console.log(res)
@@ -151,12 +152,12 @@ export function SignInPage() {
         navigate(nextPath || '/');
       } else {
         setError('Login failed. Please try again.');
+        setIsProcessing(false);
       }
     } catch (err: any) {
       console.error('Unexpected sign-in error:', err);
       const errorMessage = getErrorMessage(err);
       setError(errorMessage);
-    } finally {
       setIsProcessing(false);
     }
   }

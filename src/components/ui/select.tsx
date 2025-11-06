@@ -71,7 +71,7 @@ function SelectTrigger({ className, children, size, ...props }: SelectTriggerPro
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
-      className={cn(selectTriggerVariants({ size }), className)}
+      className={cn(selectTriggerVariants({ size }), className, 'data-[disabled]:cursor-not-allowed')}
       {...props}
     >
       {children}

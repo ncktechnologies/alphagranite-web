@@ -1,16 +1,22 @@
-import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useState, useEffect, useMemo } from 'react';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Input } from '@/components/ui/input';
 import {
     Form,
-    FormControl,
     FormField,
     FormItem,
     FormLabel,
+    FormControl,
     FormMessage,
 } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectTrigger,
+    SelectValue,
+    SelectContent,
+    SelectItem,
+} from '@/components/ui/select';
 import { LoaderCircleIcon } from 'lucide-react';
 import {
     CompleteProfileSchemaType,
@@ -33,44 +39,44 @@ export const ProfileFormSection = ({ onSave, onCancel }: ProfileFormSectionProps
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
-    const { data: profile, isLoading, isError, error: queryError } = useGetProfileQuery();
+    const { data: profile, isLoading: isLoadingProfile } = useGetProfileQuery();
     const { data: departmentsData, isLoading: isDepartmentsLoading } = useGetDepartmentsQuery();
     const [updateProfile] = useUpdateProfileMutation();
     const [uploadImage] = useUploadImageMutation();
 
-    useEffect(() => {
-        console.log('Profile Query State:', { data: profile, isLoading, isError, error: queryError });
-        if (error) {
-            console.error('Profile fetch error:', queryError);
-        }
-    }, [profile, isLoading, isError, queryError]);
-
-    const form = useForm<CompleteProfileSchemaType>({
-        resolver: zodResolver(getCompleteProfileSchema()),
-        mode: 'onChange',
-        defaultValues: {
-            first_name: '',
-            last_name: '',
-            email: '',
-            department: '',
-            gender: '',
-            phone: '',
-        },
-    });
-
-    // Populate form when profile loads
-    useEffect(() => {
+    const defaultValues = useMemo(() => {
         if (profile) {
-            form.reset({
+            return {
                 first_name: profile.first_name || '',
                 last_name: profile.last_name || '',
                 email: profile.email || '',
                 phone: profile.phone || '',
                 department: profile.department?.toString() || '',
                 gender: profile.gender || '',
-            });
+            };
         }
-    }, [profile, form]);
+        return {
+            first_name: '',
+            last_name: '',
+            email: '',
+            department: '',
+            gender: '',
+            phone: '',
+        };
+    }, [profile]);
+
+    const form = useForm<CompleteProfileSchemaType>({
+        resolver: zodResolver(getCompleteProfileSchema()),
+        mode: 'onChange',
+        defaultValues,
+    });
+
+    // Populate form when profile loads
+    useEffect(() => {
+        if (profile) {
+            form.reset(defaultValues);
+        }
+    }, [defaultValues, form]);
 
     const onSubmit = async (values: CompleteProfileSchemaType) => {
         try {
@@ -189,7 +195,7 @@ export const ProfileFormSection = ({ onSave, onCancel }: ProfileFormSectionProps
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Department *</FormLabel>
-                                    <Select value={field.value} onValueChange={field.onChange} disabled={isDepartmentsLoading}>
+                                    <Select value={field.value} onValueChange={field.onChange} disabled>
                                         <FormControl>
                                             <SelectTrigger>
                                                 <SelectValue placeholder={isDepartmentsLoading ? "Loading departments..." : "Select department"} />
@@ -217,7 +223,7 @@ export const ProfileFormSection = ({ onSave, onCancel }: ProfileFormSectionProps
                                     <Select value={field.value} onValueChange={field.onChange}>
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select Gender" />
+                                                <SelectValue placeholder="Select gender" />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>

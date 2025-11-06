@@ -31,7 +31,7 @@ const Contributions = ({ title }: IContributionsProps) => {
     const x = Math.cos(angleInRadians) * radius;
     const y = Math.sin(angleInRadians) * radius;
     
-    return { x: x + 150, y: y + 150 }; // Updated center to 150 for 300x300 chart
+    return { x: x + 120, y: y + 120 }; // Updated center to 150 for 300x300 chart
   };
 
   const options: ApexOptions = {
@@ -52,7 +52,7 @@ const Contributions = ({ title }: IContributionsProps) => {
     plotOptions: {
       pie: {
         donut: {
-          size: '65%',
+          size: '60%',
           background: 'transparent',
           labels: {
             show: false,
@@ -93,14 +93,14 @@ const Contributions = ({ title }: IContributionsProps) => {
               options={options}
               series={options.series}
               type="donut"
-              width="300"  
-              height="300" 
+              width="243"  
+              height="243" 
             />
             
             {/* Custom center circle with shadow - increased size */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="bg-white rounded-full shadow-lg flex items-center justify-center" 
-                   style={{width: '110px', height: '110px'}}> {/* Increased from 80px to 110px */}
+                   style={{width: '112px', height: '112px'}}> {/* Increased from 80px to 110px */}
                 <span className="text-xl font-bold text-gray-800">100%</span> {/* Increased font size */}
               </div>
             </div>

@@ -219,63 +219,63 @@ const Employees = () => {
                     cellClassName: '',
                 },
             },
-            // {
-            //     id: 'name',
-            //     accessorFn: (row) => row.name,
-            //     header: ({ column }) => (
-            //         <DataGridColumnHeader title="EMPLOYEE NAME" column={column} />
-            //     ),
-            //     cell: ({ row }) => (
-            //         <div className="flex items-center truncate max-w-[200px]">
-            //             <Avatar className="w-8 h-8 mr-3">
-            //                 <AvatarFallback className="bg-gray-200 text-gray-600">
-            //                     {row.original.name.split(' ').map(n => n[0]).join('')}
-            //                 </AvatarFallback>
-            //             </Avatar>
-            //             <span className="text-sm  text-text">{row.original.name}</span>
-            //         </div>
-            //     ),
-            //     enableSorting: true,
-            //     size: 200,
-            //     meta: {
-            //         skeleton: <Skeleton className="h-5 w-[160px]" />,
-            //     },
-            // },
             {
-                id: 'users',
+                id: 'name',
                 accessorFn: (row) => row.name,
                 header: ({ column }) => (
-                    <DataGridColumnHeader title="Member" column={column} />
+                    <DataGridColumnHeader title="EMPLOYEE NAME" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center truncate max-w-[200px]">
                         <Avatar className="w-8 h-8 mr-3">
                             <AvatarFallback className="bg-gray-200 text-gray-600">
                                 {row.original.name.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
                         </Avatar>
-                        <div className="flex flex-col gap-0.5">
-                            <Link
-                                to="#"
-                                className="text-sm font-medium text-mono hover:text-primary-active mb-px"
-                            >
-                                {row.original.name}
-                            </Link>
-                            <Link
-                                to="#"
-                                className="text-sm text-secondary-foreground font-normal hover:text-primary-active"
-                            >
-                                {row.original.email}
-                            </Link>
-                        </div>
+                        <span className="text-sm  text-text">{row.original.name}</span>
                     </div>
                 ),
                 enableSorting: true,
-                size: 300,
+                size: 220,
                 meta: {
-                    headerClassName: '',
+                    skeleton: <Skeleton className="h-5 w-[160px]" />,
                 },
             },
+            // {
+            //     id: 'users',
+            //     accessorFn: (row) => row.name,
+            //     header: ({ column }) => (
+            //         <DataGridColumnHeader title="Member" column={column} />
+            //     ),
+            //     cell: ({ row }) => (
+            //         <div className="flex items-center gap-4">
+            //             <Avatar className="w-8 h-8 mr-3">
+            //                 <AvatarFallback className="bg-gray-200 text-gray-600">
+            //                     {row.original.name.split(' ').map(n => n[0]).join('')}
+            //                 </AvatarFallback>
+            //             </Avatar>
+            //             <div className="flex flex-col gap-0.5">
+            //                 <Link
+            //                     to="#"
+            //                     className="text-sm font-medium text-mono hover:text-primary-active mb-px"
+            //                 >
+            //                     {row.original.name}
+            //                 </Link>
+            //                 <Link
+            //                     to="#"
+            //                     className="text-sm text-secondary-foreground font-normal hover:text-primary-active"
+            //                 >
+            //                     {row.original.email}
+            //                 </Link>
+            //             </div>
+            //         </div>
+            //     ),
+            //     enableSorting: true,
+            //     size: 300,
+            //     meta: {
+            //         headerClassName: '',
+            //     },
+            // },
             {
                 id: 'email',
                 accessorFn: (row) => row.email,

@@ -44,11 +44,11 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
     const form = useForm<CompleteProfileSchemaType>({
         resolver: zodResolver(getCompleteProfileSchema()),
         defaultValues: {
-            firstName: '',
-            lastName: '',
+            first_name: '',
+            last_name: '',
             email: '',
             department: '',
-            gender: '',
+            home_address: '',
             phone: '',
         },
     });
@@ -108,7 +108,7 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
                                             <div className="space-y-2 col-span-2">
-                                                <FormLabel>Upload photo *</FormLabel>
+                                                <FormLabel>Upload image *</FormLabel>
                                                 <div className="flex items-center gap-4">
                                                     <AvatarInput />
                                                 </div>
@@ -116,7 +116,7 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
 
                                             <FormField
                                                 control={form.control}
-                                                name="firstName"
+                                                name="first_name"
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>First Name *</FormLabel>
@@ -130,7 +130,7 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
 
                                             <FormField
                                                 control={form.control}
-                                                name="lastName"
+                                                name="last_name"
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>Last Name *</FormLabel>
@@ -147,7 +147,7 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
                                                 name="email"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel>Personal email address *</FormLabel>
+                                                        <FormLabel>Email address *</FormLabel>
                                                         <FormControl>
                                                             <Input placeholder="Enter email address" {...field} />
                                                         </FormControl>
@@ -180,21 +180,11 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
 
                                             <FormField
                                                 control={form.control}
-                                                name="gender"
+                                                name="home_address"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel>Gender *</FormLabel>
-                                                        <Select value={field.value} onValueChange={field.onChange}>
-                                                            <FormControl>
-                                                                <SelectTrigger>
-                                                                    <SelectValue placeholder="Select Gender" />
-                                                                </SelectTrigger>
-                                                            </FormControl>
-                                                            <SelectContent>
-                                                                <SelectItem value="male">Male</SelectItem>
-                                                                <SelectItem value="female">Female</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
+                                                        <FormLabel>Home address *</FormLabel>
+                                                        <FormControl><Input placeholder="Enter home address" type="text" {...field} /></FormControl>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}
@@ -213,6 +203,15 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
 
                             <SheetFooter className="py-3.5 px-5 border-border flex justify-end gap-3 mt-auto">
                                 <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={handleCancel}
+                                    disabled={isSubmitting}
+                                    className="justify-center"
+                                >
+                                    Cancel
+                                </Button>
+                                <Button
                                     type="submit"
                                     variant="primary"
                                     disabled={isSubmitting}
@@ -227,15 +226,7 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
                                         'Save employee'
                                     )}
                                 </Button>
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={handleCancel}
-                                    disabled={isSubmitting}
-                                    className="justify-center"
-                                >
-                                    Cancel
-                                </Button>
+
                             </SheetFooter>
                         </form>
                     </Form>

@@ -56,7 +56,7 @@ instance.interceptors.response.use(
     const error = err.response;
     
     // Handle 401 errors (token expired)
-    if (error?.status === 401 && !originalRequest._retry) {
+    if (error?.status === 401 && !originalRequest._retry && error?.data?.detail?.message !=="Incorrect credentials") {
       if (isRefreshing) {
         // Queue the request while token is being refreshed
         return new Promise((resolve, reject) => {
@@ -134,11 +134,9 @@ instance.interceptors.response.use(
     if (error?.status === 401) {
       const errorData = error?.data;
       const errorMessage =
-        errorData?.detail ||
-        errorData?.msg ||
-        errorData?.message ||
+        errorData?.detail?.message ||
         'Your session has expired. Please login again.';
-      toast.error(errorMessage);
+      // toast.error(errorMessage);
     }
 
     return Promise.reject(err);

@@ -115,7 +115,7 @@ const DepartmentFormSheet = ({ trigger, department, onSubmitSuccess, open: contr
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="h-full flex flex-col">
               <SheetHeader className="mb-3 border-border pb-3.5 border-b">
-                <SheetTitle>{isEditMode ? "Edit department" : "Add new department"}</SheetTitle>
+                <SheetTitle>{isEditMode ? "Edit department" : "Create new department"}</SheetTitle>
               </SheetHeader>
 
               <SheetBody className="flex-1">

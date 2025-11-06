@@ -31,8 +31,11 @@ export interface DepartmentUser {
     email: string;
     phone?: string;
     gender?: string;
-    profile_photo_url?: string;
+    profile_image_id?: string;
     created_at?: string;
+    home_address?: string;
+    role?: string;
+    status?: number;
 }
 
 export interface DepartmentCreate {

@@ -9,6 +9,7 @@ import {
 } from './components';
 import { Contributions } from './components/chart';
 import { CommunityBadges } from './components/fab';
+import { FinanceStats } from './components/finance';
 
 export function Demo1LightSidebarContent() {
   return (
@@ -32,7 +33,7 @@ export function Demo1LightSidebarContent() {
 
         </div>
         <div className='lg:col-span-1'>
-          <Card className="p-2 h-full">
+          {/* <Card className="p-2 h-full">
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-[20px] leading-[24px]">Finance</CardTitle>
 
@@ -42,7 +43,8 @@ export function Demo1LightSidebarContent() {
 
 
             </CardContent>
-          </Card>
+          </Card> */}
+          <FinanceStats/>
         </div>
       </div>
       <div className="grid lg:grid-cols-3 gap-5 lg:gap-7.5 items-stretch">
