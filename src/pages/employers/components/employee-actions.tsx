@@ -32,12 +32,12 @@ export const EmployeeActions = ({ employee, onView, onEdit, onDelete }: Employee
                     <span>Edit</span>
                 </DropdownMenuItem>
 
-                <DropdownMenuItem
+                {/* <DropdownMenuItem
                     variant="destructive"
                     onClick={() => onDelete(employee)}
                 >
                     <span>Delete</span>
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
             </DropdownMenuContent>
         </DropdownMenu>
     );
