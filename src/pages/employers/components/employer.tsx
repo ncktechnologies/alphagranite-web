@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
     ColumnDef,
     getCoreRowModel,
@@ -26,154 +26,27 @@ import { DataGridPagination } from '@/components/ui/data-grid-pagination';
 import { DataGridTable, DataGridTableRowSelect, DataGridTableRowSelectAll } from '@/components/ui/data-grid-table';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Search, X } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Search, X, Ellipsis } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { Link } from 'react-router';
 import { toAbsoluteUrl } from '@/lib/helpers';
+import { useGetEmployeesQuery, Employee, useDeleteEmployeeMutation } from '@/store/api/employee';
+import { useGetDepartmentsQuery } from '@/store/api/department';
+import { useGetRolesQuery } from '@/store/api/role';
+import EmployeeFormSheet from './employeeSheet';
+import { toast } from 'sonner';
+import { EmployeeActions } from './employee-actions';
+import { usePermission } from '@/hooks/use-permission';
+import { Can } from '@/components/permission';
 
-export interface IEmployee {
-    id: number;
-    name: string;
-    email: string;
-    address: string;
-    department: string;
-    phone: string;
-    role: string;
-    status: 'Active' | 'Deactivated';
-}
-
-const employees: IEmployee[] = [
-    {
-        id: 1,
-        name: 'Cameron Williamson',
-        email: 'tim.jennings@example.com',
-        address: '8502 Preston Rd. Inglewood, Maine 98380',
-        department: 'Sales',
-        phone: '(704) 555-0113',
-        role: 'Sales',
-        status: 'Active',
-    },
-    {
-        id: 2,
-        name: 'Esther Howard',
-        email: 'willie.jennings@example.com',
-        address: '2715 Ash Dr. San Jose, South Dakota 83475',
-        department: 'Front office',
-        phone: '(704) 555-0112',
-        role: 'Front office',
-        status: 'Deactivated',
-    },
-    {
-        id: 3,
-        name: 'Leslie Alexander',
-        email: 'michelle.rivera@example.com',
-        address: '4140 Parker Rd. Allentown, New Mexico 31134',
-        department: 'CAD',
-        phone: '(684) 555-0108',
-        role: 'CAD',
-        status: 'Deactivated',
-    },
-    {
-        id: 4,
-        name: 'Jenny Wilson',
-        email: 'deanna.curtis@example.com',
-        address: '4140 Parker Rd. Allentown, New Mexico 31134',
-        department: 'Warehouse',
-        phone: '(704) 555-0120',
-        role: 'Warehouse',
-        status: 'Active',
-    },
-    {
-        id: 5,
-        name: 'Darlene Robertson',
-        email: 'felicia.reid@example.com',
-        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
-        department: 'Production',
-        phone: '(480) 555-0121',
-        role: 'Production',
-        status: 'Deactivated',
-    },
-    {
-        id: 6,
-        name: 'Darlene Robertson',
-        email: 'felicia.reid@example.com',
-        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
-        department: 'Production',
-        phone: '(480) 555-0121',
-        role: 'Production',
-        status: 'Deactivated',
-    },
-    {
-        id: 7,
-        name: 'Darlene Robertson',
-        email: 'felicia.reid@example.com',
-        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
-        department: 'Production',
-        phone: '(480) 555-0121',
-        role: 'Production',
-        status: 'Deactivated',
-    },
-    {
-        id: 8,
-        name: 'Darlene Robertson',
-        email: 'felicia.reid@example.com',
-        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
-        department: 'Production',
-        phone: '(480) 555-0121',
-        role: 'Production',
-        status: 'Deactivated',
-    },
-    {
-        id: 9,
-        name: 'Darlene Robertson',
-        email: 'felicia.reid@example.com',
-        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
-        department: 'Production',
-        phone: '(480) 555-0121',
-        role: 'Production',
-        status: 'Deactivated',
-    },
-    {
-        id: 10,
-        name: 'Darlene Robertson',
-        email: 'felicia.reid@example.com',
-        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
-        department: 'Production',
-        phone: '(480) 555-0121',
-        role: 'Production',
-        status: 'Deactivated',
-    },
-    {
-        id: 11,
-        name: 'Darlene Robertson',
-        email: 'felicia.reid@example.com',
-        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
-        department: 'Production',
-        phone: '(480) 555-0121',
-        role: 'Production',
-        status: 'Deactivated',
-    },
-    {
-        id: 12,
-        name: 'Darlene Robertson',
-        email: 'felicia.reid@example.com',
-        address: '2972 Westheimer Rd. Santa Ana, Illinois 85486',
-        department: 'Production',
-        phone: '(480) 555-0121',
-        role: 'Production',
-        status: 'Deactivated',
-    },
-
-
-];
-
-const StatusBadge = ({ status }: { status: IEmployee['status'] }) => {
-    const colors: Record<IEmployee['status'], string> = {
-        Active: 'bg-green-100 text-green-700',
-        Deactivated: 'bg-gray-100 text-gray-600',
+const StatusBadge = ({ status }: { status: string }) => {
+    const colors: Record<string, string> = {
+        active: 'bg-green-100 text-green-700',
+        inactive: 'bg-gray-100 text-gray-600',
+        deleted: 'bg-red-100 text-red-600',
     };
 
     return (
@@ -188,23 +61,91 @@ const StatusBadge = ({ status }: { status: IEmployee['status'] }) => {
 const Employees = () => {
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
-        pageSize: 5,
+        pageSize: 10,
     });
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedDepartment, setSelectedDepartment] = useState<string>('');
+    const [selectedStatus, setSelectedStatus] = useState<string>('');
+    const [selectedGender, setSelectedGender] = useState<string>('');
+    const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
+    const [sheetMode, setSheetMode] = useState<'create' | 'edit' | 'view'>('create');
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+    // Fetch employees from API
+    const { data: employeesData, isLoading, refetch } = useGetEmployeesQuery({
+        skip: pagination.pageIndex * pagination.pageSize,
+        limit: pagination.pageSize,
+        search: searchQuery || undefined,
+        department_id: selectedDepartment ? parseInt(selectedDepartment) : undefined,
+        status_id: selectedStatus ? parseInt(selectedStatus) : undefined,
+    });
+
+    // Fetch departments for filter
+    const { data: departmentsData } = useGetDepartmentsQuery();
+
+    const [deleteEmployee] = useDeleteEmployeeMutation();
+
+    // Transform API data to match table structure
+    const employees = useMemo(() => {
+        if (!employeesData?.data) return [];
+        return employeesData.data.map((emp: Employee) => ({
+            ...emp,
+            id: emp.id,
+            name: `${emp.first_name} ${emp.last_name}`,
+            email: emp.email,
+            home_address: emp.home_address || 'N/A',
+            department_name: emp.department_name || 'N/A',
+            phone: emp.phone || 'N/A',
+            role_name: emp.role_name || 'N/A',
+            status_name: emp.status_name || 'N/A',
+        }));
+    }, [employeesData]);
+
+    useEffect(() => {
+        refetch();
+    }, [searchQuery, selectedDepartment, selectedStatus, pagination, refetch]);
+
+    const handleView = (employee: Employee) => {
+        setSelectedEmployee(employee);
+        setSheetMode('view');
+        setIsSheetOpen(true);
+    };
+
+    const handleEdit = (employee: Employee) => {
+        setSelectedEmployee(employee);
+        setSheetMode('edit');
+        setIsSheetOpen(true);
+    };
+
+    const handleDelete = async (employee: Employee) => {
+        if (window.confirm(`Are you sure you want to delete ${employee.first_name} ${employee.last_name}?`)) {
+            try {
+                await deleteEmployee(employee.id).unwrap();
+                toast.success('Employee deleted successfully');
+                refetch();
+            } catch (error) {
+                toast.error('Failed to delete employee');
+            }
+        }
+    };
+
+    const handleCreateNew = () => {
+        setSelectedEmployee(null);
+        setSheetMode('create');
+        setIsSheetOpen(true);
+    };
+
+    const getEmployeeData = (id: number): Employee | undefined => {
+        return employeesData?.data?.find((e: Employee) => e.id === id);
+    };
 
     const filteredData = useMemo(() => {
-        if (!searchQuery) return employees;
-        return employees.filter(
-            (item) =>
-                item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                item.department.toLowerCase().includes(searchQuery.toLowerCase()),
-        );
-    }, [searchQuery]);
+        return employees;
+    }, [employees]);
 
-    const columns = useMemo<ColumnDef<IEmployee>[]>(
+    const columns = useMemo<ColumnDef<Employee>[]>(
         () => [
             {
                 accessorKey: 'id',
@@ -228,8 +169,10 @@ const Employees = () => {
                 cell: ({ row }) => (
                     <div className="flex items-center truncate max-w-[200px]">
                         <Avatar className="w-8 h-8 mr-3">
+                            <AvatarImage src={toAbsoluteUrl(row.original.profile_image_url || '')} alt="" >
+                            </AvatarImage>
                             <AvatarFallback className="bg-gray-200 text-gray-600">
-                                {row.original.name.split(' ').map(n => n[0]).join('')}
+                                {row.original.name && row.original.name.split(' ').map(n => n[0]).join('')}
                             </AvatarFallback>
                         </Avatar>
                         <span className="text-sm  text-text">{row.original.name}</span>
@@ -241,41 +184,6 @@ const Employees = () => {
                     skeleton: <Skeleton className="h-5 w-[160px]" />,
                 },
             },
-            // {
-            //     id: 'users',
-            //     accessorFn: (row) => row.name,
-            //     header: ({ column }) => (
-            //         <DataGridColumnHeader title="Member" column={column} />
-            //     ),
-            //     cell: ({ row }) => (
-            //         <div className="flex items-center gap-4">
-            //             <Avatar className="w-8 h-8 mr-3">
-            //                 <AvatarFallback className="bg-gray-200 text-gray-600">
-            //                     {row.original.name.split(' ').map(n => n[0]).join('')}
-            //                 </AvatarFallback>
-            //             </Avatar>
-            //             <div className="flex flex-col gap-0.5">
-            //                 <Link
-            //                     to="#"
-            //                     className="text-sm font-medium text-mono hover:text-primary-active mb-px"
-            //                 >
-            //                     {row.original.name}
-            //                 </Link>
-            //                 <Link
-            //                     to="#"
-            //                     className="text-sm text-secondary-foreground font-normal hover:text-primary-active"
-            //                 >
-            //                     {row.original.email}
-            //                 </Link>
-            //             </div>
-            //         </div>
-            //     ),
-            //     enableSorting: true,
-            //     size: 300,
-            //     meta: {
-            //         headerClassName: '',
-            //     },
-            // },
             {
                 id: 'email',
                 accessorFn: (row) => row.email,
@@ -292,13 +200,13 @@ const Employees = () => {
             },
             {
                 id: 'address',
-                accessorFn: (row) => row.address,
+                accessorFn: (row) => row.home_address,
                 header: ({ column }) => (
                     <DataGridColumnHeader title="ADDRESS" column={column} />
                 ),
                 cell: ({ row }) => (
                     <span className="text-sm text-text truncate block max-w-[280px]">
-                        {row.original.address}
+                        {row.original.home_address || 'n/a'}
                     </span>
                 ),
                 enableSorting: false,
@@ -306,12 +214,12 @@ const Employees = () => {
             },
             {
                 id: 'department',
-                accessorFn: (row) => row.department,
+                accessorFn: (row) => row.department_name,
                 header: ({ column }) => (
                     <DataGridColumnHeader title="DEPARTMENT" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <span className="text-sm text-text truncate block max-w-[140px]">{row.original.department}</span>
+                    <span className="text-sm text-text truncate block max-w-[140px]">{row.original.department_name}</span>
                 ),
                 enableSorting: true,
                 size: 140,
@@ -330,25 +238,41 @@ const Employees = () => {
             },
             {
                 id: 'role',
-                accessorFn: (row) => row.role,
+                accessorFn: (row) => row.role_name,
                 header: ({ column }) => (
                     <DataGridColumnHeader title="ROLE" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <span className="text-sm text-text truncate block max-w-[120px]">{row.original.role}</span>
+                    <span className="text-sm text-text truncate block max-w-[120px]">{row.original.role_name ?? 'N/A'}</span>
                 ),
                 enableSorting: true,
                 size: 120,
             },
             {
                 id: 'status',
-                accessorFn: (row) => row.status,
+                accessorFn: (row) => row.status_name,
                 header: ({ column }) => (
                     <DataGridColumnHeader title="STATUS" column={column} />
                 ),
-                cell: ({ row }) => <StatusBadge status={row.original.status} />,
+                cell: ({ row }) => <StatusBadge status={row.original.status_name ?? 'N/A'} />,
                 enableSorting: true,
                 size: 110,
+            },
+            {
+                id: 'actions',
+                header: '',
+                cell: ({ row }) => {
+                    return (
+                        <EmployeeActions
+                            employee={row.original}
+                            onView={handleView}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                        />
+                    );
+                },
+                enableSorting: false,
+                size: 60,
             },
         ],
         [],
@@ -358,7 +282,7 @@ const Employees = () => {
         columns,
         data: filteredData,
         pageCount: Math.ceil((filteredData?.length || 0) / pagination.pageSize),
-        getRowId: (row: IEmployee) => String(row.id),
+        getRowId: (row: Employee) => String(row.id),
         state: { pagination, sorting, rowSelection },
         columnResizeMode: 'onChange',
         onPaginationChange: setPagination,
@@ -372,78 +296,94 @@ const Employees = () => {
     });
 
     return (
-        <DataGrid
-            table={table}
-            recordCount={filteredData?.length || 0}
-            tableLayout={{
-                columnsPinnable: true,
-                columnsMovable: true,
-                columnsVisibility: true,
-                cellBorder: true,
-            }}
-        >
-            <Card>
-                <CardHeader className="py-3.5 border-b">
-                    <CardHeading>
-                        <div className="flex items-center gap-2.5">
-                            <div className="relative">
-                                <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
-                                <Input
-                                    placeholder="Search Users..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="ps-9 w-[230px] h-[34px]"
-                                />
-                                {searchQuery.length > 0 && (
-                                    <Button
-                                        mode="icon"
-                                        variant="ghost"
-                                        className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                                        onClick={() => setSearchQuery('')}
-                                    >
-                                        <X />
-                                    </Button>
-                                )}
+        <>
+            <EmployeeFormSheet
+                trigger={<></>}
+                employee={selectedEmployee || undefined}
+                mode={sheetMode}
+                open={isSheetOpen}
+                onOpenChange={setIsSheetOpen}
+                onSubmitSuccess={refetch}
+            />
+            <DataGrid
+                table={table}
+                recordCount={filteredData?.length || 0}
+                tableLayout={{
+                    columnsPinnable: true,
+                    columnsMovable: true,
+                    columnsVisibility: true,
+                    cellBorder: true,
+                }}
+            >
+                <Card>
+                    <CardHeader className="py-3.5 border-b">
+                        <CardHeading>
+                            <div className="flex items-center gap-2.5">
+                                <div className="relative">
+                                    <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                                    <Input
+                                        placeholder="Search Users..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="ps-9 w-[230px] h-[34px]"
+                                    />
+                                    {searchQuery.length > 0 && (
+                                        <Button
+                                            mode="icon"
+                                            variant="ghost"
+                                            className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                                            onClick={() => setSearchQuery('')}
+                                        >
+                                            <X />
+                                        </Button>
+                                    )}
+                                </div>
+                                <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                                    <SelectTrigger className="w-[170px] h-[34px]">
+                                        <SelectValue placeholder="Department" />
+                                    </SelectTrigger>
+                                    <SelectContent className="w-40">
+                                        <SelectItem value="all">All Departments</SelectItem>
+                                        {departmentsData?.items?.map((dept: any) => (
+                                            <SelectItem key={dept.id} value={String(dept.id)}>
+                                                {dept.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                                    <SelectTrigger className="w-[120px] h-[34px]">
+                                        <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent className="w-32">
+                                        <SelectItem value="all">All Status</SelectItem>
+                                        <SelectItem value="1">Active</SelectItem>
+                                        <SelectItem value="2">Inactive</SelectItem>
+                                        <SelectItem value="3">Deleted</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
-                            <Select >
-                                <SelectTrigger className="w-[170px] h-[34px]">
-                                    <SelectValue placeholder="2 June - 9 June" />
-                                </SelectTrigger>
-                                <SelectContent className="w-32">
-                                    <SelectItem value="active">Active</SelectItem>
-                                    <SelectItem value="disabled">Disabled</SelectItem>
-                                    <SelectItem value="pending">Pending</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            <Select>
-                                <SelectTrigger className="w-[100px] h-[34px]">
-                                    <SelectValue placeholder="Gender" />
-                                </SelectTrigger>
-                                <SelectContent className="w-32">
-                                    <SelectItem value="latest">Male</SelectItem>
-                                    <SelectItem value="older">Female</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </CardHeading>
-                    <CardToolbar>
-
-                        <Button variant="outline" onClick={(() => exportTableToCSV(table, "employees"))}>
-                            Export CSV
-                        </Button>
-                    </CardToolbar>
-                </CardHeader>
-                <CardTable>
-                    <ScrollArea>
-                        <DataGridTable />
-                        <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
-                </CardTable>
-                <CardFooter>
-                    <DataGridPagination />
-                </CardFooter>
-            </Card>
-        </DataGrid>
+                        </CardHeading>
+                        <CardToolbar>
+                            <Can action="read" on="employees">
+                                <Button variant="outline" onClick={(() => exportTableToCSV(table, "employees"))}>
+                                    Export CSV
+                                </Button>
+                            </Can>
+                        </CardToolbar>
+                    </CardHeader>
+                    <CardTable>
+                        <ScrollArea>
+                            <DataGridTable />
+                            <ScrollBar orientation="horizontal" />
+                        </ScrollArea>
+                    </CardTable>
+                    <CardFooter>
+                        <DataGridPagination />
+                    </CardFooter>
+                </Card>
+            </DataGrid>
+        </>
     );
 };
 

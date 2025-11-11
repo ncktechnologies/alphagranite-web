@@ -2,16 +2,35 @@
 import { Fragment, useState, useEffect } from 'react';
 import { Container } from '@/components/common/container';
 import { PageMenu } from '../page-menu';
-import { Role, ViewMode } from '@/config/types';
+import { Role as ConfigRole, ViewMode } from '@/config/types';
 import { RoleForm, RoleFormData } from './role-views/Form';
 import { RoleDetailsView } from './role-views/Details';
 import { RolesList } from './role-views/List';
-import { roles } from '@/config/menu.config';
+import { useGetRolesQuery, useCreateRoleMutation, useUpdateRoleMutation, Role } from '@/store/api/role';
+import { useGetAllActionMenusQuery } from '@/store/api/actionMenu';
 
 export const RolesSection = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('details');
-  const [selectedRole, setSelectedRole] = useState<Role | null>(null);
+  const [selectedRole, setSelectedRole] = useState<ConfigRole | null>(null);
   const [isDeleted, setIsDeleted] = useState(false);
+
+  // API hooks
+  const { data: rolesData, isLoading, refetch } = useGetRolesQuery({ with_stats: true });
+  const { data: actionMenus } = useGetAllActionMenusQuery();
+  const [createRole] = useCreateRoleMutation();
+  const [updateRole] = useUpdateRoleMutation();
+
+  // Transform API roles to Config roles
+  const roles: ConfigRole[] = rolesData?.items?.map((role: Role): ConfigRole => ({
+    id: role.id,
+    name: role.name,
+    description: role.description || '',
+    status: role.status === 1 ? 'Active' : 'Inactive',
+    users: role.total_members || 0,
+    activeUsers: role.active_members || 0,
+    inactiveUsers: role.inactive_members || 0,
+    pendingUsers: role.pending_members || 0,
+  })) || [];
 
   // Set first role as active when component mounts
  useEffect(() => {
@@ -22,7 +41,7 @@ export const RolesSection = () => {
 }, [selectedRole, viewMode]);
 
 
-  const handleRoleSelect = (role: Role) => {
+  const handleRoleSelect = (role: ConfigRole) => {
     setSelectedRole(role);
     setViewMode('details');
   };
@@ -32,7 +51,7 @@ export const RolesSection = () => {
     setSelectedRole(null);
   };
 
-  const handleEditRole = (role: Role) => {
+  const handleEditRole = (role: ConfigRole) => {
     setSelectedRole(role);
     setViewMode('edit');
   };
@@ -52,9 +71,33 @@ export const RolesSection = () => {
     }
   };
 
-  const handleSaveRole = (data: RoleFormData) => {
-    console.log('Saving role:', data);
-    handleCloseForm();
+  const handleSaveRole = async (data: RoleFormData) => {
+    try {
+      const rolePayload = {
+        name: data.name,
+        description: data.description,
+        status: data.isActive ? 1 : 2,
+        action_menu_permissions: data.permissions ? Object.entries(data.permissions).map(([key, perms]) => ({
+          action_menu_id: parseInt(key), // You'll need to map permission keys to action menu IDs
+          can_create: perms.create,
+          can_read: perms.read,
+          can_update: perms.update,
+          can_delete: perms.delete,
+        })) : [],
+        user_ids: data.selectedUsers.map(id => parseInt(id)),
+      };
+
+      if (viewMode === 'new') {
+        await createRole(rolePayload).unwrap();
+      } else if (selectedRole) {
+        await updateRole({ id: selectedRole.id, data: rolePayload }).unwrap();
+      }
+
+      refetch();
+      handleCloseForm();
+    } catch (error) {
+      console.error('Failed to save role:', error);
+    }
   };
 
   const handleDelete = () => {
@@ -81,7 +124,7 @@ export const RolesSection = () => {
     // }
 
     if (viewMode === 'details' && selectedRole) {
-      return <RoleDetailsView role={selectedRole} onEdit={handleEditRole} />;
+      return <RoleDetailsView role={selectedRole} onEdit={handleEditRole} onDelete={handleDelete} />;
     }
 
     if (viewMode === 'new' || viewMode === 'edit') {

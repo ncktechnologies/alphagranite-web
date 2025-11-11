@@ -18,10 +18,12 @@ import type {
 
 // const baseUrl = `${import.meta.env.VITE_ALPHA_GRANITE_BASE_URL}`
 const baseUrl = "https://alpha-granite.xyz-ntrinsic.com"
+  const token = localStorage.getItem('token') ?? '';
 
 export const authApi = createApi({
     reducerPath: "authApi",
     baseQuery: axiosBaseQuery({baseUrl}),
+    tagTypes: ["User"],
     keepUnusedDataFor: 0,
     endpoints(build) {
         return {
@@ -35,10 +37,12 @@ export const authApi = createApi({
                 query: () => ({ 
                     url: "/auth/me", 
                     method: "get"
-                })
+                }),
+                providesTags:["User"]
             }),
             updateProfile: build.mutation<UserResponse, UserProfileUpdate>({
-                query: (data) => ({ url: "/auth/me", method: "put", data })
+                query: (data) => ({ url: "/auth/me", method: "put", data }),
+                invalidatesTags:["User"]
             }),
             changePassword: build.mutation<void, PasswordChangeRequest>({
                 query: (data) => ({ url: "/auth/change-password", method: "post", data })
@@ -71,6 +75,8 @@ export const authApi = createApi({
                     data: formData,
                     headers: {
                         'Content-Type': 'multipart/form-data',
+                        Authorization: token ? `Bearer ${token}` : "",
+        //   ...headers,
                     },
                 })
             }),

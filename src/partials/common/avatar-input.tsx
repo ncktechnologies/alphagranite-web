@@ -10,7 +10,11 @@ import {
 } from '@/components/ui/tooltip';
 import { ImageInput, ImageInputFile } from '@/components/image-input';
 
-export function AvatarInput() {
+interface AvatarInputProps {
+  onFileChange?: (file: File | null) => void;
+}
+
+export function AvatarInput({ onFileChange }: AvatarInputProps = {}) {
    const [avatar, setAvatar] = useState<ImageInputFile[]>(() => {
     return [{ dataURL: toAbsoluteUrl(`/images/app/user-line.svg`) }]
   })
@@ -18,7 +22,15 @@ export function AvatarInput() {
   return (
     <ImageInput
       value={avatar}
-      onChange={(selectedAvatar) => setAvatar(selectedAvatar)}
+      onChange={(selectedAvatar) => {
+        setAvatar(selectedAvatar);
+        // Notify parent component if callback provided
+        if (onFileChange && selectedAvatar.length > 0 && selectedAvatar[0].file) {
+          onFileChange(selectedAvatar[0].file);
+        } else if (onFileChange) {
+          onFileChange(null);
+        }
+      }}
     >
       {({ onImageUpload }) => (
         <div

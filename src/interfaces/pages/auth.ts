@@ -83,6 +83,17 @@ export interface LoginRequest {
   password: string;
 }
 
+// Permission structure
+export interface MenuPermission {
+  menu_id: number;
+  menu_name: string;
+  menu_code: string;
+  can_create: boolean;
+  can_read: boolean;
+  can_update: boolean;
+  can_delete: boolean;
+}
+
 // Updated LoginResponse to handle both regular and first-time login responses
 export interface LoginResponse {
   // Regular login properties
@@ -98,6 +109,7 @@ export interface LoginResponse {
     token_type: string;
     refresh_token?: string;
     user?: any;
+    permissions?: MenuPermission[];
   };
 }
 
@@ -193,6 +205,10 @@ export interface UserResponse {
   department_id?: number;
   is_active: boolean;
   is_superuser: boolean;
+  role_id?: number | null;
+  is_super_admin?: boolean;
+  username?: string;
+  permissions?: MenuPermission[];
   // Add other user fields as needed
 }
 

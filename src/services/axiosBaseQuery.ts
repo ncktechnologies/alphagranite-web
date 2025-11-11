@@ -34,7 +34,7 @@ const processQueue = (error: any, token: string | null = null) => {
 
 const instance = axios.create({
   headers: {
-    'Content-Type': 'application/json',
+    // 'Content-Type': 'application/json',
     Accept: 'application/json',
   },
 });
@@ -43,6 +43,14 @@ instance.interceptors.request.use((config) => {
   const token = localStorage.getItem('token') ?? '';
   if (token) {
     config.headers['Authorization'] = `Bearer ${token}`;
+  }
+  // Only set Content-Type to application/json if not already set and data is not FormData
+  if (!config.headers['Content-Type'] && !(config.data instanceof FormData)) {
+    config.headers['Content-Type'] = 'application/json';
+  }
+  // Remove Content-Type for FormData to let axios set it with boundary
+  if (config.data instanceof FormData) {
+    delete config.headers['Content-Type'];
   }
   return config;
 });
@@ -81,7 +89,7 @@ instance.interceptors.response.use(
         localStorage.removeItem('user');
         localStorage.removeItem('token');
         localStorage.removeItem('refresh_token');
-        window.location.replace('/');
+        // window.location.replace('/');
         return Promise.reject(err);
       }
 

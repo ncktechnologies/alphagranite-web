@@ -323,7 +323,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/HealthResponse"
+
                 }
               }
             }
@@ -350,7 +350,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/DatabaseHealthResponse"
+
                 }
               }
             }
@@ -1501,6 +1501,33 @@
         }
       }
     },
+    "/departments/statuses": {
+      "get": {
+        "tags": [
+          "Departments"
+        ],
+        "summary": "List all status values",
+        "description": "Return all status values (value_id, name, slug)",
+        "operationId": "list_statuses_departments_statuses_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/files/upload": {
       "post": {
         "tags": [
@@ -1648,8 +1675,13 @@
           "roles"
         ],
         "summary": "Create Role",
-        "description": "Create a new role with permissions\n\nThis endpoint creates a new role with the specified permissions.\nThe role name must be unique.\n\nThe request body should include:\n- name: Role name (must be unique)\n- description: Optional role description\n- permission_ids: List of permission IDs to associate with the role\n- status: Role status (1=Active, 2=Inactive)",
+        "description": "Create a new role with action menu permissions and assign users\n\nThis endpoint creates a new role with permissions for multiple action menus.\nThe role name must be unique.\n\nThe request body should include:\n- name: Role name (must be unique)\n- description: Optional role description\n- action_menu_permissions: List of action menus with CRUD permissions\n  - Each item contains: action_menu_id, can_create, can_read, can_update, can_delete\n- user_ids: List of user IDs to assign to this role\n- status: Role status (1=Active, 2=Inactive)\n\nThe backend will:\n1. Create permission records for each action menu\n2. Create the role\n3. Create role_permission records linking role + permission + action_menu\n4. Assign users to the role via user_role records",
         "operationId": "create_role_roles_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1684,12 +1716,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       },
       "get": {
         "tags": [
@@ -1698,6 +1725,11 @@
         "summary": "Get Roles",
         "description": "Get list of roles with pagination and filtering\n\nThis endpoint returns a paginated list of roles with various filtering options.\nYou can adjust the number of items per page using the limit parameter.\n\nFilter options include:\n- Search by name/description\n- Filter by status\n- Sort by various fields in ascending or descending order\n- Include member statistics and top members",
         "operationId": "get_roles_roles_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "skip",
@@ -1837,12 +1869,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/roles/{role_id}": {
@@ -1851,8 +1878,13 @@
           "roles"
         ],
         "summary": "Get Role",
-        "description": "Get role details by ID\n\nThis endpoint retrieves a role by its ID.\nIf with_permissions is True (default), it will include the role's permissions in the response.",
+        "description": "Get role details by ID with permissions and members\n\nThis endpoint retrieves a role by its ID with:\n- Basic role information (name, description, status, dates)\n- Permissions list (if with_permissions=True)\n- Member statistics (total, active, inactive, pending)\n- Paginated members list (if with_members=True)\n\nQuery Parameters:\n- with_permissions: Include role permissions (default: True)\n- with_members: Include members list (default: True)\n- skip: Pagination offset for members\n- limit: Number of members per page\n- search: Search members by name or email\n- status_id: Filter members by status\n- sort_by: Sort field (first_name, last_name, email, status, invited_at, last_login)\n- sort_order: Sort direction (asc/desc)",
         "operationId": "get_role_roles__role_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "role_id",
@@ -1875,6 +1907,91 @@
               "title": "With Permissions"
             },
             "description": "Include permissions in response"
+          },
+          {
+            "name": "with_members",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Include members in response",
+              "default": true,
+              "title": "With Members"
+            },
+            "description": "Include members in response"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of members to skip for pagination",
+              "default": 0,
+              "title": "Skip"
+            },
+            "description": "Number of members to skip for pagination"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Number of members to return",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Number of members to return"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Search members by name or email",
+              "title": "Search"
+            },
+            "description": "Search members by name or email"
+          },
+          {
+            "name": "status_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "description": "Filter members by status",
+              "title": "Status Id"
+            },
+            "description": "Filter members by status"
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Field to sort members by",
+              "default": "first_name",
+              "title": "Sort By"
+            },
+            "description": "Field to sort members by"
+          },
+          {
+            "name": "sort_order",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Sort order (asc or desc)",
+              "default": "asc",
+              "title": "Sort Order"
+            },
+            "description": "Sort order (asc or desc)"
           }
         ],
         "responses": {
@@ -1901,12 +2018,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       },
       "put": {
         "tags": [
@@ -1915,6 +2027,11 @@
         "summary": "Update Role",
         "description": "Update role details\n\nThis endpoint updates a role's details including its permissions.\nYou can update any combination of fields:\n- name: New role name (must be unique)\n- description: New role description\n- permission_ids: New list of permission IDs\n- status: New role status (1=Active, 2=Inactive)",
         "operationId": "update_role_roles__role_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "role_id",
@@ -1961,12 +2078,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       },
       "delete": {
         "tags": [
@@ -1975,6 +2087,11 @@
         "summary": "Delete Role",
         "description": "Delete a role\n\nThis endpoint deletes a role by setting its status to deleted (3).\nThe role will no longer be visible in normal role listings.",
         "operationId": "delete_role_roles__role_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "role_id",
@@ -2011,12 +2128,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/roles/{role_id}/status": {
@@ -2027,6 +2139,11 @@
         "summary": "Update Role Status",
         "description": "Update role status\n\nThis endpoint updates a role's status.\nStatus codes:\n- 1: Active\n- 2: Inactive",
         "operationId": "update_role_status_roles__role_id__status_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "role_id",
@@ -2073,12 +2190,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/roles/check-name/{name}": {
@@ -2089,6 +2201,11 @@
         "summary": "Check Role Name Unique",
         "description": "Check if role name is unique\n\nReturns {\"unique\": true/false}",
         "operationId": "check_role_name_unique_roles_check_name__name__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "name",
@@ -2124,12 +2241,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/roles/users/{user_id}/deactivate": {
@@ -2140,6 +2252,11 @@
         "summary": "Deactivate User",
         "description": "Deactivate a user\n\nThis endpoint deactivates a user by setting their status to inactive (2).\nThe user will no longer be able to log in.",
         "operationId": "deactivate_user_roles_users__user_id__deactivate_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "user_id",
@@ -2176,12 +2293,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/roles/{role_id}/members": {
@@ -2192,6 +2304,11 @@
         "summary": "Get Role With Members",
         "description": "Get role details with member information\n\nThis endpoint returns detailed information about a role including:\n- Role details (name, description, status, creation date)\n- Member statistics (total, active, pending, inactive)\n- Paginated list of members with their details\n\nFilter options for members include:\n- Search by name or email\n- Filter by status\n- Sort by various fields in ascending or descending order",
         "operationId": "get_role_with_members_roles__role_id__members_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "role_id",
@@ -2329,6 +2446,3657 @@
               }
             }
           }
+        }
+      }
+    },
+    "/roles/{role_id}/debug-members": {
+      "get": {
+        "tags": [
+          "roles"
+        ],
+        "summary": "Debug Role Members",
+        "description": "Debug endpoint: return raw UserRole rows and joined user info for a role.\nUse this to confirm which users are assigned to a role in the database.",
+        "operationId": "debug_role_members_roles__role_id__debug_members_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "role_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Role Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/action-menus": {
+      "get": {
+        "tags": [
+          "action-menus"
+        ],
+        "summary": "Get All Action Menus",
+        "description": "Get all action menus\n\nThis endpoint returns all action menus in the system.\nUse this to populate dropdowns when creating/editing roles and permissions.",
+        "operationId": "get_all_action_menus_action_menus_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "action-menus"
+        ],
+        "summary": "Create Action Menu",
+        "description": "Create a new action menu\n\nThis endpoint creates a new action menu with a unique code.\nAction menus are used to group permissions for the frontend navigation.",
+        "operationId": "create_action_menu_action_menus_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActionMenuCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/action-menus/{action_menu_id}": {
+      "get": {
+        "tags": [
+          "action-menus"
+        ],
+        "summary": "Get Action Menu",
+        "description": "Get action menu by ID",
+        "operationId": "get_action_menu_action_menus__action_menu_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "action_menu_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Action Menu Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "action-menus"
+        ],
+        "summary": "Update Action Menu",
+        "description": "Update an action menu\n\nThis endpoint updates an action menu's name and/or code.",
+        "operationId": "update_action_menu_action_menus__action_menu_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "action_menu_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Action Menu Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActionMenuUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "action-menus"
+        ],
+        "summary": "Delete Action Menu",
+        "description": "Delete an action menu\n\nThis endpoint deletes an action menu.\nIt will fail if the action menu is in use by any permissions.",
+        "operationId": "delete_action_menu_action_menus__action_menu_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "action_menu_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Action Menu Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/permissions": {
+      "get": {
+        "tags": [
+          "permissions"
+        ],
+        "summary": "Get All Permissions",
+        "description": "Get all permissions\n\nThis endpoint returns all permissions in the system.\nUse this to populate dropdowns when creating/editing roles.",
+        "operationId": "get_all_permissions_permissions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "permissions"
+        ],
+        "summary": "Create Permission",
+        "description": "Create a new permission\n\nThis endpoint creates a new permission.\nPermissions define what actions can be performed (create, read, update, delete).",
+        "operationId": "create_permission_permissions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermissionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/permissions/{permission_id}": {
+      "get": {
+        "tags": [
+          "permissions"
+        ],
+        "summary": "Get Permission",
+        "description": "Get permission by ID",
+        "operationId": "get_permission_permissions__permission_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "permission_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Permission Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "permissions"
+        ],
+        "summary": "Update Permission",
+        "description": "Update a permission\n\nThis endpoint updates a permission's details and capabilities.",
+        "operationId": "update_permission_permissions__permission_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "permission_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Permission Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PermissionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "permissions"
+        ],
+        "summary": "Delete Permission",
+        "description": "Delete a permission\n\nThis endpoint deletes a permission.\nIt will fail if the permission is assigned to any roles.",
+        "operationId": "delete_permission_permissions__permission_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "permission_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Permission Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/jobs-with-fabs": {
+      "get": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "List Jobs With Fabs",
+        "operationId": "list_jobs_with_fabs_api_v1_jobs_with_fabs_get",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/templating/schedule": {
+      "post": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Schedule Templating",
+        "operationId": "schedule_templating_api_v1_templating_schedule_post",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          },
+          {
+            "name": "technician_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Technician Id"
+            }
+          },
+          {
+            "name": "schedule_start_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Schedule Start Date"
+            }
+          },
+          {
+            "name": "schedule_due_date",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Schedule Due Date"
+            }
+          },
+          {
+            "name": "total_sqft",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Total Sqft"
+            }
+          },
+          {
+            "name": "notes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Notes"
+            }
+          },
+          {
+            "name": "created_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Created By"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/templating/unschedule": {
+      "post": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Unschedule Templating",
+        "operationId": "unschedule_templating_api_v1_templating_unschedule_post",
+        "parameters": [
+          {
+            "name": "templating_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Templating Id"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/templating/mark-received": {
+      "post": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Mark Templated Received",
+        "operationId": "mark_templated_received_api_v1_templating_mark_received_post",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/predraft/complete": {
+      "post": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Set Predraft Completed",
+        "operationId": "set_predraft_completed_api_v1_predraft_complete_post",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          },
+          {
+            "name": "completed",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "boolean",
+              "title": "Completed"
+            }
+          },
+          {
+            "name": "notes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Notes"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/predraft/redraft": {
+      "post": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Set Predraft Redraft",
+        "operationId": "set_predraft_redraft_api_v1_predraft_redraft_post",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          },
+          {
+            "name": "redraft_notes",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Redraft Notes"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/technician/clock": {
+      "post": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Save Technician Clock",
+        "operationId": "save_technician_clock_api_v1_technician_clock_post",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          },
+          {
+            "name": "technician_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Technician Id"
+            }
+          },
+          {
+            "name": "table_name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Table Name"
+            }
+          },
+          {
+            "name": "started_at",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Started At"
+            }
+          },
+          {
+            "name": "completed_at",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Completed At"
+            }
+          },
+          {
+            "name": "total_sqft_done",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Total Sqft Done"
+            }
+          },
+          {
+            "name": "notes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Notes"
+            }
+          },
+          {
+            "name": "pause_reason",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Pause Reason"
+            }
+          },
+          {
+            "name": "table_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "title": "Table Id"
+            }
+          },
+          {
+            "name": "created_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Created By"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/technician/clock/{workflow_id}": {
+      "put": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Update Technician Clock",
+        "operationId": "update_technician_clock_api_v1_technician_clock__workflow_id__put",
+        "parameters": [
+          {
+            "name": "workflow_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Workflow Id"
+            }
+          },
+          {
+            "name": "started_at",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Started At"
+            }
+          },
+          {
+            "name": "completed_at",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Completed At"
+            }
+          },
+          {
+            "name": "total_sqft_done",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Total Sqft Done"
+            }
+          },
+          {
+            "name": "notes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Notes"
+            }
+          },
+          {
+            "name": "pause_reason",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Pause Reason"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Delete Technician Clock",
+        "operationId": "delete_technician_clock_api_v1_technician_clock__workflow_id__delete",
+        "parameters": [
+          {
+            "name": "workflow_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Workflow Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/technician/clockwork": {
+      "get": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "List Technician Clockwork",
+        "operationId": "list_technician_clockwork_api_v1_technician_clockwork_get",
+        "parameters": [
+          {
+            "name": "drafter_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Drafter Id"
+            }
+          },
+          {
+            "name": "fab_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          },
+          {
+            "name": "table_name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Table Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/technician/clockwork-table-names": {
+      "get": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Get Clockwork Table Names",
+        "operationId": "get_clockwork_table_names_api_v1_technician_clockwork_table_names_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/fab/{fab_id}/shop-schedule": {
+      "post": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Add Update Shop Schedule",
+        "operationId": "add_update_shop_schedule_api_v1_fab__fab_id__shop_schedule_post",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_add_update_shop_schedule_api_v1_fab__fab_id__shop_schedule_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/finalprogramming/{fp_id}/files": {
+      "post": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Add Files To Final Programming",
+        "operationId": "add_files_to_final_programming_api_v1_finalprogramming__fp_id__files_post",
+        "parameters": [
+          {
+            "name": "fp_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fp Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_add_files_to_final_programming_api_v1_finalprogramming__fp_id__files_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/finalprogramming/{fp_id}/files/{file_id}": {
+      "delete": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Delete File From Final Programming",
+        "operationId": "delete_file_from_final_programming_api_v1_finalprogramming__fp_id__files__file_id__delete",
+        "parameters": [
+          {
+            "name": "fp_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fp Id"
+            }
+          },
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/finalprogramming/{fp_id}/update": {
+      "post": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Update Final Programming",
+        "operationId": "update_final_programming_api_v1_finalprogramming__fp_id__update_post",
+        "parameters": [
+          {
+            "name": "fp_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fp Id"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_update_final_programming_api_v1_finalprogramming__fp_id__update_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cutlist/{cutlist_id}/update-details": {
+      "post": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Update Cutlist Details",
+        "operationId": "update_cutlist_details_api_v1_cutlist__cutlist_id__update_details_post",
+        "parameters": [
+          {
+            "name": "cutlist_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cutlist Id"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_update_cutlist_details_api_v1_cutlist__cutlist_id__update_details_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/salesct/{sct_id}/review-no": {
+      "post": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Set Sct Review No",
+        "operationId": "set_sct_review_no_api_v1_salesct__sct_id__review_no_post",
+        "parameters": [
+          {
+            "name": "sct_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Sct Id"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_set_sct_review_no_api_v1_salesct__sct_id__review_no_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/salesct/{sct_id}/review-yes": {
+      "post": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Set Sct Review Yes",
+        "operationId": "set_sct_review_yes_api_v1_salesct__sct_id__review_yes_post",
+        "parameters": [
+          {
+            "name": "sct_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Sct Id"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_set_sct_review_yes_api_v1_salesct__sct_id__review_yes_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/salesct/{sct_id}/revision-update": {
+      "post": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Update Sct Revision",
+        "operationId": "update_sct_revision_api_v1_salesct__sct_id__revision_update_post",
+        "parameters": [
+          {
+            "name": "sct_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Sct Id"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_update_sct_revision_api_v1_salesct__sct_id__revision_update_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/slabsmith/{slabsmith_id}/complete": {
+      "post": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Mark Slabsmith Completed",
+        "operationId": "mark_slabsmith_completed_api_v1_slabsmith__slabsmith_id__complete_post",
+        "parameters": [
+          {
+            "name": "slabsmith_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Slabsmith Id"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/slabsmith/{slabsmith_id}/files": {
+      "post": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Add Files To Slabsmith",
+        "operationId": "add_files_to_slabsmith_api_v1_slabsmith__slabsmith_id__files_post",
+        "parameters": [
+          {
+            "name": "slabsmith_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Slabsmith Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_add_files_to_slabsmith_api_v1_slabsmith__slabsmith_id__files_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/slabsmith/{slabsmith_id}/files/{file_id}": {
+      "delete": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Delete File From Slabsmith",
+        "operationId": "delete_file_from_slabsmith_api_v1_slabsmith__slabsmith_id__files__file_id__delete",
+        "parameters": [
+          {
+            "name": "slabsmith_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Slabsmith Id"
+            }
+          },
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/drafting/{drafting_id}/files": {
+      "post": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Add Files To Drafting",
+        "operationId": "add_files_to_drafting_api_v1_drafting__drafting_id__files_post",
+        "parameters": [
+          {
+            "name": "drafting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Drafting Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_add_files_to_drafting_api_v1_drafting__drafting_id__files_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/drafting/{drafting_id}/files/{file_id}": {
+      "delete": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Delete File From Drafting",
+        "operationId": "delete_file_from_drafting_api_v1_drafting__drafting_id__files__file_id__delete",
+        "parameters": [
+          {
+            "name": "drafting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Drafting Id"
+            }
+          },
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "File Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/drafting/{drafting_id}/submit-review": {
+      "post": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Submit Draft For Review",
+        "operationId": "submit_draft_for_review_api_v1_drafting__drafting_id__submit_review_post",
+        "parameters": [
+          {
+            "name": "drafting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Drafting Id"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_submit_draft_for_review_api_v1_drafting__drafting_id__submit_review_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/workstation": {
+      "post": {
+        "tags": [
+          "Workstations"
+        ],
+        "summary": "Create Workstation",
+        "operationId": "create_workstation_api_v1_workstation_post",
+        "parameters": [
+          {
+            "name": "created_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Created By"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/fastapi___compat__v2__Body_create_workstation_api_v1_workstation_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkStation"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/planning-section": {
+      "post": {
+        "tags": [
+          "Planning Sections"
+        ],
+        "summary": "Create Planning Section",
+        "operationId": "create_planning_section_api_v1_planning_section_post",
+        "parameters": [
+          {
+            "name": "created_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Created By"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_planning_section_api_v1_planning_section_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanningSection"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/planning-section/{section_id}": {
+      "put": {
+        "tags": [
+          "Planning Sections"
+        ],
+        "summary": "Update Planning Section",
+        "operationId": "update_planning_section_api_v1_planning_section__section_id__put",
+        "parameters": [
+          {
+            "name": "section_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Section Id"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_update_planning_section_api_v1_planning_section__section_id__put"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanningSection"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Planning Sections"
+        ],
+        "summary": "Delete Planning Section",
+        "operationId": "delete_planning_section_api_v1_planning_section__section_id__delete",
+        "parameters": [
+          {
+            "name": "section_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Section Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/planning-section/by-name/{plan_name}": {
+      "get": {
+        "tags": [
+          "Planning Sections"
+        ],
+        "summary": "Get Planning Section By Name",
+        "operationId": "get_planning_section_by_name_api_v1_planning_section_by_name__plan_name__get",
+        "parameters": [
+          {
+            "name": "plan_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Plan Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlanningSection"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/planning-section/active": {
+      "get": {
+        "tags": [
+          "Planning Sections"
+        ],
+        "summary": "Get Active Planning Sections",
+        "operationId": "get_active_planning_sections_api_v1_planning_section_active_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PlanningSection"
+                  },
+                  "type": "array",
+                  "title": "Response Get Active Planning Sections Api V1 Planning Section Active Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/workstation/{ws_id}": {
+      "put": {
+        "tags": [
+          "Workstations"
+        ],
+        "summary": "Update Workstation",
+        "operationId": "update_workstation_api_v1_workstation__ws_id__put",
+        "parameters": [
+          {
+            "name": "ws_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ws Id"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_update_workstation_api_v1_workstation__ws_id__put"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkStation"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Workstations"
+        ],
+        "summary": "Delete Workstation",
+        "operationId": "delete_workstation_api_v1_workstation__ws_id__delete",
+        "parameters": [
+          {
+            "name": "ws_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ws Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/workstation/by-name/{workstation_name}": {
+      "get": {
+        "tags": [
+          "Workstations"
+        ],
+        "summary": "Get Workstation By Name",
+        "operationId": "get_workstation_by_name_api_v1_workstation_by_name__workstation_name__get",
+        "parameters": [
+          {
+            "name": "workstation_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Workstation Name"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WorkStation"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/workstation/active": {
+      "get": {
+        "tags": [
+          "Workstations"
+        ],
+        "summary": "Get Active Workstations",
+        "operationId": "get_active_workstations_api_v1_workstation_active_get",
+        "parameters": [
+          {
+            "name": "planning_section_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Planning Section Id"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/WorkStation"
+                  },
+                  "title": "Response Get Active Workstations Api V1 Workstation Active Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/shop-planning": {
+      "post": {
+        "tags": [
+          "Shop Planning"
+        ],
+        "summary": "Create Shop Planning",
+        "operationId": "create_shop_planning_api_v1_shop_planning_post",
+        "parameters": [
+          {
+            "name": "created_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Created By"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_shop_planning_api_v1_shop_planning_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Shop Planning"
+        ],
+        "summary": "List Shop Planning",
+        "operationId": "list_shop_planning_api_v1_shop_planning_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "fab_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Fab Id"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/shop-planning/{shop_plan_id}": {
+      "put": {
+        "tags": [
+          "Shop Planning"
+        ],
+        "summary": "Update Shop Planning",
+        "operationId": "update_shop_planning_api_v1_shop_planning__shop_plan_id__put",
+        "parameters": [
+          {
+            "name": "shop_plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Shop Plan Id"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_update_shop_planning_api_v1_shop_planning__shop_plan_id__put"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Shop Planning"
+        ],
+        "summary": "Delete Shop Planning",
+        "operationId": "delete_shop_planning_api_v1_shop_planning__shop_plan_id__delete",
+        "parameters": [
+          {
+            "name": "shop_plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Shop Plan Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Shop Planning"
+        ],
+        "summary": "Get Shop Planning",
+        "operationId": "get_shop_planning_api_v1_shop_planning__shop_plan_id__get",
+        "parameters": [
+          {
+            "name": "shop_plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Shop Plan Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/shop-planning-section": {
+      "post": {
+        "tags": [
+          "Shop Planning Sections"
+        ],
+        "summary": "Create Shop Planning Section",
+        "operationId": "create_shop_planning_section_api_v1_shop_planning_section_post",
+        "parameters": [
+          {
+            "name": "created_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Created By"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_shop_planning_section_api_v1_shop_planning_section_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Shop Planning Sections"
+        ],
+        "summary": "List Shop Planning Sections",
+        "operationId": "list_shop_planning_sections_api_v1_shop_planning_section_get",
+        "parameters": [
+          {
+            "name": "planning_section_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Planning Section Id"
+            }
+          },
+          {
+            "name": "workstation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workstation Id"
+            }
+          },
+          {
+            "name": "operator_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Operator Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/shop-planning-section/{section_id}": {
+      "put": {
+        "tags": [
+          "Shop Planning Sections"
+        ],
+        "summary": "Update Shop Planning Section",
+        "operationId": "update_shop_planning_section_api_v1_shop_planning_section__section_id__put",
+        "parameters": [
+          {
+            "name": "section_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Section Id"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_update_shop_planning_section_api_v1_shop_planning_section__section_id__put"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Shop Planning Sections"
+        ],
+        "summary": "Delete Shop Planning Section",
+        "operationId": "delete_shop_planning_section_api_v1_shop_planning_section__section_id__delete",
+        "parameters": [
+          {
+            "name": "section_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Section Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Shop Planning Sections"
+        ],
+        "summary": "Get Shop Planning Section",
+        "operationId": "get_shop_planning_section_api_v1_shop_planning_section__section_id__get",
+        "parameters": [
+          {
+            "name": "section_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Section Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/operator-workflow": {
+      "post": {
+        "tags": [
+          "Operator Workflows"
+        ],
+        "summary": "Create Operator Workflow",
+        "operationId": "create_operator_workflow_api_v1_operator_workflow_post",
+        "parameters": [
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_operator_workflow_api_v1_operator_workflow_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Operator Workflows"
+        ],
+        "summary": "List Operator Workflows",
+        "operationId": "list_operator_workflows_api_v1_operator_workflow_get",
+        "parameters": [
+          {
+            "name": "shop_planning_sections",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Shop Planning Sections"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/operator-workflow/{workflow_id}": {
+      "put": {
+        "tags": [
+          "Operator Workflows"
+        ],
+        "summary": "Update Operator Workflow",
+        "operationId": "update_operator_workflow_api_v1_operator_workflow__workflow_id__put",
+        "parameters": [
+          {
+            "name": "workflow_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Workflow Id"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_update_operator_workflow_api_v1_operator_workflow__workflow_id__put"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Operator Workflows"
+        ],
+        "summary": "Delete Operator Workflow",
+        "operationId": "delete_operator_workflow_api_v1_operator_workflow__workflow_id__delete",
+        "parameters": [
+          {
+            "name": "workflow_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Workflow Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Operator Workflows"
+        ],
+        "summary": "Get Operator Workflow",
+        "operationId": "get_operator_workflow_api_v1_operator_workflow__workflow_id__get",
+        "parameters": [
+          {
+            "name": "workflow_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Workflow Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
         },
         "security": [
           {
@@ -2340,6 +6108,174 @@
   },
   "components": {
     "schemas": {
+      "ActionMenuCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Action menu name"
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Code",
+            "description": "Action menu code (unique identifier)"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "code"
+        ],
+        "title": "ActionMenuCreate",
+        "description": "Schema for creating a new action menu"
+      },
+      "ActionMenuPermission": {
+        "properties": {
+          "action_menu_id": {
+            "type": "integer",
+            "title": "Action Menu Id",
+            "description": "Action menu ID"
+          },
+          "can_create": {
+            "type": "boolean",
+            "title": "Can Create",
+            "description": "Permission to create",
+            "default": false
+          },
+          "can_read": {
+            "type": "boolean",
+            "title": "Can Read",
+            "description": "Permission to read",
+            "default": false
+          },
+          "can_update": {
+            "type": "boolean",
+            "title": "Can Update",
+            "description": "Permission to update",
+            "default": false
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete",
+            "description": "Permission to delete",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "action_menu_id"
+        ],
+        "title": "ActionMenuPermission",
+        "description": "Schema for action menu with CRUD permissions"
+      },
+      "ActionMenuUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "Action menu name"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Code",
+            "description": "Action menu code"
+          }
+        },
+        "type": "object",
+        "title": "ActionMenuUpdate",
+        "description": "Schema for updating an action menu"
+      },
+      "Body_add_files_to_drafting_api_v1_drafting__drafting_id__files_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string",
+              "format": "binary"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "Body_add_files_to_drafting_api_v1_drafting__drafting_id__files_post"
+      },
+      "Body_add_files_to_final_programming_api_v1_finalprogramming__fp_id__files_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string",
+              "format": "binary"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "Body_add_files_to_final_programming_api_v1_finalprogramming__fp_id__files_post"
+      },
+      "Body_add_files_to_slabsmith_api_v1_slabsmith__slabsmith_id__files_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string",
+              "format": "binary"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "Body_add_files_to_slabsmith_api_v1_slabsmith__slabsmith_id__files_post"
+      },
+      "Body_add_update_shop_schedule_api_v1_fab__fab_id__shop_schedule_post": {
+        "properties": {
+          "shop_schedule_date": {
+            "type": "string",
+            "title": "Shop Schedule Date"
+          },
+          "move_to_final_programming": {
+            "type": "boolean",
+            "title": "Move To Final Programming",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "shop_schedule_date"
+        ],
+        "title": "Body_add_update_shop_schedule_api_v1_fab__fab_id__shop_schedule_post"
+      },
       "Body_create_employee_employees_post": {
         "properties": {
           "first_name": {
@@ -2370,16 +6306,20 @@
             "type": "string",
             "title": "Home Address"
           },
-          "profile_image": {
+          "role_id": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "binary"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
+            "title": "Role Id"
+          },
+          "profile_image": {
+            "type": "string",
+            "format": "binary",
             "title": "Profile Image"
           }
         },
@@ -2391,6 +6331,262 @@
           "department"
         ],
         "title": "Body_create_employee_employees_post"
+      },
+      "Body_create_operator_workflow_api_v1_operator_workflow_post": {
+        "properties": {
+          "shop_planning_sections": {
+            "type": "integer",
+            "title": "Shop Planning Sections"
+          },
+          "started_at": {
+            "type": "string",
+            "title": "Started At"
+          },
+          "finished_at": {
+            "type": "string",
+            "title": "Finished At"
+          },
+          "total_sqft_done": {
+            "type": "string",
+            "title": "Total Sqft Done"
+          },
+          "reason_for_pause": {
+            "type": "string",
+            "title": "Reason For Pause"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "shop_planning_sections",
+          "started_at",
+          "finished_at",
+          "total_sqft_done",
+          "reason_for_pause"
+        ],
+        "title": "Body_create_operator_workflow_api_v1_operator_workflow_post"
+      },
+      "Body_create_planning_section_api_v1_planning_section_post": {
+        "properties": {
+          "plan_name": {
+            "type": "string",
+            "title": "Plan Name"
+          },
+          "plan_description": {
+            "type": "string",
+            "title": "Plan Description"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "plan_name",
+          "plan_description",
+          "status"
+        ],
+        "title": "Body_create_planning_section_api_v1_planning_section_post"
+      },
+      "Body_create_shop_planning_api_v1_shop_planning_post": {
+        "properties": {
+          "job_id": {
+            "type": "integer",
+            "title": "Job Id"
+          },
+          "fab_ids": {
+            "type": "string",
+            "title": "Fab Ids"
+          },
+          "planning_section_ids": {
+            "type": "string",
+            "title": "Planning Section Ids"
+          },
+          "start_datetime": {
+            "type": "string",
+            "title": "Start Datetime"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "fab_ids",
+          "planning_section_ids",
+          "start_datetime"
+        ],
+        "title": "Body_create_shop_planning_api_v1_shop_planning_post"
+      },
+      "Body_create_shop_planning_section_api_v1_shop_planning_section_post": {
+        "properties": {
+          "planning_section_id": {
+            "type": "integer",
+            "title": "Planning Section Id"
+          },
+          "workstation_ids": {
+            "type": "string",
+            "title": "Workstation Ids"
+          },
+          "total_sqft": {
+            "type": "number",
+            "title": "Total Sqft"
+          },
+          "machine_ids": {
+            "type": "string",
+            "title": "Machine Ids"
+          },
+          "operator_ids": {
+            "type": "string",
+            "title": "Operator Ids"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "scheduled_hours": {
+            "type": "string",
+            "title": "Scheduled Hours"
+          },
+          "files": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "binary"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "planning_section_id",
+          "workstation_ids",
+          "total_sqft",
+          "machine_ids",
+          "operator_ids",
+          "scheduled_hours"
+        ],
+        "title": "Body_create_shop_planning_section_api_v1_shop_planning_section_post"
+      },
+      "Body_set_sct_review_no_api_v1_salesct__sct_id__review_no_post": {
+        "properties": {
+          "revenue": {
+            "type": "number",
+            "title": "Revenue"
+          }
+        },
+        "type": "object",
+        "required": [
+          "revenue"
+        ],
+        "title": "Body_set_sct_review_no_api_v1_salesct__sct_id__review_no_post"
+      },
+      "Body_set_sct_review_yes_api_v1_salesct__sct_id__review_yes_post": {
+        "properties": {
+          "revision_reason": {
+            "type": "string",
+            "title": "Revision Reason"
+          },
+          "files": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "binary"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "revision_reason"
+        ],
+        "title": "Body_set_sct_review_yes_api_v1_salesct__sct_id__review_yes_post"
+      },
+      "Body_submit_draft_for_review_api_v1_drafting__drafting_id__submit_review_post": {
+        "properties": {
+          "file_ids": {
+            "type": "string",
+            "title": "File Ids"
+          },
+          "no_of_piece_drafted": {
+            "type": "integer",
+            "title": "No Of Piece Drafted"
+          },
+          "total_sqft_drafted": {
+            "type": "string",
+            "title": "Total Sqft Drafted"
+          },
+          "draft_note": {
+            "type": "string",
+            "title": "Draft Note"
+          },
+          "mentions": {
+            "type": "string",
+            "title": "Mentions"
+          },
+          "is_completed": {
+            "type": "boolean",
+            "title": "Is Completed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file_ids",
+          "no_of_piece_drafted",
+          "total_sqft_drafted",
+          "draft_note",
+          "mentions",
+          "is_completed"
+        ],
+        "title": "Body_submit_draft_for_review_api_v1_drafting__drafting_id__submit_review_post"
+      },
+      "Body_update_cutlist_details_api_v1_cutlist__cutlist_id__update_details_post": {
+        "properties": {
+          "no_of_pieces": {
+            "type": "integer",
+            "title": "No Of Pieces"
+          },
+          "total_sqft": {
+            "type": "string",
+            "title": "Total Sqft"
+          }
+        },
+        "type": "object",
+        "required": [
+          "no_of_pieces",
+          "total_sqft"
+        ],
+        "title": "Body_update_cutlist_details_api_v1_cutlist__cutlist_id__update_details_post"
       },
       "Body_update_employee_employees__employee_id__put": {
         "properties": {
@@ -2411,7 +6607,14 @@
             "title": "Phone Number"
           },
           "department_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Department Id"
           },
           "gender": {
@@ -2425,7 +6628,7 @@
           "role_id": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "string"
               },
               {
                 "type": "null"
@@ -2434,20 +6637,267 @@
             "title": "Role Id"
           },
           "profile_image": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "binary"
-              },
-              {
-                "type": "null"
-              }
-            ],
+            "type": "string",
+            "format": "binary",
             "title": "Profile Image"
           }
         },
         "type": "object",
         "title": "Body_update_employee_employees__employee_id__put"
+      },
+      "Body_update_final_programming_api_v1_finalprogramming__fp_id__update_post": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "title": "Body_update_final_programming_api_v1_finalprogramming__fp_id__update_post"
+      },
+      "Body_update_operator_workflow_api_v1_operator_workflow__workflow_id__put": {
+        "properties": {
+          "shop_planning_sections": {
+            "type": "integer",
+            "title": "Shop Planning Sections"
+          },
+          "started_at": {
+            "type": "string",
+            "title": "Started At"
+          },
+          "finished_at": {
+            "type": "string",
+            "title": "Finished At"
+          },
+          "total_sqft_done": {
+            "type": "string",
+            "title": "Total Sqft Done"
+          },
+          "reason_for_pause": {
+            "type": "string",
+            "title": "Reason For Pause"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "shop_planning_sections",
+          "started_at",
+          "finished_at",
+          "total_sqft_done",
+          "reason_for_pause"
+        ],
+        "title": "Body_update_operator_workflow_api_v1_operator_workflow__workflow_id__put"
+      },
+      "Body_update_planning_section_api_v1_planning_section__section_id__put": {
+        "properties": {
+          "plan_name": {
+            "type": "string",
+            "title": "Plan Name"
+          },
+          "plan_description": {
+            "type": "string",
+            "title": "Plan Description"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          }
+        },
+        "type": "object",
+        "required": [
+          "plan_name",
+          "plan_description",
+          "status"
+        ],
+        "title": "Body_update_planning_section_api_v1_planning_section__section_id__put"
+      },
+      "Body_update_sct_revision_api_v1_salesct__sct_id__revision_update_post": {
+        "properties": {
+          "revision_type": {
+            "type": "string",
+            "title": "Revision Type"
+          },
+          "revision_status": {
+            "type": "string",
+            "title": "Revision Status"
+          },
+          "draft_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Note"
+          }
+        },
+        "type": "object",
+        "required": [
+          "revision_type",
+          "revision_status"
+        ],
+        "title": "Body_update_sct_revision_api_v1_salesct__sct_id__revision_update_post"
+      },
+      "Body_update_shop_planning_api_v1_shop_planning__shop_plan_id__put": {
+        "properties": {
+          "job_id": {
+            "type": "integer",
+            "title": "Job Id"
+          },
+          "fab_ids": {
+            "type": "string",
+            "title": "Fab Ids"
+          },
+          "planning_section_ids": {
+            "type": "string",
+            "title": "Planning Section Ids"
+          },
+          "start_datetime": {
+            "type": "string",
+            "title": "Start Datetime"
+          }
+        },
+        "type": "object",
+        "required": [
+          "job_id",
+          "fab_ids",
+          "planning_section_ids",
+          "start_datetime"
+        ],
+        "title": "Body_update_shop_planning_api_v1_shop_planning__shop_plan_id__put"
+      },
+      "Body_update_shop_planning_section_api_v1_shop_planning_section__section_id__put": {
+        "properties": {
+          "planning_section_id": {
+            "type": "integer",
+            "title": "Planning Section Id"
+          },
+          "workstation_ids": {
+            "type": "string",
+            "title": "Workstation Ids"
+          },
+          "total_sqft": {
+            "type": "number",
+            "title": "Total Sqft"
+          },
+          "machine_ids": {
+            "type": "string",
+            "title": "Machine Ids"
+          },
+          "operator_ids": {
+            "type": "string",
+            "title": "Operator Ids"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "scheduled_hours": {
+            "type": "string",
+            "title": "Scheduled Hours"
+          },
+          "files": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "format": "binary"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "planning_section_id",
+          "workstation_ids",
+          "total_sqft",
+          "machine_ids",
+          "operator_ids",
+          "scheduled_hours"
+        ],
+        "title": "Body_update_shop_planning_section_api_v1_shop_planning_section__section_id__put"
+      },
+      "Body_update_workstation_api_v1_workstation__ws_id__put": {
+        "properties": {
+          "planning_section_id": {
+            "type": "integer",
+            "title": "Planning Section Id"
+          },
+          "workstation_name": {
+            "type": "string",
+            "title": "Workstation Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "assigned_operatives": {
+            "type": "string",
+            "title": "Assigned Operatives"
+          },
+          "machines": {
+            "type": "string",
+            "title": "Machines"
+          },
+          "machine_statuses": {
+            "type": "string",
+            "title": "Machine Statuses"
+          }
+        },
+        "type": "object",
+        "required": [
+          "planning_section_id",
+          "workstation_name",
+          "status",
+          "assigned_operatives",
+          "machines",
+          "machine_statuses"
+        ],
+        "title": "Body_update_workstation_api_v1_workstation__ws_id__put"
       },
       "Body_upload_file_files_upload_post": {
         "properties": {
@@ -2493,36 +6943,6 @@
         ],
         "title": "BulkEmployeeActivateRequest",
         "description": "Schema for activating or deactivating multiple employees at once"
-      },
-      "DatabaseHealthResponse": {
-        "properties": {
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "database": {
-            "type": "boolean",
-            "title": "Database"
-          },
-          "message": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Message"
-          }
-        },
-        "type": "object",
-        "required": [
-          "status",
-          "database"
-        ],
-        "title": "DatabaseHealthResponse",
-        "description": "Database health check response"
       },
       "DepartmentCreate": {
         "properties": {
@@ -2636,20 +7056,6 @@
         "type": "object",
         "title": "HTTPValidationError"
       },
-      "HealthResponse": {
-        "properties": {
-          "status": {
-            "type": "string",
-            "title": "Status"
-          }
-        },
-        "type": "object",
-        "required": [
-          "status"
-        ],
-        "title": "HealthResponse",
-        "description": "Health check response"
-      },
       "LoginRequest": {
         "properties": {
           "username": {
@@ -2728,12 +7134,157 @@
         ],
         "title": "PasswordResetRequest"
       },
-      "RoleCreate": {
+      "PermissionCreate": {
         "properties": {
           "name": {
             "type": "string",
             "maxLength": 255,
             "minLength": 1,
+            "title": "Name",
+            "description": "Permission name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Permission description"
+          },
+          "can_create": {
+            "type": "boolean",
+            "title": "Can Create",
+            "description": "Can create",
+            "default": false
+          },
+          "can_read": {
+            "type": "boolean",
+            "title": "Can Read",
+            "description": "Can read",
+            "default": false
+          },
+          "can_update": {
+            "type": "boolean",
+            "title": "Can Update",
+            "description": "Can update",
+            "default": false
+          },
+          "can_delete": {
+            "type": "boolean",
+            "title": "Can Delete",
+            "description": "Can delete",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "PermissionCreate",
+        "description": "Schema for creating a new permission"
+      },
+      "PermissionUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name",
+            "description": "Permission name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 255
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Permission description"
+          },
+          "can_create": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Create",
+            "description": "Can create"
+          },
+          "can_read": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Read",
+            "description": "Can read"
+          },
+          "can_update": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Update",
+            "description": "Can update"
+          },
+          "can_delete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Can Delete",
+            "description": "Can delete"
+          }
+        },
+        "type": "object",
+        "title": "PermissionUpdate",
+        "description": "Schema for updating a permission"
+      },
+      "PlanningSection": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
             "title": "Name"
           },
           "description": {
@@ -2747,13 +7298,88 @@
             ],
             "title": "Description"
           },
-          "permission_ids": {
+          "status_id": {
+            "type": "integer",
+            "title": "Status Id"
+          },
+          "created_by": {
+            "type": "integer",
+            "title": "Created By"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "status_id",
+          "created_by",
+          "created_at"
+        ],
+        "title": "PlanningSection"
+      },
+      "RoleCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Role name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Role description"
+          },
+          "action_menu_permissions": {
+            "items": {
+              "$ref": "#/components/schemas/ActionMenuPermission"
+            },
+            "type": "array",
+            "title": "Action Menu Permissions",
+            "description": "List of action menus with their CRUD permissions"
+          },
+          "user_ids": {
             "items": {
               "type": "integer"
             },
             "type": "array",
-            "title": "Permission Ids",
-            "description": "List of permission IDs to associate with the role"
+            "title": "User Ids",
+            "description": "List of user IDs to assign to this role"
           },
           "status": {
             "type": "integer",
@@ -2765,7 +7391,7 @@
         "type": "object",
         "required": [
           "name",
-          "permission_ids"
+          "action_menu_permissions"
         ],
         "title": "RoleCreate",
         "description": "Schema for creating a new role"
@@ -2798,7 +7424,8 @@
                 "type": "null"
               }
             ],
-            "title": "Name"
+            "title": "Name",
+            "description": "Role name"
           },
           "description": {
             "anyOf": [
@@ -2809,9 +7436,25 @@
                 "type": "null"
               }
             ],
-            "title": "Description"
+            "title": "Description",
+            "description": "Role description"
           },
-          "permission_ids": {
+          "action_menu_permissions": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/ActionMenuPermission"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Menu Permissions",
+            "description": "List of action menus with their CRUD permissions"
+          },
+          "user_ids": {
             "anyOf": [
               {
                 "items": {
@@ -2823,8 +7466,8 @@
                 "type": "null"
               }
             ],
-            "title": "Permission Ids",
-            "description": "List of permission IDs to associate with the role"
+            "title": "User Ids",
+            "description": "List of user IDs to assign to this role"
           },
           "status": {
             "anyOf": [
@@ -3029,6 +7672,118 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WorkStation": {
+        "properties": {
+          "id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Id"
+          },
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "status_id": {
+            "type": "integer",
+            "title": "Status Id"
+          },
+          "created_by": {
+            "type": "integer",
+            "title": "Created By"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "status_id",
+          "created_by",
+          "created_at"
+        ],
+        "title": "WorkStation"
+      },
+      "fastapi___compat__v2__Body_create_workstation_api_v1_workstation_post": {
+        "properties": {
+          "planning_section_id": {
+            "type": "integer",
+            "title": "Planning Section Id"
+          },
+          "workstation_name": {
+            "type": "string",
+            "title": "Workstation Name"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "assigned_operatives": {
+            "type": "string",
+            "title": "Assigned Operatives"
+          },
+          "machines": {
+            "type": "string",
+            "title": "Machines"
+          },
+          "machine_statuses": {
+            "type": "string",
+            "title": "Machine Statuses"
+          }
+        },
+        "type": "object",
+        "required": [
+          "planning_section_id",
+          "workstation_name",
+          "status",
+          "assigned_operatives",
+          "machines",
+          "machine_statuses"
+        ],
+        "title": "Body_create_workstation_api_v1_workstation_post"
       }
     },
     "securitySchemes": {

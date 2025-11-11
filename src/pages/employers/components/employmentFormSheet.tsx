@@ -10,15 +10,15 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
+import { useCreateEmployeeMutation } from '@/store/api/employee';
+import { useGetDepartmentsQuery } from '@/store/api/department';
+import { useGetRolesQuery } from '@/store/api/role';
 import { Button } from '@/components/ui/button';
-import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
-import { Check, AlertCircle, LoaderCircleIcon, CheckCircle2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { LoaderCircleIcon } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AvatarInput } from '@/partials/common/avatar-input';
 import Popup from '@/components/ui/popup';
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -34,12 +34,17 @@ import { Input } from "@/components/ui/input";
 import { CompleteProfileSchemaType, getCompleteProfileSchema } from "@/auth/pages/profile-settings/profile-schema";
 
 const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
-    const navigate = useNavigate();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [showPopover, setShowPopover] = useState(false);
-    const [isSheetOpen, setIsSheetOpen] = useState(false); // Control sheet state
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
+    const [profileImage, setProfileImage] = useState<File | null>(null);
+
+    // API hooks
+    const [createEmployee] = useCreateEmployeeMutation();
+    const { data: departmentsData } = useGetDepartmentsQuery();
+    const { data: rolesData } = useGetRolesQuery();
 
     const form = useForm<CompleteProfileSchemaType>({
         resolver: zodResolver(getCompleteProfileSchema()),
@@ -50,6 +55,7 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
             department: '',
             home_address: '',
             phone: '',
+            gender: '',
         },
     });
 
@@ -58,18 +64,31 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
             setIsSubmitting(true);
             setError(null);
 
-            console.log('Profile data submitted:', values);
+            // Create FormData for file upload
+            const formData = new FormData();
+            formData.append('first_name', values.first_name);
+            formData.append('last_name', values.last_name);
+            formData.append('email', values.email);
+            formData.append('department', values.department || ''); 
+            formData.append('home_address', values.home_address || '');
+            formData.append('phone', values.phone || '');
+            if (values.gender) {
+                formData.append('gender', values.gender);
+            }
+            if (profileImage) {
+                formData.append('profile_image', profileImage);
+            }
 
-            // Simulate API call
-            await new Promise((res) => setTimeout(res, 1000));
+            await createEmployee(formData).unwrap();
 
             setSuccess('Employee added successfully!');
             setShowPopover(true);
             form.reset();
-            setIsSheetOpen(false); // Close sheet on success
+            setProfileImage(null);
+            setIsSheetOpen(false);
 
-        } catch (err) {
-            setError('An unexpected error occurred. Please try again.');
+        } catch (err: any) {
+            setError(err?.data?.message || 'Failed to create employee. Please try again.');
         } finally {
             setIsSubmitting(false);
         }
@@ -108,9 +127,9 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ">
                                             <div className="space-y-2 col-span-2">
-                                                <FormLabel>Upload image *</FormLabel>
+                                                <FormLabel>Upload image</FormLabel>
                                                 <div className="flex items-center gap-4">
-                                                    <AvatarInput />
+                                                    <AvatarInput onFileChange={(file) => setProfileImage(file)} />
                                                 </div>
                                             </div>
 
@@ -169,8 +188,11 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
                                                                 </SelectTrigger>
                                                             </FormControl>
                                                             <SelectContent>
-                                                                <SelectItem value="drafter">Drafter</SelectItem>
-                                                                <SelectItem value="sales-person">Sales person</SelectItem>
+                                                                {departmentsData?.items?.map((dept) => (
+                                                                    <SelectItem key={dept.id} value={String(dept.id)}>
+                                                                        {dept.name}
+                                                                    </SelectItem>
+                                                                ))}
                                                             </SelectContent>
                                                         </Select>
                                                         <FormMessage />
@@ -196,6 +218,28 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
                                                     <FormMessage />
                                                 </FormItem>
                                             )} />
+                                            
+                                            <FormField
+                                                control={form.control}
+                                                name="gender"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Gender</FormLabel>
+                                                        <Select value={field.value} onValueChange={field.onChange}>
+                                                            <FormControl>
+                                                                <SelectTrigger>
+                                                                    <SelectValue placeholder="Select Gender" />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                <SelectItem value="male">Male</SelectItem>
+                                                                <SelectItem value="female">Female</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
                                         </div>
                                     </div>
                                 </ScrollArea>

@@ -144,6 +144,7 @@ export function SignInPage() {
           setCredentials({
             admin: res.data.user,
             access_token: res.data.access_token,
+            permissions: res.data.permissions || [], // Pass permissions to Redux
           })
         );
         

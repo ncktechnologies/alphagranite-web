@@ -8,17 +8,50 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { ImageInput, ImageInputFile } from '@/components/image-input';
+import { ImageInput, ImageInputFile, ImageInputFiles } from '@/components/image-input';
+import { useUploadImageMutation } from '@/store/api';
+
 
 export function AvatarInput() {
-   const [avatar, setAvatar] = useState<ImageInputFile[]>(() => {
+  const [avatar, setAvatar] = useState<ImageInputFile[]>(() => {
     return [{ dataURL: toAbsoluteUrl(`/images/app/user-line.svg`) }]
   })
+  const [uploadImage, { isLoading }] = useUploadImageMutation();
 
+  const handleAvatarChange = async (selectedAvatar: ImageInputFiles, updatedIndexes?: number[]) => {
+    // Update local state immediately for optimistic UI
+    setAvatar(selectedAvatar);
+
+    // Upload only new/updated files
+    if (updatedIndexes && updatedIndexes.length > 0) {
+      for (const index of updatedIndexes) {
+        const fileData = selectedAvatar[index];
+        if (fileData?.file) {
+          try {
+            const formData = new FormData();
+            formData.append('image', fileData.file);
+            
+            const result = await uploadImage(formData).unwrap();
+            console.log('Upload successful:', result);
+            
+            // Optional: Update with server URL
+            // if (result.url) {
+            //   const updatedAvatar = [...selectedAvatar];
+            //   updatedAvatar[index] = { ...fileData, dataURL: result.url };
+            //   setAvatar(updatedAvatar);
+            // }
+          } catch (error) {
+            console.error('Failed to upload image:', error);
+            // Handle error - maybe revert this specific image
+          }
+        }
+      }
+    }
+  };
   return (
     <ImageInput
       value={avatar}
-      onChange={(selectedAvatar) => setAvatar(selectedAvatar)}
+      onChange={handleAvatarChange}
     >
       {({ onImageUpload }) => (
         <div
@@ -28,9 +61,7 @@ export function AvatarInput() {
           
           <div
             className="  rounded-full overflow-hidden h-full w-full  bg-no-repeat  bg-cover bg-center flex items-center justify-center"
-            // style={{
-            //   backgroundImage: `url(${toAbsoluteUrl(`/images/app/user-line.svg`)})`,
-            // }}
+           
           >
             {avatar.length > 0 && <img src={avatar[0].dataURL} alt="avatar" />}
             <div className="flex items-center justify-center cursor-pointer  rounded-full right-0 bottom-0 bg-primary p-2 absolute">

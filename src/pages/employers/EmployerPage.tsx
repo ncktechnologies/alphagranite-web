@@ -3,24 +3,30 @@ import { Employees } from './components/employer';
 import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import EmploymentFormSheet from './components/employmentFormSheet';
+import EmployeeFormSheet from './components/employeeSheet';
+import { useState } from 'react';
 
 export function EmployeePage() {
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
+
     return (
         <div className="">
-
             <Container>
                 <Toolbar className=' '>
-
                     <ToolbarHeading title=" Employees" description="Manage all Alpha Granite employees here" />
 
                     <ToolbarActions>
-                        <EmploymentFormSheet trigger={
-                        <Button className="">
-                            <Plus/>
-                            New employee
-                        </Button>
-                        }/>
+                        <EmployeeFormSheet 
+                            trigger={
+                                <Button className="" onClick={() => setIsSheetOpen(true)}>
+                                    <Plus/>
+                                    New employee
+                                </Button>
+                            }
+                            mode="create"
+                            open={isSheetOpen}
+                            onOpenChange={setIsSheetOpen}
+                        />
                     </ToolbarActions>
                 </Toolbar>
                 <Employees />
