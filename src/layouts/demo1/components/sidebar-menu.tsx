@@ -1,6 +1,6 @@
 'use client';
 
-import { JSX, useCallback } from 'react';
+import { JSX, useCallback, useMemo } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { MENU_SIDEBAR } from '@/config/menu.config';
 import { MenuConfig, MenuItem } from '@/config/types';
@@ -16,15 +16,73 @@ import {
   AccordionMenuSubTrigger,
 } from '@/components/ui/accordion-menu';
 import { Badge } from '@/components/ui/badge';
+import { useAllPermissions, useIsSuperAdmin } from '@/hooks/use-permission';
 
 export function SidebarMenu() {
   const { pathname } = useLocation();
+  const permissions = useAllPermissions();
+  const isSuperAdmin = useIsSuperAdmin();
 
   // Memoize matchPath to prevent unnecessary re-renders
   const matchPath = useCallback(
     (path: string): boolean =>
       path === pathname || (path.length > 1 && pathname.startsWith(path)),
     [pathname],
+  );
+
+  // Map menu paths to permission codes
+  const getMenuCode = (path: string): string | null => {
+    if (path === '/') return 'dashboard';
+    if (path.startsWith('/employees')) return 'employees';
+    if (path.startsWith('/departments')) return 'department';
+    if (path.startsWith('/job')) return 'jobs';
+    if (path.startsWith('/shop')) return 'shop';
+    if (path.startsWith('/settings')) return 'settings';
+    return null;
+  };
+
+  // Filter menu items based on permissions
+  const filterMenuByPermissions = useCallback((items: MenuConfig): MenuConfig => {
+    return items.filter(item => {
+      // Always show headings and separators
+      if (item.heading || item.separator) return true;
+      
+      // Super admins see everything
+      if (isSuperAdmin) return true;
+      
+      // Check permission for this menu item
+      if (item.path) {
+        const menuCode = getMenuCode(item.path);
+        if (menuCode && permissions[menuCode]) {
+          // User has at least read permission
+          return permissions[menuCode].can_read;
+        }
+      }
+      
+      // If item has children, check if any children are accessible
+      if (item.children) {
+        const filteredChildren = filterMenuByPermissions(item.children);
+        return filteredChildren.length > 0;
+      }
+      
+      // Default: hide if no permission found
+      return false;
+    }).map(item => {
+      // If item has children, filter them too
+      if (item.children) {
+        return {
+          ...item,
+          children: filterMenuByPermissions(item.children)
+        };
+      }
+      return item;
+    });
+  }, [permissions, isSuperAdmin]);
+
+  // Memoize filtered menu
+  const filteredMenu = useMemo(
+    () => filterMenuByPermissions(MENU_SIDEBAR),
+    [filterMenuByPermissions]
   );
 
   // Global classNames for consistent styling
@@ -219,7 +277,7 @@ export function SidebarMenu() {
         collapsible
         classNames={classNames}
       >
-        {buildMenu(MENU_SIDEBAR)}
+        {buildMenu(filteredMenu)}
       </AccordionMenu>
     </div>
   );

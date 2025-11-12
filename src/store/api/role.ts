@@ -18,6 +18,8 @@ export interface Role {
     pending_members?: number;
     permissions?: RolePermission[];
     members?: RoleMember[];
+    member_count?: number;
+    top_members?: RoleMember[];
 }
 
 export interface RolePermission {
@@ -38,6 +40,7 @@ export interface RoleMember {
     status?: number;
     status_name?: string;
     profile_image_id?: number;
+    profile_image_url?: string;
     invited_at?: string;
     last_login?: string;
 }
@@ -88,7 +91,7 @@ export interface RoleDetailsParams {
 }
 
 export interface RoleListResponse {
-    items: Role[];
+    data: Role[];
     total: number;
     skip: number;
     limit: number;

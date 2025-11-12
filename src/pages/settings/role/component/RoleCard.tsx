@@ -2,7 +2,7 @@
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Role } from '@/config/types';
+import { Role } from '@/store/api';
 
 interface RoleCardProps {
   role: Role;
@@ -11,7 +11,9 @@ interface RoleCardProps {
 }
 
 export const RoleCard = ({ role, isSelected, onClick }: RoleCardProps) => {
+  // console.log(role, "jnaooperl")
   return (
+    <>
     <Card 
       className={`cursor-pointer transition-all hover:shadow-md ${
         isSelected ? 'ring-1 ring-[#8BAD2B] bg-[#F0FDF4]' : ''
@@ -24,21 +26,22 @@ export const RoleCard = ({ role, isSelected, onClick }: RoleCardProps) => {
             <h3 className={` ${isSelected  ? 'text-lg font-normal ' : 'font-bold text-[16px]'} text-black   `}>{role.name}</h3>
             <Badge 
             //   variant={role.status === 'Active' ? 'default' : 'secondary'}
-              className={`${role.status === 'Active'  ? 'bg-[#0BC33F33] text-[#0BC33F]' : 'bg-[#ED143B33] text-[#ED143B]'} px-2 py-1 rounded-[50px] text-sm `}
+              className={`${role.status === 1  ? 'bg-[#0BC33F33] text-[#0BC33F]' : 'bg-[#ED143B33] text-[#ED143B]'} px-2 py-1 rounded-[50px] text-sm `}
             >
-              {role.status}
+              {role.status === 1 ? 'Active' : 'Inactive'}
             </Badge>
           </div>
           
           <p className="text-sm text-text">{role.description}</p>
           
           <div className="flex items-center gap-2">
-            <span className="text-sm text-text">MEMBERS ({role.members})</span>
+            <span className="text-sm text-text">MEMBERS ({role.member_count})</span>
             <div className="flex -space-x-2">
-              {role.avatars.map((avatar, index) => (
-                <Avatar key={index} className="w-6 h-6 border-2 border-white">
+              {role.top_members?.map((user) => (
+                <Avatar key={user.id} className="w-6 h-6 border-2 border-white">
+                  <Avatar></Avatar>
                   <AvatarFallback className="text-xs bg-gray-200 text-gray-600">
-                    {avatar}
+                    {user.first_name.charAt(0) + user.last_name.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
               ))}
@@ -48,5 +51,6 @@ export const RoleCard = ({ role, isSelected, onClick }: RoleCardProps) => {
       </CardContent>
       
     </Card>
+    </>
   );
 };

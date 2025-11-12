@@ -38,37 +38,29 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Role, RoleMember } from '@/store/api/role';
 
-interface User {
-  id: string;
-  name: string;
-  dateInvited: Date;
-  status: 'Active' | 'Pending' | 'Inactive';
+interface UsersSectionProps {
+  role: Role;
 }
 
-const data: User[] = [
-  { id: '1', name: 'Cameron Williamson', dateInvited: new Date('2024-01-15'), status: 'Active' },
-  { id: '2', name: 'Leslie Alexander', dateInvited: new Date('2024-01-16'), status: 'Pending' },
-  { id: '3', name: 'Robert Fox', dateInvited: new Date('2024-01-17'), status: 'Active' },
-  { id: '4', name: 'Jane Cooper', dateInvited: new Date('2024-01-18'), status: 'Inactive' },
-
-];
-
-const StatusBadge = ({ status }: { status: User['status'] }) => {
-  const colors: Record<User['status'], string> = {
-    Active: 'bg-green-100 text-green-700',
-    Pending: 'bg-yellow-100 text-yellow-700',
-    Inactive: 'bg-gray-100 text-gray-700',
+const StatusBadge = ({ status }: { status: number | undefined }) => {
+  const getStatusInfo = (s: number | undefined) => {
+    if (s === 1) return { label: 'Active', color: 'bg-green-100 text-green-700' };
+    if (s === 2) return { label: 'Pending', color: 'bg-yellow-100 text-yellow-700' };
+    return { label: 'Inactive', color: 'bg-gray-100 text-gray-700' };
   };
 
+  const statusInfo = getStatusInfo(status);
+
   return (
-    <Badge variant="secondary" className={`${colors[status]} hover:${colors[status]}`}>
-      {status}
+    <Badge variant="secondary" className={`${statusInfo.color} hover:${statusInfo.color}`}>
+      {statusInfo.label}
     </Badge>
   );
 };
 
-const UsersSection = () => {
+const UsersSection = ({ role }: UsersSectionProps) => {
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -84,15 +76,18 @@ const UsersSection = () => {
   });
   const [genderFilter, setGenderFilter] = useState('All');
 
-  const filteredData = useMemo(() => {
-    if (!searchQuery) return data;
-    return data.filter(
-      (item) =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [searchQuery]);
+  const members = role.members || [];
 
-  const columns = useMemo<ColumnDef<User>[]>(() => [
+  const filteredData = useMemo(() => {
+    if (!searchQuery) return members;
+    return members.filter(
+      (item) =>
+        `${item.first_name} ${item.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.email.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [searchQuery, members]);
+
+  const columns = useMemo<ColumnDef<RoleMember>[]>(() => [
     {
       id: 'select',
       header: ({ table }) => (
@@ -111,20 +106,27 @@ const UsersSection = () => {
     },
     {
       id: 'name',
-      accessorFn: (row) => row.name,
+      accessorFn: (row) => `${row.first_name} ${row.last_name}`,
       header: ({ column }) => (
         <DataGridColumnHeader title="EMPLOYEE NAME" column={column} />
       ),
-      cell: ({ row }) => (
-        <div className="flex items-center">
-          <Avatar className="w-8 h-8 mr-3">
-            <AvatarFallback className="bg-gray-200 text-gray-600">
-              {row.original.name.split(' ').map(n => n[0]).join('')}
-            </AvatarFallback>
-          </Avatar>
-          <span className="text-sm font-medium text-gray-900">{row.original.name}</span>
-        </div>
-      ),
+      cell: ({ row }) => {
+        const fullName = `${row.original.first_name} ${row.original.last_name}`;
+        const initials = `${row.original.first_name[0]}${row.original.last_name[0]}`;
+        return (
+          <div className="flex items-center">
+            <Avatar className="w-8 h-8 mr-3">
+              {row.original.profile_image_url && (
+                <AvatarImage src={row.original.profile_image_url} alt={fullName} />
+              )}
+              <AvatarFallback className="bg-gray-200 text-gray-600">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <span className="text-sm font-medium text-gray-900">{fullName}</span>
+          </div>
+        );
+      },
       enableSorting: true,
       size: 200,
       meta: {
@@ -133,13 +135,13 @@ const UsersSection = () => {
     },
     {
       id: 'dateInvited',
-      accessorFn: (row) => row.dateInvited,
+      accessorFn: (row) => row.invited_at,
       header: ({ column }) => (
         <DataGridColumnHeader title="DATE INVITED" column={column} />
       ),
       cell: ({ row }) => (
         <span className="text-sm text-gray-500">
-          {format(row.original.dateInvited, 'MMM dd, yyyy')}
+          {row.original.invited_at ? format(new Date(row.original.invited_at), 'MMM dd, yyyy') : '-'}
         </span>
       ),
       enableSorting: true,
@@ -169,7 +171,7 @@ const UsersSection = () => {
     columns,
     data: filteredData,
     pageCount: Math.ceil((filteredData?.length || 0) / pagination.pageSize),
-    getRowId: (row: User) => row.id,
+    getRowId: (row: RoleMember) => String(row.id),
     state: {
       pagination,
       sorting,

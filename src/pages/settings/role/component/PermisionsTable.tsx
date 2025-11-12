@@ -1,57 +1,6 @@
-// // components/PermissionsTable.tsx
-// import { Checkbox } from '@/components/ui/checkbox';
-// import { modules } from '@/config/menu.config';
-// import { Permissions } from '@/config/types';
-
-// interface PermissionsTableProps {
-//   permissions: Permissions;
-//   onPermissionChange: (module: string, action: string, checked: boolean) => void;
-// }
-
-// export const PermissionsTable = ({
-//   permissions,
-//   onPermissionChange,
-// }: PermissionsTableProps) => {
-//   return (
-//     <div className="space-y-4">
-//       <h3 className="font-semibold text-gray-900">Permissions</h3>
-//       <div className="overflow-x-auto">
-//         <table className="w-full border-collapse">
-//           <thead>
-//             <tr className="border-b">
-//               <th className="text-left py-2 font-medium text-gray-700">Module</th>
-//               <th className="text-center py-2 font-medium text-gray-700">Create</th>
-//               <th className="text-center py-2 font-medium text-gray-700">Read</th>
-//               <th className="text-center py-2 font-medium text-gray-700">Update</th>
-//               <th className="text-center py-2 font-medium text-gray-700">Delete</th>
-//             </tr>
-//           </thead>
-//           <tbody>
-//             {modules.map((module) => (
-//               <tr key={module.key} className="border-b">
-//                 <td className="py-2 font-medium text-gray-900">{module.label}</td>
-//                 {(['create', 'read', 'update', 'delete'] as const).map((action) => (
-//                   <td key={action} className="py-2 text-center">
-//                     <Checkbox
-//                       checked={permissions[module.key]?.[action] || false}
-//                       onCheckedChange={(checked) =>
-//                         onPermissionChange(module.key, action, checked as boolean)
-//                       }
-//                     />
-//                   </td>
-//                 ))}
-//               </tr>
-//             ))}
-//           </tbody>
-//         </table>
-//       </div>
-//     </div>
-//   );
-// };
 
 // components/PermissionsTable.tsx
 import { Checkbox } from '@/components/ui/checkbox';
-import { modules } from '@/config/menu.config';
 import { Permissions } from '@/config/types';
 import {
   Table,
@@ -62,6 +11,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
+import { useGetAllActionMenusQuery } from '@/store/api/actionMenu';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface PermissionsTableProps {
   permissions: Permissions;
@@ -72,6 +23,21 @@ export const PermissionsTable = ({
   permissions,
   onPermissionChange,
 }: PermissionsTableProps) => {
+  // Fetch action menus from API
+  const { data: actionMenus, isLoading } = useGetAllActionMenusQuery();
+
+  if (isLoading) {
+    return (
+      <Card className=" border-l-0">
+        <CardContent className="p-6">
+          <Skeleton className="h-8 w-full mb-2" />
+          <Skeleton className="h-8 w-full mb-2" />
+          <Skeleton className="h-8 w-full mb-2" />
+          <Skeleton className="h-8 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
 
 
   return (
@@ -98,15 +64,15 @@ export const PermissionsTable = ({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {modules.map((module) => (
-              <TableRow key={module.key} className="">
-                <TableCell className="py-2.5!">{module.label}</TableCell>
+            {actionMenus?.map((actionMenu) => (
+              <TableRow key={actionMenu.code} className="">
+                <TableCell className="py-2.5!">{actionMenu.name}</TableCell>
                 {(['create', 'read', 'update', 'delete'] as const).map((action) => (
                   <TableCell key={action} className="py-2.5! text-center ">
                     <Checkbox
-                      checked={permissions[module.key]?.[action] || false}
+                      checked={permissions[actionMenu.code]?.[action] || false}
                       onCheckedChange={(checked) =>
-                        onPermissionChange(module.key, action, checked as boolean)
+                        onPermissionChange(actionMenu.code, action, checked as boolean)
                       }
                     />
                   </TableCell>

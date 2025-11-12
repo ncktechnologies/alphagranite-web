@@ -1,5 +1,5 @@
 // components/RoleForm.tsx
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +11,7 @@ import { PermissionsTable } from '../component/PermisionsTable';
 import { FormLabel } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { useGetAllActionMenusQuery } from '@/store/api/actionMenu';
 
 interface RoleFormProps {
     mode: 'new' | 'edit';
@@ -25,6 +26,13 @@ export interface RoleFormData {
     isActive: boolean;
     selectedUsers: string[];
     permissions: Permissions;
+    action_menu_permissions?: Array<{
+        action_menu_id: number;
+        can_create: boolean;
+        can_read: boolean;
+        can_update: boolean;
+        can_delete: boolean;
+    }>;
 }
 
 const initialPermissions: Permissions = {
@@ -41,9 +49,21 @@ const initialPermissions: Permissions = {
 export const RoleForm = ({ mode, role, onBack, onSave }: RoleFormProps) => {
     const [roleName, setRoleName] = useState(role?.name || '');
     const [description, setDescription] = useState(role?.description || '');
-    const [isActive, setIsActive] = useState(role?.status === 'Active' || true);
+    const [isActive, setIsActive] = useState<boolean>(role?.status === 'Active' ? true : mode === 'new');
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
     const [permissions, setPermissions] = useState<Permissions>(initialPermissions);
+
+    // Fetch action menus to get IDs
+    const { data: actionMenus } = useGetAllActionMenusQuery();
+
+    // Create a map of action menu codes to IDs
+    const actionMenuMap = useMemo(() => {
+        if (!actionMenus) return {};
+        return actionMenus.reduce((acc, menu) => {
+            acc[menu.code] = menu.id;
+            return acc;
+        }, {} as Record<string, number>);
+    }, [actionMenus]);
 
     const handlePermissionChange = (module: string, action: string, checked: boolean) => {
         setPermissions(prev => ({
@@ -64,13 +84,29 @@ export const RoleForm = ({ mode, role, onBack, onSave }: RoleFormProps) => {
     };
 
     const handleSubmit = () => {
+        // Transform permissions to use action menu IDs instead of codes
+        const transformedPermissions = permissions ? Object.entries(permissions).map(([code, perms]) => {
+            const actionMenuId = actionMenuMap[code];
+            if (!actionMenuId) return null; // Skip if no matching action menu found
+            
+            return {
+                action_menu_id: actionMenuId,
+                can_create: perms.create,
+                can_read: perms.read,
+                can_update: perms.update,
+                can_delete: perms.delete,
+            };
+        }).filter(Boolean) : []; // Remove null values
+
         onSave({
             name: roleName,
             description,
             isActive,
             selectedUsers,
             permissions,
-        });
+            // Add transformed permissions for API submission
+            action_menu_permissions: transformedPermissions,
+        } as any);
     };
 
     return (

@@ -2,16 +2,17 @@
 import { Fragment, useState, useEffect } from 'react';
 import { Container } from '@/components/common/container';
 import { PageMenu } from '../page-menu';
-import { Role as ConfigRole, ViewMode } from '@/config/types';
+import {  ViewMode } from '@/config/types';
 import { RoleForm, RoleFormData } from './role-views/Form';
 import { RoleDetailsView } from './role-views/Details';
 import { RolesList } from './role-views/List';
-import { useGetRolesQuery, useCreateRoleMutation, useUpdateRoleMutation, Role } from '@/store/api/role';
+import { useGetRolesQuery, useCreateRoleMutation, useUpdateRoleMutation, useDeleteRoleMutation, Role, useGetRoleByIdQuery } from '@/store/api/role';
 import { useGetAllActionMenusQuery } from '@/store/api/actionMenu';
+import { EmptyState } from './component/EmptyState';
 
 export const RolesSection = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('details');
-  const [selectedRole, setSelectedRole] = useState<ConfigRole | null>(null);
+  const [selectedRoleId, setSelectedRoleId] = useState<number | null>(null);
   const [isDeleted, setIsDeleted] = useState(false);
 
   // API hooks
@@ -19,40 +20,36 @@ export const RolesSection = () => {
   const { data: actionMenus } = useGetAllActionMenusQuery();
   const [createRole] = useCreateRoleMutation();
   const [updateRole] = useUpdateRoleMutation();
+  const [deleteRole] = useDeleteRoleMutation();
 
-  // Transform API roles to Config roles
-  const roles: ConfigRole[] = rolesData?.items?.map((role: Role): ConfigRole => ({
-    id: role.id,
-    name: role.name,
-    description: role.description || '',
-    status: role.status === 1 ? 'Active' : 'Inactive',
-    users: role.total_members || 0,
-    activeUsers: role.active_members || 0,
-    inactiveUsers: role.inactive_members || 0,
-    pendingUsers: role.pending_members || 0,
-  })) || [];
+  // Fetch detailed role data when a role is selected
+  const { data: selectedRoleDetails, isLoading: isLoadingDetails } = useGetRoleByIdQuery(
+    { id: selectedRoleId!, params: { with_permissions: true, with_members: true } },
+    { skip: !selectedRoleId }
+  );
 
-  // Set first role as active when component mounts
- useEffect(() => {
-  if (roles.length > 0 && !selectedRole && viewMode !== 'new' && viewMode !== 'edit') {
-    setSelectedRole(roles[0]);
-    setViewMode('details');
-  }
-}, [selectedRole, viewMode]);
+  const roles = rolesData?.data || [];
+
+  // Set first role as active when component mounts or when roles load
+  useEffect(() => {
+    if (roles.length > 0 && !selectedRoleId && viewMode === 'details') {
+      setSelectedRoleId(roles[0].id);
+    }
+  }, [roles, selectedRoleId, viewMode]);
 
 
-  const handleRoleSelect = (role: ConfigRole) => {
-    setSelectedRole(role);
+  const handleRoleSelect = (role: Role) => {
+    setSelectedRoleId(role.id);
     setViewMode('details');
   };
 
   const handleNewRole = () => {
     setViewMode('new');
-    setSelectedRole(null);
+    setSelectedRoleId(null);
   };
 
-  const handleEditRole = (role: ConfigRole) => {
-    setSelectedRole(role);
+  const handleEditRole = (role: Role) => {
+    setSelectedRoleId(role.id);
     setViewMode('edit');
   };
 
@@ -60,7 +57,7 @@ export const RolesSection = () => {
     if (viewMode === 'new') {
       // When closing new mode, go to details of first role
       if (roles.length > 0) {
-        setSelectedRole(roles[0]);
+        setSelectedRoleId(roles[0].id);
         setViewMode('details');
       } else {
         setViewMode('list');
@@ -77,20 +74,14 @@ export const RolesSection = () => {
         name: data.name,
         description: data.description,
         status: data.isActive ? 1 : 2,
-        action_menu_permissions: data.permissions ? Object.entries(data.permissions).map(([key, perms]) => ({
-          action_menu_id: parseInt(key), // You'll need to map permission keys to action menu IDs
-          can_create: perms.create,
-          can_read: perms.read,
-          can_update: perms.update,
-          can_delete: perms.delete,
-        })) : [],
+        action_menu_permissions: data.action_menu_permissions || [],
         user_ids: data.selectedUsers.map(id => parseInt(id)),
       };
 
       if (viewMode === 'new') {
         await createRole(rolePayload).unwrap();
-      } else if (selectedRole) {
-        await updateRole({ id: selectedRole.id, data: rolePayload }).unwrap();
+      } else if (selectedRoleId) {
+        await updateRole({ id: selectedRoleId, data: rolePayload }).unwrap();
       }
 
       refetch();
@@ -100,49 +91,66 @@ export const RolesSection = () => {
     }
   };
 
-  const handleDelete = () => {
-    // Simulate deletion
-    setTimeout(() => {
-      setIsDeleted(true);
-      setTimeout(() => {
-        setIsDeleted(false);
-        // After deletion, set first role as active if available
-        if (roles.length > 0) {
-          setSelectedRole(roles[0]);
-          setViewMode('details');
-        } else {
-          setViewMode('list');
-          setSelectedRole(null);
-        }
-      }, 2000);
-    }, 1000);
+  const handleDelete = async () => {
+    if (!selectedRoleId) return;
+    
+    try {
+      await deleteRole(selectedRoleId).unwrap();
+      refetch();
+      
+      // After deletion, set first role as active if available
+      if (roles.length > 1) {
+        const remainingRoles = roles.filter(r => r.id !== selectedRoleId);
+        setSelectedRoleId(remainingRoles[0].id);
+        setViewMode('details');
+      } else {
+        setViewMode('list');
+        setSelectedRoleId(null);
+      }
+    } catch (error) {
+      console.error('Failed to delete role:', error);
+    }
+  };
+
+  const handleActivateRole = async (roleId: number, currentStatus: number) => {
+    try {
+      const newStatus = currentStatus === 1 ? 2 : 1; // Toggle between active (1) and inactive (2)
+      await updateRole({ id: roleId, data: { status: newStatus } }).unwrap();
+      refetch();
+    } catch (error) {
+      console.error('Failed to update role status:', error);
+    }
   };
 
   const renderRightContent = () => {
-    // if (isDeleted) {
-    //   return <SuccessMessage message="Role deleted successfully" roleName={selectedRole?.name} />;
-    // }
+    // Show empty state when no roles exist
+    if (roles.length === 0 && viewMode !== 'new') {
+      return <EmptyState onNewRole={handleNewRole} />;
+    }
 
-    if (viewMode === 'details' && selectedRole) {
-      return <RoleDetailsView role={selectedRole} onEdit={handleEditRole} onDelete={handleDelete} />;
+    if (viewMode === 'details' && selectedRoleDetails) {
+      return (
+        <RoleDetailsView 
+          role={selectedRoleDetails} 
+          onEdit={handleEditRole} 
+          onDelete={handleDelete}
+          onActivate={handleActivateRole}
+        />
+      );
     }
 
     if (viewMode === 'new' || viewMode === 'edit') {
       return (
         <RoleForm
           mode={viewMode}
-          role={selectedRole}
+          role={selectedRoleDetails}
           onBack={handleCloseForm}
           onSave={handleSaveRole}
         />
       );
     }
 
-    return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
-        No roles available. Create a new role to get started.
-      </div>
-    );
+    return null;
   };
 
   return (
@@ -152,9 +160,10 @@ export const RolesSection = () => {
         <div className="flex h-full gap-6">
           <RolesList
             roles={roles}
-            selectedRole={selectedRole}
+            selectedRoleId={selectedRoleId}
             onRoleSelect={handleRoleSelect}
             onNewRole={handleNewRole}
+            isLoading={isLoading}
           />
 
           {/* Right Content Area */}

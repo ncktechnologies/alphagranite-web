@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import EmployeeFormSheet from './components/employeeSheet';
 import { useState } from 'react';
+import { Can } from '@/components/permission';
 
 export function EmployeePage() {
     const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -16,17 +17,19 @@ export function EmployeePage() {
                     <ToolbarHeading title=" Employees" description="Manage all Alpha Granite employees here" />
 
                     <ToolbarActions>
-                        <EmployeeFormSheet 
-                            trigger={
-                                <Button className="" onClick={() => setIsSheetOpen(true)}>
-                                    <Plus/>
-                                    New employee
-                                </Button>
-                            }
-                            mode="create"
-                            open={isSheetOpen}
-                            onOpenChange={setIsSheetOpen}
-                        />
+                        <Can action="create" on="employees">
+                            <EmployeeFormSheet 
+                                trigger={
+                                    <Button className="" onClick={() => setIsSheetOpen(true)}>
+                                        <Plus/>
+                                        New employee
+                                    </Button>
+                                }
+                                mode="create"
+                                open={isSheetOpen}
+                                onOpenChange={setIsSheetOpen}
+                            />
+                        </Can>
                     </ToolbarActions>
                 </Toolbar>
                 <Employees />

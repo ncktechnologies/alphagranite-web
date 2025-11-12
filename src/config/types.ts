@@ -51,9 +51,9 @@ export interface Role {
   id: string;
   name: string;
   description: string;
-  status: 'Active' | 'Inactive';
-  members: number;
-  avatars: string[];
+  status: number;
+  member_count: number;
+  top_members: string[];
 }
 export interface Station {
   id: string;

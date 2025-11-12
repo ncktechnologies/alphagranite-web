@@ -7,6 +7,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { EllipsisVertical } from 'lucide-react';
+import { Can } from '@/components/permission';
 
 interface EmployeeActionsProps {
     employee: Employee;
@@ -24,20 +25,26 @@ export const EmployeeActions = ({ employee, onView, onEdit, onDelete }: Employee
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-[157px]" side="bottom" align="end">
-                <DropdownMenuItem onClick={() => onView(employee)}>
-                    <span>View</span>
-                </DropdownMenuItem>
+                <Can action="read" on="employees">
+                    <DropdownMenuItem onClick={() => onView(employee)}>
+                        <span>View</span>
+                    </DropdownMenuItem>
+                </Can>
 
-                <DropdownMenuItem onClick={() => onEdit(employee)}>
-                    <span>Edit</span>
-                </DropdownMenuItem>
+                <Can action="update" on="employees">
+                    <DropdownMenuItem onClick={() => onEdit(employee)}>
+                        <span>Edit</span>
+                    </DropdownMenuItem>
+                </Can>
 
-                {/* <DropdownMenuItem
-                    variant="destructive"
-                    onClick={() => onDelete(employee)}
-                >
-                    <span>Delete</span>
-                </DropdownMenuItem> */}
+                <Can action="delete" on="employees">
+                    <DropdownMenuItem
+                        variant="destructive"
+                        onClick={() => onDelete(employee)}
+                    >
+                        <span>Delete</span>
+                    </DropdownMenuItem>
+                </Can>
             </DropdownMenuContent>
         </DropdownMenu>
     );

@@ -32,6 +32,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import type { DepartmentUser } from '@/store/api/department';
+import { Can } from '@/components/permission';
 
 
 
@@ -266,10 +267,11 @@ const DepartmentTable = ({ employees }: employeeProps) => {
                         </div>
                     </CardHeading>
                     <CardToolbar>
-
-                        <Button variant="outline" onClick={() => exportTableToCSV(table, "dapartment-employees")}>
-                            Export CSV
-                        </Button>
+                        <Can action="read" on="department">
+                            <Button variant="outline" onClick={() => exportTableToCSV(table, "dapartment-employees")}>
+                                Export CSV
+                            </Button>
+                        </Can>
                     </CardToolbar>
                 </CardHeader>
                 <CardTable>
