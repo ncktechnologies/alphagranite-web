@@ -1,21 +1,22 @@
 // components/RoleForm.tsx
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { X } from 'lucide-react';
-import { Permissions, Role } from '@/config/types';
+import { Permissions } from '@/config/types';
 import { UserAssignment } from '../component/AssignUser';
 import { PermissionsTable } from '../component/PermisionsTable';
 import { FormLabel } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useGetAllActionMenusQuery } from '@/store/api/actionMenu';
+import { Role } from '@/store/api/role';
 
 interface RoleFormProps {
     mode: 'new' | 'edit';
-    role: Role | null;
+    role: Role | null | undefined;
     onBack: () => void;
     onSave: (data: RoleFormData) => void;
 }
@@ -47,11 +48,11 @@ const initialPermissions: Permissions = {
 };
 
 export const RoleForm = ({ mode, role, onBack, onSave }: RoleFormProps) => {
-    const [roleName, setRoleName] = useState(role?.name || '');
-    const [description, setDescription] = useState(role?.description || '');
-    const [isActive, setIsActive] = useState<boolean>(role?.status === 'Active' ? true : mode === 'new');
+    const [roleName, setRoleName] = useState('');
+    const [description, setDescription] = useState('');
+    const [isActive, setIsActive] = useState<boolean>(true);
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
-    const [permissions, setPermissions] = useState<Permissions>(initialPermissions);
+    const [permissions, setPermissions] = useState<Permissions>({});
 
     // Fetch action menus to get IDs
     const { data: actionMenus } = useGetAllActionMenusQuery();
@@ -64,6 +65,44 @@ export const RoleForm = ({ mode, role, onBack, onSave }: RoleFormProps) => {
             return acc;
         }, {} as Record<string, number>);
     }, [actionMenus]);
+
+    // Populate form data when role changes (for edit mode)
+    useEffect(() => {
+        if (role) {
+            setRoleName(role.name || '');
+            setDescription(role.description || '');
+            setIsActive(role.status === 1);
+            
+            // Populate selected users from role members
+            if (role.members && role.members.length > 0) {
+                const userIds = role.members.map(member => String(member.id));
+                setSelectedUsers(userIds);
+            }
+            
+            // Populate permissions from role permissions
+            if (role.permissions && role.permissions.length > 0) {
+                const permsObj: Permissions = {};
+                role.permissions.forEach(perm => {
+                    if (perm.action_menu_code) {
+                        permsObj[perm.action_menu_code] = {
+                            create: perm.can_create,
+                            read: perm.can_read,
+                            update: perm.can_update,
+                            delete: perm.can_delete,
+                        };
+                    }
+                });
+                setPermissions(permsObj);
+            }
+        } else {
+            // Reset form for new mode
+            setRoleName('');
+            setDescription('');
+            setIsActive(true);
+            setSelectedUsers([]);
+            setPermissions({});
+        }
+    }, [role]);
 
     const handlePermissionChange = (module: string, action: string, checked: boolean) => {
         setPermissions(prev => ({

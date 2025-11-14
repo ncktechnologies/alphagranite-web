@@ -4,6 +4,7 @@ import { departmentApi } from "./api/department";
 import { employeeApi } from "./api/employee";
 import { roleApi } from "./api/role";
 import { actionMenuApi } from "./api/actionMenu";
+import { jobApi } from "./api/job";
 
 
 export const store = configureStore({
@@ -13,6 +14,7 @@ export const store = configureStore({
         [employeeApi.reducerPath]: employeeApi.reducer,
         [roleApi.reducerPath]: roleApi.reducer,
         [actionMenuApi.reducerPath]: actionMenuApi.reducer,
+        [jobApi.reducerPath]: jobApi.reducer,
     },
     middleware: (getDefaultMiddleware) =>
         getDefaultMiddleware().concat(
@@ -21,6 +23,7 @@ export const store = configureStore({
             employeeApi.middleware,
             roleApi.middleware,
             actionMenuApi.middleware,
+            jobApi.middleware,
         ),
 });
 

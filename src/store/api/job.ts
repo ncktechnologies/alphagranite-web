@@ -1,0 +1,614 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { axiosBaseQuery } from "@/services/axiosBaseQuery";
+import { createApi } from "@reduxjs/toolkit/query/react";
+
+const baseUrl = "https://alpha-granite.xyz-ntrinsic.com";
+
+// Job Types
+export interface Job {
+    id: number;
+    name: string;
+    job_number: string;
+    account_id: number;
+    description?: string;
+    priority?: string;
+    start_date?: string;
+    due_date?: string;
+    status_id: number;
+    created_at: string;
+    created_by: number;
+    updated_at?: string;
+    updated_by?: number;
+}
+
+export interface JobCreate {
+    name: string;
+    job_number: string;
+    account_id: number;
+    description?: string;
+    priority?: string;
+    start_date?: string;
+    due_date?: string;
+}
+
+export interface JobUpdate {
+    name?: string;
+    job_number?: string;
+    account_id?: number;
+    description?: string;
+    priority?: string;
+    start_date?: string;
+    due_date?: string;
+}
+
+// Fab Types
+export interface Fab {
+    id: number;
+    job_id: number;
+    fab_type: string;
+    sales_person_id: number;
+    stone_type_id: number;
+    stone_color_id: number;
+    stone_thickness_id: number;
+    edge_id: number;
+    input_area: string;
+    total_sqft: number;
+    notes?: string;
+    template_needed: boolean;
+    drafting_needed: boolean;
+    slab_smith_cust_needed: boolean;
+    slab_smith_ag_needed: boolean;
+    sct_needed: boolean;
+    final_programming_needed: boolean;
+    current_stage?: string;
+    status_id: number;
+    created_at: string;
+    created_by: number;
+    updated_at?: string;
+    updated_by?: number;
+}
+
+export interface FabCreate {
+    job_id: number;
+    fab_type: string;
+    sales_person_id: number;
+    stone_type_id: number;
+    stone_color_id: number;
+    stone_thickness_id: number;
+    edge_id: number;
+    input_area: string;
+    total_sqft: number;
+    notes?: string;
+    template_needed?: boolean;
+    drafting_needed?: boolean;
+    slab_smith_cust_needed?: boolean;
+    slab_smith_ag_needed?: boolean;
+    sct_needed?: boolean;
+    final_programming_needed?: boolean;
+}
+
+export interface FabUpdate {
+    fab_type?: string;
+    sales_person_id?: number;
+    stone_type_id?: number;
+    stone_color_id?: number;
+    stone_thickness_id?: number;
+    edge_id?: number;
+    input_area?: string;
+    total_sqft?: number;
+    notes?: string;
+    template_needed?: boolean;
+    drafting_needed?: boolean;
+    slab_smith_cust_needed?: boolean;
+    slab_smith_ag_needed?: boolean;
+    sct_needed?: boolean;
+    final_programming_needed?: boolean;
+}
+
+export interface FabType {
+    id: number;
+    name: string;
+    description?: string;
+}
+
+// Lookup Types
+export interface Account {
+    id: number;
+    name: string;
+    account_number?: string;
+    description?: string;
+    contact_person?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+    status_id: number;
+    created_at: string;
+    created_by: number;
+    updated_at?: string;
+    updated_by?: number;
+}
+
+export interface AccountCreate {
+    name: string;
+    account_number?: string;
+    description?: string;
+    contact_person?: string;
+    email?: string;
+    phone?: string;
+    address?: string;
+}
+
+export interface StoneType {
+    id: number;
+    name: string;
+    description?: string;
+    status_id: number;
+    created_at: string;
+    created_by: number;
+    updated_at?: string;
+    updated_by?: number;
+}
+
+export interface StoneTypeCreate {
+    name: string;
+    description?: string;
+}
+
+export interface StoneColor {
+    id: number;
+    name: string;
+    color_code?: string;
+    description?: string;
+    status_id: number;
+    created_at: string;
+    created_by: number;
+    updated_at?: string;
+    updated_by?: number;
+}
+
+export interface StoneColorCreate {
+    name: string;
+    color_code?: string;
+    description?: string;
+}
+
+export interface StoneThickness {
+    id: number;
+    thickness: string;
+    thickness_mm?: number;
+    description?: string;
+    status_id: number;
+    created_at: string;
+    created_by: number;
+    updated_at?: string;
+    updated_by?: number;
+}
+
+export interface StoneThicknessCreate {
+    thickness: string;
+    thickness_mm?: number;
+    description?: string;
+}
+
+export interface Edge {
+    id: number;
+    name: string;
+    edge_type: string;
+    description?: string;
+    status_id: number;
+    created_at: string;
+    created_by: number;
+    updated_at?: string;
+    updated_by?: number;
+}
+
+export interface EdgeCreate {
+    name: string;
+    edge_type: string;
+    description?: string;
+}
+
+export interface JobListParams {
+    skip?: number;
+    limit?: number;
+    account_id?: number;
+    status_id?: number;
+    priority?: string;
+}
+
+export interface FabListParams {
+    skip?: number;
+    limit?: number;
+    job_id?: number;
+    fab_type?: string;
+    sales_person_id?: number;
+    status_id?: number;
+    current_stage?: string;
+}
+
+export interface TemplatingSchedule {
+    fab_id: number;
+    technician_id: number;
+    schedule_start_date: string;
+    schedule_due_date: string;
+    total_sqft: string;
+    notes?: string;
+    created_by?: number;
+}
+
+export interface AccountListParams {
+    skip?: number;
+    limit?: number;
+    status_id?: number;
+    search?: string;
+}
+
+export interface StoneTypeListParams {
+    skip?: number;
+    limit?: number;
+    status_id?: number;
+    search?: string;
+}
+
+export interface StoneColorListParams {
+    skip?: number;
+    limit?: number;
+    status_id?: number;
+    search?: string;
+}
+
+export interface StoneThicknessListParams {
+    skip?: number;
+    limit?: number;
+    status_id?: number;
+}
+
+export interface EdgeListParams {
+    skip?: number;
+    limit?: number;
+    status_id?: number;
+    edge_type?: string;
+    search?: string;
+}
+
+export const jobApi = createApi({
+    reducerPath: "jobApi",
+    baseQuery: axiosBaseQuery({ baseUrl: `${baseUrl}/api/v1` }),
+    tagTypes: ["Job", "Fab", "FabType", "Account", "StoneType", "StoneColor", "StoneThickness", "Edge"],
+    keepUnusedDataFor: 0,
+    endpoints(build) {
+        return {
+            // Jobs
+            getJobs: build.query<Job[], JobListParams | void>({
+                query: (params) => {
+                    const queryParams = params || {};
+                    return {
+                        url: "/jobs",
+                        method: "get",
+                        params: {
+                            skip: queryParams.skip || 0,
+                            limit: queryParams.limit || 100,
+                            ...(queryParams.account_id !== undefined && { account_id: queryParams.account_id }),
+                            ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
+                            ...(queryParams.priority && { priority: queryParams.priority }),
+                        }
+                    };
+                },
+                providesTags: ["Job"],
+            }),
+
+            getJobById: build.query<Job, number>({
+                query: (id) => ({
+                    url: `/jobs/${id}`,
+                    method: "get"
+                }),
+                providesTags: (_result, _error, id) => [{ type: "Job", id }],
+            }),
+
+            createJob: build.mutation<Job, JobCreate>({
+                query: (data) => ({
+                    url: "/jobs",
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Job"],
+            }),
+
+            updateJob: build.mutation<Job, { id: number; data: JobUpdate }>({
+                query: ({ id, data }) => ({
+                    url: `/jobs/${id}`,
+                    method: "put",
+                    data
+                }),
+                invalidatesTags: (_result, _error, { id }) => [{ type: "Job", id }, "Job"],
+            }),
+
+            deleteJob: build.mutation<void, number>({
+                query: (id) => ({
+                    url: `/jobs/${id}`,
+                    method: "delete"
+                }),
+                invalidatesTags: ["Job"],
+            }),
+
+            // Fabs
+            getFabs: build.query<Fab[], FabListParams | void>({
+                query: (params) => {
+                    const queryParams = params || {};
+                    return {
+                        url: "/fabs",
+                        method: "get",
+                        params: {
+                            skip: queryParams.skip || 0,
+                            limit: queryParams.limit || 100,
+                            ...(queryParams.job_id !== undefined && { job_id: queryParams.job_id }),
+                            ...(queryParams.fab_type && { fab_type: queryParams.fab_type }),
+                            ...(queryParams.sales_person_id !== undefined && { sales_person_id: queryParams.sales_person_id }),
+                            ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
+                            ...(queryParams.current_stage && { current_stage: queryParams.current_stage }),
+                        }
+                    };
+                },
+                providesTags: ["Fab"],
+            }),
+
+            getFabById: build.query<Fab, number>({
+                query: (id) => ({
+                    url: `/fabs/${id}`,
+                    method: "get"
+                }),
+                providesTags: (_result, _error, id) => [{ type: "Fab", id }],
+            }),
+
+            getFabsByJob: build.query<Fab[], number>({
+                query: (jobId) => ({
+                    url: `/jobs/${jobId}/fabs`,
+                    method: "get"
+                }),
+                providesTags: ["Fab"],
+            }),
+
+            createFab: build.mutation<Fab, FabCreate>({
+                query: (data) => ({
+                    url: "/fabs",
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Fab", "Job"],
+            }),
+
+            updateFab: build.mutation<Fab, { id: number; data: FabUpdate }>({
+                query: ({ id, data }) => ({
+                    url: `/fabs/${id}`,
+                    method: "put",
+                    data
+                }),
+                invalidatesTags: (_result, _error, { id }) => [{ type: "Fab", id }, "Fab"],
+            }),
+
+            deleteFab: build.mutation<void, number>({
+                query: (id) => ({
+                    url: `/fabs/${id}`,
+                    method: "delete"
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Fab Types
+            getFabTypes: build.query<FabType[], void>({
+                query: () => ({
+                    url: "/fab-types",
+                    method: "get"
+                }),
+                providesTags: ["FabType"],
+            }),
+
+            // Accounts
+            getAccounts: build.query<Account[], AccountListParams | void>({
+                query: (params) => {
+                    const queryParams = params || {};
+                    return {
+                        url: "/accounts",
+                        method: "get",
+                        params: {
+                            skip: queryParams.skip || 0,
+                            limit: queryParams.limit || 100,
+                            ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
+                            ...(queryParams.search && { search: queryParams.search }),
+                        }
+                    };
+                },
+                providesTags: ["Account"],
+            }),
+
+            getAccountById: build.query<Account, number>({
+                query: (id) => ({
+                    url: `/accounts/${id}`,
+                    method: "get"
+                }),
+                providesTags: (_result, _error, id) => [{ type: "Account", id }],
+            }),
+
+            // Stone Types
+            getStoneTypes: build.query<StoneType[], StoneTypeListParams | void>({
+                query: (params) => {
+                    const queryParams = params || {};
+                    return {
+                        url: "/stone-types",
+                        method: "get",
+                        params: {
+                            skip: queryParams.skip || 0,
+                            limit: queryParams.limit || 100,
+                            ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
+                            ...(queryParams.search && { search: queryParams.search }),
+                        }
+                    };
+                },
+                providesTags: ["StoneType"],
+            }),
+
+            // Stone Colors
+            getStoneColors: build.query<StoneColor[], StoneColorListParams | void>({
+                query: (params) => {
+                    const queryParams = params || {};
+                    return {
+                        url: "/stone-colors",
+                        method: "get",
+                        params: {
+                            skip: queryParams.skip || 0,
+                            limit: queryParams.limit || 100,
+                            ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
+                            ...(queryParams.search && { search: queryParams.search }),
+                        }
+                    };
+                },
+                providesTags: ["StoneColor"],
+            }),
+
+            // Stone Thickness
+            getStoneThicknesses: build.query<StoneThickness[], StoneThicknessListParams | void>({
+                query: (params) => {
+                    const queryParams = params || {};
+                    return {
+                        url: "/stone-thickness",
+                        method: "get",
+                        params: {
+                            skip: queryParams.skip || 0,
+                            limit: queryParams.limit || 100,
+                            ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
+                        }
+                    };
+                },
+                providesTags: ["StoneThickness"],
+            }),
+
+            // Edges
+            getEdges: build.query<Edge[], EdgeListParams | void>({
+                query: (params) => {
+                    const queryParams = params || {};
+                    return {
+                        url: "/edges",
+                        method: "get",
+                        params: {
+                            skip: queryParams.skip || 0,
+                            limit: queryParams.limit || 100,
+                            ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
+                            ...(queryParams.edge_type && { edge_type: queryParams.edge_type }),
+                            ...(queryParams.search && { search: queryParams.search }),
+                        }
+                    };
+                },
+                providesTags: ["Edge"],
+            }),
+
+            // Templating
+            scheduleTemplating: build.mutation<any, TemplatingSchedule>({
+                query: (data) => ({
+                    url: "/templating/schedule",
+                    method: "post",
+                    params: data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            unscheduleTemplating: build.mutation<any, { templating_id: number; updated_by?: number }>({
+                query: ({ templating_id, updated_by }) => ({
+                    url: "/templating/unschedule",
+                    method: "post",
+                    params: { templating_id, updated_by }
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Jobs with Fabs
+            getJobsWithFabs: build.query<any, { search?: string; account_id?: number } | void>({
+                query: (params) => ({
+                    url: "/jobs-with-fabs",
+                    method: "get",
+                    params: params || {}
+                }),
+                providesTags: ["Job", "Fab"],
+            }),
+
+            // Create Account
+            createAccount: build.mutation<Account, AccountCreate>({
+                query: (data) => ({
+                    url: "/accounts",
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Account"],
+            }),
+
+            // Create Stone Type
+            createStoneType: build.mutation<StoneType, StoneTypeCreate>({
+                query: (data) => ({
+                    url: "/stone-types",
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["StoneType"],
+            }),
+
+            // Create Stone Color
+            createStoneColor: build.mutation<StoneColor, StoneColorCreate>({
+                query: (data) => ({
+                    url: "/stone-colors",
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["StoneColor"],
+            }),
+
+            // Create Stone Thickness
+            createStoneThickness: build.mutation<StoneThickness, StoneThicknessCreate>({
+                query: (data) => ({
+                    url: "/stone-thickness",
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["StoneThickness"],
+            }),
+
+            // Create Edge
+            createEdge: build.mutation<Edge, EdgeCreate>({
+                query: (data) => ({
+                    url: "/edges",
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Edge"],
+            }),
+        };
+    },
+});
+
+export const {
+    useGetJobsQuery,
+    useGetJobByIdQuery,
+    useCreateJobMutation,
+    useUpdateJobMutation,
+    useDeleteJobMutation,
+    useGetFabsQuery,
+    useGetFabByIdQuery,
+    useGetFabsByJobQuery,
+    useCreateFabMutation,
+    useUpdateFabMutation,
+    useDeleteFabMutation,
+    useGetFabTypesQuery,
+    useGetAccountsQuery,
+    useGetAccountByIdQuery,
+    useGetStoneTypesQuery,
+    useGetStoneColorsQuery,
+    useGetStoneThicknessesQuery,
+    useGetEdgesQuery,
+    useScheduleTemplatingMutation,
+    useUnscheduleTemplatingMutation,
+    useGetJobsWithFabsQuery,
+    // New mutation hooks
+    useCreateAccountMutation,
+    useCreateStoneTypeMutation,
+    useCreateStoneColorMutation,
+    useCreateStoneThicknessMutation,
+    useCreateEdgeMutation,
+} = jobApi;

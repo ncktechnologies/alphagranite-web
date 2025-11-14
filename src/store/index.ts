@@ -11,6 +11,7 @@ import { departmentApi } from "./api/department";
 import { employeeApi } from "./api/employee";
 import { roleApi } from "./api/role";
 import { actionMenuApi } from "./api/actionMenu";
+import { jobApi } from "./api/job";
 
 
 const persistConfig = {
@@ -28,7 +29,7 @@ const rootReducer = combineReducers({
     [employeeApi.reducerPath]: employeeApi.reducer,
     [roleApi.reducerPath]: roleApi.reducer,
     [actionMenuApi.reducerPath]: actionMenuApi.reducer,
-
+    [jobApi.reducerPath]: jobApi.reducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;
@@ -50,6 +51,7 @@ const store = configureStore({
                 employeeApi.middleware,
                 roleApi.middleware,
                 actionMenuApi.middleware,
+                jobApi.middleware,
             ),
 
 });

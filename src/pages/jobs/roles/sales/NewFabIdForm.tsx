@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -24,6 +24,21 @@ import { ArrowLeft, Plus, AlertCircle, Check, LoaderCircleIcon, Search, ChevronD
 import { Link, useNavigate } from 'react-router-dom';
 import { RiInformationFill } from '@remixicon/react';
 import { toast } from 'sonner';
+import { 
+  useGetFabTypesQuery, 
+  useGetAccountsQuery, 
+  useGetStoneTypesQuery, 
+  useGetStoneColorsQuery, 
+  useGetStoneThicknessesQuery, 
+  useGetEdgesQuery, 
+  useCreateJobMutation, 
+  useCreateFabMutation,
+  useCreateAccountMutation,
+  useCreateStoneThicknessMutation,
+  useCreateStoneTypeMutation,
+  useCreateStoneColorMutation,
+  useCreateEdgeMutation
+} from '@/store/api/job';
 
 // Zod schema for form validation
 const fabIdFormSchema = z.object({
@@ -54,6 +69,57 @@ const NewFabIdForm = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  // API hooks for dropdown data with error handling
+  const { 
+    data: fabTypesData, 
+    isLoading: isLoadingFabTypes, 
+    isError: isFabTypesError,
+    error: fabTypesError
+  } = useGetFabTypesQuery();
+  
+  const { 
+    data: accountsData, 
+    isLoading: isLoadingAccounts, 
+    isError: isAccountsError,
+    error: accountsError
+  } = useGetAccountsQuery({ limit: 1000 });
+  const { 
+    data: stoneTypesData, 
+    isLoading: isLoadingStoneTypes, 
+    isError: isStoneTypesError,
+    error: stoneTypesError
+  } = useGetStoneTypesQuery({ limit: 1000 });
+  
+  const { 
+    data: stoneColorsData, 
+    isLoading: isLoadingStoneColors, 
+    isError: isStoneColorsError,
+    error: stoneColorsError
+  } = useGetStoneColorsQuery({ limit: 1000 });
+  
+  const { 
+    data: stoneThicknessesData, 
+    isLoading: isLoadingStoneThicknesses, 
+    isError: isStoneThicknessesError,
+    error: stoneThicknessesError
+  } = useGetStoneThicknessesQuery({ limit: 1000 });
+  
+  const { 
+    data: edgesData, 
+    isLoading: isLoadingEdges, 
+    isError: isEdgesError,
+    error: edgesError
+  } = useGetEdgesQuery({ limit: 1000 });
+  
+  // Mutations
+  const [createJob] = useCreateJobMutation();
+  const [createFab] = useCreateFabMutation();
+  const [createAccount] = useCreateAccountMutation();
+  const [createStoneThickness] = useCreateStoneThicknessMutation();
+  const [createStoneType] = useCreateStoneTypeMutation();
+  const [createStoneColor] = useCreateStoneColorMutation();
+  const [createEdge] = useCreateEdgeMutation();
 
   // Search states for dropdowns
   const [fabTypeSearch, setFabTypeSearch] = useState('');
@@ -99,55 +165,22 @@ const NewFabIdForm = () => {
     },
   });
 
-  const [fabTypes, setFabTypes] = useState([
-    'STANDARD',
-    'FAB ONLY',
-    'AG REDO',
-    'CUST REDO',
-    'RESURFACE',
-    'FAST TRACT'
-  ]);
+  // Filter functions for search with error handling
+  const filteredFabTypes = (!isFabTypesError && fabTypesData?.map(type => type.name) || []).filter(type =>
+    type.toLowerCase().includes(fabTypeSearch.toLowerCase())
+  );
 
-  const [accounts, setAccounts] = useState([
-    'Waller 101',
-    'Waller 100',
-    'Waller 105',
-    'Waller 103',
-    'Waller 102'
-  ]);
+  const filteredAccounts = (!isAccountsError && accountsData?.data?.map(account => account.name) || []).filter(account =>
+    account.toLowerCase().includes(accountSearch.toLowerCase())
+  );
 
-  const stoneTypes = [
-    'Granite',
-    'Marble',
-    'Quartz',
-    'Quartzite',
-    'Soapstone'
-  ];
+  const filteredThicknessOptions = (!isStoneThicknessesError && stoneThicknessesData?.data?.map(thickness => thickness.thickness) || []).filter(thickness =>
+    thickness.toLowerCase().includes(thicknessSearch.toLowerCase())
+  );
 
-  const stoneColors = [
-    'Absolute Black',
-    'Carrara White',
-    'Calacatta Gold',
-    'Statuario',
-    'Emperador Dark'
-  ];
-
-  const [thicknessOptions, setThicknessOptions] = useState([
-    '1cm',
-    '2cm',
-    '3cm',
-    '4cm',
-    '5cm'
-  ]);
-
-  const edgeOptions = [
-    'Straight Edge',
-    'Bullnose',
-    'Beveled',
-    'Ogee',
-    'Dupont'
-  ];
-
+  const stoneTypes = !isStoneTypesError ? (stoneTypesData?.data?.map(type => type.name) || []) : [];
+  const stoneColors = !isStoneColorsError ? (stoneColorsData?.data?.map(color => color.name) || []) : [];
+  const edgeOptions = !isEdgesError ? (edgesData?.data?.map(edge => edge.name) || []) : [];
   const salesPersons = [
     'BRUNO PIRES',
     'Sarah Johnson',
@@ -155,41 +188,53 @@ const NewFabIdForm = () => {
     'Maria Garcia'
   ];
 
-  // Filter functions for search
-  const filteredFabTypes = fabTypes.filter(type =>
-    type.toLowerCase().includes(fabTypeSearch.toLowerCase())
-  );
-
-  const filteredAccounts = accounts.filter(account =>
-    account.toLowerCase().includes(accountSearch.toLowerCase())
-  );
-
-  const filteredThicknessOptions = thicknessOptions.filter(thickness =>
-    thickness.toLowerCase().includes(thicknessSearch.toLowerCase())
-  );
-
   // Functions to add new items
-  const handleAddThickness = () => {
+  const handleAddThickness = async () => {
     if (newThickness.trim()) {
-      setThicknessOptions(prev => [...prev, newThickness.trim()]);
-      setNewThickness('');
-      setShowAddThickness(false);
-      setThicknessPopoverOpen(false); // Close the main popover
+      try {
+        await createStoneThickness({ thickness: newThickness.trim() }).unwrap();
+        setNewThickness('');
+        setShowAddThickness(false);
+        setThicknessPopoverOpen(false); // Close the main popover
+        toast.success('Thickness added successfully');
+      } catch (error: any) {
+        console.error('Failed to add thickness:', error);
+        if (error?.status === 'FETCH_ERROR') {
+          toast.error('Network error: Unable to add thickness. Please check your connection and try again.');
+        } else if (error?.data?.message) {
+          toast.error(`Failed to add thickness: ${error.data.message}`);
+        } else {
+          toast.error('Failed to add thickness');
+        }
+      }
     }
   };
 
-  const handleAddAccount = () => {
+  const handleAddAccount = async () => {
     if (newAccount.trim()) {
-      setAccounts(prev => [...prev, newAccount.trim()]);
-      setNewAccount('');
-      setShowAddAccount(false);
-      setAccountPopoverOpen(false); // Close the main popover
+      try {
+        await createAccount({ name: newAccount.trim() }).unwrap();
+        setNewAccount('');
+        setShowAddAccount(false);
+        setAccountPopoverOpen(false); // Close the main popover
+        toast.success('Account added successfully');
+      } catch (error: any) {
+        console.error('Failed to add account:', error);
+        if (error?.status === 'FETCH_ERROR') {
+          toast.error('Network error: Unable to add account. Please check your connection and try again.');
+        } else if (error?.data?.message) {
+          toast.error(`Failed to add account: ${error.data.message}`);
+        } else {
+          toast.error('Failed to add account');
+        }
+      }
     }
   };
 
   const handleAddTemplate = () => {
     if (newTemplate.trim()) {
       // Handle template addition logic here
+      // This would likely call an API to schedule templating
       setNewTemplate('');
       setShowAddTemplate(false);
     }
@@ -200,12 +245,47 @@ const NewFabIdForm = () => {
       setIsSubmitting(true);
       setError(null);
 
-      console.log('FAB ID data submitted:', values);
+      // Find IDs for selected values
+      const selectedFabType = fabTypesData?.find(type => type.name === values.fabType);
+      const selectedAccount = accountsData?.find(account => account.name === values.account);
+      const selectedStoneType = stoneTypesData?.find(type => type.name === values.stoneType);
+      const selectedStoneColor = stoneColorsData?.find(color => color.name === values.stoneColor);
+      const selectedStoneThickness = stoneThicknessesData?.find(thickness => thickness.thickness === values.stoneThickness);
+      const selectedEdge = edgesData?.find(edge => edge.name === values.edge);
 
-      // Simulate API call
-      await new Promise((res) => setTimeout(res, 2000));
+      // Validate all required data is available
+      if (!selectedFabType || !selectedAccount || !selectedStoneType || !selectedStoneColor || !selectedStoneThickness || !selectedEdge) {
+        throw new Error('Please select valid options for all dropdown fields');
+      }
 
-      // toast.success('FAB ID submitted successfully for templating review!');
+      // Create job first
+      const jobResponse = await createJob({
+        name: values.jobName,
+        job_number: values.jobNumber,
+        account_id: selectedAccount.id,
+        description: values.notes || '',
+      }).unwrap();
+
+      // Then create fab
+      await createFab({
+        job_id: jobResponse.id,
+        fab_type: selectedFabType.name,
+        sales_person_id: 1, // This should be the actual sales person ID
+        stone_type_id: selectedStoneType.id,
+        stone_color_id: selectedStoneColor.id,
+        stone_thickness_id: selectedStoneThickness.id,
+        edge_id: selectedEdge.id,
+        input_area: values.area,
+        total_sqft: parseFloat(values.totalSqFt) || 0,
+        notes: values.notes || '',
+        template_needed: !values.templateNotNeeded,
+        drafting_needed: !values.draftNotNeeded,
+        slab_smith_cust_needed: !values.slabSmithCustNotNeeded,
+        slab_smith_ag_needed: !values.slabSmithAGNotNeeded,
+        sct_needed: !values.sctNotNeeded,
+        final_programming_needed: !values.finalProgrammingNotNeeded,
+      }).unwrap();
+
       toast.custom(
         () => (
           <Alert variant="success" icon="success">
@@ -222,11 +302,20 @@ const NewFabIdForm = () => {
         },
       );
       form.reset();
-        navigate('/job/templating');
-      
+      navigate('/job/templating');
 
-    } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+    } catch (err: any) {
+      console.error('Submission error:', err);
+      // Handle different types of errors
+      if (err?.status === 'FETCH_ERROR') {
+        setError('Network error: Unable to connect to the server. Please check your connection and try again.');
+      } else if (err?.data?.message) {
+        setError(err.data.message);
+      } else if (err?.message) {
+        setError(err.message);
+      } else {
+        setError('An unexpected error occurred. Please try again.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -309,9 +398,10 @@ const NewFabIdForm = () => {
                                     <Button
                                       variant="outline"
                                       className="w-full justify-between h-[48px] px-4 text-sm border-input shadow-xs shadow-black/5"
+                                      disabled={isLoadingFabTypes}
                                     >
                                       <span className={!field.value ? "text-muted-foreground" : ""}>
-                                        {field.value || "Select type"}
+                                        {isLoadingFabTypes ? 'Loading...' : (field.value || "Select type")}
                                       </span>
                                       <ChevronDown className="h-4 w-4 opacity-60" />
                                     </Button>
@@ -328,6 +418,11 @@ const NewFabIdForm = () => {
                                         onChange={(e) => setFabTypeSearch(e.target.value)}
                                       />
                                     </div>
+                                    {isFabTypesError && (
+                                      <div className="px-3 py-2 text-sm text-red-500 text-center">
+                                        Failed to load FAB types: {fabTypesError ? 'Server error occurred' : 'Unknown error'}
+                                      </div>
+                                    )}
                                     <div className="space-y-1 max-h-48 overflow-y-auto">
                                       {filteredFabTypes.map((type) => (
                                         <div
@@ -342,9 +437,9 @@ const NewFabIdForm = () => {
                                           {type}
                                         </div>
                                       ))}
-                                      {filteredFabTypes.length === 0 && (
+                                      {filteredFabTypes.length === 0 && !isFabTypesError && (
                                         <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                          No FAB types found
+                                          {isLoadingFabTypes ? 'Loading FAB types...' : 'No FAB types found'}
                                         </div>
                                       )}
                                     </div>
@@ -369,9 +464,10 @@ const NewFabIdForm = () => {
                                     <Button
                                       variant="outline"
                                       className="w-full justify-between h-[48px] px-4 text-sm border-input shadow-xs shadow-black/5"
+                                      disabled={isLoadingAccounts}
                                     >
                                       <span className={!field.value ? "text-muted-foreground" : ""}>
-                                        {field.value || "Select account"}
+                                        {isLoadingAccounts ? 'Loading...' : (field.value || "Select account")}
                                       </span>
                                       <ChevronDown className="h-4 w-4 opacity-60" />
                                     </Button>
@@ -417,6 +513,11 @@ const NewFabIdForm = () => {
                                         onChange={(e) => setAccountSearch(e.target.value)}
                                       />
                                     </div>
+                                    {isAccountsError && (
+                                      <div className="px-3 py-2 text-sm text-red-500 text-center">
+                                        Failed to load accounts: {accountsError ? 'Server error occurred' : 'Unknown error'}
+                                      </div>
+                                    )}
                                     <div className="space-y-1 max-h-48 overflow-y-auto">
                                       {filteredAccounts.map((account) => (
                                         <div
@@ -431,9 +532,9 @@ const NewFabIdForm = () => {
                                           {account}
                                         </div>
                                       ))}
-                                      {filteredAccounts.length === 0 && (
+                                      {filteredAccounts.length === 0 && !isAccountsError && (
                                         <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                          No accounts found
+                                          {isLoadingAccounts ? 'Loading accounts...' : 'No accounts found'}
                                         </div>
                                       )}
                                     </div>
@@ -496,18 +597,24 @@ const NewFabIdForm = () => {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Stone Type *</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
+                              <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingStoneTypes}>
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select stone type" />
+                                    <SelectValue placeholder={isLoadingStoneTypes ? 'Loading...' : 'Select stone type'} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {stoneTypes.map((type) => (
-                                    <SelectItem key={type} value={type}>
-                                      {type}
-                                    </SelectItem>
-                                  ))}
+                                  {isStoneTypesError ? (
+                                    <div className="px-3 py-2 text-sm text-red-500">
+                                      Failed to load stone types: Server error occurred
+                                    </div>
+                                  ) : (
+                                    stoneTypes.map((type) => (
+                                      <SelectItem key={type} value={type}>
+                                        {type}
+                                      </SelectItem>
+                                    ))
+                                  )}
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -521,18 +628,24 @@ const NewFabIdForm = () => {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Stone Color *</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
+                              <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingStoneColors}>
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select stone color" />
+                                    <SelectValue placeholder={isLoadingStoneColors ? 'Loading...' : 'Select stone color'} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {stoneColors.map((color) => (
-                                    <SelectItem key={color} value={color}>
-                                      {color}
-                                    </SelectItem>
-                                  ))}
+                                  {isStoneColorsError ? (
+                                    <div className="px-3 py-2 text-sm text-red-500">
+                                      Failed to load stone colors: Server error occurred
+                                    </div>
+                                  ) : (
+                                    stoneColors.map((color) => (
+                                      <SelectItem key={color} value={color}>
+                                        {color}
+                                      </SelectItem>
+                                    ))
+                                  )}
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -553,9 +666,10 @@ const NewFabIdForm = () => {
                                     <Button
                                       variant="outline"
                                       className="w-full justify-between h-[48px] px-4 text-sm border-input shadow-xs shadow-black/5"
+                                      disabled={isLoadingStoneThicknesses}
                                     >
                                       <span className={!field.value ? "text-muted-foreground" : ""}>
-                                        {field.value || "Select thickness"}
+                                        {isLoadingStoneThicknesses ? 'Loading...' : (field.value || "Select thickness")}
                                       </span>
                                       <ChevronDown className="h-4 w-4 opacity-60" />
                                     </Button>
@@ -604,6 +718,11 @@ const NewFabIdForm = () => {
                                         onChange={(e) => setThicknessSearch(e.target.value)}
                                       />
                                     </div>
+                                    {isStoneThicknessesError && (
+                                      <div className="px-3 py-2 text-sm text-red-500 text-center">
+                                        Failed to load thicknesses: Server error occurred
+                                      </div>
+                                    )}
                                     <div className="space-y-1 max-h-48 overflow-y-auto">
                                       {filteredThicknessOptions.map((thickness) => (
                                         <div
@@ -618,9 +737,9 @@ const NewFabIdForm = () => {
                                           {thickness}
                                         </div>
                                       ))}
-                                      {filteredThicknessOptions.length === 0 && (
+                                      {filteredThicknessOptions.length === 0 && !isStoneThicknessesError && (
                                         <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                          No thickness options found
+                                          {isLoadingStoneThicknesses ? 'Loading thicknesses...' : 'No thickness options found'}
                                         </div>
                                       )}
                                     </div>
@@ -639,18 +758,24 @@ const NewFabIdForm = () => {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Edge *</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
+                              <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingEdges}>
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select edge" />
+                                    <SelectValue placeholder={isLoadingEdges ? 'Loading...' : 'Select edge'} />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {edgeOptions.map((edge) => (
-                                    <SelectItem key={edge} value={edge}>
-                                      {edge}
-                                    </SelectItem>
-                                  ))}
+                                  {isEdgesError ? (
+                                    <div className="px-3 py-2 text-sm text-red-500">
+                                      Failed to load edges: Server error occurred
+                                    </div>
+                                  ) : (
+                                    edgeOptions.map((edge) => (
+                                      <SelectItem key={edge} value={edge}>
+                                        {edge}
+                                      </SelectItem>
+                                    ))
+                                  )}
                                 </SelectContent>
                               </Select>
                               <FormMessage />
