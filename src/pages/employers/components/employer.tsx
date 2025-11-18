@@ -66,20 +66,19 @@ const Employees = () => {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
-    const [selectedDepartment, setSelectedDepartment] = useState<string>('');
-    const [selectedStatus, setSelectedStatus] = useState<string>('');
-    const [selectedGender, setSelectedGender] = useState<string>('');
+    const [selectedDepartment, setSelectedDepartment] = useState<string>('all');
+    const [selectedStatus, setSelectedStatus] = useState<string>('all');
     const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
     const [sheetMode, setSheetMode] = useState<'create' | 'edit' | 'view'>('create');
     const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-    // Fetch employees from API
+    // Fetch employees from API with proper server-side pagination
     const { data: employeesData, isLoading, refetch } = useGetEmployeesQuery({
         skip: pagination.pageIndex * pagination.pageSize,
         limit: pagination.pageSize,
-        search: searchQuery || undefined,
-        department_id: selectedDepartment ? parseInt(selectedDepartment) : undefined,
-        status_id: selectedStatus ? parseInt(selectedStatus) : undefined,
+        ...(searchQuery && { search: searchQuery }),
+        ...(selectedDepartment !== 'all' && { department_id: parseInt(selectedDepartment) }),
+        ...(selectedStatus !== 'all' && { status_id: parseInt(selectedStatus) }),
     });
 
     // Fetch departments for filter
@@ -103,9 +102,10 @@ const Employees = () => {
         }));
     }, [employeesData]);
 
+    // Reset to first page when filters change
     useEffect(() => {
-        refetch();
-    }, [searchQuery, selectedDepartment, selectedStatus, pagination, refetch]);
+        setPagination(prev => ({ ...prev, pageIndex: 0 }));
+    }, [searchQuery, selectedDepartment, selectedStatus]);
 
     const handleView = (employee: Employee) => {
         setSelectedEmployee(employee);
@@ -281,7 +281,7 @@ const Employees = () => {
     const table = useReactTable({
         columns,
         data: filteredData,
-        pageCount: Math.ceil((filteredData?.length || 0) / pagination.pageSize),
+        pageCount: employeesData?.total ? Math.ceil(employeesData.total / pagination.pageSize) : -1,
         getRowId: (row: Employee) => String(row.id),
         state: { pagination, sorting, rowSelection },
         columnResizeMode: 'onChange',
@@ -293,6 +293,7 @@ const Employees = () => {
         getFilteredRowModel: getFilteredRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
+        manualPagination: true, // Enable server-side pagination
     });
 
     return (
@@ -307,7 +308,7 @@ const Employees = () => {
             />
             <DataGrid
                 table={table}
-                recordCount={filteredData?.length || 0}
+                recordCount={employeesData?.total || 0}
                 tableLayout={{
                     columnsPinnable: true,
                     columnsMovable: true,

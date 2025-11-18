@@ -27,7 +27,7 @@ import { toast } from "sonner";
 const employeeSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().min(1, "Last name is required"),
-  email: z.string().email("Please enter a valid email address"),
+  email: z.string().email("Please enter a valid email address").optional().or(z.string().length(0)), // Make email optional
   department: z.string().min(1, "Please select a department"),
   home_address: z.string().optional(),
   phone: z.string().optional().refine(
@@ -122,7 +122,10 @@ const EmployeeFormSheet = ({
       const formData = new FormData();
       formData.append('first_name', values.first_name);
       formData.append('last_name', values.last_name);
-      formData.append('email', values.email);
+      // Only append email if it's provided
+      if (values.email) {
+        formData.append('email', values.email);
+      }
       formData.append('department', values.department);
       formData.append('home_address', values.home_address || '');
       formData.append('phone', values.phone || '');
@@ -238,7 +241,7 @@ const EmployeeFormSheet = ({
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Email address *</FormLabel>
+                            <FormLabel>Email address</FormLabel>
                             <FormControl>
                               <Input 
                                 placeholder="Enter email address" 
@@ -359,7 +362,7 @@ const EmployeeFormSheet = ({
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {rolesData?.items?.map((role) => (
+                                {rolesData?.data?.map((role) => (
                                   <SelectItem key={role.id} value={String(role.id)}>
                                     {role.name}
                                   </SelectItem>

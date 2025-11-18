@@ -47,16 +47,27 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
     });
     const [sorting, setSorting] = useState<SortingState>([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [dateFilter, setDateFilter] = useState<string>('all'); // For date filtering
 
     const filteredData = useMemo(() => {
-        if (!searchQuery) return jobs;
-        return jobs.filter(
-            (job) =>
+        if (!searchQuery && (dateFilter === 'all' || !dateFilter)) return jobs;
+        
+        return jobs.filter((job) => {
+            // Text search across multiple fields
+            const matchesSearch = !searchQuery || 
                 job.job_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                job.fab_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                job.job_no?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 job.fab_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                job.job_no?.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-    }, [searchQuery, jobs]);
+                job.template_schedule?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                job.templater?.toLowerCase().includes(searchQuery.toLowerCase());
+            
+            // Date filter
+            const matchesDate = dateFilter === 'all' || !dateFilter || job.date?.includes(dateFilter);
+            
+            return matchesSearch && matchesDate;
+        });
+    }, [searchQuery, dateFilter, jobs]);
 
     const navigate = useNavigate();
 
@@ -65,9 +76,9 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
     };
 
     // Function to handle row click
-    const handleRowClickInternal = (fabId: string) => {
+    const handleRowClickInternal = (job: IJob) => {
         if (onRowClick) {
-            onRowClick(fabId);
+            onRowClick(job.fab_id);
         }
     };
 
@@ -320,7 +331,7 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                 columnsVisibility: true,
                 cellBorder: true,
             }}
-            onRowClick={onRowClick ? (row) => handleRowClickInternal(row.original.fab_id) : undefined} // Add row click handler
+            onRowClick={onRowClick ? (row) => handleRowClickInternal(row) : undefined} // Add row click handler
         >
             <Card>
                 <CardHeader className="py-3.5 border-b">
@@ -345,25 +356,18 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                                     </Button>
                                 )}
                             </div>
-                            <Select >
+                            <Select value={dateFilter} onValueChange={setDateFilter}>
                                 <SelectTrigger className="w-[170px] h-[34px]">
-                                    <SelectValue placeholder="2 June - 9 June" />
+                                    <SelectValue placeholder="Filter by date" />
                                 </SelectTrigger>
                                 <SelectContent className="w-32">
-                                    <SelectItem value="active">Active</SelectItem>
-                                    <SelectItem value="disabled">Disabled</SelectItem>
-                                    <SelectItem value="pending">Pending</SelectItem>
+                                    <SelectItem value="all">All Dates</SelectItem>
+                                    <SelectItem value="2025">2025</SelectItem>
+                                    <SelectItem value="2024">2024</SelectItem>
+                                    <SelectItem value="2023">2023</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Select>
-                                <SelectTrigger className="w-[100px] h-[34px]">
-                                    <SelectValue placeholder="Gender" />
-                                </SelectTrigger>
-                                <SelectContent className="w-32">
-                                    <SelectItem value="latest">Male</SelectItem>
-                                    <SelectItem value="older">Female</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            {/* Remove the gender filter as it's not relevant */}
                         </div>
                     </CardHeading>
 

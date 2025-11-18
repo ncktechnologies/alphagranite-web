@@ -40,7 +40,7 @@ export interface Employee {
 export interface EmployeeCreatePayload {
     first_name: string;
     last_name: string;
-    email: string;
+    email?: string; // Make email optional
     phone?: string;
     gender?: string;
     department: number;
