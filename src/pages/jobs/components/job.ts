@@ -17,9 +17,8 @@ export interface IJob {
   draft_completed?:string
   gp?:string
   date: string; // e.g. "08 October, 2025"
+  current_stage?: string; // Add current_stage field
 }
-
-
 
 
 export interface SchedulingNote {
@@ -82,4 +81,3 @@ export interface FileViewerProps {
       timestamp: '1 hour ago'
     }
   ];
-

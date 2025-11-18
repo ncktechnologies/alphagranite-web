@@ -32,6 +32,7 @@ import { groupData } from '@/lib/groupData';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import ActionsCell from '../roles/sales/action';
 import { useNavigate } from 'react-router';
+import { JOB_STAGES } from '@/hooks/use-job-stage';
 
 interface JobTableProps {
     jobs: IJob[];
@@ -48,26 +49,35 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
     const [sorting, setSorting] = useState<SortingState>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [dateFilter, setDateFilter] = useState<string>('all'); // For date filtering
+    const [stageFilter, setStageFilter] = useState<string>('all'); // For stage filtering
 
     const filteredData = useMemo(() => {
-        if (!searchQuery && (dateFilter === 'all' || !dateFilter)) return jobs;
+        let result = jobs;
         
-        return jobs.filter((job) => {
-            // Text search across multiple fields
-            const matchesSearch = !searchQuery || 
+        // Text search across multiple fields
+        if (searchQuery) {
+            result = result.filter((job) => 
                 job.job_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 job.fab_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 job.job_no?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 job.fab_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 job.template_schedule?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                job.templater?.toLowerCase().includes(searchQuery.toLowerCase());
-            
-            // Date filter
-            const matchesDate = dateFilter === 'all' || !dateFilter || job.date?.includes(dateFilter);
-            
-            return matchesSearch && matchesDate;
-        });
-    }, [searchQuery, dateFilter, jobs]);
+                job.templater?.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        }
+        
+        // Date filter
+        if (dateFilter !== 'all') {
+            result = result.filter((job) => job.date?.includes(dateFilter));
+        }
+        
+        // Stage filter (only for super admins)
+        if (isSuperAdmin && stageFilter !== 'all') {
+            result = result.filter((job) => job.current_stage === stageFilter);
+        }
+        
+        return result;
+    }, [searchQuery, dateFilter, stageFilter, jobs, isSuperAdmin]);
 
     const navigate = useNavigate();
 
@@ -367,6 +377,22 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                                     <SelectItem value="2023">2023</SelectItem>
                                 </SelectContent>
                             </Select>
+                            {/* Stage filter - only visible to super admins */}
+                            {isSuperAdmin && (
+                                <Select value={stageFilter} onValueChange={setStageFilter}>
+                                    <SelectTrigger className="w-[170px] h-[34px]">
+                                        <SelectValue placeholder="Filter by stage" />
+                                    </SelectTrigger>
+                                    <SelectContent className="w-48">
+                                        <SelectItem value="all">All Stages</SelectItem>
+                                        {Object.values(JOB_STAGES).map((stage) => (
+                                            <SelectItem key={stage.stage} value={stage.stage}>
+                                                {stage.title}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
                             {/* Remove the gender filter as it's not relevant */}
                         </div>
                     </CardHeading>

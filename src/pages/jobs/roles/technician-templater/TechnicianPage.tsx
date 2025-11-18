@@ -8,13 +8,13 @@ import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
 import { useGetFabsQuery } from '@/store/api/job';
 import { Fab } from '@/store/api/job';
+import { useJobStageFilter } from '@/hooks/use-job-stage';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
-import { useJobStageFilter } from '@/hooks/use-job-stage';
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
@@ -40,6 +40,7 @@ const transformFabToJob = (fab: Fab): IJob => {
     job_name: `Job ${fab.job_id}`, // Placeholder - would need actual job data
     job_no: String(fab.job_id), // Using job_id as job_no
     date: fab.created_at, // Using created_at as date
+    current_stage: fab.current_stage, // Add current_stage
     // Optional fields with default values
     acct_name: '',
     template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
