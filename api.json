@@ -3035,7 +3035,7 @@
           "Jobs"
         ],
         "summary": "Create Job",
-        "description": "Create a new job",
+        "description": "Create a new job with job name, job number, and account_id",
         "operationId": "create_job_api_v1_jobs_post",
         "security": [
           {
@@ -3616,6 +3616,74 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessResponse_NoneType_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/sales-persons": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get Sales Persons",
+        "description": "Get a list of all sales persons with their basic information",
+        "operationId": "get_sales_persons_api_v1_users_sales_persons_get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Search"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_List_dict__"
                 }
               }
             }
@@ -4863,7 +4931,7 @@
           "Fabs"
         ],
         "summary": "Create Fab",
-        "description": "Create a new fab",
+        "description": "Create a new fab with validation",
         "operationId": "create_fab_api_v1_fabs_post",
         "requestBody": {
           "required": true,
@@ -4881,7 +4949,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FabResponse"
+                  "$ref": "#/components/schemas/SuccessResponse_FabResponse_"
                 }
               }
             }
@@ -5068,7 +5136,7 @@
           "Fabs"
         ],
         "summary": "Get Fab",
-        "description": "Get a specific fab by ID",
+        "description": "Get a specific fab by ID with related data",
         "operationId": "get_fab_api_v1_fabs__fab_id__get",
         "parameters": [
           {
@@ -5087,7 +5155,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FabResponse"
+                  "$ref": "#/components/schemas/SuccessResponse_FabResponse_"
                 }
               }
             }
@@ -9934,9 +10002,17 @@
             "title": "Input Area"
           },
           "total_sqft": {
-            "type": "number",
-            "exclusiveMinimum": 0,
-            "title": "Total Sqft"
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft",
+            "default": 1
           },
           "notes": {
             "anyOf": [
@@ -9989,8 +10065,7 @@
           "stone_color_id",
           "stone_thickness_id",
           "edge_id",
-          "input_area",
-          "total_sqft"
+          "input_area"
         ],
         "title": "FabCreate"
       },
@@ -10012,21 +10087,76 @@
             "type": "integer",
             "title": "Sales Person Id"
           },
+          "sales_person_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sales Person Name"
+          },
           "stone_type_id": {
             "type": "integer",
             "title": "Stone Type Id"
+          },
+          "stone_type_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stone Type Name"
           },
           "stone_color_id": {
             "type": "integer",
             "title": "Stone Color Id"
           },
+          "stone_color_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stone Color Name"
+          },
           "stone_thickness_id": {
             "type": "integer",
             "title": "Stone Thickness Id"
           },
+          "stone_thickness_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stone Thickness Value"
+          },
           "edge_id": {
             "type": "integer",
             "title": "Edge Id"
+          },
+          "edge_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edge Name"
           },
           "input_area": {
             "type": "string",
@@ -11123,6 +11253,21 @@
             ],
             "title": "Status",
             "description": "Role status (1=Active, 2=Inactive)"
+          },
+          "permission_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permission Ids",
+            "description": "List of permission IDs to assign to this role"
           }
         },
         "type": "object",
@@ -11671,6 +11816,34 @@
         ],
         "title": "SuccessResponse[EdgeResponse]"
       },
+      "SuccessResponse_FabResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FabResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[FabResponse]"
+      },
       "SuccessResponse_List_AccountResponse__": {
         "properties": {
           "success": {
@@ -11894,6 +12067,39 @@
           "message"
         ],
         "title": "SuccessResponse[List[WorkStation]]"
+      },
+      "SuccessResponse_List_dict__": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[List[dict]]"
       },
       "SuccessResponse_NoneType_": {
         "properties": {

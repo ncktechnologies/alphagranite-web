@@ -2,7 +2,8 @@
 import { axiosBaseQuery } from "@/services/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
 
-const baseUrl = "https://alpha-granite.xyz-ntrinsic.com";
+// const baseUrl = "https://alpha-granite.xyz-ntrinsic.com";
+const baseUrl = `${(import.meta as any).env?.VITE_ALPHA_GRANITE_BASE_URL || ''}`
 
 // Job Types
 export interface Job {
@@ -66,6 +67,10 @@ export interface Fab {
     created_by: number;
     updated_at?: string;
     updated_by?: number;
+    // Templating schedule fields
+    templating_schedule_start_date?: string;
+    templating_schedule_due_date?: string;
+    technician_name?: string;
 }
 
 export interface FabCreate {
@@ -302,6 +307,7 @@ export const jobApi = createApi({
                     url: `/jobs/${id}`,
                     method: "get"
                 }),
+                transformResponse: (response: any) => response.data || response,
                 providesTags: (_result, _error, id) => [{ type: "Job", id }],
             }),
 
@@ -349,6 +355,7 @@ export const jobApi = createApi({
                         }
                     };
                 },
+                transformResponse: (response: any) => response.data || response,
                 providesTags: ["Fab"],
             }),
 
@@ -357,6 +364,7 @@ export const jobApi = createApi({
                     url: `/fabs/${id}`,
                     method: "get"
                 }),
+                transformResponse: (response: any) => response.data || response,
                 providesTags: (_result, _error, id) => [{ type: "Fab", id }],
             }),
 
@@ -365,6 +373,7 @@ export const jobApi = createApi({
                     url: `/jobs/${jobId}/fabs`,
                     method: "get"
                 }),
+                transformResponse: (response: any) => response.data || response,
                 providesTags: ["Fab"],
             }),
 
@@ -418,6 +427,13 @@ export const jobApi = createApi({
                         }
                     };
                 },
+                transformResponse: (response: any) => {
+                    // Handle the response format with success, message, and data properties
+                    if (response && response.data) {
+                        return response.data;
+                    }
+                    return response;
+                },
                 providesTags: ["Account"],
             }),
 
@@ -444,6 +460,13 @@ export const jobApi = createApi({
                         }
                     };
                 },
+                transformResponse: (response: any) => {
+                    // Handle the response format with success, message, and data properties
+                    if (response && response.data) {
+                        return response.data;
+                    }
+                    return response;
+                },
                 providesTags: ["StoneType"],
             }),
 
@@ -461,6 +484,14 @@ export const jobApi = createApi({
                             ...(queryParams.search && { search: queryParams.search }),
                         }
                     };
+                    
+                },
+                transformResponse: (response: any) => {
+                    // Handle the response format with success, message, and data properties
+                    if (response && response.data) {
+                        return response.data;
+                    }
+                    return response;
                 },
                 providesTags: ["StoneColor"],
             }),
@@ -478,6 +509,13 @@ export const jobApi = createApi({
                             ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
                         }
                     };
+                },
+                transformResponse: (response: any) => {
+                    // Handle the response format with success, message, and data properties
+                    if (response && response.data) {
+                        return response.data;
+                    }
+                    return response;
                 },
                 providesTags: ["StoneThickness"],
             }),
@@ -498,6 +536,13 @@ export const jobApi = createApi({
                         }
                     };
                 },
+                transformResponse: (response: any) => {
+                    // Handle the response format with success, message, and data properties
+                    if (response && response.data) {
+                        return response.data;
+                    }
+                    return response;
+                },
                 providesTags: ["Edge"],
             }),
 
@@ -506,7 +551,7 @@ export const jobApi = createApi({
                 query: (data) => ({
                     url: "/templating/schedule",
                     method: "post",
-                    params: data
+                    data // Send as request body instead of params
                 }),
                 invalidatesTags: ["Fab"],
             }),
@@ -515,7 +560,7 @@ export const jobApi = createApi({
                 query: ({ templating_id, updated_by }) => ({
                     url: "/templating/unschedule",
                     method: "post",
-                    params: { templating_id, updated_by }
+                    data: { templating_id, updated_by } // Send as request body
                 }),
                 invalidatesTags: ["Fab"],
             }),

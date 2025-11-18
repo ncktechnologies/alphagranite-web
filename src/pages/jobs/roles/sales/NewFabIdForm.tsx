@@ -37,8 +37,12 @@ import {
   useCreateStoneThicknessMutation,
   useCreateStoneTypeMutation,
   useCreateStoneColorMutation,
-  useCreateEdgeMutation
+  useCreateEdgeMutation,
+  useGetJobsQuery
 } from '@/store/api/job';
+import { useAuth } from '@/auth/context/auth-context';
+import { useGetEmployeesQuery } from '@/store/api/employee';
+import { useGetSalesPersonsQuery } from '@/store/api/employee';
 
 // Zod schema for form validation
 const fabIdFormSchema = z.object({
@@ -84,6 +88,7 @@ const NewFabIdForm = () => {
     isError: isAccountsError,
     error: accountsError
   } = useGetAccountsQuery({ limit: 1000 });
+  
   const { 
     data: stoneTypesData, 
     isLoading: isLoadingStoneTypes, 
@@ -112,6 +117,14 @@ const NewFabIdForm = () => {
     error: edgesError
   } = useGetEdgesQuery({ limit: 1000 });
   
+  // Fetch jobs for linked dropdowns
+  const { 
+    data: jobsData, 
+    isLoading: isLoadingJobs, 
+    isError: isJobsError,
+    error: jobsError
+  } = useGetJobsQuery({ limit: 1000 });
+  
   // Mutations
   const [createJob] = useCreateJobMutation();
   const [createFab] = useCreateFabMutation();
@@ -125,6 +138,8 @@ const NewFabIdForm = () => {
   const [fabTypeSearch, setFabTypeSearch] = useState('');
   const [accountSearch, setAccountSearch] = useState('');
   const [thicknessSearch, setThicknessSearch] = useState('');
+  const [jobNameSearch, setJobNameSearch] = useState('');
+  const [jobNumberSearch, setJobNumberSearch] = useState('');
 
   // Main popover states
   const [fabTypePopoverOpen, setFabTypePopoverOpen] = useState(false);
@@ -166,27 +181,83 @@ const NewFabIdForm = () => {
   });
 
   // Filter functions for search with error handling
-  const filteredFabTypes = (!isFabTypesError && fabTypesData?.map(type => type.name) || []).filter(type =>
+  const filteredFabTypes = (!isFabTypesError && Array.isArray(fabTypesData) && fabTypesData?.map((type: any) => type.name) || []).filter((type: string) =>
     type.toLowerCase().includes(fabTypeSearch.toLowerCase())
   );
 
-  const filteredAccounts = (!isAccountsError && accountsData?.data?.map(account => account.name) || []).filter(account =>
+  const filteredAccounts = (!isAccountsError && Array.isArray(accountsData) && accountsData?.map((account: any) => account.name) || []).filter((account: string) =>
     account.toLowerCase().includes(accountSearch.toLowerCase())
   );
 
-  const filteredThicknessOptions = (!isStoneThicknessesError && stoneThicknessesData?.data?.map(thickness => thickness.thickness) || []).filter(thickness =>
+  const filteredThicknessOptions = (!isStoneThicknessesError && Array.isArray(stoneThicknessesData) && stoneThicknessesData?.map((thickness: any) => thickness.thickness) || []).filter((thickness: string) =>
     thickness.toLowerCase().includes(thicknessSearch.toLowerCase())
   );
 
-  const stoneTypes = !isStoneTypesError ? (stoneTypesData?.data?.map(type => type.name) || []) : [];
-  const stoneColors = !isStoneColorsError ? (stoneColorsData?.data?.map(color => color.name) || []) : [];
-  const edgeOptions = !isEdgesError ? (edgesData?.data?.map(edge => edge.name) || []) : [];
-  const salesPersons = [
-    'BRUNO PIRES',
-    'Sarah Johnson',
-    'Mike Rodriguez',
-    'Maria Garcia'
-  ];
+  // Filter jobs for job name and job number dropdowns
+  const filteredJobNames = (!isJobsError && Array.isArray(jobsData) && jobsData?.map((job: any) => job.name) || []).filter((name: string) =>
+    name.toLowerCase().includes(jobNameSearch.toLowerCase())
+  );
+
+  const filteredJobNumbers = (!isJobsError && Array.isArray(jobsData) && jobsData?.map((job: any) => job.job_number) || []).filter((number: string) =>
+    number.toLowerCase().includes(jobNumberSearch.toLowerCase())
+  );
+
+  const stoneTypes = !isStoneTypesError && Array.isArray(stoneTypesData) ? (stoneTypesData?.map((type: any) => type.name) || []) : [];
+  const stoneColors = !isStoneColorsError && Array.isArray(stoneColorsData) ? (stoneColorsData?.map((color: any) => color.name) || []) : [];
+  const edgeOptions = !isEdgesError && Array.isArray(edgesData) ? (edgesData?.map((edge: any) => edge.name) || []) : [];
+  const { user } = useAuth();
+  
+  // Get sales persons using the new API endpoint
+  const { 
+    data: salesPersonsData,
+    isLoading: isLoadingSalesPersons,
+    isError: isSalesPersonsError
+  } = useGetSalesPersonsQuery();
+  
+  // Extract sales persons from the response
+  const salesPersons = Array.isArray(salesPersonsData) ? salesPersonsData : [];
+  
+  // Set default sales person to current user
+  useEffect(() => {
+    if (user && salesPersons.length > 0) {
+      // Find the current user in the sales persons list
+      const currentUserInSales = salesPersons.find((salesPerson: any) => 
+        salesPerson.email === user.email || 
+        `${salesPerson.first_name} ${salesPerson.last_name}`.toLowerCase() === 
+        `${user.first_name} ${user.last_name}`.toLowerCase()
+      );
+      
+      if (currentUserInSales) {
+        form.setValue('selectedSalesPerson', `${currentUserInSales.first_name} ${currentUserInSales.last_name}`);
+      }
+    }
+  }, [user, salesPersons, form]);
+
+  // Handle job name selection - auto-select job number
+  const handleJobNameChange = (jobName: string) => {
+    form.setValue('jobName', jobName);
+    
+    // Find the job with this name and set the job number
+    if (jobsData && Array.isArray(jobsData)) {
+      const job = jobsData.find((j: any) => j.name === jobName);
+      if (job) {
+        form.setValue('jobNumber', job.job_number);
+      }
+    }
+  };
+
+  // Handle job number selection - auto-select job name
+  const handleJobNumberChange = (jobNumber: string) => {
+    form.setValue('jobNumber', jobNumber);
+    
+    // Find the job with this number and set the job name
+    if (jobsData && Array.isArray(jobsData)) {
+      const job = jobsData.find((j: any) => j.job_number === jobNumber);
+      if (job) {
+        form.setValue('jobName', job.name);
+      }
+    }
+  };
 
   // Functions to add new items
   const handleAddThickness = async () => {
@@ -246,31 +317,57 @@ const NewFabIdForm = () => {
       setError(null);
 
       // Find IDs for selected values
-      const selectedFabType = fabTypesData?.find(type => type.name === values.fabType);
-      const selectedAccount = accountsData?.find(account => account.name === values.account);
-      const selectedStoneType = stoneTypesData?.find(type => type.name === values.stoneType);
-      const selectedStoneColor = stoneColorsData?.find(color => color.name === values.stoneColor);
-      const selectedStoneThickness = stoneThicknessesData?.find(thickness => thickness.thickness === values.stoneThickness);
-      const selectedEdge = edgesData?.find(edge => edge.name === values.edge);
+      const selectedFabType = Array.isArray(fabTypesData) && fabTypesData?.find((type: any) => type.name === values.fabType);
+      const selectedAccount = Array.isArray(accountsData) && accountsData?.find((account: any) => account.name === values.account);
+      const selectedStoneType = Array.isArray(stoneTypesData) && stoneTypesData?.find((type: any) => type.name === values.stoneType);
+      const selectedStoneColor = Array.isArray(stoneColorsData) && stoneColorsData?.find((color: any) => color.name === values.stoneColor);
+      const selectedStoneThickness = Array.isArray(stoneThicknessesData) && stoneThicknessesData?.find((thickness: any) => thickness.thickness === values.stoneThickness);
+      const selectedEdge = Array.isArray(edgesData) && edgesData?.find((edge: any) => edge.name === values.edge);
+
+      // Find the selected sales person ID
+      const selectedSalesPerson = salesPersons.find((person: any) => 
+        `${person.first_name} ${person.last_name}` === values.selectedSalesPerson
+      );
 
       // Validate all required data is available
-      if (!selectedFabType || !selectedAccount || !selectedStoneType || !selectedStoneColor || !selectedStoneThickness || !selectedEdge) {
+      if (!selectedFabType || !selectedAccount || !selectedStoneType || !selectedStoneColor || !selectedStoneThickness || !selectedEdge || !selectedSalesPerson) {
         throw new Error('Please select valid options for all dropdown fields');
       }
 
-      // Create job first
-      const jobResponse = await createJob({
-        name: values.jobName,
-        job_number: values.jobNumber,
-        account_id: selectedAccount.id,
-        description: values.notes || '',
-      }).unwrap();
+      // Check if job already exists
+      let jobResponse;
+      if (jobsData && Array.isArray(jobsData)) {
+        const existingJob = jobsData.find((job: any) => 
+          job.name === values.jobName && job.job_number === values.jobNumber
+        );
+        
+        if (existingJob) {
+          // Use existing job
+          jobResponse = existingJob;
+        } else {
+          // Create new job
+          jobResponse = await createJob({
+            name: values.jobName,
+            job_number: values.jobNumber,
+            account_id: selectedAccount.id,
+            description: values.notes || '',
+          }).unwrap();
+        }
+      } else {
+        // Create new job if no jobs data available
+        jobResponse = await createJob({
+          name: values.jobName,
+          job_number: values.jobNumber,
+          account_id: selectedAccount.id,
+          description: values.notes || '',
+        }).unwrap();
+      }
 
-      // Then create fab
+      // Then create fab using the job ID
       await createFab({
         job_id: jobResponse.id,
         fab_type: selectedFabType.name,
-        sales_person_id: 1, // This should be the actual sales person ID
+        sales_person_id: selectedSalesPerson.id, // Use the actual sales person ID
         stone_type_id: selectedStoneType.id,
         stone_color_id: selectedStoneColor.id,
         stone_thickness_id: selectedStoneThickness.id,
@@ -293,7 +390,7 @@ const NewFabIdForm = () => {
               <Check />
             </AlertIcon>
             <AlertTitle>
-              FAB ID submitted successfully for templating review!
+              FAB ID submitted successfully!
             </AlertTitle>
           </Alert>
         ),
@@ -302,7 +399,10 @@ const NewFabIdForm = () => {
         },
       );
       form.reset();
-      navigate('/job/templating');
+      
+      // Navigate based on user's department/role instead of always going to templating
+      // For sales role, navigate back to sales jobs page
+      navigate('/job/sales');
 
     } catch (err: any) {
       console.error('Submission error:', err);
@@ -424,7 +524,7 @@ const NewFabIdForm = () => {
                                       </div>
                                     )}
                                     <div className="space-y-1 max-h-48 overflow-y-auto">
-                                      {filteredFabTypes.map((type) => (
+                                      {filteredFabTypes.map((type: string) => (
                                         <div
                                           key={type}
                                           className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
@@ -476,30 +576,33 @@ const NewFabIdForm = () => {
                                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                                   <div className="p-2">
                                     <div className="flex items-center justify-between mb-2">
-                                      {/* <span className="text-sm font-medium">Account</span> */}
+                                      <span className="text-sm font-medium">Accounts</span>
                                       <Popover open={showAddAccount} onOpenChange={setShowAddAccount}>
                                         <PopoverTrigger asChild>
-                                          <Button variant="ghost" size="sm" className="h-7 px-2 text-[#7A9705] text-lg">
+                                          <Button variant="ghost" size="sm" className="h-7 px-2">
                                             <Plus className="w-3 h-3 mr-1" />
                                             Add
                                           </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-80" align="end">
                                           <div className="space-y-3">
-                                            <div className="">
+                                            <div>
                                               <Label htmlFor="newAccount">Account Name</Label>
                                               <Input
                                                 id="newAccount"
                                                 placeholder="Enter account name"
                                                 value={newAccount}
                                                 onChange={(e) => setNewAccount(e.target.value)}
-                                                className='relative'
                                               />
-                                              <Button size="sm" onClick={handleAddAccount} className='absolute right-8 top-12 px-6 py-3'>
+                                            </div>
+                                            <div className="flex justify-end gap-2">
+                                              <Button variant="outline" size="sm" onClick={() => setShowAddAccount(false)}>
+                                                Cancel
+                                              </Button>
+                                              <Button size="sm" onClick={handleAddAccount}>
                                                 Add
                                               </Button>
                                             </div>
-
                                           </div>
                                         </PopoverContent>
                                       </Popover>
@@ -507,8 +610,8 @@ const NewFabIdForm = () => {
                                     <div className="relative mb-2">
                                       <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
                                       <Input
-                                        placeholder="Search accounts"
-                                        className="ps-8"
+                                        placeholder="Search account"
+                                        className="pl-8"
                                         value={accountSearch}
                                         onChange={(e) => setAccountSearch(e.target.value)}
                                       />
@@ -519,7 +622,7 @@ const NewFabIdForm = () => {
                                       </div>
                                     )}
                                     <div className="space-y-1 max-h-48 overflow-y-auto">
-                                      {filteredAccounts.map((account) => (
+                                      {filteredAccounts.map((account: string) => (
                                         <div
                                           key={account}
                                           className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
@@ -546,30 +649,147 @@ const NewFabIdForm = () => {
                           )}
                         />
 
-                        {/* Second Row */}
+                        {/* Job Name - Input with Dropdown Option */}
                         <FormField
                           control={form.control}
                           name="jobName"
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Job Name *</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Enter name" {...field} />
-                              </FormControl>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <div className="relative">
+                                    <FormControl>
+                                      <Input 
+                                        placeholder="Enter or select job name" 
+                                        {...field}
+                                      />
+                                    </FormControl>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      className="absolute right-0 top-0 h-full rounded-l-none border-l"
+                                      disabled={isLoadingJobs}
+                                    >
+                                      <ChevronDown className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </PopoverTrigger>
+                                <PopoverContent 
+                                  className="w-full p-0" 
+                                  align="start"
+                                  style={{ width: 'var(--radix-popover-trigger-width)' }}
+                                >
+                                  <div className="p-2">
+                                    <div className="relative mb-2">
+                                      <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
+                                      <Input
+                                        placeholder="Search job name"
+                                        className="pl-8"
+                                        value={jobNameSearch}
+                                        onChange={(e) => setJobNameSearch(e.target.value)}
+                                      />
+                                    </div>
+                                    {isJobsError && (
+                                      <div className="px-3 py-2 text-sm text-red-500 text-center">
+                                        Failed to load jobs: {jobsError ? 'Server error occurred' : 'Unknown error'}
+                                      </div>
+                                    )}
+                                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                                      {filteredJobNames.map((name: string) => (
+                                        <div
+                                          key={name}
+                                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
+                                          onClick={() => {
+                                            handleJobNameChange(name);
+                                            setJobNameSearch('');
+                                          }}
+                                        >
+                                          {name}
+                                        </div>
+                                      ))}
+                                      {filteredJobNames.length === 0 && !isJobsError && (
+                                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                          {isLoadingJobs ? 'Loading jobs...' : 'No jobs found'}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
 
+                        {/* Job Number - Input with Dropdown Option */}
                         <FormField
                           control={form.control}
                           name="jobNumber"
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Job Number *</FormLabel>
-                              <FormControl>
-                                <Input placeholder="Job number" {...field} />
-                              </FormControl>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <div className="relative">
+                                    <FormControl>
+                                      <Input 
+                                        placeholder="Enter or select job number" 
+                                        {...field}
+                                      />
+                                    </FormControl>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      className="absolute right-0 top-0 h-full rounded-l-none border-l"
+                                      disabled={isLoadingJobs}
+                                    >
+                                      <ChevronDown className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                </PopoverTrigger>
+                                <PopoverContent 
+                                  className="w-full p-0" 
+                                  align="start"
+                                  style={{ width: 'var(--radix-popover-trigger-width)' }}
+                                >
+                                  <div className="p-2">
+                                    <div className="relative mb-2">
+                                      <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
+                                      <Input
+                                        placeholder="Search job number"
+                                        className="pl-8"
+                                        value={jobNumberSearch}
+                                        onChange={(e) => setJobNumberSearch(e.target.value)}
+                                      />
+                                    </div>
+                                    {isJobsError && (
+                                      <div className="px-3 py-2 text-sm text-red-500 text-center">
+                                        Failed to load jobs: {jobsError ? 'Server error occurred' : 'Unknown error'}
+                                      </div>
+                                    )}
+                                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                                      {filteredJobNumbers.map((number: string) => (
+                                        <div
+                                          key={number}
+                                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
+                                          onClick={() => {
+                                            handleJobNumberChange(number);
+                                            setJobNumberSearch('');
+                                          }}
+                                        >
+                                          {number}
+                                        </div>
+                                      ))}
+                                      {filteredJobNumbers.length === 0 && !isJobsError && (
+                                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                          {isLoadingJobs ? 'Loading jobs...' : 'No jobs found'}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -609,7 +829,7 @@ const NewFabIdForm = () => {
                                       Failed to load stone types: Server error occurred
                                     </div>
                                   ) : (
-                                    stoneTypes.map((type) => (
+                                    stoneTypes.map((type: string) => (
                                       <SelectItem key={type} value={type}>
                                         {type}
                                       </SelectItem>
@@ -640,7 +860,7 @@ const NewFabIdForm = () => {
                                       Failed to load stone colors: Server error occurred
                                     </div>
                                   ) : (
-                                    stoneColors.map((color) => (
+                                    stoneColors.map((color: string) => (
                                       <SelectItem key={color} value={color}>
                                         {color}
                                       </SelectItem>
@@ -713,7 +933,7 @@ const NewFabIdForm = () => {
                                       <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
                                       <Input
                                         placeholder="Search thickness"
-                                        className="ps-8"
+                                        className="pl-8"
                                         value={thicknessSearch}
                                         onChange={(e) => setThicknessSearch(e.target.value)}
                                       />
@@ -724,7 +944,7 @@ const NewFabIdForm = () => {
                                       </div>
                                     )}
                                     <div className="space-y-1 max-h-48 overflow-y-auto">
-                                      {filteredThicknessOptions.map((thickness) => (
+                                      {filteredThicknessOptions.map((thickness: string) => (
                                         <div
                                           key={thickness}
                                           className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
@@ -770,7 +990,7 @@ const NewFabIdForm = () => {
                                       Failed to load edges: Server error occurred
                                     </div>
                                   ) : (
-                                    edgeOptions.map((edge) => (
+                                    edgeOptions.map((edge: string) => (
                                       <SelectItem key={edge} value={edge}>
                                         {edge}
                                       </SelectItem>
@@ -798,8 +1018,6 @@ const NewFabIdForm = () => {
                         />
 
                         {/* Sales Person */}
-
-
                         <FormField
                           control={form.control}
                           name="selectedSalesPerson"
@@ -813,9 +1031,12 @@ const NewFabIdForm = () => {
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {salesPersons.map((person) => (
-                                    <SelectItem key={person} value={person}>
-                                      {person}
+                                  {salesPersons.map((person: any) => (
+                                    <SelectItem 
+                                      key={person.id} 
+                                      value={person.name}
+                                    >
+                                      {person.name}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -924,12 +1145,14 @@ const NewFabIdForm = () => {
                           )}
                         />
                       </div>
-                      <div>
+                      {/* <div>
                         <FormLabel>Sales Person</FormLabel>
                         <div className="mt-1 p-3 bg-gray-50 rounded-md">
-                          <p className="text-sm font-medium text-gray-900">BRUNO PIRES</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {user?.first_name}
+                          </p>
                         </div>
-                      </div>
+                      </div> */}
                       {/* Notes */}
                       <FormField
                         control={form.control}
@@ -991,18 +1214,14 @@ const NewFabIdForm = () => {
                         <Link to="/job/sales">
                           <Button variant="outline" type="button">Cancel</Button>
                         </Link>
-                        <Button
-                          type="submit"
-                          className="bg-green-600 hover:bg-green-700"
-                          disabled={isSubmitting}
-                        >
+                        <Button type="submit" disabled={isSubmitting}>
                           {isSubmitting ? (
-                            <span className="flex items-center gap-2">
-                              <LoaderCircleIcon className="h-4 w-4 animate-spin" />
+                            <>
+                              <LoaderCircleIcon className="mr-2 h-4 w-4 animate-spin" />
                               Submitting...
-                            </span>
+                            </>
                           ) : (
-                            'Submit for templating'
+                            'Submit for Review'
                           )}
                         </Button>
                       </div>

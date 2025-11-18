@@ -2,7 +2,8 @@
 import { axiosBaseQuery } from "@/services/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
 
-const baseUrl = "https://alpha-granite.xyz-ntrinsic.com";
+// const baseUrl = "https://alpha-granite.xyz-ntrinsic.com";
+const baseUrl = `${(import.meta as any).env?.VITE_ALPHA_GRANITE_BASE_URL || ''}`
 
 // Department Types
 export interface Department {

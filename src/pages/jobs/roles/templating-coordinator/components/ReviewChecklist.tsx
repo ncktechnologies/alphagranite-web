@@ -17,7 +17,8 @@ import { toast } from "sonner";
 import { AssignTechnicianModal } from "./AssignTech";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { useNavigate } from "react-router";
+import { useNavigate, useParams } from "react-router";
+import { useGetFabByIdQuery } from "@/store/api/job";
 
 const reviewChecklistSchema = z.object({
     customerInfo: z.boolean(),
@@ -33,7 +34,9 @@ type ReviewChecklistData = z.infer<typeof reviewChecklistSchema>;
 export function ReviewChecklistForm() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [openModal, setOpenModal] = useState(false);
-  const navigate = useNavigate();
+    const navigate = useNavigate();
+    const { id } = useParams<{ id: string }>();
+    const { data: fab } = useGetFabByIdQuery(Number(id));
 
     const form = useForm<ReviewChecklistData>({
         resolver: zodResolver(reviewChecklistSchema),
@@ -47,12 +50,15 @@ export function ReviewChecklistForm() {
     });
 
     const onSubmit = async (values: ReviewChecklistData) => {
-        setIsSubmitting(true);
-        await new Promise((r) => setTimeout(r, 1200));
+        // Check if all required checkboxes are checked
+        if (!values.customerInfo || !values.materialSpecs || !values.stoneType || 
+            !values.stoneColour || !values.fabType) {
+            toast.error("Please complete all required checklist items");
+            return;
+        }
 
-        toast.success("Checklist review completed successfully!");
-        setOpenModal(true); // ✅ open modal when checklist passes
-        setIsSubmitting(false);
+        // Open the assign technician modal instead of submitting directly
+        setOpenModal(true);
     };
 
     return (
@@ -134,8 +140,11 @@ export function ReviewChecklistForm() {
             {openModal && (
                 <AssignTechnicianModal
                     open={openModal}
-                    onClose={() => {setOpenModal(false); navigate('/job/templating-technician')}}
-                // fabData={fabData}
+                    onClose={() => setOpenModal(false)}
+                    fabData={{
+                        fabId: fab?.id ? `FAB-${fab.id}` : "FAB-ID",
+                        jobName: fab?.fab_type || "Job Name"
+                    }}
                 />
             )}
         </>

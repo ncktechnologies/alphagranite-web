@@ -7,8 +7,8 @@ import { DefaultPage } from '@/pages/dashboards';
 import { DepartmentPage } from '@/pages/departments';
 import { DepartmentDetailsPage } from '@/pages/departments/department-table/TablePage';
 import { EmployeePage } from '@/pages/employers';
-import { JobPage } from '@/pages/job-flow/job-page';
-import { NewFabIdForm } from '@/pages/jobs';
+// import { JobPage } from '@/pages/job-flow/job-page';
+// import { NewFabIdForm } from '@/pages/jobs';
 import { AfterDraftSalesPage } from '@/pages/jobs/roles/back-to-sales/BackSalesPage';
 import { DraftReviewDetailsPage } from '@/pages/jobs/roles/back-to-sales/details';
 import { DrafterDetailsPage } from '@/pages/jobs/roles/drafters';
@@ -19,8 +19,10 @@ import { DraftRevisionPage } from '@/pages/jobs/roles/revisiondraft/BackSalesPag
 import { ReviewDetailsPage } from '@/pages/jobs/roles/revisiondraft/details';
 import { SalesPage } from '@/pages/jobs/roles/sales/SalesPage';
 import { TechnicianDetailsPage } from '@/pages/jobs/roles/technician-templater/components/details';
+import { TemplatingDetailsPage } from '@/pages/jobs/roles/technician-templater/components/TemplatingDetailsPage';
 import { TechnicianPage } from '@/pages/jobs/roles/technician-templater/TechnicianPage';
 import { FabIdDetailsPage } from '@/pages/jobs/roles/templating-coordinator/components/details';
+import { TemplatingCoordinatorDetailsPage } from '@/pages/jobs/roles/templating-coordinator/components/TemplatingCoordinatorDetailsPage';
 import { TemplatingPage } from '@/pages/jobs/roles/templating-coordinator/templatingPage';
 import { NotificationsSection, ProfileSection, RolesSection } from '@/pages/settings';
 import CuttingPlanPage from '@/pages/shop/cutting-plan/CuttingPlanPage';
@@ -32,8 +34,10 @@ import MilterPlanPage from '@/pages/shop/milter/MilterPage';
 import SettingsPage from '@/pages/shop/settings/SettingsPage';
 import { WjDetailsPage } from '@/pages/shop/wj/Detail';
 import WJPlanPage from '@/pages/shop/wj/WjPage';
+import { JobsSection } from '@/pages/jobs/JobsSection';
 
 import { Navigate, Route, Routes } from 'react-router';
+import { NewFabIdForm } from '@/pages/jobs/roles';
 
 export function AppRoutingSetup() {
   return (
@@ -45,6 +49,7 @@ export function AppRoutingSetup() {
           <Route path="/settings/roles" element={<RolesSection />} />
           <Route path="/settings/profile" element={<ProfileSection />} />
           <Route path="/settings/notifications" element={<NotificationsSection />} />
+          <Route path="/create-jobs" element={<JobsSection />} />
 
           <Route
             path="/employees"
@@ -95,6 +100,22 @@ export function AppRoutingSetup() {
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <TechnicianDetailsPage/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job/templating-details/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <TemplatingDetailsPage/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job/templating-coordinator/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <TemplatingCoordinatorDetailsPage/>
               // </ProtectedRoute>
             }
           />

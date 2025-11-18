@@ -1,215 +1,80 @@
+import { useEffect } from 'react';
+import { Link, useLocation } from 'react-router';
 import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { useLocation, Link } from 'react-router';
 import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
+import { useGetFabsQuery } from '@/store/api/job';
+import { Fab } from '@/store/api/job';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 import { NewFabIdForm } from './NewFabIdForm';
+import { useIsSuperAdmin } from '@/hooks/use-permission';
+import { useJobStageFilter } from '@/hooks/use-job-stage';
 
+// Format date to "08 Oct, 2025" format
+const formatDate = (dateString?: string): string => {
+  if (!dateString) return '-';
+  
+  try {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = date.toLocaleString('en-US', { month: 'short' });
+    const year = date.getFullYear();
+    return `${day} ${month}, ${year}`;
+  } catch (error) {
+    return '-';
+  }
+};
+
+// Transform Fab data to match IJob interface
+const transformFabToJob = (fab: Fab): IJob => {
+  return {
+    id: fab.id,
+    fab_type: fab.fab_type,
+    fab_id: String(fab.id), // Using fab.id as fab_id since there's no fab_id in Fab type
+    job_name: `Job ${fab.job_id}`, // Placeholder - would need actual job data
+    job_no: String(fab.job_id), // Using job_id as job_no
+    date: fab.created_at, // Using created_at as date
+    // Optional fields with default values
+    acct_name: '',
+    template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
+    template_received: '',
+    templater: fab.technician_name || '-',
+    no_of_pieces: '',
+    total_sq_ft: String(fab.total_sqft),
+    revenue: '',
+    revised: '',
+    sct_completed: '',
+    draft_completed: '',
+    gp: ''
+  };
+};
 
 export function SalesPage() {
     const location = useLocation();
     const isNewFabForm = location.pathname.includes('/new-fab-id');
-
-    const jobsData: IJob[] = [
-        {
-            id: 1,
-            fab_type: 'Standard',
-            fab_id: '14425',
-            job_name: 'Preston kitchen floor',
-            job_no: '9999',
-            acct_name: 'Waller 101',
-            template_schedule: '-',
-            template_received: 'No',
-            templater: '-',
-            date: '08 October, 2025',
-        },
-        {
-            id: 2,
-            fab_type: 'FAB only',
-            fab_id: '5644',
-            job_name: 'Preston kitchen floor',
-            job_no: '4555',
-            acct_name: 'Waller 101',
-            template_schedule: '08 Oct, 2025',
-            template_received: 'Yes',
-            templater: 'Jenny Wilson',
-            date: '08 October, 2025',
-        },
-        {
-            id: 3,
-            fab_type: 'Standard',
-            fab_id: '33034',
-            job_name: 'Preston kitchen floor',
-            job_no: '9999',
-            acct_name: 'Waller 101',
-            template_schedule: '-',
-            template_received: 'No',
-            templater: '-',
-            date: '10 October, 2025',
-        },
-        {
-            id: 4,
-            fab_type: 'Standard',
-            fab_id: '33034',
-            job_name: 'Preston kitchen floor',
-            job_no: '9999',
-            acct_name: 'Waller 101',
-            template_schedule: '-',
-            template_received: 'No',
-            templater: '-',
-            date: '10 October, 2025',
-        },
-        {
-            id: 5,
-            fab_type: 'Standard',
-            fab_id: '33034',
-            job_name: 'Preston kitchen floor',
-            job_no: '9999',
-            acct_name: 'Waller 101',
-            template_schedule: '-',
-            template_received: 'No',
-            templater: '-',
-            date: '10 October, 2025',
-        },
-        {
-            id: 6,
-            fab_type: 'Standard',
-            fab_id: '33034',
-            job_name: 'Preston kitchen floor',
-            job_no: '9999',
-            acct_name: 'Waller 101',
-            template_schedule: '-',
-            template_received: 'No',
-            templater: '-',
-            date: '10 October, 2025',
-        },
-        {
-            id: 7,
-            fab_type: 'Standard',
-            fab_id: '33034',
-            job_name: 'Preston kitchen floor',
-            job_no: '9999',
-            acct_name: 'Waller 101',
-            template_schedule: '-',
-            template_received: 'No',
-            templater: '-',
-            date: '10 October, 2025',
-        },
-        {
-            id: 8,
-            fab_type: 'Standard',
-            fab_id: '33034',
-            job_name: 'Preston kitchen floor',
-            job_no: '9999',
-            acct_name: 'Waller 101',
-            template_schedule: '-',
-            template_received: 'No',
-            templater: '-',
-            date: '10 October, 2025',
-        },
-        {
-            id: 9,
-            fab_type: 'Standard',
-            fab_id: '33034',
-            job_name: 'Preston kitchen floor',
-            job_no: '9999',
-            acct_name: 'Waller 101',
-            template_schedule: '-',
-            template_received: 'No',
-            templater: '-',
-            date: '10 October, 2025',
-        },
-        {
-            id: 10,
-            fab_type: 'Standard',
-            fab_id: '33034',
-            job_name: 'Preston kitchen floor',
-            job_no: '9999',
-            acct_name: 'Waller 101',
-            template_schedule: '-',
-            template_received: 'No',
-            templater: '-',
-            date: '10 October, 2025',
-        },
-        {
-            id: 11,
-            fab_type: 'Standard',
-            fab_id: '33034',
-            job_name: 'Preston kitchen floor',
-            job_no: '9999',
-            acct_name: 'Waller 101',
-            template_schedule: '-',
-            template_received: 'No',
-            templater: '-',
-            date: '10 October, 2025',
-        },
-        {
-            id: 12,
-            fab_type: 'Standard',
-            fab_id: '33034',
-            job_name: 'Preston kitchen floor',
-            job_no: '9999',
-            acct_name: 'Waller 101',
-            template_schedule: '-',
-            template_received: 'No',
-            templater: '-',
-            date: '10 October, 2025',
-        },
-        {
-            id: 13,
-            fab_type: 'Standard',
-            fab_id: '33034',
-            job_name: 'Preston kitchen floor',
-            job_no: '9999',
-            acct_name: 'Waller 101',
-            template_schedule: '-',
-            template_received: 'No',
-            templater: '-',
-            date: '10 October, 2025',
-        },
-        {
-            id: 14,
-            fab_type: 'Standard',
-            fab_id: '33034',
-            job_name: 'Preston kitchen floor',
-            job_no: '9999',
-            acct_name: 'Waller 101',
-            template_schedule: '-',
-            template_received: 'No',
-            templater: '-',
-            date: '10 October, 2025',
-        },
-        {
-            id: 15,
-            fab_type: 'Standard',
-            fab_id: '33034',
-            job_name: 'Preston kitchen floor',
-            job_no: '9999',
-            acct_name: 'Waller 101',
-            template_schedule: '-',
-            template_received: 'No',
-            templater: '-',
-            date: '10 October, 2025',
-        },
-        {
-            id: 16,
-            fab_type: 'Standard',
-            fab_id: '33034',
-            job_name: 'Preston kitchen floor',
-            job_no: '9999',
-            acct_name: 'Waller 101',
-            template_schedule: '-',
-            template_received: 'No',
-            templater: '-',
-            date: '10 October, 2025',
-        },
-    ]
+    // Get current stage filter based on user role
+    const { currentStageFilter, isSuperAdmin } = useJobStageFilter();
+    const user = useSelector((state: RootState) => state.user?.user);
+    const isUserSuperAdmin = useIsSuperAdmin();
+    
+    // Fetch fabs with role-based filtering
+    // Super admin: currentStageFilter is undefined, so gets ALL fabs
+    // Sales role: currentStageFilter is 'sales', so gets only sales fabs
+    const { data: fabs, isLoading, error } = useGetFabsQuery({
+        current_stage: currentStageFilter,
+        limit: 100,
+    });
 
     if (isNewFabForm) {
         return <NewFabIdForm />;
     }
+
+    // Transform Fab data to IJob format
+    const transformedJobs: IJob[] = fabs ? fabs.map(transformFabToJob) : [];
 
     return (
         <div className="">
@@ -225,7 +90,7 @@ export function SalesPage() {
                         </Link>
                     </ToolbarActions>
                 </Toolbar>
-                < JobTable jobs={jobsData} path='templating'/>
+                <JobTable jobs={transformedJobs} path='templating' isSuperAdmin={isUserSuperAdmin}/>
             </Container>
         </div>
     );

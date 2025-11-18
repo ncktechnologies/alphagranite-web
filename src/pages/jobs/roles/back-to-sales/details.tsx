@@ -7,7 +7,7 @@ import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Separator } from '@/components/ui/separator';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { FileViewer } from '../drafters/components';
-import { jobInfo } from '../templating-coordinator/components/details';
+// import { jobInfo } from '../templating-coordinator/components/details';
 import { Documents } from '@/pages/shop/components/files';
 import { RevisionModal } from './components/SubmissionModal';
 import { TimeDisplay } from './components/DisplayTime';

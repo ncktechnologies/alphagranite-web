@@ -23,6 +23,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { LoaderCircle, Check } from "lucide-react";
 import { toast } from "sonner";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { useScheduleTemplatingMutation } from "@/store/api/job";
+import { useNavigate, useParams } from "react-router";
+import { useGetEmployeesQuery } from "@/store/api/employee";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const assignTechnicianSchema = z.object({
   technician: z.string().min(1, "Please select a technician"),
@@ -30,7 +36,6 @@ const assignTechnicianSchema = z.object({
     .string()
     .min(1, { message: "date is required." })
     .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Date must be in YYYY-MM-DD format." }),
-
 });
 
 type AssignTechnicianData = z.infer<typeof assignTechnicianSchema>;
@@ -45,26 +50,119 @@ export function AssignTechnicianModal({
   fabData?: any;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [scheduleTemplating] = useScheduleTemplatingMutation();
+  const { data: employeesData, isLoading, isError, error } = useGetEmployeesQuery({
+    limit: 100,
+  });
 
   const form = useForm<AssignTechnicianData>({
     resolver: zodResolver(assignTechnicianSchema),
     defaultValues: {
       technician: "",
-
     },
   });
 
   const onSubmit = async (values: AssignTechnicianData) => {
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1000));
-
-    toast.success(`Technician ${values.technician} assigned successfully!`);
-    setIsSubmitting(false);
-    onClose();
+    
+    try {
+      // Update the templating schedule with technician information
+      if (id) {
+        const selectedEmployee = employeesData?.data.find(
+          (emp: any) => `${emp.id}` === values.technician
+        );
+        
+        await scheduleTemplating({
+          fab_id: Number(id),
+          technician_id: Number(values.technician),
+          schedule_start_date: values.date,
+          schedule_due_date: new Date(new Date(values.date).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days after start
+          total_sqft: "0", // This would be updated with actual value
+          notes: selectedEmployee 
+            ? `Assigned to ${selectedEmployee.first_name} ${selectedEmployee.last_name} on ${values.date}`
+            : `Assigned to technician ID ${values.technician} on ${values.date}`
+        }).unwrap();
+      }
+      
+      toast.success(`Technician assigned successfully!`);
+      onClose();
+      navigate('/job/templating');
+    } catch (error) {
+      console.error("Failed to assign technician:", error);
+      toast.error("Failed to assign technician. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const technicians = ["John Doe", "Mary Smith", "Daniel Kim", "Sophia Brown"];
+  if (isLoading) {
+    return (
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-md space-y-5">
+          <DialogHeader className="border-b">
+            <DialogTitle>Schedule template</DialogTitle>
+          </DialogHeader>
 
+          <div>
+            <Skeleton className="h-6 w-32 mb-2" />
+            <Skeleton className="h-4 w-48" />
+          </div>
+
+          <div className="space-y-5">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </div>
+
+          <DialogFooter className="flex justify-end gap-2">
+            <Skeleton className="h-10 w-20" />
+            <Skeleton className="h-10 w-32" />
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (isError) {
+    return (
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-md space-y-5">
+          <DialogHeader className="border-b">
+            <DialogTitle>Schedule template</DialogTitle>
+          </DialogHeader>
+
+          <div>
+            <p className="font-bold"> {fabData?.fabId || "FAB-2024-001"}</p>
+            <p>{fabData?.jobName || "Conference Table - Quartz"}</p>
+          </div>
+
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>
+              {error ? `Failed to load employees: ${JSON.stringify(error)}` : "Failed to load employees"}
+            </AlertDescription>
+          </Alert>
+
+          <DialogFooter className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  const technicians = employeesData?.data || [];
+  
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md space-y-5">
@@ -113,9 +211,9 @@ export function AssignTechnicianModal({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {technicians.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
+                      {technicians.map((technician: any) => (
+                        <SelectItem key={technician.id} value={`${technician.id}`}>
+                          {technician.first_name} {technician.last_name}
                         </SelectItem>
                       ))}
                     </SelectContent>

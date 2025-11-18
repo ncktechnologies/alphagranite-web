@@ -9,7 +9,7 @@ import GraySidebar from '@/pages/jobs/components/job-details.tsx/GraySidebar';
 import { FileViewer } from '@/pages/jobs/roles/drafters/components';
 import { Documents } from '../components/files';
 import { ScheduleCuttingModal } from './components/SubmissionModal';
-import { jobInfo } from '@/pages/jobs/roles/templating-coordinator/components/details';
+// import { jobInfo } from '@/pages/jobs/roles/templating-coordinator/components/details';
 
 const EdgingDetailsPage = () => {
     type ViewMode = 'activity' | 'file';
@@ -28,7 +28,19 @@ const EdgingDetailsPage = () => {
         setViewMode('file');
     }
 
-
+const jobInfo = [
+        { label: 'FAB ID', value: 'FAB-2024-001' },
+        { label: 'FAB Type', value: 'FAB-toilet tiles' },
+        { label: 'Account', value: 'FAB-2024-001' },
+        { label: 'Job name', value: 'Johnson Kitchen Remodel' },
+        { label: 'Job #', value: 'Fabrication' },
+        { label: 'Area (s)', value: '2847 Oak Street, Denver, CO' },
+        { label: 'Stone type', value: 'Marble tiles' },
+        { label: 'Stone colour', value: 'Grey' },
+        { label: 'Stone thickness', value: '20cm' },
+        { label: 'Edge', value: 'Flat edge' },
+        { label: 'Total square ft', value: '234 square ft' },
+    ];
     const handleSubmitDraft = (submissionData: any) => {
         console.log('Draft submitted:', submissionData);
         setShowSubmissionModal(false);

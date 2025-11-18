@@ -8,7 +8,7 @@ import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Separator } from '@/components/ui/separator';
 import GraySidebar from '../jobs/components/job-details.tsx/GraySidebar';
 import { jobDetails } from '../jobs/components/job';
-import { jobInfo } from '../jobs/roles/templating-coordinator/components/details';
+// import { jobInfo } from '../jobs/roles/templating-coordinator/components/details';
 import { Documents } from './components/files';
 import { FileViewer } from '../jobs/roles/drafters/components';
 
@@ -28,7 +28,19 @@ const ShopDetailsPage = () => {
         setActiveFile(file);
         setViewMode('file');
     }
-
+const jobInfo = [
+        { label: 'FAB ID', value: 'FAB-2024-001' },
+        { label: 'FAB Type', value: 'FAB-toilet tiles' },
+        { label: 'Account', value: 'FAB-2024-001' },
+        { label: 'Job name', value: 'Johnson Kitchen Remodel' },
+        { label: 'Job #', value: 'Fabrication' },
+        { label: 'Area (s)', value: '2847 Oak Street, Denver, CO' },
+        { label: 'Stone type', value: 'Marble tiles' },
+        { label: 'Stone colour', value: 'Grey' },
+        { label: 'Stone thickness', value: '20cm' },
+        { label: 'Edge', value: 'Flat edge' },
+        { label: 'Total square ft', value: '234 square ft' },
+    ];
 
     const handleSubmitDraft = (submissionData: any) => {
         console.log('Draft submitted:', submissionData);

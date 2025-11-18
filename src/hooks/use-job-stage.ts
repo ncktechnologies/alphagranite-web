@@ -39,8 +39,8 @@ import type { RootState } from '@/store';
  */
 export const JOB_STAGES = {
     SALES: {
-        stage: 'sales',
-        route: '/job/sales',
+        stage: 'fab_created',
+        route: '/job/templating',
         title: 'Sales - New FAB IDs',
     },
     TEMPLATING_COORDINATOR: {
@@ -49,7 +49,7 @@ export const JOB_STAGES = {
         title: 'Templating Coordinator',
     },
     TEMPLATING_TECHNICIAN: {
-        stage: 'templating_technician',
+        stage: 'templating',
         route: '/job/templating-technician',
         title: 'Templating Technician',
     },

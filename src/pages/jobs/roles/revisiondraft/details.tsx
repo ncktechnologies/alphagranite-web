@@ -7,7 +7,7 @@ import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Separator } from '@/components/ui/separator';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { FileViewer } from '../drafters/components';
-import { jobInfo } from '../templating-coordinator/components/details';
+// import { jobInfo } from '../templating-coordinator/components/details';
 import { Documents } from '@/pages/shop/components/files';
 import { RevisionForm } from './components/SubmissionModal';
 import { TimeDisplay } from './components/DisplayTime';
@@ -27,7 +27,19 @@ const ReviewDetailsPage = () => {
         setActiveFile(file);
         setViewMode('file');
     }
-
+const jobInfo = [
+        { label: 'FAB ID', value: 'FAB-2024-001' },
+        { label: 'FAB Type', value: 'FAB-toilet tiles' },
+        { label: 'Account', value: 'FAB-2024-001' },
+        { label: 'Job name', value: 'Johnson Kitchen Remodel' },
+        { label: 'Job #', value: 'Fabrication' },
+        { label: 'Area (s)', value: '2847 Oak Street, Denver, CO' },
+        { label: 'Stone type', value: 'Marble tiles' },
+        { label: 'Stone colour', value: 'Grey' },
+        { label: 'Stone thickness', value: '20cm' },
+        { label: 'Edge', value: 'Flat edge' },
+        { label: 'Total square ft', value: '234 square ft' },
+    ];
     const handleEditRole = () => {
         setViewMode('edit');
     };

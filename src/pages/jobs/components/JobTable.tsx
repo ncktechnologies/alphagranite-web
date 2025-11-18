@@ -36,9 +36,11 @@ import { useNavigate } from 'react-router';
 interface JobTableProps {
     jobs: IJob[];
     path: string;
+    isSuperAdmin?: boolean;
+    onRowClick?: (fabId: string) => void; // Add row click handler
 }
 
-export const JobTable = ({ jobs, path }: JobTableProps) => {
+export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTableProps) => {
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 5,
@@ -62,6 +64,12 @@ export const JobTable = ({ jobs, path }: JobTableProps) => {
         navigate(`/job/${department}/${id}`);
     };
 
+    // Function to handle row click
+    const handleRowClickInternal = (fabId: string) => {
+        if (onRowClick) {
+            onRowClick(fabId);
+        }
+    };
 
     // Function to check if a column has any data
     const columnHasData = (accessorKey: string) => {
@@ -312,6 +320,7 @@ export const JobTable = ({ jobs, path }: JobTableProps) => {
                 columnsVisibility: true,
                 cellBorder: true,
             }}
+            onRowClick={onRowClick ? (row) => handleRowClickInternal(row.original.fab_id) : undefined} // Add row click handler
         >
             <Card>
                 <CardHeader className="py-3.5 border-b">

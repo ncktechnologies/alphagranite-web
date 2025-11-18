@@ -7,8 +7,8 @@ import type {
   ForgotPasswordRequest,
   ResetPasswordRequest,
   UpdateProfileRequest,
-  SignupRequest,
-  SignupResponse,
+//   SignupRequest,
+//   SignupResponse,
   PasswordChangeRequest,
   PasswordResetRequest,
   PasswordResetConfirm,
@@ -17,7 +17,8 @@ import type {
 } from "@/interfaces/pages/auth";
 
 // const baseUrl = `${import.meta.env.VITE_ALPHA_GRANITE_BASE_URL}`
-const baseUrl = "https://alpha-granite.xyz-ntrinsic.com"
+const baseUrl = `${(import.meta as any).env?.VITE_ALPHA_GRANITE_BASE_URL || ''}`
+
   const token = localStorage.getItem('token') ?? '';
 
 export const authApi = createApi({

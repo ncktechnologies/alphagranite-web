@@ -6,61 +6,97 @@ import { useLocation, Link } from 'react-router';
 import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { useGetFabsQuery } from '@/store/api/job';
+import { Fab } from '@/store/api/job';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
+
+// Format date to "08 Oct, 2025" format
+const formatDate = (dateString?: string): string => {
+  if (!dateString) return '-';
+  
+  try {
+    const date = new Date(dateString);
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = date.toLocaleString('en-US', { month: 'short' });
+    const year = date.getFullYear();
+    return `${day} ${month}, ${year}`;
+  } catch (error) {
+    return '-';
+  }
+};
+
+// Transform Fab data to match IJob interface
+const transformFabToJob = (fab: Fab): IJob => {
+  return {
+    id: fab.id,
+    fab_type: fab.fab_type,
+    fab_id: String(fab.id), // Using fab.id as fab_id since there's no fab_id in Fab type
+    job_name: `Job ${fab.job_id}`, // Placeholder - would need actual job data
+    job_no: String(fab.job_id), // Using job_id as job_no
+    date: fab.created_at, // Using created_at as date
+    // Optional fields with default values
+    acct_name: '',
+    template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-', // Format the date
+    template_received: fab.current_stage === 'completed' ? 'Yes' : 'No', // Simplified logic
+    templater: fab.technician_name || '-', // Use technician name if available
+    no_of_pieces: '',
+    total_sq_ft: String(fab.total_sqft),
+    revenue: '',
+    revised: '',
+    sct_completed: '',
+    draft_completed: '',
+    gp: ''
+  };
+};
 
 export function TemplatingPage() {
+    // Fetch all fabs
+    const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
+        limit: 100,
+    });
 
-    const jobsData: IJob[] = [
-        {
-            id: 1,
-            fab_type: 'Standard',
-            fab_id: '14425',
-            job_name: 'Preston kitchen floor',
-            job_no: '9999',
-            // acct_name: 'Waller 101',
-            template_schedule: '-',
-            template_received: 'No',
-            templater: '-',
-            date: '08 October, 2025',
-        },
-        {
-            id: 2,
-            fab_type: 'FAB only',
-            fab_id: '5644',
-            job_name: 'Preston kitchen floor',
-            job_no: '4555',
-            // acct_name: 'Waller 101',
-            template_schedule: '08 Oct, 2025',
-            template_received: 'Yes',
-            templater: 'Jenny Wilson',
-            date: '08 October, 2025',
-        },
-        {
-            id: 3,
-            fab_type: 'Standard',
-            fab_id: '33034',
-            job_name: 'Preston kitchen floor',
-            job_no: '9999',
-            // acct_name: 'Waller 101',
-            template_schedule: '-',
-            template_received: 'No',
-            templater: '-',
-            date: '10 October, 2025',
-        },
-        {
-            id: 4,
-            fab_type: 'FAB only',
-            fab_id: '60055',
-            job_name: 'Preston kitchen floor',
-            job_no: '5666',
-            // acct_name: 'Waller 101',
-            template_schedule: '08 Oct, 2025',
-            template_received: 'Yes',
-            templater: 'Darlene Robertson',
-            date: '10 October, 2025',
-        },
-    ];
+    if (isLoading) {
+        return (
+            <Container>
+                <Toolbar>
+                    <ToolbarHeading
+                        title="Templating"
+                        description="Manage and track all Alpha Granite templating jobs"
+                    />
+                </Toolbar>
+                <div className="space-y-4 mt-4">
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                </div>
+            </Container>
+        );
+    }
 
+    if (isError) {
+        return (
+            <Container>
+                <Toolbar>
+                    <ToolbarHeading
+                        title="Templating"
+                        description="Manage and track all Alpha Granite templating jobs"
+                    />
+                </Toolbar>
+                <Alert variant="destructive" className="mt-4">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>
+                        {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : "Failed to load FAB data"}
+                    </AlertDescription>
+                </Alert>
+            </Container>
+        );
+    }
 
+    // Transform Fab data to IJob format
+    const jobsData: IJob[] = fabs ? fabs.map(transformFabToJob) : [];
 
     // Filter logic
     const unscheduledJobs = jobsData.filter(job => job.template_schedule === '-' || job.template_schedule === '');

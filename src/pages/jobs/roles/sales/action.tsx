@@ -10,26 +10,45 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useState } from 'react';
-import DialogContent, { Dialog, DialogBody, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useState, useContext, createContext } from 'react';
 import { IJob } from '../../components/job';
+import { useIsSuperAdmin } from '@/hooks/use-permission';
 
-interface ActionsCellProps {
-// id:string
-row: Row<IJob>,
-onView?: () => void
+// Create a context to manage the current stage view state at a higher level
+interface CurrentStageContextType {
+  openCurrentStageView: (fabId: string, jobName: string) => void;
 }
 
-function ActionsCell({  row,onView}: ActionsCellProps) {
+const CurrentStageContext = createContext<CurrentStageContextType | null>(null);
+
+// Export context provider component to be used at a higher level
+export const CurrentStageProvider = CurrentStageContext.Provider;
+
+// Hook to access the current stage context
+// export const useCurrentStage = () => {
+//   const context = useContext(CurrentStageContext);
+//   if (!context) {
+//     throw new Error('useCurrentStage must be used within a CurrentStageProvider');
+//   }
+//   return context;
+// };
+
+interface ActionsCellProps {
+  row: Row<IJob>;
+  onView?: () => void;
+}
+
+function ActionsCell({ row, onView }: ActionsCellProps) {
   const bulletin = row.original;
-  const [selectedBulletin, setSelectedBulletin] = useState<IJob | null>(null);
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const isSuperAdmin = useIsSuperAdmin();
+  // const { openCurrentStageView } = useCurrentStage();
 
   const handleViewDetails = () => {
-    setSelectedBulletin(bulletin);
-    // setDetailsOpen(true);
+    if (onView) onView();
+  };
+
+  const handleViewCurrentStage = () => {
+    openCurrentStageView(bulletin.fab_id, bulletin.job_name || 'Unknown Job');
   };
 
   return (
@@ -41,13 +60,20 @@ function ActionsCell({  row,onView}: ActionsCellProps) {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          {/* <DropdownMenuLabel>Actions</DropdownMenuLabel> */}
-          <DropdownMenuItem onClick={onView}>
-           View details
+          <DropdownMenuItem onClick={handleViewDetails}>
+            View details
           </DropdownMenuItem>
+          {/* {isSuperAdmin && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleViewCurrentStage}>
+                <Eye className="mr-2 h-4 w-4" />
+                View Current Stage
+              </DropdownMenuItem>
+            </>
+          )} */}
         </DropdownMenuContent>
       </DropdownMenu>
-     
     </div>
   );
 }

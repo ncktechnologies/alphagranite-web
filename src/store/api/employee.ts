@@ -2,7 +2,8 @@
 import { axiosBaseQuery } from "@/services/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
 
-const baseUrl = "https://alpha-granite.xyz-ntrinsic.com";
+// const baseUrl = "https://alpha-granite.xyz-ntrinsic.com";
+const baseUrl = `${(import.meta as any).env?.VITE_ALPHA_GRANITE_BASE_URL || ''}`
 
 // Employee Types
 export interface Employee {
@@ -201,6 +202,22 @@ export const employeeApi = createApi({
                 }),
                 transformResponse: (response: any) => response.data || response,
             }),
+            
+            // Get sales persons
+            getSalesPersons: build.query<any, void>({
+                query: () => ({
+                    url: "/api/v1/users/sales-persons",
+                    method: "get"
+                }),
+                transformResponse: (response: any) => {
+                    // Handle the response format with success, message, and data properties
+                    if (response && response.data) {
+                        return response.data;
+                    }
+                    return response;
+                },
+                providesTags: ["Employee"],
+            }),
         };
     },
 });
@@ -218,4 +235,5 @@ export const {
     useBulkToggleEmployeeActivationMutation,
     useCheckEmailUniqueQuery,
     useLazyCheckEmailUniqueQuery,
+    useGetSalesPersonsQuery,
 } = employeeApi;
