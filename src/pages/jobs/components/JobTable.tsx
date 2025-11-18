@@ -49,7 +49,6 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
     const [sorting, setSorting] = useState<SortingState>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [dateFilter, setDateFilter] = useState<string>('all'); // For date filtering
-    const [stageFilter, setStageFilter] = useState<string>('all'); // For stage filtering
 
     const filteredData = useMemo(() => {
         let result = jobs;
@@ -71,13 +70,8 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
             result = result.filter((job) => job.date?.includes(dateFilter));
         }
         
-        // Stage filter (only for super admins)
-        if (isSuperAdmin && stageFilter !== 'all') {
-            result = result.filter((job) => job.current_stage === stageFilter);
-        }
-        
         return result;
-    }, [searchQuery, dateFilter, stageFilter, jobs, isSuperAdmin]);
+    }, [searchQuery, dateFilter, jobs]);
 
     const navigate = useNavigate();
 
@@ -89,6 +83,20 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
     const handleRowClickInternal = (job: IJob) => {
         if (onRowClick) {
             onRowClick(job.fab_id);
+        }
+    };
+
+    // Function to handle stage filter change - navigate to the selected stage route
+    const handleStageFilterChange = (stageValue: string) => {
+        if (stageValue === 'all') {
+            // Stay on current page or go to a default page
+            return;
+        }
+        
+        // Find the stage that matches the selected value
+        const selectedStage = Object.values(JOB_STAGES).find(stage => stage.stage === stageValue);
+        if (selectedStage) {
+            navigate(selectedStage.route);
         }
     };
 
@@ -379,9 +387,9 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                             </Select>
                             {/* Stage filter - only visible to super admins */}
                             {isSuperAdmin && (
-                                <Select value={stageFilter} onValueChange={setStageFilter}>
+                                <Select onValueChange={handleStageFilterChange}>
                                     <SelectTrigger className="w-[170px] h-[34px]">
-                                        <SelectValue placeholder="Filter by stage" />
+                                        <SelectValue placeholder="Go to stage" />
                                     </SelectTrigger>
                                     <SelectContent className="w-48">
                                         <SelectItem value="all">All Stages</SelectItem>
