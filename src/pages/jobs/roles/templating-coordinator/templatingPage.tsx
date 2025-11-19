@@ -33,7 +33,7 @@ const transformFabToJob = (fab: any): IJob => {
   return {
     id: fab.id,
     fab_type: fab.fab_type,
-    fab_id: `FAB-${fab.id}`,
+    fab_id: `${fab.id}`,
     job_name: fab.job_details?.name || `Job ${fab.job_id}`,
     job_no: fab.job_details?.job_number || String(fab.job_id),
     date: fab.created_at,
