@@ -24,13 +24,13 @@ import { ArrowLeft, Plus, AlertCircle, Check, LoaderCircleIcon, Search, ChevronD
 import { Link, useNavigate } from 'react-router-dom';
 import { RiInformationFill } from '@remixicon/react';
 import { toast } from 'sonner';
-import { 
-  useGetFabTypesQuery, 
-  useGetAccountsQuery, 
-  useGetStoneTypesQuery, 
-  useGetStoneColorsQuery, 
-  useGetStoneThicknessesQuery, 
-  useGetEdgesQuery, 
+import {
+  useGetFabTypesQuery,
+  useGetAccountsQuery,
+  useGetStoneTypesQuery,
+  useGetStoneColorsQuery,
+  useGetStoneThicknessesQuery,
+  useGetEdgesQuery,
   useCreateFabMutation,
   useCreateAccountMutation,
   useCreateStoneThicknessMutation,
@@ -77,56 +77,56 @@ const NewFabIdForm = () => {
   const navigate = useNavigate();
 
   // API hooks for dropdown data with error handling
-  const { 
-    data: fabTypesData, 
-    isLoading: isLoadingFabTypes, 
+  const {
+    data: fabTypesData,
+    isLoading: isLoadingFabTypes,
     isError: isFabTypesError,
     error: fabTypesError
   } = useGetFabTypesQuery();
-  
-  const { 
-    data: accountsData, 
-    isLoading: isLoadingAccounts, 
+
+  const {
+    data: accountsData,
+    isLoading: isLoadingAccounts,
     isError: isAccountsError,
     error: accountsError
   } = useGetAccountsQuery({ limit: 1000 });
-  
-  const { 
-    data: stoneTypesData, 
-    isLoading: isLoadingStoneTypes, 
+
+  const {
+    data: stoneTypesData,
+    isLoading: isLoadingStoneTypes,
     isError: isStoneTypesError,
     error: stoneTypesError
   } = useGetStoneTypesQuery({ limit: 1000 });
-  
-  const { 
-    data: stoneColorsData, 
-    isLoading: isLoadingStoneColors, 
+
+  const {
+    data: stoneColorsData,
+    isLoading: isLoadingStoneColors,
     isError: isStoneColorsError,
     error: stoneColorsError
   } = useGetStoneColorsQuery({ limit: 1000 });
-  
-  const { 
-    data: stoneThicknessesData, 
-    isLoading: isLoadingStoneThicknesses, 
+
+  const {
+    data: stoneThicknessesData,
+    isLoading: isLoadingStoneThicknesses,
     isError: isStoneThicknessesError,
     error: stoneThicknessesError
   } = useGetStoneThicknessesQuery({ limit: 1000 });
-  
-  const { 
-    data: edgesData, 
-    isLoading: isLoadingEdges, 
+
+  const {
+    data: edgesData,
+    isLoading: isLoadingEdges,
     isError: isEdgesError,
     error: edgesError
   } = useGetEdgesQuery({ limit: 1000 });
-  
+
   // Fetch jobs for linked dropdowns
-  const { 
-    data: jobsData, 
-    isLoading: isLoadingJobs, 
+  const {
+    data: jobsData,
+    isLoading: isLoadingJobs,
     isError: isJobsError,
     error: jobsError
   } = useGetJobsQuery({ limit: 1000 });
-  
+
   // Mutations
   const [createFab] = useCreateFabMutation();
   const [createAccount] = useCreateAccountMutation();
@@ -225,19 +225,19 @@ const NewFabIdForm = () => {
   const stoneColors = !isStoneColorsError && Array.isArray(stoneColorsData) ? (stoneColorsData?.map((color: any) => color.name) || []) : [];
   const edgeOptions = !isEdgesError && Array.isArray(edgesData) ? (edgesData?.map((edge: any) => edge.name) || []) : [];
   const { user } = useAuth();
-  
+
   // Get sales persons using the new API endpoint
-  const { 
+  const {
     data: salesPersonsData,
     isLoading: isLoadingSalesPersons,
     isError: isSalesPersonsError
   } = useGetSalesPersonsQuery();
-  
+
   // Extract sales persons from the response
   const salesPersons = Array.isArray(salesPersonsData) ? salesPersonsData : [];
-  
+
   // Set default sales person to current user
-  
+
 
   // Functions to add new items
   const handleAddThickness = async () => {
@@ -305,7 +305,7 @@ const NewFabIdForm = () => {
       const selectedEdge = Array.isArray(edgesData) ? edgesData?.find((edge: any) => edge.name === values.edge) : undefined;
 
       // Find the selected sales person ID
-      const selectedSalesPerson = salesPersons.find((person: any) => 
+      const selectedSalesPerson = salesPersons.find((person: any) =>
         person.name === values.selectedSalesPerson
       );
 
@@ -316,7 +316,7 @@ const NewFabIdForm = () => {
         if (values.jobName) {
           selectedJob = jobsData.find((job: any) => job.name === values.jobName);
         }
-        
+
         // If that doesn't work, try to match by job number
         if (!selectedJob && values.jobNumber) {
           selectedJob = jobsData.find((job: any) => job.job_number === values.jobNumber);
@@ -334,7 +334,7 @@ const NewFabIdForm = () => {
         if (!selectedEdge) missingFields.push('Edge');
         if (!selectedSalesPerson) missingFields.push('Sales Person');
         if (!selectedJob) missingFields.push('Job');
-        
+
         throw new Error('Please select valid options for all dropdown fields. Missing: ' + missingFields.join(', '));
       }
 
@@ -380,7 +380,7 @@ const NewFabIdForm = () => {
         },
       );
       form.reset();
-      
+
       // Navigate based on user's department/role instead of always going to templating
       // For sales role, navigate back to sales jobs page
       navigate('/job/sales');
@@ -636,7 +636,14 @@ const NewFabIdForm = () => {
                           name="jobName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Job Name</FormLabel>
+                              <FormLabel>Job Name <span>
+                                <Link to="/create-jobs">
+                                  <Button variant="ghost" className="text-primary inline-flex items-center ml-2" >
+                                    <Plus />
+                                    New Job
+                                  </Button>
+                                </Link>
+                              </span></FormLabel>
                               <Select onValueChange={(value) => {
                                 field.onChange(value);
                                 // Auto-populate job number
@@ -949,8 +956,8 @@ const NewFabIdForm = () => {
                                 </FormControl>
                                 <SelectContent>
                                   {salesPersons.map((person: any) => (
-                                    <SelectItem 
-                                      key={person.id} 
+                                    <SelectItem
+                                      key={person.id}
                                       value={person.name}
                                     >
                                       {person.name}
