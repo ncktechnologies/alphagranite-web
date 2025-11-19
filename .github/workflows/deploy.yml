@@ -26,6 +26,8 @@ jobs:
           cd /var/www/html/carpediem/alphagranite-web
 
           # Pull latest updates
+          git stash
+
           git pull
 
           # Install dependencies
