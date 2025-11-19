@@ -18,6 +18,7 @@ import { PredraftPage } from '@/pages/jobs/roles/predraft/PredraftPage';
 import { DraftRevisionPage } from '@/pages/jobs/roles/revisiondraft/BackSalesPage';
 import { ReviewDetailsPage } from '@/pages/jobs/roles/revisiondraft/details';
 import { SalesPage } from '@/pages/jobs/roles/sales/SalesPage';
+import { SalesDetailsPage } from '@/pages/jobs/roles/sales/Details';
 import { TechnicianDetailsPage } from '@/pages/jobs/roles/technician-templater/components/details';
 import { TemplatingDetailsPage } from '@/pages/jobs/roles/technician-templater/components/TemplatingDetailsPage';
 import { TechnicianPage } from '@/pages/jobs/roles/technician-templater/TechnicianPage';
@@ -38,6 +39,7 @@ import { JobsSection } from '@/pages/jobs/JobsSection';
 
 import { Navigate, Route, Routes } from 'react-router';
 import { NewFabIdForm } from '@/pages/jobs/roles';
+import { EditFabIdForm } from '@/pages/jobs/roles/sales/EditFabIdForm';
 
 export function AppRoutingSetup() {
   return (
@@ -68,6 +70,22 @@ export function AppRoutingSetup() {
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <SalesPage/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job/sales/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <SalesDetailsPage/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job/sales/edit/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <EditFabIdForm/>
               // </ProtectedRoute>
             }
           />

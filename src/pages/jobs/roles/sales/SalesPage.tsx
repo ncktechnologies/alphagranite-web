@@ -89,9 +89,15 @@ export function SalesPage() {
                                 New FAB ID
                             </Button>
                         </Link>
+                        <Link to="/create-jobs">
+                            <Button className="">
+                                <Plus/>
+                                New Job
+                            </Button>
+                        </Link>
                     </ToolbarActions>
                 </Toolbar>
-                <JobTable jobs={transformedJobs} path='templating' isSuperAdmin={isUserSuperAdmin}/>
+                <JobTable jobs={transformedJobs} path='sales' isSuperAdmin={isUserSuperAdmin}/>
             </Container>
         </div>
     );

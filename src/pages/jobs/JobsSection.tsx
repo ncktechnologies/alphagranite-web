@@ -70,11 +70,7 @@ export const JobsSection = () => {
       const jobPayload = {
         name: data.name,
         job_number: data.job_number,
-        account_id: data.account_id,
-        description: data.description,
-        priority: data.priority,
-        start_date: data.start_date,
-        due_date: data.due_date,
+        project_value: data.project_value,
       };
 
       if (viewMode === 'new') {
@@ -122,7 +118,6 @@ export const JobsSection = () => {
         <JobDetailsView 
           job={selectedJobDetails} 
           onEdit={handleEditJob} 
-          onDelete={handleDelete}
         />
       );
     }

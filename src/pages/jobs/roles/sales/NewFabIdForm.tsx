@@ -172,7 +172,7 @@ const NewFabIdForm = () => {
       totalSqFt: '',
       selectedSalesPerson: '',
       notes: '',
-      templateNotNeeded: true,
+      templateNotNeeded: false,
       draftNotNeeded: false,
       slabSmithCustNotNeeded: false,
       sctNotNeeded: false,

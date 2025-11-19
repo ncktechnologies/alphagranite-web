@@ -12,13 +12,13 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { LoaderCircle, Check, Undo2, Save } from "lucide-react";
+import { LoaderCircle, Check, Undo2, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { AssignTechnicianModal } from "./AssignTech";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate, useParams } from "react-router";
-import { useGetFabByIdQuery } from "@/store/api/job";
+import { useGetFabByIdQuery, useGetTemplatingByFabIdQuery, useUnscheduleTemplatingMutation } from "@/store/api/job";
 
 const reviewChecklistSchema = z.object({
     customerInfo: z.boolean(),
@@ -37,6 +37,12 @@ export function ReviewChecklistForm() {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const { data: fab } = useGetFabByIdQuery(Number(id));
+    
+    // Get templating data to check if there's a schedule
+    const { data: templatingData, isLoading: isTemplatingLoading } = useGetTemplatingByFabIdQuery(Number(id));
+    
+    // Mutation for unscheduling
+    const [unscheduleTemplating] = useUnscheduleTemplatingMutation();
 
     const form = useForm<ReviewChecklistData>({
         resolver: zodResolver(reviewChecklistSchema),
@@ -50,16 +56,59 @@ export function ReviewChecklistForm() {
     });
 
     const onSubmit = async (values: ReviewChecklistData) => {
-        // Check if all required checkboxes are checked
-        if (!values.customerInfo || !values.materialSpecs || !values.stoneType || 
-            !values.stoneColour || !values.fabType) {
-            toast.error("Please complete all required checklist items");
+        // Check if any checkboxes are checked (not all required)
+        const anyChecked = values.customerInfo || values.materialSpecs || values.stoneType || 
+            values.stoneColour || values.fabType;
+            
+        if (!anyChecked) {
+            toast.error("Please check at least one checklist item");
             return;
         }
 
         // Open the assign technician modal instead of submitting directly
         setOpenModal(true);
     };
+    
+    const handleUnschedule = async () => {
+        try {
+            if (templatingData?.data?.id) {
+                await unscheduleTemplating({ 
+                    templating_id: templatingData.data.id
+                }).unwrap();
+                toast.success('Templating unscheduled successfully');
+            } else {
+                // No templating schedule found, which is not an error condition
+                toast.info('No templating schedule found for this job');
+            }
+        } catch (error) {
+            console.error('Failed to unschedule templating:', error);
+            toast.error('Failed to unschedule templating');
+        }
+    };
+
+    // Check if there's a technician assigned and a template schedule
+    const isScheduled = !!templatingData?.data?.technician_name && !!templatingData?.data?.schedule_start_date;
+
+    // Show loading state while checking templating data
+    if (isTemplatingLoading) {
+        return (
+            <div className="space-y-4">
+                <div className="space-y-4">
+                    <h2 className="text-base font-bold text-text">Review Checklist</h2>
+                    {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="h-6 bg-gray-200 rounded animate-pulse"></div>
+                    ))}
+                </div>
+                <div className="h-24 bg-gray-200 rounded animate-pulse"></div>
+                <Separator className="my-4" />
+                <div className="space-y-3 mt-6">
+                    <div className="h-12 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-12 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-12 bg-gray-200 rounded animate-pulse"></div>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <>
@@ -113,16 +162,31 @@ export function ReviewChecklistForm() {
                     <Separator className="my-4" />
 
                     <div className="space-y-3 mt-6">
-                        <Button className="w-full py-6 text-base" type="submit" disabled={isSubmitting}>
-                            {isSubmitting ? (
-                                <span className="flex items-center gap-2">
-                                    <LoaderCircle className="w-4 h-4 animate-spin" />
-                                    Verifying...
-                                </span>
-                            ) : (
-                                " Schedule for templating"
-                            )}
-                        </Button>
+                        {!isScheduled && (
+                            <Button className="w-full py-6 text-base" type="submit" disabled={isSubmitting}>
+                                {isSubmitting ? (
+                                    <span className="flex items-center gap-2">
+                                        <LoaderCircle className="w-4 h-4 animate-spin" />
+                                        Verifying...
+                                    </span>
+                                ) : (
+                                    " Schedule for templating"
+                                )}
+                            </Button>
+                        )}
+                        
+                        {isScheduled && (
+                            <Button 
+                                variant="outline" 
+                                className="w-full text-secondary font-bold py-6 text-base"
+                                onClick={handleUnschedule}
+                                type="button"
+                            >
+                                <X className="mr-2 h-4 w-4" />
+                                Unschedule
+                            </Button>
+                        )}
+                        
                         <Button variant="outline" className="w-full text-secondary font-bold py-6 text-base">
                             <Undo2 />
                             Return to sales

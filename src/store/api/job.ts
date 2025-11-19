@@ -10,11 +10,7 @@ export interface Job {
     id: number;
     name: string;
     job_number: string;
-    account_id: number;
-    description?: string;
-    priority?: string;
-    start_date?: string;
-    due_date?: string;
+    project_value?: string;
     status_id: number;
     created_at: string;
     created_by: number;
@@ -25,21 +21,13 @@ export interface Job {
 export interface JobCreate {
     name: string;
     job_number: string;
-    account_id: number;
-    description?: string;
-    priority?: string;
-    start_date?: string;
-    due_date?: string;
+    project_value?: string;
 }
 
 export interface JobUpdate {
     name?: string;
     job_number?: string;
-    account_id?: number;
-    description?: string;
-    priority?: string;
-    start_date?: string;
-    due_date?: string;
+    project_value?: string;
 }
 
 // Fab Types
@@ -597,11 +585,10 @@ export const jobApi = createApi({
                 invalidatesTags: ["Fab"],
             }),
 
-            unscheduleTemplating: build.mutation<any, { templating_id: number; updated_by?: number }>({
-                query: ({ templating_id, updated_by }) => ({
-                    url: "/templating/unschedule",
-                    method: "post",
-                    data: { templating_id, updated_by } // Send as request body
+            unscheduleTemplating: build.mutation<any, { templating_id: number }>({
+                query: ({ templating_id }) => ({
+                    url: `/templating/${templating_id}/unschedule`,
+                    method: "put"
                 }),
                 invalidatesTags: ["Fab"],
             }),

@@ -56,7 +56,7 @@ export function PredraftPage() {
     
     // Fetch fabs with role-based filtering
     const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
-        current_stage: isSuperAdmin ? 'predraft' : currentStageFilter,
+        current_stage: isSuperAdmin ? 'templating_technician' : currentStageFilter,
         limit: 100,
     });
 

@@ -29,20 +29,20 @@ const formatDate = (dateString?: string): string => {
 };
 
 // Transform Fab data to match IJob interface
-const transformFabToJob = (fab: Fab): IJob => {
+const transformFabToJob = (fab: any): IJob => {
   return {
     id: fab.id,
     fab_type: fab.fab_type,
-    fab_id: String(fab.id), // Using fab.id as fab_id since there's no fab_id in Fab type
-    job_name: `Job ${fab.job_id}`, // Placeholder - would need actual job data
-    job_no: String(fab.job_id), // Using job_id as job_no
-    date: fab.created_at, // Using created_at as date
-    current_stage: fab.current_stage, // Add current_stage
+    fab_id: `FAB-${fab.id}`,
+    job_name: fab.job_details?.name || `Job ${fab.job_id}`,
+    job_no: fab.job_details?.job_number || String(fab.job_id),
+    date: fab.created_at,
+    current_stage: fab.current_stage,
     // Optional fields with default values
-    acct_name: '',
-    template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-', // Format the date
-    template_received: fab.current_stage === 'completed' ? 'Yes' : 'No', // Simplified logic
-    templater: fab.technician_name || '-', // Use technician name if available
+    acct_name: fab.account_name || '',
+    template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
+    template_received: fab.current_stage === 'completed' ? 'Yes' : 'No',
+    templater: fab.technician_name || '-',
     no_of_pieces: '',
     total_sq_ft: String(fab.total_sqft),
     revenue: '',

@@ -21,82 +21,29 @@ export function TemplatingDetailsPage() {
       title: "Job Details",
       type: "details",
       items: [
-        { label: "FAB ID", value: String(fab.id) },
+        { label: "FAB ID", value: `FAB-${fab.id}` },
+        { label: "Job Name", value: fab.job_details?.name || `Job ${fab.job_id}` },
+        { label: "Job Number", value: fab.job_details?.job_number || String(fab.job_id) },
         { label: "Area", value: String(fab.input_area) },
         { label: "Material", value: `${fab.stone_type_name || 'N/A'} - ${fab.stone_thickness_value || 'N/A'}` },
         { label: 'Total square ft', value: String(fab.total_sqft) },
         { label: "Scheduled Date", value: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',},
         { label: "Assigned to", value: String(fab.technician_name) },
-
       ],
     },
-   
-   
-    // {
-    //   title: "Slab Smith",
-    //   type: "details",
-    //   items: [
-    //     { label: "Customer Needed", value: fab.slab_smith_cust_needed ? 'Yes' : 'No' },
-    //     { label: "AG Needed", value: fab.slab_smith_ag_needed ? 'Yes' : 'No' },
-    //   ],
-    // },
-    // {
-    //   title: "Personnel",
-    //   type: "details",
-    //   items: [
-    //     { label: "Sales Person ID", value: String(fab.sales_person_id) },
-    //     { label: "Created By", value: String(fab.created_by) },
-    //     { label: "Updated By", value: String(fab.updated_by || 'N/A') },
-    //   ],
-    // },
   ] : [
     {
       title: "Job Details",
       type: "details",
       items: [
         { label: "FAB ID", value: id || 'N/A' },
-        { label: "Job ID", value: 'N/A' },
-        { label: "FAB Type", value: 'N/A' },
-        { label: "Total Sq Ft", value: 'N/A' },
-        { label: "Current Stage", value: 'N/A' },
-        { label: "Created At", value: 'N/A' },
-      ],
-    },
-    {
-      title: "Materials",
-      type: "details",
-      items: [
-        { label: "Stone Type ID", value: 'N/A' },
-        { label: "Stone Color ID", value: 'N/A' },
-        { label: "Thickness ID", value: 'N/A' },
-        { label: "Edge ID", value: 'N/A' },
-      ],
-    },
-    {
-      title: "Requirements",
-      type: "details",
-      items: [
-        { label: "Template Needed", value: 'N/A' },
-        { label: "Drafting Needed", value: 'N/A' },
-        { label: "SCT Needed", value: 'N/A' },
-        { label: "Final Programming Needed", value: 'N/A' },
-      ],
-    },
-    {
-      title: "Slab Smith",
-      type: "details",
-      items: [
-        { label: "Customer Needed", value: 'N/A' },
-        { label: "AG Needed", value: 'N/A' },
-      ],
-    },
-    {
-      title: "Personnel",
-      type: "details",
-      items: [
-        { label: "Sales Person ID", value: 'N/A' },
-        { label: "Created By", value: 'N/A' },
-        { label: "Updated By", value: 'N/A' },
+        { label: "Job Name", value: 'N/A' },
+        { label: "Job Number", value: 'N/A' },
+        { label: "Area", value: 'N/A' },
+        { label: "Material", value: 'N/A' },
+        { label: "Total square ft", value: 'N/A' },
+        { label: "Scheduled Date", value: 'N/A' },
+        { label: "Assigned to", value: 'N/A' },
       ],
     },
   ];

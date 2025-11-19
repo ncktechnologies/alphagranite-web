@@ -4,20 +4,13 @@ import { Job } from '@/store/api/job';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { ChevronLeft, Save } from 'lucide-react';
-import { useGetAccountsQuery } from '@/store/api/job';
 
 export interface JobFormData {
   name: string;
   job_number: string;
-  account_id: number;
-  description?: string;
-  priority?: string;
-  start_date?: string;
-  due_date?: string;
+  project_value: string;
 }
 
 interface JobFormProps {
@@ -31,26 +24,15 @@ export const JobForm = ({ mode, job, onBack, onSave }: JobFormProps) => {
   const [formData, setFormData] = useState<JobFormData>({
     name: '',
     job_number: '',
-    account_id: 0,
-    description: '',
-    priority: '',
-    start_date: '',
-    due_date: '',
+    project_value: '',
   });
-
-  const { data: accountsData } = useGetAccountsQuery({ limit: 100 });
-  const accounts = accountsData || [];
 
   useEffect(() => {
     if (job && mode === 'edit') {
       setFormData({
         name: job.name || '',
         job_number: job.job_number || '',
-        account_id: job.account_id || 0,
-        description: job.description || '',
-        priority: job.priority || '',
-        start_date: job.start_date || '',
-        due_date: job.due_date || '',
+        project_value: job.project_value || '',
       });
     }
   }, [job, mode]);
@@ -105,70 +87,18 @@ export const JobForm = ({ mode, job, onBack, onSave }: JobFormProps) => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="account_id">Account *</Label>
-                <Select
-                  value={formData.account_id.toString()}
-                  onValueChange={(value) => handleChange('account_id', parseInt(value))}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select account" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id.toString()}>
-                        {account.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="project_value">Project Value *</Label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-500">$</span>
+                  <Input
+                    id="project_value"
+                    value={formData.project_value}
+                    onChange={(e) => handleChange('project_value', e.target.value)}
+                    className="pl-8"
+                    required
+                  />
+                </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="priority">Priority</Label>
-                <Select
-                  value={formData.priority || ''}
-                  onValueChange={(value) => handleChange('priority', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="low">Low</SelectItem>
-                    <SelectItem value="medium">Medium</SelectItem>
-                    <SelectItem value="high">High</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="start_date">Start Date</Label>
-                <Input
-                  id="start_date"
-                  type="date"
-                  value={formData.start_date}
-                  onChange={(e) => handleChange('start_date', e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="due_date">Due Date</Label>
-                <Input
-                  id="due_date"
-                  type="date"
-                  value={formData.due_date}
-                  onChange={(e) => handleChange('due_date', e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => handleChange('description', e.target.value)}
-                rows={4}
-              />
             </div>
 
             <div className="flex justify-end space-x-3">

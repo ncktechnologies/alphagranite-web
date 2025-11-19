@@ -23,9 +23,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { LoaderCircle, Check } from "lucide-react";
 import { toast } from "sonner";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { useGetEmployeesQuery } from "@/store/api/employee"; // Import employees query
+import { useGetDepartmentsQuery } from "@/store/api/department"; // Import departments query
+import { useNavigate } from "react-router"; // Import navigate
 
-const assignTechnicianSchema = z.object({
-  technician: z.string().min(1, "Please select a technician"),
+const assignDrafterSchema = z.object({
+  drafter: z.string().optional(), // Make drafter optional
   date: z
     .string()
     .min(1, { message: "date is required." })
@@ -33,7 +36,7 @@ const assignTechnicianSchema = z.object({
 
 });
 
-type AssignTechnicianData = z.infer<typeof assignTechnicianSchema>;
+type AssignDrafterData = z.infer<typeof assignDrafterSchema>;
 
 export function AssignTechnicianModal({
   open,
@@ -45,25 +48,44 @@ export function AssignTechnicianModal({
   fabData?: any;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate(); // Add navigate hook
 
-  const form = useForm<AssignTechnicianData>({
-    resolver: zodResolver(assignTechnicianSchema),
+  // Fetch employees and departments
+  const { data: employeesData, isLoading: isEmployeesLoading } = useGetEmployeesQuery();
+  const { data: departmentsData } = useGetDepartmentsQuery();
+  
+  // Find the drafters department
+  const draftersDepartment = departmentsData?.items?.find((dept: any) => 
+    dept.name.toLowerCase().includes('draft') || dept.name.toLowerCase().includes('pre')
+  );
+  
+  // Get drafters from employees data
+  const drafters = draftersDepartment && employeesData?.data ? 
+    employeesData.data.filter((emp: any) => emp.department_id === draftersDepartment.id) : [];
+
+  const form = useForm<AssignDrafterData>({
+    resolver: zodResolver(assignDrafterSchema),
     defaultValues: {
-      technician: "",
-
+      drafter: "none", // Update default value to match the new "none" option
     },
   });
 
-  const onSubmit = async (values: AssignTechnicianData) => {
+  const onSubmit = async (values: AssignDrafterData) => {
     setIsSubmitting(true);
+    // Simulate API call
     await new Promise((r) => setTimeout(r, 1000));
 
-    toast.success(`Technician ${values.technician} assigned successfully!`);
+    if (values.drafter && values.drafter !== "none") {
+      toast.success(`Drafter assigned successfully!`);
+    } else {
+      toast.success(`Template scheduled without drafter assignment!`);
+    }
+    
     setIsSubmitting(false);
     onClose();
+    // Navigate back to predraft page
+    navigate('/job/predraft');
   };
-
-  const technicians = ["John Doe", "Mary Smith", "Daniel Kim", "Sophia Brown"];
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -93,7 +115,7 @@ export function AssignTechnicianModal({
                         const formatted = date?.toISOString().split("T")[0] // "YYYY-MM-DD"
                         field.onChange(formatted)
                       }}
-                      placeholder="Schdule date"
+                      placeholder="Schedule date"
                     />
                   </FormControl>
                   <FormMessage>{fieldState.error?.message}</FormMessage>
@@ -102,31 +124,36 @@ export function AssignTechnicianModal({
             />
             <FormField
               control={form.control}
-              name="technician"
+              name="drafter"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Technician *</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <FormLabel>Drafter (Optional)</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value} disabled={isEmployeesLoading}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select technician" />
+                        <SelectValue placeholder="Select drafter (optional)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {technicians.map((t) => (
-                        <SelectItem key={t} value={t}>
-                          {t}
-                        </SelectItem>
-                      ))}
+                      {isEmployeesLoading ? (
+                        <SelectItem value="loading" disabled>Loading drafters...</SelectItem>
+                      ) : (
+                        <>
+                          {/* Empty option for no drafter selection */}
+                          <SelectItem value="none">No drafter assigned</SelectItem>
+                          {drafters.map((drafter: any) => (
+                            <SelectItem key={drafter.id} value={drafter.id.toString()}>
+                              {drafter.first_name} {drafter.last_name}
+                            </SelectItem>
+                          ))}
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
                 </FormItem>
               )}
             />
-          
-            
-            
 
             <DialogFooter className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={onClose}>
@@ -139,7 +166,7 @@ export function AssignTechnicianModal({
                     Assigning...
                   </span>
                 ) : (
-                  "Assign Technician"
+                  "Assign Drafter"
                 )}
               </Button>
             </DialogFooter>
