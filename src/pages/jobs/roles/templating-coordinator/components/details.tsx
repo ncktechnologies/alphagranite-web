@@ -18,7 +18,7 @@ export function FabIdDetailsPage() {
     { label: 'Account', value: `Account ${fab.job_id}` }, // Placeholder
     { label: 'Job name', value: `Job ${fab.job_id}` }, // Placeholder
     { label: 'Job #', value: String(fab.job_id) },
-    { label: 'Area (s)', value: '2847 Oak Street, Denver, CO' }, // Placeholder
+    { label: 'Area (s)', value: fab.input_area }, // Placeholder
     { label: 'Stone type', value: fab.stone_type_name || 'N/A' },
     { label: 'Stone colour', value: fab.stone_color_name || 'N/A' },
     { label: 'Stone thickness', value: fab.stone_thickness_value || 'N/A' },

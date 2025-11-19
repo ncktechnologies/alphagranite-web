@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -13,6 +13,8 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
+import { useCompleteTemplatingMutation, useGetTemplatingByFabIdQuery, useUpdateTemplatingMutation } from '@/store/api/job';
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 
 const formSchema = z.object({
   status: z.enum(["completed", "not_completed"]),
@@ -22,10 +24,90 @@ const formSchema = z.object({
   square_ft: z.string().optional(),
 });
 
-export function TemplatingActivityForm() {
+interface TemplatingActivityFormProps {
+  fabId?: string;
+}
+
+export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
   const [openModal, setOpenModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-const navigate = useNavigate()
+  const navigate = useNavigate();
+  const [completeTemplating] = useCompleteTemplatingMutation();
+  const [updateTemplating] = useUpdateTemplatingMutation();
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsSubmitting(true);
+    
+    try {
+      // console.log("Form values:", values);
+      
+      const id = fabId;
+      if (!id) {
+        throw new Error("FAB ID is missing");
+      }
+
+      // Get the templating ID from the templating data
+      const templatingId = templatingData?.data?.id;
+      if (!templatingId) {
+        throw new Error("Templating record not found. Please schedule templating first.");
+      }
+
+      // Only submit if status is completed
+      if (values.status === "completed") {
+        const response = await completeTemplating({
+          templating_id: templatingId,
+          actual_sqft: values.square_ft || "",
+          notes: values.notes ? [values.notes] : []
+        }).unwrap();
+
+        toast.success(response?.message || "Templating completed successfully!");
+      } else {
+        // When not completed, update the templating record with all relevant data
+        const updateData: any = {
+          templating_id: templatingId
+        };
+        
+        // Add notes if provided
+        if (values.notes) {
+          updateData.notes = [values.notes];
+        }
+        
+        // Add actual start date and duration if provided
+        if (values.start_date) {
+          updateData.actual_start_date = new Date(values.start_date).toISOString();
+        }
+        
+        if (values.duration) {
+          updateData.duration = values.duration;
+        }
+        
+        // Add square footage if provided
+        if (values.square_ft) {
+          updateData.total_sqft = values.square_ft;
+        }
+        
+        const response = await updateTemplating(updateData).unwrap();
+
+        toast.success(response?.message || "Templating activity saved successfully!");
+      }
+
+      navigate('/job/templating-technician');
+    } catch (error: any) {
+      console.error("Failed to complete templating:", error);
+      // Don't navigate if there's an error
+      const errorMessage = error?.data?.message || error?.message || "Failed to complete templating. Please try again.";
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  // Fetch templating record by FAB ID
+  const { data: templatingData, isLoading: isTemplatingLoading } = useGetTemplatingByFabIdQuery(
+    Number(fabId), 
+    { skip: !fabId }
+  );
+
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -37,14 +119,50 @@ const navigate = useNavigate()
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1200));
+  // Watch form values for debugging
+  const statusValue = form.watch("status");
+  const squareFtValue = form.watch("square_ft");
+  
+  // useEffect(() => {
+  //   console.log("Status value changed to:", statusValue);
+  // }, [statusValue]);
+  
+  // useEffect(() => {
+  //   console.log("Square ft value changed to:", squareFtValue);
+  // }, [squareFtValue]);
 
-    toast.success("Checklist review completed successfully!");
+  useEffect(() => {
+    // Debugging: Log the templating data
+    // console.log("Templating data:", templatingData);
+    
+    // Populate form with templating data when it's available
+    if (templatingData?.data) {
+      // console.log("Populating form with templating data:", templatingData.data);
+      
+      // Prepare values for the form
+      const formValues: Partial<z.infer<typeof formSchema>> & { status: "not_completed" } = {
+        status: "not_completed",
+        start_date: templatingData.data.schedule_start_date 
+          ? (() => {
+              const date = new Date(templatingData.data.schedule_start_date);
+              const year = date.getFullYear();
+              const month = String(date.getMonth() + 1).padStart(2, '0');
+              const day = String(date.getDate()).padStart(2, '0');
+              return `${year}-${month}-${day}`;
+            })()
+          : "",
+        duration: "",
+        notes: "",
+        square_ft: templatingData.data.total_sqft?.toString() || ''
+      };
+      
+      console.log("Resetting form with values:", formValues);
+      form.reset(formValues);
+    }
+  }, [templatingData, form]);
 
-    setIsSubmitting(false);
-    navigate('/job/predraft')
+  if (isTemplatingLoading) {
+    return <div>Loading...</div>;
   }
 
   return (
@@ -64,24 +182,42 @@ const navigate = useNavigate()
                   Status
                 </FormLabel>
                 <div className="flex items-center gap-8">
-                  <div
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={() => field.onChange("completed")}
-                  >
-                    <Checkbox completed={field.value === "completed"} />
-                    <span className="font-medium text-sm">
+                  <div className="flex items-center gap-2">
+                    <Checkbox 
+                      id="completed"
+                      checked={field.value === "completed"}
+                      onCheckedChange={(checked) => {
+                        console.log("Checkbox completed changed:", checked);
+                        if (checked) {
+                          field.onChange("completed");
+                        }
+                      }}
+                    />
+                    <label 
+                      htmlFor="completed"
+                      className="font-medium text-sm cursor-pointer"
+                    >
                       Completed
-                    </span>
+                    </label>
                   </div>
 
-                  <div
-                    className="flex items-center gap-2 cursor-pointer"
-                    onClick={() => field.onChange("not_completed")}
-                  >
-                    <Checkbox completed={field.value === "not_completed"} />
-                    <span className="font-medium text-sm">
+                  <div className="flex items-center gap-2">
+                    <Checkbox 
+                      id="not-completed"
+                      checked={field.value === "not_completed"}
+                      onCheckedChange={(checked) => {
+                        console.log("Checkbox not_completed changed:", checked);
+                        if (checked) {
+                          field.onChange("not_completed");
+                        }
+                      }}
+                    />
+                    <label 
+                      htmlFor="not-completed"
+                      className="font-medium text-sm cursor-pointer"
+                    >
                       Not completed
-                    </span>
+                    </label>
                   </div>
                 </div>
               </FormItem>
@@ -93,7 +229,12 @@ const navigate = useNavigate()
             <div>
               <FormLabel>Scheduled date</FormLabel>
               <div className="flex items-center gap-2">
-                <Input value="03 October, 2025" disabled />
+                <Input 
+                  value={templatingData?.data?.schedule_start_date 
+                    ? format(new Date(templatingData.data.schedule_start_date), "dd MMMM, yyyy") 
+                    : "Not scheduled"} 
+                  disabled 
+                />
               </div>
             </div>
 
@@ -114,7 +255,23 @@ const navigate = useNavigate()
                 <FormItem>
                   <FormLabel>Start date</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} />
+                    <DateTimePicker
+                      mode="date"
+                      value={field.value ? new Date(field.value) : undefined}
+                      onChange={(date) => {
+                        if (date) {
+                          // Format date as YYYY-MM-DD while preserving local timezone
+                          const year = date.getFullYear();
+                          const month = String(date.getMonth() + 1).padStart(2, '0');
+                          const day = String(date.getDate()).padStart(2, '0');
+                          const formatted = `${year}-${month}-${day}`;
+                          field.onChange(formatted);
+                        } else {
+                          field.onChange("");
+                        }
+                      }}
+                      placeholder="Select start date"
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -137,14 +294,13 @@ const navigate = useNavigate()
           </div>
 
           <div>
-
             <FormField
               control={form.control}
               name="square_ft"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Square Ft</FormLabel>
-                  <Input placeholder="146" disabled {...field} />
+                  <Input placeholder="146" {...field} />
                 </FormItem>
               )}
             />
@@ -165,11 +321,11 @@ const navigate = useNavigate()
           />
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline">
+            <Button type="button" variant="outline" onClick={() => navigate('/job/templating-technician')}>
               Cancel
             </Button>
-            <Button type="submit" className="px-10">
-              Save
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Saving..." : "Save"}
             </Button>
           </div>
         </form>

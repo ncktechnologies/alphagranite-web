@@ -17,7 +17,7 @@ import { AlertCircle } from 'lucide-react';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
 
 // Format date to "08 Oct, 2025" format
-const formatDate = (dateString?: string): string => {
+export const formatDate = (dateString?: string): string => {
   if (!dateString) return '-';
   
   try {
@@ -59,15 +59,14 @@ const transformFabToJob = (fab: Fab): IJob => {
 export function TechnicianPage() {
     const location = useLocation();
     const navigate = useNavigate();
-    const isNewFabForm = location.pathname.includes('/new-fab-id');
-    useJobStageFilter(); // Call the hook without destructuring since we don't use its values
+    const { currentStageFilter, isSuperAdmin } = useJobStageFilter();
     const user = useSelector((state: RootState) => state.user?.user);
     const isUserSuperAdmin = useIsSuperAdmin();
     
     // Fetch fabs with role-based filtering
     // Technicians typically see all fabs in the templating stage
     const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
-        current_stage: 'templating', // Filter for templating stage
+        current_stage: isSuperAdmin ? 'templating' : currentStageFilter, // Filter for templating stage
         limit: 100,
     });
 
@@ -110,18 +109,13 @@ export function TechnicianPage() {
     // Transform Fab data to IJob format
     const transformedJobs: IJob[] = fabs ? fabs.map(transformFabToJob) : [];
 
-    // Handle row click to navigate to templating details
-    const handleRowClick = (fabId: string) => {
-        navigate(`/job/templating-details/${fabId}`);
-    };
-
     return (
         <div className="">
             <Container>
                 <Toolbar className=' '>
                     <ToolbarHeading title="Templating" description="" />
                 </Toolbar>
-                <JobTable jobs={transformedJobs} path='technician' isSuperAdmin={isUserSuperAdmin} onRowClick={handleRowClick} />
+                <JobTable jobs={transformedJobs} path='templating-details' isSuperAdmin={isUserSuperAdmin} />
             </Container>
         </div>
     );

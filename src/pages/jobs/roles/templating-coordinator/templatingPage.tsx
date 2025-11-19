@@ -11,6 +11,7 @@ import { Fab } from '@/store/api/job';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { useJobStageFilter } from '@/hooks/use-job-stage';
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
@@ -53,9 +54,12 @@ const transformFabToJob = (fab: Fab): IJob => {
 };
 
 export function TemplatingPage() {
-    // Fetch all fabs
+    const { currentStageFilter, isSuperAdmin } = useJobStageFilter();
+    
+    // Fetch fabs filtered by current stage
     const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
         limit: 100,
+        current_stage: currentStageFilter // Use the stage filter from the hook
     });
 
     if (isLoading) {
@@ -99,11 +103,9 @@ export function TemplatingPage() {
     // Transform Fab data to IJob format
     const jobsData: IJob[] = fabs ? fabs.map(transformFabToJob) : [];
 
-    // Filter logic
-    const unscheduledJobs = jobsData.filter(job => job.template_schedule === '-' || job.template_schedule === '');
-    const incompleteJobs = jobsData.filter(job => job.template_received === 'No');
-    const completedJobs = jobsData.filter(job => job.template_received === 'Yes');
-
+    // For super admins, we still want to show the tabs, but they should fetch data from the API
+    // with different stage filters rather than client-side filtering
+    
     return (
         <Container>
             <Toolbar>
@@ -137,25 +139,22 @@ export function TemplatingPage() {
                     <TabsTrigger value="completed">
                         <span className="flex items-center gap-2">
                             <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                            Completed ({completedJobs.length})
+                            Completed
                         </span>
                     </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="all" className="mt-4">
-                    <JobTable jobs={jobsData} path='templating' />
+                    <JobTable jobs={jobsData} path='templating' isSuperAdmin={isSuperAdmin} />
                 </TabsContent>
-
                 <TabsContent value="unscheduled" className="mt-4">
-                    <JobTable jobs={unscheduledJobs} path='templating'/>
+                    <JobTable jobs={jobsData} path='templating' isSuperAdmin={isSuperAdmin} />
                 </TabsContent>
-
                 <TabsContent value="incomplete" className="mt-4">
-                    <JobTable jobs={incompleteJobs} path='templating'/>
+                    <JobTable jobs={jobsData} path='templating' isSuperAdmin={isSuperAdmin} />
                 </TabsContent>
-
                 <TabsContent value="completed" className="mt-4">
-                    <JobTable jobs={completedJobs} path='templating'/>
+                    <JobTable jobs={jobsData} path='templating' isSuperAdmin={isSuperAdmin} />
                 </TabsContent>
             </Tabs>
         </Container>

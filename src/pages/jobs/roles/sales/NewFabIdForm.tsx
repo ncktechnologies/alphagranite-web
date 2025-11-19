@@ -31,7 +31,6 @@ import {
   useGetStoneColorsQuery, 
   useGetStoneThicknessesQuery, 
   useGetEdgesQuery, 
-  useCreateJobMutation, 
   useCreateFabMutation,
   useCreateAccountMutation,
   useCreateStoneThicknessMutation,
@@ -44,12 +43,12 @@ import { useAuth } from '@/auth/context/auth-context';
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 
-// Zod schema for form validation
+// Update the Zod schema - remove jobName and jobNumber as required fields since they'll be selected
 const fabIdFormSchema = z.object({
   fabType: z.string().min(1, 'FAB Type is required'),
   account: z.string().min(1, 'Account is required'),
-  jobName: z.string().min(1, 'Job Name is required'),
-  jobNumber: z.string().min(1, 'Job Number is required'),
+  jobName: z.string().optional(),
+  jobNumber: z.string().optional(),
   area: z.string().min(1, 'Area is required'),
   stoneType: z.string().min(1, 'Stone Type is required'),
   stoneColor: z.string().min(1, 'Stone Color is required'),
@@ -57,13 +56,16 @@ const fabIdFormSchema = z.object({
   edge: z.string().min(1, 'Edge is required'),
   totalSqFt: z.string().min(1, 'Total Sq Ft is required'),
   selectedSalesPerson: z.string().min(1, 'Sales Person is required'),
-  notes: z.string().optional(),
+  notes: z.string().optional(), // Keep as string
   templateNotNeeded: z.boolean(),
   draftNotNeeded: z.boolean(),
   slabSmithCustNotNeeded: z.boolean(),
   sctNotNeeded: z.boolean(),
   slabSmithAGNotNeeded: z.boolean(),
   finalProgrammingNotNeeded: z.boolean(),
+}).refine((data) => data.jobName || data.jobNumber, {
+  message: "Please select either job name or job number",
+  path: ["jobName"],
 });
 
 type FabIdFormData = z.infer<typeof fabIdFormSchema>;
@@ -126,7 +128,6 @@ const NewFabIdForm = () => {
   } = useGetJobsQuery({ limit: 1000 });
   
   // Mutations
-  const [createJob] = useCreateJobMutation();
   const [createFab] = useCreateFabMutation();
   const [createAccount] = useCreateAccountMutation();
   const [createStoneThickness] = useCreateStoneThicknessMutation();
@@ -193,15 +194,33 @@ const NewFabIdForm = () => {
     thickness.toLowerCase().includes(thicknessSearch.toLowerCase())
   );
 
-  // Filter jobs for job name and job number dropdowns
-  const filteredJobNames = (!isJobsError && Array.isArray(jobsData) && jobsData?.map((job: any) => job.name) || []).filter((name: string) =>
-    name.toLowerCase().includes(jobNameSearch.toLowerCase())
-  );
+  // Filter jobs for job dropdowns
+  const jobNames = (!isJobsError && Array.isArray(jobsData) ? jobsData : []).map((job: any) => job.name);
+  const jobNumbers = (!isJobsError && Array.isArray(jobsData) ? jobsData : []).map((job: any) => job.job_number);
 
-  const filteredJobNumbers = (!isJobsError && Array.isArray(jobsData) && jobsData?.map((job: any) => job.job_number) || []).filter((number: string) =>
-    number.toLowerCase().includes(jobNumberSearch.toLowerCase())
-  );
+  // Effect to auto-populate job number when job name is selected
+  const jobNameValue = form.watch('jobName');
+  const jobNumberValue = form.watch('jobNumber');
 
+  useEffect(() => {
+    if (jobNameValue && jobsData && Array.isArray(jobsData)) {
+      const selectedJob = jobsData.find((job: any) => job.name === jobNameValue);
+      if (selectedJob && selectedJob.job_number !== jobNumberValue) {
+        form.setValue('jobNumber', selectedJob.job_number);
+      }
+    }
+  }, [jobNameValue, jobsData, form, jobNumberValue]);
+
+  useEffect(() => {
+    if (jobNumberValue && jobsData && Array.isArray(jobsData)) {
+      const selectedJob = jobsData.find((job: any) => job.job_number === jobNumberValue);
+      if (selectedJob && selectedJob.name !== jobNameValue) {
+        form.setValue('jobName', selectedJob.name);
+      }
+    }
+  }, [jobNumberValue, jobsData, form, jobNameValue]);
+
+  // Extract stone types, colors, and edges from the response
   const stoneTypes = !isStoneTypesError && Array.isArray(stoneTypesData) ? (stoneTypesData?.map((type: any) => type.name) || []) : [];
   const stoneColors = !isStoneColorsError && Array.isArray(stoneColorsData) ? (stoneColorsData?.map((color: any) => color.name) || []) : [];
   const edgeOptions = !isEdgesError && Array.isArray(edgesData) ? (edgesData?.map((edge: any) => edge.name) || []) : [];
@@ -218,46 +237,7 @@ const NewFabIdForm = () => {
   const salesPersons = Array.isArray(salesPersonsData) ? salesPersonsData : [];
   
   // Set default sales person to current user
-  useEffect(() => {
-    if (user && salesPersons.length > 0) {
-      // Find the current user in the sales persons list
-      const currentUserInSales = salesPersons.find((salesPerson: any) => 
-        salesPerson.email === user.email || 
-        `${salesPerson.first_name} ${salesPerson.last_name}`.toLowerCase() === 
-        `${user.first_name} ${user.last_name}`.toLowerCase()
-      );
-      
-      if (currentUserInSales) {
-        form.setValue('selectedSalesPerson', `${currentUserInSales.first_name} ${currentUserInSales.last_name}`);
-      }
-    }
-  }, [user, salesPersons, form]);
-
-  // Handle job name selection - auto-select job number
-  const handleJobNameChange = (jobName: string) => {
-    form.setValue('jobName', jobName);
-    
-    // Find the job with this name and set the job number
-    if (jobsData && Array.isArray(jobsData)) {
-      const job = jobsData.find((j: any) => j.name === jobName);
-      if (job) {
-        form.setValue('jobNumber', job.job_number);
-      }
-    }
-  };
-
-  // Handle job number selection - auto-select job name
-  const handleJobNumberChange = (jobNumber: string) => {
-    form.setValue('jobNumber', jobNumber);
-    
-    // Find the job with this number and set the job name
-    if (jobsData && Array.isArray(jobsData)) {
-      const job = jobsData.find((j: any) => j.job_number === jobNumber);
-      if (job) {
-        form.setValue('jobName', job.name);
-      }
-    }
-  };
+  
 
   // Functions to add new items
   const handleAddThickness = async () => {
@@ -317,55 +297,56 @@ const NewFabIdForm = () => {
       setError(null);
 
       // Find IDs for selected values
-      const selectedFabType = Array.isArray(fabTypesData) && fabTypesData?.find((type: any) => type.name === values.fabType);
-      const selectedAccount = Array.isArray(accountsData) && accountsData?.find((account: any) => account.name === values.account);
-      const selectedStoneType = Array.isArray(stoneTypesData) && stoneTypesData?.find((type: any) => type.name === values.stoneType);
-      const selectedStoneColor = Array.isArray(stoneColorsData) && stoneColorsData?.find((color: any) => color.name === values.stoneColor);
-      const selectedStoneThickness = Array.isArray(stoneThicknessesData) && stoneThicknessesData?.find((thickness: any) => thickness.thickness === values.stoneThickness);
-      const selectedEdge = Array.isArray(edgesData) && edgesData?.find((edge: any) => edge.name === values.edge);
+      const selectedFabType = Array.isArray(fabTypesData) ? fabTypesData?.find((type: any) => type.name === values.fabType) : undefined;
+      const selectedAccount = Array.isArray(accountsData) ? accountsData?.find((account: any) => account.name === values.account) : undefined;
+      const selectedStoneType = Array.isArray(stoneTypesData) ? stoneTypesData?.find((type: any) => type.name === values.stoneType) : undefined;
+      const selectedStoneColor = Array.isArray(stoneColorsData) ? stoneColorsData?.find((color: any) => color.name === values.stoneColor) : undefined;
+      const selectedStoneThickness = Array.isArray(stoneThicknessesData) ? stoneThicknessesData?.find((thickness: any) => thickness.thickness === values.stoneThickness) : undefined;
+      const selectedEdge = Array.isArray(edgesData) ? edgesData?.find((edge: any) => edge.name === values.edge) : undefined;
 
       // Find the selected sales person ID
       const selectedSalesPerson = salesPersons.find((person: any) => 
-        `${person.first_name} ${person.last_name}` === values.selectedSalesPerson
+        person.name === values.selectedSalesPerson
       );
 
-      // Validate all required data is available
-      if (!selectedFabType || !selectedAccount || !selectedStoneType || !selectedStoneColor || !selectedStoneThickness || !selectedEdge || !selectedSalesPerson) {
-        throw new Error('Please select valid options for all dropdown fields');
-      }
-
-      // Check if job already exists
-      let jobResponse;
+      // Find the selected job - match by either name or number
+      let selectedJob;
       if (jobsData && Array.isArray(jobsData)) {
-        const existingJob = jobsData.find((job: any) => 
-          job.name === values.jobName && job.job_number === values.jobNumber
-        );
-        
-        if (existingJob) {
-          // Use existing job
-          jobResponse = existingJob;
-        } else {
-          // Create new job
-          jobResponse = await createJob({
-            name: values.jobName,
-            job_number: values.jobNumber,
-            account_id: selectedAccount.id,
-            description: values.notes || '',
-          }).unwrap();
+        // Try to match by name first
+        if (values.jobName) {
+          selectedJob = jobsData.find((job: any) => job.name === values.jobName);
         }
-      } else {
-        // Create new job if no jobs data available
-        jobResponse = await createJob({
-          name: values.jobName,
-          job_number: values.jobNumber,
-          account_id: selectedAccount.id,
-          description: values.notes || '',
-        }).unwrap();
+        
+        // If that doesn't work, try to match by job number
+        if (!selectedJob && values.jobNumber) {
+          selectedJob = jobsData.find((job: any) => job.job_number === values.jobNumber);
+        }
       }
 
-      // Then create fab using the job ID
+      // Validate all required data is available
+      if (!selectedFabType || !selectedAccount || !selectedStoneType || !selectedStoneColor || !selectedStoneThickness || !selectedEdge || !selectedSalesPerson || !selectedJob) {
+        const missingFields = [];
+        if (!selectedFabType) missingFields.push('FAB Type');
+        if (!selectedAccount) missingFields.push('Account');
+        if (!selectedStoneType) missingFields.push('Stone Type');
+        if (!selectedStoneColor) missingFields.push('Stone Color');
+        if (!selectedStoneThickness) missingFields.push('Stone Thickness');
+        if (!selectedEdge) missingFields.push('Edge');
+        if (!selectedSalesPerson) missingFields.push('Sales Person');
+        if (!selectedJob) missingFields.push('Job');
+        
+        throw new Error('Please select valid options for all dropdown fields. Missing: ' + missingFields.join(', '));
+      }
+
+      // Process notes - keep as string
+      let notesValue: string | undefined = undefined;
+      if (values.notes) {
+        notesValue = values.notes;
+      }
+
+      // Create fab using the existing job ID (no job creation)
       await createFab({
-        job_id: jobResponse.id,
+        job_id: selectedJob.id,
         fab_type: selectedFabType.name,
         sales_person_id: selectedSalesPerson.id, // Use the actual sales person ID
         stone_type_id: selectedStoneType.id,
@@ -374,7 +355,7 @@ const NewFabIdForm = () => {
         edge_id: selectedEdge.id,
         input_area: values.area,
         total_sqft: parseFloat(values.totalSqFt) || 0,
-        notes: values.notes || '',
+        notes: notesValue, // Send as string
         template_needed: !values.templateNotNeeded,
         drafting_needed: !values.draftNotNeeded,
         slab_smith_cust_needed: !values.slabSmithCustNotNeeded,
@@ -649,147 +630,83 @@ const NewFabIdForm = () => {
                           )}
                         />
 
-                        {/* Job Name - Input with Dropdown Option */}
+                        {/* Job Name - Select Dropdown */}
                         <FormField
                           control={form.control}
                           name="jobName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Job Name *</FormLabel>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <div className="relative">
-                                    <FormControl>
-                                      <Input 
-                                        placeholder="Enter or select job name" 
-                                        {...field}
-                                      />
-                                    </FormControl>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      className="absolute right-0 top-0 h-full rounded-l-none border-l"
-                                      disabled={isLoadingJobs}
-                                    >
-                                      <ChevronDown className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </PopoverTrigger>
-                                <PopoverContent 
-                                  className="w-full p-0" 
-                                  align="start"
-                                  style={{ width: 'var(--radix-popover-trigger-width)' }}
-                                >
-                                  <div className="p-2">
-                                    <div className="relative mb-2">
-                                      <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
-                                      <Input
-                                        placeholder="Search job name"
-                                        className="pl-8"
-                                        value={jobNameSearch}
-                                        onChange={(e) => setJobNameSearch(e.target.value)}
-                                      />
+                              <FormLabel>Job Name</FormLabel>
+                              <Select onValueChange={(value) => {
+                                field.onChange(value);
+                                // Auto-populate job number
+                                if (jobsData && Array.isArray(jobsData)) {
+                                  const selectedJob = jobsData.find((job: any) => job.name === value);
+                                  if (selectedJob) {
+                                    form.setValue('jobNumber', selectedJob.job_number);
+                                  }
+                                }
+                              }} value={field.value} disabled={isLoadingJobs}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder={isLoadingJobs ? 'Loading...' : 'Select job name'} />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {isJobsError ? (
+                                    <div className="px-3 py-2 text-sm text-red-500">
+                                      Failed to load jobs: Server error occurred
                                     </div>
-                                    {isJobsError && (
-                                      <div className="px-3 py-2 text-sm text-red-500 text-center">
-                                        Failed to load jobs: {jobsError ? 'Server error occurred' : 'Unknown error'}
-                                      </div>
-                                    )}
-                                    <div className="space-y-1 max-h-48 overflow-y-auto">
-                                      {filteredJobNames.map((name: string) => (
-                                        <div
-                                          key={name}
-                                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
-                                          onClick={() => {
-                                            handleJobNameChange(name);
-                                            setJobNameSearch('');
-                                          }}
-                                        >
-                                          {name}
-                                        </div>
-                                      ))}
-                                      {filteredJobNames.length === 0 && !isJobsError && (
-                                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                          {isLoadingJobs ? 'Loading jobs...' : 'No jobs found'}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
+                                  ) : (
+                                    jobNames.map((jobName: string) => (
+                                      <SelectItem key={jobName} value={jobName}>
+                                        {jobName}
+                                      </SelectItem>
+                                    ))
+                                  )}
+                                </SelectContent>
+                              </Select>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
 
-                        {/* Job Number - Input with Dropdown Option */}
+                        {/* Job Number - Select Dropdown */}
                         <FormField
                           control={form.control}
                           name="jobNumber"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Job Number *</FormLabel>
-                              <Popover>
-                                <PopoverTrigger asChild>
-                                  <div className="relative">
-                                    <FormControl>
-                                      <Input 
-                                        placeholder="Enter or select job number" 
-                                        {...field}
-                                      />
-                                    </FormControl>
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      className="absolute right-0 top-0 h-full rounded-l-none border-l"
-                                      disabled={isLoadingJobs}
-                                    >
-                                      <ChevronDown className="h-4 w-4" />
-                                    </Button>
-                                  </div>
-                                </PopoverTrigger>
-                                <PopoverContent 
-                                  className="w-full p-0" 
-                                  align="start"
-                                  style={{ width: 'var(--radix-popover-trigger-width)' }}
-                                >
-                                  <div className="p-2">
-                                    <div className="relative mb-2">
-                                      <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
-                                      <Input
-                                        placeholder="Search job number"
-                                        className="pl-8"
-                                        value={jobNumberSearch}
-                                        onChange={(e) => setJobNumberSearch(e.target.value)}
-                                      />
+                              <FormLabel>Job Number</FormLabel>
+                              <Select onValueChange={(value) => {
+                                field.onChange(value);
+                                // Auto-populate job name
+                                if (jobsData && Array.isArray(jobsData)) {
+                                  const selectedJob = jobsData.find((job: any) => job.job_number === value);
+                                  if (selectedJob) {
+                                    form.setValue('jobName', selectedJob.name);
+                                  }
+                                }
+                              }} value={field.value} disabled={isLoadingJobs}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder={isLoadingJobs ? 'Loading...' : 'Select job number'} />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {isJobsError ? (
+                                    <div className="px-3 py-2 text-sm text-red-500">
+                                      Failed to load jobs: Server error occurred
                                     </div>
-                                    {isJobsError && (
-                                      <div className="px-3 py-2 text-sm text-red-500 text-center">
-                                        Failed to load jobs: {jobsError ? 'Server error occurred' : 'Unknown error'}
-                                      </div>
-                                    )}
-                                    <div className="space-y-1 max-h-48 overflow-y-auto">
-                                      {filteredJobNumbers.map((number: string) => (
-                                        <div
-                                          key={number}
-                                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
-                                          onClick={() => {
-                                            handleJobNumberChange(number);
-                                            setJobNumberSearch('');
-                                          }}
-                                        >
-                                          {number}
-                                        </div>
-                                      ))}
-                                      {filteredJobNumbers.length === 0 && !isJobsError && (
-                                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                          {isLoadingJobs ? 'Loading jobs...' : 'No jobs found'}
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                </PopoverContent>
-                              </Popover>
+                                  ) : (
+                                    jobNumbers.map((jobNumber: string) => (
+                                      <SelectItem key={jobNumber} value={jobNumber}>
+                                        {jobNumber}
+                                      </SelectItem>
+                                    ))
+                                  )}
+                                </SelectContent>
+                              </Select>
                               <FormMessage />
                             </FormItem>
                           )}

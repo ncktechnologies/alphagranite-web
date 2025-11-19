@@ -74,24 +74,32 @@ export function AssignTechnicianModal({
           (emp: any) => `${emp.id}` === values.technician
         );
         
-        await scheduleTemplating({
+        const response = await scheduleTemplating({
           fab_id: Number(id),
           technician_id: Number(values.technician),
           schedule_start_date: values.date,
           schedule_due_date: new Date(new Date(values.date).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days after start
           total_sqft: "0", // This would be updated with actual value
-          notes: selectedEmployee 
+          notes: [selectedEmployee 
             ? `Assigned to ${selectedEmployee.first_name} ${selectedEmployee.last_name} on ${values.date}`
-            : `Assigned to technician ID ${values.technician} on ${values.date}`
+            : `Assigned to technician ID ${values.technician} on ${values.date}`]
         }).unwrap();
+        
+        // Use success message from endpoint if available and successful, otherwise use default
+        let successMessage = "Technician assigned successfully!";
+        if (response?.detail?.success !== false && (response?.detail?.message || response?.message)) {
+          successMessage = response?.detail?.message || response?.message || successMessage;
+        }
+        toast.success(successMessage);
       }
       
-      toast.success(`Technician assigned successfully!`);
       onClose();
       navigate('/job/templating');
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to assign technician:", error);
-      toast.error("Failed to assign technician. Please try again.");
+      // Extract error message from the response
+      const errorMessage = error?.data?.detail?.message || error?.data?.message || "Failed to assign technician. Please try again.";
+      // toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }

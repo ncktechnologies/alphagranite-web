@@ -49,12 +49,16 @@ export interface Fab {
     fab_type: string;
     sales_person_id: number;
     stone_type_id: number;
+    stone_type_name?: string;
     stone_color_id: number;
+    stone_color_name?: string;
     stone_thickness_id: number;
+    stone_thickness_value?: string;
     edge_id: number;
+    edge_name?: string;
     input_area: string;
     total_sqft: number;
-    notes?: string;
+    notes?: string[];
     template_needed: boolean;
     drafting_needed: boolean;
     slab_smith_cust_needed: boolean;
@@ -83,7 +87,7 @@ export interface FabCreate {
     edge_id: number;
     input_area: string;
     total_sqft: number;
-    notes?: string;
+    notes?: string[];
     template_needed?: boolean;
     drafting_needed?: boolean;
     slab_smith_cust_needed?: boolean;
@@ -101,7 +105,7 @@ export interface FabUpdate {
     edge_id?: number;
     input_area?: string;
     total_sqft?: number;
-    notes?: string;
+    notes?: string[];
     template_needed?: boolean;
     drafting_needed?: boolean;
     slab_smith_cust_needed?: boolean;
@@ -237,7 +241,7 @@ export interface TemplatingSchedule {
     schedule_start_date: string;
     schedule_due_date: string;
     total_sqft: string;
-    notes?: string;
+    notes?: string[];
     created_by?: number;
 }
 
@@ -547,11 +551,48 @@ export const jobApi = createApi({
             }),
 
             // Templating
+            getTemplatingByFabId: build.query<any, number>({
+                query: (fab_id) => ({
+                    url: `/templating/fab/${fab_id}`,
+                    method: "get"
+                }),
+                providesTags: ["Fab"],
+            }),
+
             scheduleTemplating: build.mutation<any, TemplatingSchedule>({
                 query: (data) => ({
                     url: "/templating/schedule",
                     method: "post",
                     data // Send as request body instead of params
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            updateTemplating: build.mutation<any, { templating_id: number; notes?: string[] }>({
+                query: ({ templating_id, ...data }) => ({
+                    url: `/templating/${templating_id}`,
+                    method: "put",
+                    data // Send as request body
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            completeTemplating: build.mutation<any, { templating_id: number; actual_sqft?: string; notes?: string[] }>({
+                query: ({ templating_id, actual_sqft, notes }) => ({
+                    url: `/templating/${templating_id}/complete`,
+                    method: "post",
+                    data: {
+                        actual_sqft: actual_sqft || "",
+                        notes: notes || []
+                    }
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            markTemplatingReceived: build.mutation<any, { templating_id: number }>({
+                query: ({ templating_id }) => ({
+                    url: `/templating/${templating_id}/mark-received`,
+                    method: "post"
                 }),
                 invalidatesTags: ["Fab"],
             }),
@@ -648,8 +689,12 @@ export const {
     useGetStoneThicknessesQuery,
     useGetEdgesQuery,
     useScheduleTemplatingMutation,
+    useCompleteTemplatingMutation,
+    useMarkTemplatingReceivedMutation,
     useUnscheduleTemplatingMutation,
+    useGetTemplatingByFabIdQuery,
     useGetJobsWithFabsQuery,
+    useUpdateTemplatingMutation,
     // New mutation hooks
     useCreateAccountMutation,
     useCreateStoneTypeMutation,
