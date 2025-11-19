@@ -16,42 +16,42 @@ import { useIsSuperAdmin } from '@/hooks/use-permission';
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
-  if (!dateString) return '-';
-  
-  try {
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = date.toLocaleString('en-US', { month: 'short' });
-    const year = date.getFullYear();
-    return `${day} ${month}, ${year}`;
-  } catch (error) {
-    return '-';
-  }
+    if (!dateString) return '-';
+
+    try {
+        const date = new Date(dateString);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = date.toLocaleString('en-US', { month: 'short' });
+        const year = date.getFullYear();
+        return `${day} ${month}, ${year}`;
+    } catch (error) {
+        return '-';
+    }
 };
 
 // Transform Fab data to match IJob interface
 const transformFabToJob = (fab: Fab): IJob => {
-  return {
-    id: fab.id,
-    fab_type: fab.fab_type,
-    fab_id: String(fab.id), // Using fab.id as fab_id since there's no fab_id in Fab type
-    job_name: `Job ${fab.job_id}`, // Placeholder - would need actual job data
-    job_no: String(fab.job_id), // Using job_id as job_no
-    date: fab.created_at, // Using created_at as date
-    current_stage: fab.current_stage, // Add current_stage
-    // Optional fields with default values
-    acct_name: '',
-    template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
-    template_received: '',
-    templater: fab.technician_name || '-',
-    no_of_pieces: '',
-    total_sq_ft: String(fab.total_sqft),
-    revenue: '',
-    revised: '',
-    sct_completed: '',
-    draft_completed: '',
-    gp: ''
-  };
+    return {
+        id: fab.id,
+        fab_type: fab.fab_type,
+        fab_id: String(fab.id), // Using fab.id as fab_id since there's no fab_id in Fab type
+        job_name: `${fab.job_details?.name}`,
+        job_no: String(fab.job_details?.job_number),
+        date: fab.created_at, // Using created_at as date
+        current_stage: fab.current_stage, // Add current_stage
+        // Optional fields with default values
+        acct_name: '',
+        template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
+        template_received: '',
+        templater: fab.technician_name || '-',
+        no_of_pieces: '',
+        total_sq_ft: String(fab.total_sqft),
+        revenue: '',
+        revised: '',
+        sct_completed: '',
+        draft_completed: '',
+        gp: ''
+    };
 };
 
 export function SalesPage() {
@@ -61,7 +61,7 @@ export function SalesPage() {
     const { currentStageFilter, isSuperAdmin } = useJobStageFilter();
     const user = useSelector((state: RootState) => state.user?.user);
     const isUserSuperAdmin = useIsSuperAdmin();
-    
+
     // Fetch fabs with role-based filtering
     // Super admin: currentStageFilter is undefined, so gets ALL fabs
     // Sales role: currentStageFilter is 'sales', so gets only sales fabs
@@ -85,19 +85,19 @@ export function SalesPage() {
                     <ToolbarActions>
                         <Link to="/jobs/sales/new-fab-id">
                             <Button className="">
-                                <Plus/>
+                                <Plus />
                                 New FAB ID
                             </Button>
                         </Link>
                         <Link to="/create-jobs">
                             <Button className="">
-                                <Plus/>
+                                <Plus />
                                 New Job
                             </Button>
                         </Link>
                     </ToolbarActions>
                 </Toolbar>
-                <JobTable jobs={transformedJobs} path='sales' isSuperAdmin={isUserSuperAdmin}/>
+                <JobTable jobs={transformedJobs} path='sales' isSuperAdmin={isUserSuperAdmin} />
             </Container>
         </div>
     );

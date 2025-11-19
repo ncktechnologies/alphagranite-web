@@ -32,8 +32,8 @@ const transformFabToJob = (fab: Fab): IJob => {
     id: fab.id,
     fab_type: fab.fab_type,
     fab_id: String(fab.id),
-    job_name: `Job ${fab.job_id}`,
-    job_no: String(fab.job_id),
+    job_name: `${fab.job_details?.name}`,
+    job_no: String(fab.job_details?.job_number),
     date: fab.created_at,
     current_stage: fab.current_stage,
     // Optional fields with default values
@@ -59,7 +59,7 @@ const DrafterPage = () => {
     
     // Fetch fabs with role-based filtering
     const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
-        current_stage: isSuperAdmin ? 'draft' : currentStageFilter,
+        current_stage: isSuperAdmin ? 'pre_draft' : currentStageFilter,
         limit: 100,
     });
 

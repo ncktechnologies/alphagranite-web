@@ -59,7 +59,7 @@ export const JOB_STAGES = {
         title: 'Pre-Draft',
     },
     DRAFT: {
-        stage: 'draft',
+        stage: 'pre_draft',
         route: '/job/draft',
         title: 'Drafting',
     },

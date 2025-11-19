@@ -16,8 +16,8 @@ export function FabIdDetailsPage() {
     { label: 'FAB ID', value: String(fab.id) },
     { label: 'FAB Type', value: fab.fab_type },
     { label: 'Account', value: `Account ${fab.job_id}` }, // Placeholder
-    { label: 'Job name', value: `Job ${fab.job_id}` }, // Placeholder
-    { label: 'Job #', value: String(fab.job_id) },
+    { label: 'Job name', value: `Job ${fab.job_details?.name}` }, // Placeholder
+    { label: 'Job #', value: String(fab.job_details?.job_number) },
     { label: 'Area (s)', value: fab.input_area }, // Placeholder
     { label: 'Stone type', value: fab.stone_type_name || 'N/A' },
     { label: 'Stone colour', value: fab.stone_color_name || 'N/A' },

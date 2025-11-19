@@ -142,7 +142,7 @@ export function PreDraftDetailsPage() {
                         <div className='text-text-foreground'>
                             Status:
                             <Badge className='text-[#0BC33F] bg-[#0BC33F]/20 rounded-[50px] h-[30px] font-medium text-[14px] ml-2 px-2'>
-                                {fab?.current_stage || 'N/A'}
+                                compeleted
                             </Badge>
                         </div>
                     </div>
