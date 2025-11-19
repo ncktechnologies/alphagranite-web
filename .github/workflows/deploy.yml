@@ -1,0 +1,37 @@
+name: Deploy Alphagranite Web Demo
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.x'
+
+    - name: Deploy to Alphagranite Server
+      uses: appleboy/ssh-action@v0.1.5
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.PRIVATE_KEY }}
+        script: |
+          cd /var/www/html/carpediem/alphagranite-web
+
+          # Pull latest updates
+          git pull
+
+          # Install dependencies
+          npm install --legacy-peer-deps
+
+          # Build project
+          npm run build
+
+          echo "✅ Alphagranite Web Demo deployed successfully!"
