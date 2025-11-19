@@ -636,14 +636,15 @@ const NewFabIdForm = () => {
                           name="jobName"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Job Name <span>
+                              <div className="flex items-center">
+                                <FormLabel>Job Name</FormLabel>
                                 <Link to="/create-jobs">
-                                  <Button variant="ghost" className="text-primary inline-flex items-center ml-2" >
-                                    <Plus />
+                                  <Button variant="ghost" className="text-primary !my-0 ml-2 !p-0 hover:bg-none text-xs !h-0" size="sm" autoHeight={false} >
+                                    <Plus  />
                                     New Job
                                   </Button>
                                 </Link>
-                              </span></FormLabel>
+                              </div>
                               <Select onValueChange={(value) => {
                                 field.onChange(value);
                                 // Auto-populate job number

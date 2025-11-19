@@ -23,8 +23,8 @@ const ProfileSection = () => {
 
   const image = (
     <img
-      src={toAbsoluteUrl('/images/app/300-2.png')}
-      className="rounded-full size-[100px] shrink-0"
+      src={toAbsoluteUrl('/images/app/user-line.svg')}
+      className="rounded-full size-[100px] shrink-0 shadow p-3 object-cover"
       alt="image"
     />
   );
