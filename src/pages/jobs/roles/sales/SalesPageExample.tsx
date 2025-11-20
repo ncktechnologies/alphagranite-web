@@ -1,12 +1,15 @@
 import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Search } from 'lucide-react';
 import { Link } from 'react-router';
-import { useGetFabsQuery } from '@/store/api/job';
+import { useGetFabsQuery, FabListParams } from '@/store/api/job';
 import { useJobStageFilter } from '@/hooks/use-job-stage';
 import { useSelector } from 'react-redux';
 import type { RootState } from '@/store';
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 
 /**
  * EXAMPLE: Sales Page with Role-Based Filtering
@@ -22,13 +25,25 @@ export function SalesPageExample() {
     const { currentStageFilter, isSuperAdmin } = useJobStageFilter();
     const user = useSelector((state: RootState) => state.user?.user);
     
-    // Fetch fabs with role-based filtering
-    // Super admin: currentStageFilter is undefined, so gets ALL fabs
-    // Sales role: currentStageFilter is 'sales', so gets only sales fabs
-    const { data: fabs, isLoading, error } = useGetFabsQuery({
+    // Pagination and filter states
+    const [page, setPage] = useState(0);
+    const [pageSize, setPageSize] = useState(20);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [scheduleStartDate, setScheduleStartDate] = useState<Date | undefined>(undefined);
+    const [scheduleDueDate, setScheduleDueDate] = useState<Date | undefined>(undefined);
+
+    // Build query params with pagination, search, and filters
+    const queryParams: FabListParams = {
         current_stage: currentStageFilter,
-        limit: 100,
-    });
+        skip: page * pageSize,
+        limit: pageSize,
+        ...(searchQuery && { search: searchQuery }),
+        ...(scheduleStartDate && { schedule_start_date: scheduleStartDate.toISOString() }),
+        ...(scheduleDueDate && { schedule_due_date: scheduleDueDate.toISOString() }),
+    };
+    
+    // Fetch fabs with role-based filtering, pagination, and search
+    const { data: fabs, isLoading, error } = useGetFabsQuery(queryParams);
 
     if (isLoading) {
         return (
@@ -68,6 +83,65 @@ export function SalesPageExample() {
             </Toolbar>
 
             <div className="mt-6">
+                {/* Search and Filters */}
+                <div className="mb-6 bg-white rounded-lg shadow p-4">
+                    <div className="flex flex-wrap gap-4 items-end">
+                        <div className="flex-1 min-w-[200px]">
+                            <label className="text-sm font-medium mb-2 block">Search</label>
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                                <Input
+                                    placeholder="Search fabs..."
+                                    value={searchQuery}
+                                    onChange={(e) => {
+                                        setSearchQuery(e.target.value);
+                                        setPage(0); // Reset to first page on search
+                                    }}
+                                    className="pl-10"
+                                />
+                            </div>
+                        </div>
+                        
+                        <div className="min-w-[200px]">
+                            <label className="text-sm font-medium mb-2 block">Template Start Date</label>
+                            <DateTimePicker
+                                mode="date"
+                                value={scheduleStartDate}
+                                onChange={(date) => {
+                                    setScheduleStartDate(date);
+                                    setPage(0);
+                                }}
+                                placeholder="Select start date"
+                            />
+                        </div>
+                        
+                        <div className="min-w-[200px]">
+                            <label className="text-sm font-medium mb-2 block">Template Due Date</label>
+                            <DateTimePicker
+                                mode="date"
+                                value={scheduleDueDate}
+                                onChange={(date) => {
+                                    setScheduleDueDate(date);
+                                    setPage(0);
+                                }}
+                                placeholder="Select due date"
+                            />
+                        </div>
+                        
+                        <Button
+                            variant="outline"
+                            onClick={() => {
+                                setSearchQuery('');
+                                setScheduleStartDate(undefined);
+                                setScheduleDueDate(undefined);
+                                setPage(0);
+                            }}
+                        >
+                            Clear Filters
+                        </Button>
+                    </div>
+                </div>
+
                 <div className="bg-white rounded-lg shadow">
                     <div className="p-4">
                         <h3 className="text-lg font-medium mb-4">
@@ -110,6 +184,36 @@ export function SalesPageExample() {
                         </div>
                     </div>
                 </div>
+                
+                {/* Pagination */}
+                {fabs && fabs.length > 0 && (
+                    <div className="mt-6 bg-white rounded-lg shadow p-4 flex items-center justify-between">
+                        <div className="text-sm text-gray-600">
+                            Showing {page * pageSize + 1} to {Math.min((page + 1) * pageSize, page * pageSize + (fabs?.length || 0))}
+                        </div>
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPage(p => Math.max(0, p - 1))}
+                                disabled={page === 0}
+                            >
+                                Previous
+                            </Button>
+                            <div className="flex items-center px-4 text-sm">
+                                Page {page + 1}
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setPage(p => p + 1)}
+                                disabled={(fabs?.length || 0) < pageSize}
+                            >
+                                Next
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </div>
         </Container>
     );

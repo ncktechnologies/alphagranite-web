@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { MenuConfig } from '@/config/types';
 import { cn } from '@/lib/utils';
 import { useMenu } from '@/hooks/use-menu';
+import { useIsSuperAdmin } from '@/hooks/use-permission';
 import {
   Menubar,
   MenubarContent,
@@ -17,6 +18,15 @@ import {
 const NavbarMenu = ({ items }: { items: MenuConfig }) => {
   const { pathname } = useLocation();
   const { isActive, hasActiveChild } = useMenu(pathname);
+  const isSuperAdmin = useIsSuperAdmin();
+
+  // Filter menu items based on super admin status
+  const filteredItems = items.filter(item => {
+    // If item doesn't have superAdminOnly property, show it to everyone
+    if (!item.superAdminOnly) return true;
+    // If item is superAdminOnly, only show it to super admins
+    return isSuperAdmin;
+  });
 
   const buildMenu = (items: MenuConfig) => {
     return items.map((item, index) => {
@@ -106,7 +116,7 @@ const NavbarMenu = ({ items }: { items: MenuConfig }) => {
     <div className="grid">
       <div className="kt-scrollable-x-auto">
         <Menubar className="flex items-stretch gap-3 bg-transparent p-0 h-auto">
-          {buildMenu(items)}
+          {buildMenu(filteredItems)}
         </Menubar>
       </div>
     </div>

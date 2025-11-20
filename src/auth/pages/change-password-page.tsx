@@ -107,6 +107,7 @@ export function ChangePasswordPage() {
             setCredentials({
               admin: profileData,
               access_token: accessToken,
+              permissions: profileData?.permissions || [], // Pass permissions to Redux
             })
           );
         }

@@ -61,7 +61,15 @@ export const authApi = createApi({
                 query: () => ({ 
                     url: "/admin/platform/dashboard/stats", 
                     method: "get"
-                })
+                }),
+                transformResponse: (response: any) => response.data || response
+            }),
+            getRoleBasedDashboard: build.query<any, void>({
+                query: () => ({
+                    url: "/dashboard/role-based",
+                    method: "get"
+                }),
+                transformResponse: (response: any) => response.data || response
             }),
             forgotPassword: build.mutation<any, ForgotPasswordRequest>({
                 query: (data) => ({ url: "/users/forgot_password", method: "post", data })
@@ -97,6 +105,7 @@ export const {
     useResetPasswordMutation,
     useUnlockAccountMutation,
     useGetDashboardWidgetsQuery,
+    useGetRoleBasedDashboardQuery,
     useForgotPasswordMutation,
     useRefreshTokenMutation,
     useUploadImageMutation,

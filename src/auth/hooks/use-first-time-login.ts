@@ -43,6 +43,7 @@ export const useFirstTimeLogin = () => {
         setCredentials({
           admin: profileData,
           access_token: res.data.access_token,
+          permissions: profileData?.permissions || [], // Pass permissions to Redux
         })
       );
       

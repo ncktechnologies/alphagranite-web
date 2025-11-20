@@ -31,13 +31,16 @@ export function SidebarMenu() {
   );
 
   // Map menu paths to permission codes
+  // Note: Dashboard and Settings are always visible to all users
+  // Dashboard shows role-based widgets filtered by permissions
+  // Settings shows only Profile for non-super admin users
   const getMenuCode = (path: string): string | null => {
-    if (path === '/') return 'dashboard';
+    if (path === '/') return null; // Dashboard - always visible
     if (path.startsWith('/employees')) return 'employees';
     if (path.startsWith('/departments')) return 'department';
     if (path.startsWith('/job')) return 'jobs';
     if (path.startsWith('/shop')) return 'shop';
-    if (path.startsWith('/settings')) return 'settings';
+    if (path.startsWith('/settings')) return null; // Settings - always visible
     return null;
   };
 
@@ -47,7 +50,10 @@ export function SidebarMenu() {
       // Always show headings and separators
       if (item.heading || item.separator) return true;
       
-      // Super admins see everything
+      // Always show Dashboard and Settings for all users
+      if (item.path === '/' || item.path?.startsWith('/settings')) return true;
+      
+      // Super admins see everything else
       if (isSuperAdmin) return true;
       
       // Check permission for this menu item

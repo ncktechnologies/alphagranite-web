@@ -636,10 +636,10 @@ const NewFabIdForm = () => {
                           name="jobName"
                           render={({ field }) => (
                             <FormItem>
-                              <div className="flex items-center">
+                              <div className="flex items-start ">
                                 <FormLabel>Job Name</FormLabel>
                                 <Link to="/create-jobs">
-                                  <Button variant="ghost" className="text-primary !my-0 ml-2 !p-0 hover:bg-none text-xs !h-0" size="sm" autoHeight={false} >
+                                  <Button variant="ghost" className="text-primary -py-2 hover:bg-none text-xs !h-0 gap-0" size="xs"  autoHeight={false}>
                                     <Plus  />
                                     New Job
                                   </Button>

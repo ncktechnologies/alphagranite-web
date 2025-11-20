@@ -15,6 +15,7 @@ export interface MenuItem {
   expandTitle?: string;
   badge?: string;
   separator?: boolean;
+  superAdminOnly?: boolean;
 }
 
 export type MenuConfig = MenuItem[];

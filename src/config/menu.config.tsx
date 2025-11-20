@@ -61,7 +61,7 @@ import {
   StoreIcon,
 } from 'lucide-react';
 import { Role, Station, type MenuConfig } from './types';
-import { RiBuilding2Line, RiBuildingLine, RiNodeTree, RiNotification3Line, RiStoreLine, RiUser3Line } from '@remixicon/react';
+import { RiBuilding2Line, RiBuildingLine, RiNodeTree, RiNotification3Line, RiShieldKeyholeLine, RiStoreLine, RiUser3Line } from '@remixicon/react';
 
 export const MENU_SIDEBAR: MenuConfig = [
   {
@@ -118,15 +118,24 @@ export const SETTINGS_NAV:MenuConfig = [
     icon: RiUser3Line,
     path:'/settings/profile'
   },
+  // Super admin only sections
   {
     title: "Roles & Permissions",
     icon: RiNodeTree,
-    path:'/settings/roles'
+    path:'/settings/roles',
+    superAdminOnly: true
+  },
+  {
+    title: "Permissions Management",
+    icon: RiShieldKeyholeLine,
+    path:'/settings/permissions',
+    superAdminOnly: true
   },
   {
     title: "Notifications",
     icon: RiNotification3Line,
-    path:'/settings/notifications'
+    path:'/settings/notifications',
+    superAdminOnly: true
   }
 ];
 export const SHOP_NAV:MenuConfig = [
@@ -152,41 +161,41 @@ export const roles: Role[] = [
       id: '1',
       name: 'SALES',
       description: 'Job pipeline, estimates pending approval',
-      status: 'Active',
-      members: 5,
-      avatars: ['AJ', 'SM']
+      status: 1,
+      member_count: 5,
+      top_members: ['AJ', 'SM']
     },
     {
       id: '2',
       name: 'PROJECT MANAGERS',
       description: 'Active jobs, schedules, blockers',
-      status: 'Active',
-      members: 5,
-      avatars: ['DC', 'MG']
+      status: 1,
+      member_count: 5,
+      top_members: ['DC', 'MG']
     },
     {
       id: '3',
       name: 'FABRICATION MANAGER',
       description: 'Today\'s cut list, task queue',
-      status: 'Active',
-      members: 5,
-      avatars: ['JW', 'AB']
+      status: 1,
+      member_count: 5,
+      top_members: ['JW', 'AB']
     },
     {
       id: '4',
       name: 'INSTALLERS',
       description: 'Assigned jobs, route planning, customer details',
-      status: 'Inactive',
-      members: 5,
-      avatars: ['CD', 'EF']
+      status: 2,
+      member_count: 5,
+      top_members: ['CD', 'EF']
     },
     {
       id: '5',
       name: 'ADMIN/EXECUTIVES',
       description: 'Department KPIs, financial & operational insights',
-      status: 'Active',
-      members: 5,
-      avatars: ['GH', 'IJ']
+      status: 1,
+      member_count: 5,
+      top_members: ['GH', 'IJ']
     }
   ];
   export const workStation: Station[] = [

@@ -27,9 +27,10 @@ import { DataGridTable, DataGridTableRowSelect, DataGridTableRowSelectAll } from
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Search, X } from 'lucide-react';
+import { Search, X, Calendar } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { Link, useNavigate } from 'react-router';
 import { toAbsoluteUrl } from '@/lib/helpers';
@@ -61,6 +62,10 @@ const CuttingPlan = () => {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
+    const [dateFilter, setDateFilter] = useState<string>('all');
+    const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
+    const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
+    const [showCustomDate, setShowCustomDate] = useState(false);
     const navigate = useNavigate();
 
     const filteredData = useMemo(() => {
@@ -249,15 +254,44 @@ const CuttingPlan = () => {
                             />
                         </div>
 
-                        <Select>
+                        <Select value={dateFilter} onValueChange={(value) => {
+                            setDateFilter(value)
+                            if (value === 'custom') {
+                                setShowCustomDate(true)
+                            } else {
+                                setShowCustomDate(false)
+                                setCustomStartDate(undefined)
+                                setCustomEndDate(undefined)
+                            }
+                        }}>
                             <SelectTrigger className="w-[150px] h-[34px]">
-                                <SelectValue placeholder="2 June - 9 June" />
+                                <SelectValue placeholder="Date Filter" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="week1">2 June - 9 June</SelectItem>
-                                <SelectItem value="week2">10 June - 17 June</SelectItem>
+                                <SelectItem value="all">All Time</SelectItem>
+                                <SelectItem value="today">Today</SelectItem>
+                                <SelectItem value="7days">Last 7 Days</SelectItem>
+                                <SelectItem value="30days">Last 30 Days</SelectItem>
+                                <SelectItem value="custom">Custom Range</SelectItem>
                             </SelectContent>
                         </Select>
+
+                        {showCustomDate && (
+                            <>
+                                <DateTimePicker
+                                    value={customStartDate}
+                                    onChange={setCustomStartDate}
+                                    placeholder="Start Date"
+                                    granularity="day"
+                                />
+                                <DateTimePicker
+                                    value={customEndDate}
+                                    onChange={setCustomEndDate}
+                                    placeholder="End Date"
+                                    granularity="day"
+                                />
+                            </>
+                        )}
 
                         <Select>
                             <SelectTrigger className="w-[120px] h-[34px]">

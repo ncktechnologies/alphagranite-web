@@ -39,6 +39,7 @@ const buttonVariants = cva(
         lg: 'h-10 rounded-md px-4 text-sm gap-1.5 [&_svg:not([class*=size-])]:size-4',
         md: 'h-8.5 rounded-md px-3 gap-1.5 text-[0.8125rem] leading-(--text-sm--line-height) [&_svg:not([class*=size-])]:size-4',
         sm: 'h-7 rounded-md px-2.5 gap-1.25 text-xs [&_svg:not([class*=size-])]:size-3.5',
+        xs: 'h-0 rounded-md px-2.5 gap-x-1.25 text-xs [&_svg:not([class*=size-])]:size-1',
         icon: 'size-8.5 rounded-md [&_svg:not([class*=size-])]:size-4 shrink-0',
       },
       autoHeight: {
@@ -301,6 +302,11 @@ const buttonVariants = cva(
       },
 
       // Size
+      {
+        size: 'xs',
+        mode: 'icon',
+        className: 'w-2 h-2 p-0 [[&_svg:not([class*=size-])]:size-1',
+      },
       {
         size: 'sm',
         mode: 'icon',

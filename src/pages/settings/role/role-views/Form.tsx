@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { X } from 'lucide-react';
+import { X, Settings } from 'lucide-react';
 import { Permissions } from '@/config/types';
 import { UserAssignment } from '../component/AssignUser';
 import { PermissionsTable } from '../component/PermisionsTable';
@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useGetAllActionMenusQuery } from '@/store/api/actionMenu';
 import { Role } from '@/store/api/role';
+import { Link } from 'react-router';
 
 interface RoleFormProps {
     mode: 'new' | 'edit';
@@ -183,7 +184,16 @@ export const RoleForm = ({ mode, role, onBack, onSave }: RoleFormProps) => {
                         placeholder="Department KPIs, financial, operational insights"
                     />
                 </div>
-                <h3 className="font-semibold text-black leading-6  ">Permissions</h3>
+                <h3 className="font-semibold text-black leading-6">Permissions</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <p className="text-sm text-gray-500">Configure access permissions for this role</p>
+                  <Link to="/settings/permissions">
+                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800">
+                      <Settings className="w-4 h-4 mr-1" />
+                      Manage Permissions
+                    </Button>
+                  </Link>
+                </div>
                 <PermissionsTable
                     permissions={permissions}
                     onPermissionChange={handlePermissionChange}

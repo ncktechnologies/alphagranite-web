@@ -4,17 +4,37 @@ import { Container } from '@/components/common/container';
 import { PageMenu } from '@/pages/settings/page-menu';
 import { ViewMode } from '@/config/types';
 import { JobForm, JobFormData } from './components/Form';
-import { useGetJobsQuery, useCreateJobMutation, useUpdateJobMutation, useDeleteJobMutation, Job, useGetJobByIdQuery } from '@/store/api/job';
+import { useGetJobsQuery, useCreateJobMutation, useUpdateJobMutation, useDeleteJobMutation, Job, useGetJobByIdQuery, JobListParams } from '@/store/api/job';
 import { EmptyState } from '@/pages/settings/role/component/EmptyState';
 import { JobsList } from './components/List';
 import { JobDetailsView } from './components/Details';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Search, Calendar } from 'lucide-react';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 
 export const JobsSection = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('details');
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
+  
+  // Pagination and filter states
+  const [page, setPage] = useState(0);
+  const [pageSize, setPageSize] = useState(20);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [scheduleStartDate, setScheduleStartDate] = useState<Date | undefined>(undefined);
+  const [scheduleDueDate, setScheduleDueDate] = useState<Date | undefined>(undefined);
+
+  // Build query params
+  const queryParams: JobListParams = {
+    skip: page * pageSize,
+    limit: pageSize,
+    ...(searchQuery && { search: searchQuery }),
+    ...(scheduleStartDate && { schedule_start_date: scheduleStartDate.toISOString() }),
+    ...(scheduleDueDate && { schedule_due_date: scheduleDueDate.toISOString() }),
+  };
 
   // API hooks
-  const { data: jobsData, isLoading, refetch } = useGetJobsQuery({ limit: 100 });
+  const { data: jobsData, isLoading, refetch } = useGetJobsQuery(queryParams);
   const [createJob] = useCreateJobMutation();
   const [updateJob] = useUpdateJobMutation();
   const [deleteJob] = useDeleteJobMutation();
@@ -140,6 +160,52 @@ export const JobsSection = () => {
     <Fragment>
       {/* <PageMenu /> */}
       <Container>
+        {/* Search and Filters */}
+        <div className="mb-6 flex flex-wrap gap-4 items-end">
+          <div className="flex-1 min-w-[200px]">
+            <label className="text-sm font-medium mb-2 block">Search Jobs</label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search by job name, number..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+          
+          <div className="min-w-[200px]">
+            <label className="text-sm font-medium mb-2 block">Schedule Start Date</label>
+            <DateTimePicker
+              value={scheduleStartDate}
+              onChange={setScheduleStartDate}
+              placeholder="Select start date"
+            />
+          </div>
+          
+          <div className="min-w-[200px]">
+            <label className="text-sm font-medium mb-2 block">Schedule Due Date</label>
+            <DateTimePicker
+              value={scheduleDueDate}
+              onChange={setScheduleDueDate}
+              placeholder="Select due date"
+            />
+          </div>
+          
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSearchQuery('');
+              setScheduleStartDate(undefined);
+              setScheduleDueDate(undefined);
+              setPage(0);
+            }}
+          >
+            Clear Filters
+          </Button>
+        </div>
+
         <div className="flex h-full gap-6">
           <JobsList
             jobs={jobs}
@@ -154,6 +220,33 @@ export const JobsSection = () => {
             {renderRightContent()}
           </div>
         </div>
+        
+        {/* Pagination */}
+        {jobs.length > 0 && (
+          <div className="mt-6 flex items-center justify-between">
+            <div className="text-sm text-gray-600">
+              Showing {page * pageSize + 1} to {Math.min((page + 1) * pageSize, jobs.length)} entries
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => Math.max(0, p - 1))}
+                disabled={page === 0}
+              >
+                Previous
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPage(p => p + 1)}
+                disabled={jobs.length < pageSize}
+              >
+                Next
+              </Button>
+            </div>
+          </div>
+        )}
       </Container>
     </Fragment>
   );

@@ -211,6 +211,9 @@ export interface JobListParams {
     account_id?: number;
     status_id?: number;
     priority?: string;
+    search?: string;
+    schedule_start_date?: string;
+    schedule_due_date?: string;
 }
 
 export interface FabListParams {
@@ -221,6 +224,9 @@ export interface FabListParams {
     sales_person_id?: number;
     status_id?: number;
     current_stage?: string;
+    search?: string;
+    schedule_start_date?: string;
+    schedule_due_date?: string;
 }
 
 export interface TemplatingSchedule {
@@ -288,6 +294,9 @@ export const jobApi = createApi({
                             ...(queryParams.account_id !== undefined && { account_id: queryParams.account_id }),
                             ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
                             ...(queryParams.priority && { priority: queryParams.priority }),
+                            ...(queryParams.search && { search: queryParams.search }),
+                            ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
+                            ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
                         }
                     };
                 },
@@ -344,6 +353,9 @@ export const jobApi = createApi({
                             ...(queryParams.sales_person_id !== undefined && { sales_person_id: queryParams.sales_person_id }),
                             ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
                             ...(queryParams.current_stage && { current_stage: queryParams.current_stage }),
+                            ...(queryParams.search && { search: queryParams.search }),
+                            ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
+                            ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
                         }
                     };
                 },

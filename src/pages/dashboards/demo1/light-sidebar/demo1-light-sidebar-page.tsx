@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/popover';
 import { Container } from '@/components/common/container';
 import { Demo1LightSidebarContent } from './';
+import { RoleBasedDashboard } from './RoleBasedDashboard';
+import { useIsSuperAdmin } from '@/hooks/use-permission';
 import {
   Select,
   SelectContent,
@@ -32,6 +34,7 @@ export function Demo1LightSidebarPage() {
   const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(
     date,
   );
+  const isSuperAdmin = useIsSuperAdmin();
 
   const handleDateRangeApply = () => {
     setDate(tempDateRange); // Save the temporary date range to the main state
@@ -103,7 +106,8 @@ export function Demo1LightSidebarPage() {
         </Toolbar>
       </Container>
       <Container>
-        <Demo1LightSidebarContent />
+        {/* Super admins see the full admin dashboard, regular users see role-based dashboard */}
+        {isSuperAdmin ? <Demo1LightSidebarContent /> : <RoleBasedDashboard />}
       </Container>
     </Fragment>
   );

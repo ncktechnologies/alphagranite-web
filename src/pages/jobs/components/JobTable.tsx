@@ -33,6 +33,7 @@ import { exportTableToCSV } from '@/lib/exportToCsv';
 import ActionsCell from '../roles/sales/action';
 import { useNavigate } from 'react-router';
 import { JOB_STAGES } from '@/hooks/use-job-stage';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 
 interface JobTableProps {
     jobs: IJob[];
@@ -49,6 +50,9 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
     const [sorting, setSorting] = useState<SortingState>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [dateFilter, setDateFilter] = useState<string>('all'); // For date filtering
+    const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined); // For custom date range
+    const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined); // For custom date range
+    const [showCustomDate, setShowCustomDate] = useState(false); // To toggle custom date picker
 
     const filteredData = useMemo(() => {
         let result = jobs;
@@ -67,11 +71,40 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
         
         // Date filter
         if (dateFilter !== 'all') {
-            result = result.filter((job) => job.date?.includes(dateFilter));
+            result = result.filter((job) => {
+                if (!job.date) return false;
+                
+                const jobDate = new Date(job.date);
+                const today = new Date();
+                
+                switch (dateFilter) {
+                    case 'today':
+                        return jobDate.toDateString() === today.toDateString();
+                    case '7days':
+                        const sevenDaysAgo = new Date();
+                        sevenDaysAgo.setDate(today.getDate() - 7);
+                        return jobDate >= sevenDaysAgo && jobDate <= today;
+                    case '30days':
+                        const thirtyDaysAgo = new Date();
+                        thirtyDaysAgo.setDate(today.getDate() - 30);
+                        return jobDate >= thirtyDaysAgo && jobDate <= today;
+                    case 'custom':
+                        if (customStartDate && customEndDate) {
+                            const start = new Date(customStartDate);
+                            const end = new Date(customEndDate);
+                            end.setHours(23, 59, 59, 999); // Include the entire end day
+                            return jobDate >= start && jobDate <= end;
+                        }
+                        return true;
+                    default:
+                        // Year-based filtering (existing functionality)
+                        return job.date?.includes(dateFilter);
+                }
+            });
         }
         
         return result;
-    }, [searchQuery, dateFilter, jobs]);
+    }, [searchQuery, dateFilter, customStartDate, customEndDate, jobs]);
 
     const navigate = useNavigate();
 
@@ -349,12 +382,12 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                 columnsVisibility: true,
                 cellBorder: true,
             }}
-            onRowClick={onRowClick ? (row) => handleRowClickInternal(row) : undefined} // Add row click handler
+            onRowClick={onRowClick ? (row) => handleRowClickInternal(row) : undefined}
         >
             <Card>
                 <CardHeader className="py-3.5 border-b">
                     <CardHeading>
-                        <div className="flex items-center gap-2.5">
+                        <div className="flex items-center gap-2.5 flex-wrap">
                             <div className="relative">
                                 <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
                                 <Input
@@ -374,17 +407,52 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                                     </Button>
                                 )}
                             </div>
-                            <Select value={dateFilter} onValueChange={setDateFilter}>
-                                <SelectTrigger className="w-[170px] h-[34px]">
-                                    <SelectValue placeholder="Filter by date" />
-                                </SelectTrigger>
-                                <SelectContent className="w-32">
-                                    <SelectItem value="all">All Dates</SelectItem>
-                                    <SelectItem value="2025">2025</SelectItem>
-                                    <SelectItem value="2024">2024</SelectItem>
-                                    <SelectItem value="2023">2023</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            
+                            {/* Enhanced Date Filter */}
+                            <div className="flex items-center gap-2">
+                                <Select value={dateFilter} onValueChange={(value) => {
+                                    setDateFilter(value);
+                                    if (value === 'custom') {
+                                        setShowCustomDate(true);
+                                    } else {
+                                        setShowCustomDate(false);
+                                    }
+                                }}>
+                                    <SelectTrigger className="w-[170px] h-[34px]">
+                                        <SelectValue placeholder="Filter by date" />
+                                    </SelectTrigger>
+                                    <SelectContent className="w-48">
+                                        <SelectItem value="all">All Dates</SelectItem>
+                                        <SelectItem value="today">Today</SelectItem>
+                                        <SelectItem value="7days">Last 7 Days</SelectItem>
+                                        <SelectItem value="30days">Last 30 Days</SelectItem>
+                                        <SelectItem value="custom">Custom Range</SelectItem>
+                                        <SelectItem value="2025">2025</SelectItem>
+                                        <SelectItem value="2024">2024</SelectItem>
+                                        <SelectItem value="2023">2023</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                
+                                {/* Custom Date Pickers - only shown when 'custom' is selected */}
+                                {showCustomDate && (
+                                    <div className="flex items-center gap-2">
+                                        <DateTimePicker
+                                            mode="date"
+                                            value={customStartDate}
+                                            onChange={setCustomStartDate}
+                                            placeholder="Start date"
+                                        />
+                                        <span className="text-sm">to</span>
+                                        <DateTimePicker
+                                            mode="date"
+                                            value={customEndDate}
+                                            onChange={setCustomEndDate}
+                                            placeholder="End date"
+                                        />
+                                    </div>
+                                )}
+                            </div>
+                            
                             {/* Stage filter - only visible to super admins */}
                             {isSuperAdmin && (
                                 <Select onValueChange={handleStageFilterChange}>
@@ -401,7 +469,6 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                                     </SelectContent>
                                 </Select>
                             )}
-                            {/* Remove the gender filter as it's not relevant */}
                         </div>
                     </CardHeading>
 
