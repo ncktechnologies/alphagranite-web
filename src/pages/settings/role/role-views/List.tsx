@@ -21,7 +21,6 @@ export const RolesList = ({
   onNewRole,
   isLoading = false,
 }: RolesListProps) => {
-  console.log(roles, "roleslistttt")
   return (
     <div className="w-80 space-y-4 pr-6 border-r">
       <div className="flex items-center justify-between">

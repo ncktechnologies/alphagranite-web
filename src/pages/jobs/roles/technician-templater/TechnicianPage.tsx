@@ -37,8 +37,8 @@ const transformFabToJob = (fab: Fab): IJob => {
     id: fab.id,
     fab_type: fab.fab_type,
     fab_id: String(fab.id), // Using fab.id as fab_id since there's no fab_id in Fab type
-    job_name: `Job ${fab.job_id}`, // Use job_id as placeholder since job_details is not available
-    job_no: String(fab.job_id),
+    job_name: `${fab.job_details?.name}`,
+    job_no: String(fab.job_details?.job_number),
     date: fab.created_at, // Using created_at as date
     current_stage: fab.current_stage, // Add current_stage
     // Optional fields with default values

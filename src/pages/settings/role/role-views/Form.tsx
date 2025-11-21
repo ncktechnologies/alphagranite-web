@@ -28,6 +28,7 @@ export interface RoleFormData {
     isActive: boolean;
     selectedUsers: string[];
     permissions: Permissions;
+    role_id:number;
     action_menu_permissions?: Array<{
         action_menu_id: number;
         can_create: boolean;
@@ -57,7 +58,6 @@ export const RoleForm = ({ mode, role, onBack, onSave }: RoleFormProps) => {
 
     // Fetch action menus to get IDs
     const { data: actionMenus } = useGetAllActionMenusQuery();
-
     // Create a map of action menu codes to IDs
     const actionMenuMap = useMemo(() => {
         if (!actionMenus) return {};
@@ -75,8 +75,8 @@ export const RoleForm = ({ mode, role, onBack, onSave }: RoleFormProps) => {
             setIsActive(role.status === 1);
             
             // Populate selected users from role members
-            if (role.members && role.members.length > 0) {
-                const userIds = role.members.map(member => String(member.id));
+            if (role.members?.data && role.members?.data.length > 0) {
+                const userIds = role.members?.data.map(member => String(member.id));
                 setSelectedUsers(userIds);
             }
             
@@ -84,8 +84,8 @@ export const RoleForm = ({ mode, role, onBack, onSave }: RoleFormProps) => {
             if (role.permissions && role.permissions.length > 0) {
                 const permsObj: Permissions = {};
                 role.permissions.forEach(perm => {
-                    if (perm.action_menu_code) {
-                        permsObj[perm.action_menu_code] = {
+                    if (perm.action_menu_name) {
+                        permsObj[perm.action_menu_name] = {
                             create: perm.can_create,
                             read: perm.can_read,
                             update: perm.can_update,
@@ -140,6 +140,7 @@ export const RoleForm = ({ mode, role, onBack, onSave }: RoleFormProps) => {
 
         onSave({
             name: roleName,
+            role_id: role ? role.id : 0,
             description,
             isActive,
             selectedUsers,

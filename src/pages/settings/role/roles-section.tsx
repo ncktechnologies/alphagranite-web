@@ -2,13 +2,15 @@
 import { Fragment, useState, useEffect } from 'react';
 import { Container } from '@/components/common/container';
 import { PageMenu } from '../page-menu';
-import {  ViewMode } from '@/config/types';
+import { ViewMode } from '@/config/types';
 import { RoleForm, RoleFormData } from './role-views/Form';
 import { RoleDetailsView } from './role-views/Details';
 import { RolesList } from './role-views/List';
 import { useGetRolesQuery, useCreateRoleMutation, useUpdateRoleMutation, useDeleteRoleMutation, Role, useGetRoleByIdQuery } from '@/store/api/role';
 import { useGetAllActionMenusQuery } from '@/store/api/actionMenu';
 import { EmptyState } from './component/EmptyState';
+import { ContentLoader } from '@/components/common/content-loader';
+import { Card } from '@/components/ui/card';
 
 export const RolesSection = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('details');
@@ -16,7 +18,7 @@ export const RolesSection = () => {
   const [isDeleted, setIsDeleted] = useState(false);
 
   // API hooks
-  const { data: rolesData, isLoading, refetch } = useGetRolesQuery({ with_stats: true });
+  const { data: rolesData, isLoading, refetch, error} = useGetRolesQuery({ with_stats: true });
   const { data: actionMenus } = useGetAllActionMenusQuery();
   const [createRole] = useCreateRoleMutation();
   const [updateRole] = useUpdateRoleMutation();
@@ -76,6 +78,7 @@ export const RolesSection = () => {
         status: data.isActive ? 1 : 2,
         action_menu_permissions: data.action_menu_permissions || [],
         user_ids: data.selectedUsers.map(id => parseInt(id)),
+        role_id: parseInt(data.role_id),
       };
 
       if (viewMode === 'new') {
@@ -93,11 +96,11 @@ export const RolesSection = () => {
 
   const handleDelete = async () => {
     if (!selectedRoleId) return;
-    
+
     try {
       await deleteRole(selectedRoleId).unwrap();
       refetch();
-      
+
       // After deletion, set first role as active if available
       if (roles.length > 1) {
         const remainingRoles = roles.filter(r => r.id !== selectedRoleId);
@@ -130,9 +133,9 @@ export const RolesSection = () => {
 
     if (viewMode === 'details' && selectedRoleDetails) {
       return (
-        <RoleDetailsView 
-          role={selectedRoleDetails} 
-          onEdit={handleEditRole} 
+        <RoleDetailsView
+          role={selectedRoleDetails}
+          onEdit={handleEditRole}
           onDelete={handleDelete}
           onActivate={handleActivateRole}
         />
@@ -153,6 +156,32 @@ export const RolesSection = () => {
     return null;
   };
 
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <Fragment>
+        <PageMenu />
+        <Container>
+          <ContentLoader />
+        </Container>
+      </Fragment>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <Fragment>
+        <PageMenu />
+        <Container>
+          <Card className="p-6">
+            <div className="text-red-600">Failed to load roles. Please try again.</div>
+          </Card>
+        </Container>
+      </Fragment>
+    );
+  }
   return (
     <Fragment>
       <PageMenu />

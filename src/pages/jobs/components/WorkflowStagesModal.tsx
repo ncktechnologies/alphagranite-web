@@ -60,7 +60,7 @@ const getWorkflowStages = (): WorkflowStage[] => [
     date: '2025-11-16',
     assignedTo: 'Production Coordinator',
     notes: 'All documents reviewed and approved',
-    route: '/jobs/pre-draft-review'
+    route: '/job/predraft'
   },
   {
     id: '4',

@@ -31,7 +31,7 @@ export function RoleBasedDashboard() {
     const routeMap: Record<string, string> = {
       'fab-ids': '/job/sales',
       'templating': '/job/templating',
-      'pre-draft-review': '/job/predraft',
+      'Pre-draft Review': '/job/predraft',
       'drafting': '/job/drafting',
       'sct': '/job/sct',
       'slabsmith-request': '/job/slabsmith',

@@ -76,7 +76,9 @@ const UsersSection = ({ role }: UsersSectionProps) => {
   });
   const [genderFilter, setGenderFilter] = useState('All');
 
-  const members = role.members || [];
+  const members = role.members?.data || [];
+
+  console.log(members, "dkc")
 
   const filteredData = useMemo(() => {
     if (!searchQuery) return members;

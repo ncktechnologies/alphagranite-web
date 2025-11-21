@@ -56,7 +56,7 @@ export function PredraftPage() {
     
     // Fetch fabs with role-based filtering
     const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
-        current_stage: isSuperAdmin ? 'templating_technician' : currentStageFilter,
+        current_stage:  'templating_technician' ,
         limit: 100,
     });
 
@@ -68,12 +68,13 @@ export function PredraftPage() {
                         title="Pre-draft review"
                         description=""
                     />
-                    <div className="space-y-4 mt-4">
+                   
+                </Toolbar>
+                 <div className="space-y-4 mt-4">
                         <Skeleton className="h-16 w-full" />
                         <Skeleton className="h-16 w-full" />
                         <Skeleton className="h-16 w-full" />
                     </div>
-                </Toolbar>
             </Container>
         );
     }

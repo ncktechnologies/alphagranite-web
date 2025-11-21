@@ -32,7 +32,7 @@ const userSlice = createSlice({
       if (permissions && Array.isArray(permissions)) {
         state.permissions = permissions.reduce((acc: any, perm: MenuPermission) => {
           // Use menu_name as the key for widget matching
-          const key = perm.menu_name || perm.menu_code;
+          const key = perm.menu_name;
           acc[key] = {
             can_create: perm.can_create,
             can_read: perm.can_read,

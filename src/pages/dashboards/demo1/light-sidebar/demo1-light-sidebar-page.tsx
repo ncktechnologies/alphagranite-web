@@ -5,7 +5,7 @@ import {
   ToolbarHeading,
 } from '@/layouts/demo1/components/toolbar';
 import { addDays, format } from 'date-fns';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, Plus } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Link } from 'react-router';
 export function Demo1LightSidebarPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<DateRange | undefined>({
@@ -46,10 +47,12 @@ export function Demo1LightSidebarPage() {
   };
 
   const defaultStartDate = new Date(); // Default start date fallback
+    const isUserSuperAdmin = useIsSuperAdmin();
 
   return (
     <Fragment>
       <Container>
+       {isUserSuperAdmin ?  
         <Toolbar>
           <ToolbarHeading
             title="Dashboard"
@@ -67,43 +70,27 @@ export function Demo1LightSidebarPage() {
                 <SelectItem value="12">12 months</SelectItem>
               </SelectContent>
             </Select>
-            {/* <Popover open={isOpen} onOpenChange={setIsOpen}>
-              <PopoverTrigger asChild>
-                <Button id="date" variant="outline">
-                  <CalendarDays size={16} className="me-0.5" />
-                  {date?.from ? (
-                    date.to ? (
-                      <>
-                        {format(date.from, 'LLL dd, y')} -{' '}
-                        {format(date.to, 'LLL dd, y')}
-                      </>
-                    ) : (
-                      format(date.from, 'LLL dd, y')
-                    )
-                  ) : (
-                    <span>Pick a date range</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="end">
-                <Calendar
-                  initialFocus
-                  mode="range"
-                  defaultMonth={tempDateRange?.from || defaultStartDate}
-                  selected={tempDateRange}
-                  onSelect={setTempDateRange}
-                  numberOfMonths={2}
-                />
-                <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
-                  <Button variant="outline" onClick={handleDateRangeReset}>
-                    Reset
-                  </Button>
-                  <Button onClick={handleDateRangeApply}>Apply</Button>
-                </div>
-              </PopoverContent>
-            </Popover> */}
           </ToolbarActions>
         </Toolbar>
+:
+        <Toolbar className=' '>
+          <ToolbarHeading title="Dashboard" description="" />
+          <ToolbarActions>
+            <Link to="/jobs/sales/new-fab-id">
+              <Button className="">
+                <Plus/>
+                New FAB ID
+              </Button>
+            </Link>
+            <Link to="/create-jobs">
+              <Button className="">
+                <Plus />
+                New Job
+              </Button>
+            </Link>
+          </ToolbarActions>
+        </Toolbar>
+}
       </Container>
       <Container>
         {/* Super admins see the full admin dashboard, regular users see role-based dashboard */}

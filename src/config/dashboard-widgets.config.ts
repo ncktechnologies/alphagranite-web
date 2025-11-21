@@ -43,9 +43,9 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     data: { icon: 'h131.svg', bgColor: 'bg-[#EA3DB1]' }
   },
   {
-    id: 'pre-draft-review',
+    id: 'Pre-draft Review',
     title: 'Pre-draft Review',
-    requiredPermission: 'pre_draft_review',
+    requiredPermission: 'Pre-draft Review',
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
