@@ -492,10 +492,25 @@ function DataGridTable<TData extends object>() {
   const groupedRows = groupByDate && dateKey
     ? table.getRowModel().rows.reduce<Record<string, Row<TData>[]>>((acc, row) => {
         const dateValue = (row.original as any)[dateKey];
-        if (!dateValue) return acc;
-        const date = new Date(dateValue).toLocaleDateString(); // Format date as needed
-        if (!acc[date]) acc[date] = [];
-        acc[date].push(row);
+        
+        // Handle cases where there's no date
+        if (!dateValue) {
+          const noDateKey = 'No Date';
+          if (!acc[noDateKey]) acc[noDateKey] = [];
+          acc[noDateKey].push(row);
+          return acc;
+        }
+        
+        try {
+          const date = new Date(dateValue).toLocaleDateString();
+          if (!acc[date]) acc[date] = [];
+          acc[date].push(row);
+        } catch (error) {
+          // Handle invalid date values
+          const invalidDateKey = 'Invalid Date';
+          if (!acc[invalidDateKey]) acc[invalidDateKey] = [];
+          acc[invalidDateKey].push(row);
+        }
         return acc;
       }, {})
     : null;
@@ -561,12 +576,46 @@ function DataGridTable<TData extends object>() {
   // Grouped by date view - each date gets its own table section
   return (
     <div className="space-y-3">
-      {Object.entries(groupedRows).map(([date, rows]) => (
-        <div key={date} className="border border-border rounded-lg overflow-hidden">
-          {/* Date header - comes first */}
-          <div className="bg-[#F6FFE7] p-4 text-[15px] leading-[15px] font-normal text-text border-b border-border">
-            {date}
-          </div>
+      {Object.entries(groupedRows).map(([date, rows]) => {
+        // Calculate total_sq_ft for this date group
+        const totalSqFt = rows.reduce((sum, row) => {
+          const sqFt = (row.original as any).total_sq_ft;
+          const numValue = parseFloat(sqFt);
+          return sum + (isNaN(numValue) ? 0 : numValue);
+        }, 0);
+
+        return (
+          <div key={date} className="border border-border rounded-lg overflow-hidden">
+            {/* Date header row matching table columns */}
+            <div className="bg-[#F6FFE7] border-b border-border">
+              <table className="w-full table-fixed">
+                <thead>
+                  <tr>
+                    {table.getHeaderGroups()[0]?.headers.map((header, index) => {
+                      const isFirstColumn = index === 0;
+                      const isTotalSqFtColumn = header.column.id === 'total_sq_ft';
+                      const isLastColumn = index === table.getHeaderGroups()[0]?.headers.length - 1;
+                      
+                      return (
+                        <th
+                          key={header.id}
+                          style={{ width: header.getSize() }}
+                          className="p-4 text-left font-normal"
+                        >
+                          {isFirstColumn ? (
+                            <span className="text-[15px] leading-[15px] text-text">{date}</span>
+                          ) : isTotalSqFtColumn ? (
+                            <span className="text-[13px] leading-[13px] font-medium text-text">
+                              {totalSqFt.toFixed(1)}
+                            </span>
+                          ) : null}
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+              </table>
+            </div>
           
           {/* Separate table for each date group */}
           <DataGridTableBase>
@@ -608,7 +657,8 @@ function DataGridTable<TData extends object>() {
             </DataGridTableBody>
           </DataGridTableBase>
         </div>
-      ))}
+        );
+      })}
       
       {/* Empty state when no grouped rows */}
       {Object.keys(groupedRows).length === 0 && (

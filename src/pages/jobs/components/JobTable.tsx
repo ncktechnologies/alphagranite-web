@@ -24,7 +24,7 @@ import { DataGridPagination } from '@/components/ui/data-grid-pagination';
 import { DataGridTable, DataGridTableRowSelect, DataGridTableRowSelectAll } from '@/components/ui/data-grid-table';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, X } from 'lucide-react';
+import { CalendarDays, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { IJob } from './job';
@@ -33,7 +33,10 @@ import { exportTableToCSV } from '@/lib/exportToCsv';
 import ActionsCell from '../roles/sales/action';
 import { useNavigate } from 'react-router';
 import { JOB_STAGES } from '@/hooks/use-job-stage';
-import { DateTimePicker } from '@/components/ui/date-time-picker';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DateRange } from 'react-day-picker';
+import { format } from 'date-fns';
 
 interface JobTableProps {
     jobs: IJob[];
@@ -49,10 +52,10 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
     });
     const [sorting, setSorting] = useState<SortingState>([]);
     const [searchQuery, setSearchQuery] = useState('');
-    const [dateFilter, setDateFilter] = useState<string>('all'); // For date filtering
-    const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined); // For custom date range
-    const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined); // For custom date range
-    const [showCustomDate, setShowCustomDate] = useState(false); // To toggle custom date picker
+    const [dateFilter, setDateFilter] = useState<string>('all');
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+    const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
     const filteredData = useMemo(() => {
         let result = jobs;
@@ -86,25 +89,24 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                         return jobDate >= sevenDaysAgo && jobDate <= today;
                     case '30days':
                         const thirtyDaysAgo = new Date();
-                        thirtyDaysAgo.setDate(today.getDate() - 30);
+                        thirtyDaysAgo.setDate(today.getDate() + 30);
                         return jobDate >= thirtyDaysAgo && jobDate <= today;
                     case 'custom':
-                        if (customStartDate && customEndDate) {
-                            const start = new Date(customStartDate);
-                            const end = new Date(customEndDate);
-                            end.setHours(23, 59, 59, 999); // Include the entire end day
+                        if (dateRange?.from && dateRange?.to) {
+                            const start = new Date(dateRange.from);
+                            const end = new Date(dateRange.to);
+                            end.setHours(23, 59, 59, 999);
                             return jobDate >= start && jobDate <= end;
                         }
                         return true;
                     default:
-                        // Year-based filtering (existing functionality)
                         return job.date?.includes(dateFilter);
                 }
             });
         }
         
         return result;
-    }, [searchQuery, dateFilter, customStartDate, customEndDate, jobs]);
+    }, [searchQuery, dateFilter, dateRange, jobs]);
 
     const navigate = useNavigate();
 
@@ -413,9 +415,7 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                                 <Select value={dateFilter} onValueChange={(value) => {
                                     setDateFilter(value);
                                     if (value === 'custom') {
-                                        setShowCustomDate(true);
-                                    } else {
-                                        setShowCustomDate(false);
+                                        setIsDatePickerOpen(false);
                                     }
                                 }}>
                                     <SelectTrigger className="w-[170px] h-[34px]">
@@ -424,32 +424,66 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                                     <SelectContent className="w-48">
                                         <SelectItem value="all">All Dates</SelectItem>
                                         <SelectItem value="today">Today</SelectItem>
-                                        <SelectItem value="7days">Last 7 Days</SelectItem>
-                                        <SelectItem value="30days">Last 30 Days</SelectItem>
+                                        <SelectItem value="7days">next three months</SelectItem>
+                                        <SelectItem value="30days">next six months</SelectItem>
                                         <SelectItem value="custom">Custom Range</SelectItem>
-                                        <SelectItem value="2025">2025</SelectItem>
+                                        {/* <SelectItem value="2025">2025</SelectItem>
                                         <SelectItem value="2024">2024</SelectItem>
-                                        <SelectItem value="2023">2023</SelectItem>
+                                        <SelectItem value="2023">2023</SelectItem> */}
                                     </SelectContent>
                                 </Select>
                                 
-                                {/* Custom Date Pickers - only shown when 'custom' is selected */}
-                                {showCustomDate && (
-                                    <div className="flex items-center gap-2">
-                                        <DateTimePicker
-                                            mode="date"
-                                            value={customStartDate}
-                                            onChange={setCustomStartDate}
-                                            placeholder="Start date"
-                                        />
-                                        <span className="text-sm">to</span>
-                                        <DateTimePicker
-                                            mode="date"
-                                            value={customEndDate}
-                                            onChange={setCustomEndDate}
-                                            placeholder="End date"
-                                        />
-                                    </div>
+                                {/* Custom Date Range Picker */}
+                                {dateFilter === 'custom' && (
+                                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" size="sm" className="h-[34px]">
+                                                <CalendarDays className="h-4 w-4 mr-2" />
+                                                {dateRange?.from ? (
+                                                    dateRange.to ? (
+                                                        <>
+                                                            {format(dateRange.from, 'MMM dd')} - {format(dateRange.to, 'MMM dd, yyyy')}
+                                                        </>
+                                                    ) : (
+                                                        format(dateRange.from, 'MMM dd, yyyy')
+                                                    )
+                                                ) : (
+                                                    <span>Pick dates</span>
+                                                )}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                initialFocus
+                                                mode="range"
+                                                defaultMonth={tempDateRange?.from || new Date()}
+                                                selected={tempDateRange}
+                                                onSelect={setTempDateRange}
+                                                numberOfMonths={2}
+                                            />
+                                            <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setTempDateRange(undefined);
+                                                        setDateRange(undefined);
+                                                    }}
+                                                >
+                                                    Reset
+                                                </Button>
+                                                <Button 
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setDateRange(tempDateRange);
+                                                        setIsDatePickerOpen(false);
+                                                    }}
+                                                >
+                                                    Apply
+                                                </Button>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
                                 )}
                             </div>
                             

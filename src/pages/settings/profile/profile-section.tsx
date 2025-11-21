@@ -11,7 +11,6 @@ import { cn } from '@/lib/utils';
 import { ViewMode } from '@/config/types';
 import { ProfileFormSection } from './profileForm';
 import { useGetProfileQuery } from '@/store/api/auth';
-import { useGetDepartmentsQuery } from '@/store/api/department';
 import { ContentLoader } from '@/components/common/content-loader';
 
 const ProfileSection = () => {
@@ -19,7 +18,6 @@ const ProfileSection = () => {
   const [success, setSuccess] = useState(false);
   
   const { data: profile, isLoading, error } = useGetProfileQuery();
-  const { data: departmentsData } = useGetDepartmentsQuery();
 
   const image = (
     <img
@@ -37,12 +35,7 @@ const ProfileSection = () => {
   };
 
   // Get department name from department ID
-  const getDepartmentName = () => {
-    if (!profile?.department && !profile?.department_id) return 'Not assigned';
-    const deptId = profile?.department || profile?.department_id;
-    const department = departmentsData?.items?.find(d => d.id === deptId);
-    return department?.name || 'Unknown Department';
-  };
+ 
 
   // Loading state
   if (isLoading) {
@@ -103,9 +96,9 @@ const ProfileSection = () => {
             <UserHero
               name={`${profile?.first_name || ''} ${profile?.last_name || ''}`}
               image={image}
-              username={`@${profile?.email?.split('@')[0] || 'user'}`}
-              role={getDepartmentName()}
-              info={[]}
+              username={`@${profile?.username|| 'user'}`}
+              role={profile?.department_name || 'Nil'}
+               info={[]}
             />
 
 
@@ -120,7 +113,7 @@ const ProfileSection = () => {
               </div>
               <div className="flex flex-col space-y-1">
                 <span className="text-xs uppercase text-[#9094A4]">Department</span>
-                <div className="font-semibold">{getDepartmentName()}</div>
+                <div className="font-semibold">{profile?.department_name}</div>
               </div>
               <div className="flex flex-col space-y-1">
                 <span className="text-xs uppercase text-[#9094A4]">Gender</span>

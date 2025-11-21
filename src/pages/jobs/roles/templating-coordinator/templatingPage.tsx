@@ -36,7 +36,7 @@ const transformFabToJob = (fab: any): IJob => {
     fab_id: `${fab.id}`,
     job_name: fab.job_details?.name || `Job ${fab.job_id}`,
     job_no: fab.job_details?.job_number || String(fab.job_id),
-    date: fab.created_at,
+    date: fab.templating_schedule_start_date,
     current_stage: fab.current_stage,
     // Optional fields with default values
     acct_name: fab.account_name || '',
@@ -127,7 +127,7 @@ export function TemplatingPage() {
                             </span>
                         </span>
                     </TabsTrigger>
-                    <TabsTrigger value="unscheduled">
+                    {/* <TabsTrigger value="unscheduled">
                         Unscheduled
                     </TabsTrigger>
                     <TabsTrigger value="incomplete">
@@ -141,13 +141,13 @@ export function TemplatingPage() {
                             <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
                             Completed
                         </span>
-                    </TabsTrigger>
+                    </TabsTrigger> */}
                 </TabsList>
 
                 <TabsContent value="all" className="mt-4">
                     <JobTable jobs={jobsData} path='templating' isSuperAdmin={isSuperAdmin} />
                 </TabsContent>
-                <TabsContent value="unscheduled" className="mt-4">
+                {/* <TabsContent value="unscheduled" className="mt-4">
                     <JobTable jobs={jobsData} path='templating' isSuperAdmin={isSuperAdmin} />
                 </TabsContent>
                 <TabsContent value="incomplete" className="mt-4">
@@ -155,7 +155,7 @@ export function TemplatingPage() {
                 </TabsContent>
                 <TabsContent value="completed" className="mt-4">
                     <JobTable jobs={jobsData} path='templating' isSuperAdmin={isSuperAdmin} />
-                </TabsContent>
+                </TabsContent> */}
             </Tabs>
         </Container>
     );

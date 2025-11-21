@@ -3,8 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardHeader, CardTable, CardFooter, CardToolbar } from '@/components/ui/card'
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area'
-import { Search, Calendar } from 'lucide-react'
-import { DateTimePicker } from '@/components/ui/datetime-picker'
+import { Search, CalendarDays } from 'lucide-react'
 import {
     ColumnDef,
     getCoreRowModel,
@@ -35,6 +34,10 @@ import { DataGrid } from '@/components/ui/data-grid'
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header'
 import ActionsCell from './action'
 import { useNavigate } from 'react-router'
+import { Calendar } from '@/components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { DateRange } from 'react-day-picker'
+import { format } from 'date-fns'
 
 export interface ShopData {
     id: number
@@ -139,6 +142,9 @@ export default function ShopTabs() {
     )
 }
 
+// ✅ Prevent full re-renders when switching tabs
+const MemoizedShopTableContent = React.memo(ShopTableContent)
+
 function ShopTableContent({ data}: { data: ShopData[] }) {
      const navigate = useNavigate();
 
@@ -154,19 +160,58 @@ function ShopTableContent({ data}: { data: ShopData[] }) {
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
     const [searchQuery, setSearchQuery] = useState('')
     const [dateFilter, setDateFilter] = useState<string>('all')
-    const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined)
-    const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined)
-    const [showCustomDate, setShowCustomDate] = useState(false)
+    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined)
+    const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined)
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false)
 
     // ✅ useMemo to avoid re-filtering on every keystroke
     const filteredData = useMemo(() => {
-        const q = searchQuery.toLowerCase()
-        return data.filter(
-            (item) =>
-                item.job_no.toLowerCase().includes(q) ||
-                item.fab_id.toLowerCase().includes(q)
-        )
-    }, [data, searchQuery])
+        let result = data;
+        
+        // Text search across multiple fields
+        if (searchQuery) {
+            result = result.filter((item) => 
+                item.job_no?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                item.fab_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                item.fab_type?.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        }
+        
+        // Date filter
+        if (dateFilter !== 'all') {
+            result = result.filter((item) => {
+                if (!item.date) return false;
+                
+                const itemDate = new Date(item.date);
+                const today = new Date();
+                
+                switch (dateFilter) {
+                    case 'today':
+                        return itemDate.toDateString() === today.toDateString();
+                    case '7days':
+                        const sevenDaysAgo = new Date();
+                        sevenDaysAgo.setDate(today.getDate() - 7);
+                        return itemDate >= sevenDaysAgo && itemDate <= today;
+                    case '30days':
+                        const thirtyDaysAgo = new Date();
+                        thirtyDaysAgo.setDate(today.getDate() - 30);
+                        return itemDate >= thirtyDaysAgo && itemDate <= today;
+                    case 'custom':
+                        if (dateRange?.from && dateRange?.to) {
+                            const start = new Date(dateRange.from);
+                            const end = new Date(dateRange.to);
+                            end.setHours(23, 59, 59, 999);
+                            return itemDate >= start && itemDate <= end;
+                        }
+                        return true;
+                    default:
+                        return item.date?.includes(dateFilter);
+                }
+            });
+        }
+        
+        return result;
+    }, [searchQuery, dateFilter, dateRange, data]);
 
     // ✅ memoize columns once
     const columns = useMemo<ColumnDef<ShopData>[]>(
@@ -341,44 +386,77 @@ function ShopTableContent({ data}: { data: ShopData[] }) {
                             />
                         </div>
 
-                        <Select value={dateFilter} onValueChange={(value) => {
-                            setDateFilter(value)
-                            if (value === 'custom') {
-                                setShowCustomDate(true)
-                            } else {
-                                setShowCustomDate(false)
-                                setCustomStartDate(undefined)
-                                setCustomEndDate(undefined)
-                            }
-                        }}>
-                            <SelectTrigger className="w-[150px] h-[34px]">
-                                <SelectValue placeholder="Date Filter" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Time</SelectItem>
-                                <SelectItem value="today">Today</SelectItem>
-                                <SelectItem value="7days">Last 7 Days</SelectItem>
-                                <SelectItem value="30days">Last 30 Days</SelectItem>
-                                <SelectItem value="custom">Custom Range</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <div className="flex items-center gap-2">
+                            <Select value={dateFilter} onValueChange={(value) => {
+                                setDateFilter(value);
+                                setIsDatePickerOpen(false);
+                            }}>
+                                <SelectTrigger className="w-[250px] h-[34px]">
+                                    <SelectValue placeholder="Date Filter">
+                                        {dateFilter === 'custom' && dateRange?.from ? (
+                                            dateRange.to ? (
+                                                `Custom: ${format(dateRange.from, 'd MMM yyyy')} - ${format(dateRange.to, 'd MMM yyyy')}`
+                                            ) : (
+                                                `Custom: ${format(dateRange.from, 'd MMM yyyy')}`
+                                            )
+                                        ) : (
+                                            dateFilter === 'custom' ? 'Custom Range' : undefined
+                                        )}
+                                    </SelectValue>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Time</SelectItem>
+                                    <SelectItem value="today">Today</SelectItem>
+                                    <SelectItem value="7days">Last 7 Days</SelectItem>
+                                    <SelectItem value="30days">Last 30 Days</SelectItem>
+                                    <SelectItem value="custom">Custom Range</SelectItem>
+                                </SelectContent>
+                            </Select>
 
-                        {showCustomDate && (
-                            <>
-                                <DateTimePicker
-                                    value={customStartDate}
-                                    onChange={setCustomStartDate}
-                                    placeholder="Start Date"
-                                    granularity="day"
-                                />
-                                <DateTimePicker
-                                    value={customEndDate}
-                                    onChange={setCustomEndDate}
-                                    placeholder="End Date"
-                                    granularity="day"
-                                />
-                            </>
-                        )}
+                            <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm"
+                                        className={`${dateFilter !== 'custom' ? 'hidden' : ''}`}
+                                    >
+                                        Select Dates
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        initialFocus
+                                        mode="range"
+                                        defaultMonth={tempDateRange?.from || new Date()}
+                                        selected={tempDateRange}
+                                        onSelect={setTempDateRange}
+                                        numberOfMonths={2}
+                                    />
+                                    <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
+                                        <Button 
+                                            variant="outline" 
+                                            size="sm"
+                                            onClick={() => {
+                                                setTempDateRange(undefined);
+                                                setDateRange(undefined);
+                                                setIsDatePickerOpen(false);
+                                            }}
+                                        >
+                                            Reset
+                                        </Button>
+                                        <Button 
+                                            size="sm"
+                                            onClick={() => {
+                                                setDateRange(tempDateRange);
+                                                setIsDatePickerOpen(false);
+                                            }}
+                                        >
+                                            Apply
+                                        </Button>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        </div>
 
                         <Select>
                             <SelectTrigger className="w-[120px] h-[34px]">
@@ -429,6 +507,3 @@ function ShopTableContent({ data}: { data: ShopData[] }) {
         </DataGrid>
     )
 }
-
-// ✅ Prevent full re-renders when switching tabs
-const MemoizedShopTableContent = React.memo(ShopTableContent)
