@@ -36,11 +36,11 @@ const transformFabToJob = (fab: any): IJob => {
     fab_id: `${fab.id}`,
     job_name: fab.job_details?.name || `Job ${fab.job_id}`,
     job_no: fab.job_details?.job_number || String(fab.job_id),
-    date: fab.templating_schedule_start_date,
+    date: fab.created_at,
     current_stage: fab.current_stage,
     // Optional fields with default values
-    acct_name: fab.account_name || '',
-    template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
+    acct_name: '',
+    template_schedule: '',
     template_received: fab.current_stage === 'completed' ? 'Yes' : 'No',
     templater: fab.technician_name || '-',
     no_of_pieces: '',
@@ -67,7 +67,7 @@ export function TemplatingPage() {
             <Container>
                 <Toolbar>
                     <ToolbarHeading
-                        title="Templating"
+                        title="Templating Scheduling"
                         description="Manage and track all Alpha Granite templating jobs"
                     />
                 </Toolbar>
@@ -101,7 +101,7 @@ export function TemplatingPage() {
     }
 
     // Transform Fab data to IJob format
-    const jobsData: IJob[] = fabs ? fabs.map(transformFabToJob) : [];
+    const jobsData: IJob[] = fabs ? fabs.fabs?.map(transformFabToJob) : [];
 
     // For super admins, we still want to show the tabs, but they should fetch data from the API
     // with different stage filters rather than client-side filtering
@@ -110,8 +110,8 @@ export function TemplatingPage() {
         <Container>
             <Toolbar>
                 <ToolbarHeading
-                    title="Templating"
-                    description="Manage and track all Alpha Granite templating jobs"
+                    title="Template Scheduling"
+                    description=""
                 />
 
             </Toolbar>
@@ -127,9 +127,11 @@ export function TemplatingPage() {
                             </span>
                         </span>
                     </TabsTrigger>
-                    {/* <TabsTrigger value="unscheduled">
-                        Unscheduled
-                    </TabsTrigger>
+                     <div className='pl-5 text-[#4B5675] text-[14px]'>
+                        Total SQ. FT: {jobsData.reduce((total, job) => total + (Number(job.total_sq_ft) || 0), 0)} 
+                    </div>
+                    {/* 
+                   
                     <TabsTrigger value="incomplete">
                         <span className="flex items-center gap-2">
                             <span className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
@@ -145,7 +147,7 @@ export function TemplatingPage() {
                 </TabsList>
 
                 <TabsContent value="all" className="mt-4">
-                    <JobTable jobs={jobsData} path='templating' isSuperAdmin={isSuperAdmin} />
+                    <JobTable jobs={jobsData} path='templating' isSuperAdmin={isSuperAdmin} isLoading={isLoading} />
                 </TabsContent>
                 {/* <TabsContent value="unscheduled" className="mt-4">
                     <JobTable jobs={jobsData} path='templating' isSuperAdmin={isSuperAdmin} />

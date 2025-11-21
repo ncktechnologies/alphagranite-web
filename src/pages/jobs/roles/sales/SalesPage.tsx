@@ -75,7 +75,7 @@ export function SalesPage() {
     }
 
     // Transform Fab data to IJob format
-    const transformedJobs: IJob[] = fabs ? fabs.map(transformFabToJob) : [];
+    const transformedJobs: IJob[] = fabs ? fabs.fabs?.map(transformFabToJob) : [];
 
     return (
         <div className="">

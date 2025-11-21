@@ -42,10 +42,11 @@ interface JobTableProps {
     jobs: IJob[];
     path: string;
     isSuperAdmin?: boolean;
+    isLoading?: boolean;
     onRowClick?: (fabId: string) => void; // Add row click handler
 }
 
-export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTableProps) => {
+export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowClick }: JobTableProps) => {
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 5,
@@ -53,16 +54,23 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
     const [sorting, setSorting] = useState<SortingState>([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [dateFilter, setDateFilter] = useState<string>('all');
+    const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
+    // Get unique fab types for the filter
+    const fabTypes = useMemo(() => {
+        const types = Array.from(new Set(jobs.map(job => job.fab_type).filter(Boolean)));
+        return types.sort();
+    }, [jobs]);
+
     const filteredData = useMemo(() => {
         let result = jobs;
-        
+
         // Text search across multiple fields
         if (searchQuery) {
-            result = result.filter((job) => 
+            result = result.filter((job) =>
                 job.job_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 job.fab_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 job.job_no?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -71,25 +79,25 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                 job.templater?.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
-        
+
         // Date filter
         if (dateFilter !== 'all') {
             result = result.filter((job) => {
                 if (!job.date) return false;
-                
+
                 const jobDate = new Date(job.date);
                 const today = new Date();
-                
+
                 switch (dateFilter) {
                     case 'today':
                         return jobDate.toDateString() === today.toDateString();
                     case '7days':
                         const sevenDaysAgo = new Date();
-                        sevenDaysAgo.setDate(today.getDate() - 7);
+                        sevenDaysAgo.setDate(today.getDate() + 30);
                         return jobDate >= sevenDaysAgo && jobDate <= today;
                     case '30days':
                         const thirtyDaysAgo = new Date();
-                        thirtyDaysAgo.setDate(today.getDate() + 30);
+                        thirtyDaysAgo.setDate(today.getDate() + 60);
                         return jobDate >= thirtyDaysAgo && jobDate <= today;
                     case 'custom':
                         if (dateRange?.from && dateRange?.to) {
@@ -104,9 +112,14 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                 }
             });
         }
-        
+
+        // Fab Type filter
+        if (fabTypeFilter !== 'all') {
+            result = result.filter((job) => job.fab_type === fabTypeFilter);
+        }
+
         return result;
-    }, [searchQuery, dateFilter, dateRange, jobs]);
+    }, [searchQuery, dateFilter, fabTypeFilter, dateRange, jobs]);
 
     const navigate = useNavigate();
 
@@ -127,7 +140,7 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
             // Stay on current page or go to a default page
             return;
         }
-        
+
         // Find the stage that matches the selected value
         const selectedStage = Object.values(JOB_STAGES).find(stage => stage.stage === stageValue);
         if (selectedStage) {
@@ -223,19 +236,7 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                 </span>
             ),
         },
-        {
-            id: "total_sq_ft",
-            accessorKey: "total_sq_ft",
-            accessorFn: (row: IJob) => row.total_sq_ft,
-            header: ({ column }) => (
-                <DataGridColumnHeader className='uppercase' title="Total Sq ft " column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[160px]">
-                    {row.original.total_sq_ft}
-                </span>
-            ),
-        },
+      
         {
             id: "revenue",
             accessorKey: "revenue",
@@ -299,7 +300,7 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                 <span className="text-sm">{row.original.template_schedule}</span>
             ),
         },
-         {
+        {
             id: "gp",
             accessorKey: "gp",
             accessorFn: (row: IJob) => row.gp,
@@ -329,6 +330,19 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                 <DataGridColumnHeader title="TEMPLATER" column={column} />
             ),
             cell: ({ row }) => <span className="text-sm">{row.original.templater}</span>,
+        },
+          {
+            id: "total_sq_ft",
+            accessorKey: "total_sq_ft",
+            accessorFn: (row: IJob) => row.total_sq_ft,
+            header: ({ column }) => (
+                <DataGridColumnHeader className='uppercase' title="Total Sq ft " column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm truncate block max-w-[160px]">
+                    {row.original.total_sq_ft}
+                </span>
+            ),
         },
         {
             id: 'actions',
@@ -376,6 +390,7 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
         <DataGrid
             table={table}
             recordCount={filteredData.length}
+            isLoading={isLoading}
             groupByDate
             dateKey="date"
             tableLayout={{
@@ -409,7 +424,10 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                                     </Button>
                                 )}
                             </div>
-                            
+
+                            {/* Fab Type Filter */}
+
+
                             {/* Enhanced Date Filter */}
                             <div className="flex items-center gap-2">
                                 <Select value={dateFilter} onValueChange={(value) => {
@@ -426,13 +444,13 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                                         <SelectItem value="today">Today</SelectItem>
                                         <SelectItem value="7days">next three months</SelectItem>
                                         <SelectItem value="30days">next six months</SelectItem>
-                                        <SelectItem value="custom">Custom Range</SelectItem>
+                                        <SelectItem value="custom">Custom</SelectItem>
                                         {/* <SelectItem value="2025">2025</SelectItem>
                                         <SelectItem value="2024">2024</SelectItem>
                                         <SelectItem value="2023">2023</SelectItem> */}
                                     </SelectContent>
                                 </Select>
-                                
+
                                 {/* Custom Date Range Picker */}
                                 {dateFilter === 'custom' && (
                                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
@@ -462,8 +480,8 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                                                 numberOfMonths={2}
                                             />
                                             <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
-                                                <Button 
-                                                    variant="outline" 
+                                                <Button
+                                                    variant="outline"
                                                     size="sm"
                                                     onClick={() => {
                                                         setTempDateRange(undefined);
@@ -472,7 +490,7 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                                                 >
                                                     Reset
                                                 </Button>
-                                                <Button 
+                                                <Button
                                                     size="sm"
                                                     onClick={() => {
                                                         setDateRange(tempDateRange);
@@ -486,7 +504,20 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, onRowClick }: JobTa
                                     </Popover>
                                 )}
                             </div>
-                            
+                            <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
+                                <SelectTrigger className="w-[150px] h-[34px]">
+                                    <SelectValue placeholder="Fab Type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Fab Types</SelectItem>
+                                    {fabTypes.map((type) => (
+                                        <SelectItem key={type} value={type}>
+                                            {type}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
                             {/* Stage filter - only visible to super admins */}
                             {isSuperAdmin && (
                                 <Select onValueChange={handleStageFilterChange}>
