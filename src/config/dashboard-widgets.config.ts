@@ -23,9 +23,9 @@ export interface WidgetConfig {
 export const DASHBOARD_WIDGETS: WidgetConfig[] = [
   // Stats Widgets - These match the menu_name from permissions
   {
-    id: 'fab-ids',
+    id: 'FAB IDs',
     title: 'FAB IDs',
-    requiredPermission: 'fab_ids',
+    requiredPermission: 'FAB IDs',
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
@@ -53,9 +53,9 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     data: { icon: 'magnifier.svg', bgColor: 'bg-[#EA3DB1]' }
   },
   {
-    id: 'drafting',
+    id: 'Drafting',
     title: 'Drafting',
-    requiredPermission: 'drafting',
+    requiredPermission: 'Drafting',
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
@@ -65,9 +65,9 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
   
   // Stats Widgets - Row 2: SCT, SlabSmith Request, Final Programming, Cut List
   {
-    id: 'sct',
+    id: 'SCT',
     title: 'SCT',
-    requiredPermission: 'sct',
+    requiredPermission: 'SCT',
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
@@ -75,9 +75,9 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     data: { icon: 'money.svg', bgColor: 'bg-[#0BC33F]' }
   },
   {
-    id: 'slabsmith-request',
+    id: 'SlabSmith Request',
     title: 'SlabSmith Request',
-    requiredPermission: 'slabsmith_request',
+    requiredPermission: 'SlabSmith Request',
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
@@ -85,9 +85,9 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     data: { icon: 'package-up.svg', bgColor: 'bg-[#C1BE5E]' }
   },
   {
-    id: 'final-programming',
+    id: 'Final Programming',
     title: 'Final Programming',
-    requiredPermission: 'final_programming',
+    requiredPermission: 'finaFinal Programming',
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
@@ -95,9 +95,9 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     data: { icon: 'settings.svg', bgColor: 'bg-[#573DEA]' }
   },
   {
-    id: 'cut-list',
+    id: 'Cut List',
     title: 'Cut List',
-    requiredPermission: 'cut_list',
+    requiredPermission: 'Cut List',
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
@@ -107,9 +107,9 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
   
   // Stats Widgets - Row 3: Retrofit Scheduling, Retrofit, Install Scheduling, Install Completion
   {
-    id: 'resurface-scheduling',
+    id: 'Resurface Scheduling',
     title: 'Resurface Scheduling',
-    requiredPermission: 'resurface-scheduling',
+    requiredPermission: 'Resurface Scheduling',
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
@@ -117,9 +117,9 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     data: { icon: 'icon-4.svg', bgColor: 'bg-[#C30B7C]' }
   },
   {
-    id: 'revisions',
+    id: 'Revisions',
     title: 'Revisions',
-    requiredPermission: 'revisions',
+    requiredPermission: 'Revisions',
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
@@ -127,9 +127,9 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     data: { icon: 'icon-3.svg', bgColor: 'bg-[#DA5D0F]' }
   },
   {
-    id: 'install-scheduling',
+    id: 'Install Scheduling',
     title: 'Install Scheduling',
-    requiredPermission: 'install_scheduling',
+    requiredPermission: 'Install Scheduling',
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
@@ -137,9 +137,9 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     data: { icon: 'calendar_pin.svg', bgColor: 'bg-[#CF2675]' }
   },
   {
-    id: 'install-completion',
+    id: 'Install Completion',
     title: 'Install Completion',
-    requiredPermission: 'install_completion',
+    requiredPermission: 'Install Completion',
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
