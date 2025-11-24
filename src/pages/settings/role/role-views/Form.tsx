@@ -69,41 +69,47 @@ export const RoleForm = ({ mode, role, onBack, onSave }: RoleFormProps) => {
 
     // Populate form data when role changes (for edit mode)
     useEffect(() => {
-        if (role) {
-            setRoleName(role.name || '');
-            setDescription(role.description || '');
-            setIsActive(role.status === 1);
+    if (role && actionMenus) {
+        setRoleName(role.name || '');
+        setDescription(role.description || '');
+        setIsActive(role.status === 1);
+        
+        // Populate selected users from role members
+        if (role.members?.data && role.members?.data.length > 0) {
+            const userIds = role.members?.data.map(member => String(member.id));
+            setSelectedUsers(userIds);
+        }
+        
+        // Populate permissions from role permissions
+        if (role.action_permissions && role.action_permissions.length > 0) {
+            const permsObj: Permissions = {};
             
-            // Populate selected users from role members
-            if (role.members?.data && role.members?.data.length > 0) {
-                const userIds = role.members?.data.map(member => String(member.id));
-                setSelectedUsers(userIds);
-            }
+            role.action_permissions.forEach(perm => {
+                // Find the action menu by id
+                const actionMenu = actionMenus.find(menu => menu.id === perm.action_menu_id);
+                if (actionMenu) {
+                    permsObj[actionMenu.code] = {
+                        create: perm.can_create,
+                        read: perm.can_read,
+                        update: perm.can_update,
+                        delete: perm.can_delete,
+                    };
+                }
+            });
             
-            // Populate permissions from role permissions
-            if (role.permissions && role.permissions.length > 0) {
-                const permsObj: Permissions = {};
-                role.permissions.forEach(perm => {
-                    if (perm.action_menu_name) {
-                        permsObj[perm.action_menu_name] = {
-                            create: perm.can_create,
-                            read: perm.can_read,
-                            update: perm.can_update,
-                            delete: perm.can_delete,
-                        };
-                    }
-                });
-                setPermissions(permsObj);
-            }
+            setPermissions(permsObj);
         } else {
-            // Reset form for new mode
-            setRoleName('');
-            setDescription('');
-            setIsActive(true);
-            setSelectedUsers([]);
             setPermissions({});
         }
-    }, [role]);
+    } else if (!role) {
+        // Reset form for new mode
+        setRoleName('');
+        setDescription('');
+        setIsActive(true);
+        setSelectedUsers([]);
+        setPermissions({});
+    }
+}, [role, actionMenus]);
 
     const handlePermissionChange = (module: string, action: string, checked: boolean) => {
         setPermissions(prev => ({

@@ -29,7 +29,7 @@ export const RolesSection = () => {
     { id: selectedRoleId!, params: { with_permissions: true, with_members: true } },
     { skip: !selectedRoleId }
   );
-
+console.log(selectedRoleDetails, "hjdj")
   const roles = rolesData?.data || [];
 
   // Set first role as active when component mounts or when roles load
