@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router';
 import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { AlertCircle, Plus } from 'lucide-react';
 import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
 import { useGetFabsQuery } from '@/store/api/job';
@@ -13,6 +13,8 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { NewFabIdForm } from './NewFabIdForm';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
@@ -65,7 +67,7 @@ export function SalesPage() {
     // Fetch fabs with role-based filtering
     // Super admin: currentStageFilter is undefined, so gets ALL fabs
     // Sales role: currentStageFilter is 'sales', so gets only sales fabs
-    const { data: fabs, isLoading, error } = useGetFabsQuery({
+    const { data: fabs, isLoading, error, isError } = useGetFabsQuery({
         current_stage: currentStageFilter,
         limit: 100,
     });
@@ -74,6 +76,41 @@ export function SalesPage() {
         return <NewFabIdForm />;
     }
 
+     if (isLoading) {
+            return (
+                <div className="">
+                    <Container>
+                        <Toolbar className=' '>
+                            <ToolbarHeading title="Drafting" description="" />
+                        </Toolbar>
+                        <div className="space-y-4 mt-4">
+                            <Skeleton className="h-16 w-full" />
+                            <Skeleton className="h-16 w-full" />
+                            <Skeleton className="h-16 w-full" />
+                        </div>
+                    </Container>
+                </div>
+            );
+        }
+    
+        if (isError) {
+            return (
+                <div className="">
+                    <Container>
+                        <Toolbar className=' '>
+                            <ToolbarHeading title="Drafting" description="" />
+                        </Toolbar>
+                        <Alert variant="destructive" className="mt-4">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>
+                                {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : "Failed to load FAB data"}
+                            </AlertDescription>
+                        </Alert>
+                    </Container>
+                </div>
+            );
+        }
     // Transform Fab data to IJob format
     const transformedJobs: IJob[] = fabs ? fabs.fabs?.map(transformFabToJob) : [];
 

@@ -25,6 +25,8 @@ const formatDate = (dateString?: string): string => {
   }
 };
 
+
+
 // Transform Fab data to match IJob interface
 const transformFabToJob = (fab: Fab): IJob => {
   return {
@@ -62,39 +64,37 @@ export function AfterDraftSalesPage() {
 
     if (isLoading) {
         return (
-            <Container>
-                <Toolbar>
-                    <ToolbarHeading
-                        title="Drafting"
-                        description=""
-                    />
+            <div className="">
+                <Container>
+                    <Toolbar className=' '>
+                        <ToolbarHeading title="SCT" description="" />
+                    </Toolbar>
                     <div className="space-y-4 mt-4">
                         <Skeleton className="h-16 w-full" />
                         <Skeleton className="h-16 w-full" />
                         <Skeleton className="h-16 w-full" />
                     </div>
-                </Toolbar>
-            </Container>
+                </Container>
+            </div>
         );
     }
 
     if (isError) {
         return (
-            <Container>
-                <Toolbar>
-                    <ToolbarHeading
-                        title="Drafting"
-                        description=""
-                    />
-                </Toolbar>
-                <Alert variant="destructive" className="mt-4">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>
-                        {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : "Failed to load FAB data"}
-                    </AlertDescription>
-                </Alert>
-            </Container>
+            <div className="">
+                <Container>
+                    <Toolbar className=' '>
+                        <ToolbarHeading title="SCT" description="" />
+                    </Toolbar>
+                    <Alert variant="destructive" className="mt-4">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>
+                            {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : "Failed to load FAB data"}
+                        </AlertDescription>
+                    </Alert>
+                </Container>
+            </div>
         );
     }
 
@@ -105,7 +105,7 @@ export function AfterDraftSalesPage() {
         <Container>
             <Toolbar>
                 <ToolbarHeading
-                    title="Drafting"
+                    title="SCT"
                     description=""
                 />
             </Toolbar>

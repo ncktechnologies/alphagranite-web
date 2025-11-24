@@ -70,14 +70,14 @@ export function TechnicianPage() {
         limit: 100,
     });
 
-    if (isLoading) {
+   if (isLoading) {
         return (
             <div className="">
                 <Container>
                     <Toolbar className=' '>
-                        <ToolbarHeading title="Templating" description="" />
+                        <ToolbarHeading title="Drafting" description="" />
                     </Toolbar>
-                    <div className="space-y-4">
+                    <div className="space-y-4 mt-4">
                         <Skeleton className="h-16 w-full" />
                         <Skeleton className="h-16 w-full" />
                         <Skeleton className="h-16 w-full" />
@@ -92,9 +92,9 @@ export function TechnicianPage() {
             <div className="">
                 <Container>
                     <Toolbar className=' '>
-                        <ToolbarHeading title="Templating" description="" />
+                        <ToolbarHeading title="Drafting" description="" />
                     </Toolbar>
-                    <Alert variant="destructive">
+                    <Alert variant="destructive" className="mt-4">
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Error</AlertTitle>
                         <AlertDescription>
