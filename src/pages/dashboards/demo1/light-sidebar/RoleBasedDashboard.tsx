@@ -29,18 +29,18 @@ export function RoleBasedDashboard() {
    */
   const getRouteForWidget = (widgetId: string): string => {
     const routeMap: Record<string, string> = {
-      'fab-ids': '/job/sales',
-      'templating': '/job/templating',
+      'FAB IDs': '/job/sales',
+      'Templating': '/job/templating',
       'Pre-draft Review': '/job/predraft',
-      'drafting': '/job/drafting',
-      'sct': '/job/sct',
-      'slabsmith-request': '/job/slabsmith',
-      'final-programming': '/job/final-programming',
-      'cut-list': '/job/cut-list',
-      'retrofit-scheduling': '/job/retrofit-scheduling',
-      'retrofit': '/job/retrofit',
-      'install-scheduling': '/job/install-scheduling',
-      'install-completion': '/job/install-completion',
+      'Drafting': '/job/draft',
+      'SCT': '/job/draft-review',
+      'SlabSmith Request': '/job/slabsmith',
+      'Final Programming': '/job/final-programming',
+      'Cut List': '/job/draft-review',
+      'Resurface Scheduling': '/job/retrofit-scheduling',
+      'Revisions': '/job/revision',
+      'Install Scheduling': '/job/install-scheduling',
+      'Install Completion': '/job/install-completion',
     };
     return routeMap[widgetId] || '/job';
   };
