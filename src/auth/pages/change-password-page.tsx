@@ -79,11 +79,11 @@ export function ChangePasswordPage() {
       setError(null);
 
       // Log the values being sent
-      console.log('Sending password change request:', {
-        current_password: values.currentPassword,
-        new_password: values.password,
-        confirm_password: values.confirmPassword
-      });
+      // console.log('Sending password change request:', {
+      //   current_password: values.currentPassword,
+      //   new_password: values.password,
+      //   confirm_password: values.confirmPassword
+      // });
 
       // Call the API to change password
       await changePassword({ 
@@ -101,13 +101,12 @@ export function ChangePasswordPage() {
         // Get user profile
         const profileData = await getProfile().unwrap();
         const accessToken = localStorage.getItem('token');
-        
         if (accessToken) {
           dispatch(
             setCredentials({
               admin: profileData,
               access_token: accessToken,
-              permissions: profileData?.permissions || [], // Pass permissions to Redux
+              permissions: profileData?.action_permissions || [], // Pass permissions to Redux
             })
           );
         }

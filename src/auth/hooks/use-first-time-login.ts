@@ -39,11 +39,12 @@ export const useFirstTimeLogin = () => {
       toast.success("User login successfully");
       localStorage.setItem('token', res.data.access_token);
       const profileData = await getProfile().unwrap();
+    console.log(profileData, "testing")
       dispatch(
         setCredentials({
           admin: profileData,
           access_token: res.data.access_token,
-          permissions: profileData?.permissions || [], // Pass permissions to Redux
+          permissions: profileData?.action_permissions || [], // Pass permissions to Redux
         })
       );
       
