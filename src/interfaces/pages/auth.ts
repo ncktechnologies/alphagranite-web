@@ -109,6 +109,8 @@ export interface UserProfileUpdate {
   department_id?: number;
   department?: number;
   gender?: string;
+  profile_image_id?: number;
+  profile_image_url?: string;
   // Add other profile fields as needed
 }
 

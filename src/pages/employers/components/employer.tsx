@@ -309,6 +309,7 @@ const Employees = () => {
             <DataGrid
                 table={table}
                 recordCount={employeesData?.total || 0}
+                isLoading={isLoading}
                 tableLayout={{
                     columnsPinnable: true,
                     columnsMovable: true,

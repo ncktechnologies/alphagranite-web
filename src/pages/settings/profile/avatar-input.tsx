@@ -11,8 +11,12 @@ import {
 import { ImageInput, ImageInputFile, ImageInputFiles } from '@/components/image-input';
 import { useUploadImageMutation } from '@/store/api';
 
+type AvatarInputProps = {
+  onUploadComplete?: (file: { id: number; url: string; filename: string }) => void;
+  onUploadError?: (error: unknown) => void;
+};
 
-export function AvatarInput() {
+export function AvatarInput({ onUploadComplete, onUploadError }: AvatarInputProps = {}) {
   const [avatar, setAvatar] = useState<ImageInputFile[]>(() => {
     return [{ dataURL: toAbsoluteUrl(`/images/app/user-line.svg`) }]
   })
@@ -33,6 +37,7 @@ export function AvatarInput() {
             
             const result = await uploadImage(formData).unwrap();
             console.log('Upload successful:', result);
+            onUploadComplete?.(result);
             
             // Optional: Update with server URL
             // if (result.url) {
@@ -42,6 +47,7 @@ export function AvatarInput() {
             // }
           } catch (error) {
             console.error('Failed to upload image:', error);
+            onUploadError?.(error);
             // Handle error - maybe revert this specific image
           }
         }

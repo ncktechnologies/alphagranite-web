@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Container } from '@/components/common/container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,10 @@ import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate } from 'react-router';
+import { useUploadImageMutation } from '@/store/api/auth';
+import type { FileWithPreview } from '@/hooks/use-file-upload';
+import { UploadedFileMeta } from '@/types/uploads';
+import { toast } from 'sonner';
 
 const DrafterDetailsPage = () => {
   type ViewMode = 'activity' | 'file';
@@ -23,15 +27,66 @@ const DrafterDetailsPage = () => {
   const [isDrafting, setIsDrafting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [totalTime, setTotalTime] = useState(0);
-  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFileMeta[]>([]);
+  const [uploadedFileMap, setUploadedFileMap] = useState<Record<string, UploadedFileMeta>>({});
+  const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('activity');
   const [activeFile, setActiveFile] = useState<any | null>(null);
   const [hasEnded, setHasEnded] = useState(false);
   const [resetTimeTracking, setResetTimeTracking] = useState(0);
    const navigate = useNavigate()
-  const handleFilesChange = (files: any[]) => {
-    setUploadedFiles(files);
-  };
+  const [uploadImage] = useUploadImageMutation();
+
+  const handleFilesChange = useCallback(async (files: FileWithPreview[]) => {
+    if (!files) return;
+
+    const retainedEntries: Record<string, UploadedFileMeta> = {};
+    files.forEach((fileItem) => {
+      if (uploadedFileMap[fileItem.id]) {
+        retainedEntries[fileItem.id] = uploadedFileMap[fileItem.id];
+      }
+    });
+
+    const pendingFiles = files.filter(
+      (fileItem) => fileItem.file instanceof File && !retainedEntries[fileItem.id],
+    );
+
+    if (pendingFiles.length === 0) {
+      setUploadedFileMap(retainedEntries);
+      setUploadedFiles(Object.values(retainedEntries));
+      return;
+    }
+
+    try {
+      setIsUploadingDocuments(true);
+      const newEntries: Record<string, UploadedFileMeta> = { ...retainedEntries };
+
+      for (const fileItem of pendingFiles) {
+        const rawFile = fileItem.file;
+        if (!(rawFile instanceof File)) continue;
+
+        const formData = new FormData();
+        formData.append('image', rawFile);
+        const response = await uploadImage(formData).unwrap();
+        newEntries[fileItem.id] = {
+          id: response.id.toString(),
+          name: rawFile.name,
+          size: rawFile.size,
+          filename: response.filename,
+          url: response.url,
+          type: rawFile.type,
+        };
+      }
+
+      setUploadedFileMap(newEntries);
+      setUploadedFiles(Object.values(newEntries));
+    } catch (error) {
+      console.error('Unable to upload files', error);
+      toast.error('Failed to upload one or more files. Please try again.');
+    } finally {
+      setIsUploadingDocuments(false);
+    }
+  }, [uploadedFileMap, uploadImage]);
 
   const handleFileClick = (file: any) => {
     setActiveFile(file);
@@ -180,7 +235,13 @@ const DrafterDetailsPage = () => {
                   <UploadDocuments
                     onFileClick={handleFileClick}
                     onFilesChange={handleFilesChange}
+                    simulateUpload={false}
                   />
+                  {isUploadingDocuments && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Uploading files, please wait...
+                    </p>
+                  )}
 
 
 

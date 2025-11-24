@@ -20,7 +20,7 @@ import {
 import { LoaderCircleIcon } from 'lucide-react';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { AvatarInput } from './avatar-input';
-import { useGetProfileQuery, useUpdateProfileMutation, useUploadImageMutation } from '@/store/api/auth';
+import { useGetProfileQuery, useUpdateProfileMutation } from '@/store/api/auth';
 import { useGetDepartmentsQuery } from '@/store/api/department';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Check } from 'lucide-react';
@@ -39,7 +39,7 @@ export const ProfileFormSection = ({ onSave, onCancel }: ProfileFormSectionProps
     const { data: profile, isLoading: isLoadingProfile } = useGetProfileQuery();
     const { data: departmentsData, isLoading: isDepartmentsLoading } = useGetDepartmentsQuery();
     const [updateProfile] = useUpdateProfileMutation();
-    const [uploadImage] = useUploadImageMutation();
+    const [profileImageMeta, setProfileImageMeta] = useState<{ id: number; url: string; filename: string } | null>(null);
 
     const defaultValues = useMemo(() => {
         if (profile) {
@@ -90,7 +90,13 @@ export const ProfileFormSection = ({ onSave, onCancel }: ProfileFormSectionProps
             // Remove the department string field as we're sending department_id
             const { department, ...updateData } = payload;
 
-            await updateProfile(updateData).unwrap();
+            const payloadWithImage = {
+                ...updateData,
+                ...(profileImageMeta?.id && { profile_image_id: profileImageMeta.id }),
+                ...(profileImageMeta?.url && { profile_image_url: profileImageMeta.url }),
+            };
+
+            await updateProfile(payloadWithImage).unwrap();
             setSuccess('Profile updated successfully!');
 
             // Call parent onSave callback
@@ -137,7 +143,7 @@ export const ProfileFormSection = ({ onSave, onCancel }: ProfileFormSectionProps
                 <div className="space-y-4 bg-[#F8F9FC] h-[220px] text-center p-[24px] rounded-[12px]">
                     <FormLabel className='text-center text-[#2E3A59] pb-2'>Upload Image</FormLabel>
                     <div className="flex items-center gap-4 justify-center">
-                        <AvatarInput />
+                        <AvatarInput onUploadComplete={setProfileImageMeta} />
 
                     </div>
                 </div>

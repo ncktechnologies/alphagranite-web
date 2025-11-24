@@ -30,7 +30,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     component: 'StatWidget',
     category: 'stats',
     order: 1,
-    data: { icon: 'h119.svg', bgColor: 'bg-[#9CC15E]' }
+    data: { icon: 'user-fill.svg', bgColor: 'bg-[#9CC15E]' }
   },
   {
     id: 'templating',
@@ -40,7 +40,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     component: 'StatWidget',
     category: 'stats',
     order: 2,
-    data: { icon: 'h131.svg', bgColor: 'bg-[#EA3DB1]' }
+    data: { icon: 'tape-measure.svg', bgColor: 'bg-[#EE7575]' }
   },
   {
     id: 'Pre-draft Review',
@@ -50,7 +50,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     component: 'StatWidget',
     category: 'stats',
     order: 3,
-    data: { icon: 'h143.svg', bgColor: 'bg-[#EA3DB1]' }
+    data: { icon: 'magnifier.svg', bgColor: 'bg-[#EA3DB1]' }
   },
   {
     id: 'drafting',
@@ -60,7 +60,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     component: 'StatWidget',
     category: 'stats',
     order: 4,
-    data: { icon: 'h156.svg', bgColor: 'bg-[#51BCF4]' }
+    data: { icon: 'icon-6.svg', bgColor: 'bg-[#51BCF4]' }
   },
   
   // Stats Widgets - Row 2: SCT, SlabSmith Request, Final Programming, Cut List
@@ -72,7 +72,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     component: 'StatWidget',
     category: 'stats',
     order: 5,
-    data: { icon: 'h119.svg', bgColor: 'bg-[#9CC15E]' }
+    data: { icon: 'money.svg', bgColor: 'bg-[#0BC33F]' }
   },
   {
     id: 'slabsmith-request',
@@ -82,7 +82,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     component: 'StatWidget',
     category: 'stats',
     order: 6,
-    data: { icon: 'h131.svg', bgColor: 'bg-[#FFA500]' }
+    data: { icon: 'package-up.svg', bgColor: 'bg-[#C1BE5E]' }
   },
   {
     id: 'final-programming',
@@ -92,7 +92,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     component: 'StatWidget',
     category: 'stats',
     order: 7,
-    data: { icon: 'h143.svg', bgColor: 'bg-[#FFA500]' }
+    data: { icon: 'settings.svg', bgColor: 'bg-[#573DEA]' }
   },
   {
     id: 'cut-list',
@@ -102,7 +102,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     component: 'StatWidget',
     category: 'stats',
     order: 8,
-    data: { icon: 'h156.svg', bgColor: 'bg-[#9CC15E]' }
+    data: { icon: 'hand-saw.svg', bgColor: 'bg-[#5DD40D]' }
   },
   
   // Stats Widgets - Row 3: Retrofit Scheduling, Retrofit, Install Scheduling, Install Completion
@@ -114,7 +114,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     component: 'StatWidget',
     category: 'stats',
     order: 9,
-    data: { icon: 'h119.svg', bgColor: 'bg-[#EA3DB1]' }
+    data: { icon: 'icon-4.svg', bgColor: 'bg-[#C30B7C]' }
   },
   {
     id: 'revisions',
@@ -124,7 +124,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     component: 'StatWidget',
     category: 'stats',
     order: 10,
-    data: { icon: 'h131.svg', bgColor: 'bg-[#FFA500]' }
+    data: { icon: 'icon-3.svg', bgColor: 'bg-[#DA5D0F]' }
   },
   {
     id: 'install-scheduling',
@@ -134,7 +134,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     component: 'StatWidget',
     category: 'stats',
     order: 11,
-    data: { icon: 'h143.svg', bgColor: 'bg-[#9370DB]' }
+    data: { icon: 'calendar_pin.svg', bgColor: 'bg-[#CF2675]' }
   },
   {
     id: 'install-completion',
@@ -144,7 +144,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     component: 'StatWidget',
     category: 'stats',
     order: 12,
-    data: { icon: 'h156.svg', bgColor: 'bg-[#51BCF4]' }
+    data: { icon: 'icon-1.svg', bgColor: 'bg-[#13D6C6]' }
   },
   
   // FAB Widgets

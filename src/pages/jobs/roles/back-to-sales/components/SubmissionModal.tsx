@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +23,8 @@ import { Upload, Plus, Check } from "lucide-react";
 import { Alert, AlertIcon, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
+import { useUploadImageMutation } from "@/store/api/auth";
+import { UploadedFileMeta } from "@/types/uploads";
 
 const revisionSchema = z.object({
   salesPerson: z.string().min(1, "Sales person is required"),
@@ -33,6 +35,8 @@ const revisionSchema = z.object({
         id: z.string(),
         name: z.string(),
         size: z.number(),
+        url: z.string().optional(),
+        filename: z.string().optional(),
       })
     )
     .optional(),
@@ -64,7 +68,9 @@ export const RevisionModal = ({
   onSubmit,
 }: RevisionModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFileMeta[]>([]);
+  const [uploadImage, { isLoading: isUploadingFiles }] = useUploadImageMutation();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate()
   const form = useForm<RevisionData>({
     resolver: zodResolver(revisionSchema),
@@ -75,18 +81,39 @@ export const RevisionModal = ({
     },
   });
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadSelectedFiles = async (fileList: FileList) => {
+    const files = Array.from(fileList);
+    const uploaded: UploadedFileMeta[] = [];
+
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("image", file);
+      const response = await uploadImage(formData).unwrap();
+      uploaded.push({
+        id: response.id.toString(),
+        name: file.name,
+        size: file.size,
+        filename: response.filename,
+        url: response.url,
+        type: file.type,
+      });
+    }
+
+    setUploadedFiles((prev) => [...prev, ...uploaded]);
+    form.setValue("files", [...(form.getValues("files") ?? []), ...uploaded]);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
-    const newFiles = Array.from(e.target.files);
-    setUploadedFiles((prev) => [...prev, ...newFiles]);
-    form.setValue(
-      "files",
-      [...uploadedFiles, ...newFiles].map((f, i) => ({
-        id: String(i),
-        name: f.name,
-        size: f.size,
-      }))
-    );
+    try {
+      await uploadSelectedFiles(e.target.files);
+      toast.success("Files uploaded successfully");
+    } catch (error) {
+      console.error("Failed to upload files", error);
+      toast.error("Failed to upload files. Please try again.");
+    } finally {
+      e.target.value = "";
+    }
   };
 
   const handleSubmit = async (values: RevisionData) => {
@@ -213,6 +240,7 @@ export const RevisionModal = ({
                       multiple
                       onChange={handleFileUpload}
                       className="hidden"
+                      ref={fileInputRef}
                     />
                   </InputWrapper>
                 </label>
@@ -221,12 +249,16 @@ export const RevisionModal = ({
                   type="button"
                   variant="dashed"
                   className="flex flex-1 items-center gap-2 h-12"
-                  onClick={() => document.querySelector<HTMLInputElement>('input[type="file"]')?.click()}
+                  onClick={() => fileInputRef.current?.click()}
                 >
                   <Plus className="w-4 h-4" />
                   Add
                 </Button>
               </div>
+
+              {isUploadingFiles && (
+                <p className="text-xs text-muted-foreground pt-1">Uploading files...</p>
+              )}
 
               {uploadedFiles.length > 0 && (
                 <div className="space-y-1 pt-2 text-sm text-muted-foreground">

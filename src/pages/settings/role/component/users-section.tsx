@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ColumnDef,
   getCoreRowModel,
@@ -10,7 +10,7 @@ import {
   SortingState,
   useReactTable,
 } from '@tanstack/react-table';
-import { Search, X, CalendarIcon, Filter, UserRoundPlusIcon } from 'lucide-react';
+import { Search, X, UserRoundPlusIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -18,7 +18,6 @@ import {
   CardHeader,
   CardHeading,
   CardTable,
-  CardTitle,
   CardToolbar,
 } from '@/components/ui/card';
 import { DataGrid } from '@/components/ui/data-grid';
@@ -34,11 +33,12 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
 import { format } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Role, RoleMember } from '@/store/api/role';
+import { Role, RoleMember, useUpdateRoleMutation } from '@/store/api/role';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { UserAssignment } from './AssignUser';
+import { toast } from 'sonner';
 
 interface UsersSectionProps {
   role: Role;
@@ -60,6 +60,10 @@ const StatusBadge = ({ status }: { status: number | undefined }) => {
   );
 };
 
+type RoleMembersCollection = {
+  data?: RoleMember[];
+};
+
 const UsersSection = ({ role }: UsersSectionProps) => {
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -70,20 +74,51 @@ const UsersSection = ({ role }: UsersSectionProps) => {
   ]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [searchQuery, setSearchQuery] = useState('');
-  const [dateRange, setDateRange] = useState<{ from: Date | undefined, to: Date | undefined }>({
-    from: undefined,
-    to: undefined
-  });
-  const [genderFilter, setGenderFilter] = useState('All');
+  const members = useMemo<RoleMember[]>(() => {
+    const rawMembers = role.members as RoleMember[] | RoleMembersCollection | undefined;
+    if (Array.isArray(rawMembers)) {
+      return rawMembers;
+    }
+    if (rawMembers && !Array.isArray(rawMembers)) {
+      return rawMembers.data ?? [];
+    }
+    return [];
+  }, [role.members]);
+  const memberIds = useMemo(() => members.map((member: RoleMember) => String(member.id)), [members]);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>(memberIds);
+  const [updateRole, { isLoading: isAssigning }] = useUpdateRoleMutation();
 
-  const members = role.members?.data || [];
+  useEffect(() => {
+    if (!assignDialogOpen) {
+      setSelectedUserIds(memberIds);
+    }
+  }, [memberIds, assignDialogOpen]);
 
-  console.log(members, "dkc")
+  const handleUserToggle = (userId: string) => {
+    setSelectedUserIds((prev) => (prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]));
+  };
+
+  const handleAssignSave = async () => {
+    try {
+      await updateRole({
+        id: role.id,
+        data: {
+          user_ids: selectedUserIds.map((id) => Number(id)),
+        },
+      }).unwrap();
+      toast.success('Users assigned successfully');
+      setAssignDialogOpen(false);
+    } catch (error: unknown) {
+      const message = (error as { data?: { message?: string } })?.data?.message || 'Failed to assign users';
+      toast.error(message);
+    }
+  };
 
   const filteredData = useMemo(() => {
     if (!searchQuery) return members;
     return members.filter(
-      (item) =>
+      (item: RoleMember) =>
         `${item.first_name} ${item.last_name}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.email.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -92,7 +127,7 @@ const UsersSection = ({ role }: UsersSectionProps) => {
   const columns = useMemo<ColumnDef<RoleMember>[]>(() => [
     {
       id: 'select',
-      header: ({ table }) => (
+      header: () => (
         <DataGridTableRowSelectAll />
       ),
       cell: ({ row }) => (
@@ -246,11 +281,28 @@ const UsersSection = ({ role }: UsersSectionProps) => {
             </div>
           </CardHeading>
           <CardToolbar>
-
-            <Button >
-              <UserRoundPlusIcon />
-              Assign Role
-            </Button>
+            <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <UserRoundPlusIcon />
+                  Assign Role
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Assign Users to Role</DialogTitle>
+                </DialogHeader>
+                <UserAssignment selectedUsers={selectedUserIds} onUserToggle={handleUserToggle} />
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleAssignSave} disabled={isAssigning}>
+                    {isAssigning ? 'Saving...' : 'Save Changes'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </CardToolbar>
         </CardHeader>
         <CardTable>

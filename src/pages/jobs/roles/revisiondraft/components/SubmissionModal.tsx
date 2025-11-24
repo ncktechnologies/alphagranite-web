@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -23,6 +23,9 @@ import { Upload, Plus, CheckCircle2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useUploadImageMutation } from "@/store/api/auth";
+import { UploadedFileMeta } from "@/types/uploads";
+import { toast } from "sonner";
 
 const revisionSchema = z.object({
   revisionType: z.string().min(1, "Select revision type"),
@@ -32,6 +35,8 @@ const revisionSchema = z.object({
         id: z.string(),
         name: z.string(),
         size: z.number(),
+        url: z.string().optional(),
+        filename: z.string().optional(),
       })
     )
     .optional(),
@@ -45,8 +50,10 @@ export const RevisionForm = ({
 }: {
   onSubmit: (data: RevisionData) => void;
 }) => {
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFileMeta[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadImage, { isLoading: isUploadingFiles }] = useUploadImageMutation();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const form = useForm<RevisionData>({
     resolver: zodResolver(revisionSchema),
@@ -57,20 +64,40 @@ export const RevisionForm = ({
     },
   });
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.length) return;
-    const newFiles = Array.from(e.target.files);
-    const updatedFiles = [...uploadedFiles, ...newFiles];
-    setUploadedFiles(updatedFiles);
-    form.setValue(
-      "files",
-      updatedFiles.map((f, i) => ({
-        id: String(i),
-        name: f.name,
-        size: f.size,
-      }))
-    );
+  const uploadSelectedFiles = async (fileList: FileList) => {
+    const files = Array.from(fileList);
+    const uploaded: UploadedFileMeta[] = [];
+
+    for (const file of files) {
+      const formData = new FormData();
+      formData.append("image", file);
+      const response = await uploadImage(formData).unwrap();
+      uploaded.push({
+        id: response.id.toString(),
+        name: file.name,
+        size: file.size,
+        filename: response.filename,
+        url: response.url,
+        type: file.type,
+      });
+    }
+
+    setUploadedFiles((prev) => [...prev, ...uploaded]);
+    form.setValue("files", [...(form.getValues("files") ?? []), ...uploaded]);
     form.setValue("complete", true);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length) return;
+    try {
+      await uploadSelectedFiles(e.target.files);
+      toast.success("Files uploaded successfully");
+    } catch (error) {
+      console.error("Failed to upload files", error);
+      toast.error("Failed to upload files. Please try again.");
+    } finally {
+      e.target.value = "";
+    }
   };
 
   const handleSubmit = async (values: RevisionData) => {
@@ -123,9 +150,7 @@ export const RevisionForm = ({
                 <label className="flex-1 cursor-pointer">
                   <InputWrapper className="flex items-center justify-start h-12 border-dashed">
                     <div className="flex items-center gap-2 text-sm uderline text-primary">
-                      {/* <Upload className="w-4 h-4" /> */}
                       <img src='/images/app/upload.svg' className="w-[27px] h-[21px]" />
-
                       Upload file
                     </div>
                     <input
@@ -133,6 +158,7 @@ export const RevisionForm = ({
                       multiple
                       onChange={handleFileUpload}
                       className="hidden"
+                      ref={fileInputRef}
                     />
                   </InputWrapper>
                 </label>
@@ -141,13 +167,16 @@ export const RevisionForm = ({
                   type="button"
                   variant="dashed"
                   className="flex flex-1 items-center gap-2 h-12"
-                  onClick={() => document.querySelector<HTMLInputElement>('input[type="file"]')?.click()}
+                  onClick={() => fileInputRef.current?.click()}
                 >
                   <Plus className="w-4 h-4" />
                   Add
                 </Button>
               </div>
 
+              {isUploadingFiles && (
+                <p className="text-xs text-muted-foreground pt-1">Uploading files...</p>
+              )}
 
               {uploadedFiles.length > 0 && (
                 <ul className="pt-2 space-y-1 text-sm text-muted-foreground">

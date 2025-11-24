@@ -189,7 +189,7 @@ export const RoleForm = ({ mode, role, onBack, onSave }: RoleFormProps) => {
                 <div className="flex items-center justify-between mb-4">
                   <p className="text-sm text-gray-500">Configure access permissions for this role</p>
                   <Link to="/settings/permissions">
-                    <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-800">
+                    <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80">
                       <Settings className="w-4 h-4 mr-1" />
                       Manage Permissions
                     </Button>

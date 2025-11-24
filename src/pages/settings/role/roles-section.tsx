@@ -131,7 +131,11 @@ export const RolesSection = () => {
       return <EmptyState onNewRole={handleNewRole} />;
     }
 
-    if (viewMode === 'details' && selectedRoleDetails) {
+    if (viewMode === 'details') {
+      if (isLoadingDetails || !selectedRoleDetails) {
+        return <ContentLoader className="min-h-[240px]" />;
+      }
+
       return (
         <RoleDetailsView
           role={selectedRoleDetails}
@@ -142,7 +146,22 @@ export const RolesSection = () => {
       );
     }
 
-    if (viewMode === 'new' || viewMode === 'edit') {
+    if (viewMode === 'new') {
+      return (
+        <RoleForm
+          mode={viewMode}
+          role={null}
+          onBack={handleCloseForm}
+          onSave={handleSaveRole}
+        />
+      );
+    }
+
+    if (viewMode === 'edit') {
+      if (isLoadingDetails || !selectedRoleDetails) {
+        return <ContentLoader className="min-h-[240px]" />;
+      }
+
       return (
         <RoleForm
           mode={viewMode}

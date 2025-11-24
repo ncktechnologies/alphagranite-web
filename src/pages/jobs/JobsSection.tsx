@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, Calendar } from 'lucide-react';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
+import { ContentLoader } from '@/components/common/content-loader';
 
 export const JobsSection = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('details');
@@ -133,7 +134,11 @@ export const JobsSection = () => {
       return <EmptyState onNewRole={handleNewJob} />;
     }
 
-    if (viewMode === 'details' && selectedJobDetails) {
+    if (viewMode === 'details') {
+      if (isLoadingDetails || !selectedJobDetails) {
+        return <ContentLoader className="min-h-[240px]" />;
+      }
+
       return (
         <JobDetailsView 
           job={selectedJobDetails} 
@@ -142,7 +147,22 @@ export const JobsSection = () => {
       );
     }
 
-    if (viewMode === 'new' || viewMode === 'edit') {
+    if (viewMode === 'new') {
+      return (
+        <JobForm
+          mode={viewMode}
+          job={undefined}
+          onBack={handleCloseForm}
+          onSave={handleSaveJob}
+        />
+      );
+    }
+
+    if (viewMode === 'edit') {
+      if (isLoadingDetails || !selectedJobDetails) {
+        return <ContentLoader className="min-h-[240px]" />;
+      }
+
       return (
         <JobForm
           mode={viewMode}
