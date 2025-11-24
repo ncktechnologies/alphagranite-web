@@ -36,7 +36,7 @@ const transformFabToJob = (fab: any): IJob => {
     fab_id: `${fab.id}`,
     job_name: fab.job_details?.name || `Job ${fab.job_id}`,
     job_no: fab.job_details?.job_number || String(fab.job_id),
-    date: fab.created_at,
+    date: fab.templating_schedule_start_date,
     current_stage: fab.current_stage,
     // Optional fields with default values
     acct_name: '',
@@ -85,7 +85,7 @@ export function TemplatingPage() {
             <Container>
                 <Toolbar>
                     <ToolbarHeading
-                        title="Templating"
+                        title="Template Scheduling"
                         description="Manage and track all Alpha Granite templating jobs"
                     />
                 </Toolbar>

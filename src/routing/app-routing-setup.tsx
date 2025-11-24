@@ -15,6 +15,7 @@ import { DrafterDetailsPage } from '@/pages/jobs/roles/drafters';
 import DrafterPage from '@/pages/jobs/roles/drafters/DrafterPage';
 import { PreDraftDetailsPage } from '@/pages/jobs/roles/predraft/components/details';
 import { PredraftPage } from '@/pages/jobs/roles/predraft/PredraftPage';
+import { PreDraftReviewPage } from '@/pages/jobs/roles/predraft/PreDraftReviewPage';
 import { DraftRevisionPage } from '@/pages/jobs/roles/revisiondraft/BackSalesPage';
 import { ReviewDetailsPage } from '@/pages/jobs/roles/revisiondraft/details';
 import { SalesPage } from '@/pages/jobs/roles/sales/SalesPage';
@@ -36,6 +37,10 @@ import SettingsPage from '@/pages/shop/settings/SettingsPage';
 import { WjDetailsPage } from '@/pages/shop/wj/Detail';
 import WJPlanPage from '@/pages/shop/wj/WjPage';
 import { JobsSection } from '@/pages/jobs/JobsSection';
+import CutListPage from '@/pages/jobs/roles/production-coordinator/CutListPage';
+import FinalProgrammingPage from '@/pages/jobs/roles/production-coordinator/FinalProgrammingPage';
+import CutListDetailsPage from '@/pages/jobs/roles/production-coordinator/CutListDetailsPage';
+import FinalProgrammingDetailsPage from '@/pages/jobs/roles/production-coordinator/FinalProgrammingDetailsPage';
 
 import { Navigate, Route, Routes } from 'react-router';
 import { NewFabIdForm } from '@/pages/jobs/roles';
@@ -163,6 +168,14 @@ export function AppRoutingSetup() {
             }
           />
           <Route
+            path="/job/predraft-review"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <PreDraftReviewPage/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
             path="/job/draft"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
@@ -210,6 +223,42 @@ export function AppRoutingSetup() {
               // </ProtectedRoute>
             }
           />
+          <Route
+            path="/job/cut-list"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <CutListPage/>
+              // </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/job/cut-list/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <CutListDetailsPage/>
+              // </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/job/final-programming"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <FinalProgrammingPage/>
+              // </ProtectedRoute>
+            }
+          />
+          
+          <Route
+            path="/job/final-programming/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <FinalProgrammingDetailsPage/>
+              // </ProtectedRoute>
+            }
+          />
+          
           <Route
             path="/shop"
             element={

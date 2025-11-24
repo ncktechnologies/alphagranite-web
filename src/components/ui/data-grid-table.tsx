@@ -498,7 +498,7 @@ function DataGridTable<TData extends object>() {
         const dateValue = (row.original as any)[dateKey];
 
         if (!dateValue) {
-          const noDateKey = 'No Date';
+          const noDateKey = 'No Dates';
           if (!acc[noDateKey]) acc[noDateKey] = [];
           acc[noDateKey].push(row);
           return acc;
@@ -509,7 +509,7 @@ function DataGridTable<TData extends object>() {
           if (!acc[date]) acc[date] = [];
           acc[date].push(row);
         } catch (error) {
-          const invalidDateKey = 'Invalid Date';
+          const invalidDateKey = 'Invalid Dates';
           if (!acc[invalidDateKey]) acc[invalidDateKey] = [];
           acc[invalidDateKey].push(row);
         }
@@ -620,7 +620,7 @@ function DataGridTable<TData extends object>() {
                           className="p-4 text-left font-normal"
                         >
                           {isFirstColumn ? (
-                            <span className="text-[15px] leading-[15px] text-text">{date}</span>
+                            <span className="text-[15px] leading-[15px] text-text whitespace-nowrap">{date}</span>
                           ) : isTotalSqFtColumn ? (
                             <span className="text-[13px] leading-[13px] font-medium text-text">
                               {totalSqFt.toFixed(1)}

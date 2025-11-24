@@ -33,9 +33,9 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     data: { icon: 'user-fill.svg', bgColor: 'bg-[#9CC15E]' }
   },
   {
-    id: 'templating',
+    id: 'Templating',
     title: 'Templating',
-    requiredPermission: 'templating',
+    requiredPermission: 'Templating',
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
@@ -87,7 +87,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
   {
     id: 'Final Programming',
     title: 'Final Programming',
-    requiredPermission: 'finaFinal Programming',
+    requiredPermission: 'Final Programming',
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',

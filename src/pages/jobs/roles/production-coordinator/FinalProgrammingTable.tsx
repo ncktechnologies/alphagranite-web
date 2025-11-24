@@ -27,10 +27,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarDays, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { IJob } from './job';
+import { IJob } from '@/pages/jobs/components/job';
 import { groupData } from '@/lib/groupData';
 import { exportTableToCSV } from '@/lib/exportToCsv';
-import ActionsCell from '../roles/sales/action';
 import { useNavigate } from 'react-router';
 import { JOB_STAGES } from '@/hooks/use-job-stage';
 import { Calendar } from '@/components/ui/calendar';
@@ -38,15 +37,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
 
-interface JobTableProps {
+interface FinalProgrammingTableProps {
     jobs: IJob[];
     path: string;
     isSuperAdmin?: boolean;
     isLoading?: boolean;
-    onRowClick?: (fabId: string) => void; // Add row click handler
+    onRowClick?: (fabId: string) => void;
 }
 
-export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowClick }: JobTableProps) => {
+export const FinalProgrammingTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowClick }: FinalProgrammingTableProps) => {
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 5,
@@ -55,7 +54,7 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
     const [searchQuery, setSearchQuery] = useState('');
     const [dateFilter, setDateFilter] = useState<string>('today');
     const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
-    const [scheduleFilter, setScheduleFilter] = useState<string>('all'); // Change default to 'all'
+    const [scheduleFilter, setScheduleFilter] = useState<string>('scheduled'); // Change default to 'scheduled'
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -75,9 +74,7 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
                 job.job_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 job.fab_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 job.job_no?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                job.fab_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                job.template_schedule?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                job.templater?.toLowerCase().includes(searchQuery.toLowerCase())
+                job.fab_type?.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
 
@@ -157,10 +154,6 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
     }, [searchQuery, dateFilter, fabTypeFilter, scheduleFilter, dateRange, jobs]);
 
     const navigate = useNavigate();
-
-    const handleView = (department: string, id: string) => {
-        navigate(`/job/${department}/${id}`);
-    };
 
     // Function to handle row click
     const handleRowClickInternal = (job: IJob) => {
@@ -246,15 +239,6 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
             cell: ({ row }) => <span className="text-sm">{row.original.job_no}</span>,
         },
         {
-            id: "template_needed",
-            accessorKey: "template_needed",
-            accessorFn: (row: IJob) => row.template_needed,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="Template not needed" column={column} />
-            ),
-            cell: ({ row }) => <span className="text-sm">{row.original.template_needed}</span>,
-        },
-        {
             id: "acct_name",
             accessorKey: "acct_name",
             accessorFn: (row: IJob) => row.acct_name,
@@ -281,57 +265,11 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
             ),
         },
         {
-            id: "revised",
-            accessorKey: "revised",
-            accessorFn: (row: IJob) => row.revised,
-            header: ({ column }) => (
-                <DataGridColumnHeader className='uppercase' title="Revised" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[160px]">
-                    {row.original.revised}
-                </span>
-            ),
-        },
-       
-        {
-            id: "template_schedule",
-            accessorKey: "template_schedule",
-            accessorFn: (row: IJob) => row.template_schedule,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="TEMPLATE SCHEDULE" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm">{row.original.template_schedule}</span>
-            ),
-        },
-        
-        {
-            id: "template_received",
-            accessorKey: "template_received",
-            accessorFn: (row: IJob) => row.template_received,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="TEMPLATE RECEIVED" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm">{row.original.template_received}</span>
-            ),
-        },
-        {
-            id: "templater",
-            accessorKey: "templater",
-            accessorFn: (row: IJob) => row.templater,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="TEMPLATER" column={column} />
-            ),
-            cell: ({ row }) => <span className="text-sm">{row.original.templater}</span>,
-        },
-          {
             id: "total_sq_ft",
             accessorKey: "total_sq_ft",
             accessorFn: (row: IJob) => row.total_sq_ft,
             header: ({ column }) => (
-                <DataGridColumnHeader className='uppercase' title="Total Sq ft " column={column} />
+                <DataGridColumnHeader className='uppercase' title="Total Sq ft" column={column} />
             ),
             cell: ({ row }) => (
                 <span className="text-sm truncate block max-w-[160px]">
@@ -339,83 +277,45 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
                 </span>
             ),
         },
-           {
-            id: "revenue",
-            accessorKey: "revenue",
-            accessorFn: (row: IJob) => row.revenue,
+        {
+            id: "programming_status",
+            accessorKey: "current_stage",
+            accessorFn: (row: IJob) => row.current_stage,
             header: ({ column }) => (
-                <DataGridColumnHeader className='uppercase' title="Revenue" column={column} />
+                <DataGridColumnHeader title="PROGRAMMING STATUS" column={column} />
+            ),
+            cell: ({ row }) => <span className="text-sm">{row.original.current_stage}</span>,
+        },
+        {
+            id: "files_attached",
+            accessorKey: "template_needed",
+            accessorFn: (row: IJob) => row.template_needed,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="FILES ATTACHED" column={column} />
+            ),
+            cell: ({ row }) => <span className="text-sm">{row.original.template_needed}</span>,
+        },
+        {
+            id: "notes",
+            accessorKey: "template_schedule",
+            accessorFn: (row: IJob) => row.template_schedule,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="NOTES" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[160px]">
-                    {row.original.revenue}
+                <span className="text-sm truncate block max-w-[200px]">
+                    {row.original.template_schedule}
                 </span>
             ),
         },
-        {
-            id: "gp",
-            accessorKey: "gp",
-            accessorFn: (row: IJob) => row.gp,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="GP" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm">{row.original.gp}</span>
-            ),
-        },
-         {
-            id: "sct_completed",
-            accessorKey: "sct_completed",
-            accessorFn: (row: IJob) => row.sct_completed,
-            header: ({ column }) => (
-                <DataGridColumnHeader className='uppercase' title="Sct Completed" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[160px]">
-                    {row.original.sct_completed}
-                </span>
-            ),
-        },
-        {
-            id: "draft_completed",
-            accessorKey: "draft_completed",
-            accessorFn: (row: IJob) => row.draft_completed,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="DRAFT COMPLETED" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[160px]">
-                    {row.original.draft_completed}
-                </span>
-            ),
-        },
-        {
-            id: "review_completed",
-            accessorKey: "review_completed",
-            accessorFn: (row: IJob) => row.review_completed,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="REVIEW COMPLETED" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[160px]">
-                    {row.original.draft_completed}
-                </span>
-            ),
-        },
-        {
-            id: 'actions',
-            header: '',
-            cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(path, row.original.fab_id)} />,
-            enableSorting: false,
-            size: 60,
-        },
-    ], [path]);
+
+    ], []);
 
     // Filter columns based on data availability
     const columns = useMemo<ColumnDef<IJob>[]>(() => {
         return baseColumns.filter(column => {
             // Always show these columns regardless of data
-            if (column.id === 'id' || column.id === 'actions') {
+            if (column.id === 'id') {
                 return true;
             }
 
@@ -443,6 +343,24 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
     });
+
+    if (isLoading) {
+        return (
+            <Card className="border rounded-lg">
+                <CardHeader className="border-b p-4">
+                    <div>
+                        <h3 className="text-lg font-semibold">Final Programming Jobs</h3>
+                        <p className="text-sm text-muted-foreground">Jobs in final CNC programming stage</p>
+                    </div>
+                </CardHeader>
+                <div className="p-4 space-y-4">
+                    {[...Array(5)].map((_, index) => (
+                        <Skeleton key={index} className="h-12 w-full" />
+                    ))}
+                </div>
+            </Card>
+        );
+    }
 
     return (
         <DataGrid
@@ -483,7 +401,6 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
                                 )}
                             </div>
 
-                            {/* Fab Type Filter */}
                             <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
                                 <SelectTrigger className="w-[150px] h-[34px]">
                                     <SelectValue placeholder="Fab Type" />
@@ -497,11 +414,14 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
                                     ))}
                                 </SelectContent>
                             </Select>
-{/* Enhanced Date Filter */}
+
+                            {/* Enhanced Date Filter */}
                             <div className="flex items-center gap-2">
                                 <Select value={dateFilter} onValueChange={(value) => {
                                     setDateFilter(value);
                                     if (value === 'custom') {
+                                        setIsDatePickerOpen(true);
+                                    } else {
                                         setIsDatePickerOpen(false);
                                     }
                                 }}>
@@ -515,6 +435,8 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
                                         <SelectItem value="next_week">Next Week</SelectItem>
                                         <SelectItem value="next_month">Next Month</SelectItem>
                                         <SelectItem value="all">All</SelectItem>
+                                        <SelectItem value="scheduled">Scheduled</SelectItem>
+                                        <SelectItem value="unscheduled">Unscheduled</SelectItem>
                                         <SelectItem value="custom">Custom</SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -572,19 +494,18 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
                                     </Popover>
                                 )}
                             </div>
+
                             {/* Schedule Filter */}
                             <Select value={scheduleFilter} onValueChange={setScheduleFilter}>
                                 <SelectTrigger className="w-[150px] h-[34px]">
                                     <SelectValue placeholder="Schedule Status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
                                     <SelectItem value="scheduled">Scheduled</SelectItem>
                                     <SelectItem value="unscheduled">Unscheduled</SelectItem>
                                 </SelectContent>
                             </Select>
 
-                            
                             {/* Stage filter - only visible to super admins */}
                             {isSuperAdmin && (
                                 <Select onValueChange={handleStageFilterChange}>

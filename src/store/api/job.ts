@@ -274,10 +274,44 @@ export interface EdgeListParams {
     search?: string;
 }
 
+// Add Drafting Types
+export interface Drafting {
+    id: number;
+    fab_id: number;
+    drafter_id: number;
+    drafter_name?: string;
+    scheduled_start_date?: string;
+    scheduled_end_date?: string;
+    status_id: number;
+    status_name?: string;
+    created_at: string;
+    updated_at?: string;
+}
+
+export interface DraftingCreate {
+    fab_id: number;
+    drafter_id: number;
+}
+
+export interface DraftingUpdate {
+    scheduled_start_date?: string;
+    scheduled_end_date?: string;
+    status_id?: number;
+}
+
+export interface DraftingSubmitReview {
+    file_ids: string;
+    no_of_piece_drafted: number;
+    total_sqft_drafted: string;
+    draft_note: string;
+    mentions: string;
+    is_completed: boolean;
+}
+
 export const jobApi = createApi({
     reducerPath: "jobApi",
     baseQuery: axiosBaseQuery({ baseUrl: `${baseUrl}/api/v1` }),
-    tagTypes: ["Job", "Fab", "FabType", "Account", "StoneType", "StoneColor", "StoneThickness", "Edge"],
+    tagTypes: ["Job", "Fab", "FabType", "Account", "StoneType", "StoneColor", "StoneThickness", "Edge", "Drafting"],
     keepUnusedDataFor: 0,
     endpoints(build) {
         return {
@@ -664,6 +698,83 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Edge"],
             }),
+
+            // Drafting endpoints
+            // Create drafting assignment
+            createDrafting: build.mutation<Drafting, DraftingCreate>({
+                query: (data) => ({
+                    url: "/drafting",
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Get drafting by ID
+            getDraftingById: build.query<Drafting, number>({
+                query: (id) => ({
+                    url: `/drafting/${id}`,
+                    method: "get"
+                }),
+                providesTags: (_result, _error, id) => [{ type: "Drafting", id }],
+            }),
+
+            // Get drafting by FAB ID
+            getDraftingByFabId: build.query<Drafting, number>({
+                query: (fab_id) => ({
+                    url: `/drafting/fab/${fab_id}`,
+                    method: "get"
+                }),
+                providesTags: ["Drafting"],
+            }),
+
+            // Update drafting
+            updateDrafting: build.mutation<Drafting, { id: number; data: DraftingUpdate }>({
+                query: ({ id, data }) => ({
+                    url: `/drafting/${id}`,
+                    method: "put",
+                    data
+                }),
+                invalidatesTags: (_result, _error, { id }) => [{ type: "Drafting", id }, "Drafting"],
+            }),
+
+            // Submit drafting for review
+            submitDraftingForReview: build.mutation<any, { drafting_id: number; data: DraftingSubmitReview }>({
+                query: ({ drafting_id, data }) => ({
+                    url: `/drafting/${drafting_id}/submit-review`,
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Fab", "Drafting"],
+            }),
+
+            // Add files to drafting
+            addFilesToDrafting: build.mutation<any, { drafting_id: number; files: File[] }>({
+                query: ({ drafting_id, files }) => {
+                    const formData = new FormData();
+                    files.forEach((file) => {
+                        formData.append('file', file); // Make sure this matches backend expectation
+                    });
+                    return {
+                        url: `/drafting/${drafting_id}/files`,
+                        method: "post",
+                        data: formData,
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
+                    };
+                },
+                invalidatesTags: ["Drafting"],
+            }),
+
+            // Delete file from drafting
+            deleteFileFromDrafting: build.mutation<any, { drafting_id: number; file_id: string }>({
+                query: ({ drafting_id, file_id }) => ({
+                    url: `/drafting/${drafting_id}/files/${file_id}`,
+                    method: "delete"
+                }),
+                invalidatesTags: ["Drafting"],
+            }),
         };
     },
 });
@@ -700,4 +811,11 @@ export const {
     useCreateStoneColorMutation,
     useCreateStoneThicknessMutation,
     useCreateEdgeMutation,
+    useCreateDraftingMutation,
+    useGetDraftingByIdQuery,
+    useGetDraftingByFabIdQuery,
+    useUpdateDraftingMutation,
+    useSubmitDraftingForReviewMutation,
+    useAddFilesToDraftingMutation,
+    useDeleteFileFromDraftingMutation,
 } = jobApi;

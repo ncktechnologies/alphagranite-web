@@ -27,25 +27,25 @@ const formatDate = (dateString?: string): string => {
 };
 
 // Transform Fab data to match IJob interface
-const transformFabToJob = (fab: Fab): IJob => {
+export const transformFabToJob = (fab: Fab): IJob => {
   return {
     id: fab.id,
     fab_type: fab.fab_type,
     fab_id: String(fab.id),
     job_name: `${fab.job_details?.name}`,
     job_no: String(fab.job_details?.job_number),
-    date: fab.created_at,
+    date: fab.templating_schedule_start_date,
     current_stage: fab.current_stage,
     // Optional fields with default values
     acct_name: '',
-    no_of_pieces: fab.total_sqft ? `${fab.total_sqft} sq ft` : "-",
+    no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
     total_sq_ft: String(fab.total_sqft || "-"),
-    revenue: "-",
+    revenue:fab.job_details?.project_value || "-",
     gp: "-",
     draft_completed: fab.current_stage === 'completed' ? 'Yes' : 'No',
-    template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
+    // template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
     template_received: '',
-    templater: fab.technician_name || '-',
+    // templater: fab.technician_name || '-',
     revised: '',
     sct_completed: '',
   };

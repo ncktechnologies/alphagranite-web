@@ -72,7 +72,7 @@ export function CurrentStageView({ isOpen, onClose, fabId, jobName }: CurrentSta
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Error</AlertTitle>
             <AlertDescription>
-              {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : "Failed to load FAB data"}
+              {error ? `Failed to load FAB data: ${JSON.stringify(error?.message)}` : "Failed to load FAB data"}
             </AlertDescription>
           </Alert>
         </DialogContent>

@@ -81,7 +81,7 @@ export function SalesPage() {
                 <div className="">
                     <Container>
                         <Toolbar className=' '>
-                            <ToolbarHeading title="Drafting" description="" />
+                            <ToolbarHeading title="FAB ID'S" description="" />
                         </Toolbar>
                         <div className="space-y-4 mt-4">
                             <Skeleton className="h-16 w-full" />
@@ -98,7 +98,7 @@ export function SalesPage() {
                 <div className="">
                     <Container>
                         <Toolbar className=' '>
-                            <ToolbarHeading title="Drafting" description="" />
+                            <ToolbarHeading title="FAB ID'S" description="" />
                         </Toolbar>
                         <Alert variant="destructive" className="mt-4">
                             <AlertCircle className="h-4 w-4" />

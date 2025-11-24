@@ -37,14 +37,14 @@ const transformFabToJob = (fab: Fab): IJob => {
     current_stage: fab.current_stage,
     // Optional fields with default values
     acct_name: '',
-    no_of_pieces: fab.total_sqft ? `${fab.total_sqft} sq ft` : "-",
+    no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
     total_sq_ft: String(fab.total_sqft || "-"),
     revenue: "-",
     revised: "no",
     sct_completed: fab.current_stage === 'completed' ? 'Yes' : 'No',
-    template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
+    // template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
     template_received: '',
-    templater: fab.technician_name || '-',
+    // templater: fab.technician_name || '-',
     draft_completed: '',
     gp: ''
   };
@@ -65,7 +65,7 @@ export function DraftRevisionPage() {
             <div className="">
                 <Container>
                     <Toolbar className=' '>
-                        <ToolbarHeading title="Drafting" description="" />
+                        <ToolbarHeading title="Revision que" description="" />
                     </Toolbar>
                     <div className="space-y-4 mt-4">
                         <Skeleton className="h-16 w-full" />
@@ -82,7 +82,7 @@ export function DraftRevisionPage() {
             <div className="">
                 <Container>
                     <Toolbar className=' '>
-                        <ToolbarHeading title="Drafting" description="" />
+                        <ToolbarHeading title="Revision que" description="" />
                     </Toolbar>
                     <Alert variant="destructive" className="mt-4">
                         <AlertCircle className="h-4 w-4" />

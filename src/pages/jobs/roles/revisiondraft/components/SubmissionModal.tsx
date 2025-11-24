@@ -70,7 +70,7 @@ export const RevisionForm = ({
 
     for (const file of files) {
       const formData = new FormData();
-      formData.append("image", file);
+      formData.append("file", file);
       const response = await uploadImage(formData).unwrap();
       uploaded.push({
         id: response.id.toString(),
