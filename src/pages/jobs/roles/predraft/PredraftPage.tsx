@@ -58,7 +58,7 @@ export function PredraftPage() {
     
     // Fetch fabs with role-based filtering
     const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
-        current_stage:  'templating_technician' ,
+        current_stage:  'pre_draft_review' ,
         limit: 100,
     });
 
@@ -102,7 +102,7 @@ export function PredraftPage() {
     }
 
     // Transform Fab data to IJob format
-    const jobsData: IJob[] = fabs ? fabs.fabs?.map(transformFabToJob) : [];
+    const jobsData: IJob[] = fabs ? fabs.data?.map(transformFabToJob) : [];
 
     return (
         <Container>

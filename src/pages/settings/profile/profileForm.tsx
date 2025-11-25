@@ -21,7 +21,6 @@ import { LoaderCircleIcon } from 'lucide-react';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { AvatarInput } from './avatar-input';
 import { useGetProfileQuery, useUpdateProfileMutation } from '@/store/api/auth';
-import { useGetDepartmentsQuery } from '@/store/api/department';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Check } from 'lucide-react';
 import { CompleteProfileSchemaType, getCompleteProfileSchema } from './profile-schema';
@@ -35,9 +34,9 @@ export const ProfileFormSection = ({ onSave, onCancel }: ProfileFormSectionProps
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [isAvatarUploading, setIsAvatarUploading] = useState(false);
 
     const { data: profile, isLoading: isLoadingProfile } = useGetProfileQuery();
-    const { data: departmentsData, isLoading: isDepartmentsLoading } = useGetDepartmentsQuery();
     const [updateProfile] = useUpdateProfileMutation();
     const [profileImageMeta, setProfileImageMeta] = useState<{ id: number; url: string; filename: string } | null>(null);
 
@@ -87,7 +86,6 @@ export const ProfileFormSection = ({ onSave, onCancel }: ProfileFormSectionProps
                 department: parseInt(values.department, 10),
             };
 
-            // Remove the department string field as we're sending department_id
             const { department, ...updateData } = payload;
 
             const payloadWithImage = {
@@ -110,6 +108,10 @@ export const ProfileFormSection = ({ onSave, onCancel }: ProfileFormSectionProps
             setIsSubmitting(false);
         }
     };
+    const handleUploadComplete = (file: { id: number; url: string; filename: string }) => {
+  console.log('ProfileFormSection: Upload complete with file:', file);
+  setProfileImageMeta(file);
+};
 
     return (
         <Form {...form}>
@@ -143,8 +145,10 @@ export const ProfileFormSection = ({ onSave, onCancel }: ProfileFormSectionProps
                 <div className="space-y-4 bg-[#F8F9FC] h-[220px] text-center p-[24px] rounded-[12px]">
                     <FormLabel className='text-center text-[#2E3A59] pb-2'>Upload Image</FormLabel>
                     <div className="flex items-center gap-4 justify-center">
-                        <AvatarInput onUploadComplete={setProfileImageMeta} />
-
+                        <AvatarInput
+                            onUploadComplete={handleUploadComplete}
+                            onUploadStatusChange={setIsAvatarUploading}
+                        />
                     </div>
                 </div>
                 <Card className='p-3 col-span-2 '>
@@ -195,28 +199,14 @@ export const ProfileFormSection = ({ onSave, onCancel }: ProfileFormSectionProps
                         <FormField
                             control={form.control}
                             name="department"
-                            render={({ field }) => (
+                            render={() => (
                                 <FormItem>
                                     <FormLabel>Department *</FormLabel>
-                                    <Select value={field.value} onValueChange={field.onChange} disabled>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder={isDepartmentsLoading ? "Loading departments..." : "Select department"} />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {departmentsData?.items?.map((dept) => (
-                                                <SelectItem key={dept.id} value={dept.id.toString()}>
-                                                    {dept.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <Input value={profile?.department_name ?? ""} disabled />
                                     <FormMessage />
                                 </FormItem>
                             )}
                         />
-
                         <FormField
                             control={form.control}
                             name="gender"
@@ -265,12 +255,16 @@ export const ProfileFormSection = ({ onSave, onCancel }: ProfileFormSectionProps
                             </button>
                             <button
                                 type="submit"
-                                disabled={isSubmitting}
+                                disabled={isSubmitting || isAvatarUploading}
                                 className="inline-flex items-center gap-2 rounded-md bg-primary text-white px-4 py-2 text-sm font-medium hover:bg-primary/90"
                             >
                                 {isSubmitting ? (
                                     <>
                                         <LoaderCircleIcon className="h-4 w-4 animate-spin" /> Saving...
+                                    </>
+                                ) : isAvatarUploading ? (
+                                    <>
+                                        <LoaderCircleIcon className="h-4 w-4 animate-spin" /> Uploading Image...
                                     </>
                                 ) : (
                                     'Save changes'

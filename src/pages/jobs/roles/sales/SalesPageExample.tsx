@@ -24,7 +24,7 @@ export function SalesPageExample() {
     // Get current stage filter based on user role
     const { currentStageFilter, isSuperAdmin } = useJobStageFilter();
     const user = useSelector((state: RootState) => state.user?.user);
-    
+
     // Pagination and filter states
     const [page, setPage] = useState(0);
     const [pageSize, setPageSize] = useState(20);
@@ -41,7 +41,7 @@ export function SalesPageExample() {
         ...(scheduleStartDate && { schedule_start_date: scheduleStartDate.toISOString() }),
         ...(scheduleDueDate && { schedule_due_date: scheduleDueDate.toISOString() }),
     };
-    
+
     // Fetch fabs with role-based filtering, pagination, and search
     const { data: fabs, isLoading, error } = useGetFabsQuery(queryParams);
 
@@ -68,9 +68,9 @@ export function SalesPageExample() {
     return (
         <Container>
             <Toolbar>
-                <ToolbarHeading 
-                    title={isSuperAdmin ? "All Jobs (Super Admin)" : "Sales - New FAB IDs"} 
-                    description={isSuperAdmin ? "Viewing all job stages" : "Manage new fabrication IDs"} 
+                <ToolbarHeading
+                    title={isSuperAdmin ? "All Jobs (Super Admin)" : "Sales - New FAB IDs"}
+                    description={isSuperAdmin ? "Viewing all job stages" : "Manage new fabrication IDs"}
                 />
                 <ToolbarActions>
                     <Link to="/jobs/sales/new-fab-id">
@@ -101,7 +101,7 @@ export function SalesPageExample() {
                                 />
                             </div>
                         </div>
-                        
+
                         <div className="min-w-[200px]">
                             <label className="text-sm font-medium mb-2 block">Template Start Date</label>
                             <DateTimePicker
@@ -112,9 +112,11 @@ export function SalesPageExample() {
                                     setPage(0);
                                 }}
                                 placeholder="Select start date"
+                                minDate={new Date()}
+
                             />
                         </div>
-                        
+
                         <div className="min-w-[200px]">
                             <label className="text-sm font-medium mb-2 block">Template Due Date</label>
                             <DateTimePicker
@@ -127,7 +129,7 @@ export function SalesPageExample() {
                                 placeholder="Select due date"
                             />
                         </div>
-                        
+
                         <Button
                             variant="outline"
                             onClick={() => {
@@ -147,7 +149,7 @@ export function SalesPageExample() {
                         <h3 className="text-lg font-medium mb-4">
                             {isSuperAdmin ? `All Fabs (${fabs?.length || 0})` : `Sales Fabs (${fabs?.length || 0})`}
                         </h3>
-                        
+
                         {/* Display user info for debugging */}
                         <div className="mb-4 p-3 bg-blue-50 rounded">
                             <p className="text-sm"><strong>User:</strong> {user?.first_name} {user?.last_name}</p>
@@ -184,7 +186,7 @@ export function SalesPageExample() {
                         </div>
                     </div>
                 </div>
-                
+
                 {/* Pagination */}
                 {fabs && fabs.length > 0 && (
                     <div className="mt-6 bg-white rounded-lg shadow p-4 flex items-center justify-between">

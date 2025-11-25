@@ -56,7 +56,7 @@ export function DraftRevisionPage() {
     
     // Fetch fabs with role-based filtering
     const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
-        current_stage: isSuperAdmin ? 'revision' : currentStageFilter,
+        current_stage: 'revisions',
         limit: 100,
     });
 
@@ -97,7 +97,7 @@ export function DraftRevisionPage() {
     }
 
     // Transform Fab data to IJob format
-    const jobsData: IJob[] = fabs ? fabs.fabs.map(transformFabToJob) : [];
+    const jobsData: IJob[] = fabs ? fabs.data.map(transformFabToJob) : [];
 
     return (
         <Container>

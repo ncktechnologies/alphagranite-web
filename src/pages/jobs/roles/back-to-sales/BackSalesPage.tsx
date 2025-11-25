@@ -99,7 +99,7 @@ export function AfterDraftSalesPage() {
     }
 
     // Transform Fab data to IJob format
-    const jobsData: IJob[] = fabs ? fabs.fabs?.map(transformFabToJob) : [];
+    const jobsData: IJob[] = fabs ? fabs.data?.map(transformFabToJob) : [];
 
     return (
         <Container>

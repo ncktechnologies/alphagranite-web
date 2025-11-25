@@ -44,15 +44,15 @@ export const JOB_STAGES = {
         title: 'Sales - New FAB IDs',
     },
     TEMPLATING_COORDINATOR: {
-        stage: 'templating_coordinator',
+        stage: 'templatin',
         route: '/job/templating',
         title: 'Templating Coordinator',
     },
-    TEMPLATING_TECHNICIAN: {
-        stage: 'templating',
-        route: '/job/templating-technician',
-        title: 'Templating Technician',
-    },
+    // TEMPLATING_TECHNICIAN: {
+    //     stage: 'templating',
+    //     route: '/job/templating-technician',
+    //     title: 'Templating Technician',
+    // },
     PREDRAFT: {
         stage: 'templating_technician',
         route: '/job/predraft',

@@ -219,6 +219,17 @@ export interface JobListParams {
     schedule_due_date?: string;
 }
 
+// Add this interface for jobs by account
+export interface JobsByAccountParams {
+    skip?: number;
+    limit?: number;
+    status_id?: number;
+    priority?: string;
+    search?: string;
+    schedule_start_date?: string;
+    schedule_due_date?: string;
+}
+
 export interface FabListParams {
     skip?: number;
     limit?: number;
@@ -311,6 +322,36 @@ export interface DraftingSubmitReview {
     is_completed: boolean;
 }
 
+export interface Stage {
+    id: number;
+    name: string;
+    description?: string;
+    order_sequence: number;
+    status_id: number;
+    created_at: string;
+    updated_at?: string;
+}
+
+// Add this interface for the stage statistics response
+export interface StageStats {
+    stage_name: string;
+    stage_order: number | null;
+    fab_count: number;
+    last_10_fab_ids: number[];
+    next_stage: string | null;
+}
+
+// Add this after other interfaces
+export interface WorkflowStage {
+    id: string;
+    name: string;
+    status: 'completed' | 'in-progress' | 'pending' | 'not-started';
+    date?: string;
+    assignedTo?: string;
+    notes?: string;
+    route?: string;
+}
+
 export const jobApi = createApi({
     reducerPath: "jobApi",
     baseQuery: axiosBaseQuery({ baseUrl: `${baseUrl}/api/v1` }),
@@ -340,6 +381,28 @@ export const jobApi = createApi({
                 providesTags: ["Job"],
             }),
 
+            // Add this new endpoint for getting jobs by account
+            getJobsByAccount: build.query<Job[], { account_id: number; params?: JobsByAccountParams }>({
+                query: ({ account_id, params }) => {
+                    const queryParams = params || {};
+                    return {
+                        url: `/accounts/${account_id}/jobs`,
+                        method: "get",
+                        params: {
+                            skip: queryParams.skip || 0,
+                            limit: queryParams.limit || 100,
+                            ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
+                            ...(queryParams.priority && { priority: queryParams.priority }),
+                            ...(queryParams.search && { search: queryParams.search }),
+                            ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
+                            ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
+                        }
+                    };
+                },
+                transformResponse: (response: any) => response.data || response,
+                providesTags: ["Job"],
+            }),
+            
             getJobById: build.query<Job, number>({
                 query: (id) => ({
                     url: `/jobs/${id}`,
@@ -778,12 +841,24 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Drafting"],
             }),
+
+            // Update the endpoint for getting stages with statistics
+            getStages: build.query<StageStats[], void>({
+                query: () => ({
+                    url: "/stages",
+                    method: "get"
+                }),
+                transformResponse: (response: any) => response.data || response,
+                providesTags: ["Job"],
+            }),
+            
         };
     },
 });
 
 export const {
     useGetJobsQuery,
+    useGetJobsByAccountQuery, // Export the new hook
     useGetJobByIdQuery,
     useCreateJobMutation,
     useUpdateJobMutation,
@@ -821,4 +896,5 @@ export const {
     useSubmitDraftingForReviewMutation,
     useAddFilesToDraftingMutation,
     useDeleteFileFromDraftingMutation,
+    useGetStagesQuery,
 } = jobApi;

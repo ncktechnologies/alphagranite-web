@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import { toAbsoluteUrl } from '@/lib/helpers';
 import { Button } from '@/components/ui/button';
@@ -12,15 +12,29 @@ import { ImageInput, ImageInputFile, ImageInputFiles } from '@/components/image-
 import { useUploadImageMutation } from '@/store/api';
 
 type AvatarInputProps = {
-  onUploadComplete?: (file: { id: number; url: string; filename: string }) => void;
+  // onUploadComplete?: (file: { id: number; url: string; filename: string }) => void;
+  onUploadComplete?: (file: {
+    id: number;
+    url: string;
+    filename: string;
+    // Optional: include other fields if needed
+    file_path?: string;
+    file_type?: string;
+    file_size?: string;
+  }) => void;
   onUploadError?: (error: unknown) => void;
+  onUploadStatusChange?: (isLoading: boolean) => void; // new prop
 };
 
-export function AvatarInput({ onUploadComplete, onUploadError }: AvatarInputProps = {}) {
+export function AvatarInput({ onUploadComplete, onUploadError, onUploadStatusChange }: AvatarInputProps = {}) {
   const [avatar, setAvatar] = useState<ImageInputFile[]>(() => {
     return [{ dataURL: toAbsoluteUrl(`/images/app/user-line.svg`) }]
   })
   const [uploadImage, { isLoading }] = useUploadImageMutation();
+
+  useEffect(() => {
+    onUploadStatusChange?.(isLoading);
+  }, [isLoading, onUploadStatusChange]);
 
   const handleAvatarChange = async (selectedAvatar: ImageInputFiles, updatedIndexes?: number[]) => {
     // Update local state immediately for optimistic UI
@@ -33,18 +47,29 @@ export function AvatarInput({ onUploadComplete, onUploadError }: AvatarInputProp
         if (fileData?.file) {
           try {
             const formData = new FormData();
-            formData.append('image', fileData.file);
-            
+            formData.append('file', fileData.file);
+
             const result = await uploadImage(formData).unwrap();
             console.log('Upload successful:', result);
             onUploadComplete?.(result);
-            
+
             // Optional: Update with server URL
             // if (result.url) {
             //   const updatedAvatar = [...selectedAvatar];
             //   updatedAvatar[index] = { ...fileData, dataURL: result.url };
             //   setAvatar(updatedAvatar);
             // }
+            if (result.success && result.data) {
+              const transformedData = {
+                id: result.data.id,
+                url: result.data.url,
+                filename: result.data.name
+              };
+              console.log('Transformed data for onUploadComplete:', transformedData);
+              onUploadComplete?.(transformedData);
+            } else {
+              throw new Error(result.message || 'Upload failed');
+            }
           } catch (error) {
             console.error('Failed to upload image:', error);
             onUploadError?.(error);
@@ -64,10 +89,10 @@ export function AvatarInput({ onUploadComplete, onUploadError }: AvatarInputProp
           className="size-40 relative cursor-pointer"
           onClick={onImageUpload}
         >
-          
+
           <div
             className="  rounded-full overflow-hidden h-full w-full  bg-no-repeat  bg-cover bg-center flex items-center justify-center"
-           
+
           >
             {avatar.length > 0 && <img src={avatar[0].dataURL} alt="avatar" />}
             <div className="flex items-center justify-center cursor-pointer  rounded-full right-0 bottom-0 bg-primary p-2 absolute">

@@ -32,7 +32,7 @@ import { useGetSalesPersonsQuery } from "@/store/api";
 const reviewChecklistSchema = z.object({
     templatereceived: z.boolean(),
     templatereview: z.boolean(),
-    notes: z.string().optional(),
+    fab_notes: z.string().optional(),
     drafter: z.string().optional(),
     square_ft: z.string().optional(),
 });
@@ -132,8 +132,8 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                 }
                 
                 // Include notes if provided
-                if (values.notes) {
-                    updateData.notes = [values.notes]; // Wrap in array as API expects notes as array
+                if (values.fab_notes) {
+                    updateData.fab_notes = [values.fab_notes]; // Wrap in array as API expects notes as array
                 }
                 
                 // First update the FAB
@@ -250,7 +250,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
 
                     <FormField
                         control={form.control}
-                        name="notes"
+                        name="fab_notes"
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Notes</FormLabel>

@@ -59,9 +59,10 @@ export function TemplatingPage() {
     // Fetch fabs filtered by current stage
     const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
         limit: 100,
-        current_stage: currentStageFilter // Use the stage filter from the hook
+        current_stage: "templating" // Use the stage filter from the hook
     });
 
+  
     if (isLoading) {
         return (
             <Container>
@@ -101,11 +102,23 @@ export function TemplatingPage() {
     }
 
     // Transform Fab data to IJob format
-    const jobsData: IJob[] = fabs ? fabs.fabs?.map(transformFabToJob) : [];
+    const jobsData: IJob[] = fabs ? fabs.data?.map(transformFabToJob) : [];
 
     // For super admins, we still want to show the tabs, but they should fetch data from the API
     // with different stage filters rather than client-side filtering
-    
+      const getJobTablePath = (jobs: IJob[]): string => {
+        // Check if any job has a template technician assigned
+        const hasTemplateTechnician = jobs.some(job => 
+            job.templater && job.templater !== '-' && job.templater.trim() !== ''
+        );
+        
+        // Alternative: Check based on current stage or other criteria
+        // const hasTemplateTechnician = jobs.some(job => 
+        //     job.current_stage === 'in_progress' || job.templater !== '-'
+        // );
+        
+        return hasTemplateTechnician ? 'templating-details' : 'templating';
+    };
     return (
         <Container>
             <Toolbar>
@@ -123,7 +136,7 @@ export function TemplatingPage() {
                         <span className="flex items-center gap-2">
                             FabId
                             <span className=" bg-[#E1FCE9] text-base px-[6px] text-text rounded-[50px]" >
-                            {jobsData.length}
+                            {jobsData?.length}
                             </span>
                         </span>
                     </TabsTrigger>
@@ -147,7 +160,7 @@ export function TemplatingPage() {
                 </TabsList>
 
                 <TabsContent value="all" className="mt-4">
-                    <JobTable jobs={jobsData} path='templating' isSuperAdmin={isSuperAdmin} isLoading={isLoading} />
+                    <JobTable jobs={jobsData} path={getJobTablePath(jobsData)} isSuperAdmin={isSuperAdmin} isLoading={isLoading} />
                 </TabsContent>
                 {/* <TabsContent value="unscheduled" className="mt-4">
                     <JobTable jobs={jobsData} path='templating' isSuperAdmin={isSuperAdmin} />

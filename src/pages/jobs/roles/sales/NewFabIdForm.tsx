@@ -37,7 +37,8 @@ import {
   useCreateStoneTypeMutation,
   useCreateStoneColorMutation,
   useCreateEdgeMutation,
-  useGetJobsQuery
+  useGetJobsQuery,
+  useGetJobsByAccountQuery
 } from '@/store/api/job';
 import { useAuth } from '@/auth/context/auth-context';
 import { useGetEmployeesQuery } from '@/store/api/employee';
@@ -181,6 +182,57 @@ const NewFabIdForm = () => {
     },
   });
 
+  // Watch for account changes
+  const accountValue = form.watch('account');
+  
+  // Get the selected account ID
+  const selectedAccount = accountsData?.find((account: any) => account.name === accountValue);
+  const selectedAccountId = selectedAccount?.id;
+  
+  // Effect to auto-populate job number when job name is selected
+  const jobNameValue = form.watch('jobName');
+  const jobNumberValue = form.watch('jobNumber');
+  
+  // Fetch jobs filtered by selected account using the new endpoint
+  const {
+    data: accountJobsData,
+    isLoading: isAccountJobsLoading,
+    isError: isAccountJobsError,
+    error: accountJobsError
+  } = useGetJobsByAccountQuery( 
+    { account_id: selectedAccountId!, params: { limit: 1000 } },
+    { skip: !selectedAccountId }
+  );
+  
+  // Override the existing jobsData with account-specific jobs when an account is selected
+  const effectiveJobsData = selectedAccountId ? accountJobsData : jobsData;
+  const isEffectiveJobsLoading = selectedAccountId ? isAccountJobsLoading : isLoadingJobs;
+  const isEffectiveJobsError = selectedAccountId ? isAccountJobsError : isJobsError;
+  
+  // Filter jobs for job dropdowns - use account-specific jobs when available
+  const jobNames = (!isEffectiveJobsError && Array.isArray(effectiveJobsData) ? effectiveJobsData : []).map((job: any) => job.name);
+  const jobNumbers = (!isEffectiveJobsError && Array.isArray(effectiveJobsData) ? effectiveJobsData : []).map((job: any) => job.job_number);
+  
+  
+  // Update the useEffect hooks to use effectiveJobsData
+  useEffect(() => {
+    if (jobNameValue && effectiveJobsData && Array.isArray(effectiveJobsData)) {
+      const selectedJob = effectiveJobsData.find((job: any) => job.name === jobNameValue);
+      if (selectedJob && selectedJob.job_number !== jobNumberValue) {
+        form.setValue('jobNumber', selectedJob.job_number);
+      }
+    }
+  }, [jobNameValue, effectiveJobsData, form, jobNumberValue]);
+
+  useEffect(() => {
+    if (jobNumberValue && effectiveJobsData && Array.isArray(effectiveJobsData)) {
+      const selectedJob = effectiveJobsData.find((job: any) => job.job_number === jobNumberValue);
+      if (selectedJob && selectedJob.name !== jobNameValue) {
+        form.setValue('jobName', selectedJob.name);
+      }
+    }
+  }, [jobNumberValue, effectiveJobsData, form, jobNameValue]);
+  
   // Filter functions for search with error handling
   const filteredFabTypes = (!isFabTypesError && Array.isArray(fabTypesData) && fabTypesData?.map((type: any) => type.name) || []).filter((type: string) =>
     type.toLowerCase().includes(fabTypeSearch.toLowerCase())
@@ -193,32 +245,6 @@ const NewFabIdForm = () => {
   const filteredThicknessOptions = (!isStoneThicknessesError && Array.isArray(stoneThicknessesData) && stoneThicknessesData?.map((thickness: any) => thickness.thickness) || []).filter((thickness: string) =>
     thickness.toLowerCase().includes(thicknessSearch.toLowerCase())
   );
-
-  // Filter jobs for job dropdowns
-  const jobNames = (!isJobsError && Array.isArray(jobsData) ? jobsData : []).map((job: any) => job.name);
-  const jobNumbers = (!isJobsError && Array.isArray(jobsData) ? jobsData : []).map((job: any) => job.job_number);
-
-  // Effect to auto-populate job number when job name is selected
-  const jobNameValue = form.watch('jobName');
-  const jobNumberValue = form.watch('jobNumber');
-
-  useEffect(() => {
-    if (jobNameValue && jobsData && Array.isArray(jobsData)) {
-      const selectedJob = jobsData.find((job: any) => job.name === jobNameValue);
-      if (selectedJob && selectedJob.job_number !== jobNumberValue) {
-        form.setValue('jobNumber', selectedJob.job_number);
-      }
-    }
-  }, [jobNameValue, jobsData, form, jobNumberValue]);
-
-  useEffect(() => {
-    if (jobNumberValue && jobsData && Array.isArray(jobsData)) {
-      const selectedJob = jobsData.find((job: any) => job.job_number === jobNumberValue);
-      if (selectedJob && selectedJob.name !== jobNameValue) {
-        form.setValue('jobName', selectedJob.name);
-      }
-    }
-  }, [jobNumberValue, jobsData, form, jobNameValue]);
 
   // Extract stone types, colors, and edges from the response
   const stoneTypes = !isStoneTypesError && Array.isArray(stoneTypesData) ? (stoneTypesData?.map((type: any) => type.name) || []) : [];
@@ -311,15 +337,15 @@ const NewFabIdForm = () => {
 
       // Find the selected job - match by either name or number
       let selectedJob;
-      if (jobsData && Array.isArray(jobsData)) {
+      if (effectiveJobsData && Array.isArray(effectiveJobsData)) {
         // Try to match by name first
         if (values.jobName) {
-          selectedJob = jobsData.find((job: any) => job.name === values.jobName);
+          selectedJob = effectiveJobsData.find((job: any) => job.name === values.jobName);
         }
 
         // If that doesn't work, try to match by job number
         if (!selectedJob && values.jobNumber) {
-          selectedJob = jobsData.find((job: any) => job.job_number === values.jobNumber);
+          selectedJob = effectiveJobsData.find((job: any) => job.job_number === values.jobNumber);
         }
       }
 
@@ -355,7 +381,7 @@ const NewFabIdForm = () => {
         edge_id: selectedEdge.id,
         input_area: values.area,
         total_sqft: parseFloat(values.totalSqFt) || 0,
-        notes: notesValue, // Send as string
+        notes: notesValue, // Send as array
         template_needed: !values.templateNotNeeded,
         drafting_needed: !values.draftNotNeeded,
         slab_smith_cust_needed: !values.slabSmithCustNotNeeded,

@@ -107,7 +107,7 @@ export function TechnicianPage() {
     }
 
     // Transform Fab data to IJob format
-    const transformedJobs: IJob[] = fabs ? fabs.fabs.map(transformFabToJob) : [];
+    const transformedJobs: IJob[] = fabs ? fabs.data.map(transformFabToJob) : [];
 
     return (
         <div className="">
