@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useState, useEffect } from "react"
 import { format } from "date-fns"
-import { CalendarDays, CalendarIcon, Clock3, ChevronLeft, ChevronRight } from "lucide-react"
+import { CalendarDays, CalendarIcon, Clock3, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -156,16 +156,21 @@ function EnhancedCalendar({ mode, selected, onSelect, disabled, className }: Enh
           <ChevronLeft className="h-4 w-4" />
         </Button>
 
-        <Button type="button" variant="ghost" className="font-medium" onClick={() => setShowYearMonthPicker(true)}>
+        {/* Month/year display with subtle indicator for year/month selection */}
+        <div 
+          className="font-medium cursor-pointer hover:bg-accent rounded-md px-2 py-1 flex items-center"
+          onClick={() => setShowYearMonthPicker(true)}
+        >
           {format(currentMonth, "MMMM yyyy")}
-        </Button>
+          <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
+        </div>
 
         <Button type="button" variant="ghost" size="sm" onClick={() => navigateMonth("next")}>
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
 
-      {/* Calendar Component */}
+      {/* Calendar Component - Hide default month caption */}
       <Calendar
         mode={mode}
         selected={selected}
@@ -174,6 +179,9 @@ function EnhancedCalendar({ mode, selected, onSelect, disabled, className }: Enh
         onMonthChange={setCurrentMonth}
         disabled={disabled}
         className="p-0"
+        classNames={{
+          month_caption: 'hidden', // Hide the default month caption
+        }}
       />
     </div>
   )
@@ -193,6 +201,7 @@ const DateTimePicker = ({
 }: DateTimePickerProps) => {
   const [dateValue, setDateValue] = useState<Date | undefined>(value)
   const [timeValue, setTimeValue] = useState<string | undefined>(value ? format(value, "HH:mm") : undefined)
+  const [isOpen, setIsOpen] = useState(false) // Add state to control popover
 
   // Sync with external value changes
   useEffect(() => {
@@ -218,6 +227,10 @@ const DateTimePicker = ({
     if (mode === "datetime" && !timeValue) {
       setTimeValue(undefined)
     }
+    // Close the popover when a date is selected
+    if (date) {
+      setIsOpen(false)
+    }
   }
 
   const handleTimeSelect = (time: string) => {
@@ -235,7 +248,7 @@ const DateTimePicker = ({
       {label && <Label className="flex w-full items-center gap-1 mb-2.5">{label}</Label>}
 
       {mode === "date" ? (
-        <Popover>
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
           <PopoverTrigger asChild>
             <Button
               type="button"
@@ -257,7 +270,7 @@ const DateTimePicker = ({
           </PopoverContent>
         </Popover>
       ) : mode === "datetime" ? (
-        <Popover>
+        <Popover open={isOpen} onOpenChange={setIsOpen}>
           <PopoverTrigger asChild>
             <Button
               type="button"
@@ -294,7 +307,7 @@ const DateTimePicker = ({
                           <Button
                             type="button"
                             key={timeSlot}
-                            variant={timeValue === timeSlot ? "default" : "outline"}
+                            variant={timeValue === timeSlot ? "primary" : "outline"}
                             size="sm"
                             className="w-full"
                             onClick={() => handleTimeSelect(timeSlot)}

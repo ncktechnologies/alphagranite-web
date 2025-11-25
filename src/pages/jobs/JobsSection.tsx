@@ -88,11 +88,17 @@ export const JobsSection = () => {
 
   const handleSaveJob = async (data: JobFormData) => {
     try {
-      const jobPayload = {
+      // Only include account_id in payload if it's a valid number
+      const jobPayload: any = {
         name: data.name,
         job_number: data.job_number,
         project_value: data.project_value,
       };
+
+      // Add account_id only if it's a valid number
+      if (data.account_id && !isNaN(data.account_id)) {
+        jobPayload.account_id = data.account_id;
+      }
 
       if (viewMode === 'new') {
         await createJob(jobPayload).unwrap();
@@ -181,50 +187,7 @@ export const JobsSection = () => {
       {/* <PageMenu /> */}
       <Container>
         {/* Search and Filters */}
-        <div className="mb-6 flex flex-wrap gap-4 items-end">
-          <div className="flex-1 min-w-[200px]">
-            <label className="text-sm font-medium mb-2 block">Search Jobs</label>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search by job name, number..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-          
-          <div className="min-w-[200px]">
-            <label className="text-sm font-medium mb-2 block">Schedule Start Date</label>
-            <DateTimePicker
-              value={scheduleStartDate}
-              onChange={setScheduleStartDate}
-              placeholder="Select start date"
-            />
-          </div>
-          
-          <div className="min-w-[200px]">
-            <label className="text-sm font-medium mb-2 block">Schedule Due Date</label>
-            <DateTimePicker
-              value={scheduleDueDate}
-              onChange={setScheduleDueDate}
-              placeholder="Select due date"
-            />
-          </div>
-          
-          <Button
-            variant="outline"
-            onClick={() => {
-              setSearchQuery('');
-              setScheduleStartDate(undefined);
-              setScheduleDueDate(undefined);
-              setPage(0);
-            }}
-          >
-            Clear Filters
-          </Button>
-        </div>
+      
 
         <div className="flex h-full gap-6">
           <JobsList

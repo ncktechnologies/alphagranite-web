@@ -20,10 +20,17 @@ import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router";
-import { useUpdateFabMutation, useCompleteTemplatingMutation, useGetTemplatingByFabIdQuery, useGetFabByIdQuery } from "@/store/api/job"; // Added completeTemplating mutation and getFabById
+import { 
+    useUpdateFabMutation, 
+    useCompleteTemplatingMutation, 
+    useMarkTemplatingReceivedMutation,
+    useGetTemplatingByFabIdQuery, 
+    useGetFabByIdQuery 
+} from "@/store/api/job";
 import { useGetSalesPersonsQuery } from "@/store/api";
 
 const reviewChecklistSchema = z.object({
+    templatereceived: z.boolean(),
     templatereview: z.boolean(),
     notes: z.string().optional(),
     drafter: z.string().optional(),
@@ -34,10 +41,9 @@ type ReviewChecklistData = z.infer<typeof reviewChecklistSchema>;
 
 interface ReviewChecklistFormProps {
     fabId?: number;
-    templateReceived?: boolean;
 }
 
-export function ReviewChecklistForm({ fabId, templateReceived = false }: ReviewChecklistFormProps) {
+export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
     
@@ -52,34 +58,59 @@ export function ReviewChecklistForm({ fabId, templateReceived = false }: ReviewC
      const salesPersons = Array.isArray(salesPersonsData) ? salesPersonsData : [];
      
     const [updateFab] = useUpdateFabMutation();
-    const [completeTemplating] = useCompleteTemplatingMutation(); // Add completeTemplating mutation
-    // Add hook to fetch templating data and fab data
+    const [completeTemplating] = useCompleteTemplatingMutation();
+    const [markTemplatingReceived] = useMarkTemplatingReceivedMutation();
     const { data: templatingData } = useGetTemplatingByFabIdQuery(fabId || 0, { skip: !fabId });
     const { data: fabData } = useGetFabByIdQuery(fabId || 0, { skip: !fabId });
     
     const form = useForm<ReviewChecklistData>({
         resolver: zodResolver(reviewChecklistSchema),
         defaultValues: {
+            templatereceived: false,
             templatereview: false,
             square_ft: '',
             drafter: 'none'
         },
     });
 
-    // Populate square footage from endpoint when fabData is available
+    // Populate square footage and drafter from endpoint when fabData is available
     useEffect(() => {
-        if (fabData && fabData.total_sqft) {
-            form.setValue('square_ft', fabData.total_sqft.toString());
+        if (fabData) {
+            if (fabData.total_sqft) {
+                form.setValue('square_ft', fabData.total_sqft.toString());
+            }
+            
+            // Populate drafter if it exists in fabData
+            if (fabData.drafter_id) {
+                form.setValue('drafter', fabData.drafter_id.toString());
+            }
         }
     }, [fabData, form]);
 
-    const onSubmit = async (values: ReviewChecklistData) => {
-        // Check if template is received before allowing submission
-        if (!templateReceived) {
-            toast.error("Template must be received before assigning a drafter");
-            return;
+    // Handle template received checkbox change
+    const handleTemplateReceivedChange = async (checked: boolean) => {
+        form.setValue('templatereceived', checked);
+        
+        // If checked, call the markTemplatingReceived endpoint
+        if (checked && fabId) {
+            try {
+                const templatingId = templatingData?.data?.id;
+                if (templatingId) {
+                    await markTemplatingReceived({
+                        templating_id: templatingId,
+                    }).unwrap();
+                    toast.success("Template marked as received");
+                }
+            } catch (error) {
+                console.error("Failed to mark template as received:", error);
+                toast.error("Failed to mark template as received");
+                // Revert the checkbox if the API call fails
+                form.setValue('templatereceived', false);
+            }
         }
+    };
 
+    const onSubmit = async (values: ReviewChecklistData) => {
         setIsSubmitting(true);
         
         try {
@@ -118,15 +149,12 @@ export function ReviewChecklistForm({ fabId, templateReceived = false }: ReviewC
                     if (templatingId) {
                         await completeTemplating({
                             templating_id: templatingId,
-                            // actual_sqft: values.square_ft || undefined,
-                            // notes: values.notes ? [values.notes] : undefined
                         }).unwrap();
                     }
                 }
             }
             
             toast.success("Checklist review completed successfully!");
-            // Navigate directly to predraft page instead of opening modal
             navigate('/job/predraft');
         } catch (error) {
             console.error("Failed to update fab:", error);
@@ -143,6 +171,21 @@ export function ReviewChecklistForm({ fabId, templateReceived = false }: ReviewC
         <>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <FormField
+                        control={form.control}
+                        name="templatereceived"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-3">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={(checked) => handleTemplateReceivedChange(checked as boolean)}
+                                    />
+                                </FormControl>
+                                <FormLabel className="text-base font-semibold text-text">Template received</FormLabel>
+                            </FormItem>
+                        )}
+                    />
 
                     <FormField
                         control={form.control}
@@ -153,6 +196,7 @@ export function ReviewChecklistForm({ fabId, templateReceived = false }: ReviewC
                                     <Checkbox
                                         checked={field.value}
                                         onCheckedChange={field.onChange}
+                                        disabled={!form.watch("templatereceived")}
                                     />
                                 </FormControl>
                                 <FormLabel className="text-base font-semibold text-text">Template review complete</FormLabel>
@@ -174,11 +218,11 @@ export function ReviewChecklistForm({ fabId, templateReceived = false }: ReviewC
                         name="drafter"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Assign to Drafter {templateReceived && ''}</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value} disabled={!templateReceived || isLoadingSalesPersons}>
+                                <FormLabel>Assign to Drafter</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value} disabled={!form.watch("templatereceived") || isLoadingSalesPersons}>
                                     <FormControl>
                                         <SelectTrigger>
-                                            <SelectValue placeholder={templateReceived ? "Select drafter (optional)" : "Template not received"} />
+                                            <SelectValue placeholder={form.watch("templatereceived") ? "Select drafter (optional)" : "Template not received"} />
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
@@ -186,7 +230,6 @@ export function ReviewChecklistForm({ fabId, templateReceived = false }: ReviewC
                                             <SelectItem value="loading" disabled>Loading drafters...</SelectItem>
                                         ) : (
                                             <>
-                                                {/* Empty option for no drafter selection */}
                                                 <SelectItem value="none">No drafter assigned</SelectItem>
                                                 {salesPersons.map((drafter: any) => (
                                                     <SelectItem key={drafter.id} value={drafter.id.toString()}>
@@ -197,7 +240,7 @@ export function ReviewChecklistForm({ fabId, templateReceived = false }: ReviewC
                                         )}
                                     </SelectContent>
                                 </Select>
-                                {!templateReceived && (
+                                {!form.watch("templatereceived") && (
                                     <p className="text-sm text-yellow-600">Template must be received before assigning a drafter</p>
                                 )}
                                 <FormMessage />
@@ -225,14 +268,14 @@ export function ReviewChecklistForm({ fabId, templateReceived = false }: ReviewC
                     <Separator className="my-4" />
 
                     <div className="space-y-3 mt-6">
-                        <Button className="w-full py-6 text-base" type="submit" disabled={isSubmitting || !templateReceived}>
+                        <Button className="w-full py-6 text-base" type="submit" disabled={isSubmitting || !form.watch("templatereceived")}>
                             {isSubmitting ? (
                                 <span className="flex items-center gap-2">
                                     <LoaderCircle className="w-4 h-4 animate-spin" />
                                     Verifying...
                                 </span>
                             ) : (
-                                "Schedule for drafting" // Changed button name
+                                "Schedule for drafting"
                             )}
                         </Button>
                         <Button variant="outline" className="w-full text-secondary font-bold py-6 text-base" onClick={() => navigate('/job/predraft')}>

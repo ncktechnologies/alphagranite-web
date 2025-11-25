@@ -11,6 +11,7 @@ export interface Job {
     name: string;
     job_number: string;
     project_value?: string;
+    account_id?: number;
     status_id: number;
     created_at: string;
     created_by: number;
@@ -22,12 +23,14 @@ export interface JobCreate {
     name: string;
     job_number: string;
     project_value?: string;
+    account_id?: number;
 }
 
 export interface JobUpdate {
     name?: string;
     job_number?: string;
     project_value?: string;
+    account_id?: number;
 }
 
 // Fab Types

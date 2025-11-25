@@ -179,7 +179,6 @@ export function PreDraftDetailsPage() {
                         <CardContent>
                             <ReviewChecklistForm 
                                 fabId={Number(id)} 
-                                templateReceived={!!fab?.current_stage && fab.current_stage !== 'templating'} 
                             />
                         </CardContent>
                     </Card>

@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { useScheduleTemplatingMutation } from "@/store/api/job";
 import { useNavigate, useParams } from "react-router";
-import { useGetEmployeesQuery } from "@/store/api/employee";
+import { useGetEmployeesQuery, useGetSalesPersonsQuery } from "@/store/api/employee";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -53,9 +53,7 @@ export function AssignTechnicianModal({
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [scheduleTemplating] = useScheduleTemplatingMutation();
-  const { data: employeesData, isLoading, isError, error } = useGetEmployeesQuery({
-    limit: 100,
-  });
+  const { data: employeesData, isLoading, isError, error } = useGetSalesPersonsQuery();
 
   const form = useForm<AssignTechnicianData>({
     resolver: zodResolver(assignTechnicianSchema),
@@ -70,9 +68,9 @@ export function AssignTechnicianModal({
     try {
       // Update the templating schedule with technician information
       if (id) {
-        const selectedEmployee = employeesData?.data.find(
-          (emp: any) => `${emp.id}` === values.technician
-        );
+        // const selectedEmployee = employeesData?.data.find(
+        //   (emp: any) => `${emp.id}` === values.technician
+        // );
         
         const response = await scheduleTemplating({
           fab_id: Number(id),
@@ -80,9 +78,7 @@ export function AssignTechnicianModal({
           schedule_start_date: values.date,
           schedule_due_date: new Date(new Date(values.date).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days after start
           total_sqft: "0", // This would be updated with actual value
-          notes: [selectedEmployee 
-            ? `Assigned to ${selectedEmployee.first_name} ${selectedEmployee.last_name} on ${values.date}`
-            : `Assigned to technician ID ${values.technician} on ${values.date}`]
+          notes: [values.notes || ""],
         }).unwrap();
         
         // Use success message from endpoint if available and successful, otherwise use default
@@ -169,7 +165,7 @@ export function AssignTechnicianModal({
     );
   }
 
-  const technicians = employeesData?.data || [];
+  const technicians = Array.isArray(employeesData) ? employeesData : [];;
   
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -221,7 +217,7 @@ export function AssignTechnicianModal({
                     <SelectContent>
                       {technicians.map((technician: any) => (
                         <SelectItem key={technician.id} value={`${technician.id}`}>
-                          {technician.first_name} {technician.last_name}
+                          {technician.name}
                         </SelectItem>
                       ))}
                     </SelectContent>

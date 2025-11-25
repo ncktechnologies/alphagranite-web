@@ -78,7 +78,7 @@ export function ReviewChecklistForm() {
                 toast.success('Templating unscheduled successfully');
             } else {
                 // No templating schedule found, which is not an error condition
-                toast.info('No templating schedule found for this job');
+                // toast.info('No templating schedule/ found for this job');
             }
         } catch (error) {
             console.error('Failed to unschedule templating:', error);

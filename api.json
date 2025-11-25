@@ -291,7 +291,7 @@
           "auth"
         ],
         "summary": "Get User Profile",
-        "description": "Get current user profile",
+        "description": "Get current user profile with roles and permissions",
         "operationId": "get_user_profile_auth_me_get",
         "responses": {
           "200": {
@@ -2073,7 +2073,7 @@
           "roles"
         ],
         "summary": "Update Role",
-        "description": "Update role details\n\nThis endpoint updates a role's details including its permissions.\nYou can update any combination of fields:\n- name: New role name (must be unique)\n- description: New role description\n- permission_ids: New list of permission IDs\n- status: New role status (1=Active, 2=Inactive)",
+        "description": "Update role details\n\nThis endpoint updates a role's details including its permissions and members.\nYou can update any combination of fields:\n- name: New role name (must be unique)\n- description: New role description\n- action_menu_permissions: New list of action menus with CRUD permissions\n- user_ids: New list of user IDs to assign to this role\n- permission_ids: New list of permission IDs (alternative to action_menu_permissions)\n- status: New role status (1=Active, 2=Inactive)",
         "operationId": "update_role_roles__role_id__put",
         "security": [
           {
@@ -5095,6 +5095,24 @@
               "title": "Current Stage"
             },
             "description": "Filter by current stage"
+          },
+          {
+            "name": "next_stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by next stage",
+              "title": "Next Stage"
+            },
+            "description": "Filter by next stage"
           }
         ],
         "responses": {
@@ -5211,7 +5229,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/FabResponse"
+                  "$ref": "#/components/schemas/SuccessResponse_FabResponse_"
                 }
               }
             }
@@ -5321,11 +5339,1250 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FabResponse"
-                  },
-                  "title": "Response Get Fabs By Job Api V1 Jobs  Job Id  Fabs Get"
+                  "$ref": "#/components/schemas/SuccessResponse_List_FabResponse__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/fabs/{fab_id}/notes": {
+      "get": {
+        "tags": [
+          "FAB Notes"
+        ],
+        "summary": "Get Fab Notes List",
+        "description": "Get all notes for a specific FAB with pagination and filters",
+        "operationId": "get_fab_notes_list_api_v1_fabs__fab_id__notes_get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of records to skip",
+              "default": 0,
+              "title": "Skip"
+            },
+            "description": "Number of records to skip"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "description": "Number of records to return",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Number of records to return"
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by stage",
+              "title": "Stage"
+            },
+            "description": "Filter by stage"
+          },
+          {
+            "name": "created_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by creator user ID",
+              "title": "Created By"
+            },
+            "description": "Filter by creator user ID"
+          },
+          {
+            "name": "date_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter notes from this date (inclusive)",
+              "title": "Date From"
+            },
+            "description": "Filter notes from this date (inclusive)"
+          },
+          {
+            "name": "date_to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter notes to this date (inclusive)",
+              "title": "Date To"
+            },
+            "description": "Filter notes to this date (inclusive)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_List_FabNotesResponse__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/fab_notes": {
+      "post": {
+        "tags": [
+          "FAB Notes"
+        ],
+        "summary": "Create Fab Note",
+        "description": "Create a new FAB note",
+        "operationId": "create_fab_note_api_v1_fab_notes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FabNotesCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_FabNotesResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/fab_notes/{note_id}": {
+      "put": {
+        "tags": [
+          "FAB Notes"
+        ],
+        "summary": "Update Fab Note",
+        "description": "Update an existing FAB note",
+        "operationId": "update_fab_note_api_v1_fab_notes__note_id__put",
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Note Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FabNotesUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_FabNotesResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "FAB Notes"
+        ],
+        "summary": "Delete Fab Note",
+        "description": "Delete a FAB note",
+        "operationId": "delete_fab_note_api_v1_fab_notes__note_id__delete",
+        "parameters": [
+          {
+            "name": "note_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Note Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/templating/schedule": {
+      "post": {
+        "tags": [
+          "Templating"
+        ],
+        "summary": "Schedule Templating",
+        "description": "Schedule templating for a fab.\nFlow: Select Technician, Add scheduled date, Add Total sqft for draft, Add any drafting notes, Add due date",
+        "operationId": "schedule_templating_api_v1_templating_schedule_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplatingScheduleCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_TemplatingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/templating/{templating_id}/unschedule": {
+      "put": {
+        "tags": [
+          "Templating"
+        ],
+        "summary": "Unschedule Templating",
+        "description": "Unschedule/cancel templating",
+        "operationId": "unschedule_templating_api_v1_templating__templating_id__unschedule_put",
+        "parameters": [
+          {
+            "name": "templating_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Templating Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_NoneType_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/templating/{templating_id}": {
+      "put": {
+        "tags": [
+          "Templating"
+        ],
+        "summary": "Update Templating",
+        "description": "Update templating schedule details",
+        "operationId": "update_templating_api_v1_templating__templating_id__put",
+        "parameters": [
+          {
+            "name": "templating_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Templating Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplatingScheduleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_TemplatingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Templating"
+        ],
+        "summary": "Get Templating",
+        "description": "Get templating details by ID",
+        "operationId": "get_templating_api_v1_templating__templating_id__get",
+        "parameters": [
+          {
+            "name": "templating_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Templating Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_TemplatingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/templating/{templating_id}/complete": {
+      "post": {
+        "tags": [
+          "Templating"
+        ],
+        "summary": "Complete Templating",
+        "description": "Technician marks templating as complete.\nUpdates: actual square footage, notes (appends new notes to existing), status to completed.\nAlso updates FAB stage to next stage in workflow.",
+        "operationId": "complete_templating_api_v1_templating__templating_id__complete_post",
+        "parameters": [
+          {
+            "name": "templating_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Templating Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplatingCompleteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_TemplatingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/templating/{templating_id}/mark-received": {
+      "post": {
+        "tags": [
+          "Templating"
+        ],
+        "summary": "Mark Templating Received",
+        "description": "Mark templating as received, which automatically moves the fab to predraft review state",
+        "operationId": "mark_templating_received_api_v1_templating__templating_id__mark_received_post",
+        "parameters": [
+          {
+            "name": "templating_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Templating Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_NoneType_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/templating/fab/{fab_id}": {
+      "get": {
+        "tags": [
+          "Templating"
+        ],
+        "summary": "Get Templating By Fab",
+        "description": "Get templating details by fab ID",
+        "operationId": "get_templating_by_fab_api_v1_templating_fab__fab_id__get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_TemplatingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/drafting": {
+      "post": {
+        "tags": [
+          "Drafting"
+        ],
+        "summary": "Create Drafting",
+        "description": "Create a new drafting entry",
+        "operationId": "create_drafting_api_v1_drafting_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftingCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_DraftingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/drafting/{drafting_id}": {
+      "put": {
+        "tags": [
+          "Drafting"
+        ],
+        "summary": "Update Drafting",
+        "description": "Update drafting entry",
+        "operationId": "update_drafting_api_v1_drafting__drafting_id__put",
+        "parameters": [
+          {
+            "name": "drafting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Drafting Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftingUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_DraftingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Drafting"
+        ],
+        "summary": "Get Drafting",
+        "description": "Get drafting details by ID",
+        "operationId": "get_drafting_api_v1_drafting__drafting_id__get",
+        "parameters": [
+          {
+            "name": "drafting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Drafting Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_DraftingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/drafting/{drafting_id}/submit": {
+      "post": {
+        "tags": [
+          "Drafting"
+        ],
+        "summary": "Submit Draft For Review",
+        "description": "Submit draft for review using form data.\nIncludes: Total sqft done, Number of pieces drafted, draft notes, \nis drafting completed, mentions (people to notify about this submission)",
+        "operationId": "submit_draft_for_review_api_v1_drafting__drafting_id__submit_post",
+        "parameters": [
+          {
+            "name": "drafting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Drafting Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_submit_draft_for_review_api_v1_drafting__drafting_id__submit_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_DraftingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/drafting/fab/{fab_id}": {
+      "get": {
+        "tags": [
+          "Drafting"
+        ],
+        "summary": "Get Drafting By Fab",
+        "description": "Get drafting details by fab ID",
+        "operationId": "get_drafting_by_fab_api_v1_drafting_fab__fab_id__get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_DraftingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/drafting/{drafting_id}/add-file": {
+      "post": {
+        "tags": [
+          "Drafting"
+        ],
+        "summary": "Add File To Drafting",
+        "description": "Add file to drafting section",
+        "operationId": "add_file_to_drafting_api_v1_drafting__drafting_id__add_file_post",
+        "parameters": [
+          {
+            "name": "drafting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Drafting Id"
+            }
+          },
+          {
+            "name": "file_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "File Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_NoneType_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/drafting/{drafting_id}/file/{file_id}": {
+      "delete": {
+        "tags": [
+          "Drafting"
+        ],
+        "summary": "Delete File From Drafting",
+        "description": "Delete file from drafting section",
+        "operationId": "delete_file_from_drafting_api_v1_drafting__drafting_id__file__file_id__delete",
+        "parameters": [
+          {
+            "name": "drafting_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Drafting Id"
+            }
+          },
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "File Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_NoneType_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/pre-draft-review": {
+      "post": {
+        "tags": [
+          "Drafting"
+        ],
+        "summary": "Create Pre Draft Review",
+        "description": "Create a pre-draft review entry",
+        "operationId": "create_pre_draft_review_api_v1_pre_draft_review_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreDraftReviewCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_PreDraftReviewResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/pre-draft-review/{review_id}/complete": {
+      "post": {
+        "tags": [
+          "Drafting"
+        ],
+        "summary": "Mark Predraft Review Completed",
+        "description": "Mark pre-draft review as completed or not, which auto sets the fab to drafting status.\nTakes fab_id and notes (optional)",
+        "operationId": "mark_predraft_review_completed_api_v1_pre_draft_review__review_id__complete_post",
+        "parameters": [
+          {
+            "name": "review_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Review Id"
+            }
+          },
+          {
+            "name": "is_completed",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Is Completed"
+            }
+          },
+          {
+            "name": "notes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Notes"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_NoneType_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/pre-draft-review/{review_id}/set-redraft": {
+      "post": {
+        "tags": [
+          "Drafting"
+        ],
+        "summary": "Set Predraft To Redraft",
+        "description": "Set pre-draft review to redraft and add redraft notes.\nThis triggers a template redrafting.",
+        "operationId": "set_predraft_to_redraft_api_v1_pre_draft_review__review_id__set_redraft_post",
+        "parameters": [
+          {
+            "name": "review_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Review Id"
+            }
+          },
+          {
+            "name": "redraft_notes",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Redraft Notes"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_NoneType_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/pre-draft-review/fab/{fab_id}": {
+      "get": {
+        "tags": [
+          "Drafting"
+        ],
+        "summary": "Get Predraft Review By Fab",
+        "description": "Get pre-draft review by fab ID",
+        "operationId": "get_predraft_review_by_fab_api_v1_pre_draft_review_fab__fab_id__get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_PreDraftReviewResponse_"
                 }
               }
             }
@@ -5386,229 +6643,6 @@
                 }
               ],
               "title": "Account Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      }
-    },
-    "/api/v1/templating/schedule": {
-      "post": {
-        "tags": [
-          "Job Extras"
-        ],
-        "summary": "Schedule Templating",
-        "operationId": "schedule_templating_api_v1_templating_schedule_post",
-        "parameters": [
-          {
-            "name": "fab_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Fab Id"
-            }
-          },
-          {
-            "name": "technician_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Technician Id"
-            }
-          },
-          {
-            "name": "schedule_start_date",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Schedule Start Date"
-            }
-          },
-          {
-            "name": "schedule_due_date",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Schedule Due Date"
-            }
-          },
-          {
-            "name": "total_sqft",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "title": "Total Sqft"
-            }
-          },
-          {
-            "name": "notes",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Notes"
-            }
-          },
-          {
-            "name": "created_by",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 1,
-              "title": "Created By"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      }
-    },
-    "/api/v1/templating/unschedule": {
-      "post": {
-        "tags": [
-          "Job Extras"
-        ],
-        "summary": "Unschedule Templating",
-        "operationId": "unschedule_templating_api_v1_templating_unschedule_post",
-        "parameters": [
-          {
-            "name": "templating_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Templating Id"
-            }
-          },
-          {
-            "name": "updated_by",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 1,
-              "title": "Updated By"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      }
-    },
-    "/api/v1/templating/mark-received": {
-      "post": {
-        "tags": [
-          "Job Extras"
-        ],
-        "summary": "Mark Templated Received",
-        "operationId": "mark_templated_received_api_v1_templating_mark_received_post",
-        "parameters": [
-          {
-            "name": "fab_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Fab Id"
-            }
-          },
-          {
-            "name": "updated_by",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 1,
-              "title": "Updated By"
             }
           }
         ],
@@ -9283,6 +10317,52 @@
         ],
         "title": "Body_set_sct_review_yes_api_v1_salesct__sct_id__review_yes_post"
       },
+      "Body_submit_draft_for_review_api_v1_drafting__drafting_id__submit_post": {
+        "properties": {
+          "total_sqft_drafted": {
+            "type": "string",
+            "title": "Total Sqft Drafted"
+          },
+          "no_of_piece_drafted": {
+            "type": "string",
+            "title": "No Of Piece Drafted"
+          },
+          "is_drafting_completed": {
+            "type": "boolean",
+            "title": "Is Drafting Completed",
+            "default": false
+          },
+          "draft_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Note"
+          },
+          "mentions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mentions",
+            "description": "Comma-separated list of user IDs to notify"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_sqft_drafted",
+          "no_of_piece_drafted"
+        ],
+        "title": "Body_submit_draft_for_review_api_v1_drafting__drafting_id__submit_post"
+      },
       "Body_submit_draft_for_review_api_v1_drafting__drafting_id__submit_review_post": {
         "properties": {
           "file_ids": {
@@ -9766,6 +10846,295 @@
         "type": "object",
         "title": "DepartmentUpdate"
       },
+      "DraftingCreate": {
+        "properties": {
+          "fab_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Fab Id"
+          },
+          "drafter_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Drafter Id"
+          },
+          "scheduled_start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled Start Date"
+          },
+          "scheduled_end_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled End Date"
+          },
+          "total_sqft_required_to_draft": {
+            "type": "string",
+            "title": "Total Sqft Required To Draft"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fab_id",
+          "drafter_id",
+          "scheduled_start_date",
+          "scheduled_end_date",
+          "total_sqft_required_to_draft"
+        ],
+        "title": "DraftingCreate"
+      },
+      "DraftingResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "fab_id": {
+            "type": "integer",
+            "title": "Fab Id"
+          },
+          "drafter_id": {
+            "type": "integer",
+            "title": "Drafter Id"
+          },
+          "scheduled_start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled Start Date"
+          },
+          "scheduled_end_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled End Date"
+          },
+          "drafter_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafter Start Date"
+          },
+          "drafter_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafter End Date"
+          },
+          "total_sqft_required_to_draft": {
+            "type": "string",
+            "title": "Total Sqft Required To Draft"
+          },
+          "total_sqft_drafted": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft Drafted"
+          },
+          "no_of_piece_drafted": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "No Of Piece Drafted"
+          },
+          "draft_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Note"
+          },
+          "mentions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mentions"
+          },
+          "file_ids": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Ids"
+          },
+          "is_redrafting": {
+            "type": "boolean",
+            "title": "Is Redrafting"
+          },
+          "status_id": {
+            "type": "integer",
+            "title": "Status Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "fab_id",
+          "drafter_id",
+          "scheduled_start_date",
+          "scheduled_end_date",
+          "drafter_start_date",
+          "drafter_end_date",
+          "total_sqft_required_to_draft",
+          "total_sqft_drafted",
+          "no_of_piece_drafted",
+          "draft_note",
+          "mentions",
+          "file_ids",
+          "is_redrafting",
+          "status_id",
+          "created_at",
+          "updated_at",
+          "updated_by"
+        ],
+        "title": "DraftingResponse"
+      },
+      "DraftingUpdate": {
+        "properties": {
+          "drafter_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafter Start Date"
+          },
+          "drafter_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafter End Date"
+          },
+          "total_sqft_drafted": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft Drafted"
+          },
+          "no_of_piece_drafted": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "No Of Piece Drafted"
+          },
+          "draft_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Note"
+          },
+          "mentions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mentions"
+          },
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
+          }
+        },
+        "type": "object",
+        "title": "DraftingUpdate"
+      },
       "EdgeCreate": {
         "properties": {
           "name": {
@@ -10069,6 +11438,155 @@
         ],
         "title": "FabCreate"
       },
+      "FabNotesCreate": {
+        "properties": {
+          "fab_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Fab Id",
+            "description": "FAB ID"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage",
+            "description": "Stage for the note (defaults to FAB's current_stage)"
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Note",
+            "description": "Note content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fab_id",
+          "note"
+        ],
+        "title": "FabNotesCreate"
+      },
+      "FabNotesResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "fab_id": {
+            "type": "integer",
+            "title": "Fab Id"
+          },
+          "stage": {
+            "type": "string",
+            "title": "Stage"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          },
+          "created_by": {
+            "type": "integer",
+            "title": "Created By"
+          },
+          "created_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          },
+          "updated_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By Name"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "fab_id",
+          "stage",
+          "note",
+          "created_by",
+          "created_at"
+        ],
+        "title": "FabNotesResponse"
+      },
+      "FabNotesUpdate": {
+        "properties": {
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note",
+            "description": "Updated note content"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage",
+            "description": "Updated stage"
+          }
+        },
+        "type": "object",
+        "title": "FabNotesUpdate"
+      },
       "FabResponse": {
         "properties": {
           "id": {
@@ -10078,6 +11596,84 @@
           "job_id": {
             "type": "integer",
             "title": "Job Id"
+          },
+          "job_details": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Job Details"
+          },
+          "account_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Id"
+          },
+          "account_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Name"
+          },
+          "account_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Number"
+          },
+          "account_contact_person": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Contact Person"
+          },
+          "account_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Email"
+          },
+          "account_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Phone"
           },
           "fab_type": {
             "type": "string",
@@ -10169,7 +11765,10 @@
           "notes": {
             "anyOf": [
               {
-                "type": "string"
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
               },
               {
                 "type": "null"
@@ -10201,6 +11800,62 @@
             "type": "boolean",
             "title": "Final Programming Needed"
           },
+          "drafter_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafter Id"
+          },
+          "drafter_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafter Name"
+          },
+          "drafter_assigned_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafter Assigned By"
+          },
+          "drafter_assigned_by_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafter Assigned By Name"
+          },
+          "drafter_assigned_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafter Assigned At"
+          },
           "current_stage": {
             "anyOf": [
               {
@@ -10211,6 +11866,17 @@
               }
             ],
             "title": "Current Stage"
+          },
+          "next_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Stage"
           },
           "status_id": {
             "type": "integer",
@@ -10247,6 +11913,70 @@
               }
             ],
             "title": "Updated By"
+          },
+          "templating_schedule_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Templating Schedule Start Date"
+          },
+          "templating_schedule_due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Templating Schedule Due Date"
+          },
+          "templating_notes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Templating Notes"
+          },
+          "technician_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technician Name"
+          },
+          "fab_notes": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fab Notes"
           }
         },
         "type": "object",
@@ -10261,7 +11991,6 @@
           "edge_id",
           "input_area",
           "total_sqft",
-          "notes",
           "template_needed",
           "drafting_needed",
           "slab_smith_cust_needed",
@@ -10269,6 +11998,7 @@
           "sct_needed",
           "final_programming_needed",
           "current_stage",
+          "next_stage",
           "status_id",
           "created_at",
           "created_by",
@@ -10410,7 +12140,20 @@
                 "type": "null"
               }
             ],
-            "title": "Notes"
+            "title": "Notes",
+            "description": "Note to add to FAB (will be saved to fab_notes)"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage",
+            "description": "Stage for the note (defaults to current_stage)"
           },
           "template_needed": {
             "anyOf": [
@@ -10478,6 +12221,19 @@
             ],
             "title": "Final Programming Needed"
           },
+          "drafter_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafter Id",
+            "description": "Drafter user ID"
+          },
           "current_stage": {
             "anyOf": [
               {
@@ -10488,6 +12244,17 @@
               }
             ],
             "title": "Current Stage"
+          },
+          "next_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Stage"
           },
           "status_id": {
             "anyOf": [
@@ -10533,66 +12300,24 @@
             "title": "Job Number",
             "description": "Unique job number"
           },
-          "account_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Account Id",
-            "description": "Account ID"
-          },
-          "description": {
+          "project_value": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "number",
+                "minimum": 0
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Description"
-          },
-          "priority": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Priority",
-            "description": "Job priority: Low, Medium, High, Urgent",
-            "default": "Medium"
-          },
-          "start_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Start Date"
-          },
-          "due_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Due Date"
+            "title": "Project Value",
+            "description": "Project value/amount"
           }
         },
         "type": "object",
         "required": [
           "name",
-          "job_number",
-          "account_id"
+          "job_number"
         ],
         "title": "JobCreate"
       },
@@ -10611,7 +12336,14 @@
             "title": "Job Number"
           },
           "account_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Account Id"
           },
           "description": {
@@ -10659,6 +12391,17 @@
               }
             ],
             "title": "Due Date"
+          },
+          "project_value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Project Value"
           },
           "status_id": {
             "type": "integer",
@@ -10702,16 +12445,9 @@
           "id",
           "name",
           "job_number",
-          "account_id",
-          "description",
-          "priority",
-          "start_date",
-          "due_date",
           "status_id",
           "created_at",
-          "created_by",
-          "updated_at",
-          "updated_by"
+          "created_by"
         ],
         "title": "JobResponse"
       },
@@ -10743,63 +12479,17 @@
             ],
             "title": "Job Number"
           },
-          "account_id": {
+          "project_value": {
             "anyOf": [
               {
-                "type": "integer",
-                "exclusiveMinimum": 0
+                "type": "number",
+                "minimum": 0
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Account Id"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "priority": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Priority"
-          },
-          "start_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Start Date"
-          },
-          "due_date": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Due Date"
+            "title": "Project Value"
           },
           "status_id": {
             "anyOf": [
@@ -11103,6 +12793,107 @@
           "created_at"
         ],
         "title": "PlanningSection"
+      },
+      "PreDraftReviewCreate": {
+        "properties": {
+          "fab_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Fab Id"
+          },
+          "is_completed": {
+            "type": "boolean",
+            "title": "Is Completed",
+            "default": false
+          },
+          "draft_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fab_id"
+        ],
+        "title": "PreDraftReviewCreate"
+      },
+      "PreDraftReviewResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "fab_id": {
+            "type": "integer",
+            "title": "Fab Id"
+          },
+          "draft_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Notes"
+          },
+          "is_redrafting_needed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Redrafting Needed"
+          },
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "type": "integer",
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "fab_id",
+          "draft_notes",
+          "is_redrafting_needed",
+          "status_id",
+          "created_at",
+          "updated_at",
+          "updated_by"
+        ],
+        "title": "PreDraftReviewResponse"
       },
       "RefreshTokenRequest": {
         "properties": {
@@ -11788,6 +13579,34 @@
         ],
         "title": "SuccessResponse[AccountResponse]"
       },
+      "SuccessResponse_DraftingResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DraftingResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[DraftingResponse]"
+      },
       "SuccessResponse_EdgeResponse_": {
         "properties": {
           "success": {
@@ -11815,6 +13634,34 @@
           "message"
         ],
         "title": "SuccessResponse[EdgeResponse]"
+      },
+      "SuccessResponse_FabNotesResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FabNotesResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[FabNotesResponse]"
       },
       "SuccessResponse_FabResponse_": {
         "properties": {
@@ -11907,6 +13754,70 @@
           "message"
         ],
         "title": "SuccessResponse[List[EdgeResponse]]"
+      },
+      "SuccessResponse_List_FabNotesResponse__": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FabNotesResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[List[FabNotesResponse]]"
+      },
+      "SuccessResponse_List_FabResponse__": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/FabResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[List[FabResponse]]"
       },
       "SuccessResponse_List_PlanningSection__": {
         "properties": {
@@ -12151,6 +14062,34 @@
         ],
         "title": "SuccessResponse[PlanningSection]"
       },
+      "SuccessResponse_PreDraftReviewResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PreDraftReviewResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[PreDraftReviewResponse]"
+      },
       "SuccessResponse_StoneColorResponse_": {
         "properties": {
           "success": {
@@ -12235,6 +14174,34 @@
         ],
         "title": "SuccessResponse[StoneTypeResponse]"
       },
+      "SuccessResponse_TemplatingResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TemplatingResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[TemplatingResponse]"
+      },
       "SuccessResponse_TokenSchema_": {
         "properties": {
           "success": {
@@ -12290,6 +14257,396 @@
           "message"
         ],
         "title": "SuccessResponse[WorkStation]"
+      },
+      "TemplatingCompleteRequest": {
+        "properties": {
+          "actual_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Sqft",
+            "description": "Actual square footage measured"
+          },
+          "actual_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Start Date",
+            "description": "Actual start date of work"
+          },
+          "duration": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration",
+            "description": "Duration in hours"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Notes to append to existing notes"
+          }
+        },
+        "type": "object",
+        "title": "TemplatingCompleteRequest"
+      },
+      "TemplatingResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "fab_id": {
+            "type": "integer",
+            "title": "Fab Id"
+          },
+          "technician_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technician Id"
+          },
+          "technician_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technician Name"
+          },
+          "schedule_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule Start Date"
+          },
+          "schedule_due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule Due Date"
+          },
+          "total_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft"
+          },
+          "actual_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Start Date"
+          },
+          "duration": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "is_templating_schedule": {
+            "type": "boolean",
+            "title": "Is Templating Schedule"
+          },
+          "status_id": {
+            "type": "integer",
+            "title": "Status Id"
+          },
+          "status_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Name"
+          },
+          "current_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Stage"
+          },
+          "next_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Stage"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "fab_id",
+          "technician_id",
+          "schedule_start_date",
+          "schedule_due_date",
+          "total_sqft",
+          "notes",
+          "is_templating_schedule",
+          "status_id",
+          "created_at",
+          "updated_at",
+          "updated_by"
+        ],
+        "title": "TemplatingResponse"
+      },
+      "TemplatingScheduleCreate": {
+        "properties": {
+          "fab_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Fab Id",
+            "description": "FAB ID"
+          },
+          "technician_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Technician Id",
+            "description": "Technician ID"
+          },
+          "schedule_start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Schedule Start Date",
+            "description": "Scheduled start date"
+          },
+          "schedule_due_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Schedule Due Date",
+            "description": "Scheduled due date"
+          },
+          "total_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft",
+            "description": "Total square feet"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Additional notes as array"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fab_id",
+          "technician_id",
+          "schedule_start_date",
+          "schedule_due_date"
+        ],
+        "title": "TemplatingScheduleCreate"
+      },
+      "TemplatingScheduleUpdate": {
+        "properties": {
+          "technician_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technician Id"
+          },
+          "schedule_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule Start Date"
+          },
+          "schedule_due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Schedule Due Date"
+          },
+          "total_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
+          }
+        },
+        "type": "object",
+        "title": "TemplatingScheduleUpdate"
       },
       "TokenSchema": {
         "properties": {
@@ -12370,6 +14727,17 @@
               }
             ],
             "title": "Gender"
+          },
+          "role_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Role Id"
           }
         },
         "type": "object",
@@ -12434,6 +14802,17 @@
             "type": "integer",
             "title": "Department"
           },
+          "department_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Department Name"
+          },
           "status": {
             "type": "integer",
             "title": "Status"
@@ -12451,6 +14830,51 @@
             "type": "string",
             "format": "date-time",
             "title": "Updated At"
+          },
+          "roles": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roles"
+          },
+          "permissions": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Permissions"
+          },
+          "action_permissions": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Action Permissions"
           }
         },
         "type": "object",

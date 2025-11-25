@@ -1,16 +1,25 @@
 // components/Form.tsx
 import { useState, useEffect } from 'react';
-import { Job } from '@/store/api/job';
+import { Job, Account } from '@/store/api/job';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ChevronLeft, Save } from 'lucide-react';
+import { useGetAccountsQuery } from '@/store/api/job';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export interface JobFormData {
   name: string;
   job_number: string;
   project_value: string;
+  account_id?: number;
 }
 
 interface JobFormProps {
@@ -25,7 +34,11 @@ export const JobForm = ({ mode, job, onBack, onSave }: JobFormProps) => {
     name: '',
     job_number: '',
     project_value: '',
+    account_id: undefined,
   });
+
+  const { data: accountsData, isLoading: isLoadingAccounts } = useGetAccountsQuery();
+  const accounts = accountsData || [];
 
   useEffect(() => {
     if (job && mode === 'edit') {
@@ -33,12 +46,18 @@ export const JobForm = ({ mode, job, onBack, onSave }: JobFormProps) => {
         name: job.name || '',
         job_number: job.job_number || '',
         project_value: job.project_value || '',
+        account_id: job.account_id || undefined,
       });
     }
   }, [job, mode]);
 
   const handleChange = (field: keyof JobFormData, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAccountChange = (value: string) => {
+    const accountId = value ? parseInt(value) : undefined;
+    handleChange('account_id', accountId || '');
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -98,6 +117,39 @@ export const JobForm = ({ mode, job, onBack, onSave }: JobFormProps) => {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="account">Account</Label>
+                <Select 
+                  value={formData.account_id?.toString() || 'none'} 
+                  onValueChange={(value) => {
+                    if (value === 'none') {
+                      handleChange('account_id', '');
+                    } else {
+                      const accountId = parseInt(value);
+                      handleChange('account_id', accountId || '');
+                    }
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select an account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {isLoadingAccounts ? (
+                      <SelectItem value="loading" disabled>Loading accounts...</SelectItem>
+                    ) : (
+                      <>
+                        <SelectItem value="none">None</SelectItem>
+                        {accounts.map((account) => (
+                          <SelectItem key={account.id} value={account.id.toString()}>
+                            {account.name}
+                          </SelectItem>
+                        ))}
+                      </>
+                    )}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
