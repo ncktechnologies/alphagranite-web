@@ -96,7 +96,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
       console.error("Failed to complete templating:", error);
       // Don't navigate if there's an error
       const errorMessage = error?.data?.message || error?.message || "Failed to complete templating. Please try again.";
-      toast.error(errorMessage);
+      // toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
