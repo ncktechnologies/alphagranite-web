@@ -59,7 +59,7 @@ const DrafterPage = () => {
     
     // Fetch fabs with role-based filtering
     const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
-        current_stage: isSuperAdmin ? 'pre_draft' : currentStageFilter,
+        current_stage: 'drafting',
         limit: 100,
     });
 

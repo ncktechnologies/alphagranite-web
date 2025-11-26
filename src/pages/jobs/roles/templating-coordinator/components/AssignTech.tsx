@@ -64,14 +64,14 @@ export function AssignTechnicianModal({
 
   const onSubmit = async (values: AssignTechnicianData) => {
     setIsSubmitting(true);
-    
+
     try {
       // Update the templating schedule with technician information
       if (id) {
         // const selectedEmployee = employeesData?.data.find(
         //   (emp: any) => `${emp.id}` === values.technician
         // );
-        
+
         const response = await scheduleTemplating({
           fab_id: Number(id),
           technician_id: Number(values.technician),
@@ -80,7 +80,7 @@ export function AssignTechnicianModal({
           total_sqft: "0", // This would be updated with actual value
           notes: [values.notes || ""],
         }).unwrap();
-        
+
         // Use success message from endpoint if available and successful, otherwise use default
         let successMessage = "Technician assigned successfully!";
         if (response?.detail?.success !== false && (response?.detail?.message || response?.message)) {
@@ -88,7 +88,7 @@ export function AssignTechnicianModal({
         }
         toast.success(successMessage);
       }
-      
+
       onClose();
       navigate('/job/templating');
     } catch (error: any) {
@@ -166,7 +166,7 @@ export function AssignTechnicianModal({
   }
 
   const technicians = Array.isArray(employeesData) ? employeesData : [];;
-  
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md space-y-5">
@@ -181,7 +181,7 @@ export function AssignTechnicianModal({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-              <FormField
+            <FormField
               control={form.control}
               name="date"
               render={({ field, fieldState }) => (
@@ -192,9 +192,11 @@ export function AssignTechnicianModal({
                       mode="date"
                       value={field.value ? new Date(field.value) : undefined}
                       onChange={(date) => {
-                        const formatted = date?.toISOString().split("T")[0] // "YYYY-MM-DD"
-                        field.onChange(formatted)
+                        if (!date) return field.onChange("");
+                        const formatted = date.toLocaleDateString("en-CA"); // YYYY-MM-DD without timezone issues
+                        field.onChange(formatted);
                       }}
+
                       placeholder="Schedule date"
                       minDate={new Date()}
                     />
@@ -227,9 +229,9 @@ export function AssignTechnicianModal({
                 </FormItem>
               )}
             />
-          
-            
-            
+
+
+
 
             <DialogFooter className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={onClose}>

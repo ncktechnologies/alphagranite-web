@@ -15,7 +15,7 @@ import { DrafterDetailsPage } from '@/pages/jobs/roles/drafters';
 import DrafterPage from '@/pages/jobs/roles/drafters/DrafterPage';
 import { PreDraftDetailsPage } from '@/pages/jobs/roles/predraft/components/details';
 import { PredraftPage } from '@/pages/jobs/roles/predraft/PredraftPage';
-import { PreDraftReviewPage } from '@/pages/jobs/roles/predraft/PreDraftReviewPage';
+// import { PreDraftReviewPage } from '@/pages/jobs/roles/predraft/PreDraftReviewPage';
 import { DraftRevisionPage } from '@/pages/jobs/roles/revisiondraft/BackSalesPage';
 import { ReviewDetailsPage } from '@/pages/jobs/roles/revisiondraft/details';
 import { SalesPage } from '@/pages/jobs/roles/sales/SalesPage';
@@ -167,14 +167,14 @@ export function AppRoutingSetup() {
               // </ProtectedRoute>
             }
           />
-          <Route
+          {/* <Route
             path="/job/predraft-review"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <PreDraftReviewPage/>
               // </ProtectedRoute>
             }
-          />
+          /> */}
           <Route
             path="/job/draft"
             element={

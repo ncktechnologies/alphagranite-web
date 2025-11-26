@@ -19,7 +19,10 @@ import { DateTimePicker } from "@/components/ui/date-time-picker";
 const formSchema = z.object({
   status: z.enum(["completed", "not_completed"]),
   start_date: z.string().min(1, "Start date is required"),
-  duration: z.string().min(1, "Duration is required"),
+  duration: z.string().optional().refine(
+  (val) => !val || /^\d+$/.test(val),
+  { message: "Duration must be in days (numbers only)" }
+),
   notes: z.string().optional(),
   square_ft: z.string().optional(),
 });
@@ -91,7 +94,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
         toast.success(response?.message || "Templating activity saved successfully!");
       }
 
-      navigate('/job/templating-technician');
+      navigate('/job/templating');
     } catch (error: any) {
       console.error("Failed to complete templating:", error);
       // Don't navigate if there's an error

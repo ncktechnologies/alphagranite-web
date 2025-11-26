@@ -68,7 +68,7 @@ export function SalesPage() {
     // Super admin: currentStageFilter is undefined, so gets ALL fabs
     // Sales role: currentStageFilter is 'sales', so gets only sales fabs
     const { data: fabs, isLoading, error, isError } = useGetFabsQuery({
-        current_stage: currentStageFilter,
+        // current_stage: currentStageFilter,
         limit: 100,
     });
 

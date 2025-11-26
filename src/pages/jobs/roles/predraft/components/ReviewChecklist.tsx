@@ -75,16 +75,11 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
         },
     });
 
-    // Populate square footage and drafter from endpoint when fabData is available
+    // Populate square footage from endpoint when fabData is available
     useEffect(() => {
         if (fabData) {
             if (fabData.total_sqft) {
                 form.setValue('square_ft', fabData.total_sqft.toString());
-            }
-            
-            // Populate drafter if it exists in fabData
-            if (fabData.drafter_id) {
-                form.setValue('drafter', fabData.drafter_id.toString());
             }
         }
     }, [fabData, form]);
@@ -125,7 +120,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                 
                 // Only include drafter_id if a drafter was selected (not "none")
                 if (values.drafter && values.drafter !== "none") {
-                    updateData.drafter_id = parseInt(values.drafter);
+                    updateData.drafter_id = parseInt(values.drafter, 10);
                 }
                 
                 // Include square footage if provided
@@ -152,6 +147,28 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                         await completeTemplating({
                             templating_id: templatingId,
                         }).unwrap();
+                    }
+                    
+                    // If a drafter was selected, create a drafting assignment
+                    if (values.drafter && values.drafter !== "none") {
+                        try {
+                            // Use the templating schedule dates for drafting
+                            const startDate = fabData?.templating_schedule_start_date || new Date().toISOString();
+                            const endDate = fabData?.templating_schedule_due_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+                            
+                            await createDrafting({
+                                fab_id: fabId,
+                                drafter_id: values.drafter && values.drafter !== 'none' ? parseInt(values.drafter, 10) : 0,
+                                scheduled_start_date: startDate,
+                                scheduled_end_date: endDate,
+                                total_sqft_required_to_draft: values.square_ft || "0"
+                            }).unwrap();
+                            
+                            toast.success("Drafting assignment created successfully");
+                        } catch (draftError) {
+                            console.error("Failed to create drafting assignment:", draftError);
+                            toast.error("Failed to create drafting assignment");
+                        }
                     }
                 }
             }

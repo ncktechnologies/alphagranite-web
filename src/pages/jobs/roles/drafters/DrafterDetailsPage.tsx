@@ -1,368 +1,276 @@
-import { useCallback, useState, useMemo } from 'react';
+// DrafterDetailsPageRefactor.tsx
+import React, { useCallback, useState } from 'react';
 import { Container } from '@/components/common/container';
+import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { TimeTrackingComponent } from './components/TimeTrackingComponent';
-import { FileUploadComponent } from './components/FileUploadComponent';
-import { FileViewer } from './components/FileViewer';
-import { SubmissionModal } from './components/SubmissionModal';
-import { jobDetails, schedulingNotes } from '../../components/job';
-import { ImageInput } from '@/components/image-input';
-import { UploadDocuments } from './components/fileUploads';
-import { X } from 'lucide-react';
-import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
-import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate, useParams } from 'react-router';
-import { useUploadImageMutation } from '@/store/api/auth';
-import type { FileWithPreview } from '@/hooks/use-file-upload';
-import { UploadedFileMeta } from '@/types/uploads';
 import { toast } from 'sonner';
-// Import the new drafting API hooks
-import { 
-  useGetFabByIdQuery, 
-  useGetDraftingByFabIdQuery, 
-  useSubmitDraftingForReviewMutation,
-  useAddFilesToDraftingMutation,
-  useGetJobByIdQuery,
-  useCreateDraftingMutation
-} from '@/store/api/job';
-import { SubmitDraftModal } from './components';
+import { useGetFabByIdQuery, useGetDraftingByFabIdQuery, useAddFilesToDraftingMutation } from '@/store/api/job';
+import { TimeTrackingComponent } from './components/TimeTrackingComponent';
+import { UploadDocuments } from './components/fileUploads';
+import { FileViewer } from './components/FileViewer';
+import { SubmissionModal } from './components/SubmissionModal';
 import { useSelector } from 'react-redux';
-import { useGetEmployeesQuery } from '@/store/api/employee';
-import { useGetProfileQuery } from '@/store/api/auth';
+import { FileWithPreview } from '@/hooks/use-file-upload';
+import { UploadedFileMeta } from '@/types/uploads';
+import { X } from 'lucide-react';
 
-const DrafterDetailsPage = () => {
+export function DrafterDetailsPage() {
   const { id } = useParams<{ id: string }>();
-  const fabId = id ? parseInt(id) : 0;
-  
-  // Get current user from Redux store
-  const currentUser = useSelector((state: any) => state.user.user);
-  
-  // Use the employee ID directly from the current user if available
-  const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
-  
-  // Fetch FAB and job data
-  const { data: fabData, isLoading: isFabLoading } = useGetFabByIdQuery(fabId, { skip: !fabId });
-  const { data: jobData } = useGetJobByIdQuery(fabData?.job_id || 0, { skip: !fabData?.job_id });
-  const { data: draftingData } = useGetDraftingByFabIdQuery(fabId, { skip: !fabId });
-  
-  // Drafting mutations
-  const [submitDraftingForReview] = useSubmitDraftingForReviewMutation();
-  const [addFilesToDrafting] = useAddFilesToDraftingMutation();
-  const [createDrafting] = useCreateDraftingMutation();
+  const fabId = id ? Number(id) : 0;
+  const navigate = useNavigate();
 
-  type ViewMode = 'activity' | 'file';
-  const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+  const currentUser = useSelector((s: any) => s.user.user);
+  const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
+
+  // load fab & drafting (we assume drafting already exists)
+  const { data: fabData, isLoading: isFabLoading } = useGetFabByIdQuery(fabId, { skip: !fabId });
+  const { data: draftingData, isLoading: isDraftingLoading, refetch: refetchDrafting } = useGetDraftingByFabIdQuery(fabId, { skip: !fabId });
+  const [addFilesToDrafting] = useAddFilesToDraftingMutation();
+
+  // local UI state
   const [isDrafting, setIsDrafting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
-  const [totalTime, setTotalTime] = useState(0);
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFileMeta[]>([]);
+  const [hasEnded, setHasEnded] = useState(false);
+  const [totalTime, setTotalTime] = useState<number>(0);
+
+  // start/end timestamps captured from child component
+  const [draftStart, setDraftStart] = useState<Date | null>(null);
+  const [draftEnd, setDraftEnd] = useState<Date | null>(null);
+
+  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+  const [uploadedFileObjects, setUploadedFileObjects] = useState<Record<string, File>>({}); // Store actual File objects as a map
+  const [activeFile, setActiveFile] = useState<any | null>(null);
+  const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
   const [uploadedFileMap, setUploadedFileMap] = useState<Record<string, UploadedFileMeta>>({});
   const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
-  const [viewMode, setViewMode] = useState<ViewMode>('activity');
-  const [activeFile, setActiveFile] = useState<any | null>(null);
-  const [hasEnded, setHasEnded] = useState(false);
-  const [resetTimeTracking, setResetTimeTracking] = useState(0);
-  const navigate = useNavigate()
+
+  const [showSubmissionModal, setShowSubmissionModal] = useState(false);
 
   const handleFilesChange = useCallback(async (files: FileWithPreview[]) => {
     if (!files) return;
 
-    const retainedEntries: Record<string, UploadedFileMeta> = {};
-    files.forEach((fileItem) => {
-      if (uploadedFileMap[fileItem.id]) {
-        retainedEntries[fileItem.id] = uploadedFileMap[fileItem.id];
-      }
-    });
+    console.log('Files received:', files);
+    console.log('Current uploadedFileMap:', uploadedFileMap);
 
-    const pendingFiles = files.filter(
-      (fileItem) => fileItem.file instanceof File && !retainedEntries[fileItem.id],
+    // Filter to only actual File objects
+    const validFiles = files.filter(
+      (fileItem) => fileItem.file instanceof File,
     );
+    console.log('Valid files:', validFiles);
 
-    if (pendingFiles.length === 0) {
-      setUploadedFileMap(retainedEntries);
-      setUploadedFiles(Object.values(retainedEntries));
+    if (validFiles.length === 0) {
+      console.log('No valid files to process');
       return;
     }
 
     try {
       setIsUploadingDocuments(true);
-      const newEntries: Record<string, UploadedFileMeta> = { ...retainedEntries };
+
+      // Start with existing entries
+      const updatedEntries: Record<string, UploadedFileMeta> = { ...uploadedFileMap };
+      const newFileObjects: File[] = []; // Collect new file objects
+      const newFileMap: Record<string, File> = {}; // Map file IDs to File objects
 
       // Only upload files to drafting endpoint, not to general file upload
       // If we have drafting data, add files to drafting
       let currentDraftingData = draftingData;
-      
-      // If no drafting data exists, create a drafting assignment
-      if (!currentDraftingData) {
-        try {
-          // Make sure we have the current employee ID
-          if (!currentEmployeeId) {
-            toast.error('Unable to identify drafter. Please refresh the page and try again.');
-            setIsUploadingDocuments(false);
-            return;
-          }
-          
-          // Use the templating schedule dates for drafting, or default dates if not available
-          const startDate = fabData?.templating_schedule_start_date || new Date().toISOString();
-          const endDate = fabData?.templating_schedule_due_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-          
-          const newDrafting = await createDrafting({
-            fab_id: fabId,
-            drafter_id: currentEmployeeId,
-            scheduled_start_date: startDate,
-            scheduled_end_date: endDate,
-            total_sqft_required_to_draft: fabData?.total_sqft?.toString() || "0"
-          }).unwrap();
-          
-          currentDraftingData = newDrafting;
-          toast.success('Drafting assignment created successfully');
-        } catch (createError) {
-          console.error('Error creating drafting assignment:', createError);
-          toast.error('Failed to create drafting assignment. Please try again.');
-          setIsUploadingDocuments(false);
-          return;
-        }
-      }
+      console.log('Current drafting data:', currentDraftingData);
 
+      // Check if we have valid drafting data with an ID
       if (currentDraftingData && currentDraftingData.id) {
         // Extract the actual File objects from file items
-        const filesToAdd = pendingFiles.map(f => f.file as File);
+        const filesToAdd = validFiles.map(f => f.file as File);
+
+        // Store file objects for later use in submission
+        newFileObjects.push(...filesToAdd);
+
+        // Upload files to drafting with proper format
         const response = await addFilesToDrafting({
           drafting_id: currentDraftingData.id,
           files: filesToAdd
         }).unwrap();
-      
-        // Create entries with the file objects themselves since we don't get IDs back
-        // We'll use a combination of timestamp and index as temporary IDs
-        filesToAdd.forEach((file, index) => {
-          const tempId = `draft-${currentDraftingData.id}-${Date.now()}-${index}`;
-          newEntries[tempId] = {
+
+        // Extract file IDs from the response and create entries
+        if (response && response.data && Array.isArray(response.data)) {
+          response.data.forEach((fileData: any, index: number) => {
+            if (fileData.id) {
+              const tempId = `draft-${currentDraftingData.id}-${fileData.id}`;
+              updatedEntries[tempId] = {
+                id: fileData.id, // Use actual file ID from server
+                name: fileData.name || filesToAdd[index].name,
+                size: fileData.size || filesToAdd[index].size,
+                type: fileData.type || filesToAdd[index].type,
+              };
+              // Map the file ID to the File object
+              newFileMap[fileData.id] = filesToAdd[index];
+            }
+          });
+        }
+
+        console.log('Updated entries after upload:', updatedEntries);
+      } else {
+        // If no drafting data, just track the files locally without uploading
+        validFiles.forEach((fileItem, index) => {
+          const file = fileItem.file as File;
+          const tempId = `local-${Date.now()}-${index}`;
+          updatedEntries[tempId] = {
             id: tempId,
             name: file.name,
             size: file.size,
             type: file.type,
           };
+          // Store file objects for later use in submission
+          newFileObjects.push(file);
+          // Map the file ID to the File object
+          newFileMap[tempId] = file;
         });
+        console.log('Tracked files locally (no drafting data):', updatedEntries);
       }
 
-      setUploadedFileMap(newEntries);
-      setUploadedFiles(Object.values(newEntries));
+      // Update state with all entries (both existing and new)
+      setUploadedFileMap(updatedEntries);
+      setUploadedFiles(Object.values(updatedEntries));
+      // Update the file objects map with new entries
+      setUploadedFileObjects(prev => ({ ...prev, ...newFileMap }));
+      console.log('Final uploaded files count:', Object.values(updatedEntries).length);
     } catch (error) {
       console.error('Unable to upload files', error);
       toast.error('Failed to upload one or more files. Please try again.');
     } finally {
       setIsUploadingDocuments(false);
     }
-  }, [uploadedFileMap, draftingData, addFilesToDrafting, createDrafting, fabId, currentEmployeeId, fabData]);
-
+  }, [uploadedFileMap, draftingData, addFilesToDrafting, fabId, fabData]);
   const handleFileClick = (file: any) => {
     setActiveFile(file);
     setViewMode('file');
   };
 
-  const handleStartDrafting = () => {
+  // Time tracking handlers — these get Date objects from TimeTrackingComponent
+  const handleStart = (startDate: Date) => {
     setIsDrafting(true);
     setIsPaused(false);
     setHasEnded(false);
+    setDraftStart(startDate);
   };
 
-  const handlePauseDrafting = () => {
+  const handlePause = () => {
     setIsPaused(true);
   };
 
-  const handleResumeDrafting = () => {
+  const handleResume = () => {
     setIsPaused(false);
   };
 
-  const handleEndDrafting = () => {
+  const handleEnd = (endDate: Date) => {
     setIsDrafting(false);
     setIsPaused(false);
     setHasEnded(true);
+    setDraftEnd(endDate);
   };
 
-  const handleSubmitDraft = async (submissionData: any) => {
+  const canOpenSubmit = !isDrafting && totalTime > 0 && uploadedFiles.length > 0;
+
+  const onSubmitModal = async (payload: any) => {
+    // After SubmissionModal calls updateDrafting successfully it will call onClose(true)
+    // We can refresh drafting and navigate to review page
     try {
-      let currentDraftingData = draftingData;
-      
-      // If no drafting data exists, create a drafting assignment
-      if (!currentDraftingData) {
-        try {
-          // Make sure we have the current employee ID
-          if (!currentEmployeeId) {
-            toast.error('Unable to identify drafter. Please refresh the page and try again.');
-            return;
-          }
-          
-          // Use the templating schedule dates for drafting, or default dates if not available
-          const startDate = fabData?.templating_schedule_start_date || new Date().toISOString();
-          const endDate = fabData?.templating_schedule_due_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-          
-          const newDrafting = await createDrafting({
-            fab_id: fabId,
-            drafter_id: currentEmployeeId, // Use the actual current employee ID
-            scheduled_start_date: startDate,
-            scheduled_end_date: endDate,
-            total_sqft_required_to_draft: fabData?.total_sqft?.toString() || "0"
-          }).unwrap();
-          
-          currentDraftingData = newDrafting;
-          toast.success('Drafting assignment created successfully');
-        } catch (createError) {
-          console.error('Error creating drafting assignment:', createError);
-          toast.error('Failed to create drafting assignment. Please try again.');
-          return;
-        }
-      }
-      
-      if (currentDraftingData && currentDraftingData.id) {
-        // Submit drafting for review
-        await submitDraftingForReview({
-          drafting_id: currentDraftingData.id,
-          data: {
-            // Use actual file IDs from uploaded files
-            file_ids: uploadedFiles.map(f => f.id).join(','),
-            no_of_piece_drafted: parseInt(submissionData.numberOfPieces) || 0,
-            total_sqft_drafted: submissionData.totalSqFt || '0',
-            draft_note: submissionData.draftNotes || '',
-            mentions: submissionData.assignToSales || '',
-            is_completed: true
-          }
-        }).unwrap();
-      
-        toast.success('Draft submitted successfully');
-      }
-      
+      await refetchDrafting();
       setShowSubmissionModal(false);
-      setIsDrafting(false);
-      setIsPaused(false);
-      setTotalTime(0);
       setUploadedFiles([]);
-      setHasEnded(false)
-      setResetTimeTracking(prev => prev + 1);
-      navigate('/job/draft-review')
-    } catch (error) {
-      console.error('Error submitting draft:', error);
-      toast.error('Failed to submit draft. Please try again.');
+      setTotalTime(0);
+      setDraftStart(null);
+      setDraftEnd(null);
+      // toast.success('Draft submitted — redirecting to draft review');
+      navigate('/job/draft');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to finalize submission flow');
     }
   };
 
-  // Update sidebar sections with actual FAB data if available
-  const sidebarSections = [
-    {
-      title: "Job Details",
-      type: "details",
-      items: [
-        { label: "Customer", value: jobData?.name || "Loading..." },
-        { label: "Area", value: fabData?.input_area || "Loading..." },
-        { label: "Material", value: `${fabData?.stone_type_name || ''} ${fabData?.stone_color_name || ''} - ${fabData?.stone_thickness_value || ''}` },
-        { label: "FAB Type", value: fabData?.fab_type || "Loading..." },
-        { label: "Assigned to", value: draftingData?.drafter_name || (currentEmployeeId ? "You (Self-assigned)" : "Loading...") },
-      ],
-    },
-    {
-      title: "Notes",
-      type: "notes",
-      notes: fabData?.notes?.map((note: string, index: number) => ({
-        id: index,
-        avatar: "N",
-        content: note,
-        author: "System",
-        timestamp: "Recent",
-      })) || [],
-    },
-  ];
-
-  // Transform UploadedFileMeta to UploadedFile for the SubmissionModal
-  const transformedUploadedFiles = useMemo(() => {
-    return uploadedFiles.map(file => ({
-      id: file.id,
-      name: file.name,
-      size: file.size,
-      type: file.type || '', // Provide default empty string if type is undefined
-      url: file.url
-    }));
-  }, [uploadedFiles]);
-
-  if (isFabLoading) {
-    return <div>Loading...</div>;
-  }
-
+  if (isFabLoading || isDraftingLoading) return <div>Loading...</div>;
+  const sidebarSections =
+    [
+      {
+        title: "Job Details",
+        type: "details",
+        items: [
+          // { label: "Customer", value: jobData?.name || "Loading..." },
+          { label: "Area", value: fabData?.input_area || "Loading..." },
+          { label: "Material", value: `${fabData?.stone_type_name || ''} ${fabData?.stone_color_name || ''} - ${fabData?.stone_thickness_value || ''}` },
+          { label: "FAB Type", value: fabData?.fab_type || "Loading..." },
+          { label: "Assigned to", value: draftingData?.drafter_name || (currentEmployeeId ? "You (Self-assigned)" : "Loading...") },
+        ],
+      },
+      {
+        title: "Notes",
+        type: "notes",
+        notes: fabData?.notes?.map((note: string, index: number) => ({
+          id: index,
+          avatar: "N",
+          content: note,
+          author: "",
+          timestamp: "",
+        })) || [],
+      },
+    ];
   return (
     <>
       <Container className='lg:mx-0'>
-        <Toolbar className=' '>
-          <ToolbarHeading title={`FAB ID: ${fabData?.id || 'Loading...'}`} description="Update drafting activity" />
-        </Toolbar>
+        <div className='py-4'>
+          <h2 className='text-lg font-semibold'>FAB ID: {fabData?.id || 'Loading...'}</h2>
+          <p className='text-sm text-muted-foreground'>Update drafting activity</p>
+        </div>
       </Container>
-      <div className=" border-t grid grid-cols-1 lg:grid-cols-12 gap-3 ultra:gap-0  items-start lg:flex-shrink-0">
+
+      <div className=" border-t grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
         <div className="lg:col-span-3 w-full lg:w-[200px]  2xl:w-[286px]  ultra:w-[500px]" >
           <GraySidebar sections={sidebarSections as any} />
         </div>
         <Container className="lg:col-span-9 px-0 mx-0">
           {viewMode === 'file' && activeFile ? (
-            <div className="">
+            <div>
               <div className="flex justify-end">
-                <Button
-                  variant="inverse"
-                  size="sm"
-                  onClick={() => {
-                    setViewMode('activity');
-                    setActiveFile(null);
-                  }}
-                >
+                <Button variant="inverse" size="sm" onClick={() => { setViewMode('activity'); setActiveFile(null); }}>
                   <X className="w-6 h-6" />
+
                 </Button>
               </div>
-              <FileViewer
-                file={activeFile}
-                onClose={() => {
-                  setViewMode('activity');
-                  setActiveFile(null);
-                }}
-              />
+              <FileViewer file={activeFile} onClose={() => { setActiveFile(null); setViewMode('activity'); }} />
             </div>
           ) : (
             <>
               <Card className='my-4'>
                 <CardHeader className='flex flex-col items-start py-4'>
                   <CardTitle>Drafting activity</CardTitle>
-                  <p className="text-sm text-[#4B5563]">
-                    Update your drafting activity here
-                  </p>
+                  <p className="text-sm text-[#4B5563]">Update your drafting activity here</p>
                 </CardHeader>
               </Card>
 
               <Card>
-                <CardContent className="">
-                  {/* Time Tracking Component */}
+                <CardContent>
                   <TimeTrackingComponent
-                    key={resetTimeTracking}
                     isDrafting={isDrafting}
                     isPaused={isPaused}
                     totalTime={totalTime}
-                    onStart={handleStartDrafting}
-                    onPause={handlePauseDrafting}
-                    onResume={handleResumeDrafting}
-                    onEnd={handleEndDrafting}
+                    onStart={handleStart}
+                    onPause={handlePause}
+                    onResume={handleResume}
+                    onEnd={handleEnd}
                     onTimeUpdate={setTotalTime}
                     hasEnded={hasEnded}
                   />
-                  <Separator className='my-3' />
-                  {/* Upload Documents with file viewing support */}
+
+                  <Separator className="my-3" />
+
                   <UploadDocuments
                     onFileClick={handleFileClick}
                     onFilesChange={handleFilesChange}
                     simulateUpload={false}
                   />
-                  {isUploadingDocuments && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Uploading files, please wait...
-                    </p>
-                  )}
 
                   {/* Submit Button */}
                   {viewMode === 'activity' && (
@@ -382,20 +290,25 @@ const DrafterDetailsPage = () => {
           )}
         </Container>
 
-        {/* Submission Modal */}
         {showSubmissionModal && (
           <SubmissionModal
-            jobDetails={jobDetails}
-            totalTime={totalTime}
-            uploadedFiles={transformedUploadedFiles} // Use transformed files
-            onClose={() => setShowSubmissionModal(false)}
-            onSubmit={handleSubmitDraft}
+            open={showSubmissionModal}
+            onClose={(success?: boolean) => {
+              setShowSubmissionModal(false);
+              if (success) onSubmitModal({});
+            }}
+            drafting={draftingData}
+            uploadedFiles={uploadedFiles.map((file) => ({
+              ...file,
+              file: uploadedFileObjects[file.id]
+            }))}
+            draftStart={draftStart}
+            draftEnd={draftEnd}
           />
         )}
-        
       </div>
     </>
   );
-};
+}
 
-export { DrafterDetailsPage };
+export default DrafterDetailsPage;

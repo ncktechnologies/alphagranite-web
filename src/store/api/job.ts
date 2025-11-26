@@ -300,6 +300,7 @@ export interface Drafting {
     status_name?: string;
     created_at: string;
     updated_at?: string;
+    file_ids?: string | null;
 }
 
 export interface DraftingCreate {
@@ -822,7 +823,7 @@ export const jobApi = createApi({
                 query: ({ drafting_id, files }) => {
                     const formData = new FormData();
                     files.forEach((file) => {
-                        formData.append('file', file); // Make sure this matches backend expectation
+                        formData.append('files', file); // Changed from 'file' to 'files'
                     });
                     return {
                         url: `/drafting/${drafting_id}/files`,
