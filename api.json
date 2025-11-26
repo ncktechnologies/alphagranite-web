@@ -3638,6 +3638,117 @@
         ]
       }
     },
+    "/api/v1/accounts/{account_id}/jobs": {
+      "get": {
+        "tags": [
+          "Accounts"
+        ],
+        "summary": "Get Account Jobs",
+        "description": "Get all jobs under a specific account with optional filtering",
+        "operationId": "get_account_jobs_api_v1_accounts__account_id__jobs_get",
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Account Id"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of records to skip",
+              "default": 0,
+              "title": "Skip"
+            },
+            "description": "Number of records to skip"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Number of records to return",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Number of records to return"
+          },
+          {
+            "name": "status_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by job status ID",
+              "title": "Status Id"
+            },
+            "description": "Filter by job status ID"
+          },
+          {
+            "name": "priority",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by priority",
+              "title": "Priority"
+            },
+            "description": "Filter by priority"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_List_JobResponse__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/users/sales-persons": {
       "get": {
         "tags": [
@@ -3759,11 +3870,6 @@
         "summary": "Get Stone Thicknesses",
         "description": "Get list of stone thicknesses with optional filtering",
         "operationId": "get_stone_thicknesses_api_v1_stone_thickness_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
         "parameters": [
           {
             "name": "skip",
@@ -3832,7 +3938,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/v1/stone-thickness/{thickness_id}": {
@@ -3993,6 +4104,11 @@
         "summary": "Create Stone Color",
         "description": "Create a new stone color",
         "operationId": "create_stone_color_api_v1_stone_colors_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -4024,12 +4140,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       },
       "get": {
         "tags": [
@@ -4186,6 +4297,11 @@
         "summary": "Update Stone Color",
         "description": "Update a stone color",
         "operationId": "update_stone_color_api_v1_stone_colors__color_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "color_id",
@@ -4228,12 +4344,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       },
       "delete": {
         "tags": [
@@ -4242,6 +4353,11 @@
         "summary": "Delete Stone Color",
         "description": "Delete a stone color (soft delete by setting status to deleted)",
         "operationId": "delete_stone_color_api_v1_stone_colors__color_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "color_id",
@@ -4274,12 +4390,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/stone-types": {
@@ -4290,6 +4401,11 @@
         "summary": "Create Stone Type",
         "description": "Create a new stone type",
         "operationId": "create_stone_type_api_v1_stone_types_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -4321,12 +4437,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       },
       "get": {
         "tags": [
@@ -4483,6 +4594,11 @@
         "summary": "Update Stone Type",
         "description": "Update a stone type",
         "operationId": "update_stone_type_api_v1_stone_types__type_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "type_id",
@@ -4525,12 +4641,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       },
       "delete": {
         "tags": [
@@ -4539,6 +4650,11 @@
         "summary": "Delete Stone Type",
         "description": "Delete a stone type (soft delete by setting status to deleted)",
         "operationId": "delete_stone_type_api_v1_stone_types__type_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "type_id",
@@ -4571,12 +4687,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/edges": {
@@ -4587,6 +4698,11 @@
         "summary": "Create Edge",
         "description": "Create a new edge",
         "operationId": "create_edge_api_v1_edges_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -4618,12 +4734,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       },
       "get": {
         "tags": [
@@ -4798,6 +4909,11 @@
         "summary": "Update Edge",
         "description": "Update an edge",
         "operationId": "update_edge_api_v1_edges__edge_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "edge_id",
@@ -4840,12 +4956,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       },
       "delete": {
         "tags": [
@@ -4854,6 +4965,11 @@
         "summary": "Delete Edge",
         "description": "Delete an edge (soft delete by setting status to deleted)",
         "operationId": "delete_edge_api_v1_edges__edge_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "edge_id",
@@ -4886,12 +5002,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/fab-types": {
@@ -4976,7 +5087,7 @@
           "Fabs"
         ],
         "summary": "Get Fabs",
-        "description": "Get list of fabs with optional filtering",
+        "description": "Get list of fabs with optional filtering and pagination",
         "operationId": "get_fabs_api_v1_fabs_get",
         "parameters": [
           {
@@ -5121,11 +5232,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/FabResponse"
-                  },
-                  "title": "Response Get Fabs Api V1 Fabs Get"
+
                 }
               }
             }
@@ -5350,6 +5457,144 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/stages/{stage_name}/fabs": {
+      "get": {
+        "tags": [
+          "Fabs"
+        ],
+        "summary": "Get Fabs By Stage",
+        "description": "Get paginated list of FABs in a specific stage",
+        "operationId": "get_fabs_by_stage_api_v1_stages__stage_name__fabs_get",
+        "parameters": [
+          {
+            "name": "stage_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Stage Name"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of records to skip",
+              "default": 0,
+              "title": "Skip"
+            },
+            "description": "Number of records to skip"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Number of records to return",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Number of records to return"
+          },
+          {
+            "name": "job_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by job ID",
+              "title": "Job Id"
+            },
+            "description": "Filter by job ID"
+          },
+          {
+            "name": "status_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by status ID",
+              "title": "Status Id"
+            },
+            "description": "Filter by status ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/stages": {
+      "get": {
+        "tags": [
+          "Fabs"
+        ],
+        "summary": "Get All Stages",
+        "description": "Get all workflow stages with FAB count for each stage",
+        "operationId": "get_all_stages_api_v1_stages_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_List_dict__"
                 }
               }
             }
@@ -6008,6 +6253,180 @@
         ]
       }
     },
+    "/api/v1/templating/coordinator/review/{fab_id}": {
+      "patch": {
+        "tags": [
+          "Templating"
+        ],
+        "summary": "Update Template Review",
+        "description": "Templating Coordinator: Update template received status and square footage",
+        "operationId": "update_template_review_api_v1_templating_coordinator_review__fab_id__patch",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplatingReviewUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/templating/coordinator/review-complete/{fab_id}": {
+      "patch": {
+        "tags": [
+          "Templating"
+        ],
+        "summary": "Mark Template Review Complete",
+        "description": "Templating Coordinator: Mark template review as complete",
+        "operationId": "mark_template_review_complete_api_v1_templating_coordinator_review_complete__fab_id__patch",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateReviewCompleteUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/templating/technician/update/{fab_id}": {
+      "patch": {
+        "tags": [
+          "Templating"
+        ],
+        "summary": "Update Templating Work",
+        "description": "Templating Technician: Update templating work status, start time, duration, sqft, notes",
+        "operationId": "update_templating_work_api_v1_templating_technician_update__fab_id__patch",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplatingTechnicianUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/drafting": {
       "post": {
         "tags": [
@@ -6583,6 +7002,2348 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessResponse_PreDraftReviewResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/slabsmith": {
+      "post": {
+        "tags": [
+          "SlabSmith & Sales CT"
+        ],
+        "summary": "Create Slabsmith",
+        "description": "Create a new slab smith entry",
+        "operationId": "create_slabsmith_api_v1_slabsmith_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlabSmithCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_SlabSmithResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/slabsmith/{slabsmith_id}": {
+      "put": {
+        "tags": [
+          "SlabSmith & Sales CT"
+        ],
+        "summary": "Update Slabsmith",
+        "description": "Update slab smith entry",
+        "operationId": "update_slabsmith_api_v1_slabsmith__slabsmith_id__put",
+        "parameters": [
+          {
+            "name": "slabsmith_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Slabsmith Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlabSmithUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_SlabSmithResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/slabsmith/{slabsmith_id}/complete": {
+      "post": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Mark Slabsmith Completed",
+        "operationId": "mark_slabsmith_completed_api_v1_slabsmith__slabsmith_id__complete_post",
+        "parameters": [
+          {
+            "name": "slabsmith_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Slabsmith Id"
+            }
+          },
+          {
+            "name": "updated_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "title": "Updated By"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/slabsmith/{slabsmith_id}/add-file": {
+      "post": {
+        "tags": [
+          "SlabSmith & Sales CT"
+        ],
+        "summary": "Add File To Slabsmith",
+        "description": "Add file to slab smith",
+        "operationId": "add_file_to_slabsmith_api_v1_slabsmith__slabsmith_id__add_file_post",
+        "parameters": [
+          {
+            "name": "slabsmith_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Slabsmith Id"
+            }
+          },
+          {
+            "name": "file_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "File Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_NoneType_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/slabsmith/{slabsmith_id}/file/{file_id}": {
+      "delete": {
+        "tags": [
+          "SlabSmith & Sales CT"
+        ],
+        "summary": "Delete File From Slabsmith",
+        "description": "Delete file from slab smith",
+        "operationId": "delete_file_from_slabsmith_api_v1_slabsmith__slabsmith_id__file__file_id__delete",
+        "parameters": [
+          {
+            "name": "slabsmith_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Slabsmith Id"
+            }
+          },
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "File Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_NoneType_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/slabsmith/fab/{fab_id}": {
+      "get": {
+        "tags": [
+          "SlabSmith & Sales CT"
+        ],
+        "summary": "Get Slabsmith By Fab",
+        "description": "Get slab smith by fab ID",
+        "operationId": "get_slabsmith_by_fab_api_v1_slabsmith_fab__fab_id__get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_SlabSmithResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/sales-ct": {
+      "post": {
+        "tags": [
+          "SlabSmith & Sales CT"
+        ],
+        "summary": "Create Sales Ct",
+        "description": "Create a sales CT entry",
+        "operationId": "create_sales_ct_api_v1_sales_ct_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SalesCTCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_SalesCTResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/sales-ct/{sales_ct_id}/review-no": {
+      "put": {
+        "tags": [
+          "SlabSmith & Sales CT"
+        ],
+        "summary": "Set Review Needed No",
+        "description": "Set review needed as No, add revenue and status",
+        "operationId": "set_review_needed_no_api_v1_sales_ct__sales_ct_id__review_no_put",
+        "parameters": [
+          {
+            "name": "sales_ct_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Sales Ct Id"
+            }
+          },
+          {
+            "name": "revenue",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Revenue"
+            }
+          },
+          {
+            "name": "status_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_NoneType_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/sales-ct/{sales_ct_id}/review-yes": {
+      "put": {
+        "tags": [
+          "SlabSmith & Sales CT"
+        ],
+        "summary": "Set Review Needed Yes",
+        "description": "Set review needed as Yes, add revision reason and files (optional)",
+        "operationId": "set_review_needed_yes_api_v1_sales_ct__sales_ct_id__review_yes_put",
+        "parameters": [
+          {
+            "name": "sales_ct_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Sales Ct Id"
+            }
+          },
+          {
+            "name": "revision_reason",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Revision Reason"
+            }
+          },
+          {
+            "name": "file_ids",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "File Ids"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_NoneType_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/sales-ct/{sales_ct_id}/revision": {
+      "put": {
+        "tags": [
+          "SlabSmith & Sales CT"
+        ],
+        "summary": "Update Revision Type",
+        "description": "Update revision type. Can set revision status as completed, add draft note.\nTrack revision count, type, and dates",
+        "operationId": "update_revision_type_api_v1_sales_ct__sales_ct_id__revision_put",
+        "parameters": [
+          {
+            "name": "sales_ct_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Sales Ct Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SalesCTRevisionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_NoneType_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/sales-ct/fab/{fab_id}": {
+      "get": {
+        "tags": [
+          "SlabSmith & Sales CT"
+        ],
+        "summary": "Get Sales Ct By Fab",
+        "description": "Get sales CT by fab ID",
+        "operationId": "get_sales_ct_by_fab_api_v1_sales_ct_fab__fab_id__get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_SalesCTResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/sales-ct/{fab_id}/review": {
+      "patch": {
+        "tags": [
+          "SalesCT",
+          "SalesCT"
+        ],
+        "summary": "Update Sct Review",
+        "description": "Sales CT: Mark SCT review as complete",
+        "operationId": "update_sct_review_api_v1_sales_ct__fab_id__review_patch",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SalesCTReviewUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Update Sct Review Api V1 Sales Ct  Fab Id  Review Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/sales-ct/{fab_id}/send-to-drafting": {
+      "post": {
+        "tags": [
+          "SalesCT",
+          "SalesCT"
+        ],
+        "summary": "Send To Drafting",
+        "description": "Sales CT: Send FAB back to drafting for revisions",
+        "operationId": "send_to_drafting_api_v1_sales_ct__fab_id__send_to_drafting_post",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SalesCTSendToDrafting"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Send To Drafting Api V1 Sales Ct  Fab Id  Send To Drafting Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/sales-ct/{fab_id}/approve": {
+      "post": {
+        "tags": [
+          "SalesCT",
+          "SalesCT"
+        ],
+        "summary": "Approve And Send To Slabsmith",
+        "description": "Sales CT: Approve FAB and send to SlabSmith",
+        "operationId": "approve_and_send_to_slabsmith_api_v1_sales_ct__fab_id__approve_post",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SalesCTApprove"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Approve And Send To Slabsmith Api V1 Sales Ct  Fab Id  Approve Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/sales-ct/{fab_id}/revision-history": {
+      "get": {
+        "tags": [
+          "SalesCT",
+          "SalesCT"
+        ],
+        "summary": "Get Revision History",
+        "description": "Sales CT: Get revision history for a FAB",
+        "operationId": "get_revision_history_api_v1_sales_ct__fab_id__revision_history_get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Revision History Api V1 Sales Ct  Fab Id  Revision History Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cut-list/{fab_id}/schedule": {
+      "patch": {
+        "tags": [
+          "Cut List",
+          "Cut List"
+        ],
+        "summary": "Schedule Shop Date",
+        "description": "Production Coordinator: Schedule cut list shop date",
+        "operationId": "schedule_shop_date_api_v1_cut_list__fab_id__schedule_patch",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CutListScheduleUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Schedule Shop Date Api V1 Cut List  Fab Id  Schedule Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cut-list/{fab_id}/update": {
+      "patch": {
+        "tags": [
+          "Cut List",
+          "Cut List"
+        ],
+        "summary": "Update Cut List",
+        "description": "Production Coordinator: Update cut list information",
+        "operationId": "update_cut_list_api_v1_cut_list__fab_id__update_patch",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CutListUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Update Cut List Api V1 Cut List  Fab Id  Update Patch"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cut-list/{fab_id}": {
+      "get": {
+        "tags": [
+          "Cut List",
+          "Cut List"
+        ],
+        "summary": "Get Cut List Details",
+        "description": "Production Coordinator: Get cut list details for a FAB",
+        "operationId": "get_cut_list_details_api_v1_cut_list__fab_id__get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Cut List Details Api V1 Cut List  Fab Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/final-programming/{fab_id}/session": {
+      "post": {
+        "tags": [
+          "Final Programming",
+          "Final Programming"
+        ],
+        "summary": "Manage Programming Session",
+        "description": "Final Programming: Manage programming session (start, pause, resume, end)",
+        "operationId": "manage_programming_session_api_v1_final_programming__fab_id__session_post",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinalProgrammingSessionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Manage Programming Session Api V1 Final Programming  Fab Id  Session Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/final-programming/{fab_id}/schedule-shop-date": {
+      "post": {
+        "tags": [
+          "Final Programming",
+          "Final Programming"
+        ],
+        "summary": "Schedule Shop Date",
+        "description": "Final Programming: Schedule shop date (writes to Cut List stage)",
+        "operationId": "schedule_shop_date_api_v1_final_programming__fab_id__schedule_shop_date_post",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinalProgrammingScheduleShopDate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Schedule Shop Date Api V1 Final Programming  Fab Id  Schedule Shop Date Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/final-programming/{fab_id}/complete": {
+      "post": {
+        "tags": [
+          "Final Programming",
+          "Final Programming"
+        ],
+        "summary": "Complete Final Programming",
+        "description": "Final Programming: Mark final programming as complete",
+        "operationId": "complete_final_programming_api_v1_final_programming__fab_id__complete_post",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinalProgrammingComplete"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Complete Final Programming Api V1 Final Programming  Fab Id  Complete Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/final-programming/{fab_id}/session-status": {
+      "get": {
+        "tags": [
+          "Final Programming",
+          "Final Programming"
+        ],
+        "summary": "Get Session Status",
+        "description": "Final Programming: Get current session status",
+        "operationId": "get_session_status_api_v1_final_programming__fab_id__session_status_get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Session Status Api V1 Final Programming  Fab Id  Session Status Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wj-programming": {
+      "post": {
+        "tags": [
+          "WJ Programming"
+        ],
+        "summary": "Create Wj Programming",
+        "description": "Create WJ programming for a fab",
+        "operationId": "create_wj_programming_api_v1_wj_programming_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WJProgrammingCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_WJProgrammingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wj-programming/{wj_programming_id}": {
+      "put": {
+        "tags": [
+          "WJ Programming"
+        ],
+        "summary": "Update Wj Programming",
+        "description": "Update WJ programming",
+        "operationId": "update_wj_programming_api_v1_wj_programming__wj_programming_id__put",
+        "parameters": [
+          {
+            "name": "wj_programming_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Wj Programming Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WJProgrammingUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_WJProgrammingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wj-programming/fab/{fab_id}": {
+      "get": {
+        "tags": [
+          "WJ Programming"
+        ],
+        "summary": "Get Wj Programming By Fab",
+        "description": "Get WJ programming by fab ID",
+        "operationId": "get_wj_programming_by_fab_api_v1_wj_programming_fab__fab_id__get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_WJProgrammingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wj-scheduling": {
+      "post": {
+        "tags": [
+          "WJ Scheduling"
+        ],
+        "summary": "Create Wj Scheduling",
+        "description": "Create WJ scheduling for a fab",
+        "operationId": "create_wj_scheduling_api_v1_wj_scheduling_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WJSchedulingCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_WJSchedulingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wj-scheduling/{wj_scheduling_id}": {
+      "put": {
+        "tags": [
+          "WJ Scheduling"
+        ],
+        "summary": "Update Wj Scheduling",
+        "description": "Update WJ scheduling",
+        "operationId": "update_wj_scheduling_api_v1_wj_scheduling__wj_scheduling_id__put",
+        "parameters": [
+          {
+            "name": "wj_scheduling_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Wj Scheduling Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/WJSchedulingUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_WJSchedulingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/wj-scheduling/fab/{fab_id}": {
+      "get": {
+        "tags": [
+          "WJ Scheduling"
+        ],
+        "summary": "Get Wj Scheduling By Fab",
+        "description": "Get WJ scheduling by fab ID",
+        "operationId": "get_wj_scheduling_by_fab_api_v1_wj_scheduling_fab__fab_id__get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_WJSchedulingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/resurface-scheduling": {
+      "post": {
+        "tags": [
+          "Resurface Scheduling"
+        ],
+        "summary": "Create Resurface Scheduling",
+        "description": "Create resurface scheduling for a fab",
+        "operationId": "create_resurface_scheduling_api_v1_resurface_scheduling_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResurfaceSchedulingCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_ResurfaceSchedulingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/resurface-scheduling/{resurface_scheduling_id}": {
+      "put": {
+        "tags": [
+          "Resurface Scheduling"
+        ],
+        "summary": "Update Resurface Scheduling",
+        "description": "Update resurface scheduling",
+        "operationId": "update_resurface_scheduling_api_v1_resurface_scheduling__resurface_scheduling_id__put",
+        "parameters": [
+          {
+            "name": "resurface_scheduling_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Resurface Scheduling Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResurfaceSchedulingUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_ResurfaceSchedulingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/resurface-scheduling/fab/{fab_id}": {
+      "get": {
+        "tags": [
+          "Resurface Scheduling"
+        ],
+        "summary": "Get Resurface Scheduling By Fab",
+        "description": "Get resurface scheduling by fab ID",
+        "operationId": "get_resurface_scheduling_by_fab_api_v1_resurface_scheduling_fab__fab_id__get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_ResurfaceSchedulingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/revisions": {
+      "post": {
+        "tags": [
+          "Revisions"
+        ],
+        "summary": "Create Revision",
+        "description": "Create a revision for a fab",
+        "operationId": "create_revision_api_v1_revisions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevisionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_RevisionResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/revisions/{revision_id}": {
+      "put": {
+        "tags": [
+          "Revisions"
+        ],
+        "summary": "Update Revision",
+        "description": "Update a revision",
+        "operationId": "update_revision_api_v1_revisions__revision_id__put",
+        "parameters": [
+          {
+            "name": "revision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Revision Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RevisionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_RevisionResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/revisions/fab/{fab_id}": {
+      "get": {
+        "tags": [
+          "Revisions"
+        ],
+        "summary": "Get Revisions By Fab",
+        "description": "Get all revisions for a fab",
+        "operationId": "get_revisions_by_fab_api_v1_revisions_fab__fab_id__get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_list_RevisionResponse__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cost-of-stone": {
+      "post": {
+        "tags": [
+          "Cost of Stone"
+        ],
+        "summary": "Create Cost Of Stone",
+        "description": "Create cost of stone calculation for a fab",
+        "operationId": "create_cost_of_stone_api_v1_cost_of_stone_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CostOfStoneCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_CostOfStoneResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cost-of-stone/{cost_id}": {
+      "put": {
+        "tags": [
+          "Cost of Stone"
+        ],
+        "summary": "Update Cost Of Stone",
+        "description": "Update cost of stone",
+        "operationId": "update_cost_of_stone_api_v1_cost_of_stone__cost_id__put",
+        "parameters": [
+          {
+            "name": "cost_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Cost Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CostOfStoneUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_CostOfStoneResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/cost-of-stone/fab/{fab_id}": {
+      "get": {
+        "tags": [
+          "Cost of Stone"
+        ],
+        "summary": "Get Cost Of Stone By Fab",
+        "description": "Get cost of stone by fab ID",
+        "operationId": "get_cost_of_stone_by_fab_api_v1_cost_of_stone_fab__fab_id__get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_CostOfStoneResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/install-scheduling": {
+      "post": {
+        "tags": [
+          "Install Scheduling"
+        ],
+        "summary": "Create Install Scheduling",
+        "description": "Create install scheduling for a fab",
+        "operationId": "create_install_scheduling_api_v1_install_scheduling_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstallSchedulingCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_InstallSchedulingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/install-scheduling/{install_scheduling_id}": {
+      "put": {
+        "tags": [
+          "Install Scheduling"
+        ],
+        "summary": "Update Install Scheduling",
+        "description": "Update install scheduling",
+        "operationId": "update_install_scheduling_api_v1_install_scheduling__install_scheduling_id__put",
+        "parameters": [
+          {
+            "name": "install_scheduling_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Install Scheduling Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstallSchedulingUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_InstallSchedulingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/install-scheduling/fab/{fab_id}": {
+      "get": {
+        "tags": [
+          "Install Scheduling"
+        ],
+        "summary": "Get Install Scheduling By Fab",
+        "description": "Get install scheduling by fab ID",
+        "operationId": "get_install_scheduling_by_fab_api_v1_install_scheduling_fab__fab_id__get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_InstallSchedulingResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/install-completion": {
+      "post": {
+        "tags": [
+          "Install Completion"
+        ],
+        "summary": "Create Install Completion",
+        "description": "Create install completion record for a fab",
+        "operationId": "create_install_completion_api_v1_install_completion_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstallCompletionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_InstallCompletionResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/install-completion/{install_completion_id}": {
+      "put": {
+        "tags": [
+          "Install Completion"
+        ],
+        "summary": "Update Install Completion",
+        "description": "Update install completion",
+        "operationId": "update_install_completion_api_v1_install_completion__install_completion_id__put",
+        "parameters": [
+          {
+            "name": "install_completion_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Install Completion Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstallCompletionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_InstallCompletionResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/install-completion/fab/{fab_id}": {
+      "get": {
+        "tags": [
+          "Install Completion"
+        ],
+        "summary": "Get Install Completion By Fab",
+        "description": "Get install completion by fab ID",
+        "operationId": "get_install_completion_by_fab_api_v1_install_completion_fab__fab_id__get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_InstallCompletionResponse_"
                 }
               }
             }
@@ -7724,63 +10485,6 @@
             }
           }
         },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      }
-    },
-    "/api/v1/slabsmith/{slabsmith_id}/complete": {
-      "post": {
-        "tags": [
-          "Job Extras"
-        ],
-        "summary": "Mark Slabsmith Completed",
-        "operationId": "mark_slabsmith_completed_api_v1_slabsmith__slabsmith_id__complete_post",
-        "parameters": [
-          {
-            "name": "slabsmith_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Slabsmith Id"
-            }
-          },
-          {
-            "name": "updated_by",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 1,
-              "title": "Updated By"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -9666,6 +12370,18 @@
             "type": "integer",
             "title": "Status Id"
           },
+          "total_jobs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Jobs",
+            "default": 0
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -10775,6 +13491,498 @@
         "title": "BulkEmployeeActivateRequest",
         "description": "Schema for activating or deactivating multiple employees at once"
       },
+      "CostOfStoneCreate": {
+        "properties": {
+          "fab_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Fab Id"
+          },
+          "stone_color_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stone Color Id"
+          },
+          "stone_type_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stone Type Id"
+          },
+          "total_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft"
+          },
+          "cost_per_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Sqft"
+          },
+          "waste_percentage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Waste Percentage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fab_id"
+        ],
+        "title": "CostOfStoneCreate"
+      },
+      "CostOfStoneResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "fab_id": {
+            "type": "integer",
+            "title": "Fab Id"
+          },
+          "stone_color_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stone Color Id"
+          },
+          "stone_type_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stone Type Id"
+          },
+          "total_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft"
+          },
+          "cost_per_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Sqft"
+          },
+          "total_cost": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Cost"
+          },
+          "waste_percentage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Waste Percentage"
+          },
+          "calculated_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calculated By"
+          },
+          "is_completed": {
+            "type": "boolean",
+            "title": "Is Completed"
+          },
+          "status_id": {
+            "type": "integer",
+            "title": "Status Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "fab_id",
+          "stone_color_id",
+          "stone_type_id",
+          "total_sqft",
+          "cost_per_sqft",
+          "total_cost",
+          "waste_percentage",
+          "calculated_by",
+          "is_completed",
+          "status_id",
+          "created_at",
+          "updated_at",
+          "updated_by"
+        ],
+        "title": "CostOfStoneResponse"
+      },
+      "CostOfStoneUpdate": {
+        "properties": {
+          "stone_color_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stone Color Id"
+          },
+          "stone_type_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stone Type Id"
+          },
+          "total_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft"
+          },
+          "cost_per_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Per Sqft"
+          },
+          "total_cost": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Cost"
+          },
+          "waste_percentage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Waste Percentage"
+          },
+          "calculated_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Calculated By"
+          },
+          "is_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Completed"
+          },
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
+          }
+        },
+        "type": "object",
+        "title": "CostOfStoneUpdate"
+      },
+      "CutListScheduleUpdate": {
+        "properties": {
+          "shop_date_schedule": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Shop Date Schedule",
+            "description": "Scheduled shop date"
+          },
+          "installation_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Installation Date",
+            "description": "Optional installation date"
+          },
+          "no_of_pieces": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "No Of Pieces",
+            "description": "Number of pieces"
+          },
+          "total_sqft": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft",
+            "description": "Total square feet"
+          },
+          "wj_linft": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wj Linft",
+            "description": "Waterjet linear feet"
+          },
+          "edging_linft": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edging Linft",
+            "description": "Edging linear feet"
+          },
+          "cnc_linft": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cnc Linft",
+            "description": "CNC linear feet"
+          },
+          "miter_linft": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Miter Linft",
+            "description": "Miter linear feet"
+          },
+          "revision_complete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Complete",
+            "description": "Mark revision as complete"
+          }
+        },
+        "type": "object",
+        "required": [
+          "shop_date_schedule"
+        ],
+        "title": "CutListScheduleUpdate",
+        "description": "Schema for scheduling cut list shop date"
+      },
+      "CutListUpdate": {
+        "properties": {
+          "slab_smith_used": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slab Smith Used",
+            "description": "Mark if slab smith was used"
+          },
+          "fp_not_needed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fp Not Needed",
+            "description": "Mark if final programming not needed"
+          },
+          "shop_date_schedule": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shop Date Schedule",
+            "description": "Scheduled shop date"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Cut list notes"
+          }
+        },
+        "type": "object",
+        "title": "CutListUpdate",
+        "description": "Schema for updating cut list information"
+      },
       "DepartmentCreate": {
         "properties": {
           "name": {
@@ -10994,6 +14202,10 @@
             "type": "boolean",
             "title": "Is Redrafting"
           },
+          "is_completed": {
+            "type": "boolean",
+            "title": "Is Completed"
+          },
           "status_id": {
             "type": "integer",
             "title": "Status Id"
@@ -11043,6 +14255,7 @@
           "mentions",
           "file_ids",
           "is_redrafting",
+          "is_completed",
           "status_id",
           "created_at",
           "updated_at",
@@ -11119,6 +14332,17 @@
               }
             ],
             "title": "Mentions"
+          },
+          "is_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Completed"
           },
           "status_id": {
             "anyOf": [
@@ -11856,6 +15080,238 @@
             ],
             "title": "Drafter Assigned At"
           },
+          "template_received": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Received",
+            "default": false
+          },
+          "template_review_complete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Review Complete",
+            "default": false
+          },
+          "draft_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Completed",
+            "default": false
+          },
+          "cad_review_complete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cad Review Complete",
+            "default": false
+          },
+          "no_of_pieces": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "No Of Pieces"
+          },
+          "revenue": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revenue"
+          },
+          "gp": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gp"
+          },
+          "sct_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sct Completed",
+            "default": false
+          },
+          "revised": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revised",
+            "default": false
+          },
+          "shop_date_schedule": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shop Date Schedule"
+          },
+          "final_programming_complete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Programming Complete",
+            "default": false
+          },
+          "slab_smith_used": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slab Smith Used",
+            "default": false
+          },
+          "fp_not_needed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fp Not Needed",
+            "default": false
+          },
+          "confirmed_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed Date"
+          },
+          "wj_time_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wj Time Minutes"
+          },
+          "wj_linft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wj Linft"
+          },
+          "edging_linft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edging Linft"
+          },
+          "cnc_linft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cnc Linft"
+          },
+          "miter_linft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Miter Linft"
+          },
+          "installation_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Installation Date"
+          },
           "current_stage": {
             "anyOf": [
               {
@@ -11865,7 +15321,8 @@
                 "type": "null"
               }
             ],
-            "title": "Current Stage"
+            "title": "Current Stage",
+            "default": "templating"
           },
           "next_stage": {
             "anyOf": [
@@ -11876,7 +15333,32 @@
                 "type": "null"
               }
             ],
-            "title": "Next Stage"
+            "title": "Next Stage",
+            "default": "pre_draft_review"
+          },
+          "is_complete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Complete",
+            "default": false
+          },
+          "stage_data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage Data"
           },
           "status_id": {
             "type": "integer",
@@ -11997,8 +15479,6 @@
           "slab_smith_ag_needed",
           "sct_needed",
           "final_programming_needed",
-          "current_stage",
-          "next_stage",
           "status_id",
           "created_at",
           "created_by",
@@ -12234,6 +15714,255 @@
             "title": "Drafter Id",
             "description": "Drafter user ID"
           },
+          "template_received": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Received",
+            "description": "Mark if template is received"
+          },
+          "template_review_complete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Template Review Complete",
+            "description": "Mark template review as complete"
+          },
+          "draft_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Completed",
+            "description": "Mark draft as completed"
+          },
+          "cad_review_complete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cad Review Complete",
+            "description": "Mark CAD review as complete"
+          },
+          "no_of_pieces": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "No Of Pieces",
+            "description": "Number of pieces"
+          },
+          "revenue": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revenue",
+            "description": "Revenue amount"
+          },
+          "gp": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gp",
+            "description": "Gross Profit amount"
+          },
+          "sct_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sct Completed",
+            "description": "Mark SCT review as complete"
+          },
+          "revised": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revised",
+            "description": "Mark if FAB has been revised"
+          },
+          "shop_date_schedule": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shop Date Schedule",
+            "description": "Scheduled shop date"
+          },
+          "final_programming_complete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Programming Complete",
+            "description": "Mark final programming as complete"
+          },
+          "slab_smith_used": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slab Smith Used",
+            "description": "Mark if slab smith was used"
+          },
+          "fp_not_needed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fp Not Needed",
+            "description": "Mark if final programming is not needed"
+          },
+          "confirmed_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed Date",
+            "description": "Final programming confirmed date"
+          },
+          "wj_time_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wj Time Minutes",
+            "description": "Waterjet time in minutes"
+          },
+          "wj_linft": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wj Linft",
+            "description": "Waterjet linear feet"
+          },
+          "edging_linft": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edging Linft",
+            "description": "Edging linear feet"
+          },
+          "cnc_linft": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cnc Linft",
+            "description": "CNC linear feet"
+          },
+          "miter_linft": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Miter Linft",
+            "description": "Miter linear feet"
+          },
+          "installation_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Installation Date",
+            "description": "Installation date"
+          },
           "current_stage": {
             "anyOf": [
               {
@@ -12271,6 +16000,205 @@
         "type": "object",
         "title": "FabUpdate"
       },
+      "FinalProgrammingComplete": {
+        "properties": {
+          "final_programming_complete": {
+            "type": "boolean",
+            "title": "Final Programming Complete",
+            "description": "Mark final programming as complete"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Final programming notes"
+          },
+          "drafter_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafter Id",
+            "description": "Assigned programmer ID"
+          },
+          "wj_time_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wj Time Minutes",
+            "description": "Waterjet time in minutes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "final_programming_complete"
+        ],
+        "title": "FinalProgrammingComplete",
+        "description": "Schema for completing final programming"
+      },
+      "FinalProgrammingScheduleShopDate": {
+        "properties": {
+          "shop_date_schedule": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Shop Date Schedule",
+            "description": "Scheduled shop date"
+          },
+          "installation_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Installation Date",
+            "description": "Optional installation date"
+          },
+          "no_of_pieces": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "No Of Pieces",
+            "description": "Number of pieces"
+          },
+          "total_sqft": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft",
+            "description": "Total square feet"
+          },
+          "wj_linft": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Wj Linft",
+            "description": "Waterjet linear feet"
+          },
+          "edging_linft": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Edging Linft",
+            "description": "Edging linear feet"
+          },
+          "cnc_linft": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cnc Linft",
+            "description": "CNC linear feet"
+          },
+          "miter_linft": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Miter Linft",
+            "description": "Miter linear feet"
+          },
+          "confirmed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confirmed",
+            "description": "Mark as confirmed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "shop_date_schedule"
+        ],
+        "title": "FinalProgrammingScheduleShopDate",
+        "description": "Schema for scheduling shop date from Final Programming"
+      },
+      "FinalProgrammingSessionUpdate": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "title": "Action",
+            "description": "Action: 'start', 'pause', 'resume', or 'end'"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Session notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "FinalProgrammingSessionUpdate",
+        "description": "Schema for final programming session actions (start, pause, resume, end)"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -12283,6 +16211,536 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "InstallCompletionCreate": {
+        "properties": {
+          "fab_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Fab Id"
+          },
+          "installer_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Installer Id"
+          },
+          "install_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Install Date"
+          },
+          "completion_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Completion Date"
+          },
+          "total_sqft_installed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft Installed"
+          },
+          "customer_signature": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Signature"
+          },
+          "completion_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fab_id",
+          "installer_id",
+          "install_date",
+          "completion_date"
+        ],
+        "title": "InstallCompletionCreate"
+      },
+      "InstallCompletionResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "fab_id": {
+            "type": "integer",
+            "title": "Fab Id"
+          },
+          "installer_id": {
+            "type": "integer",
+            "title": "Installer Id"
+          },
+          "install_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Install Date"
+          },
+          "completion_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Completion Date"
+          },
+          "total_sqft_installed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft Installed"
+          },
+          "customer_signature": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Signature"
+          },
+          "completion_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Notes"
+          },
+          "is_completed": {
+            "type": "boolean",
+            "title": "Is Completed"
+          },
+          "status_id": {
+            "type": "integer",
+            "title": "Status Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "fab_id",
+          "installer_id",
+          "install_date",
+          "completion_date",
+          "total_sqft_installed",
+          "customer_signature",
+          "completion_notes",
+          "is_completed",
+          "status_id",
+          "created_at",
+          "updated_at",
+          "updated_by"
+        ],
+        "title": "InstallCompletionResponse"
+      },
+      "InstallCompletionUpdate": {
+        "properties": {
+          "installer_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Installer Id"
+          },
+          "install_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Install Date"
+          },
+          "completion_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Date"
+          },
+          "total_sqft_installed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft Installed"
+          },
+          "customer_signature": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Customer Signature"
+          },
+          "completion_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completion Notes"
+          },
+          "is_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Completed"
+          },
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
+          }
+        },
+        "type": "object",
+        "title": "InstallCompletionUpdate"
+      },
+      "InstallSchedulingCreate": {
+        "properties": {
+          "fab_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Fab Id"
+          },
+          "scheduled_install_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Install Date"
+          },
+          "scheduled_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled End Date"
+          },
+          "total_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fab_id"
+        ],
+        "title": "InstallSchedulingCreate"
+      },
+      "InstallSchedulingResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "fab_id": {
+            "type": "integer",
+            "title": "Fab Id"
+          },
+          "installer_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Installer Id"
+          },
+          "scheduled_install_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Install Date"
+          },
+          "scheduled_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled End Date"
+          },
+          "actual_install_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Install Date"
+          },
+          "total_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft"
+          },
+          "is_completed": {
+            "type": "boolean",
+            "title": "Is Completed"
+          },
+          "status_id": {
+            "type": "integer",
+            "title": "Status Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "fab_id",
+          "installer_id",
+          "scheduled_install_date",
+          "scheduled_end_date",
+          "actual_install_date",
+          "total_sqft",
+          "is_completed",
+          "status_id",
+          "created_at",
+          "updated_at",
+          "updated_by"
+        ],
+        "title": "InstallSchedulingResponse"
+      },
+      "InstallSchedulingUpdate": {
+        "properties": {
+          "installer_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Installer Id"
+          },
+          "scheduled_install_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Install Date"
+          },
+          "scheduled_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled End Date"
+          },
+          "actual_install_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Install Date"
+          },
+          "total_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft"
+          },
+          "is_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Completed"
+          },
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
+          }
+        },
+        "type": "object",
+        "title": "InstallSchedulingUpdate"
       },
       "JobCreate": {
         "properties": {
@@ -12299,6 +16757,12 @@
             "minLength": 1,
             "title": "Job Number",
             "description": "Unique job number"
+          },
+          "account_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Account Id",
+            "description": "Account ID"
           },
           "project_value": {
             "anyOf": [
@@ -12317,7 +16781,8 @@
         "type": "object",
         "required": [
           "name",
-          "job_number"
+          "job_number",
+          "account_id"
         ],
         "title": "JobCreate"
       },
@@ -12345,6 +16810,61 @@
               }
             ],
             "title": "Account Id"
+          },
+          "account_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Name"
+          },
+          "account_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Number"
+          },
+          "account_contact_person": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Contact Person"
+          },
+          "account_email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Email"
+          },
+          "account_phone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Phone"
           },
           "description": {
             "anyOf": [
@@ -12908,6 +17428,637 @@
         ],
         "title": "RefreshTokenRequest"
       },
+      "ResurfaceSchedulingCreate": {
+        "properties": {
+          "fab_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Fab Id"
+          },
+          "scheduled_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Start Date"
+          },
+          "scheduled_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled End Date"
+          },
+          "total_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fab_id"
+        ],
+        "title": "ResurfaceSchedulingCreate"
+      },
+      "ResurfaceSchedulingResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "fab_id": {
+            "type": "integer",
+            "title": "Fab Id"
+          },
+          "technician_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technician Id"
+          },
+          "scheduled_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Start Date"
+          },
+          "scheduled_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled End Date"
+          },
+          "actual_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Start Date"
+          },
+          "actual_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual End Date"
+          },
+          "total_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft"
+          },
+          "completed_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed Sqft"
+          },
+          "is_completed": {
+            "type": "boolean",
+            "title": "Is Completed"
+          },
+          "status_id": {
+            "type": "integer",
+            "title": "Status Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "fab_id",
+          "technician_id",
+          "scheduled_start_date",
+          "scheduled_end_date",
+          "actual_start_date",
+          "actual_end_date",
+          "total_sqft",
+          "completed_sqft",
+          "is_completed",
+          "status_id",
+          "created_at",
+          "updated_at",
+          "updated_by"
+        ],
+        "title": "ResurfaceSchedulingResponse"
+      },
+      "ResurfaceSchedulingUpdate": {
+        "properties": {
+          "technician_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technician Id"
+          },
+          "scheduled_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Start Date"
+          },
+          "scheduled_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled End Date"
+          },
+          "actual_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Start Date"
+          },
+          "actual_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual End Date"
+          },
+          "total_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft"
+          },
+          "completed_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed Sqft"
+          },
+          "is_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Completed"
+          },
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
+          }
+        },
+        "type": "object",
+        "title": "ResurfaceSchedulingUpdate"
+      },
+      "RevisionCreate": {
+        "properties": {
+          "fab_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Fab Id"
+          },
+          "revision_type": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Revision Type"
+          },
+          "requested_by": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Requested By"
+          },
+          "assigned_to": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned To"
+          },
+          "scheduled_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Start Date"
+          },
+          "scheduled_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled End Date"
+          },
+          "revision_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fab_id",
+          "revision_type",
+          "requested_by"
+        ],
+        "title": "RevisionCreate"
+      },
+      "RevisionResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "fab_id": {
+            "type": "integer",
+            "title": "Fab Id"
+          },
+          "revision_type": {
+            "type": "string",
+            "title": "Revision Type"
+          },
+          "requested_by": {
+            "type": "integer",
+            "title": "Requested By"
+          },
+          "assigned_to": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned To"
+          },
+          "scheduled_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Start Date"
+          },
+          "scheduled_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled End Date"
+          },
+          "actual_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Start Date"
+          },
+          "actual_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual End Date"
+          },
+          "revision_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Notes"
+          },
+          "is_completed": {
+            "type": "boolean",
+            "title": "Is Completed"
+          },
+          "status_id": {
+            "type": "integer",
+            "title": "Status Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "fab_id",
+          "revision_type",
+          "requested_by",
+          "assigned_to",
+          "scheduled_start_date",
+          "scheduled_end_date",
+          "actual_start_date",
+          "actual_end_date",
+          "revision_notes",
+          "is_completed",
+          "status_id",
+          "created_at",
+          "updated_at",
+          "updated_by"
+        ],
+        "title": "RevisionResponse"
+      },
+      "RevisionUpdate": {
+        "properties": {
+          "revision_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Type"
+          },
+          "assigned_to": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned To"
+          },
+          "scheduled_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Start Date"
+          },
+          "scheduled_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled End Date"
+          },
+          "actual_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Start Date"
+          },
+          "actual_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual End Date"
+          },
+          "revision_notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Notes"
+          },
+          "is_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Completed"
+          },
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
+          }
+        },
+        "type": "object",
+        "title": "RevisionUpdate"
+      },
       "RoleCreate": {
         "properties": {
           "name": {
@@ -13064,6 +18215,443 @@
         "type": "object",
         "title": "RoleUpdate",
         "description": "Schema for updating an existing role"
+      },
+      "SalesCTApprove": {
+        "properties": {
+          "sct_completed": {
+            "type": "boolean",
+            "title": "Sct Completed",
+            "description": "Mark SCT as complete",
+            "default": true
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Approval notes"
+          }
+        },
+        "type": "object",
+        "title": "SalesCTApprove",
+        "description": "Schema for approving FAB and sending to SlabSmith"
+      },
+      "SalesCTCreate": {
+        "properties": {
+          "fab_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Fab Id"
+          },
+          "is_revision_needed": {
+            "type": "boolean",
+            "title": "Is Revision Needed",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "fab_id"
+        ],
+        "title": "SalesCTCreate"
+      },
+      "SalesCTResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "fab_id": {
+            "type": "integer",
+            "title": "Fab Id"
+          },
+          "is_revision_needed": {
+            "type": "boolean",
+            "title": "Is Revision Needed"
+          },
+          "is_revision_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Revision Completed"
+          },
+          "is_completed": {
+            "type": "boolean",
+            "title": "Is Completed"
+          },
+          "no_of_revisions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "No Of Revisions"
+          },
+          "current_revision_count": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Revision Count"
+          },
+          "status_id": {
+            "type": "integer",
+            "title": "Status Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "fab_id",
+          "is_revision_needed",
+          "is_revision_completed",
+          "is_completed",
+          "no_of_revisions",
+          "current_revision_count",
+          "status_id",
+          "created_at",
+          "updated_at",
+          "updated_by"
+        ],
+        "title": "SalesCTResponse"
+      },
+      "SalesCTReviewUpdate": {
+        "properties": {
+          "sct_completed": {
+            "type": "boolean",
+            "title": "Sct Completed",
+            "description": "Mark SCT review as complete"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "SCT review notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sct_completed"
+        ],
+        "title": "SalesCTReviewUpdate",
+        "description": "Schema for Sales CT to review and mark FAB complete"
+      },
+      "SalesCTRevisionUpdate": {
+        "properties": {
+          "is_revision_completed": {
+            "type": "boolean",
+            "title": "Is Revision Completed",
+            "default": false
+          },
+          "draft_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Note"
+          },
+          "revision_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Type"
+          }
+        },
+        "type": "object",
+        "title": "SalesCTRevisionUpdate"
+      },
+      "SalesCTSendToDrafting": {
+        "properties": {
+          "notes": {
+            "type": "string",
+            "title": "Notes",
+            "description": "Revision notes - required when sending back"
+          }
+        },
+        "type": "object",
+        "required": [
+          "notes"
+        ],
+        "title": "SalesCTSendToDrafting",
+        "description": "Schema for sending FAB back to drafting for revisions"
+      },
+      "SlabSmithCreate": {
+        "properties": {
+          "fab_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Fab Id"
+          },
+          "slab_smith_type": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Slab Smith Type"
+          },
+          "drafter_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Drafter Id"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "total_sqft_completed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft Completed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fab_id",
+          "slab_smith_type",
+          "drafter_id",
+          "start_date"
+        ],
+        "title": "SlabSmithCreate"
+      },
+      "SlabSmithResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "fab_id": {
+            "type": "integer",
+            "title": "Fab Id"
+          },
+          "slab_smith_type": {
+            "type": "string",
+            "title": "Slab Smith Type"
+          },
+          "drafter_id": {
+            "type": "integer",
+            "title": "Drafter Id"
+          },
+          "start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "total_sqft_completed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft Completed"
+          },
+          "file_ids": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Ids"
+          },
+          "is_completed": {
+            "type": "boolean",
+            "title": "Is Completed"
+          },
+          "status_id": {
+            "type": "integer",
+            "title": "Status Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "fab_id",
+          "slab_smith_type",
+          "drafter_id",
+          "start_date",
+          "end_date",
+          "total_sqft_completed",
+          "file_ids",
+          "is_completed",
+          "status_id",
+          "created_at",
+          "updated_at",
+          "updated_by"
+        ],
+        "title": "SlabSmithResponse"
+      },
+      "SlabSmithUpdate": {
+        "properties": {
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "total_sqft_completed": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft Completed"
+          },
+          "is_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Completed"
+          },
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
+          }
+        },
+        "type": "object",
+        "title": "SlabSmithUpdate"
       },
       "StoneColorCreate": {
         "properties": {
@@ -13579,6 +19167,34 @@
         ],
         "title": "SuccessResponse[AccountResponse]"
       },
+      "SuccessResponse_CostOfStoneResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CostOfStoneResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[CostOfStoneResponse]"
+      },
       "SuccessResponse_DraftingResponse_": {
         "properties": {
           "success": {
@@ -13690,6 +19306,62 @@
           "message"
         ],
         "title": "SuccessResponse[FabResponse]"
+      },
+      "SuccessResponse_InstallCompletionResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InstallCompletionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[InstallCompletionResponse]"
+      },
+      "SuccessResponse_InstallSchedulingResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/InstallSchedulingResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[InstallSchedulingResponse]"
       },
       "SuccessResponse_List_AccountResponse__": {
         "properties": {
@@ -13818,6 +19490,38 @@
           "message"
         ],
         "title": "SuccessResponse[List[FabResponse]]"
+      },
+      "SuccessResponse_List_JobResponse__": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/JobResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[List[JobResponse]]"
       },
       "SuccessResponse_List_PlanningSection__": {
         "properties": {
@@ -14090,6 +19794,118 @@
         ],
         "title": "SuccessResponse[PreDraftReviewResponse]"
       },
+      "SuccessResponse_ResurfaceSchedulingResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ResurfaceSchedulingResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[ResurfaceSchedulingResponse]"
+      },
+      "SuccessResponse_RevisionResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RevisionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[RevisionResponse]"
+      },
+      "SuccessResponse_SalesCTResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SalesCTResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[SalesCTResponse]"
+      },
+      "SuccessResponse_SlabSmithResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SlabSmithResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[SlabSmithResponse]"
+      },
       "SuccessResponse_StoneColorResponse_": {
         "properties": {
           "success": {
@@ -14230,6 +20046,62 @@
         ],
         "title": "SuccessResponse[TokenSchema]"
       },
+      "SuccessResponse_WJProgrammingResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WJProgrammingResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[WJProgrammingResponse]"
+      },
+      "SuccessResponse_WJSchedulingResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/WJSchedulingResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[WJSchedulingResponse]"
+      },
       "SuccessResponse_WorkStation_": {
         "properties": {
           "success": {
@@ -14257,6 +20129,96 @@
           "message"
         ],
         "title": "SuccessResponse[WorkStation]"
+      },
+      "SuccessResponse_dict_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[dict]"
+      },
+      "SuccessResponse_list_RevisionResponse__": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RevisionResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[list[RevisionResponse]]"
+      },
+      "TemplateReviewCompleteUpdate": {
+        "properties": {
+          "template_review_complete": {
+            "type": "boolean",
+            "title": "Template Review Complete",
+            "description": "Mark template review as complete/incomplete"
+          },
+          "total_sqft": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft",
+            "description": "Updated total square feet"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_review_complete"
+        ],
+        "title": "TemplateReviewCompleteUpdate",
+        "description": "Schema for marking template review as complete"
       },
       "TemplatingCompleteRequest": {
         "properties": {
@@ -14424,6 +20386,10 @@
             "type": "boolean",
             "title": "Is Templating Schedule"
           },
+          "is_completed": {
+            "type": "boolean",
+            "title": "Is Completed"
+          },
           "status_id": {
             "type": "integer",
             "title": "Status Id"
@@ -14500,12 +20466,53 @@
           "total_sqft",
           "notes",
           "is_templating_schedule",
+          "is_completed",
           "status_id",
           "created_at",
           "updated_at",
           "updated_by"
         ],
         "title": "TemplatingResponse"
+      },
+      "TemplatingReviewUpdate": {
+        "properties": {
+          "template_received": {
+            "type": "boolean",
+            "title": "Template Received",
+            "description": "Mark if template is received"
+          },
+          "total_sqft": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft",
+            "description": "Updated total square feet"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Review notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "template_received"
+        ],
+        "title": "TemplatingReviewUpdate",
+        "description": "Schema for templating coordinator to update template review"
       },
       "TemplatingScheduleCreate": {
         "properties": {
@@ -14633,6 +20640,17 @@
             ],
             "title": "Notes"
           },
+          "is_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Completed"
+          },
           "status_id": {
             "anyOf": [
               {
@@ -14647,6 +20665,74 @@
         },
         "type": "object",
         "title": "TemplatingScheduleUpdate"
+      },
+      "TemplatingTechnicianUpdate": {
+        "properties": {
+          "is_completed": {
+            "type": "boolean",
+            "title": "Is Completed",
+            "description": "Mark templating as completed/not completed"
+          },
+          "actual_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Start Date",
+            "description": "Actual start date of templating work"
+          },
+          "duration": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration",
+            "description": "Duration in minutes"
+          },
+          "total_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft",
+            "description": "Measured square footage"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Templating notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "is_completed"
+        ],
+        "title": "TemplatingTechnicianUpdate",
+        "description": "Schema for templating technician to update their work"
       },
       "TokenSchema": {
         "properties": {
@@ -14738,6 +20824,17 @@
               }
             ],
             "title": "Role Id"
+          },
+          "profile_image_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Image Id"
           }
         },
         "type": "object",
@@ -14830,6 +20927,17 @@
             "type": "string",
             "format": "date-time",
             "title": "Updated At"
+          },
+          "profile_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Image Url"
           },
           "roles": {
             "anyOf": [
@@ -14924,6 +21032,589 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "WJProgrammingCreate": {
+        "properties": {
+          "fab_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Fab Id"
+          },
+          "drafter_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Drafter Id"
+          },
+          "scheduled_start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled Start Date"
+          },
+          "scheduled_end_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled End Date"
+          },
+          "total_ln_ft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Ln Ft"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fab_id",
+          "drafter_id",
+          "scheduled_start_date",
+          "scheduled_end_date"
+        ],
+        "title": "WJProgrammingCreate"
+      },
+      "WJProgrammingResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "fab_id": {
+            "type": "integer",
+            "title": "Fab Id"
+          },
+          "drafter_id": {
+            "type": "integer",
+            "title": "Drafter Id"
+          },
+          "scheduled_start_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled Start Date"
+          },
+          "scheduled_end_date": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled End Date"
+          },
+          "drafter_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafter Start Date"
+          },
+          "drafter_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafter End Date"
+          },
+          "no_of_pieces": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "No Of Pieces"
+          },
+          "total_ln_ft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Ln Ft"
+          },
+          "is_completed": {
+            "type": "boolean",
+            "title": "Is Completed"
+          },
+          "status_id": {
+            "type": "integer",
+            "title": "Status Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "fab_id",
+          "drafter_id",
+          "scheduled_start_date",
+          "scheduled_end_date",
+          "drafter_start_date",
+          "drafter_end_date",
+          "no_of_pieces",
+          "total_ln_ft",
+          "is_completed",
+          "status_id",
+          "created_at",
+          "updated_at",
+          "updated_by"
+        ],
+        "title": "WJProgrammingResponse"
+      },
+      "WJProgrammingUpdate": {
+        "properties": {
+          "drafter_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafter Id"
+          },
+          "scheduled_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Start Date"
+          },
+          "scheduled_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled End Date"
+          },
+          "drafter_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafter Start Date"
+          },
+          "drafter_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafter End Date"
+          },
+          "no_of_pieces": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "No Of Pieces"
+          },
+          "total_ln_ft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Ln Ft"
+          },
+          "is_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Completed"
+          },
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
+          }
+        },
+        "type": "object",
+        "title": "WJProgrammingUpdate"
+      },
+      "WJSchedulingCreate": {
+        "properties": {
+          "fab_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Fab Id"
+          },
+          "scheduled_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Start Date"
+          },
+          "scheduled_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled End Date"
+          },
+          "total_ln_ft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Ln Ft"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fab_id"
+        ],
+        "title": "WJSchedulingCreate"
+      },
+      "WJSchedulingResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "fab_id": {
+            "type": "integer",
+            "title": "Fab Id"
+          },
+          "technician_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technician Id"
+          },
+          "scheduled_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Start Date"
+          },
+          "scheduled_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled End Date"
+          },
+          "actual_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Start Date"
+          },
+          "actual_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual End Date"
+          },
+          "total_ln_ft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Ln Ft"
+          },
+          "completed_ln_ft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed Ln Ft"
+          },
+          "is_completed": {
+            "type": "boolean",
+            "title": "Is Completed"
+          },
+          "status_id": {
+            "type": "integer",
+            "title": "Status Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "fab_id",
+          "technician_id",
+          "scheduled_start_date",
+          "scheduled_end_date",
+          "actual_start_date",
+          "actual_end_date",
+          "total_ln_ft",
+          "completed_ln_ft",
+          "is_completed",
+          "status_id",
+          "created_at",
+          "updated_at",
+          "updated_by"
+        ],
+        "title": "WJSchedulingResponse"
+      },
+      "WJSchedulingUpdate": {
+        "properties": {
+          "technician_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Technician Id"
+          },
+          "scheduled_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Start Date"
+          },
+          "scheduled_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled End Date"
+          },
+          "actual_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Start Date"
+          },
+          "actual_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual End Date"
+          },
+          "total_ln_ft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Ln Ft"
+          },
+          "completed_ln_ft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed Ln Ft"
+          },
+          "is_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Completed"
+          },
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
+          }
+        },
+        "type": "object",
+        "title": "WJSchedulingUpdate"
       },
       "WorkStation": {
         "properties": {

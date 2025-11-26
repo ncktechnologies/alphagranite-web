@@ -27,7 +27,7 @@ import { toast } from "sonner";
 const employeeSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().min(1, "Last name is required"),
-  email: z.string().email("Please enter a valid email address").optional().or(z.string().length(0)), // Make email optional
+  email: z.string().email("Please enter a valid email address").optional().or(z.string().length(0)),
   department: z.string().min(1, "Please select a department"),
   home_address: z.string().optional(),
   phone: z.string().optional().refine(
@@ -66,8 +66,8 @@ const EmployeeFormSheet = ({
   
   const [createEmployee, { isLoading: isCreating }] = useCreateEmployeeMutation();
   const [updateEmployee, { isLoading: isUpdating }] = useUpdateEmployeeMutation();
-  const { data: departmentsData } = useGetDepartmentsQuery();
-  const { data: rolesData } = useGetRolesQuery();
+  const { data: departmentsData, isLoading: departmentsLoading } = useGetDepartmentsQuery();
+  const { data: rolesData, isLoading: rolesLoading } = useGetRolesQuery();
   
   const isSubmitting = isCreating || isUpdating;
   const isEditMode = mode === 'edit';
@@ -87,20 +87,28 @@ const EmployeeFormSheet = ({
     },
   });
 
-  // Prefill form when editing or viewing
+  // Prefill form when editing or viewing - FIXED VERSION
   useEffect(() => {
-    if (employee) {
-      form.reset({
-        first_name: employee.first_name,
-        last_name: employee.last_name,
-        email: employee.email,
-        department: employee.department_id ? String(employee.department_id) : "",
+    if (isSheetOpen && employee) {
+      console.log('Employee data for form:', employee);
+      console.log('Available departments:', departmentsData?.items);
+      
+      // Use employee.department (which contains the ID) instead of employee.department_id
+      const resetData = {
+        first_name: employee.first_name || "",
+        last_name: employee.last_name || "",
+        email: employee.email || "",
+        department: employee.department ? String(employee.department) : "",
         home_address: employee.home_address || "",
         phone: employee.phone || "",
         gender: employee.gender || "",
         role_id: employee.role_id ? String(employee.role_id) : "",
-      });
-    } else {
+      };
+      
+      console.log('Form reset data:', resetData);
+      form.reset(resetData);
+    } else if (isSheetOpen && !employee) {
+      // Reset to empty for create mode
       form.reset({
         first_name: "",
         last_name: "",
@@ -112,7 +120,17 @@ const EmployeeFormSheet = ({
         role_id: "",
       });
     }
-  }, [employee, form, isSheetOpen]);
+  }, [employee, form, isSheetOpen, departmentsData]);
+
+  // Debug current form values
+  useEffect(() => {
+    if (isSheetOpen) {
+      const subscription = form.watch((value) => {
+        console.log('Current form values:', value);
+      });
+      return () => subscription.unsubscribe();
+    }
+  }, [isSheetOpen, form]);
 
   async function onSubmit(values: EmployeeFormType) {
     if (isViewMode) return;
@@ -122,7 +140,6 @@ const EmployeeFormSheet = ({
       const formData = new FormData();
       formData.append('first_name', values.first_name);
       formData.append('last_name', values.last_name);
-      // Only append email if it's provided
       if (values.email) {
         formData.append('email', values.email);
       }
@@ -136,7 +153,6 @@ const EmployeeFormSheet = ({
       if (values.role_id) {
         formData.append('role_id', values.role_id);
       }
-      // Only append file if provided
       if (profileImage) {
         formData.append('profile_image', profileImage);
       }
@@ -190,6 +206,8 @@ const EmployeeFormSheet = ({
               <SheetBody className="flex-1">
                 <ScrollArea className="h-full">
                   <div className="space-y-6">
+                    
+
                     {!isViewMode && (
                       <div className="space-y-2">
                         <FormLabel>Upload image</FormLabel>
@@ -263,11 +281,18 @@ const EmployeeFormSheet = ({
                             <Select 
                               value={field.value} 
                               onValueChange={field.onChange}
-                              disabled={isViewMode}
+                              disabled={isViewMode || departmentsLoading}
                             >
                               <FormControl>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Select Department" />
+                                  <SelectValue placeholder={
+                                    departmentsLoading ? "Loading departments..." : "Select Department"
+                                  }>
+                                    {departmentsLoading ? "Loading..." : field.value ? 
+                                      departmentsData?.items?.find(dept => String(dept.id) === field.value)?.name : 
+                                      "Select Department"
+                                    }
+                                  </SelectValue>
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -276,6 +301,11 @@ const EmployeeFormSheet = ({
                                     {dept.name}
                                   </SelectItem>
                                 ))}
+                                {(!departmentsData?.items || departmentsData.items.length === 0) && !departmentsLoading && (
+                                  <div className="px-2 py-1.5 text-sm text-muted-foreground text-center">
+                                    No departments available
+                                  </div>
+                                )}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -319,7 +349,7 @@ const EmployeeFormSheet = ({
                         )}
                       />
 
-                      <FormField
+                      {/* <FormField
                         control={form.control}
                         name="gender"
                         render={({ field }) => (
@@ -343,7 +373,7 @@ const EmployeeFormSheet = ({
                             <FormMessage />
                           </FormItem>
                         )}
-                      />
+                      /> */}
 
                       <FormField
                         control={form.control}
@@ -354,11 +384,13 @@ const EmployeeFormSheet = ({
                             <Select 
                               value={field.value} 
                               onValueChange={field.onChange}
-                              disabled={isViewMode}
+                              disabled={isViewMode || rolesLoading}
                             >
                               <FormControl>
                                 <SelectTrigger>
-                                  <SelectValue placeholder="Select Role" />
+                                  <SelectValue placeholder={
+                                    rolesLoading ? "Loading roles..." : "Select Role"
+                                  } />
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
@@ -367,6 +399,11 @@ const EmployeeFormSheet = ({
                                     {role.name}
                                   </SelectItem>
                                 ))}
+                                {(!rolesData?.data || rolesData.data.length === 0) && !rolesLoading && (
+                                  <div className="px-2 py-1.5 text-sm text-muted-foreground text-center">
+                                    No roles available
+                                  </div>
+                                )}
                               </SelectContent>
                             </Select>
                             <FormMessage />

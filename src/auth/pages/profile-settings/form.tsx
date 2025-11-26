@@ -88,7 +88,7 @@ export default function ProfileForm() {
                 ...profile,
                 ...values,
                 // department_id: parseInt(values.department, 10),
-            
+
             };
 
             // Remove the department string field as we're sending department_id
@@ -188,17 +188,6 @@ export default function ProfileForm() {
                         />
                         <FormField
                             control={form.control}
-                            name="phone"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Phone Number</FormLabel>
-                                    <Input placeholder="Enter phone number" {...field} />
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
                             name="department"
                             render={() => (
                                 <FormItem>
@@ -208,10 +197,22 @@ export default function ProfileForm() {
                                 </FormItem>
                             )}
                         />
-
-
-
                         <FormField
+                            control={form.control}
+                            name="phone"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Phone Number</FormLabel>
+                                    <Input placeholder="Enter phone number" {...field} />
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+
+
+
+                        {/* <FormField
                             control={form.control}
                             name="gender"
                             render={({ field }) => (
@@ -231,7 +232,7 @@ export default function ProfileForm() {
                                     <FormMessage />
                                 </FormItem>
                             )}
-                        />
+                        /> */}
                     </div>
                     <div className='flex justify-end mt-6'>
                         <Button type="submit" className="w-2/5" disabled={isSubmitting}>

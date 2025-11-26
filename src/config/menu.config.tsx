@@ -125,12 +125,12 @@ export const SETTINGS_NAV:MenuConfig = [
     path:'/settings/roles',
     superAdminOnly: true
   },
-  // {
-  //   title: "Permissions Management",
-  //   icon: RiShieldKeyholeLine,
-  //   path:'/settings/permissions',
-  //   superAdminOnly: true
-  // },
+  {
+    title: "Permissions Management",
+    icon: RiShieldKeyholeLine,
+    path:'/settings/permissions',
+    superAdminOnly: true
+  },
   {
     title: "Notifications",
     icon: RiNotification3Line,
