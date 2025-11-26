@@ -305,6 +305,9 @@ export interface Drafting {
 export interface DraftingCreate {
     fab_id: number;
     drafter_id: number;
+    scheduled_start_date: string;
+    scheduled_end_date: string;
+    total_sqft_required_to_draft: string;
 }
 
 export interface DraftingUpdate {

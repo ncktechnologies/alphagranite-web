@@ -25,7 +25,8 @@ import {
     useCompleteTemplatingMutation, 
     useMarkTemplatingReceivedMutation,
     useGetTemplatingByFabIdQuery, 
-    useGetFabByIdQuery 
+    useGetFabByIdQuery,
+    useCreateDraftingMutation
 } from "@/store/api/job";
 import { useGetSalesPersonsQuery } from "@/store/api";
 
@@ -60,6 +61,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
     const [updateFab] = useUpdateFabMutation();
     const [completeTemplating] = useCompleteTemplatingMutation();
     const [markTemplatingReceived] = useMarkTemplatingReceivedMutation();
+    const [createDrafting] = useCreateDraftingMutation();
     const { data: templatingData } = useGetTemplatingByFabIdQuery(fabId || 0, { skip: !fabId });
     const { data: fabData } = useGetFabByIdQuery(fabId || 0, { skip: !fabId });
     

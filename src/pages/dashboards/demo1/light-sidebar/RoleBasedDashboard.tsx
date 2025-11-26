@@ -264,19 +264,19 @@ export function RoleBasedDashboard() {
   }
 
   // Show error message if stages failed to load
-  if (isStagesError) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Alert variant="destructive" className="max-w-md">
-          <InfoIcon className="h-4 w-4" />
-          <AlertTitle>Error Loading Dashboard</AlertTitle>
-          <AlertDescription>
-            Failed to load stage statistics. Please try refreshing the page.
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+  // if (isStagesError) {
+  //   return (
+  //     <div className="flex items-center justify-center min-h-[400px]">
+  //       <Alert variant="destructive" className="max-w-md">
+  //         <InfoIcon className="h-4 w-4" />
+  //         <AlertTitle>Error Loading Dashboard</AlertTitle>
+  //         <AlertDescription>
+  //           Failed to load stage statistics. Please try refreshing the page.
+  //         </AlertDescription>
+  //       </Alert>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="grid gap-5 lg:gap-7.5">

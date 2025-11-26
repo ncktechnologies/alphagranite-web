@@ -26,13 +26,23 @@ import {
   useGetDraftingByFabIdQuery, 
   useSubmitDraftingForReviewMutation,
   useAddFilesToDraftingMutation,
-  useGetJobByIdQuery
+  useGetJobByIdQuery,
+  useCreateDraftingMutation
 } from '@/store/api/job';
 import { SubmitDraftModal } from './components';
+import { useSelector } from 'react-redux';
+import { useGetEmployeesQuery } from '@/store/api/employee';
+import { useGetProfileQuery } from '@/store/api/auth';
 
 const DrafterDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
   const fabId = id ? parseInt(id) : 0;
+  
+  // Get current user from Redux store
+  const currentUser = useSelector((state: any) => state.user.user);
+  
+  // Use the employee ID directly from the current user if available
+  const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
   
   // Fetch FAB and job data
   const { data: fabData, isLoading: isFabLoading } = useGetFabByIdQuery(fabId, { skip: !fabId });
@@ -42,6 +52,7 @@ const DrafterDetailsPage = () => {
   // Drafting mutations
   const [submitDraftingForReview] = useSubmitDraftingForReviewMutation();
   const [addFilesToDrafting] = useAddFilesToDraftingMutation();
+  const [createDrafting] = useCreateDraftingMutation();
 
   type ViewMode = 'activity' | 'file';
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
@@ -83,18 +94,52 @@ const DrafterDetailsPage = () => {
 
       // Only upload files to drafting endpoint, not to general file upload
       // If we have drafting data, add files to drafting
-      if (draftingData && draftingData.id) {
+      let currentDraftingData = draftingData;
+      
+      // If no drafting data exists, create a drafting assignment
+      if (!currentDraftingData) {
+        try {
+          // Make sure we have the current employee ID
+          if (!currentEmployeeId) {
+            toast.error('Unable to identify drafter. Please refresh the page and try again.');
+            setIsUploadingDocuments(false);
+            return;
+          }
+          
+          // Use the templating schedule dates for drafting, or default dates if not available
+          const startDate = fabData?.templating_schedule_start_date || new Date().toISOString();
+          const endDate = fabData?.templating_schedule_due_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+          
+          const newDrafting = await createDrafting({
+            fab_id: fabId,
+            drafter_id: currentEmployeeId,
+            scheduled_start_date: startDate,
+            scheduled_end_date: endDate,
+            total_sqft_required_to_draft: fabData?.total_sqft?.toString() || "0"
+          }).unwrap();
+          
+          currentDraftingData = newDrafting;
+          toast.success('Drafting assignment created successfully');
+        } catch (createError) {
+          console.error('Error creating drafting assignment:', createError);
+          toast.error('Failed to create drafting assignment. Please try again.');
+          setIsUploadingDocuments(false);
+          return;
+        }
+      }
+
+      if (currentDraftingData && currentDraftingData.id) {
         // Extract the actual File objects from file items
         const filesToAdd = pendingFiles.map(f => f.file as File);
         const response = await addFilesToDrafting({
-          drafting_id: draftingData.id,
+          drafting_id: currentDraftingData.id,
           files: filesToAdd
         }).unwrap();
       
         // Create entries with the file objects themselves since we don't get IDs back
         // We'll use a combination of timestamp and index as temporary IDs
         filesToAdd.forEach((file, index) => {
-          const tempId = `draft-${draftingData.id}-${Date.now()}-${index}`;
+          const tempId = `draft-${currentDraftingData.id}-${Date.now()}-${index}`;
           newEntries[tempId] = {
             id: tempId,
             name: file.name,
@@ -112,7 +157,7 @@ const DrafterDetailsPage = () => {
     } finally {
       setIsUploadingDocuments(false);
     }
-  }, [uploadedFileMap, draftingData, addFilesToDrafting]);
+  }, [uploadedFileMap, draftingData, addFilesToDrafting, createDrafting, fabId, currentEmployeeId, fabData]);
 
   const handleFileClick = (file: any) => {
     setActiveFile(file);
@@ -141,10 +186,42 @@ const DrafterDetailsPage = () => {
 
   const handleSubmitDraft = async (submissionData: any) => {
     try {
-      if (draftingData && draftingData.id) {
+      let currentDraftingData = draftingData;
+      
+      // If no drafting data exists, create a drafting assignment
+      if (!currentDraftingData) {
+        try {
+          // Make sure we have the current employee ID
+          if (!currentEmployeeId) {
+            toast.error('Unable to identify drafter. Please refresh the page and try again.');
+            return;
+          }
+          
+          // Use the templating schedule dates for drafting, or default dates if not available
+          const startDate = fabData?.templating_schedule_start_date || new Date().toISOString();
+          const endDate = fabData?.templating_schedule_due_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+          
+          const newDrafting = await createDrafting({
+            fab_id: fabId,
+            drafter_id: currentEmployeeId, // Use the actual current employee ID
+            scheduled_start_date: startDate,
+            scheduled_end_date: endDate,
+            total_sqft_required_to_draft: fabData?.total_sqft?.toString() || "0"
+          }).unwrap();
+          
+          currentDraftingData = newDrafting;
+          toast.success('Drafting assignment created successfully');
+        } catch (createError) {
+          console.error('Error creating drafting assignment:', createError);
+          toast.error('Failed to create drafting assignment. Please try again.');
+          return;
+        }
+      }
+      
+      if (currentDraftingData && currentDraftingData.id) {
         // Submit drafting for review
         await submitDraftingForReview({
-          drafting_id: draftingData.id,
+          drafting_id: currentDraftingData.id,
           data: {
             // Use actual file IDs from uploaded files
             file_ids: uploadedFiles.map(f => f.id).join(','),
@@ -183,7 +260,7 @@ const DrafterDetailsPage = () => {
         { label: "Area", value: fabData?.input_area || "Loading..." },
         { label: "Material", value: `${fabData?.stone_type_name || ''} ${fabData?.stone_color_name || ''} - ${fabData?.stone_thickness_value || ''}` },
         { label: "FAB Type", value: fabData?.fab_type || "Loading..." },
-        { label: "Assigned to", value: draftingData?.drafter_name || "Loading..." },
+        { label: "Assigned to", value: draftingData?.drafter_name || (currentEmployeeId ? "You (Self-assigned)" : "Loading...") },
       ],
     },
     {

@@ -76,7 +76,7 @@ const FinalProgrammingPage = () => {
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Error</AlertTitle>
                         <AlertDescription>
-                            {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : "Failed to load FAB data"}
+                            {error ? `Failed to load FAB data: ${JSON.stringify(error.data)}` : "Failed to load FAB data"}
                         </AlertDescription>
                     </Alert>
                 </Container>
