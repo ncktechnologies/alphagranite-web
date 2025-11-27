@@ -10,11 +10,18 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useUpdateDraftingMutation, useAddFilesToDraftingMutation } from '@/store/api/job';
 import { toast } from 'sonner';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useGetSalesPersonsQuery } from '@/store/api';
 
 const submissionSchema = z.object({
   totalSqFt: z.string().optional(),
   numberOfPieces: z.string().optional(),
   draftNotes: z.string().optional(),
+  mentions: z.string().optional(),
+  // completed: z.boolean().refine((val) => val === true, {
+  //   message: "You must confirm that the drafting is completed.",
+  // }),
 });
 
 type SubmissionData = z.infer<typeof submissionSchema>;
@@ -41,6 +48,7 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
 
   const [updateDrafting] = useUpdateDraftingMutation();
   const [addFilesToDrafting] = useAddFilesToDraftingMutation();
+  const { data: employeesData, isLoading, isError, error } = useGetSalesPersonsQuery();
 
   const form = useForm<SubmissionData>({
     resolver: zodResolver(submissionSchema),
@@ -51,77 +59,83 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
     }
   });
 
-  const handleFinalSubmit = async (values: SubmissionData) => {
-    if (!drafting?.id && !drafting?.data?.id) {
-      toast.error('Drafting ID is missing. Cannot submit.');
-      return;
+ // Updated handleFinalSubmit function
+const handleFinalSubmit = async (values: SubmissionData) => {
+  if (!drafting?.id && !drafting?.data?.id) {
+    toast.error('Drafting ID is missing. Cannot submit.');
+    return;
+  }
+
+  if (!isConfirmed) {
+    toast.error('Please confirm the drafting is completed by checking the box.');
+    return;
+  }
+
+  const draftingId = drafting?.id ?? drafting?.data?.id;
+  console.log('Submitting draft with ID:', draftingId, 'Files:', uploadedFiles);
+
+  setIsSubmitting(true);
+  try {
+    // Filter only files that haven't been uploaded yet (no ID or temporary ID)
+    const filesToUpload = uploadedFiles.filter(f => 
+      !f.id || // No ID at all
+      typeof f.id === 'string' && f.id.includes('temp') || // Temporary ID
+      f.file instanceof File // Has File object (not yet uploaded)
+    );
+
+    console.log('Files to upload:', filesToUpload);
+
+    let fileIds: number[] = [];
+    
+    if (filesToUpload.length > 0) {
+      const fileObjects = filesToUpload.map(f => f.file as File);
+      
+      try {
+        console.log('Uploading files:', fileObjects);
+        const response = await addFilesToDrafting({
+          drafting_id: draftingId,
+          files: fileObjects
+        }).unwrap();
+        console.log('File upload response:', response);
+
+        // Extract file IDs from the response
+        if (response && response.data && Array.isArray(response.data)) {
+          fileIds = response.data.map((file: any) => file.id);
+        }
+      } catch (fileError) {
+        console.error('File upload failed:', fileError);
+        toast.error('Failed to upload files');
+        throw fileError;
+      }
     }
 
-    if (!isConfirmed) {
-      toast.error('Please confirm the drafting is completed by checking the box.');
-      return;
-    }
+    // Update drafting with other data
+    const payload: any = {
+      drafter_start_date: draftStart ? draftStart.toISOString() : null,
+      drafter_end_date: draftEnd ? draftEnd.toISOString() : null,
+      total_sqft_drafted: values.totalSqFt || null,
+      no_of_piece_drafted: values.numberOfPieces || null,
+      draft_note: values.draftNotes || null,
+      mentions: values.mentions || null,
+      is_completed: true,
+      status_id: 1
+    };
 
-    const draftingId = drafting?.id ?? drafting?.data?.id;
-    console.log('Submitting draft with ID:', draftingId);
+    console.log('Updating draft with payload:', payload);
+    await updateDrafting({ id: draftingId, data: payload }).unwrap();
+    console.log('Draft update successful');
 
-    setIsSubmitting(true);
-    try {
-      // First, upload any files that haven't been uploaded yet
-      let fileIds: number[] = [];
-      const fileObjects = uploadedFiles
-        .filter(f => f.file instanceof File)
-        .map(f => f.file as File);
-
-      console.log('File objects to upload:', fileObjects);
-
-      // if (fileObjects.length > 0) {
-      //   try {
-      //     console.log('Uploading files:', fileObjects);
-      //     const response = await addFilesToDrafting({
-      //       drafting_id: draftingId,
-      //       files: fileObjects
-      //     }).unwrap();
-      //     console.log('File upload response:', response);
-          
-      //     // Extract file IDs from the response
-      //     if (response && response.data && Array.isArray(response.data)) {
-      //       fileIds = response.data.map((file: any) => file.id);
-      //     }
-      //   } catch (fileError) {
-      //     console.error('File upload failed:', fileError);
-      //     toast.error('Failed to upload files');
-      //     throw fileError;
-      //   }
-      // }
-
-      // Use updateDrafting to include date fields (without file_ids)
-      const payload: any = {
-        drafter_start_date: draftStart ? draftStart.toISOString() : null,
-        drafter_end_date: draftEnd ? draftEnd.toISOString() : null,
-
-        total_sqft_drafted: values.totalSqFt || null,
-        no_of_piece_drafted: values.numberOfPieces || null,
-        draft_note: values.draftNotes || null,
-
-        is_completed: true,
-        status_id: 1
-      };
-
-      console.log('Updating draft with payload:', payload);
-      await updateDrafting({ id: draftingId, data: payload }).unwrap();
-      console.log('Draft update successful');
-
-      toast.success('Draft submitted successfully');
-      onClose(true);
-    } catch (err: any) {
-      console.error('Failed to submit drafting:', err);
-      toast.error(err?.data?.message || 'Failed to submit drafting');
-      onClose(false);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+    toast.success('Draft submitted successfully');
+    onClose(true);
+  } catch (err: any) {
+    console.error('Failed to submit drafting:', err);
+    toast.error(err?.data?.message || 'Failed to submit drafting');
+    onClose(false);
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+  const salesPersons = Array.isArray(employeesData) ? employeesData : [];;
 
   return (
     <Dialog open={open} onOpenChange={() => onClose(false)}>
@@ -130,6 +144,12 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
           <div className="border-b">
             <DialogTitle className="text-[15px] font-semibold py-2">Submit Draft</DialogTitle>
           </div>
+          {/* <div className="space-y-1 mt-2">
+            <p className="font-semibold text-black leading-4">
+              {jobDetails.fabId}
+            </p>
+            <p className="text-sm text-black">{jobDetails.area}</p>
+          </div> */}
         </DialogHeader>
 
         <Form {...form}>
@@ -141,7 +161,7 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
                 <FormItem>
                   <FormLabel>Total Sq Ft</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. 60" {...field} />
+                    <Input placeholder="(1)" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -155,7 +175,7 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
                 <FormItem>
                   <FormLabel>No. of pieces</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. 3" {...field} />
+                    <Input placeholder="5" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -175,31 +195,51 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
               )}
             />
 
-            {/* Uploaded files preview (read-only) */}
-            {uploadedFiles && uploadedFiles.length > 0 && (
-              <div className="p-3 bg-slate-50 rounded">
-                <div className="text-sm font-medium mb-2">Uploaded Files ({uploadedFiles.length})</div>
-                <ul className="text-sm">
-                  {uploadedFiles.map((f, i) => (
-                    <li key={i} className="truncate">• {f.name}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
+        
+            {/* Assign to Sales */}
+            <FormField
+              control={form.control}
+              name="mentions"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Assign to sales</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select sales person" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {salesPersons.map((person: any) => (
+                        <SelectItem key={person.id} value={`${person.id}`}>
+                          {person.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             {/* Confirmation Checkbox */}
-            <div className="flex items-center gap-2 mt-4">
-              <input
-                id="confirm-completed"
-                type="checkbox"
-                checked={isConfirmed}
-                onChange={(e) => setIsConfirmed(e.target.checked)}
-                className="h-4 w-4"
-              />
-              <label htmlFor="confirm-completed" className="text-sm font-medium">
-                I confirm the drafting is completed
-              </label>
-            </div>
+            <FormField
+              control={form.control}
+              name="completed"
+              render={() => (
+                <FormItem className="flex flex-row items-center space-x-3 mt-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={isConfirmed}
+                      onCheckedChange={(v) => setIsConfirmed(Boolean(v))}
+                    />
+                  </FormControl>
+                  <FormLabel className="font-semibold text-[16px]">
+                    CAD review complete
+                  </FormLabel>
+                </FormItem>
+              )}
+            />
+
 
             <div className="flex justify-end gap-3 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => onClose(false)}>

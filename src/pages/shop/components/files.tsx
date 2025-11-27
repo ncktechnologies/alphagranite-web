@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -10,6 +10,7 @@ import {
   VideoIcon,
   X,
 } from 'lucide-react';
+import { Drafting } from '@/store/api/job';
 
 interface FileMetadata {
   id: string;
@@ -21,54 +22,36 @@ interface FileMetadata {
 
 interface UploadBoxProps {
   onFileClick?: (file: FileMetadata) => void;
+  draftingData?: Drafting;
 }
 
-export function Documents({ onFileClick }: UploadBoxProps) {
-  // Mock sample files (replace with your data)
-  const [files] = useState<FileMetadata[]>([
-    {
-      id: '1',
-      name: 'Photo.pdf',
-      size: 523400,
-      type: 'image/jpeg',
-      url: '/images/app/upload-file.svg',
-    },
-    {
-      id: '2',
-      name: 'Photo.jpg',
-      size: 1452300,
-      type: 'image/jpeg',
-      url: '/images/app/upload-file.svg',
-    },
-    {
-      id: '3',
-      name: 'Data.pdf',
-      size: 230000,
-      type: 'application/pdf',
-      url: '/sample-files/data.xlsx',
-    },
-    {
-      id: '4',
-      name: 'Data.xlsx',
-      size: 230000,
-      type: 'application/vnd.ms-excel',
-      url: '/sample-files/data.xlsx',
-    },
-    {
-      id: '5',
-      name: 'Data.xlsx',
-      size: 230000,
-      type: 'application/vnd.ms-excel',
-      url: '/sample-files/data.xlsx',
-    },
-    {
-      id: '6',
-      name: 'Data.xlsx',
-      size: 230000,
-      type: 'application/vnd.ms-excel',
-      url: '/sample-files/data.xlsx',
-    },
-  ]);
+export function Documents({ onFileClick, draftingData }: UploadBoxProps) {
+  // State for files - initialize with empty array
+  const [files, setFiles] = useState<FileMetadata[]>([]);
+
+  // Update files when draftingData changes
+  useEffect(() => {
+    if (draftingData && draftingData.file_ids) {
+      // Parse file_ids string into an array of file objects
+      // Since we don't have a way to get actual file details, we'll create mock files based on file_ids
+      try {
+        const fileIdsArray = draftingData.file_ids.split(',').filter(id => id.trim() !== '');
+        const mockFiles = fileIdsArray.map((id, index) => ({
+          id: id.trim(),
+          name: `Drafting_File_${index + 1}.pdf`,
+          size: 1024000 + index * 512000, // Mock size
+          type: 'application/pdf',
+          url: '/images/app/upload-file.svg',
+        }));
+        setFiles(mockFiles);
+      } catch (error) {
+        console.error('Error parsing file_ids:', error);
+        setFiles([]);
+      }
+    } else {
+      setFiles([]);
+    }
+  }, [draftingData]);
 
   const getFileIcon = (file: FileMetadata) => {
     const { type } = file;
@@ -87,9 +70,17 @@ export function Documents({ onFileClick }: UploadBoxProps) {
     // else window.open(file.url, '_blank');
   };
 
+  // If no files, show a message
+  if (files.length === 0) {
+    return (
+      <div className="border-none">
+        <p className="text-muted-foreground text-sm py-4">No files uploaded by the drafter</p>
+      </div>
+    );
+  }
+
   return (
     <div className="border-none">
-    
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ">
           {files.map((file) => (
             <div
@@ -132,7 +123,6 @@ export function Documents({ onFileClick }: UploadBoxProps) {
             </div>
           ))}
         </div>
-      
     </div>
   );
 }

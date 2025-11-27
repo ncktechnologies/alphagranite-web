@@ -33,6 +33,20 @@ export interface JobUpdate {
     account_id?: number;
 }
 
+// Add this interface before the Fab interface
+export interface JobDetails {
+    id: number;
+    name: string;
+    job_number: string;
+    project_value?: string;
+    account_id?: number;
+    status_id: number;
+    created_at: string;
+    created_by: number;
+    updated_at?: string;
+    updated_by?: number;
+}
+
 // Fab Types
 export interface Fab {
     id: number;
@@ -66,6 +80,8 @@ export interface Fab {
     templating_schedule_start_date?: string;
     templating_schedule_due_date?: string;
     technician_name?: string;
+    // Job details
+    job_details?: JobDetails;
 }
 
 export interface FabCreate {
@@ -296,6 +312,9 @@ export interface Drafting {
     drafter_name?: string;
     scheduled_start_date?: string;
     scheduled_end_date?: string;
+    drafter_start_date?: string | null;
+    drafter_end_date?: string | null;
+    total_time_spent?: number | null;
     status_id: number;
     status_name?: string;
     created_at: string;
@@ -354,6 +373,37 @@ export interface WorkflowStage {
     assignedTo?: string;
     notes?: string;
     route?: string;
+}
+
+// Add these interfaces after the other interfaces
+export interface SalesCTCreate {
+    fab_id: number;
+    notes?: string;
+}
+
+export interface SalesCTResponse {
+    id: number;
+    fab_id: number;
+    is_revision_needed: boolean;
+    is_revision_completed: boolean;
+    is_completed: boolean;
+    no_of_revisions: number;
+    current_revision_count: number;
+    status_id: number;
+    created_at: string;
+    updated_at: string;
+    updated_by: number;
+}
+
+export interface SalesCTReviewUpdate {
+    sct_completed: boolean;
+    notes?: string;
+}
+
+export interface SalesCTRevisionUpdate {
+    is_revision_completed?: boolean;
+    draft_note?: string;
+    revision_type?: string;
 }
 
 export const jobApi = createApi({
@@ -855,7 +905,47 @@ export const jobApi = createApi({
                 transformResponse: (response: any) => response.data || response,
                 providesTags: ["Job"],
             }),
-            
+
+            // Sales CT endpoints
+            // Create Sales CT
+            createSalesCT: build.mutation<SalesCTResponse, SalesCTCreate>({
+                query: (data) => ({
+                    url: "/sales-ct",
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Get Sales CT by FAB ID
+            getSalesCTByFabId: build.query<SalesCTResponse, number>({
+                query: (fab_id) => ({
+                    url: `/sales-ct/fab/${fab_id}`,
+                    method: "get"
+                }),
+                providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
+            }),
+
+            // Update SCT review (mark as complete)
+            updateSCTReview: build.mutation<any, { fab_id: number; data: SalesCTReviewUpdate }>({
+                query: ({ fab_id, data }) => ({
+                    url: `/sales-ct/${fab_id}/review`,
+                    method: "patch",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Update SCT revision
+            updateSCTRevision: build.mutation<any, { sct_id: number; data: SalesCTRevisionUpdate }>({
+                query: ({ sct_id, data }) => ({
+                    url: `/sales-ct/${sct_id}/revision-update`,
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
         };
     },
 });
@@ -901,4 +991,9 @@ export const {
     useAddFilesToDraftingMutation,
     useDeleteFileFromDraftingMutation,
     useGetStagesQuery,
+    // Sales CT hooks
+    useCreateSalesCTMutation,
+    useGetSalesCTByFabIdQuery,
+    useUpdateSCTReviewMutation,
+    useUpdateSCTRevisionMutation,
 } = jobApi;

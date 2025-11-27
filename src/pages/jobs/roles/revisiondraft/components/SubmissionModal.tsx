@@ -69,22 +69,26 @@ export const RevisionForm = ({
     const uploaded: UploadedFileMeta[] = [];
 
     for (const file of files) {
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await uploadImage(formData).unwrap();
-      uploaded.push({
-        id: response.id.toString(),
-        name: file.name,
-        size: file.size,
-        filename: response.filename,
-        url: response.url,
-        type: file.type,
-      });
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const response = await uploadImage(formData).unwrap();
+        uploaded.push({
+          id: response.id.toString(),
+          name: file.name,
+          size: file.size,
+          filename: response.filename,
+          url: response.url,
+          type: file.type,
+        });
+      } catch (error) {
+        console.error("Failed to upload file:", error);
+        toast.error(`Failed to upload ${file.name}`);
+      }
     }
 
     setUploadedFiles((prev) => [...prev, ...uploaded]);
     form.setValue("files", [...(form.getValues("files") ?? []), ...uploaded]);
-    form.setValue("complete", true);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,23 +100,28 @@ export const RevisionForm = ({
       console.error("Failed to upload files", error);
       toast.error("Failed to upload files. Please try again.");
     } finally {
-      e.target.value = "";
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
   const handleSubmit = async (values: RevisionData) => {
     setIsSubmitting(true);
-    await new Promise((r) => setTimeout(r, 1500));
-    onSubmit(values);
-    setIsSubmitting(false);
+    try {
+      onSubmit(values);
+    } catch (error) {
+      console.error("Failed to submit revision:", error);
+      toast.error("Failed to submit revision");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <Card className="mt-10">
-      {/* <h2 className="text-base font-semibold mb-5">Revision</h2> */}
       <CardHeader className="border-b">
         <CardTitle>Revision</CardTitle>
-
       </CardHeader>
       <CardContent className="p-4">
         <Form {...form}>
@@ -187,35 +196,6 @@ export const RevisionForm = ({
               )}
             </div>
 
-            {/* Revision Complete */}
-            {/* <div className="flex items-center gap-2 pt-2">
-              <AnimatePresence mode="wait">
-                {form.watch("complete") ? (
-                  <motion.div
-                    key="complete"
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.8, opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                  >
-                    <Check2 className="w-4 h-4 text-green-600" />
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="incomplete"
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 0.6 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.25 }}
-                  >
-                    <CheckCircle2 className="w-4 h-4 text-muted-foreground" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <span className="text-sm text-muted-foreground">
-                Revision complete
-              </span>
-            </div> */}
             <FormField
               control={form.control}
               name="complete"
@@ -225,13 +205,11 @@ export const RevisionForm = ({
                     Status
                   </FormLabel>
                   <div className="">
-
-
                     <div
                       className="flex items-center gap-2 cursor-pointer"
-                      onClick={() => field.onChange("complete")}
+                      onClick={() => field.onChange(!field.value)}
                     >
-                      <Checkbox completed={field.value === "complete"} />
+                      <Checkbox checked={field.value} />
                       <span className="font-medium text-sm">
                         Revision complete
                       </span>
@@ -256,7 +234,6 @@ export const RevisionForm = ({
           </form>
         </Form>
       </CardContent>
-
     </Card>
   );
 };

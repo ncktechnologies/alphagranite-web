@@ -1,4 +1,4 @@
-// DrafterDetailsPageRefactor.tsx
+// DrafterDetailsPageRefactor.tsx - FIXED VERSION
 import React, { useCallback, useState } from 'react';
 import { Container } from '@/components/common/container';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
@@ -40,115 +40,105 @@ export function DrafterDetailsPage() {
   const [draftStart, setDraftStart] = useState<Date | null>(null);
   const [draftEnd, setDraftEnd] = useState<Date | null>(null);
 
-  const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
-  const [uploadedFileObjects, setUploadedFileObjects] = useState<Record<string, File>>({}); // Store actual File objects as a map
+  // Simplified file state - track files that need to be uploaded
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [uploadedFileMetas, setUploadedFileMetas] = useState<UploadedFileMeta[]>([]);
   const [activeFile, setActiveFile] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
-  const [uploadedFileMap, setUploadedFileMap] = useState<Record<string, UploadedFileMeta>>({});
   const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
 
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
 
+  // Fixed handleFilesChange - REPLACES files instead of accumulating
   const handleFilesChange = useCallback(async (files: FileWithPreview[]) => {
-    if (!files) return;
+    if (!files || files.length === 0) {
+      setPendingFiles([]);
+      return;
+    }
 
-    console.log('Files received:', files);
-    console.log('Current uploadedFileMap:', uploadedFileMap);
+    console.log('New files selected:', files);
 
     // Filter to only actual File objects
-    const validFiles = files.filter(
-      (fileItem) => fileItem.file instanceof File,
-    );
-    console.log('Valid files:', validFiles);
-
+    const validFiles = files.filter((fileItem) => fileItem.file instanceof File);
+    
     if (validFiles.length === 0) {
       console.log('No valid files to process');
+      setPendingFiles([]);
       return;
+    }
+
+    // Extract the File objects
+    const fileObjects = validFiles.map(f => f.file as File);
+    
+    // REPLACE the pending files (don't accumulate)
+    setPendingFiles(fileObjects);
+
+    // Create file metas for display
+    const newFileMetas: UploadedFileMeta[] = fileObjects.map((file, index) => ({
+      id: `pending-${Date.now()}-${index}`, // Temporary ID
+      name: file.name,
+      size: file.size,
+      type: file.type,
+    }));
+
+    setUploadedFileMetas(newFileMetas);
+    
+    console.log('Set pending files:', fileObjects.length);
+    console.log('File names:', fileObjects.map(f => f.name));
+
+  }, []); // Removed dependencies since we're replacing, not accumulating
+
+  // Upload files when needed (like when opening submission modal)
+  const uploadPendingFiles = useCallback(async () => {
+    if (pendingFiles.length === 0 || !draftingData?.id) {
+      return [];
     }
 
     try {
       setIsUploadingDocuments(true);
+      console.log('Uploading pending files:', pendingFiles);
 
-      // Start with existing entries
-      const updatedEntries: Record<string, UploadedFileMeta> = { ...uploadedFileMap };
-      const newFileObjects: File[] = []; // Collect new file objects
-      const newFileMap: Record<string, File> = {}; // Map file IDs to File objects
+      const response = await addFilesToDrafting({
+        drafting_id: draftingData.id,
+        files: pendingFiles
+      }).unwrap();
 
-      // Only upload files to drafting endpoint, not to general file upload
-      // If we have drafting data, add files to drafting
-      let currentDraftingData = draftingData;
-      console.log('Current drafting data:', currentDraftingData);
+      console.log('File upload response:', response);
 
-      // Check if we have valid drafting data with an ID
-      if (currentDraftingData && currentDraftingData.id) {
-        // Extract the actual File objects from file items
-        const filesToAdd = validFiles.map(f => f.file as File);
-
-        // Store file objects for later use in submission
-        newFileObjects.push(...filesToAdd);
-
-        // Upload files to drafting with proper format
-        const response = await addFilesToDrafting({
-          drafting_id: currentDraftingData.id,
-          files: filesToAdd
-        }).unwrap();
-
-        // Extract file IDs from the response and create entries
-        if (response && response.data && Array.isArray(response.data)) {
-          response.data.forEach((fileData: any, index: number) => {
-            if (fileData.id) {
-              const tempId = `draft-${currentDraftingData.id}-${fileData.id}`;
-              updatedEntries[tempId] = {
-                id: fileData.id, // Use actual file ID from server
-                name: fileData.name || filesToAdd[index].name,
-                size: fileData.size || filesToAdd[index].size,
-                type: fileData.type || filesToAdd[index].type,
-              };
-              // Map the file ID to the File object
-              newFileMap[fileData.id] = filesToAdd[index];
-            }
-          });
-        }
-
-        console.log('Updated entries after upload:', updatedEntries);
-      } else {
-        // If no drafting data, just track the files locally without uploading
-        validFiles.forEach((fileItem, index) => {
-          const file = fileItem.file as File;
-          const tempId = `local-${Date.now()}-${index}`;
-          updatedEntries[tempId] = {
-            id: tempId,
-            name: file.name,
-            size: file.size,
-            type: file.type,
-          };
-          // Store file objects for later use in submission
-          newFileObjects.push(file);
-          // Map the file ID to the File object
-          newFileMap[tempId] = file;
-        });
-        console.log('Tracked files locally (no drafting data):', updatedEntries);
+      let uploadedIds: number[] = [];
+      if (response?.data && Array.isArray(response.data)) {
+        uploadedIds = response.data.map((file: any) => file.id);
+        
+        // Update file metas with real IDs
+        const updatedMetas = response.data.map((fileData: any, index: number) => ({
+          id: fileData.id,
+          name: fileData.name || pendingFiles[index].name,
+          size: fileData.size || pendingFiles[index].size,
+          type: fileData.type || pendingFiles[index].type,
+        }));
+        
+        setUploadedFileMetas(updatedMetas);
       }
 
-      // Update state with all entries (both existing and new)
-      setUploadedFileMap(updatedEntries);
-      setUploadedFiles(Object.values(updatedEntries));
-      // Update the file objects map with new entries
-      setUploadedFileObjects(prev => ({ ...prev, ...newFileMap }));
-      console.log('Final uploaded files count:', Object.values(updatedEntries).length);
+      // Clear pending files after successful upload
+      setPendingFiles([]);
+      return uploadedIds;
+
     } catch (error) {
-      console.error('Unable to upload files', error);
-      toast.error('Failed to upload one or more files. Please try again.');
+      console.error('Failed to upload files:', error);
+      toast.error('Failed to upload files');
+      throw error;
     } finally {
       setIsUploadingDocuments(false);
     }
-  }, [uploadedFileMap, draftingData, addFilesToDrafting, fabId, fabData]);
+  }, [pendingFiles, draftingData, addFilesToDrafting]);
+
   const handleFileClick = (file: any) => {
     setActiveFile(file);
     setViewMode('file');
   };
 
-  // Time tracking handlers — these get Date objects from TimeTrackingComponent
+  // Time tracking handlers
   const handleStart = (startDate: Date) => {
     setIsDrafting(true);
     setIsPaused(false);
@@ -171,19 +161,31 @@ export function DrafterDetailsPage() {
     setDraftEnd(endDate);
   };
 
-  const canOpenSubmit = !isDrafting && totalTime > 0 && uploadedFiles.length > 0;
+  const canOpenSubmit = !isDrafting && totalTime > 0 && (pendingFiles.length > 0 || uploadedFileMetas.length > 0);
+
+  // Modified to handle file upload before showing modal
+  const handleOpenSubmissionModal = async () => {
+    try {
+      // Upload any pending files first
+      if (pendingFiles.length > 0) {
+        await uploadPendingFiles();
+      }
+      setShowSubmissionModal(true);
+    } catch (error) {
+      console.error('Failed to prepare files for submission:', error);
+      // Don't open modal if file upload fails
+    }
+  };
 
   const onSubmitModal = async (payload: any) => {
-    // After SubmissionModal calls updateDrafting successfully it will call onClose(true)
-    // We can refresh drafting and navigate to review page
     try {
       await refetchDrafting();
       setShowSubmissionModal(false);
-      setUploadedFiles([]);
+      setPendingFiles([]);
+      setUploadedFileMetas([]);
       setTotalTime(0);
       setDraftStart(null);
       setDraftEnd(null);
-      // toast.success('Draft submitted — redirecting to draft review');
       navigate('/job/draft');
     } catch (err) {
       console.error(err);
@@ -192,31 +194,37 @@ export function DrafterDetailsPage() {
   };
 
   if (isFabLoading || isDraftingLoading) return <div>Loading...</div>;
-  const sidebarSections =
-    [
-      {
-        title: "Job Details",
-        type: "details",
-        items: [
-          // { label: "Customer", value: jobData?.name || "Loading..." },
-          { label: "Area", value: fabData?.input_area || "Loading..." },
-          { label: "Material", value: `${fabData?.stone_type_name || ''} ${fabData?.stone_color_name || ''} - ${fabData?.stone_thickness_value || ''}` },
-          { label: "FAB Type", value: fabData?.fab_type || "Loading..." },
-          { label: "Assigned to", value: draftingData?.drafter_name || (currentEmployeeId ? "You (Self-assigned)" : "Loading...") },
-        ],
-      },
-      {
-        title: "Notes",
-        type: "notes",
-        notes: fabData?.notes?.map((note: string, index: number) => ({
-          id: index,
-          avatar: "N",
-          content: note,
-          author: "",
-          timestamp: "",
-        })) || [],
-      },
-    ];
+  
+  const sidebarSections = [
+    {
+      title: "Job Details",
+      type: "details",
+      items: [
+        { label: "Area", value: fabData?.input_area || "Loading..." },
+        { label: "Material", value: `${fabData?.stone_type_name || ''} ${fabData?.stone_color_name || ''} - ${fabData?.stone_thickness_value || ''}` },
+        { label: "FAB Type", value: fabData?.fab_type || "Loading..." },
+        { label: "Assigned to", value: draftingData?.drafter_name || (currentEmployeeId ? "You (Self-assigned)" : "Loading...") },
+      ],
+    },
+    {
+      title: "Notes",
+      type: "notes",
+      notes: fabData?.notes?.map((note: string, index: number) => ({
+        id: index,
+        avatar: "N",
+        content: note,
+        author: "",
+        timestamp: "",
+      })) || [],
+    },
+  ];
+
+  // Prepare files for SubmissionModal
+  const filesForSubmission = uploadedFileMetas.map(meta => ({
+    ...meta,
+    file: pendingFiles.find(f => f.name === meta.name) || null
+  }));
+
   return (
     <>
       <Container className='lg:mx-0'>
@@ -236,7 +244,6 @@ export function DrafterDetailsPage() {
               <div className="flex justify-end">
                 <Button variant="inverse" size="sm" onClick={() => { setViewMode('activity'); setActiveFile(null); }}>
                   <X className="w-6 h-6" />
-
                 </Button>
               </div>
               <FileViewer file={activeFile} onClose={() => { setActiveFile(null); setViewMode('activity'); }} />
@@ -272,13 +279,15 @@ export function DrafterDetailsPage() {
                     simulateUpload={false}
                   />
 
+                 
+
                   {/* Submit Button */}
                   {viewMode === 'activity' && (
                     <div className="flex justify-end">
                       <Button
-                        onClick={() => setShowSubmissionModal(true)}
+                        onClick={handleOpenSubmissionModal}
                         className="bg-green-600 hover:bg-green-700"
-                        disabled={isDrafting || totalTime === 0}
+                        disabled={isDrafting || totalTime === 0 || (pendingFiles.length === 0 && uploadedFileMetas.length === 0)}
                       >
                         Submit draft
                       </Button>
@@ -298,10 +307,7 @@ export function DrafterDetailsPage() {
               if (success) onSubmitModal({});
             }}
             drafting={draftingData}
-            uploadedFiles={uploadedFiles.map((file) => ({
-              ...file,
-              file: uploadedFileObjects[file.id]
-            }))}
+            uploadedFiles={filesForSubmission}
             draftStart={draftStart}
             draftEnd={draftEnd}
           />

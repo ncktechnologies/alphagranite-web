@@ -282,13 +282,11 @@ const CuttingPlan = () => {
                                     value={customStartDate}
                                     onChange={setCustomStartDate}
                                     placeholder="Start Date"
-                                    granularity="day"
                                 />
                                 <DateTimePicker
                                     value={customEndDate}
                                     onChange={setCustomEndDate}
                                     placeholder="End Date"
-                                    granularity="day"
                                 />
                             </>
                         )}

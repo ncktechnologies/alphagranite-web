@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router";
 import { useUploadImageMutation } from "@/store/api/auth";
 import { UploadedFileMeta } from "@/types/uploads";
+import { useUpdateSCTRevisionMutation } from "@/store/api";
 
 const revisionSchema = z.object({
   salesPerson: z.string().min(1, "Sales person is required"),
@@ -54,6 +55,7 @@ interface RevisionModalProps {
   pieces: number;
   salesPerson: string;
   onSubmit: (data: RevisionData) => void;
+  sctId?: number; // Add SCT ID for revision update
 }
 
 export const RevisionModal = ({
@@ -66,10 +68,12 @@ export const RevisionModal = ({
   pieces,
   salesPerson,
   onSubmit,
+  sctId,
 }: RevisionModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFileMeta[]>([]);
-  const [uploadImage, { isLoading: isUploadingFiles }] = useUploadImageMutation();
+  const [uploadImage] = useUploadImageMutation();
+  const [updateSCTRevision] = useUpdateSCTRevisionMutation();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate()
   const form = useForm<RevisionData>({
@@ -120,7 +124,19 @@ export const RevisionModal = ({
     setIsSubmitting(true);
     try {
       console.log("Submitting revision:", values);
-      await new Promise((r) => setTimeout(r, 1500));
+      
+      // If we have an SCT ID, update the revision
+      if (sctId) {
+        await updateSCTRevision({
+          sct_id: sctId,
+          data: {
+            is_revision_completed: false,
+            draft_note: values.reason,
+            revision_type: "sales" // Default to sales revision type
+          }
+        }).unwrap();
+      }
+      
       toast.custom(
         () => (
           <Alert variant="success" icon="success">
@@ -140,6 +156,9 @@ export const RevisionModal = ({
       onSubmit(values);
       onClose();
       navigate('/job/revision')
+    } catch (error) {
+      console.error("Failed to submit revision:", error);
+      toast.error("Failed to submit revision. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -256,8 +275,8 @@ export const RevisionModal = ({
                 </Button>
               </div>
 
-              {isUploadingFiles && (
-                <p className="text-xs text-muted-foreground pt-1">Uploading files...</p>
+              {isSubmitting && (
+                <p className="text-xs text-muted-foreground pt-1">Submitting revision...</p>
               )}
 
               {uploadedFiles.length > 0 && (
