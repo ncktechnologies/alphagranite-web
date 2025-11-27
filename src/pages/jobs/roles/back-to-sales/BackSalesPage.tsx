@@ -35,7 +35,7 @@ const transformFabToJob = (fab: Fab): IJob => {
     fab_id: String(fab.id),
    job_name: `${fab.job_details?.name}`,
     job_no: String(fab.job_details?.job_number),
-    date: fab.templating_schedule_start_date,
+    date: fab.templating_schedule_start_date || '',
     current_stage: fab.current_stage,
     // Optional fields with default values
     acct_name: '',
@@ -58,7 +58,7 @@ export function AfterDraftSalesPage() {
     
     // Fetch fabs with role-based filtering
     const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
-        current_stage: isSuperAdmin ? 'draft_review' : currentStageFilter,
+        current_stage: 'sales_ct',
         limit: 100,
     });
 
