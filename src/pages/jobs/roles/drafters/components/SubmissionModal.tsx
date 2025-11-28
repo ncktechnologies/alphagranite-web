@@ -8,20 +8,17 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { useUpdateDraftingMutation, useAddFilesToDraftingMutation } from '@/store/api/job';
+import { useUpdateDraftingMutation, useAddFilesToDraftingMutation, useCreateDraftingMutation } from '@/store/api/job';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useGetSalesPersonsQuery } from '@/store/api';
+import { useGetSalesPersonsQuery } from '@/store/api/employee';
 
 const submissionSchema = z.object({
   totalSqFt: z.string().optional(),
   numberOfPieces: z.string().optional(),
   draftNotes: z.string().optional(),
   mentions: z.string().optional(),
-  // completed: z.boolean().refine((val) => val === true, {
-  //   message: "You must confirm that the drafting is completed.",
-  // }),
 });
 
 type SubmissionData = z.infer<typeof submissionSchema>;
@@ -40,14 +37,18 @@ interface SubmissionModalProps {
   uploadedFiles: UploadedFile[]; // uploaded file meta (must contain .id and .file)
   draftStart?: Date | null;
   draftEnd?: Date | null;
+  fabId: number; // Add fabId prop
+  userId: number; // Add userId prop for drafter ID
+  fabData?: any; // Add fabData prop to get scheduling information
 }
 
-export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftStart, draftEnd }: SubmissionModalProps) => {
+export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftStart, draftEnd, fabId, userId, fabData }: SubmissionModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
 
   const [updateDrafting] = useUpdateDraftingMutation();
   const [addFilesToDrafting] = useAddFilesToDraftingMutation();
+  const [createDrafting] = useCreateDraftingMutation(); // Add createDrafting mutation
   const { data: employeesData, isLoading, isError, error } = useGetSalesPersonsQuery();
 
   const form = useForm<SubmissionData>({
@@ -59,11 +60,32 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
     }
   });
 
- // Updated handleFinalSubmit function
+// Updated handleFinalSubmit function
 const handleFinalSubmit = async (values: SubmissionData) => {
-  if (!drafting?.id && !drafting?.data?.id) {
-    toast.error('Drafting ID is missing. Cannot submit.');
-    return;
+  // Check if we have a drafting ID or need to create one
+  let draftingId = drafting?.id ?? drafting?.data?.id;
+  
+  // If no drafting exists, create one using FAB data
+  if (!draftingId) {
+    try {
+      const createResponse = await createDrafting({
+        fab_id: fabId,
+        drafter_id: userId,
+        scheduled_start_date: fabData?.templating_schedule_start_date || new Date().toISOString(),
+        scheduled_end_date: fabData?.templating_schedule_due_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        total_sqft_required_to_draft: String(fabData?.total_sqft || values.totalSqFt || "0")
+      }).unwrap();
+      
+      // Handle different response structures - extract ID from response
+      const responseAny: any = createResponse;
+      draftingId = responseAny.data?.id || responseAny.id;
+      console.log('Created draft with ID:', draftingId);
+      toast.success("Drafting created successfully");
+    } catch (createError) {
+      console.error('Failed to create drafting:', createError);
+      toast.error('Failed to create drafting');
+      return;
+    }
   }
 
   if (!isConfirmed) {
@@ -71,7 +93,6 @@ const handleFinalSubmit = async (values: SubmissionData) => {
     return;
   }
 
-  const draftingId = drafting?.id ?? drafting?.data?.id;
   console.log('Submitting draft with ID:', draftingId, 'Files:', uploadedFiles);
 
   setIsSubmitting(true);
@@ -115,6 +136,7 @@ const handleFinalSubmit = async (values: SubmissionData) => {
       drafter_end_date: draftEnd ? draftEnd.toISOString() : null,
       total_sqft_drafted: values.totalSqFt || null,
       no_of_piece_drafted: values.numberOfPieces || null,
+      total_hours_drafted: calculateTotalHours(draftStart || null, draftEnd || null), // Fix type issue
       draft_note: values.draftNotes || null,
       mentions: values.mentions || null,
       is_completed: true,
@@ -135,7 +157,7 @@ const handleFinalSubmit = async (values: SubmissionData) => {
     setIsSubmitting(false);
   }
 };
-  const salesPersons = Array.isArray(employeesData) ? employeesData : [];;
+  const salesPersons = Array.isArray(employeesData) ? employeesData : [];
 
   return (
     <Dialog open={open} onOpenChange={() => onClose(false)}>
@@ -222,24 +244,15 @@ const handleFinalSubmit = async (values: SubmissionData) => {
               )}
             />
             {/* Confirmation Checkbox */}
-            <FormField
-              control={form.control}
-              name="completed"
-              render={() => (
-                <FormItem className="flex flex-row items-center space-x-3 mt-4">
-                  <FormControl>
-                    <Checkbox
-                      checked={isConfirmed}
-                      onCheckedChange={(v) => setIsConfirmed(Boolean(v))}
-                    />
-                  </FormControl>
-                  <FormLabel className="font-semibold text-[16px]">
-                    CAD review complete
-                  </FormLabel>
-                </FormItem>
-              )}
-            />
-
+            <div className="flex flex-row items-center space-x-3 mt-4">
+              <Checkbox
+                checked={isConfirmed}
+                onCheckedChange={(v) => setIsConfirmed(Boolean(v))}
+              />
+              <label className="font-semibold text-[16px]">
+                CAD review complete
+              </label>
+            </div>
 
             <div className="flex justify-end gap-3 pt-4 border-t">
               <Button type="button" variant="outline" onClick={() => onClose(false)}>
@@ -255,4 +268,13 @@ const handleFinalSubmit = async (values: SubmissionData) => {
       </DialogContent>
     </Dialog>
   );
+}
+
+// Add helper function to calculate total hours
+const calculateTotalHours = (start: Date | null, end: Date | null): number | null => {
+  if (!start || !end) return null;
+  
+  const diffInMs = end.getTime() - start.getTime();
+  const diffInHours = diffInMs / (1000 * 60 * 60);
+  return parseFloat(diffInHours.toFixed(2));
 };

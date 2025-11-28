@@ -220,10 +220,15 @@ export function DrafterDetailsPage() {
   ];
 
   // Prepare files for SubmissionModal
-  const filesForSubmission = uploadedFileMetas.map(meta => ({
-    ...meta,
-    file: pendingFiles.find(f => f.name === meta.name) || null
-  }));
+  const filesForSubmission = uploadedFileMetas.map(meta => {
+    const file = pendingFiles.find(f => f.name === meta.name);
+    return {
+      id: meta.id,
+      name: meta.name,
+      url: meta.url,
+      file: file || undefined
+    };
+  });
 
   return (
     <>
@@ -310,6 +315,9 @@ export function DrafterDetailsPage() {
             uploadedFiles={filesForSubmission}
             draftStart={draftStart}
             draftEnd={draftEnd}
+            fabId={fabId}
+            userId={currentEmployeeId}
+            fabData={fabData}
           />
         )}
       </div>

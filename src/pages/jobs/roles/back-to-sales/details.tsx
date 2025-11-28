@@ -10,9 +10,11 @@ import { FileViewer } from '../drafters/components';
 import { Documents } from '@/pages/shop/components/files';
 import { RevisionModal } from './components/SubmissionModal';
 import { TimeDisplay } from './components/DisplayTime';
+import { useSCTService } from './components/SCTService'; // Import our SCT service
 import { useParams, useNavigate } from 'react-router-dom';
-import { useGetFabByIdQuery, useGetDraftingByFabIdQuery, useGetSalesCTByFabIdQuery, useCreateSalesCTMutation, useUpdateSCTReviewMutation } from '@/store/api/job';
+import { useGetFabByIdQuery } from '@/store/api/job'; // Remove unused drafting query
 import { toast } from 'sonner';
+import { useAuth } from '@/auth/context/auth-context'; // Import auth context to get current user
 
 const DraftReviewDetailsPage = () => {
     type ViewMode = 'activity' | 'file';
@@ -28,27 +30,24 @@ const DraftReviewDetailsPage = () => {
     
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const authContext = useAuth(); // Get auth context
+    const user = authContext.user; // Extract user from auth context
     
     // Fetch FAB data
     const { data: fabData, isLoading: isFabLoading, isError: isFabError } = useGetFabByIdQuery(Number(id), { skip: !id });
     
-    // Fetch drafting data
-    const { data: draftingData, isLoading: isDraftingLoading, isError: isDraftingError } = useGetDraftingByFabIdQuery(Number(id), { skip: !id });
+    // Remove unused drafting data query since we're using data from FAB response
+    // const { data: draftingData, isLoading: isDraftingLoading, isError: isDraftingError } = useGetDraftingByFabIdQuery(Number(id), { skip: !id });
     
-    // Fetch or create SCT data
-    const { data: sctData, isLoading: isSctLoading, isError: isSctError } = useGetSalesCTByFabIdQuery(Number(id), { skip: !id });
-    const [createSalesCT] = useCreateSalesCTMutation();
-    const [updateSCTReview] = useUpdateSCTReviewMutation();
-
-    useEffect(() => {
-        // If SCT doesn't exist, create it
-        if (fabData && !sctData && !isSctLoading && !isSctError) {
-            createSalesCT({
-                fab_id: Number(id),
-                notes: "Sales check created"
-            });
-        }
-    }, [fabData, sctData, isSctLoading, isSctError, createSalesCT, id]);
+    // Use our SCT service
+    const {
+      sctData,
+      isSctLoading,
+      isSctError,
+      creationFailed,
+      handleUpdateSCTReview,
+      refetchSCT
+    } = useSCTService({ fabId: Number(id) });
 
     const handleFileClick = (file: any) => {
         setActiveFile(file);
@@ -71,13 +70,10 @@ const DraftReviewDetailsPage = () => {
         if (!id) return;
         
         try {
-            await updateSCTReview({
-                fab_id: Number(id),
-                data: {
-                    sct_completed: true,
-                    notes: "Sales check completed"
-                }
-            }).unwrap();
+            await handleUpdateSCTReview({
+                sct_completed: true,
+                notes: "Sales check completed"
+            });
             
             toast.success("FAB marked as complete successfully");
             // Navigate to next stage or back to sales list
@@ -88,43 +84,55 @@ const DraftReviewDetailsPage = () => {
         }
     };
 
-    if (isFabLoading || isDraftingLoading || isSctLoading) {
+    if (isFabLoading) {
         return <div>Loading...</div>;
     }
 
-    if (isFabError || isDraftingError || isSctError) {
+    if (isFabError) {
         return <div>Error loading data</div>;
     }
 
+    // Get current user's name for sales person field
+    const currentUserName = user 
+        ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || 'Unknown User'
+        : 'Unknown User';
+
+    // Get sales person info from FAB data
+    const fabSalesPerson = `Sales ID: ${fabData?.sales_person_id || 'N/A'}`;
+
+    // Use draft_data from FAB response (type assertion since it's not in the interface but exists in the response)
+    const draftData = (fabData as any)?.draft_data;
+
+    // Create dynamic sidebar sections with actual FAB data
     const sidebarSections = [
         {
             title: "Job Details",
             type: "details",
             items: [
-                { label: "Slab smith used?", value: "No" },
+                { label: "Stone Type", value: fabData?.stone_type_name || 'N/A' },
+                { label: "Stone Color", value: fabData?.stone_color_name || 'N/A' },
+                { label: "Stone Thickness", value: fabData?.stone_thickness_value || 'N/A' },
+                { label: "Edge Profile", value: fabData?.edge_name || 'N/A' },
+                { label: "Total Sq Ft", value: fabData?.total_sqft?.toString() || 'N/A' },
+                { label: "Input Area", value: fabData?.input_area || 'N/A' },
+                { label: "FAB Type", value: fabData?.fab_type || 'N/A' },
+                { label: "Template Needed", value: fabData?.template_needed ? 'Yes' : 'No' },
             ],
         },
         {
             title: "",
-            sectionTitle: "Drafting notes",
+            sectionTitle: "Drafting Notes",
             type: "notes",
-            // className: "",
-            notes: [
+            // Use actual drafting notes from FAB response
+            notes: draftData ? [
                 {
                     id: 1,
-                    avatar: "MR",
-                    content: "Lorem ipsum dolor sit amee magna aliqua. veniam, quis nostrud exercitation ",
-                    author: "Mike Rodriguez",
-                    timestamp: "Oct 3, 2025",
-                },
-                {
-                    id: 1,
-                    avatar: "MR",
-                    content: "Lorem ipsum dolor sit amee magna aliqua. veniam, quis nostrud exercitation ",
-                    author: "Mike Rodriguez",
-                    timestamp: "Oct 3, 2025",
-                },
-            ],
+                    avatar: draftData?.drafter_name?.substring(0, 2).toUpperCase() || 'DR',
+                    content: draftData?.draft_note || `Drafting completed with ${draftData?.no_of_piece_drafted || 0} pieces, ${draftData?.total_sqft_drafted || 0} sq ft`,
+                    author: draftData?.drafter_name || 'Unknown Drafter',
+                    timestamp: draftData?.updated_at ? new Date(draftData.updated_at).toLocaleDateString() : 'N/A',
+                }
+            ] : [], // Empty array if no draft data
         },
     ];
     
@@ -182,16 +190,16 @@ const DraftReviewDetailsPage = () => {
                             <Card>
                                 <CardHeader className='py-5 border-b'>
                                     <TimeDisplay
-                                        startTime={draftingData?.drafter_start_date ? new Date(draftingData.drafter_start_date) : undefined}
-                                        endTime={draftingData?.drafter_end_date ? new Date(draftingData.drafter_end_date) : undefined}
-                                        totalTime={draftingData?.total_time_spent || 0}
+                                        startTime={draftData?.drafter_start_date ? new Date(draftData.drafter_start_date) : undefined}
+                                        endTime={draftData?.drafter_end_date ? new Date(draftData.drafter_end_date) : undefined}
+                                        totalTime={draftData?.total_hours_drafted || 0}
                                     />
                                 </CardHeader>
                                 <CardContent className="">
                                     <h2 className='font-semibold text-sm py-3'>Uploaded files</h2>
                                     <Documents
                                         onFileClick={handleFileClick}
-                                        draftingData={draftingData}
+                                        draftingData={draftData}
                                     />
                                 </CardContent>
                             </Card>
@@ -209,9 +217,10 @@ const DraftReviewDetailsPage = () => {
                         fabType={fabData.fab_type}
                         jobNumber={fabData.job_details?.job_number || ''}
                         totalSqFt={fabData.total_sqft}
-                        pieces={5} // This should come from drafting data
-                        salesPerson="Mike Rodriguez" // This should come from user data
+                        pieces={draftData?.no_of_piece_drafted || 0} // Use real data from draft_data
                         sctId={sctData?.id} // Pass SCT ID for revision update
+                        // Pass sales person from FAB data
+                        fabSalesPerson={fabSalesPerson}
                     />
                 )}
             </div>

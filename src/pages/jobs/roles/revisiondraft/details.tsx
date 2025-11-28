@@ -11,8 +11,12 @@ import { Documents } from '@/pages/shop/components/files';
 import { RevisionForm } from './components/SubmissionModal';
 import { TimeDisplay } from './components/DisplayTime';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useGetFabByIdQuery, useGetDraftingByFabIdQuery, useSubmitDraftingForReviewMutation } from '@/store/api/job';
+import { 
+  useGetFabByIdQuery, 
+  useCreateRevisionMutation
+} from '@/store/api/job';
 import { toast } from 'sonner';
+import { useAuth } from '@/auth/context/auth-context';
 
 const ReviewDetailsPage = () => {
     type ViewMode = 'activity' | 'file' | 'edit';
@@ -28,15 +32,16 @@ const ReviewDetailsPage = () => {
     
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { user } = useAuth();
     
     // Fetch FAB data
     const { data: fabData, isLoading: isFabLoading, isError: isFabError } = useGetFabByIdQuery(Number(id), { skip: !id });
     
-    // Fetch drafting data
-    const { data: draftingData, isLoading: isDraftingLoading, isError: isDraftingError } = useGetDraftingByFabIdQuery(Number(id), { skip: !id });
+    // Use draft_data from FAB response instead of separate API call
+    const draftData = (fabData as any)?.draft_data;
     
-    // Submit drafting for review
-    const [submitDraftingForReview, { isLoading: isSubmitting }] = useSubmitDraftingForReviewMutation();
+    // SCT mutations
+    const [createRevision, { isLoading: isCreatingRevision }] = useCreateRevisionMutation();
 
     const handleFileClick = (file: any) => {
         setActiveFile(file);
@@ -48,29 +53,23 @@ const ReviewDetailsPage = () => {
     };
 
     const handleSubmitDraft = async (submissionData: any) => {
-        if (!id || !draftingData) return;
+        if (!id || !user) return;
         
         try {
-            // Prepare the data for submission
-            const submitData = {
-                drafting_id: draftingData.id,
-                data: {
-                    file_ids: submissionData.files?.map((file: any) => file.id).join(',') || '',
-                    no_of_piece_drafted: submissionData.pieces || 0,
-                    total_sqft_drafted: submissionData.totalSqFt || '0',
-                    draft_note: submissionData.notes || '',
-                    mentions: '',
-                    is_completed: submissionData.complete || false
-                }
-            };
+            // Create revision
+            await createRevision({
+                fab_id: Number(id),
+                revision_type: submissionData.revisionType || 'general',
+                requested_by: 1, // Use a default value since UserModel doesn't have an id property
+                revision_notes: submissionData.revisionType || ''
+            }).unwrap();
             
-            await submitDraftingForReview(submitData).unwrap();
-            toast.success("Draft submitted successfully");
+            toast.success("Revision submitted successfully");
             setShowSubmissionModal(false);
             setViewMode('activity');
         } catch (error) {
-            console.error('Failed to submit draft:', error);
-            toast.error("Failed to submit draft");
+            console.error('Failed to submit revision:', error);
+            toast.error("Failed to submit revision");
         }
     };
 
@@ -79,37 +78,37 @@ const ReviewDetailsPage = () => {
             title: "Job Details",
             type: "details",
             items: [
-                { label: "Slab smith used?", value: "No" },
+                { label: "Stone Type", value: fabData?.stone_type_name || 'N/A' },
+                { label: "Stone Color", value: fabData?.stone_color_name || 'N/A' },
+                { label: "Stone Thickness", value: fabData?.stone_thickness_value || 'N/A' },
+                { label: "Edge Profile", value: fabData?.edge_name || 'N/A' },
+                { label: "Total Sq Ft", value: fabData?.total_sqft?.toString() || 'N/A' },
+                { label: "Input Area", value: fabData?.input_area || 'N/A' },
+                { label: "FAB Type", value: fabData?.fab_type || 'N/A' },
+                { label: "Template Needed", value: fabData?.template_needed ? 'Yes' : 'No' },
             ],
         },
         {
             title: "",
             sectionTitle: "Drafting notes",
             type: "notes",
-            notes: [
+            notes: draftData ? [
                 {
                     id: 1,
-                    avatar: "MR",
-                    content: "Lorem ipsum dolor sit amee magna aliqua. veniam, quis nostrud exercitation ",
-                    author: "Mike Rodriguez",
-                    timestamp: "Oct 3, 2025",
-                },
-                {
-                    id: 2,
-                    avatar: "MR",
-                    content: "Lorem ipsum dolor sit amee magna aliqua. veniam, quis nostrud exercitation ",
-                    author: "Mike Rodriguez",
-                    timestamp: "Oct 3, 2025",
-                },
-            ],
+                    avatar: draftData?.drafter_name?.substring(0, 2).toUpperCase() || 'DR',
+                    content: (draftData as any)?.draft_note || `Drafting in progress with ${(draftData as any)?.no_of_piece_drafted || 0} pieces, ${(draftData as any)?.total_sqft_drafted || 0} sq ft`,
+                    author: draftData?.drafter_name || 'Unknown Drafter',
+                    timestamp: draftData?.updated_at ? new Date(draftData.updated_at).toLocaleDateString() : 'N/A',
+                }
+            ] : [], // Empty array if no draft data
         },
     ];
     
-    if (isFabLoading || isDraftingLoading) {
+    if (isFabLoading) {
         return <div>Loading...</div>;
     }
 
-    if (isFabError || isDraftingError) {
+    if (isFabError) {
         return <div>Error loading data</div>;
     }
 
@@ -156,7 +155,7 @@ const ReviewDetailsPage = () => {
                                     <CardHeading className='flex flex-col items-start py-4'>
                                         <CardTitle className='text-[#FF8D28] leading-[32px]'>Revision reason</CardTitle>
                                         <p className="text-sm text-[#4B5563]">
-                                            Increase the edge size on the kitchen island
+                                            {(draftData as any)?.draft_note || 'No revision reason provided'}
                                         </p>
                                     </CardHeading>
                                     <CardToolbar>
@@ -168,16 +167,16 @@ const ReviewDetailsPage = () => {
                             <Card>
                                 <CardHeader className='py-5 border-b'>
                                     <TimeDisplay
-                                        startTime={draftingData?.drafter_start_date ? new Date(draftingData.drafter_start_date) : undefined}
-                                        endTime={draftingData?.drafter_end_date ? new Date(draftingData.drafter_end_date) : undefined}
-                                        totalTime={draftingData?.total_time_spent || 0}
+                                        startTime={draftData?.drafter_start_date ? new Date(draftData.drafter_start_date) : undefined}
+                                        endTime={draftData?.drafter_end_date ? new Date(draftData.drafter_end_date) : undefined}
+                                        totalTime={draftData?.total_time_spent || 0}
                                     />
                                 </CardHeader>
                                 <CardContent className="">
                                     <h2 className='font-semibold text-sm py-3'>Uploaded files</h2>
                                     <Documents
                                         onFileClick={handleFileClick}
-                                        draftingData={draftingData}
+                                        draftingData={draftData}
                                     />
                                 </CardContent>
                             </Card>

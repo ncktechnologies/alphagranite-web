@@ -1,5 +1,4 @@
 import { useRef, useState } from "react";
-import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -26,21 +25,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useUploadImageMutation } from "@/store/api/auth";
 import { UploadedFileMeta } from "@/types/uploads";
 import { toast } from "sonner";
+import { z } from "zod";
 
 const revisionSchema = z.object({
   revisionType: z.string().min(1, "Select revision type"),
-  files: z
-    .array(
-      z.object({
-        id: z.string(),
-        name: z.string(),
-        size: z.number(),
-        url: z.string().optional(),
-        filename: z.string().optional(),
-      })
-    )
-    .optional(),
-  complete: z.boolean().default(false),
+  complete: z.boolean(),
 });
 
 type RevisionData = z.infer<typeof revisionSchema>;
@@ -48,18 +37,17 @@ type RevisionData = z.infer<typeof revisionSchema>;
 export const RevisionForm = ({
   onSubmit,
 }: {
-  onSubmit: (data: RevisionData) => void;
+  onSubmit: (data: RevisionData & { files?: UploadedFileMeta[] }) => void;
 }) => {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFileMeta[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadImage, { isLoading: isUploadingFiles }] = useUploadImageMutation();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const form = useForm<RevisionData>({
+  const form = useForm({
     resolver: zodResolver(revisionSchema),
     defaultValues: {
       revisionType: "",
-      files: [],
       complete: false,
     },
   });
@@ -88,7 +76,6 @@ export const RevisionForm = ({
     }
 
     setUploadedFiles((prev) => [...prev, ...uploaded]);
-    form.setValue("files", [...(form.getValues("files") ?? []), ...uploaded]);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,10 +93,13 @@ export const RevisionForm = ({
     }
   };
 
-  const handleSubmit = async (values: RevisionData) => {
+  const handleSubmit = async (values: any) => {
     setIsSubmitting(true);
     try {
-      onSubmit(values);
+      onSubmit({
+        ...values,
+        files: uploadedFiles
+      });
     } catch (error) {
       console.error("Failed to submit revision:", error);
       toast.error("Failed to submit revision");
@@ -205,12 +195,18 @@ export const RevisionForm = ({
                     Status
                   </FormLabel>
                   <div className="">
-                    <div
-                      className="flex items-center gap-2 cursor-pointer"
-                      onClick={() => field.onChange(!field.value)}
-                    >
-                      <Checkbox checked={field.value} />
-                      <span className="font-medium text-sm">
+                    <div className="flex items-center gap-2">
+                      <Checkbox 
+                        checked={field.value} 
+                        onCheckedChange={field.onChange}
+                      />
+                      <span 
+                        className="font-medium text-sm cursor-pointer"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          field.onChange(!field.value);
+                        }}
+                      >
                         Revision complete
                       </span>
                     </div>

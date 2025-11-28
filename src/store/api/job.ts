@@ -406,6 +406,48 @@ export interface SalesCTRevisionUpdate {
     revision_type?: string;
 }
 
+// Add revision interfaces
+export interface RevisionCreate {
+    fab_id: number;
+    revision_type: string;
+    requested_by: number;
+    assigned_to?: number;
+    scheduled_start_date?: string;
+    scheduled_end_date?: string;
+    revision_notes?: string;
+}
+
+export interface RevisionUpdate {
+    revision_type?: string;
+    assigned_to?: number;
+    scheduled_start_date?: string;
+    scheduled_end_date?: string;
+    actual_start_date?: string;
+    actual_end_date?: string;
+    revision_notes?: string;
+    is_completed?: boolean;
+    status_id?: number;
+    updated_by?: number;
+}
+
+export interface RevisionResponse {
+    id: number;
+    fab_id: number;
+    revision_type: string;
+    requested_by: number;
+    assigned_to?: number;
+    scheduled_start_date?: string;
+    scheduled_end_date?: string;
+    actual_start_date?: string;
+    actual_end_date?: string;
+    revision_notes?: string;
+    is_completed: boolean;
+    status_id: number;
+    created_at: string;
+    updated_at?: string;
+    updated_by?: number;
+}
+
 export const jobApi = createApi({
     reducerPath: "jobApi",
     baseQuery: axiosBaseQuery({ baseUrl: `${baseUrl}/api/v1` }),
@@ -946,6 +988,60 @@ export const jobApi = createApi({
                 invalidatesTags: ["Fab"],
             }),
 
+            // Set SCT review yes (for creating revision)
+            setSCTReviewYes: build.mutation<any, { sct_id: number; revision_reason: string; file_ids?: string }>({
+                query: ({ sct_id, revision_reason, file_ids }) => {
+                    let url = `/sales-ct/${sct_id}/review-yes?revision_reason=${encodeURIComponent(revision_reason)}`;
+                    if (file_ids) {
+                        url += `&file_ids=${encodeURIComponent(file_ids)}`;
+                    }
+                    return {
+                        url,
+                        method: "put"
+                    };
+                },
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Send to drafting
+            sendToDrafting: build.mutation<any, { fab_id: number; data: { notes: string } }>({
+                query: ({ fab_id, data }) => ({
+                    url: `/sales-ct/${fab_id}/send-to-drafting`,
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Revision endpoints
+            // Create revision
+            createRevision: build.mutation<RevisionResponse, RevisionCreate>({
+                query: (data) => ({
+                    url: "/revisions",
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Update revision
+            updateRevision: build.mutation<RevisionResponse, { revision_id: number; data: RevisionUpdate }>({
+                query: ({ revision_id, data }) => ({
+                    url: `/revisions/${revision_id}`,
+                    method: "put",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Get revisions by FAB ID
+            getRevisionsByFabId: build.query<RevisionResponse[], number>({
+                query: (fab_id) => ({
+                    url: `/revisions/fab/${fab_id}`,
+                    method: "get"
+                }),
+                providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
+            }),
         };
     },
 });
@@ -996,4 +1092,10 @@ export const {
     useGetSalesCTByFabIdQuery,
     useUpdateSCTReviewMutation,
     useUpdateSCTRevisionMutation,
+    useSetSCTReviewYesMutation, // Add the new hook
+    useSendToDraftingMutation,
+    // Revision hooks
+    useCreateRevisionMutation,
+    useUpdateRevisionMutation,
+    useGetRevisionsByFabIdQuery,
 } = jobApi;
