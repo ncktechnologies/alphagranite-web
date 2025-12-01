@@ -32,9 +32,137 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
-import { JOB_STAGES } from '@/hooks/use-job-stage'; // Add this import
+import { JOB_STAGES } from '@/hooks/use-job-stage';
+import { Fragment } from 'react';
 
-export interface CutList {
+// Define the interface for raw FAB data
+export interface FabData {
+  id: number;
+  job_id: number;
+  fab_type: string;
+  sales_person_id: number;
+  stone_type_id: number;
+  stone_type_name?: string;
+  stone_color_id: number;
+  stone_color_name?: string;
+  stone_thickness_id: number;
+  stone_thickness_value?: string;
+  edge_id: number;
+  edge_name?: string;
+  input_area: number;
+  total_sqft: number;
+  notes?: string[];
+  template_needed: boolean;
+  drafting_needed: boolean;
+  slab_smith_cust_needed: boolean;
+  slab_smith_ag_needed: boolean;
+  sct_needed: boolean;
+  final_programming_needed: boolean;
+  current_stage?: string;
+  status_id: number;
+  created_at: string;
+  created_by: number;
+  updated_at?: string;
+  updated_by?: number;
+  templating_schedule_start_date?: string;
+  templating_schedule_due_date?: string;
+  technician_name?: string;
+  job_details?: {
+    job_number: string;
+    name: string;
+    start_date?: string;
+    project_value?: number;
+    created_by: number;
+    updated_at?: string;
+    updated_by?: number;
+    id: number;
+    priority: string;
+    description?: string;
+    account_id: number;
+    due_date?: string;
+    status_id: number;
+    created_at: string;
+  };
+  account_id: number;
+  account_name?: string;
+  account_number?: string;
+  account_contact_person?: string;
+  account_email?: string;
+  account_phone?: string;
+  templating_notes?: string[];
+  technician_name?: string;
+  drafter_name?: string;
+  drafter_assigned_by_name?: string;
+  fab_notes?: Array<{
+    id: number;
+    fab_id: number;
+    stage: string;
+    note: string;
+    created_by: number;
+    created_by_name: string;
+    created_at: string;
+    updated_at?: string;
+    updated_by?: number;
+    updated_by_name?: string;
+  }>;
+  draft_data?: {
+    id: number;
+    fab_id: number;
+    drafter_id: number;
+    drafter_name: string;
+    drafter_start_date: string;
+    drafter_end_date: string;
+    total_sqft_drafted: number;
+    no_of_piece_drafted: number;
+    draft_note: string;
+    mentions: string;
+    total_hours_drafted: number;
+    file_ids: string;
+    files: Array<{
+      id: number;
+      name: string;
+      file_url: string;
+      file_type: string;
+      file_size: string;
+      created_at: string;
+    }>;
+    status_id: number;
+    created_at: string;
+    updated_at: string;
+    updated_by: number;
+    updated_by_name: string;
+  };
+  sales_ct_data?: any;
+  is_complete: boolean;
+  stage_data?: any;
+  // Additional fields from the sample data
+  slab_smith_used: boolean;
+  installation_date?: string;
+  final_programming_complete: boolean;
+  no_of_pieces?: number;
+  fp_not_needed: boolean;
+  next_stage?: string;
+  wj_time_minutes?: number;
+  sct_completed: boolean;
+  wj_linft?: number;
+  template_received: boolean;
+  revised: boolean;
+  edging_linft?: number;
+  cnc_linft?: number;
+  miter_linft?: number;
+  sales_person_name?: string;
+  gp?: number;
+  revenue?: number;
+  confirmed_date?: string;
+  drafter_id: number;
+  drafter_assigned_at: string;
+  drafter_assigned_by: number;
+  template_review_complete: boolean;
+  shop_date_schedule?: string;
+}
+
+// Define the interface for calculated cut list data
+export interface CalculatedCutListData {
   id: number;
   fab_type: string;
   fab_id: string;
@@ -56,18 +184,87 @@ export interface CutList {
   sales_person?: string;
 }
 
-interface CutListTableProps {
-    cutLists: CutList[];
+// Function to calculate all cut list metrics from raw FAB data
+export const calculateCutListData = (fab: FabData): CalculatedCutListData => {
+  // Calculate Waterjet Linear Feet (WL LN FT)
+  const calculateWlLnFt = (): number => {
+    // Waterjet linear feet is typically stored directly in the FAB data
+    return fab.wj_linft || 0;
+  };
+
+  // Calculate SCT Linear Feet (SL LN FT)
+  const calculateSlLnFt = (): number => {
+    // If SCT is needed and completed, count as 1, otherwise 0
+    return fab.sct_needed ? (fab.sct_completed ? 1 : 0) : 0;
+  };
+
+  // Calculate Edging Linear Feet
+  const calculateEdgingLnFt = (): number => {
+    // Edging linear feet is typically stored directly in the FAB data
+    return fab.edging_linft || 0;
+  };
+
+  // Calculate CNC Linear Feet
+  const calculateCncLnFt = (): number => {
+    // CNC linear feet is typically stored directly in the FAB data
+    return fab.cnc_linft || 0;
+  };
+
+  // Calculate Milter Linear Feet
+  const calculateMilterLnFt = (): number => {
+    // Miter linear feet is typically stored directly in the FAB data
+    return fab.miter_linft || 0;
+  };
+
+  // Calculate cost of stone (placeholder - would need actual logic)
+  const calculateCostOfStone = (): number => {
+    // This would be based on stone type, color, thickness, etc.
+    // For now, we'll use a simple calculation: $50 per sq ft as an example
+    const costPerSqFt = 50;
+    return (fab.total_sqft || 0) * costPerSqFt;
+  };
+
+  return {
+    id: fab.id,
+    fab_type: fab.fab_type || '',
+    fab_id: String(fab.id),
+    fab_id_0: '', // Placeholder, can be populated if needed
+    job_name: fab.job_details?.name || '',
+    job_no: fab.job_details?.job_number || '',
+    no_of_pcs: fab.no_of_pieces || 0,
+    total_sq_ft: fab.total_sqft || 0,
+    wl_ln_ft: calculateWlLnFt(),
+    sl_ln_ft: calculateSlLnFt(),
+    edging_ln_ft: calculateEdgingLnFt(),
+    cnc_ln_ft: calculateCncLnFt(),
+    milter_ln_ft: calculateMilterLnFt(),
+    cost_of_stone: calculateCostOfStone(),
+    revenue: fab.job_details?.project_value || 0,
+    fp_completed: fab.final_programming_complete ? 'Yes' : 'No',
+    cip: fab.drafter_name || '',
+    install_date: fab.installation_date || '',
+    sales_person: fab.sales_person_name || ''
+  };
+};
+
+interface CutListTableWithCalculationsProps {
+    fabs: FabData[];
     path: string;
     isSuperAdmin?: boolean;
     isLoading?: boolean;
     onRowClick?: (fabId: string) => void;
 }
 
-export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, onRowClick }: CutListTableProps) => {
+export const CutListTableWithCalculations = ({ 
+  fabs, 
+  path, 
+  isSuperAdmin = false, 
+  isLoading, 
+  onRowClick 
+}: CutListTableWithCalculationsProps) => {
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
-        pageSize: 5, // Same as JobTable
+        pageSize: 5,
     });
     const [sorting, setSorting] = useState<SortingState>([]);
     const [searchQuery, setSearchQuery] = useState('');
@@ -78,40 +275,44 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
-    // Get unique fab types - FIXED: Handle undefined cutLists
-    const fabTypes = useMemo(() => {
-        if (!cutLists || !Array.isArray(cutLists)) return [];
-        const types = Array.from(new Set(cutLists.map(list => list.fab_type).filter(Boolean)));
-        return types.sort();
-    }, [cutLists]);
+    // Transform raw FAB data to calculated cut list data
+    const calculatedCutLists = useMemo(() => {
+        return fabs.map(calculateCutListData);
+    }, [fabs]);
 
-    // Get unique sales persons - FIXED: Handle undefined cutLists
+    // Get unique fab types
+    const fabTypes = useMemo(() => {
+        if (!calculatedCutLists || !Array.isArray(calculatedCutLists)) return [];
+        const types = Array.from(new Set(calculatedCutLists.map(list => list.fab_type).filter(Boolean)));
+        return types.sort();
+    }, [calculatedCutLists]);
+
+    // Get unique sales persons
     const salesPersons = useMemo(() => {
-        if (!cutLists || !Array.isArray(cutLists)) return [];
-        const persons = Array.from(new Set(cutLists.map(list => list.sales_person).filter(Boolean)));
+        if (!calculatedCutLists || !Array.isArray(calculatedCutLists)) return [];
+        const persons = Array.from(new Set(calculatedCutLists.map(list => list.sales_person || '').filter(Boolean)));
         return persons.sort();
-    }, [cutLists]);
+    }, [calculatedCutLists]);
 
     const filteredData = useMemo(() => {
-        // FIXED: Handle undefined cutLists
-        if (!cutLists || !Array.isArray(cutLists)) return [];
+        if (!calculatedCutLists || !Array.isArray(calculatedCutLists)) return [];
         
-        let result = cutLists;
+        let result = calculatedCutLists;
 
-        // Text search - FIXED: Use optional chaining
+        // Text search
         if (searchQuery) {
             result = result.filter((list) =>
                 list.job_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 list.fab_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                list.fab_id_0?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (list.fab_id_0 && list.fab_id_0.toLowerCase().includes(searchQuery.toLowerCase())) ||
                 list.job_no?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 list.fab_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                list.sales_person?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                (list.sales_person && list.sales_person.toLowerCase().includes(searchQuery.toLowerCase())) ||
                 list.cip?.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
 
-        // Date filter based on install_date - FIXED: Handle undefined install_date
+        // Date filter based on install_date
         if (dateFilter !== 'all') {
             result = result.filter((list) => {
                 // Handle "unscheduled" filter
@@ -185,22 +386,21 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
         }
 
         return result;
-    }, [searchQuery, dateFilter, fabTypeFilter, salesPersonFilter, dateRange, cutLists]);
+    }, [calculatedCutLists, searchQuery, dateFilter, fabTypeFilter, salesPersonFilter, dateRange]);
 
     const navigate = useNavigate();
 
-    const handleView = (department: string, id: string) => {
-        navigate(`/job/${department}/${id}`);
-    };
-
     // Function to handle row click
-    const handleRowClickInternal = (list: CutList) => {
+    const handleRowClickInternal = (list: CalculatedCutListData) => {
         if (onRowClick) {
             onRowClick(list.fab_id);
+        } else {
+            // Default navigation to cut list details page
+            navigate(`/job/cut-list/${list.id}`);
         }
     };
 
-    // Function to handle stage filter change - ADDED: Same as JobTable
+    // Function to handle stage filter change
     const handleStageFilterChange = (stageValue: string) => {
         if (stageValue === 'all') {
             return;
@@ -212,10 +412,10 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
         }
     };
 
-    const baseColumns = useMemo<ColumnDef<CutList>[]>(() => [
+    const baseColumns = useMemo<ColumnDef<CalculatedCutListData>[]>(() => [
         {
             accessorKey: 'id',
-            accessorFn: (row: CutList) => row.id,
+            accessorFn: (row: CalculatedCutListData) => row.id,
             header: () => <DataGridTableRowSelectAll />,
             cell: ({ row }) => <DataGridTableRowSelect row={row} />,
             enableSorting: false,
@@ -473,7 +673,7 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
             table={table}
             recordCount={filteredData.length}
             isLoading={isLoading}
-            groupByDate={false}
+            groupByDate={true}
             dateKey="install_date"
             tableLayout={{
                 columnsPinnable: true,
@@ -481,13 +681,15 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
                 columnsVisibility: true,
                 cellBorder: true,
             }}
-            onRowClick={onRowClick ? (row) => handleRowClickInternal(row) : undefined}
+            onRowClick={(row) => handleRowClickInternal(row as CalculatedCutListData)}
+            // Custom grouping implementation for cut list
+            customGroupRenderer={(groupedData) => renderGroupedCutList(groupedData, baseColumns, handleRowClickInternal)}
         >
             <Card>
                 <CardHeader className="py-3.5 border-b">
                     <CardHeading>
                         <div className="flex items-center gap-2.5 flex-wrap">
-                            {/* Search Input - EXACT same as JobTable */}
+                            {/* Search Input */}
                             <div className="relative">
                                 <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
                                 <Input
@@ -508,7 +710,7 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
                                 )}
                             </div>
 
-                            {/* Fab Type Filter - EXACT same pattern */}
+                            {/* Fab Type Filter */}
                             <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
                                 <SelectTrigger className="w-[150px] h-[34px]">
                                     <SelectValue placeholder="Fab Type" />
@@ -523,7 +725,7 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
                                 </SelectContent>
                             </Select>
 
-                            {/* Date Filter - EXACT same pattern as JobTable */}
+                            {/* Date Filter */}
                             <div className="flex items-center gap-2">
                                 <Select value={dateFilter} onValueChange={(value) => {
                                     setDateFilter(value);
@@ -547,7 +749,7 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
                                     </SelectContent>
                                 </Select>
 
-                                {/* Custom Date Range Picker - EXACT same as JobTable */}
+                                {/* Custom Date Range Picker */}
                                 {dateFilter === 'custom' && (
                                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                         <PopoverTrigger asChild>
@@ -601,7 +803,7 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
                                 )}
                             </div>
 
-                            {/* Sales Person Filter - NEW filter */}
+                            {/* Sales Person Filter */}
                             <Select value={salesPersonFilter} onValueChange={setSalesPersonFilter}>
                                 <SelectTrigger className="w-[180px] h-[34px]">
                                     <SelectValue placeholder="Sales Person" />
@@ -610,14 +812,14 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
                                     <SelectItem value="all">All Sales Persons</SelectItem>
                                     <SelectItem value="no_sales_person">No Sales Person</SelectItem>
                                     {salesPersons.map((person) => (
-                                        <SelectItem key={person} value={person}>
-                                            {person}
+                                        <SelectItem key={person || 'N/A'} value={person || ''}>
+                                            {person || 'N/A'}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
 
-                            {/* Stage filter - only visible to super admins - SAME as JobTable */}
+                            {/* Stage filter - only visible to super admins */}
                             {isSuperAdmin && (
                                 <Select onValueChange={handleStageFilterChange}>
                                     <SelectTrigger className="w-[170px] h-[34px]">

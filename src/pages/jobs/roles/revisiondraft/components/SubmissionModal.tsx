@@ -8,6 +8,7 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,37 +19,45 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { InputWrapper } from "@/components/ui/input";
-import { Upload, Plus, CheckCircle2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { Upload, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useUploadImageMutation } from "@/store/api/auth";
+import { useAddFilesToDraftingMutation } from '@/store/api/job';
 import { UploadedFileMeta } from "@/types/uploads";
 import { toast } from "sonner";
 import { z } from "zod";
+import { Drafting } from '@/store/api/job';
 
 const revisionSchema = z.object({
   revisionType: z.string().min(1, "Select revision type"),
-  complete: z.boolean(),
+  complete: z.boolean().optional(), // Make this optional
 });
 
 type RevisionData = z.infer<typeof revisionSchema>;
 
 export const RevisionForm = ({
   onSubmit,
+  onClose,
+  revisionReason: propRevisionReason,
+  draftingData,
 }: {
-  onSubmit: (data: RevisionData & { files?: UploadedFileMeta[] }) => void;
+  onSubmit: (data: RevisionData & { files?: UploadedFileMeta[]; complete: boolean }) => void; // Specify complete as always boolean
+  onClose: () => void;
+  revisionReason?: string;
+  draftingData?: Drafting; // Drafting data for file uploads
 }) => {
+
+  const revisionReason = propRevisionReason;
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFileMeta[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [uploadImage, { isLoading: isUploadingFiles }] = useUploadImageMutation();
+  const [addFilesToDrafting, { isLoading: isUploadingFiles }] = useAddFilesToDraftingMutation();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const form = useForm({
+  const form = useForm<RevisionData>({
     resolver: zodResolver(revisionSchema),
+    mode: 'onChange',
     defaultValues: {
       revisionType: "",
-      complete: false,
     },
   });
 
@@ -56,36 +65,44 @@ export const RevisionForm = ({
     const files = Array.from(fileList);
     const uploaded: UploadedFileMeta[] = [];
 
-    for (const file of files) {
-      try {
-        const formData = new FormData();
-        formData.append("file", file);
-        const response = await uploadImage(formData).unwrap();
-        uploaded.push({
-          id: response.id.toString(),
-          name: file.name,
-          size: file.size,
-          filename: response.filename,
-          url: response.url,
-          type: file.type,
-        });
-      } catch (error) {
-        console.error("Failed to upload file:", error);
-        toast.error(`Failed to upload ${file.name}`);
-      }
+    // Check if we have drafting data
+    if (!draftingData?.id) {
+      toast.error("Drafting data not available");
+      return;
     }
 
-    setUploadedFiles((prev) => [...prev, ...uploaded]);
+    try {
+      const response = await addFilesToDrafting({
+        drafting_id: draftingData.id,
+        files: files
+      }).unwrap();
+
+      console.log('File upload response:', response);
+
+      // Process the response to get uploaded file metadata
+      if (response?.data && Array.isArray(response.data)) {
+        const newUploadedFiles = response.data.map((fileData: any) => ({
+          id: fileData.id.toString(),
+          name: fileData.name,
+          size: fileData.size,
+          filename: fileData.filename,
+          url: fileData.url,
+          type: fileData.type,
+        }));
+        
+        setUploadedFiles((prev) => [...prev, ...newUploadedFiles]);
+        toast.success("Files uploaded successfully");
+      }
+    } catch (error) {
+      console.error("Failed to upload files:", error);
+      toast.error("Failed to upload files");
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files?.length) return;
     try {
       await uploadSelectedFiles(e.target.files);
-      toast.success("Files uploaded successfully");
-    } catch (error) {
-      console.error("Failed to upload files", error);
-      toast.error("Failed to upload files. Please try again.");
     } finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
@@ -93,13 +110,23 @@ export const RevisionForm = ({
     }
   };
 
-  const handleSubmit = async (values: any) => {
+  const handleFormSubmit = async (values: RevisionData) => {
+    console.log('Form values:', values);
+    console.log('Uploaded files:', uploadedFiles);
+    
     setIsSubmitting(true);
+    
     try {
-      onSubmit({
+      const submissionData = {
         ...values,
+        // Convert undefined complete to false for submission
+        complete: values.complete || false,
         files: uploadedFiles
-      });
+      };
+      
+      console.log('Submitting data:', submissionData);
+      await onSubmit(submissionData);
+      console.log('Submission successful');
     } catch (error) {
       console.error("Failed to submit revision:", error);
       toast.error("Failed to submit revision");
@@ -109,13 +136,21 @@ export const RevisionForm = ({
   };
 
   return (
-    <Card className="mt-10">
-      <CardHeader className="border-b">
-        <CardTitle>Revision</CardTitle>
-      </CardHeader>
-      <CardContent className="p-4">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+        <Card className="mt-10">
+          <CardHeader className="border-b">
+            <CardTitle>Revision</CardTitle>
+          </CardHeader>
+          <CardContent className="p-4">
+            {/* Display revision reason */}
+            {revisionReason && (
+              <div className="mb-4 p-3 bg-gray-50 rounded-md">
+                <h3 className="font-medium text-sm mb-1">Revision Reason:</h3>
+                <p className="text-sm text-gray-600">{revisionReason}</p>
+              </div>
+            )}
+            
             {/* Revision Type */}
             <div className="max-w-[500px]">
               <FormField
@@ -216,20 +251,29 @@ export const RevisionForm = ({
             />
             {/* Buttons */}
             <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" className="w-[127px]">
+              <Button 
+                type="button" 
+                variant="outline" 
+                className="w-[127px]"
+                onClick={() => {
+                  form.reset();
+                  setUploadedFiles([]);
+                  onClose();
+                }}
+              >
                 Cancel
               </Button>
               <Button
                 type="submit"
+                disabled={isSubmitting || !form.formState.isValid}
                 className="bg-green-600 hover:bg-green-700 text-white"
-                disabled={isSubmitting}
               >
                 {isSubmitting ? "Submitting..." : "Submit revision"}
               </Button>
             </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      </form>
+    </Form>
   );
 };

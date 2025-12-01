@@ -396,8 +396,10 @@ export interface SalesCTResponse {
 }
 
 export interface SalesCTReviewUpdate {
-    sct_completed: boolean;
-    notes?: string;
+  sct_completed: boolean;
+  revenue?: number;
+  slab_smith_used?: boolean;
+  notes?: string;
 }
 
 export interface SalesCTRevisionUpdate {
@@ -937,6 +939,73 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Drafting"],
             }),
+            
+            // Add files to slab smith
+            addFilesToSlabSmith: build.mutation<any, { slabsmith_id: number; files: File[] }>({
+                query: ({ slabsmith_id, files }) => {
+                    const formData = new FormData();
+                    files.forEach((file) => {
+                        formData.append('files', file);
+                    });
+                    return {
+                        url: `/slabsmith/${slabsmith_id}/files`,
+                        method: "post",
+                        data: formData,
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
+                    };
+                },
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Delete file from slab smith
+            deleteFileFromSlabSmith: build.mutation<any, { slabsmith_id: number; file_id: string }>({
+                query: ({ slabsmith_id, file_id }) => ({
+                    url: `/slabsmith/${slabsmith_id}/files/${file_id}`,
+                    method: "delete"
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Get slab smith by FAB ID
+            getSlabSmithByFabId: build.query<any, number>({
+                query: (fab_id) => ({
+                    url: `/slabsmith/fab/${fab_id}`,
+                    method: "get"
+                }),
+                providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
+            }),
+
+            // Create slab smith
+            createSlabSmith: build.mutation<any, any>({
+                query: (data) => ({
+                    url: "/slabsmith",
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Update slab smith
+            updateSlabSmith: build.mutation<any, { slabsmith_id: number; data: any }>({
+                query: ({ slabsmith_id, data }) => ({
+                    url: `/slabsmith/${slabsmith_id}`,
+                    method: "put",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Mark slab smith as completed
+            markSlabSmithCompleted: build.mutation<any, { slabsmith_id: number; updated_by?: number }>({
+                query: ({ slabsmith_id, updated_by = 1 }) => ({
+                    url: `/slabsmith/${slabsmith_id}/complete`,
+                    method: "post",
+                    params: { updated_by }
+                }),
+                invalidatesTags: ["Fab"],
+            }),
 
             // Update the endpoint for getting stages with statistics
             getStages: build.query<StageStats[], void>({
@@ -1098,4 +1167,11 @@ export const {
     useCreateRevisionMutation,
     useUpdateRevisionMutation,
     useGetRevisionsByFabIdQuery,
+    // Slab Smith hooks
+    useAddFilesToSlabSmithMutation,
+    useDeleteFileFromSlabSmithMutation,
+    useGetSlabSmithByFabIdQuery,
+    useCreateSlabSmithMutation,
+    useUpdateSlabSmithMutation,
+    useMarkSlabSmithCompletedMutation,
 } = jobApi;

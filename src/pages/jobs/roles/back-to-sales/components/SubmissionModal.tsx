@@ -189,7 +189,7 @@ export const RevisionModal = ({
       );
       onSubmit(values);
       onClose();
-      navigate('/job/revision')
+      navigate('/job/draft-review')
     } catch (error) {
       console.error("Failed to submit revision:", error);
       toast.error("Failed to submit revision. Please try again.");

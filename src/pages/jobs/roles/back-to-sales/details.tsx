@@ -9,6 +9,7 @@ import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { FileViewer } from '../drafters/components';
 import { Documents } from '@/pages/shop/components/files';
 import { RevisionModal } from './components/SubmissionModal';
+import { MarkAsCompleteModal } from './components/MarkAsCompleteModal'; // Import the new modal
 import { TimeDisplay } from './components/DisplayTime';
 import { useSCTService } from './components/SCTService'; // Import our SCT service
 import { useParams, useNavigate } from 'react-router-dom';
@@ -19,6 +20,7 @@ import { useAuth } from '@/auth/context/auth-context'; // Import auth context to
 const DraftReviewDetailsPage = () => {
     type ViewMode = 'activity' | 'file';
     const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+    const [showMarkAsCompleteModal, setShowMarkAsCompleteModal] = useState(false); // Add this state
     const [isDrafting, setIsDrafting] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [totalTime, setTotalTime] = useState(0);
@@ -66,16 +68,20 @@ const DraftReviewDetailsPage = () => {
     };
 
     // Handle marking as complete
-    const handleMarkAsComplete = async () => {
+    const handleMarkAsComplete = (data: any) => {
         if (!id) return;
         
         try {
-            await handleUpdateSCTReview({
-                sct_completed: true,
-                notes: "Sales check completed"
+            // Send the actual payload with all fields from the modal
+            handleUpdateSCTReview({
+                sct_completed: data.sctCompleted,
+                revenue: parseFloat(data.revenue) || 0,
+                slab_smith_used: data.slabSmithUsed || false,
+                notes: data.notes || ""
             });
             
             toast.success("FAB marked as complete successfully");
+            setShowMarkAsCompleteModal(false); // Close the modal
             // Navigate to next stage or back to sales list
             navigate('/job/sales');
         } catch (error) {
@@ -135,7 +141,6 @@ const DraftReviewDetailsPage = () => {
             ] : [], // Empty array if no draft data
         },
     ];
-    
     return (
         <>
             <Container className='lg:mx-0'>
@@ -181,7 +186,7 @@ const DraftReviewDetailsPage = () => {
                                         </p>
                                     </CardHeading>
                                     <CardToolbar>
-                                        <Button onClick={handleMarkAsComplete}>Mark as Complete</Button>
+                                        <Button onClick={() => setShowMarkAsCompleteModal(true)}>Mark as Complete</Button>
                                         <Button variant="outline" onClick={() => setShowSubmissionModal(true)}>Create Revision</Button>
                                     </CardToolbar>
                                 </CardHeader>
@@ -223,6 +228,13 @@ const DraftReviewDetailsPage = () => {
                         fabSalesPerson={fabSalesPerson}
                     />
                 )}
+                
+                {/* Mark as Complete Modal */}
+                <MarkAsCompleteModal
+                    open={showMarkAsCompleteModal}
+                    onClose={() => setShowMarkAsCompleteModal(false)}
+                    onSubmit={handleMarkAsComplete}
+                />
             </div>
         </>
     );

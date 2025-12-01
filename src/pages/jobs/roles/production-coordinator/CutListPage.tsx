@@ -1,13 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
-import { CutListTable } from './CutListTable';
-import { IJob } from '@/pages/jobs/components/job';
+import { CutListTableWithCalculations } from './CutListTableWithCalculations';
 import { useGetFabsQuery } from '@/store/api/job';
-import { transformFabToJob } from '@/pages/jobs/roles/drafters/DrafterPage';
 
 const CutListPage = () => {
-    const [jobs, setJobs] = useState<IJob[]>([]);
+    const [fabs, setFabs] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     
     // Fetch FABs in cut_list stage
@@ -17,17 +15,17 @@ const CutListPage = () => {
 
     useEffect(() => {
         if (fabsData && !isFabsLoading) {
-            // Transform FAB data to IJob format
-            const transformedJobs = fabsData.map((fab: any) => transformFabToJob(fab));
-            setJobs(transformedJobs);
+            // Handle both possible response formats
+            const fabsArray = Array.isArray(fabsData) 
+                ? fabsData 
+                : fabsData && typeof fabsData === 'object' && 'data' in fabsData 
+                    ? fabsData.data 
+                    : [];
+                
+            setFabs(fabsArray);
             setIsLoading(false);
         }
     }, [fabsData, isFabsLoading]);
-
-    const handleRowClick = (fabId: string) => {
-        // Handle row click - navigate to job details
-        console.log('Clicked on FAB ID:', fabId);
-    };
 
     return (
         <>
@@ -37,14 +35,13 @@ const CutListPage = () => {
                 </Toolbar>
             </Container>
 
-            <div className="mt-6">
-                <CutListTable 
-                    jobs={jobs}
+            <Container className="mt-6">
+                <CutListTableWithCalculations 
+                    fabs={fabs}
                     path="/job/cut-list"
                     isLoading={isLoading}
-                    onRowClick={handleRowClick}
                 />
-            </div>
+            </Container>
         </>
     );
 };

@@ -38,7 +38,7 @@ export function RoleBasedDashboard() {
       'Pre-draft Review': '/job/predraft',
       'Drafting': '/job/draft',
       'SCT': '/job/draft-review',
-      'SlabSmith Request': '/job/slabsmith',
+      'SlabSmith Request': '/job/slab-smith',
       'Final Programming': '/job/final-programming',
       'Cut List': '/job/cut-list',
       'Resurface Scheduling': '/job/final-programming',

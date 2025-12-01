@@ -25,6 +25,7 @@ export const JobRouteGuard = ({ children }: { children: React.ReactNode }) => {
         '/job/draft': 'draft',
         '/job/draft-review': 'draft_review',
         '/job/revision': 'revision',
+        '/job/slab-smith': 'slab_smith',
         '/shop': 'shop',
     };
 

@@ -19,6 +19,8 @@ interface CreateSCTData {
 
 interface UpdateSCTReviewData {
   sct_completed: boolean;
+  revenue?: number;
+  slab_smith_used?: boolean;
   notes?: string;
 }
 

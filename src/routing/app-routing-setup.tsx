@@ -45,6 +45,7 @@ import FinalProgrammingDetailsPage from '@/pages/jobs/roles/production-coordinat
 import { Navigate, Route, Routes } from 'react-router';
 import { NewFabIdForm } from '@/pages/jobs/roles';
 import { EditFabIdForm } from '@/pages/jobs/roles/sales/EditFabIdForm';
+import { SlabSmithDetailsPage, SlabSmithPage } from '@/pages/jobs/roles/slab-smith';
 
 export function AppRoutingSetup() {
   return (
@@ -220,6 +221,22 @@ export function AppRoutingSetup() {
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <ReviewDetailsPage/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job/slab-smith"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <SlabSmithPage/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job/slab-smith/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <SlabSmithDetailsPage/>
               // </ProtectedRoute>
             }
           />

@@ -14,7 +14,8 @@ import type { RootState } from '@/store';
  * 5. Drafter → Creates draft (current_stage: 'draft')
  * 6. Draft Review → Sales reviews draft (current_stage: 'draft_review')
  * 7. Revision → Handles revisions if needed (current_stage: 'revision')
- * 8. Shop → Production stages (current_stage: 'shop')
+ * 8. Slab Smith → Processes slabs (current_stage: 'slab_smith')
+ * 9. Shop → Production stages (current_stage: 'shop')
  * 
  * ROLE-BASED ACCESS:
  * - Super Admin: Can see ALL stages, no filtering
@@ -22,6 +23,7 @@ import type { RootState } from '@/store';
  * - Templating Coordinator: Only sees current_stage='templating_coordinator'
  * - Templating Technician: Only sees current_stage='templating_technician'
  * - Drafter: Only sees current_stage='predraft' or 'draft'
+ * - Slab Smith: Only sees current_stage='slab_smith'
  * - Shop roles: Only see current_stage='shop'
  * 
  * USAGE:
@@ -73,6 +75,11 @@ export const JOB_STAGES = {
         route: '/job/revision',
         title: 'Draft Revision',
     },
+    SLAB_SMITH: {
+        stage: 'slab_smith',
+        route: '/job/slab-smith',
+        title: 'Slab Smith',
+    },
     SHOP: {
         stage: 'shop',
         route: '/shop',
@@ -89,6 +96,7 @@ export const ROLE_STAGE_MAP: Record<string, keyof typeof JOB_STAGES> = {
     'templating_coordinator': 'TEMPLATING_COORDINATOR',
     'templating_technician': 'TEMPLATING_TECHNICIAN',
     'drafter': 'PREDRAFT',
+    'slab_smith': 'SLAB_SMITH',
     'shop_manager': 'SHOP',
     'shop_technician': 'SHOP',
 };

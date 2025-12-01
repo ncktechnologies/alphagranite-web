@@ -411,74 +411,6 @@ function DataGridTableRowSelectAll({ size }: { size?: 'sm' | 'md' | 'lg' }) {
   );
 }
 
-// function DataGridTable<TData>() {
-//   const { table, isLoading, props } = useDataGrid();
-//   const pagination = table.getState().pagination;
-
-//   return (
-//     <DataGridTableBase>
-//       <DataGridTableHead>
-//         {table.getHeaderGroups().map((headerGroup: HeaderGroup<TData>, index) => {
-//           return (
-//             <DataGridTableHeadRow headerGroup={headerGroup} key={index}>
-//               {headerGroup.headers.map((header, index) => {
-//                 const { column } = header;
-
-//                 return (
-//                   <DataGridTableHeadRowCell header={header} key={index}>
-//                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-//                     {props.tableLayout?.columnsResizable && column.getCanResize() && (
-//                       <DataGridTableHeadRowCellResize header={header} />
-//                     )}
-//                   </DataGridTableHeadRowCell>
-//                 );
-//               })}
-//             </DataGridTableHeadRow>
-//           );
-//         })}
-//       </DataGridTableHead>
-
-//       {(props.tableLayout?.stripped || !props.tableLayout?.rowBorder) && <DataGridTableRowSpacer />}
-
-//       <DataGridTableBody>
-//         {props.loadingMode === 'skeleton' && isLoading && pagination?.pageSize ? (
-//           Array.from({ length: pagination.pageSize }).map((_, rowIndex) => (
-//             <DataGridTableBodyRowSkeleton key={rowIndex}>
-//               {table.getVisibleFlatColumns().map((column, colIndex) => {
-//                 return (
-//                   <DataGridTableBodyRowSkeletonCell column={column} key={colIndex}>
-//                     {column.columnDef.meta?.skeleton}
-//                   </DataGridTableBodyRowSkeletonCell>
-//                 );
-//               })}
-//             </DataGridTableBodyRowSkeleton>
-//           ))
-//         ) : table.getRowModel().rows.length ? (
-//           table.getRowModel().rows.map((row: Row<TData>, index) => {
-//             return (
-//               <Fragment key={row.id}>
-//                 <DataGridTableBodyRow row={row} key={index}>
-//                   {row.getVisibleCells().map((cell: Cell<TData, unknown>, colIndex) => {
-//                     return (
-//                       <DataGridTableBodyRowCell cell={cell} key={colIndex}>
-//                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
-//                       </DataGridTableBodyRowCell>
-//                     );
-//                   })}
-//                 </DataGridTableBodyRow>
-//                 {row.getIsExpanded() && <DataGridTableBodyRowExpandded row={row} />}
-//               </Fragment>
-//            );
-//           })
-//         ) : (
-//           <DataGridTableEmpty />
-//         )
-//         }
-//       </DataGridTableBody>
-//     </DataGridTableBase>
-//   );
-// }
-// src/components/data-grid/DataGridTable.tsx
 
 function DataGridTable<TData extends object>() {
   const { table, isLoading, props } = useDataGrid();
@@ -597,11 +529,22 @@ function DataGridTable<TData extends object>() {
   return (
     <div className="relative space-y-3">
       {Object.entries(groupedRows).map(([date, rows]) => {
-        const totalSqFt = rows.reduce((sum, row) => {
-          const sqFt = (row.original as any).total_sq_ft;
-          const numValue = parseFloat(sqFt);
-          return sum + (isNaN(numValue) ? 0 : numValue);
-        }, 0);
+        // Define specific numeric columns to include in totals calculation
+        const columnsToCalculate = ['total_sq_ft', 'wl_ln_ft', 'sl_ln_ft', 'edging_ln_ft', 'cnc_ln_ft', 'milter_ln_ft', 'cost_of_stone', 'revenue'];
+        
+        // Calculate totals only for specified columns
+        const columnTotals: Record<string, number> = {};
+        
+        columnsToCalculate.forEach(columnId => {
+          // Calculate total for this column
+          const total = rows.reduce((sum, row) => {
+            const value = (row.original as any)[columnId];
+            const numValue = typeof value === 'number' ? value : parseFloat(value);
+            return sum + (isNaN(numValue) ? 0 : numValue);
+          }, 0);
+          
+          columnTotals[columnId] = total;
+        });
 
         return (
           <div key={date} className="border border-border rounded-lg overflow-hidden">
@@ -611,7 +554,8 @@ function DataGridTable<TData extends object>() {
                   <tr>
                     {table.getHeaderGroups()[0]?.headers.map((header, index) => {
                       const isFirstColumn = index === 0;
-                      const isTotalSqFtColumn = header.column.id === 'total_sq_ft';
+                      const columnId = header.column.id;
+                      const shouldShowTotal = columnsToCalculate.includes(columnId);
 
                       return (
                         <th
@@ -621,9 +565,9 @@ function DataGridTable<TData extends object>() {
                         >
                           {isFirstColumn ? (
                             <span className="text-[15px] leading-[15px] text-text whitespace-nowrap">{date}</span>
-                          ) : isTotalSqFtColumn ? (
+                          ) : shouldShowTotal ? (
                             <span className="text-[13px] leading-[13px] font-medium text-text">
-                              {totalSqFt.toFixed(1)}
+                              {columnTotals[columnId]?.toFixed(1)}
                             </span>
                           ) : null}
                         </th>

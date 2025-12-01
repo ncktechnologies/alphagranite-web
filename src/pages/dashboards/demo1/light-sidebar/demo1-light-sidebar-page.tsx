@@ -82,12 +82,7 @@ export function Demo1LightSidebarPage() {
                 New FAB ID
               </Button>
             </Link>
-            <Link to="/create-jobs">
-              <Button className="">
-                <Plus />
-                New Job
-              </Button>
-            </Link>
+           
           </ToolbarActions>
         </Toolbar>
 }
