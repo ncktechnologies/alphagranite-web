@@ -27,7 +27,7 @@ const WjDetailsPage = () => {
         setActiveFile(file);
         setViewMode('file');
     }
-const jobInfo = [
+    const jobInfo = [
         { label: 'FAB ID', value: 'FAB-2024-001' },
         { label: 'FAB Type', value: 'FAB-toilet tiles' },
         { label: 'Account', value: 'FAB-2024-001' },
@@ -153,7 +153,7 @@ const jobInfo = [
                                     />
                                 </CardContent>
                             </Card>
-                            <Separator className='my-6'/>
+                            <Separator className='my-6' />
                             <div className="flex justify-end mb-10">
                                 <Button
                                     onClick={() => setShowSubmissionModal(true)}
@@ -170,11 +170,11 @@ const jobInfo = [
 
                 {/* Submission Modal */}
                 {/* {showSubmissionModal && ( */}
-                    <ScheduleCuttingModal
-                        open={showSubmissionModal}
-                        onClose={() => setShowSubmissionModal(false)}
-                        onSubmit={handleSubmitDraft}
-                    />
+                <ScheduleCuttingModal
+                    open={showSubmissionModal}
+                    onClose={() => setShowSubmissionModal(false)}
+                    onSubmit={handleSubmitDraft}
+                />
                 {/* )} */}
             </div>
         </>

@@ -33,27 +33,28 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
 import { JOB_STAGES } from '@/hooks/use-job-stage'; // Add this import
+import ActionsCell from '../sales/action';
 
 export interface CutList {
-  id: number;
-  fab_type: string;
-  fab_id: string;
-  fab_id_0?: string;
-  job_name: string;
-  job_no: string;
-  no_of_pcs: number;
-  total_sq_ft: number;
-  wl_ln_ft: number;
-  sl_ln_ft: number;
-  edging_ln_ft: number;
-  cnc_ln_ft: number;
-  milter_ln_ft: number;
-  cost_of_stone: number;
-  revenue: number;
-  fp_completed: string;
-  cip: string;
-  install_date: string;
-  sales_person?: string;
+    id: number;
+    fab_type: string;
+    fab_id: string;
+    fab_id_0?: string;
+    job_name: string;
+    job_no: string;
+    no_of_pcs: number;
+    total_sq_ft: number;
+    wl_ln_ft: number;
+    sl_ln_ft: number;
+    edging_ln_ft: number;
+    cnc_ln_ft: number;
+    milter_ln_ft: number;
+    cost_of_stone: number;
+    revenue: number;
+    fp_completed: string;
+    cip: string;
+    install_date: string;
+    sales_person?: string;
 }
 
 interface CutListTableProps {
@@ -95,7 +96,7 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
     const filteredData = useMemo(() => {
         // FIXED: Handle undefined cutLists
         if (!cutLists || !Array.isArray(cutLists)) return [];
-        
+
         let result = cutLists;
 
         // Text search - FIXED: Use optional chaining
@@ -118,30 +119,30 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
                 if (dateFilter === 'unscheduled') {
                     return !list.install_date || list.install_date === '';
                 }
-                
+
                 // Handle "scheduled" filter
                 if (dateFilter === 'scheduled') {
                     return list.install_date && list.install_date !== '';
                 }
-                
+
                 if (!list.install_date) return false;
 
                 const installDate = new Date(list.install_date);
                 const today = new Date();
-                
+
                 const startOfWeek = new Date(today);
                 startOfWeek.setDate(today.getDate() - today.getDay());
                 const endOfWeek = new Date(startOfWeek);
                 endOfWeek.setDate(startOfWeek.getDate() + 6);
-                
+
                 const startOfNextWeek = new Date(endOfWeek);
                 startOfNextWeek.setDate(endOfWeek.getDate() + 1);
                 const endOfNextWeek = new Date(startOfNextWeek);
                 endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
-                
+
                 const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
                 const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                
+
                 const startOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
                 const endOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0);
 
@@ -411,9 +412,8 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
                 <DataGridColumnHeader title="FP COMPLETED" column={column} />
             ),
             cell: ({ row }) => (
-                <span className={`text-sm font-medium ${
-                    row.original.fp_completed === 'Yes' ? 'text-green-600' : 'text-red-600'
-                }`}>
+                <span className={`text-sm font-medium ${row.original.fp_completed === 'Yes' ? 'text-green-600' : 'text-red-600'
+                    }`}>
                     {row.original.fp_completed}
                 </span>
             ),
@@ -434,8 +434,8 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
             ),
             cell: ({ row }) => (
                 <span className="text-sm">
-                    {row.original.install_date ? 
-                        new Date(row.original.install_date).toLocaleDateString() : 
+                    {row.original.install_date ?
+                        new Date(row.original.install_date).toLocaleDateString() :
                         'Not Scheduled'
                     }
                 </span>
@@ -453,7 +453,15 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
                 </span>
             ),
         },
-    ], []);
+        {
+            id: 'actions',
+            header: '',
+            cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(path, row.original.fab_id)} />,
+            enableSorting: false,
+            size: 60,
+        },
+    ], [path]);
+
 
     const table = useReactTable({
         columns: baseColumns,

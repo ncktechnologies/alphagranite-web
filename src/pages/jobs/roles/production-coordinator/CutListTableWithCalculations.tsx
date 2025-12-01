@@ -34,319 +34,237 @@ import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
 import { JOB_STAGES } from '@/hooks/use-job-stage';
 import { Fragment } from 'react';
-
-// Define the interface for raw FAB data
-export interface FabData {
-  id: number;
-  job_id: number;
-  fab_type: string;
-  sales_person_id: number;
-  stone_type_id: number;
-  stone_type_name?: string;
-  stone_color_id: number;
-  stone_color_name?: string;
-  stone_thickness_id: number;
-  stone_thickness_value?: string;
-  edge_id: number;
-  edge_name?: string;
-  input_area: number;
-  total_sqft: number;
-  notes?: string[];
-  template_needed: boolean;
-  drafting_needed: boolean;
-  slab_smith_cust_needed: boolean;
-  slab_smith_ag_needed: boolean;
-  sct_needed: boolean;
-  final_programming_needed: boolean;
-  current_stage?: string;
-  status_id: number;
-  created_at: string;
-  created_by: number;
-  updated_at?: string;
-  updated_by?: number;
-  templating_schedule_start_date?: string;
-  templating_schedule_due_date?: string;
-  technician_name?: string;
-  job_details?: {
-    job_number: string;
-    name: string;
-    start_date?: string;
-    project_value?: number;
-    created_by: number;
-    updated_at?: string;
-    updated_by?: number;
-    id: number;
-    priority: string;
-    description?: string;
-    account_id: number;
-    due_date?: string;
-    status_id: number;
-    created_at: string;
-  };
-  account_id: number;
-  account_name?: string;
-  account_number?: string;
-  account_contact_person?: string;
-  account_email?: string;
-  account_phone?: string;
-  templating_notes?: string[];
-  technician_name?: string;
-  drafter_name?: string;
-  drafter_assigned_by_name?: string;
-  fab_notes?: Array<{
-    id: number;
-    fab_id: number;
-    stage: string;
-    note: string;
-    created_by: number;
-    created_by_name: string;
-    created_at: string;
-    updated_at?: string;
-    updated_by?: number;
-    updated_by_name?: string;
-  }>;
-  draft_data?: {
-    id: number;
-    fab_id: number;
-    drafter_id: number;
-    drafter_name: string;
-    drafter_start_date: string;
-    drafter_end_date: string;
-    total_sqft_drafted: number;
-    no_of_piece_drafted: number;
-    draft_note: string;
-    mentions: string;
-    total_hours_drafted: number;
-    file_ids: string;
-    files: Array<{
-      id: number;
-      name: string;
-      file_url: string;
-      file_type: string;
-      file_size: string;
-      created_at: string;
-    }>;
-    status_id: number;
-    created_at: string;
-    updated_at: string;
-    updated_by: number;
-    updated_by_name: string;
-  };
-  sales_ct_data?: any;
-  is_complete: boolean;
-  stage_data?: any;
-  // Additional fields from the sample data
-  slab_smith_used: boolean;
-  installation_date?: string;
-  final_programming_complete: boolean;
-  no_of_pieces?: number;
-  fp_not_needed: boolean;
-  next_stage?: string;
-  wj_time_minutes?: number;
-  sct_completed: boolean;
-  wj_linft?: number;
-  template_received: boolean;
-  revised: boolean;
-  edging_linft?: number;
-  cnc_linft?: number;
-  miter_linft?: number;
-  sales_person_name?: string;
-  gp?: number;
-  revenue?: number;
-  confirmed_date?: string;
-  drafter_id: number;
-  drafter_assigned_at: string;
-  drafter_assigned_by: number;
-  template_review_complete: boolean;
-  shop_date_schedule?: string;
-}
+import { Fab } from '@/store/api/job'; // Import the Fab type
+import ActionsCell from '@/pages/shop/components/action';
 
 // Define the interface for calculated cut list data
 export interface CalculatedCutListData {
-  id: number;
-  fab_type: string;
-  fab_id: string;
-  fab_id_0?: string;
-  job_name: string;
-  job_no: string;
-  no_of_pcs: number;
-  total_sq_ft: number;
-  wl_ln_ft: number;
-  sl_ln_ft: number;
-  edging_ln_ft: number;
-  cnc_ln_ft: number;
-  milter_ln_ft: number;
-  cost_of_stone: number;
-  revenue: number;
-  fp_completed: string;
-  cip: string;
-  install_date: string;
-  sales_person?: string;
+    id: number;
+    fab_type: string;
+    fab_id: string;
+    fab_id_0?: string;
+    job_name: string;
+    job_no: string;
+    no_of_pcs: number;
+    total_sq_ft: number;
+    wl_ln_ft: number;
+    sl_ln_ft: number;
+    edging_ln_ft: number;
+    cnc_ln_ft: number;
+    milter_ln_ft: number;
+    cost_of_stone: number;
+    revenue: number;
+    fp_completed: string;
+    cip: string;
+    install_date: string;
+    sales_person?: string;
 }
 
-// Function to calculate all cut list metrics from raw FAB data
-export const calculateCutListData = (fab: FabData): CalculatedCutListData => {
-  // Calculate Waterjet Linear Feet (WL LN FT)
-  const calculateWlLnFt = (): number => {
-    // Waterjet linear feet is typically stored directly in the FAB data
-    return fab.wj_linft || 0;
-  };
+// Update the calculateCutListData function to work with Fab
+export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
+    // Calculate Waterjet Linear Feet (WL LN FT)
+    const calculateWlLnFt = (): number => {
+        // Waterjet linear feet would need to be calculated or fetched from the backend
+        return 0; // Placeholder
+    };
 
-  // Calculate SCT Linear Feet (SL LN FT)
-  const calculateSlLnFt = (): number => {
-    // If SCT is needed and completed, count as 1, otherwise 0
-    return fab.sct_needed ? (fab.sct_completed ? 1 : 0) : 0;
-  };
+    // Calculate SCT Linear Feet (SL LN FT)
+    const calculateSlLnFt = (): number => {
+        // If SCT is needed and completed, count as 1, otherwise 0
+        return fab.sct_needed ? 1 : 0;
+    };
 
-  // Calculate Edging Linear Feet
-  const calculateEdgingLnFt = (): number => {
-    // Edging linear feet is typically stored directly in the FAB data
-    return fab.edging_linft || 0;
-  };
+    // Calculate Edging Linear Feet
+    const calculateEdgingLnFt = (): number => {
+        // Edging linear feet would need to be calculated or fetched from the backend
+        return 0; // Placeholder
+    };
 
-  // Calculate CNC Linear Feet
-  const calculateCncLnFt = (): number => {
-    // CNC linear feet is typically stored directly in the FAB data
-    return fab.cnc_linft || 0;
-  };
+    // Calculate CNC Linear Feet
+    const calculateCncLnFt = (): number => {
+        // CNC linear feet would need to be calculated or fetched from the backend
+        return 0; // Placeholder
+    };
 
-  // Calculate Milter Linear Feet
-  const calculateMilterLnFt = (): number => {
-    // Miter linear feet is typically stored directly in the FAB data
-    return fab.miter_linft || 0;
-  };
+    // Calculate Milter Linear Feet
+    const calculateMilterLnFt = (): number => {
+        // Miter linear feet would need to be calculated or fetched from the backend
+        return 0; // Placeholder
+    };
 
-  // Calculate cost of stone (placeholder - would need actual logic)
-  const calculateCostOfStone = (): number => {
-    // This would be based on stone type, color, thickness, etc.
-    // For now, we'll use a simple calculation: $50 per sq ft as an example
-    const costPerSqFt = 50;
-    return (fab.total_sqft || 0) * costPerSqFt;
-  };
+    // Calculate cost of stone (placeholder - would need actual logic)
+    const calculateCostOfStone = (): number => {
+        // This would be based on stone type, color, thickness, etc.
+        // For now, we'll use a simple calculation: $50 per sq ft as an example
+        const costPerSqFt = 50;
+        return (fab.total_sqft || 0) * costPerSqFt;
+    };
 
-  return {
-    id: fab.id,
-    fab_type: fab.fab_type || '',
-    fab_id: String(fab.id),
-    fab_id_0: '', // Placeholder, can be populated if needed
-    job_name: fab.job_details?.name || '',
-    job_no: fab.job_details?.job_number || '',
-    no_of_pcs: fab.no_of_pieces || 0,
-    total_sq_ft: fab.total_sqft || 0,
-    wl_ln_ft: calculateWlLnFt(),
-    sl_ln_ft: calculateSlLnFt(),
-    edging_ln_ft: calculateEdgingLnFt(),
-    cnc_ln_ft: calculateCncLnFt(),
-    milter_ln_ft: calculateMilterLnFt(),
-    cost_of_stone: calculateCostOfStone(),
-    revenue: fab.job_details?.project_value || 0,
-    fp_completed: fab.final_programming_complete ? 'Yes' : 'No',
-    cip: fab.drafter_name || '',
-    install_date: fab.installation_date || '',
-    sales_person: fab.sales_person_name || ''
-  };
+    return {
+        id: fab.id,
+        fab_type: fab.fab_type || '',
+        fab_id: String(fab.id),
+        fab_id_0: '', // Placeholder, can be populated if needed
+        job_name: fab.job_details?.name || '',
+        job_no: fab.job_details?.job_number || '',
+        no_of_pcs: 1, // Default value
+        total_sq_ft: fab.total_sqft || 0,
+        wl_ln_ft: calculateWlLnFt(),
+        sl_ln_ft: calculateSlLnFt(),
+        edging_ln_ft: calculateEdgingLnFt(),
+        cnc_ln_ft: calculateCncLnFt(),
+        milter_ln_ft: calculateMilterLnFt(),
+        cost_of_stone: calculateCostOfStone(),
+        revenue: fab.job_details?.project_value ? parseFloat(fab.job_details.project_value) : 0,
+        fp_completed: fab.final_programming_needed ? 'No' : 'Yes',
+        cip: '', // Placeholder
+        install_date: fab.templating_schedule_due_date || '',
+        sales_person: '', // Placeholder - would need to get sales person name from backend
+    };
 };
 
 interface CutListTableWithCalculationsProps {
-    fabs: FabData[];
+    fabs: Fab[];  // Change from FabData[] to Fab[]
+    fabTypes?: string[]; // Add fabTypes prop
+    salesPersons?: string[]; // Add salesPersons prop
     path: string;
     isSuperAdmin?: boolean;
     isLoading?: boolean;
     onRowClick?: (fabId: string) => void;
+    pagination?: { pageIndex: number; pageSize: number };
+    setPagination?: (pagination: { pageIndex: number; pageSize: number }) => void;
+    searchQuery?: string;
+    setSearchQuery?: (query: string) => void;
+    dateFilter?: string;
+    setDateFilter?: (filter: string) => void;
+    fabTypeFilter?: string;
+    setFabTypeFilter?: (filter: string) => void;
+    salesPersonFilter?: string;
+    setSalesPersonFilter?: (filter: string) => void;
+    dateRange?: DateRange | undefined;
+    setDateRange?: (range: DateRange | undefined) => void;
 }
 
-export const CutListTableWithCalculations = ({ 
-  fabs, 
-  path, 
-  isSuperAdmin = false, 
-  isLoading, 
-  onRowClick 
+export const CutListTableWithCalculations = ({
+    fabs,
+    fabTypes = [], // Destructure fabTypes with default empty array
+    salesPersons = [], // Destructure salesPersons with default empty array
+    path,
+    isSuperAdmin = false,
+    isLoading,
+    onRowClick,
+    pagination,
+    setPagination,
+    searchQuery,
+    setSearchQuery,
+    dateFilter,
+    setDateFilter,
+    fabTypeFilter,
+    setFabTypeFilter,
+    salesPersonFilter,
+    setSalesPersonFilter,
+    dateRange,
+    setDateRange
 }: CutListTableWithCalculationsProps) => {
-    const [pagination, setPagination] = useState<PaginationState>({
+    // Use passed pagination state or default to local state
+    const [localPagination, setLocalPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 5,
     });
-    const [sorting, setSorting] = useState<SortingState>([]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [dateFilter, setDateFilter] = useState<string>('all');
-    const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
-    const [salesPersonFilter, setSalesPersonFilter] = useState<string>('all');
-    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+
+    const effectivePagination = pagination || localPagination;
+    const setEffectivePagination = setPagination || setLocalPagination;
+
+    // Use passed filter states or default to local states
+    const [localSearchQuery, setLocalSearchQuery] = useState('');
+    const [localDateFilter, setLocalDateFilter] = useState<string>('all');
+    const [localFabTypeFilter, setLocalFabTypeFilter] = useState<string>('all');
+    const [localSalesPersonFilter, setLocalSalesPersonFilter] = useState<string>('all');
+    const [localDateRange, setLocalDateRange] = useState<DateRange | undefined>(undefined);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+
+    const effectiveSearchQuery = searchQuery !== undefined ? searchQuery : localSearchQuery;
+    const setEffectiveSearchQuery = setSearchQuery || setLocalSearchQuery;
+    const effectiveDateFilter = dateFilter !== undefined ? dateFilter : localDateFilter;
+    const setEffectiveDateFilter = setDateFilter || setLocalDateFilter;
+    const effectiveFabTypeFilter = fabTypeFilter !== undefined ? fabTypeFilter : localFabTypeFilter;
+    const setEffectiveFabTypeFilter = setFabTypeFilter || setLocalFabTypeFilter;
+    const effectiveSalesPersonFilter = salesPersonFilter !== undefined ? salesPersonFilter : localSalesPersonFilter;
+    const setEffectiveSalesPersonFilter = setSalesPersonFilter || setLocalSalesPersonFilter;
+    const effectiveDateRange = dateRange !== undefined ? dateRange : localDateRange;
+    const setEffectiveDateRange = setDateRange || setLocalDateRange;
 
     // Transform raw FAB data to calculated cut list data
     const calculatedCutLists = useMemo(() => {
         return fabs.map(calculateCutListData);
     }, [fabs]);
 
-    // Get unique fab types
-    const fabTypes = useMemo(() => {
-        if (!calculatedCutLists || !Array.isArray(calculatedCutLists)) return [];
-        const types = Array.from(new Set(calculatedCutLists.map(list => list.fab_type).filter(Boolean)));
-        return types.sort();
-    }, [calculatedCutLists]);
+    // Get unique fab types - now using the passed fabTypes prop
+    const uniqueFabTypes = useMemo(() => {
+        // Create a copy before sorting to avoid modifying readonly arrays
+        return [...fabTypes].sort();
+    }, [fabTypes]);
 
-    // Get unique sales persons
-    const salesPersons = useMemo(() => {
-        if (!calculatedCutLists || !Array.isArray(calculatedCutLists)) return [];
-        const persons = Array.from(new Set(calculatedCutLists.map(list => list.sales_person || '').filter(Boolean)));
-        return persons.sort();
-    }, [calculatedCutLists]);
+    // Get unique sales persons - now using the passed salesPersons prop
+    const uniqueSalesPersons = useMemo(() => {
+        // Create a copy before sorting to avoid modifying readonly arrays
+        return [...salesPersons].sort();
+    }, [salesPersons]);
 
     const filteredData = useMemo(() => {
         if (!calculatedCutLists || !Array.isArray(calculatedCutLists)) return [];
-        
+
         let result = calculatedCutLists;
 
         // Text search
-        if (searchQuery) {
+        if (effectiveSearchQuery) {
             result = result.filter((list) =>
-                list.job_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                list.fab_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (list.fab_id_0 && list.fab_id_0.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                list.job_no?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                list.fab_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                (list.sales_person && list.sales_person.toLowerCase().includes(searchQuery.toLowerCase())) ||
-                list.cip?.toLowerCase().includes(searchQuery.toLowerCase())
+                list.job_name?.toLowerCase().includes(effectiveSearchQuery.toLowerCase()) ||
+                list.fab_id?.toLowerCase().includes(effectiveSearchQuery.toLowerCase()) ||
+                (list.fab_id_0 && list.fab_id_0.toLowerCase().includes(effectiveSearchQuery.toLowerCase())) ||
+                list.job_no?.toLowerCase().includes(effectiveSearchQuery.toLowerCase()) ||
+                list.fab_type?.toLowerCase().includes(effectiveSearchQuery.toLowerCase()) ||
+                (list.sales_person && list.sales_person.toLowerCase().includes(effectiveSearchQuery.toLowerCase())) ||
+                list.cip?.toLowerCase().includes(effectiveSearchQuery.toLowerCase())
             );
         }
 
         // Date filter based on install_date
-        if (dateFilter !== 'all') {
+        if (effectiveDateFilter !== 'all') {
             result = result.filter((list) => {
                 // Handle "unscheduled" filter
-                if (dateFilter === 'unscheduled') {
+                if (effectiveDateFilter === 'unscheduled') {
                     return !list.install_date || list.install_date === '';
                 }
-                
+
                 // Handle "scheduled" filter
-                if (dateFilter === 'scheduled') {
+                if (effectiveDateFilter === 'scheduled') {
                     return list.install_date && list.install_date !== '';
                 }
-                
+
                 if (!list.install_date) return false;
 
                 const installDate = new Date(list.install_date);
                 const today = new Date();
-                
+
                 const startOfWeek = new Date(today);
                 startOfWeek.setDate(today.getDate() - today.getDay());
                 const endOfWeek = new Date(startOfWeek);
                 endOfWeek.setDate(startOfWeek.getDate() + 6);
-                
+
                 const startOfNextWeek = new Date(endOfWeek);
                 startOfNextWeek.setDate(endOfWeek.getDate() + 1);
                 const endOfNextWeek = new Date(startOfNextWeek);
                 endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
-                
+
                 const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
                 const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                
-                const startOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+
+                const startOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1);
                 const endOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0);
 
-                switch (dateFilter) {
+                switch (effectiveDateFilter) {
                     case 'today':
                         return installDate.toDateString() === today.toDateString();
                     case 'this_week':
@@ -358,35 +276,35 @@ export const CutListTableWithCalculations = ({
                     case 'next_month':
                         return installDate >= startOfNextMonth && installDate <= endOfNextMonth;
                     case 'custom':
-                        if (dateRange?.from && dateRange?.to) {
-                            const start = new Date(dateRange.from);
-                            const end = new Date(dateRange.to);
+                        if (effectiveDateRange?.from && effectiveDateRange?.to) {
+                            const start = new Date(effectiveDateRange.from);
+                            const end = new Date(effectiveDateRange.to);
                             end.setHours(23, 59, 59, 999);
                             return installDate >= start && installDate <= end;
                         }
                         return true;
                     default:
-                        return list.install_date?.includes(dateFilter);
+                        return list.install_date?.includes(effectiveDateFilter);
                 }
             });
         }
 
         // Fab Type filter
-        if (fabTypeFilter !== 'all') {
-            result = result.filter((list) => list.fab_type === fabTypeFilter);
+        if (effectiveFabTypeFilter !== 'all') {
+            result = result.filter((list) => list.fab_type === effectiveFabTypeFilter);
         }
 
         // Sales Person filter
-        if (salesPersonFilter !== 'all') {
-            if (salesPersonFilter === 'no_sales_person') {
+        if (effectiveSalesPersonFilter !== 'all') {
+            if (effectiveSalesPersonFilter === 'no_sales_person') {
                 result = result.filter((list) => !list.sales_person || list.sales_person === '');
             } else {
-                result = result.filter((list) => list.sales_person === salesPersonFilter);
+                result = result.filter((list) => list.sales_person === effectiveSalesPersonFilter);
             }
         }
 
         return result;
-    }, [calculatedCutLists, searchQuery, dateFilter, fabTypeFilter, salesPersonFilter, dateRange]);
+    }, [calculatedCutLists, effectiveSearchQuery, effectiveDateFilter, effectiveFabTypeFilter, effectiveSalesPersonFilter, effectiveDateRange]);
 
     const navigate = useNavigate();
 
@@ -411,6 +329,9 @@ export const CutListTableWithCalculations = ({
             navigate(selectedStage.route);
         }
     };
+    const handleView = (id: string) => {
+            navigate(`/cut-list/${id}`);
+        };
 
     const baseColumns = useMemo<ColumnDef<CalculatedCutListData>[]>(() => [
         {
@@ -611,9 +532,8 @@ export const CutListTableWithCalculations = ({
                 <DataGridColumnHeader title="FP COMPLETED" column={column} />
             ),
             cell: ({ row }) => (
-                <span className={`text-sm font-medium ${
-                    row.original.fp_completed === 'Yes' ? 'text-green-600' : 'text-red-600'
-                }`}>
+                <span className={`text-sm font-medium ${row.original.fp_completed === 'Yes' ? 'text-green-600' : 'text-red-600'
+                    }`}>
                     {row.original.fp_completed}
                 </span>
             ),
@@ -634,8 +554,8 @@ export const CutListTableWithCalculations = ({
             ),
             cell: ({ row }) => (
                 <span className="text-sm">
-                    {row.original.install_date ? 
-                        new Date(row.original.install_date).toLocaleDateString() : 
+                    {row.original.install_date ?
+                        new Date(row.original.install_date).toLocaleDateString() :
                         'Not Scheduled'
                     }
                 </span>
@@ -653,209 +573,226 @@ export const CutListTableWithCalculations = ({
                 </span>
             ),
         },
-    ], []);
+        {
+            id: 'actions',
+            header: '',
+            cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(row.original.fab_id)}/>,
+            enableSorting: false,
+            size: 60,
+        },
+    ], [path]);
+        
 
-    const table = useReactTable({
-        columns: baseColumns,
-        data: filteredData,
-        pageCount: Math.ceil(filteredData.length / pagination.pageSize),
-        state: { pagination, sorting },
-        onPaginationChange: setPagination,
-        onSortingChange: setSorting,
-        getCoreRowModel: getCoreRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-    });
 
-    return (
-        <DataGrid
-            table={table}
-            recordCount={filteredData.length}
-            isLoading={isLoading}
-            groupByDate={true}
-            dateKey="install_date"
-            tableLayout={{
-                columnsPinnable: true,
-                columnsMovable: true,
-                columnsVisibility: true,
-                cellBorder: true,
-            }}
-            onRowClick={(row) => handleRowClickInternal(row as CalculatedCutListData)}
-            // Custom grouping implementation for cut list
-            customGroupRenderer={(groupedData) => renderGroupedCutList(groupedData, baseColumns, handleRowClickInternal)}
-        >
-            <Card>
-                <CardHeader className="py-3.5 border-b">
-                    <CardHeading>
-                        <div className="flex items-center gap-2.5 flex-wrap">
-                            {/* Search Input */}
-                            <div className="relative">
-                                <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
-                                <Input
-                                    placeholder="Search Cut Lists..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="ps-9 w-[230px] h-[34px]"
-                                />
-                                {searchQuery && (
-                                    <Button
-                                        mode="icon"
-                                        variant="ghost"
-                                        className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                                        onClick={() => setSearchQuery('')}
-                                    >
-                                        <X />
-                                    </Button>
-                                )}
-                            </div>
+const [sorting, setSorting] = useState<SortingState>([]);
 
-                            {/* Fab Type Filter */}
-                            <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
-                                <SelectTrigger className="w-[150px] h-[34px]">
-                                    <SelectValue placeholder="Fab Type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Fab Types</SelectItem>
-                                    {fabTypes.map((type) => (
-                                        <SelectItem key={type} value={type}>
-                                            {type}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+const table = useReactTable({
+    columns: baseColumns,
+    data: filteredData,
+    pageCount: Math.ceil(filteredData.length / effectivePagination.pageSize),
+    state: { pagination: effectivePagination, sorting },
+    onPaginationChange: (updater) => {
+        // Handle both functional and direct updates
+        const newPagination = typeof updater === 'function'
+            ? updater(effectivePagination)
+            : updater;
+        if (newPagination) {
+            setEffectivePagination(newPagination as PaginationState);
+        }
+    },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+});
 
-                            {/* Date Filter */}
-                            <div className="flex items-center gap-2">
-                                <Select value={dateFilter} onValueChange={(value) => {
-                                    setDateFilter(value);
-                                    if (value === 'custom') {
-                                        setIsDatePickerOpen(false);
-                                    }
-                                }}>
-                                    <SelectTrigger className="w-[170px] h-[34px]">
-                                        <SelectValue placeholder="Install Date" />
-                                    </SelectTrigger>
-                                    <SelectContent className="w-48">
-                                        <SelectItem value="all">All</SelectItem>
-                                        <SelectItem value="today">Today</SelectItem>
-                                        <SelectItem value="this_week">This Week</SelectItem>
-                                        <SelectItem value="this_month">This Month</SelectItem>
-                                        <SelectItem value="next_week">Next Week</SelectItem>
-                                        <SelectItem value="next_month">Next Month</SelectItem>
-                                        <SelectItem value="unscheduled">Unscheduled</SelectItem>
-                                        <SelectItem value="scheduled">Scheduled</SelectItem>
-                                        <SelectItem value="custom">Custom</SelectItem>
-                                    </SelectContent>
-                                </Select>
-
-                                {/* Custom Date Range Picker */}
-                                {dateFilter === 'custom' && (
-                                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" size="sm" className="h-[34px]">
-                                                <CalendarDays className="h-4 w-4 mr-2" />
-                                                {dateRange?.from ? (
-                                                    dateRange.to ? (
-                                                        <>
-                                                            {format(dateRange.from, 'MMM dd')} - {format(dateRange.to, 'MMM dd, yyyy')}
-                                                        </>
-                                                    ) : (
-                                                        format(dateRange.from, 'MMM dd, yyyy')
-                                                    )
-                                                ) : (
-                                                    <span>Pick dates</span>
-                                                )}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                initialFocus
-                                                mode="range"
-                                                defaultMonth={tempDateRange?.from || new Date()}
-                                                selected={tempDateRange}
-                                                onSelect={setTempDateRange}
-                                                numberOfMonths={2}
-                                            />
-                                            <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setTempDateRange(undefined);
-                                                        setDateRange(undefined);
-                                                    }}
-                                                >
-                                                    Reset
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setDateRange(tempDateRange);
-                                                        setIsDatePickerOpen(false);
-                                                    }}
-                                                >
-                                                    Apply
-                                                </Button>
-                                            </div>
-                                        </PopoverContent>
-                                    </Popover>
-                                )}
-                            </div>
-
-                            {/* Sales Person Filter */}
-                            <Select value={salesPersonFilter} onValueChange={setSalesPersonFilter}>
-                                <SelectTrigger className="w-[180px] h-[34px]">
-                                    <SelectValue placeholder="Sales Person" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Sales Persons</SelectItem>
-                                    <SelectItem value="no_sales_person">No Sales Person</SelectItem>
-                                    {salesPersons.map((person) => (
-                                        <SelectItem key={person || 'N/A'} value={person || ''}>
-                                            {person || 'N/A'}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
-                            {/* Stage filter - only visible to super admins */}
-                            {isSuperAdmin && (
-                                <Select onValueChange={handleStageFilterChange}>
-                                    <SelectTrigger className="w-[170px] h-[34px]">
-                                        <SelectValue placeholder="Go to stage" />
-                                    </SelectTrigger>
-                                    <SelectContent className="w-48">
-                                        <SelectItem value="all">All Stages</SelectItem>
-                                        {Object.values(JOB_STAGES).map((stage) => (
-                                            <SelectItem key={stage.stage} value={stage.stage}>
-                                                {stage.title}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+return (
+    <DataGrid
+        table={table}
+        recordCount={filteredData.length}
+        isLoading={isLoading}
+        groupByDate={true}
+        dateKey="install_date"
+        tableLayout={{
+            columnsPinnable: true,
+            columnsMovable: true,
+            columnsVisibility: true,
+            cellBorder: true,
+        }}
+        onRowClick={(row) => handleRowClickInternal(row as CalculatedCutListData)}
+    >
+        <Card>
+            <CardHeader className="py-3.5 border-b">
+                <CardHeading>
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                        {/* Search Input */}
+                        <div className="relative">
+                            <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                            <Input
+                                placeholder="Search Cut Lists..."
+                                value={effectiveSearchQuery}
+                                onChange={(e) => setEffectiveSearchQuery(e.target.value)}
+                                className="ps-9 w-[230px] h-[34px]"
+                            />
+                            {effectiveSearchQuery && (
+                                <Button
+                                    mode="icon"
+                                    variant="ghost"
+                                    className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                                    onClick={() => setEffectiveSearchQuery('')}
+                                >
+                                    <X />
+                                </Button>
                             )}
                         </div>
-                    </CardHeading>
 
-                    <CardToolbar>
-                        <Button variant="outline" onClick={() => exportTableToCSV(table, "CutList")}>
-                            Export CSV
-                        </Button>
-                    </CardToolbar>
-                </CardHeader>
+                        {/* Fab Type Filter */}
+                        <Select value={effectiveFabTypeFilter} onValueChange={setEffectiveFabTypeFilter}>
+                            <SelectTrigger className="w-[150px] h-[34px]">
+                                <SelectValue placeholder="Fab Type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Fab Types</SelectItem>
+                                {uniqueFabTypes.map((type) => (
+                                    <SelectItem key={type} value={type}>
+                                        {type}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
 
-                <CardTable>
-                    <ScrollArea>
-                        <DataGridTable />
-                        <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
-                </CardTable>
+                        {/* Date Filter */}
+                        <div className="flex items-center gap-2">
+                            <Select value={effectiveDateFilter} onValueChange={(value) => {
+                                setEffectiveDateFilter(value);
+                                if (value === 'custom') {
+                                    setIsDatePickerOpen(false);
+                                }
+                            }}>
+                                <SelectTrigger className="w-[170px] h-[34px]">
+                                    <SelectValue placeholder="Install Date" />
+                                </SelectTrigger>
+                                <SelectContent className="w-48">
+                                    <SelectItem value="all">All</SelectItem>
+                                    <SelectItem value="today">Today</SelectItem>
+                                    <SelectItem value="this_week">This Week</SelectItem>
+                                    <SelectItem value="this_month">This Month</SelectItem>
+                                    <SelectItem value="next_week">Next Week</SelectItem>
+                                    <SelectItem value="next_month">Next Month</SelectItem>
+                                    <SelectItem value="unscheduled">Unscheduled</SelectItem>
+                                    <SelectItem value="scheduled">Scheduled</SelectItem>
+                                    <SelectItem value="custom">Custom</SelectItem>
+                                </SelectContent>
+                            </Select>
 
-                <CardFooter>
-                    <DataGridPagination />
-                </CardFooter>
-            </Card>
-        </DataGrid>
-    );
+                            {/* Custom Date Range Picker */}
+                            {effectiveDateFilter === 'custom' && (
+                                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" size="sm" className="h-[34px]">
+                                            <CalendarDays className="h-4 w-4 mr-2" />
+                                            {effectiveDateRange?.from ? (
+                                                effectiveDateRange.to ? (
+                                                    <>
+                                                        {format(effectiveDateRange.from, 'MMM dd')} - {format(effectiveDateRange.to, 'MMM dd, yyyy')}
+                                                    </>
+                                                ) : (
+                                                    format(effectiveDateRange.from, 'MMM dd, yyyy')
+                                                )
+                                            ) : (
+                                                <span>Pick dates</span>
+                                            )}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            initialFocus
+                                            mode="range"
+                                            defaultMonth={tempDateRange?.from || new Date()}
+                                            selected={tempDateRange}
+                                            onSelect={setTempDateRange}
+                                            numberOfMonths={2}
+                                        />
+                                        <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setTempDateRange(undefined);
+                                                    setEffectiveDateRange(undefined);
+                                                }}
+                                            >
+                                                Reset
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                onClick={() => {
+                                                    setEffectiveDateRange(tempDateRange);
+                                                    setIsDatePickerOpen(false);
+                                                }}
+                                            >
+                                                Apply
+                                            </Button>
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
+                            )}
+                        </div>
+
+                        {/* Sales Person Filter */}
+                        <Select value={effectiveSalesPersonFilter} onValueChange={setEffectiveSalesPersonFilter}>
+                            <SelectTrigger className="w-[180px] h-[34px]">
+                                <SelectValue placeholder="Sales Person" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Sales Persons</SelectItem>
+                                <SelectItem value="no_sales_person">No Sales Person</SelectItem>
+                                {uniqueSalesPersons.map((person) => (
+                                    <SelectItem key={person || 'N/A'} value={person || ''}>
+                                        {person || 'N/A'}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        {/* Stage filter - only visible to super admins */}
+                        {isSuperAdmin && (
+                            <Select onValueChange={handleStageFilterChange}>
+                                <SelectTrigger className="w-[170px] h-[34px]">
+                                    <SelectValue placeholder="Go to stage" />
+                                </SelectTrigger>
+                                <SelectContent className="w-48">
+                                    <SelectItem value="all">All Stages</SelectItem>
+                                    {Object.values(JOB_STAGES).map((stage) => (
+                                        <SelectItem key={stage.stage} value={stage.stage}>
+                                            {stage.title}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
+                    </div>
+                </CardHeading>
+
+                <CardToolbar>
+                    <Button variant="outline" onClick={() => exportTableToCSV(table, "CutList")}>
+                        Export CSV
+                    </Button>
+                </CardToolbar>
+            </CardHeader>
+
+            <CardTable>
+                <ScrollArea>
+                    <DataGridTable />
+                    <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+            </CardTable>
+
+            <CardFooter>
+                <DataGridPagination />
+            </CardFooter>
+        </Card>
+    </DataGrid>
+);
 };
