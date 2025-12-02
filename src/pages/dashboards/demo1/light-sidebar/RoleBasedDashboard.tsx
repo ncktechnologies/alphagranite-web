@@ -65,7 +65,7 @@ export function RoleBasedDashboard() {
       'Final Programming': 'final_programming',
       'Cut List': 'cut_list',
       'Resurface Scheduling': 'resurface_scheduling',
-      'Revisions': 'revision',
+      'Revisions': 'revisions',
       'Install Scheduling': 'install_scheduling',
       'Install Completion': 'install_completion',
       'FAB IDs': 'fab_created'

@@ -56,7 +56,7 @@ export function DraftRevisionPage() {
     
     // Fetch fabs with role-based filtering
     const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
-        current_stage: 'revision',
+        current_stage: 'revisions',
         limit: 100,
     });
 
