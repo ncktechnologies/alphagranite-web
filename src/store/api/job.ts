@@ -1111,6 +1111,17 @@ export const jobApi = createApi({
                 }),
                 providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
             }),
+
+            // Update Cut List Schedule
+            updateCutListSchedule: build.mutation<any, { fab_id: number; data: any }>({
+                query: ({ fab_id, data }) => ({
+                    url: `/cut-list/${fab_id}/schedule`,
+                    method: "PATCH",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
         };
     },
 });
@@ -1174,4 +1185,6 @@ export const {
     useCreateSlabSmithMutation,
     useUpdateSlabSmithMutation,
     useMarkSlabSmithCompletedMutation,
+    // Cut List Schedule hook
+    useUpdateCutListScheduleMutation,
 } = jobApi;

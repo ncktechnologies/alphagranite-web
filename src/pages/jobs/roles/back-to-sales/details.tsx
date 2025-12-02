@@ -223,7 +223,7 @@ const DraftReviewDetailsPage = () => {
                         jobNumber={fabData.job_details?.job_number || ''}
                         totalSqFt={fabData.total_sqft}
                         pieces={draftData?.no_of_piece_drafted || 0} // Use real data from draft_data
-                        sctId={sctData?.data?.id} // Pass SCT ID for revision update
+                        sctId={sctData?.    data?.id} // Pass SCT ID for revision update
                         // Pass sales person from FAB data
                         fabSalesPerson={fabSalesPerson}
                     />
