@@ -48,7 +48,7 @@ const CutListDetailsPage = () => {
                 { label: "Stone Thickness", value: fabData?.stone_thickness_value || 'N/A' },
                 { label: "Edge Profile", value: fabData?.edge_name || 'N/A' },
                 { label: "Total Sq Ft", value: fabData?.total_sqft?.toString() || 'N/A' },
-                { label: "Input Area", value: fabData?.input_area || 'N/A' },
+                { label: "Input Area", value: fabData?.input_area?.toString() || 'N/A' },
                 { label: "FAB Type", value: fabData?.fab_type || 'N/A' },
             ],
         },

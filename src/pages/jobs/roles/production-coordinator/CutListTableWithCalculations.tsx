@@ -62,40 +62,21 @@ export interface CalculatedCutListData {
 
 // Update the calculateCutListData function to work with Fab
 export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
-    // Calculate Waterjet Linear Feet (WL LN FT)
-    const calculateWlLnFt = (): number => {
-        // Waterjet linear feet would need to be calculated or fetched from the backend
-        return 0; // Placeholder
-    };
+    // Access additional fields that exist in the backend response but not in the Fab interface
+    const fabWithExtraFields = fab as any;
+    
+   
 
-    // Calculate SCT Linear Feet (SL LN FT)
-    const calculateSlLnFt = (): number => {
-        // If SCT is needed and completed, count as 1, otherwise 0
-        return fab.sct_needed ? 1 : 0;
-    };
-
-    // Calculate Edging Linear Feet
-    const calculateEdgingLnFt = (): number => {
-        // Edging linear feet would need to be calculated or fetched from the backend
-        return 0; // Placeholder
-    };
-
-    // Calculate CNC Linear Feet
-    const calculateCncLnFt = (): number => {
-        // CNC linear feet would need to be calculated or fetched from the backend
-        return 0; // Placeholder
-    };
-
-    // Calculate Milter Linear Feet
-    const calculateMilterLnFt = (): number => {
-        // Miter linear feet would need to be calculated or fetched from the backend
-        return 0; // Placeholder
-    };
-
-    // Calculate cost of stone (placeholder - would need actual logic)
+    // Calculate cost of stone based on actual project value
     const calculateCostOfStone = (): number => {
-        // This would be based on stone type, color, thickness, etc.
-        // For now, we'll use a simple calculation: $50 per sq ft as an example
+        // Use actual project value from job details if available
+        if (fab.job_details?.project_value) {
+            const projectValue = parseFloat(fab.job_details.project_value.toString());
+            // If project value is available, we can use it as the cost of stone
+            // or calculate a percentage of it as the cost of stone
+            return projectValue * 0.6; // Assuming 60% of project value is cost of stone
+        }
+        // Fallback to simple calculation if no project value
         const costPerSqFt = 50;
         return (fab.total_sqft || 0) * costPerSqFt;
     };
@@ -107,19 +88,19 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
         fab_id_0: '', // Placeholder, can be populated if needed
         job_name: fab.job_details?.name || '',
         job_no: fab.job_details?.job_number || '',
-        no_of_pcs: 1, // Default value
+        no_of_pcs: fabWithExtraFields.no_of_pieces || 0,
         total_sq_ft: fab.total_sqft || 0,
-        wl_ln_ft: calculateWlLnFt(),
-        sl_ln_ft: calculateSlLnFt(),
-        edging_ln_ft: calculateEdgingLnFt(),
-        cnc_ln_ft: calculateCncLnFt(),
-        milter_ln_ft: calculateMilterLnFt(),
+        wl_ln_ft: fabWithExtraFields.wj_linft || 0,
+        // sl_ln_ft: calculateSlLnFt(),
+        edging_ln_ft: fabWithExtraFields.edging_linft || 0,
+        cnc_ln_ft: fabWithExtraFields.cnc_linft || 0,
+        milter_ln_ft: fabWithExtraFields.miter_linft || 0,
         cost_of_stone: calculateCostOfStone(),
-        revenue: fab.job_details?.project_value ? parseFloat(fab.job_details.project_value) : 0,
-        fp_completed: fab.final_programming_needed ? 'No' : 'Yes',
-        cip: '', // Placeholder
-        install_date: fab.templating_schedule_due_date || '',
-        sales_person: '', // Placeholder - would need to get sales person name from backend
+        revenue: fabWithExtraFields.revenue || 0,
+        fp_completed: fabWithExtraFields.final_programming_complete ? 'Yes' : 'No',
+        cip: '', // Placeholder - would need to get CIP from backend
+        install_date: fabWithExtraFields.installation_date || fab.templating_schedule_due_date || '',
+        sales_person: fabWithExtraFields.sales_person_name || '',
     };
 };
 
@@ -412,7 +393,7 @@ export const CutListTableWithCalculations = ({
                 <DataGridColumnHeader title="TOTAL SQ FT" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm text-right block">
+                <span className="text-sm block">
                     {row.original.total_sq_ft.toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
@@ -424,10 +405,10 @@ export const CutListTableWithCalculations = ({
             id: "wl_ln_ft",
             accessorKey: "wl_ln_ft",
             header: ({ column }) => (
-                <DataGridColumnHeader title="WL LN FT" column={column} />
+                <DataGridColumnHeader title="WJ:LIN FT" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm text-right block">
+                <span className="text-sm block">
                     {row.original.wl_ln_ft.toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
@@ -435,26 +416,12 @@ export const CutListTableWithCalculations = ({
                 </span>
             ),
         },
-        {
-            id: "sl_ln_ft",
-            accessorKey: "sl_ln_ft",
-            header: ({ column }) => (
-                <DataGridColumnHeader title="SL LN FT" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm text-right block">
-                    {row.original.sl_ln_ft.toLocaleString(undefined, {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2
-                    })}
-                </span>
-            ),
-        },
+       
         {
             id: "edging_ln_ft",
             accessorKey: "edging_ln_ft",
             header: ({ column }) => (
-                <DataGridColumnHeader title="EDGING LN FT" column={column} />
+                <DataGridColumnHeader title="Edging: Lin ft" column={column} />
             ),
             cell: ({ row }) => (
                 <span className="text-sm text-right block">
@@ -469,7 +436,7 @@ export const CutListTableWithCalculations = ({
             id: "cnc_ln_ft",
             accessorKey: "cnc_ln_ft",
             header: ({ column }) => (
-                <DataGridColumnHeader title="CNC LN FT" column={column} />
+                <DataGridColumnHeader title="CNC: LIN FT " column={column} />
             ),
             cell: ({ row }) => (
                 <span className="text-sm text-right block">
@@ -484,7 +451,7 @@ export const CutListTableWithCalculations = ({
             id: "milter_ln_ft",
             accessorKey: "milter_ln_ft",
             header: ({ column }) => (
-                <DataGridColumnHeader title="MILTER LN FT" column={column} />
+                <DataGridColumnHeader title="MILTER:LIN FT" column={column} />
             ),
             cell: ({ row }) => (
                 <span className="text-sm text-right block">
@@ -542,7 +509,7 @@ export const CutListTableWithCalculations = ({
             id: "cip",
             accessorKey: "cip",
             header: ({ column }) => (
-                <DataGridColumnHeader title="CIP" column={column} />
+                <DataGridColumnHeader title="GP" column={column} />
             ),
             cell: ({ row }) => <span className="text-sm">{row.original.cip}</span>,
         },
@@ -613,7 +580,7 @@ return (
         recordCount={filteredData.length}
         isLoading={isLoading}
         groupByDate={true}
-        dateKey="install_date"
+        dateKey="shop_date_schedule"
         tableLayout={{
             columnsPinnable: true,
             columnsMovable: true,
