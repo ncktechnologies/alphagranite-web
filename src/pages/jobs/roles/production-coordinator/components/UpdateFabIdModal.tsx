@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,7 +24,7 @@ import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { LoaderCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { useUpdateCutListScheduleMutation } from "@/store/api/job";
+import { useUpdateCutListScheduleMutation, useGetCutListDetailsQuery } from "@/store/api/job";
 
 // ------------------ ZOD SCHEMA ------------------ //
 const updateFabSchema = z.object({
@@ -51,6 +51,10 @@ export function UpdateFabIdModal({
   onClose: () => void;
   fabData: any;
 }) {
+  const { data: cutListData, isLoading: isCutListLoading } = useGetCutListDetailsQuery(fabData?.id, { 
+    skip: !fabData?.id 
+  });
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [updateCutListSchedule] = useUpdateCutListScheduleMutation();
 
@@ -68,6 +72,23 @@ export function UpdateFabIdModal({
       revisionComplete: undefined,
     },
   });
+
+  // Reset form when cutListData changes
+  useEffect(() => {
+    if (cutListData) {
+      form.reset({
+        pieces: cutListData.no_of_pieces?.toString() || "",
+        totalSqFt: cutListData.total_sqft?.toString() || "",
+        wjLinFt: cutListData.wj_linft?.toString() || "",
+        edgingLinFt: cutListData.edging_linft?.toString() || "",
+        cncLinFt: cutListData.cnc_linft?.toString() || "",
+        miterLinFt: cutListData.miter_linft?.toString() || "",
+        shopDate: cutListData.shop_date_schedule || "",
+        installationDate: cutListData.installation_date || "",
+        revisionComplete: cutListData.revision_complete || undefined,
+      });
+    }
+  }, [cutListData, form]);
 
   // ---------------- JOB INFO DATA ---------------- //
   const jobInfo = [
@@ -91,11 +112,11 @@ export function UpdateFabIdModal({
         fab_id: fabData?.id,
         no_of_pieces: values.pieces ? parseInt(values.pieces) : undefined,
         total_sqft: values.totalSqFt ? parseFloat(values.totalSqFt) : undefined,
-        wj_linear_feet: values.wjLinFt ? parseFloat(values.wjLinFt) : undefined,
-        edging_linear_feet: values.edgingLinFt ? parseFloat(values.edgingLinFt) : undefined,
-        cnc_linear_feet: values.cncLinFt ? parseFloat(values.cncLinFt) : undefined,
-        miter_linear_feet: values.miterLinFt ? parseFloat(values.miterLinFt) : undefined,
-        shop_schedule_date: values.shopDate,
+        wj_linft: values.wjLinFt ? parseFloat(values.wjLinFt) : undefined,
+        edging_linft: values.edgingLinFt ? parseFloat(values.edgingLinFt) : undefined,
+        cnc_linft: values.cncLinFt ? parseFloat(values.cncLinFt) : undefined,
+        miter_linft: values.miterLinFt ? parseFloat(values.miterLinFt) : undefined,
+        shop_date_schedule: values.shopDate, // Changed from shop_schedule_date to shop_date_schedule
         installation_date: values.installationDate,
         revision_complete: values.revisionComplete,
       };
@@ -120,6 +141,18 @@ export function UpdateFabIdModal({
       setIsSubmitting(false);
     }
   };
+
+  if (isCutListLoading) {
+    return (
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent>
+          <div className="flex justify-center items-center h-20">
+            <LoaderCircle className="h-6 w-6 animate-spin" />
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>

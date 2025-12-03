@@ -1122,6 +1122,82 @@ export const jobApi = createApi({
                 invalidatesTags: ["Fab"],
             }),
 
+            // Get Cut List Details
+            getCutListDetails: build.query<any, number>({
+                query: (fab_id) => ({
+                    url: `/cut-list/${fab_id}`,
+                    method: "GET"
+                }),
+                providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
+            }),
+
+            // Final Programming endpoints
+            // Schedule shop date for final programming
+            scheduleShopDate: build.mutation<any, { fab_id: number; data: any }>({
+                query: ({ fab_id, data }) => ({
+                    url: `/final-programming/${fab_id}/schedule-shop-date`,
+                    method: "POST",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Complete final programming
+            completeFinalProgramming: build.mutation<any, { fab_id: number; data: any }>({
+                query: ({ fab_id, data }) => ({
+                    url: `/final-programming/${fab_id}/complete`,
+                    method: "POST",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Get session status for final programming
+            getFinalProgrammingSessionStatus: build.query<any, number>({
+                query: (fab_id) => ({
+                    url: `/final-programming/${fab_id}/session-status`,
+                    method: "GET"
+                }),
+                providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
+            }),
+
+            // Add files to final programming
+            addFilesToFinalProgramming: build.mutation<any, { fp_id: number; files: File[] }>({
+                query: ({ fp_id, files }) => {
+                    const formData = new FormData();
+                    files.forEach((file) => {
+                        formData.append('files', file);
+                    });
+                    return {
+                        url: `/finalprogramming/${fp_id}/files`,
+                        method: "POST",
+                        data: formData,
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
+                    };
+                },
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Delete file from final programming
+            deleteFileFromFinalProgramming: build.mutation<any, { fp_id: number; file_id: string }>({
+                query: ({ fp_id, file_id }) => ({
+                    url: `/finalprogramming/${fp_id}/files/${file_id}`,
+                    method: "DELETE"
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Update final programming
+            updateFinalProgramming: build.mutation<any, { fp_id: number; data: any }>({
+                query: ({ fp_id, data }) => ({
+                    url: `/finalprogramming/${fp_id}/update`,
+                    method: "POST",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
         };
     },
 });
@@ -1187,4 +1263,12 @@ export const {
     useMarkSlabSmithCompletedMutation,
     // Cut List Schedule hook
     useUpdateCutListScheduleMutation,
+    useGetCutListDetailsQuery,
+    // Final Programming hooks
+    useScheduleShopDateMutation,
+    useCompleteFinalProgrammingMutation,
+    useGetFinalProgrammingSessionStatusQuery,
+    useAddFilesToFinalProgrammingMutation,
+    useDeleteFileFromFinalProgrammingMutation,
+    useUpdateFinalProgrammingMutation,
 } = jobApi;
