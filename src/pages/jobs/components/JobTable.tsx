@@ -40,13 +40,21 @@ import { format } from 'date-fns';
 
 interface JobTableProps {
     jobs: IJob[];
-    path: string;
+    path: string; // Keep for backward compatibility
+    getPath?: (job: IJob) => string; // Add new optional function prop
     isSuperAdmin?: boolean;
     isLoading?: boolean;
-    onRowClick?: (fabId: string) => void; // Add row click handler
+    onRowClick?: (fabId: string) => void;
 }
 
-export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowClick }: JobTableProps) => {
+export const JobTable = ({ 
+    jobs, 
+    path, 
+    getPath, 
+    isSuperAdmin = false, 
+    isLoading, 
+    onRowClick 
+}: JobTableProps) => {
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 5,
@@ -55,12 +63,48 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
     const [searchQuery, setSearchQuery] = useState('');
     const [dateFilter, setDateFilter] = useState<string>('today');
     const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
-    const [scheduleFilter, setScheduleFilter] = useState<string>('all'); // Change default to 'all'
+    const [scheduleFilter, setScheduleFilter] = useState<string>('all');
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
-    // Get unique fab types for the filter
+    const navigate = useNavigate();
+
+    // Function to get the correct path for a specific job
+    const getViewPath = (job: IJob): string => {
+        // If getPath function is provided, use it
+        if (getPath) {
+            return getPath(job);
+        }
+        // Otherwise use the old static path
+        return path;
+    };
+
+    // Updated handleView function that uses getViewPath
+    const handleView = (job: IJob) => {
+        const viewPath = getViewPath(job);
+        navigate(`/job/${viewPath}/${job.fab_id}`);
+    };
+
+    // Function to handle row click
+    const handleRowClickInternal = (job: IJob) => {
+        if (onRowClick) {
+            onRowClick(job.fab_id);
+        }
+    };
+
+    // Function to handle stage filter change
+    const handleStageFilterChange = (stageValue: string) => {
+        if (stageValue === 'all') {
+            return;
+        }
+        const selectedStage = Object.values(JOB_STAGES).find(stage => stage.stage === stageValue);
+        if (selectedStage) {
+            navigate(selectedStage.route);
+        }
+    };
+
+    // Filter and other logic remain the same...
     const fabTypes = useMemo(() => {
         const types = Array.from(new Set(jobs.map(job => job.fab_type).filter(Boolean)));
         return types.sort();
@@ -69,7 +113,7 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
     const filteredData = useMemo(() => {
         let result = jobs;
 
-        // Text search across multiple fields
+        // Text search
         if (searchQuery) {
             result = result.filter((job) =>
                 job.job_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -84,12 +128,10 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
         // Date filter
         if (dateFilter !== 'all') {
             result = result.filter((job) => {
-                // Handle "unscheduled" filter
                 if (dateFilter === 'unscheduled') {
                     return !job.date || job.date === '';
                 }
                 
-                // Handle "scheduled" filter
                 if (dateFilter === 'scheduled') {
                     return job.date && job.date !== '';
                 }
@@ -155,33 +197,6 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
 
         return result;
     }, [searchQuery, dateFilter, fabTypeFilter, scheduleFilter, dateRange, jobs]);
-
-    const navigate = useNavigate();
-
-    const handleView = (department: string, id: string) => {
-        navigate(`/job/${department}/${id}`);
-    };
-
-    // Function to handle row click
-    const handleRowClickInternal = (job: IJob) => {
-        if (onRowClick) {
-            onRowClick(job.fab_id);
-        }
-    };
-
-    // Function to handle stage filter change - navigate to the selected stage route
-    const handleStageFilterChange = (stageValue: string) => {
-        if (stageValue === 'all') {
-            // Stay on current page or go to a default page
-            return;
-        }
-
-        // Find the stage that matches the selected value
-        const selectedStage = Object.values(JOB_STAGES).find(stage => stage.stage === stageValue);
-        if (selectedStage) {
-            navigate(selectedStage.route);
-        }
-    };
 
     // Function to check if a column has any data
     const columnHasData = (accessorKey: string) => {
@@ -293,7 +308,6 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
                 </span>
             ),
         },
-       
         {
             id: "template_schedule",
             accessorKey: "template_schedule",
@@ -305,7 +319,6 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
                 <span className="text-sm">{row.original.template_schedule}</span>
             ),
         },
-        
         {
             id: "template_received",
             accessorKey: "template_received",
@@ -326,7 +339,7 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
             ),
             cell: ({ row }) => <span className="text-sm">{row.original.templater}</span>,
         },
-          {
+        {
             id: "total_sq_ft",
             accessorKey: "total_sq_ft",
             accessorFn: (row: IJob) => row.total_sq_ft,
@@ -339,7 +352,7 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
                 </span>
             ),
         },
-           {
+        {
             id: "revenue",
             accessorKey: "revenue",
             accessorFn: (row: IJob) => row.revenue,
@@ -363,7 +376,7 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
                 <span className="text-sm">{row.original.gp}</span>
             ),
         },
-         {
+        {
             id: "sct_completed",
             accessorKey: "sct_completed",
             accessorFn: (row: IJob) => row.sct_completed,
@@ -405,28 +418,27 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
         {
             id: 'actions',
             header: '',
-            cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(path, row.original.fab_id)} />,
+            cell: ({ row }) => (
+                <ActionsCell 
+                    row={row} 
+                    onView={() => handleView(row.original)} // Pass the job object
+                />
+            ),
             enableSorting: false,
             size: 60,
         },
-    ], [path]);
+    ], [getPath, path]); // Add both getPath and path to dependencies
 
     // Filter columns based on data availability
     const columns = useMemo<ColumnDef<IJob>[]>(() => {
         return baseColumns.filter(column => {
-            // Always show these columns regardless of data
             if (column.id === 'id' || column.id === 'actions') {
                 return true;
             }
-
-            // For other columns, check if they have data
-            // accessorKey may not exist on all ColumnDef variants, so read it via a safe cast
             const accessor = (column as any).accessorKey as string | undefined;
             if (accessor) {
                 return columnHasData(accessor);
             }
-
-            // Default to showing if we can't determine
             return true;
         });
     }, [baseColumns, filteredData]);
@@ -459,6 +471,7 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
             }}
             onRowClick={onRowClick ? (row) => handleRowClickInternal(row) : undefined}
         >
+            {/* Rest of your component remains the same... */}
             <Card>
                 <CardHeader className="py-3.5 border-b">
                     <CardHeading>
@@ -497,7 +510,8 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
                                     ))}
                                 </SelectContent>
                             </Select>
-{/* Enhanced Date Filter */}
+
+                            {/* Enhanced Date Filter */}
                             <div className="flex items-center gap-2">
                                 <Select value={dateFilter} onValueChange={(value) => {
                                     setDateFilter(value);
@@ -572,6 +586,7 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
                                     </Popover>
                                 )}
                             </div>
+
                             {/* Schedule Filter */}
                             <Select value={scheduleFilter} onValueChange={setScheduleFilter}>
                                 <SelectTrigger className="w-[150px] h-[34px]">
@@ -584,7 +599,6 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
                                 </SelectContent>
                             </Select>
 
-                            
                             {/* Stage filter - only visible to super admins */}
                             {isSuperAdmin && (
                                 <Select onValueChange={handleStageFilterChange}>
@@ -605,7 +619,9 @@ export const JobTable = ({ jobs, path, isSuperAdmin = false, isLoading, onRowCli
                     </CardHeading>
 
                     <CardToolbar>
-                        <Button variant="outline" onClick={() => exportTableToCSV(table, "FabId")}>Export CSV</Button>
+                        <Button variant="outline" onClick={() => exportTableToCSV(table, "FabId")}>
+                            Export CSV
+                        </Button>
                     </CardToolbar>
                 </CardHeader>
 

@@ -15,54 +15,54 @@ import { useJobStageFilter } from '@/hooks/use-job-stage';
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
-  if (!dateString) return '-';
-  
-  try {
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = date.toLocaleString('en-US', { month: 'short' });
-    const year = date.getFullYear();
-    return `${day} ${month}, ${year}`;
-  } catch (error) {
-    return '-';
-  }
+    if (!dateString) return '-';
+
+    try {
+        const date = new Date(dateString);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = date.toLocaleString('en-US', { month: 'short' });
+        const year = date.getFullYear();
+        return `${day} ${month}, ${year}`;
+    } catch (error) {
+        return '-';
+    }
 };
 
 // Transform Fab data to match IJob interface
 const transformFabToJob = (fab: any): IJob => {
-  return {
-    id: fab.id,
-    fab_type: fab.fab_type,
-    fab_id: `${fab.id}`,
-    job_name: fab.job_details?.name || `Job ${fab.job_id}`,
-    job_no: fab.job_details?.job_number || String(fab.job_id),
-    date: fab.templating_schedule_start_date,
-    current_stage: fab.current_stage,
-    // Optional fields with default values
-    acct_name: '',
-    template_schedule: '',
-    template_received: fab.current_stage === 'completed' ? 'Yes' : 'No',
-    templater: fab.technician_name || '-',
-    no_of_pieces: '',
-    total_sq_ft: String(fab.total_sqft),
-    revenue: '',
-    revised: '',
-    sct_completed: '',
-    draft_completed: '',
-    gp: ''
-  };
+    return {
+        id: fab.id,
+        fab_type: fab.fab_type,
+        fab_id: `${fab.id}`,
+        job_name: fab.job_details?.name || `Job ${fab.job_id}`,
+        job_no: fab.job_details?.job_number || String(fab.job_id),
+        date: fab.templating_schedule_start_date,
+        current_stage: fab.current_stage,
+        // Optional fields with default values
+        acct_name: '',
+        template_schedule: '',
+        template_received: fab.current_stage === 'completed' ? 'Yes' : 'No',
+        templater: fab.technician_name || '-',
+        no_of_pieces: '',
+        total_sq_ft: String(fab.total_sqft),
+        revenue: '',
+        revised: '',
+        sct_completed: '',
+        draft_completed: '',
+        gp: ''
+    };
 };
 
 export function TemplatingPage() {
     const { currentStageFilter, isSuperAdmin } = useJobStageFilter();
-    
+
     // Fetch fabs filtered by current stage
     const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
         limit: 100,
         current_stage: "templating" // Use the stage filter from the hook
     });
 
-  
+
     if (isLoading) {
         return (
             <Container>
@@ -104,15 +104,22 @@ export function TemplatingPage() {
     // Transform Fab data to IJob format
     const jobsData: IJob[] = fabs ? fabs.data?.map(transformFabToJob) : [];
 
-      const getJobTablePath = (jobs: IJob[]): string => {
-        // Check if any job has a template date assigned
-        const hasTemplateTechnician = jobs.some(job => 
-            job.templating_schedule_start_date && job.templating_schedule_start_date !== '-' && job.templating_schedule_start_date.trim() !== ''
+    // For super admins, we still want to show the tabs, but they should fetch data from the API
+    // with different stage filters rather than client-side filtering
+    const getJobTablePath = (jobs: IJob[]): string => {
+        // Check if any job has a template technician assigned
+        const hasTemplateTechnician = jobs.some(job =>
+            job.templater && job.templater !== '-' && job.templater.trim() !== '' && job.templater !== null
         );
-        
-        
+
+        // Alternative: Check based on current stage or other criteria
+        // const hasTemplateTechnician = jobs.some(job => 
+        //     job.current_stage === 'in_progress' || job.templater !== '-'
+        // );
+
         return hasTemplateTechnician ? 'templating-details' : 'templating';
     };
+
     return (
         <Container>
             <Toolbar>
@@ -126,16 +133,16 @@ export function TemplatingPage() {
             <Tabs defaultValue="all" className="mt-4">
                 <TabsList className=" bg-transparent p-2 border  flex flex-wrap gap-1">
                     <TabsTrigger value="all">
-                         
+
                         <span className="flex items-center gap-2">
                             FabId
                             <span className=" bg-[#E1FCE9] text-base px-[6px] text-text rounded-[50px]" >
-                            {jobsData?.length}
+                                {jobsData?.length}
                             </span>
                         </span>
                     </TabsTrigger>
-                     <div className='pl-5 text-[#4B5675] text-[14px]'>
-                        Total SQ. FT: {jobsData.reduce((total, job) => total + (Number(job.total_sq_ft) || 0), 0)} 
+                    <div className='pl-5 text-[#4B5675] text-[14px]'>
+                        Total SQ. FT: {jobsData.reduce((total, job) => total + (Number(job.total_sq_ft) || 0), 0)}
                     </div>
                     {/* 
                    
@@ -154,7 +161,19 @@ export function TemplatingPage() {
                 </TabsList>
 
                 <TabsContent value="all" className="mt-4">
-                    <JobTable jobs={jobsData} path={getJobTablePath(jobsData)} isSuperAdmin={isSuperAdmin} isLoading={isLoading} />
+                    <JobTable jobs={jobsData}
+                        isSuperAdmin={isSuperAdmin}
+                        isLoading={isLoading}
+                         path="templating"
+                        getPath={(job) => {
+                            // Check if THIS SPECIFIC job has a template technician assigned
+                            const hasTemplateTechnician = job.templater &&
+                                job.templater !== '-' &&
+                                job.templater.trim() !== '';
+
+                            return hasTemplateTechnician ? 'templating-details' : 'templating';
+                        }}
+                    />
                 </TabsContent>
                 {/* <TabsContent value="unscheduled" className="mt-4">
                     <JobTable jobs={jobsData} path='templating' isSuperAdmin={isSuperAdmin} />
