@@ -10,6 +10,7 @@ import { SettingsProvider } from './providers/settings-provider';
 import { ThemeProvider } from './providers/theme-provider';
 import { TooltipsProvider } from './providers/tooltips-provider';
 import ReduxProvider from './hoc/redux-providor';
+import { PermissionManager } from '@/components/PermissionManager';
 
 const { BASE_URL } = import.meta.env;
 
@@ -27,6 +28,7 @@ export function App() {
                     <LoadingBarContainer>
                       <BrowserRouter basename={BASE_URL}>
                         <Toaster />
+                        <PermissionManager />
                         <AppRouting />
                       </BrowserRouter>
                     </LoadingBarContainer>

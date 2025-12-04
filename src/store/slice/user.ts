@@ -10,12 +10,20 @@ try {
   localStorage.removeItem("user"); // optional cleanup
 }
 
+let storedPermissions = {};
+try {
+  const raw = localStorage.getItem("permissions");
+  if (raw) storedPermissions = JSON.parse(raw);
+} catch (e) {
+  localStorage.removeItem("permissions"); // optional cleanup
+}
+
 const userSlice = createSlice({
   name: "userSlice",
   initialState: {
     user: storedUser || null,
     isAuth: !!storedUser,
-    permissions: {} as Record<string, {
+    permissions: storedPermissions as Record<string, {
       can_create: boolean;
       can_read: boolean;
       can_update: boolean;
@@ -67,9 +75,32 @@ const userSlice = createSlice({
       state.user = action.payload;
       localStorage.setItem('user', JSON.stringify(action.payload));
     },
+    // New reducer for updating permissions
+    updatePermissions: (state, action) => {
+      console.log('updatePermissions reducer called with:', action.payload);
+      // Update permissions in state
+      if (action.payload && Array.isArray(action.payload)) {
+        state.permissions = action.payload.reduce((acc: any, perm: MenuPermission) => {
+          const key = perm.menu_name;
+          acc[key] = {
+            can_create: perm.can_create,
+            can_read: perm.can_read,
+            can_update: perm.can_update,
+            can_delete: perm.can_delete,
+          };
+          return acc;
+        }, {});
+        
+        // Store updated permissions in localStorage
+        localStorage.setItem('permissions', JSON.stringify(state.permissions));
+        console.log('Permissions updated in localStorage:', state.permissions);
+      } else {
+        console.log('Invalid permissions payload:', action.payload);
+      }
+    },
   },
 })
 
-export const { setCredentials, logout, updateCredentials, updateUser } = userSlice.actions
+export const { setCredentials, logout, updateCredentials, updateUser, updatePermissions } = userSlice.actions
 export const userSliceReducer = userSlice.reducer
 export default userSlice.reducer
