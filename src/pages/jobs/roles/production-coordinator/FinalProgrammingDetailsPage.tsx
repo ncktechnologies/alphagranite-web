@@ -63,10 +63,10 @@ export function FinalProgrammingDetailsPage() {
     setDraftStart(startTime);
   }, []);
 
-  const handlePause = useCallback((pauseTime: Date) => {
+  const handlePause = useCallback(() => {
     setIsDrafting(false);
     setIsPaused(true);
-    setDraftEnd(pauseTime);
+    setDraftEnd(new Date());
   }, []);
 
   const handleResume = useCallback(() => {

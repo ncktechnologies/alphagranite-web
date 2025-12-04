@@ -16,6 +16,7 @@ interface P {
   data?: AxiosRequestConfig['data'];
   params?: AxiosRequestConfig['params'];
   headers?: AxiosRequestConfig['headers'];
+  skipToast?: boolean;
 }
 
 let isRefreshing = false;
@@ -62,9 +63,9 @@ instance.interceptors.response.use(
   async (err) => {
     const originalRequest = err.config;
     const error = err.response;
-    
+
     // Handle 401 errors (token expired)
-    if (error?.status === 401 && !originalRequest._retry && error?.data?.detail?.message !=="Incorrect credentials") {
+    if (error?.status === 401 && !originalRequest._retry && error?.data?.detail?.message !== "Incorrect credentials") {
       if (isRefreshing) {
         // Queue the request while token is being refreshed
         return new Promise((resolve, reject) => {
@@ -83,7 +84,7 @@ instance.interceptors.response.use(
       isRefreshing = true;
 
       const refreshToken = localStorage.getItem('refresh_token');
-      
+
       if (!refreshToken) {
         // No refresh token available, logout user
         localStorage.removeItem('user');
@@ -106,7 +107,7 @@ instance.interceptors.response.use(
         );
 
         const { access_token, refresh_token: newRefreshToken } = response.data.data;
-        
+
         // Update tokens in localStorage
         localStorage.setItem('token', access_token);
         if (newRefreshToken) {
@@ -127,13 +128,13 @@ instance.interceptors.response.use(
         // Refresh token failed, logout user
         processQueue(refreshError, null);
         isRefreshing = false;
-        
+
         localStorage.removeItem('user');
         localStorage.removeItem('token');
         localStorage.removeItem('refresh_token');
         toast.error('Your session has expired. Please login again.');
         window.location.replace('/');
-        
+
         return Promise.reject(refreshError);
       }
     }
@@ -152,76 +153,95 @@ instance.interceptors.response.use(
 );
 
 export const axiosBaseQuery =
-  ({ baseUrl }: { baseUrl: string } = { baseUrl: '' }): BaseQueryFn<P, unknown, unknown> =>
-  async ({ url, method, data, params }) => {
-    if (!window.navigator.onLine) {
-      toast.error('No internet connection');
-      return { data: null };
-    }
-
-    try {
-      const result = await instance({
-        url: `${baseUrl}${url}`,
-        method,
-        data,
-        params,
-      });
-
-      if (![200, 201].includes(result?.status)) {
-        const errorData = result?.data as ErrorResponse;
-        let errorMessage =
-          errorData?.detail ||
-          errorData?.error ||
-          errorData?.msg ||
-          errorData?.message ||
-          'Oops!!! Something went wrong on our end. Please be patient while we check it out.';
-        if (typeof errorMessage !== 'string') {
-          errorMessage = JSON.stringify(errorMessage);
-        }
-        toast.error(errorMessage);
-        throw Error(errorMessage);
-      }
-
-      return { data: result.data };
-    } catch (axiosError) {
-      const err = axiosError as AxiosError<ErrorResponse>;
-
-      // ✅ Handle undefined `response` (Edge, CORS, Network failure)
-      if (!err?.response) {
-        toast.error('A network error occurred. Please check your internet ');
+  ({ baseUrl }: { baseUrl: string } = { baseUrl: "" }): BaseQueryFn<P, unknown, unknown> =>
+    async ({ url, method, data, params, skipToast }) => {
+      // Offline handling
+      if (!navigator.onLine) {
+        if (!skipToast) toast.error("No internet connection");
         return {
-          error: {
-            status: 500,
-            data: { message: 'No response received from server.' },
-          },
+          error: { status: 0, data: { message: "Offline" } }
         };
       }
 
-      const errorData = err.response.data;
+      try {
+        const response = await instance({
+          url: `${baseUrl}${url}`,
+          method,
+          data,
+          params,
+        });
 
-      if (errorData && errorData.detail && !Array.isArray(errorData.detail)) {
-        errorData.detail = [errorData.detail];
+        // Handle non-success HTTP codes
+        if (![200, 201].includes(response.status)) {
+          let errorMessage =
+            response.data?.detail ||
+            response.data?.message ||
+            response.data?.msg ||
+            "Something went wrong.";
+
+          if (typeof errorMessage !== "string") {
+            errorMessage = JSON.stringify(errorMessage);
+          }
+
+          if (!skipToast) toast.error(errorMessage);
+
+          return {
+            error: {
+              status: response.status,
+              data: response.data
+            }
+          };
+        }
+
+        return { data: response.data };
+      } catch (axiosError) {
+        const err = axiosError as AxiosError<ErrorResponse>;
+
+        // No server response (timeout, CORS, network dropped)
+        if (!err.response) {
+          if (!skipToast) toast.error("A network error occurred.");
+          return {
+            error: {
+              status: 500,
+              data: { message: "No response received from server." }
+            }
+          };
+        }
+
+        const { status, data } = err.response;
+
+        // 🔥 **SUPPRESS TOAST for 404 globally (common, non-critical)**
+        if (status === 404) {
+          return {
+            error: {
+              status: 404,
+              data
+            }
+          };
+        }
+
+        // Normalize backend errors
+        const detailArray = Array.isArray(data?.detail)
+          ? data.detail
+          : data?.detail
+            ? [data.detail]
+            : [];
+
+        let errorMessage =
+          detailArray
+            .map((d: any) => d.msg || d.message || JSON.stringify(d))
+            .join(", ") ||
+          data?.msg ||
+          data?.message ||
+          "An unexpected error occurred.";
+
+        if (!skipToast) toast.error(errorMessage);
+
+        return {
+          error: {
+            status,
+            data
+          }
+        };
       }
-
-      let errorMessage: string;
-      if (Array.isArray(errorData?.detail)) {
-        errorMessage = errorData.detail
-          .map((d: any) => d.msg || d.message || JSON.stringify(d))
-          .join(', ');
-      } else {
-        errorMessage =
-          typeof errorData?.detail === 'string'
-            ? errorData.detail
-            : errorData?.msg || errorData?.message || 'An unexpected error occurred.';
-      }
-
-      toast.error(errorMessage);
-
-      return {
-        error: {
-          status: err?.response?.status || 500,
-          data: errorData,
-        },
-      };
-    }
-  };
+    };

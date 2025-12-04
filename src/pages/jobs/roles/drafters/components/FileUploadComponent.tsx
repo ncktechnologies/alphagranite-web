@@ -30,12 +30,13 @@ interface SchedulingNote {
 }
 
 interface FileUploadComponentProps {
-  uploadedFiles: UploadedFile[];
+  uploadedFiles?: UploadedFile[];
   onFileUpload: (files: UploadedFile[]) => void;
-  onRemoveFile: (index: number) => void;
+  onRemoveFile?: (index: number) => void;
   jobDetails?: JobDetails;
   schedulingNotes?: SchedulingNote[];
   onOpenFile?: (file: UploadedFile) => void;
+  onFilesChange?: (files: File[]) => void;
 }
 
 export const FileUploadComponent = ({
@@ -44,8 +45,12 @@ export const FileUploadComponent = ({
   onRemoveFile,
   jobDetails,
   schedulingNotes,
-  onOpenFile
+  onOpenFile,
+  onFilesChange
 }: FileUploadComponentProps) => {
+  // Ensure uploadedFiles is always an array
+  const files = uploadedFiles || [];
+  
   const [isDragOver, setIsDragOver] = useState(false);
   const [selectedFile, setSelectedFile] = useState<UploadedFile | null>(null);
 
@@ -71,6 +76,13 @@ export const FileUploadComponent = ({
   const handleFileSelect = useCallback((files: FileList | null) => {
     if (!files) return;
 
+    // Call onFilesChange if provided (for direct file handling)
+    if (onFilesChange) {
+      onFilesChange(Array.from(files));
+      return;
+    }
+
+    // Otherwise, use the original logic
     const newFiles: UploadedFile[] = Array.from(files).map((file) => ({
       id: Math.random().toString(36).substr(2, 9),
       name: file.name,
@@ -80,7 +92,7 @@ export const FileUploadComponent = ({
     }));
 
     onFileUpload(newFiles);
-  }, [onFileUpload]);
+  }, [onFileUpload, onFilesChange]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -136,9 +148,9 @@ export const FileUploadComponent = ({
       </Card>
 
       {/* Uploaded Files */}
-      {uploadedFiles.length > 0 && (
+      {files.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {uploadedFiles.map((file, index) => (
+          {files.map((file, index) => (
             <Card key={file.id} className="relative">
               <CardContent className="p-4">
                 <div className="flex items-center gap-3">
@@ -149,14 +161,16 @@ export const FileUploadComponent = ({
                     </p>
                     <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => onRemoveFile(index)}
-                    className="text-gray-400 hover:text-red-500"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+                  {onRemoveFile && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onRemoveFile(index)}
+                      className="text-gray-400 hover:text-red-500"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
                 <div className="mt-3">
                   <Button 

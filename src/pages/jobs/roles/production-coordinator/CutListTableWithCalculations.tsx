@@ -58,6 +58,7 @@ export interface CalculatedCutListData {
     cip: string;
     install_date: string;
     sales_person?: string;
+    shop_date_schedule: string;
 }
 
 // Update the calculateCutListData function to work with Fab
@@ -99,7 +100,8 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
         revenue: fabWithExtraFields.revenue || 0,
         fp_completed: fabWithExtraFields.final_programming_complete ? 'Yes' : 'No',
         cip: '', // Placeholder - would need to get CIP from backend
-        install_date: fabWithExtraFields.installation_date || fab.templating_schedule_due_date || '',
+        install_date: fabWithExtraFields.installation_date || '',
+        shop_date_schedule:fabWithExtraFields.shop_date_schedule || "",
         sales_person: fabWithExtraFields.sales_person_name || '',
     };
 };

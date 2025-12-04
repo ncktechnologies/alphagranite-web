@@ -83,7 +83,7 @@ const DraftReviewDetailsPage = () => {
             toast.success("FAB marked as complete successfully");
             setShowMarkAsCompleteModal(false); // Close the modal
             // Navigate to next stage or back to sales list
-            navigate('/job/sales');
+            navigate('/job/draft-review');
         } catch (error) {
             console.error('Failed to mark as complete:', error);
             toast.error("Failed to mark FAB as complete");

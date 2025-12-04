@@ -104,18 +104,12 @@ export function TemplatingPage() {
     // Transform Fab data to IJob format
     const jobsData: IJob[] = fabs ? fabs.data?.map(transformFabToJob) : [];
 
-    // For super admins, we still want to show the tabs, but they should fetch data from the API
-    // with different stage filters rather than client-side filtering
       const getJobTablePath = (jobs: IJob[]): string => {
-        // Check if any job has a template technician assigned
+        // Check if any job has a template date assigned
         const hasTemplateTechnician = jobs.some(job => 
-            job.templater && job.templater !== '-' && job.templater.trim() !== ''
+            job.templating_schedule_start_date && job.templating_schedule_start_date !== '-' && job.templating_schedule_start_date.trim() !== ''
         );
         
-        // Alternative: Check based on current stage or other criteria
-        // const hasTemplateTechnician = jobs.some(job => 
-        //     job.current_stage === 'in_progress' || job.templater !== '-'
-        // );
         
         return hasTemplateTechnician ? 'templating-details' : 'templating';
     };

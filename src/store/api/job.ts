@@ -579,6 +579,25 @@ export const jobApi = createApi({
                 providesTags: ["Fab"],
             }),
 
+            getFabsByStage: build.query<Fab[], { stage_name: string; params?: { skip?: number; limit?: number; search?: string } }>({
+                query: ({ stage_name, params }) => ({
+                    url: `/stages/${stage_name}/fabs`,
+                    method: "get",
+                    params: params || {}
+                }),
+                transformResponse: (response: any) => response.data || response,
+                providesTags: ["Fab"],
+            }),
+
+            getFabsInFinalProgrammingPending: build.query<Fab[], void>({
+                query: () => ({
+                    url: "/stages/final_programming/pending",
+                    method: "get"
+                }),
+                transformResponse: (response: any) => response.data || response,
+                providesTags: ["Fab"],
+            }),
+
             createFab: build.mutation<Fab, FabCreate>({
                 query: (data) => ({
                     url: "/fabs",
@@ -1212,6 +1231,8 @@ export const {
     useGetFabsQuery,
     useGetFabByIdQuery,
     useGetFabsByJobQuery,
+    useGetFabsByStageQuery,
+    useGetFabsInFinalProgrammingPendingQuery,
     useCreateFabMutation,
     useUpdateFabMutation,
     useDeleteFabMutation,

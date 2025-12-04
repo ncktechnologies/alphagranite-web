@@ -3,7 +3,7 @@ import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { FinalProgrammingTable } from './FinalProgrammingTable';
 import { IJob } from '@/pages/jobs/components/job';
-import { Fab, useGetFabsQuery } from '@/store/api/job';
+import { Fab, useGetFabsInFinalProgrammingPendingQuery, useGetFabsQuery } from '@/store/api/job';
 // import { transformFabToJob } from '@/pages/jobs/roles/drafters/DrafterPage';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
 import { JobTable } from '../../components/JobTable';
@@ -43,10 +43,11 @@ const FinalProgrammingPage = () => {
     const isUserSuperAdmin = useIsSuperAdmin();
     
     // Fetch fabs with role-based filtering
-    const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
-        current_stage: 'final_programming',
-        limit: 100,
-    });
+    // const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
+    //     current_stage: 'final_programming',
+    //     limit: 100,
+    // });
+    const { data: fabs, isLoading, isError, error } = useGetFabsInFinalProgrammingPendingQuery();
 
     if (isLoading) {
         return (
@@ -94,7 +95,7 @@ const FinalProgrammingPage = () => {
                     <ToolbarHeading title="Final Programming" description="Jobs in final CNC programming stage" />
                 </Toolbar>
 
-                <JobTable jobs={jobsData} path='draft' isSuperAdmin={isUserSuperAdmin} isLoading={isLoading} />
+                <JobTable jobs={jobsData} path='final-programming' isSuperAdmin={isUserSuperAdmin} isLoading={isLoading} />
 
             </Container>
 
