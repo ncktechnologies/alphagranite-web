@@ -99,7 +99,7 @@ const SlabSmithPage = () => {
                                </Link>
                            </ToolbarActions> */}
                 </Toolbar>
-                <JobTable jobs={jobsData} path='slab-smith' isSuperAdmin={isUserSuperAdmin} isLoading={isLoading} />
+                <JobTable jobs={jobsData} path='slab-smith' isLoading={isLoading} />
             </Container>
         </div>
     );

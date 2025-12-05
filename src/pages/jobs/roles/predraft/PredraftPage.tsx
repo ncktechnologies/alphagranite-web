@@ -112,7 +112,7 @@ export function PredraftPage() {
                     description=""
                 />
             </Toolbar>
-            <JobTable jobs={jobsData} path='predraft' isSuperAdmin={isUserSuperAdmin}/>
+            <JobTable jobs={jobsData} path='predraft' />
         </Container>
     );
 }

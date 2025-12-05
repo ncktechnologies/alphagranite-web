@@ -107,7 +107,7 @@ export function DraftRevisionPage() {
                     description=""
                 />
             </Toolbar>
-            <JobTable jobs={jobsData} path='revision' isSuperAdmin={isUserSuperAdmin} isLoading={isLoading} />
+            <JobTable jobs={jobsData} path='revision' isLoading={isLoading} />
         </Container>
     );
 }

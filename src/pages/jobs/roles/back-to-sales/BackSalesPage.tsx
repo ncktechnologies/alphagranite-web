@@ -109,7 +109,7 @@ export function AfterDraftSalesPage() {
                     description=""
                 />
             </Toolbar>
-            <JobTable jobs={jobsData} path='draft-review' isSuperAdmin={isUserSuperAdmin} isLoading={isLoading} />
+            <JobTable jobs={jobsData} path='draft-review'  isLoading={isLoading} />
         </Container>
     );
 }

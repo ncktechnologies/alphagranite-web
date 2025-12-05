@@ -66,7 +66,7 @@ export function TechnicianPage() {
     // Fetch fabs with role-based filtering
     // Technicians typically see all fabs in the templating stage
     const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
-        current_stage: isSuperAdmin ? 'templating' : currentStageFilter, // Filter for templating stage
+        current_stage: 'templating' , // Filter for templating stage
         limit: 100,
     });
 
@@ -115,7 +115,7 @@ export function TechnicianPage() {
                 <Toolbar className=' '>
                     <ToolbarHeading title="Templating" description="" />
                 </Toolbar>
-                <JobTable jobs={transformedJobs} path='templating-details' isSuperAdmin={isUserSuperAdmin} isLoading={isLoading} />
+                <JobTable jobs={transformedJobs} path='templating-details' isLoading={isLoading} />
             </Container>
         </div>
     );

@@ -95,7 +95,7 @@ const FinalProgrammingPage = () => {
                     <ToolbarHeading title="Final Programming" description="Jobs in final CNC programming stage" />
                 </Toolbar>
 
-                <JobTable jobs={jobsData} path='final-programming' isSuperAdmin={isUserSuperAdmin} isLoading={isLoading} />
+                <JobTable jobs={jobsData} path='final-programming' isLoading={isLoading} />
 
             </Container>
 

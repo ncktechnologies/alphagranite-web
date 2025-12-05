@@ -134,7 +134,7 @@ export function SalesPage() {
                         </Link>
                     </ToolbarActions>
                 </Toolbar>
-                <JobTable jobs={transformedJobs} path='sales' isSuperAdmin={isUserSuperAdmin} />
+                <JobTable jobs={transformedJobs} path='sales'  />
             </Container>
         </div>
     );
