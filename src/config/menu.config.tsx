@@ -83,32 +83,18 @@ export const MENU_SIDEBAR: MenuConfig = [
    {
     title: 'Jobs',
     icon: 'building.svg',
-    path: '/job/sales',
-    // children:[
-    //   { title: 'Sales', path: '/job/sales' },
-    //   { title: 'Templating Coordinator', path: '/job/templating' },
-    //   { title: 'Templating Technician', path: '/job/templating-technician' },
-    //   { title: 'Predraft', path: '/job/predraft' },
-    //   { title: 'Draft', path: '/job/draft' },
-
-
-    
-    // ]
-
+    path: '/job', // Changed from '/job/sales' to '/job' for dashboard
   },
   {
     title: 'Shop',
     icon: 'shop.svg',
     path: '/shop'
-
   },
   {
     title: 'Settings',
     icon: 'settings.svg',
     path: '/settings/profile'
-
   },
-
 ];
 
 export const SETTINGS_NAV:MenuConfig = [
@@ -794,7 +780,7 @@ export const MENU_MEGA: MenuConfig = [
               { title: 'Billing History', path: '/account/billing/history' },
               { title: 'Tax Info', disabled: true },
               { title: 'Invoices', disabled: true },
-              { title: 'Gateaways', disabled: true },
+              { title: 'Gateways', disabled: true },
             ],
           },
           {
@@ -1197,7 +1183,7 @@ export const MENU_MEGA_MOBILE: MenuConfig = [
               { title: 'Billing History', path: '/account/billing/history' },
               { title: 'Tax Info', disabled: true },
               { title: 'Invoices', disabled: true },
-              { title: 'Gateaways', disabled: true },
+              { title: 'Gateways', disabled: true },
             ],
           },
           {

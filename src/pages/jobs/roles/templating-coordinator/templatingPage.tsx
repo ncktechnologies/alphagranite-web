@@ -144,27 +144,14 @@ export function TemplatingPage() {
                     <div className='pl-5 text-[#4B5675] text-[14px]'>
                         Total SQ. FT: {jobsData.reduce((total, job) => total + (Number(job.total_sq_ft) || 0), 0)}
                     </div>
-                    {/* 
-                   
-                    <TabsTrigger value="incomplete">
-                        <span className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-yellow-500" />
-                            Incomplete
-                        </span>
-                    </TabsTrigger>
-                    <TabsTrigger value="completed">
-                        <span className="flex items-center gap-2">
-                            <span className="w-2.5 h-2.5 rounded-full bg-green-500" />
-                            Completed
-                        </span>
-                    </TabsTrigger> */}
+
                 </TabsList>
 
                 <TabsContent value="all" className="mt-4">
                     <JobTable jobs={jobsData}
-                        isSuperAdmin={isSuperAdmin}
+                        showScheduleFilter={true}
                         isLoading={isLoading}
-                         path="templating"
+                        path="templating"
                         getPath={(job) => {
                             // Check if THIS SPECIFIC job has a template technician assigned
                             const hasTemplateTechnician = job.templater &&
@@ -175,15 +162,7 @@ export function TemplatingPage() {
                         }}
                     />
                 </TabsContent>
-                {/* <TabsContent value="unscheduled" className="mt-4">
-                    <JobTable jobs={jobsData} path='templating' isSuperAdmin={isSuperAdmin} />
-                </TabsContent>
-                <TabsContent value="incomplete" className="mt-4">
-                    <JobTable jobs={jobsData} path='templating' isSuperAdmin={isSuperAdmin} />
-                </TabsContent>
-                <TabsContent value="completed" className="mt-4">
-                    <JobTable jobs={jobsData} path='templating' isSuperAdmin={isSuperAdmin} />
-                </TabsContent> */}
+
             </Tabs>
         </Container>
     );

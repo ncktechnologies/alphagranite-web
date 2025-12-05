@@ -43,7 +43,7 @@ const CutListPage = () => {
             }
             return String(item);
         };
-        
+
         return rawData.map(extractName);
     }, [fabTypesData]);
 
@@ -68,7 +68,7 @@ const CutListPage = () => {
                 map.set(item.name, item.id);
             }
         });
-        
+
         return map;
     }, [salesPersonsData]);
 
@@ -95,7 +95,7 @@ const CutListPage = () => {
             }
             return String(item);
         };
-        
+
         return rawData.map(extractName);
     }, [salesPersonsData]);
 
@@ -142,23 +142,65 @@ const CutListPage = () => {
     // Fetch FABs with backend filtering
     const { data: fabsData, isLoading: isFabsLoading, refetch, isFetching } = useGetFabsQuery(buildQueryParams);
 
-    // Extract data from response
-    const fabs = useMemo(() => {
+    // Extract data and totals from response
+    const { fabs, stageTotals, totalRevenue, totalCostOfStone } = useMemo(() => {
         if (!fabsData) {
-            return [];
+            return { 
+                fabs: [], 
+                stageTotals: null, 
+                totalRevenue: 0, 
+                totalCostOfStone: 0 
+            };
         }
 
         // Handle both possible response formats
+        let rawData: any[] = [];
+        let stageTotals: any = null;
+
         if (Array.isArray(fabsData)) {
-            return fabsData;
+            rawData = fabsData;
+        } else if (typeof fabsData === 'object' && 'data' in fabsData) {
+            const responseData = fabsData.data;
+            
+            if (Array.isArray(responseData)) {
+                rawData = responseData;
+            } else if (typeof responseData === 'object') {
+                // Extract the array of FABs
+                rawData = responseData.data || [];
+                // Extract stage totals
+                stageTotals = responseData.stage_totals || null;
+            }
         }
 
-        // If response has data property
-        if (typeof fabsData === 'object' && 'data' in fabsData) {
-            return (fabsData as any).data || [];
+        // Calculate totals from FABs data
+        const revenueTotal = rawData.reduce((sum, fab) => {
+            const revenue = fab.revenue || 0;
+            return sum + Number(revenue);
+        }, 0);
+
+        // If we have stage_totals from API, use them, otherwise calculate from raw data
+        if (!stageTotals) {
+            stageTotals = {
+                total_sqft: rawData.reduce((sum, fab) => sum + (fab.total_sqft || 0), 0),
+                wj_linft: rawData.reduce((sum, fab) => sum + (fab.wj_linft || 0), 0),
+                edging_linft: rawData.reduce((sum, fab) => sum + (fab.edging_linft || 0), 0),
+                cnc_linft: rawData.reduce((sum, fab) => sum + (fab.cnc_linft || 0), 0),
+                miter_linft: rawData.reduce((sum, fab) => sum + (fab.miter_linft || 0), 0),
+                no_of_pieces: rawData.reduce((sum, fab) => sum + (fab.no_of_pieces || 0), 0)
+            };
         }
 
-        return [];
+        // Calculate cost of stone if available (you'll need to add this field to your API)
+        // For now, we'll calculate it based on total sqft * average cost per sqft
+        // You should update this based on your actual data structure
+        const totalCostOfStone = 0; // Placeholder - update with actual calculation
+
+        return {
+            fabs: rawData,
+            stageTotals,
+            totalRevenue: revenueTotal,
+            totalCostOfStone
+        };
     }, [fabsData]);
 
     return (
@@ -168,9 +210,35 @@ const CutListPage = () => {
                     <ToolbarHeading title="Cut List" description="Jobs scheduled for shop cut date" />
                 </Toolbar>
             </Container>
-
+            <div className='flex flex-wrap gap-x-3 items-center '>
+                <div className='pl-5 text-[#4B5675] text-[14px]'>
+                    Total SQ. FT: {stageTotals?.total_sqft || 0}
+                </div>
+                <div className='pl-5 text-[#4B5675] text-[14px]'>
+                    WJ: LIN FT: {stageTotals?.wj_linft || 0}
+                </div>
+                <div className='pl-5 text-[#4B5675] text-[14px]'>
+                    Edging: LIN FT: {stageTotals?.edging_linft || 0}
+                </div>
+                <div className='pl-5 text-[#4B5675] text-[14px]'>
+                    TCNC: LIN FT: {stageTotals?.cnc_linft || 0}
+                </div>
+                <div className='pl-5 text-[#4B5675] text-[14px]'>
+                   Milter: LIN FT: {stageTotals?.miter_linft || 0}
+                </div>
+                <div className='pl-5 text-[#4B5675] text-[14px]'>
+                   No. of Pieces: {stageTotals?.no_of_pieces || 0}
+                </div>
+                <div className='pl-5 text-[#4B5675] text-[14px]'>
+                    Revenue: ${totalRevenue.toLocaleString()}
+                </div>
+                {/* Uncomment if you have cost of stone data */}
+                {/* <div className='pl-5 text-[#4B5675] text-[14px]'>
+                   Cost of stone: ${totalCostOfStone.toLocaleString()}
+                </div> */}
+            </div>
             <Container className="mt-6">
-                <CutListTableWithCalculations 
+                <CutListTableWithCalculations
                     fabs={fabs}
                     fabTypes={fabTypes}
                     salesPersons={salesPersons}

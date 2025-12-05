@@ -2,25 +2,25 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAllPermissions, useIsSuperAdmin } from '@/hooks/use-permission';
 import { DASHBOARD_WIDGETS, WIDGET_SECTIONS, type WidgetConfig } from '@/config/dashboard-widgets.config';
-import { CommunityBadges } from './components/fab';
-import { Contributions } from './components/chart';
-import { FinanceStats } from './components/finance';
-import { EarningsChart } from './components/earnings-chart';
-import { Teams } from './components/teams';
+import { CommunityBadges } from '@/pages/dashboards/demo1/light-sidebar/components/fab';
+import { Contributions } from '@/pages/dashboards/demo1/light-sidebar/components/chart';
+import { FinanceStats } from '@/pages/dashboards/demo1/light-sidebar/components/finance';
+import { EarningsChart } from '@/pages/dashboards/demo1/light-sidebar/components/earnings-chart';
+import { Teams } from '@/pages/dashboards/demo1/light-sidebar/components/teams';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { InfoIcon, TrendingDown, TrendingUp } from 'lucide-react';
+import { InfoIcon } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { toAbsoluteUrl } from '@/lib/helpers';
 import { useGetStagesQuery } from '@/store/api/job';
+import { Container } from '@/components/common/container';
 
 /**
- * Role-Based Dashboard Component
+ * Job Dashboard Component
  * 
- * This component dynamically renders dashboard widgets based on the user's
- * role permissions. It checks each widget's required permission and only
- * displays widgets the user has access to.
+ * This component displays a dashboard specifically for job-related widgets.
+ * It shows clickable widgets that navigate to different job sections.
  */
-export function RoleBasedDashboard() {
+export function JobDashboardPage() {
   const permissions = useAllPermissions();
   const isSuperAdmin = useIsSuperAdmin();
   const navigate = useNavigate();
@@ -45,7 +45,6 @@ export function RoleBasedDashboard() {
       'Revisions': '/job/revision',
       'Install Scheduling': '/job/install-scheduling',
       'Install Completion': '/job/install-completion',
-      'shop-overview': '/shop',
     };
     return routeMap[widgetId] || '/job';
   };
@@ -69,8 +68,7 @@ export function RoleBasedDashboard() {
       'Revisions': 'revision',
       'Install Scheduling': 'install_scheduling',
       'Install Completion': 'install_completion',
-      'FAB IDs': 'fab_created',
-      'shop-overview': 'shop_overview'
+      'FAB IDs': 'fab_created'
     };
     
     const stageName = stageNameMap[widgetId] || widgetId.toLowerCase().replace(/ /g, '_');
@@ -79,16 +77,21 @@ export function RoleBasedDashboard() {
   };
 
   /**
-   * Filter widgets based on user permissions
+   * Filter widgets to only show job-related widgets
    */
-  const accessibleWidgets = useMemo(() => {
-    // Super admin sees all widgets
+  const jobWidgets = useMemo(() => {
+    // Filter widgets to only include job-related ones (domain === 'job')
+    const filteredWidgets = DASHBOARD_WIDGETS.filter(widget => 
+      widget.domain === 'job'
+    );
+
+    // Super admin sees all job widgets
     if (isSuperAdmin) {
-      return DASHBOARD_WIDGETS;
+      return filteredWidgets;
     }
 
     // Filter widgets based on permissions
-    return DASHBOARD_WIDGETS.filter((widget) => {
+    return filteredWidgets.filter((widget) => {
       const menuPermissions = permissions[widget.requiredPermission];
       
       if (!menuPermissions) return false;
@@ -111,7 +114,7 @@ export function RoleBasedDashboard() {
       table: [],
     };
 
-    accessibleWidgets
+    jobWidgets
       .sort((a, b) => a.order - b.order)
       .forEach((widget) => {
         if (grouped[widget.category]) {
@@ -120,7 +123,7 @@ export function RoleBasedDashboard() {
       });
 
     return grouped;
-  }, [accessibleWidgets]);
+  }, [jobWidgets]);
 
   /**
    * Render a single stat widget
@@ -156,23 +159,6 @@ export function RoleBasedDashboard() {
             <span className="text-[32px] leading-[32px] pt-3 font-semibold text-black">
               {isStagesLoading ? '...' : fabCount}
             </span>
-            {/* <p className="flex items-center text-[12px] leading-[16px] font-normal text-[#6B7280]">
-              <span>
-                {data?.change && data.change.startsWith('+') ? (
-                  <span className="text-[#10B981]"><TrendingUp className='w-4 h-3'/></span>
-                ) : data?.change && data.change.startsWith('-') ? (
-                  <span className="text-[#EF4444]"><TrendingDown className='w-4 h-3'/></span>
-                ) : (
-                  <span className="text-[#6B7280]">■</span>
-                )}
-              </span>
-              <span>
-                <span className={`${data?.change && data.change.startsWith('-') ? 'text-[#FF5F57]' : ''}`}>
-                  {data?.change || '+0'}
-                </span>
-                {' '}this week
-              </span>
-            </p> */}
           </div>
         </CardContent>
       </Card>
@@ -230,112 +216,15 @@ export function RoleBasedDashboard() {
     }
   };
 
-  /**
-   * Render widgets with optional section title for store widgets (for non-super-admins)
-   */
-  const renderWidgetsWithTitles = () => {
-    // Separate job and store widgets
-    const jobWidgets = accessibleWidgets.filter(widget => widget.domain !== 'store');
-    const storeWidgets = accessibleWidgets.filter(widget => widget.domain === 'store');
-    
-    const elements = [];
-    
-    // Render job widgets
-    if (jobWidgets.length > 0) {
-      elements.push(
-        <div key="job-widgets">
-          {renderWidgetSection(jobWidgets)}
-        </div>
-      );
-    }
-    
-    // Render store widgets with title for non-super-admins
-    if (storeWidgets.length > 0) {
-      elements.push(
-        <div key="store-widgets">
-          {!isSuperAdmin && (
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Store</h2>
-            </div>
-          )}
-          {renderWidgetSection(storeWidgets)}
-        </div>
-      );
-    }
-    
-    return elements;
-  };
-  
-  /**
-   * Render a section of widgets
-   */
-  const renderWidgetSection = (widgets: WidgetConfig[]) => {
-    // Group widgets by category for this section
-    const sectionWidgetsByCategory: Record<string, WidgetConfig[]> = {
-      stats: [],
-      fab: [],
-      chart: [],
-      finance: [],
-      table: [],
-    };
-
-    widgets
-      .sort((a, b) => a.order - b.order)
-      .forEach((widget) => {
-        if (sectionWidgetsByCategory[widget.category]) {
-          sectionWidgetsByCategory[widget.category].push(widget);
-        }
-      });
-
-    return (
-      <>
-        {/* Stats Section - 4 columns grid for all stat widgets */}
-        {sectionWidgetsByCategory.stats.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-7.5">
-            {sectionWidgetsByCategory.stats.map(renderWidget)}
-          </div>
-        )}
-
-        {/* FAB, Statistics, and Finance Section */}
-        {(sectionWidgetsByCategory.fab.length > 0 ||
-          sectionWidgetsByCategory.chart.length > 0 ||
-          sectionWidgetsByCategory.finance.length > 0) && (
-            <div className="grid lg:grid-cols-3 gap-5 lg:gap-7.5 items-stretch mt-5">
-              {sectionWidgetsByCategory.fab
-                .filter(w => w.id === 'newly-assigned-fab')
-                .map(renderWidget)}
-              {sectionWidgetsByCategory.chart
-                .filter(w => w.id === 'overall-statistics')
-                .map(renderWidget)}
-              {sectionWidgetsByCategory.finance.map(renderWidget)}
-            </div>
-          )}
-
-        {/* Earnings Chart and Paused Jobs Section */}
-        {(sectionWidgetsByCategory.chart.some(w => w.id === 'earnings-chart') ||
-          sectionWidgetsByCategory.fab.some(w => w.id === 'paused-jobs')) && (
-            <div className="grid lg:grid-cols-3 gap-5 lg:gap-7.5 items-stretch mt-5">
-              {sectionWidgetsByCategory.chart
-                .filter(w => w.id === 'earnings-chart')
-                .map(renderWidget)}
-              {sectionWidgetsByCategory.fab
-                .filter(w => w.id === 'paused-jobs')
-                .map(renderWidget)}
-            </div>
-          )}
-      </>
-    );
-  };
-
   // Show message if no widgets are accessible
-  if (accessibleWidgets.length === 0) {
+  if (jobWidgets.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <Alert className="max-w-md">
           <InfoIcon className="h-4 w-4" />
-          <AlertTitle>No Dashboard Access</AlertTitle>
+          <AlertTitle>No Job Dashboard Access</AlertTitle>
           <AlertDescription>
-            You don't have permission to view any dashboard widgets. Please contact your administrator
+            You don't have permission to view any job dashboard widgets. Please contact your administrator
             to grant you the necessary permissions.
           </AlertDescription>
         </Alert>
@@ -343,24 +232,16 @@ export function RoleBasedDashboard() {
     );
   }
 
-  // Show error message if stages failed to load
-  // if (isStagesError) {
-  //   return (
-  //     <div className="flex items-center justify-center min-h-[400px]">
-  //       <Alert variant="destructive" className="max-w-md">
-  //         <InfoIcon className="h-4 w-4" />
-  //         <AlertTitle>Error Loading Dashboard</AlertTitle>
-  //         <AlertDescription>
-  //           Failed to load stage statistics. Please try refreshing the page.
-  //         </AlertDescription>
-  //       </Alert>
-  //     </div>
-  //   );
-  // }
-
   return (
-    <div className="grid gap-5 lg:gap-7.5">
-      {renderWidgetsWithTitles()}
-    </div>
+    <Container className="grid gap-5 lg:gap-7.5">
+      {/* Stats Section - 4 columns grid for all stat widgets */}
+      {widgetsByCategory.stats.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-7.5">
+          {widgetsByCategory.stats.map(renderWidget)}
+        </div>
+      )}
+
+     
+    </Container>
   );
 }

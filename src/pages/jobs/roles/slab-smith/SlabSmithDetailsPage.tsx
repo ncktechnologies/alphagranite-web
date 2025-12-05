@@ -304,9 +304,7 @@ export function SlabSmithDetailsPage() {
         <Separator className="my-6" />
 
         <Card>
-          <CardHeader>
-            <CardTitle>Time Tracking</CardTitle>
-          </CardHeader>
+        
           <CardContent>
             <TimeTrackingComponent
               isDrafting={isDrafting}

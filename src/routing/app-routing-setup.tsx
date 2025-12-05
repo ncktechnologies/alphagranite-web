@@ -46,6 +46,8 @@ import { Navigate, Route, Routes } from 'react-router';
 import { NewFabIdForm } from '@/pages/jobs/roles';
 import { EditFabIdForm } from '@/pages/jobs/roles/sales/EditFabIdForm';
 import { SlabSmithDetailsPage, SlabSmithPage } from '@/pages/jobs/roles/slab-smith';
+import { JobDashboardPage } from '@/pages/jobs';
+import { StoreDashboardPage } from '@/pages/shop';
 
 export function AppRoutingSetup() {
   return (
@@ -59,6 +61,9 @@ export function AppRoutingSetup() {
           <Route path="/settings/notifications" element={<NotificationsSection />} />
           <Route path="/settings/permissions" element={<PermissionsSection />} />
           <Route path="/create-jobs" element={<JobsSection />} />
+          
+          {/* Job Dashboard Route */}
+          <Route path="/job" element={<JobDashboardPage />} />
 
           <Route
             path="/employees"

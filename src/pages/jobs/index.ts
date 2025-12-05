@@ -1,1 +1,1 @@
-export { JobsSection } from './JobsSection';
+export { JobDashboardPage } from './JobDashboardPage';

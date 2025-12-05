@@ -17,6 +17,7 @@ export interface WidgetConfig {
   };
   order: number; // Display order
   category: 'stats' | 'chart' | 'table' | 'fab' | 'finance';
+  domain?: 'job' | 'store'; // Added domain property to categorize widgets
   data?: any; // Optional data for widget configuration (icon, colors, etc.)
 }
 
@@ -29,6 +30,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
+    domain: 'job', // Added domain
     order: 1,
     data: { icon: 'user-fill.svg', bgColor: 'bg-[#9CC15E]' }
   },
@@ -39,6 +41,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
+    domain: 'job', // Added domain
     order: 2,
     data: { icon: 'tape-measure.svg', bgColor: 'bg-[#EE7575]' }
   },
@@ -49,6 +52,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
+    domain: 'job', // Added domain
     order: 3,
     data: { icon: 'magnifier.svg', bgColor: 'bg-[#EA3DB1]' }
   },
@@ -59,6 +63,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
+    domain: 'job', // Added domain
     order: 4,
     data: { icon: 'icon-6.svg', bgColor: 'bg-[#51BCF4]' }
   },
@@ -71,6 +76,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
+    domain: 'job', // Added domain
     order: 5,
     data: { icon: 'money.svg', bgColor: 'bg-[#0BC33F]' }
   },
@@ -81,6 +87,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
+    domain: 'job', // Added domain
     order: 6,
     data: { icon: 'package-up.svg', bgColor: 'bg-[#C1BE5E]' }
   },
@@ -91,6 +98,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
+    domain: 'job', // Added domain
     order: 7,
     data: { icon: 'settings.svg', bgColor: 'bg-[#573DEA]' }
   },
@@ -101,6 +109,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
+    domain: 'job', // Added domain
     order: 8,
     data: { icon: 'hand-saw.svg', bgColor: 'bg-[#5DD40D]' }
   },
@@ -113,6 +122,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
+    domain: 'job', // Added domain
     order: 9,
     data: { icon: 'icon-4.svg', bgColor: 'bg-[#C30B7C]' }
   },
@@ -123,6 +133,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
+    domain: 'job', // Added domain
     order: 10,
     data: { icon: 'icon-3.svg', bgColor: 'bg-[#DA5D0F]' }
   },
@@ -133,8 +144,9 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
+    domain: 'job', // Added domain
     order: 11,
-    data: { icon: 'calendar_pin.svg', bgColor: 'bg-[#CF2675]' }
+    data: { icon: 'calendar-pin.svg', bgColor: 'bg-[#CF2675]' }
   },
   {
     id: 'Install Completion',
@@ -143,6 +155,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
+    domain: 'job', // Added domain
     order: 12,
     data: { icon: 'icon-1.svg', bgColor: 'bg-[#13D6C6]' }
   },
@@ -155,6 +168,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'CommunityBadges',
     category: 'fab',
+    domain: 'job', // Added domain
     gridSpan: { cols: 1 },
     order: 5,
   },
@@ -165,6 +179,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'CommunityBadges',
     category: 'fab',
+    domain: 'job', // Added domain
     gridSpan: { cols: 1 },
     order: 6,
   },
@@ -177,6 +192,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'Contributions',
     category: 'chart',
+    domain: 'job', // Added domain
     gridSpan: { cols: 1 },
     order: 7,
   },
@@ -187,6 +203,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'FinanceStats',
     category: 'finance',
+    domain: 'job', // Added domain
     gridSpan: { cols: 1 },
     order: 8,
   },
@@ -197,6 +214,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'EarningsChart',
     category: 'chart',
+    domain: 'job', // Added domain
     gridSpan: { cols: 2 },
     order: 9,
   },
@@ -209,6 +227,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'Teams',
     category: 'table',
+    domain: 'job', // Added domain
     gridSpan: { cols: 3 },
     order: 10,
   },
@@ -221,6 +240,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'ShopOverview',
     category: 'stats',
+    domain: 'store', // Added domain
     gridSpan: { cols: 3 },
     order: 11,
   },
@@ -233,6 +253,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'EmployeeStats',
     category: 'stats',
+    domain: 'job', // Added domain
     gridSpan: { cols: 2 },
     order: 12,
   },
@@ -245,6 +266,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'DepartmentOverview',
     category: 'stats',
+    domain: 'job', // Added domain
     gridSpan: { cols: 2 },
     order: 13,
   },

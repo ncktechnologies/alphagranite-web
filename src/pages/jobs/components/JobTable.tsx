@@ -45,15 +45,17 @@ interface JobTableProps {
     isSuperAdmin?: boolean;
     isLoading?: boolean;
     onRowClick?: (fabId: string) => void;
+    showScheduleFilter?: boolean;
 }
 
-export const JobTable = ({ 
-    jobs, 
-    path, 
-    getPath, 
-    isSuperAdmin = false, 
-    isLoading, 
-    onRowClick 
+export const JobTable = ({
+    jobs,
+    path,
+    getPath,
+    isSuperAdmin = false,
+    isLoading,
+    onRowClick,
+      showScheduleFilter = false // Default to false
 }: JobTableProps) => {
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
@@ -63,11 +65,10 @@ export const JobTable = ({
     const [searchQuery, setSearchQuery] = useState('');
     const [dateFilter, setDateFilter] = useState<string>('today');
     const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
-    const [scheduleFilter, setScheduleFilter] = useState<string>('all');
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-
+    const [scheduleFilter, setScheduleFilter] = useState<string>(showScheduleFilter ? 'all' : 'all');
     const navigate = useNavigate();
 
     // Function to get the correct path for a specific job
@@ -126,59 +127,12 @@ export const JobTable = ({
         }
 
         // Date filter
-        if (dateFilter !== 'all') {
-            result = result.filter((job) => {
-                if (dateFilter === 'unscheduled') {
-                    return !job.date || job.date === '';
-                }
-                
-                if (dateFilter === 'scheduled') {
-                    return job.date && job.date !== '';
-                }
-                
-                if (!job.date) return false;
-
-                const jobDate = new Date(job.date);
-                const today = new Date();
-                const startOfWeek = new Date(today);
-                startOfWeek.setDate(today.getDate() - today.getDay());
-                const endOfWeek = new Date(startOfWeek);
-                endOfWeek.setDate(startOfWeek.getDate() + 6);
-                
-                const startOfNextWeek = new Date(endOfWeek);
-                startOfNextWeek.setDate(endOfWeek.getDate() + 1);
-                const endOfNextWeek = new Date(startOfNextWeek);
-                endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
-                
-                const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-                const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                
-                const startOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-                const endOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0);
-
-                switch (dateFilter) {
-                    case 'today':
-                        return jobDate.toDateString() === today.toDateString();
-                    case 'this_week':
-                        return jobDate >= startOfWeek && jobDate <= endOfWeek;
-                    case 'this_month':
-                        return jobDate >= startOfMonth && jobDate <= endOfMonth;
-                    case 'next_week':
-                        return jobDate >= startOfNextWeek && jobDate <= endOfNextWeek;
-                    case 'next_month':
-                        return jobDate >= startOfNextMonth && jobDate <= endOfNextMonth;
-                    case 'custom':
-                        if (dateRange?.from && dateRange?.to) {
-                            const start = new Date(dateRange.from);
-                            const end = new Date(dateRange.to);
-                            end.setHours(23, 59, 59, 999);
-                            return jobDate >= start && jobDate <= end;
-                        }
-                        return true;
-                    default:
-                        return job.date?.includes(dateFilter);
-                }
-            });
+         if (showScheduleFilter && scheduleFilter !== 'all') {
+            if (scheduleFilter === 'scheduled') {
+                result = result.filter((job) => job.date && job.date !== '');
+            } else if (scheduleFilter === 'unscheduled') {
+                result = result.filter((job) => !job.date || job.date === '');
+            }
         }
 
         // Fab Type filter
@@ -419,8 +373,8 @@ export const JobTable = ({
             id: 'actions',
             header: '',
             cell: ({ row }) => (
-                <ActionsCell 
-                    row={row} 
+                <ActionsCell
+                    row={row}
                     onView={() => handleView(row.original)} // Pass the job object
                 />
             ),
@@ -588,16 +542,18 @@ export const JobTable = ({
                             </div>
 
                             {/* Schedule Filter */}
-                            <Select value={scheduleFilter} onValueChange={setScheduleFilter}>
-                                <SelectTrigger className="w-[150px] h-[34px]">
-                                    <SelectValue placeholder="Schedule Status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All</SelectItem>
-                                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                                    <SelectItem value="unscheduled">Unscheduled</SelectItem>
-                                </SelectContent>
-                            </Select>
+                            {showScheduleFilter && (
+                                <Select value={scheduleFilter} onValueChange={setScheduleFilter}>
+                                    <SelectTrigger className="w-[150px] h-[34px]">
+                                        <SelectValue placeholder="Schedule Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All</SelectItem>
+                                        <SelectItem value="scheduled">Scheduled</SelectItem>
+                                        <SelectItem value="unscheduled">Unscheduled</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            )}
 
                             {/* Stage filter - only visible to super admins */}
                             {isSuperAdmin && (
