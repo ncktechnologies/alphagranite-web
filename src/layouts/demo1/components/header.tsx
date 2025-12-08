@@ -130,7 +130,7 @@ export function Header() {
             <div></div>
           ) : (
             <>
-              {!mobileMode && (
+              {/* {!mobileMode && (
                 <div className="pt-2.5 px-3.5 mb-1">
                   <div className="relative">
                     <Search className="text-muted-foreground absolute top-1/2 start-3.5 -translate-y-1/2 size-4" />
@@ -147,20 +147,20 @@ export function Header() {
                     </div>
                   </div>
                 </div>
-              )}
+              )} */}
               {/* <NotificationsSheet
                 trigger={ */}
-                  <Button
+                  {/* <Button
                     variant="ghost"
                     mode="icon"
                     shape="circle"
                     className="size-9 border-foreground hover:bg-primary/10 hover:[&_svg]:text-primary"
                   >
                     <Bell className="size-5!" />
-                  </Button>
+                  </Button> */}
                 {/* }
               /> */}
-              <ChatSheet
+              {/* <ChatSheet
                 trigger={
                   <Button
                     variant="ghost"
@@ -168,17 +168,16 @@ export function Header() {
                     shape="circle"
                     className="size-9 border-foreground hover:bg-primary/10 hover:[&_svg]:text-primary"
                   >
-                    {/* <Message className="size-6!" /> */}
                     <img src="/images/icons/messages.svg" alt="" />
                   </Button>
                 }
-              />
+              /> */}
 
               <UserDropdownMenu
                 trigger={
                   <img
                     className="size-9 rounded-full border-2 border-green-500 shrink-0 cursor-pointer"
-                    src={toAbsoluteUrl('/images/app/300-2.png')}
+                    src={toAbsoluteUrl('/images/app/user-line.svg')}
                     alt="User Avatar"
                   />
                 }
