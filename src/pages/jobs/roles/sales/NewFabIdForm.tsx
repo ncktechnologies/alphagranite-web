@@ -184,36 +184,36 @@ const NewFabIdForm = () => {
 
   // Watch for account changes
   const accountValue = form.watch('account');
-  
+
   // Get the selected account ID
   const selectedAccount = accountsData?.find((account: any) => account.name === accountValue);
   const selectedAccountId = selectedAccount?.id;
-  
+
   // Effect to auto-populate job number when job name is selected
   const jobNameValue = form.watch('jobName');
   const jobNumberValue = form.watch('jobNumber');
-  
+
   // Fetch jobs filtered by selected account using the new endpoint
   const {
     data: accountJobsData,
     isLoading: isAccountJobsLoading,
     isError: isAccountJobsError,
     error: accountJobsError
-  } = useGetJobsByAccountQuery( 
+  } = useGetJobsByAccountQuery(
     { account_id: selectedAccountId!, params: { limit: 1000 } },
     { skip: !selectedAccountId }
   );
-  
+
   // Override the existing jobsData with account-specific jobs when an account is selected
   const effectiveJobsData = selectedAccountId ? accountJobsData : jobsData;
   const isEffectiveJobsLoading = selectedAccountId ? isAccountJobsLoading : isLoadingJobs;
   const isEffectiveJobsError = selectedAccountId ? isAccountJobsError : isJobsError;
-  
+
   // Filter jobs for job dropdowns - use account-specific jobs when available
   const jobNames = (!isEffectiveJobsError && Array.isArray(effectiveJobsData) ? effectiveJobsData : []).map((job: any) => job.name);
   const jobNumbers = (!isEffectiveJobsError && Array.isArray(effectiveJobsData) ? effectiveJobsData : []).map((job: any) => job.job_number);
-  
-  
+
+
   // Update the useEffect hooks to use effectiveJobsData
   useEffect(() => {
     if (jobNameValue && effectiveJobsData && Array.isArray(effectiveJobsData)) {
@@ -232,7 +232,7 @@ const NewFabIdForm = () => {
       }
     }
   }, [jobNumberValue, effectiveJobsData, form, jobNameValue]);
-  
+
   // Filter functions for search with error handling
   const filteredFabTypes = (!isFabTypesError && Array.isArray(fabTypesData) && fabTypesData?.map((type: any) => type.name) || []).filter((type: string) =>
     type.toLowerCase().includes(fabTypeSearch.toLowerCase())
@@ -665,31 +665,58 @@ const NewFabIdForm = () => {
                               <div className="flex items-start ">
                                 <FormLabel>Job Name</FormLabel>
                                 <Link to="/create-jobs">
-                                  <Button variant="ghost" className="text-primary -py-2 hover:bg-none text-xs !h-0 gap-0" size="xs"  autoHeight={false}>
-                                    <Plus  />
+                                  <Button variant="ghost" className="text-primary -py-2 hover:bg-none text-xs !h-0 gap-0" size="xs" autoHeight={false}>
+                                    <Plus />
                                     New Job
                                   </Button>
                                 </Link>
                               </div>
-                              <Select onValueChange={(value) => {
-                                field.onChange(value);
-                                // Auto-populate job number
-                                if (jobsData && Array.isArray(jobsData)) {
-                                  const selectedJob = jobsData.find((job: any) => job.name === value);
-                                  if (selectedJob) {
-                                    form.setValue('jobNumber', selectedJob.job_number);
+                              <Select
+                                onValueChange={(value) => {
+                                  field.onChange(value);
+                                  // Auto-populate job number
+                                  if (effectiveJobsData && Array.isArray(effectiveJobsData)) {
+                                    const selectedJob = effectiveJobsData.find((job: any) => job.name === value);
+                                    if (selectedJob) {
+                                      form.setValue('jobNumber', selectedJob.job_number);
+                                    }
                                   }
-                                }
-                              }} value={field.value} disabled={isLoadingJobs}>
+                                }}
+                                value={field.value}
+                                disabled={isEffectiveJobsLoading || (selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0)}
+                              >
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder={isLoadingJobs ? 'Loading...' : 'Select job name'} />
+                                    <SelectValue placeholder={
+                                      isEffectiveJobsLoading ? 'Loading...' :
+                                        (selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0) ? 'No jobs available' :
+                                          'Select job name'
+                                    } />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {isJobsError ? (
-                                    <div className="px-3 py-2 text-sm text-red-500">
+                                  {isEffectiveJobsError ? (
+                                    <div className="px-3 py-2 text-sm text-red-500 text-center">
                                       Failed to load jobs: Server error occurred
+                                    </div>
+                                  ) : isEffectiveJobsLoading ? (
+                                    <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                      Loading jobs...
+                                    </div>
+                                  ) : selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0 ? (
+                                    <div className="px-3 py-2 text-sm text-gray-500 text-center flex flex-col items-center gap-2">
+                                      <InfoIcon className="h-4 w-4 text-gray-400" />
+                                      <span>No jobs found for this account</span>
+                                      <Link to="/create-jobs">
+                                        <Button variant="outline" size="sm" className="mt-2">
+                                          <Plus className="w-3 h-3 mr-1" />
+                                          Create New Job
+                                        </Button>
+                                      </Link>
+                                    </div>
+                                  ) : effectiveJobsData && effectiveJobsData.length === 0 ? (
+                                    <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                      No jobs found
                                     </div>
                                   ) : (
                                     jobNames.map((jobName: string) => (
@@ -712,25 +739,52 @@ const NewFabIdForm = () => {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Job Number</FormLabel>
-                              <Select onValueChange={(value) => {
-                                field.onChange(value);
-                                // Auto-populate job name
-                                if (jobsData && Array.isArray(jobsData)) {
-                                  const selectedJob = jobsData.find((job: any) => job.job_number === value);
-                                  if (selectedJob) {
-                                    form.setValue('jobName', selectedJob.name);
+                              <Select
+                                onValueChange={(value) => {
+                                  field.onChange(value);
+                                  // Auto-populate job name
+                                  if (effectiveJobsData && Array.isArray(effectiveJobsData)) {
+                                    const selectedJob = effectiveJobsData.find((job: any) => job.job_number === value);
+                                    if (selectedJob) {
+                                      form.setValue('jobName', selectedJob.name);
+                                    }
                                   }
-                                }
-                              }} value={field.value} disabled={isLoadingJobs}>
+                                }}
+                                value={field.value}
+                                disabled={isEffectiveJobsLoading || (selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0)}
+                              >
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder={isLoadingJobs ? 'Loading...' : 'Select job number'} />
+                                    <SelectValue placeholder={
+                                      isEffectiveJobsLoading ? 'Loading...' :
+                                        (selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0) ? 'No jobs available' :
+                                          'Select job number'
+                                    } />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {isJobsError ? (
-                                    <div className="px-3 py-2 text-sm text-red-500">
+                                  {isEffectiveJobsError ? (
+                                    <div className="px-3 py-2 text-sm text-red-500 text-center">
                                       Failed to load jobs: Server error occurred
+                                    </div>
+                                  ) : isEffectiveJobsLoading ? (
+                                    <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                      Loading jobs...
+                                    </div>
+                                  ) : selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0 ? (
+                                    <div className="px-3 py-2 text-sm text-gray-500 text-center flex flex-col items-center gap-2">
+                                      <InfoIcon className="h-4 w-4 text-gray-400" />
+                                      <span>No jobs found for this account</span>
+                                      <Link to="/create-jobs">
+                                        <Button variant="outline" size="sm" className="mt-2">
+                                          <Plus className="w-3 h-3 mr-1" />
+                                          Create New Job
+                                        </Button>
+                                      </Link>
+                                    </div>
+                                  ) : effectiveJobsData && effectiveJobsData.length === 0 ? (
+                                    <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                      No jobs found
                                     </div>
                                   ) : (
                                     jobNumbers.map((jobNumber: string) => (
@@ -1172,7 +1226,7 @@ const NewFabIdForm = () => {
                               Submitting...
                             </>
                           ) : (
-                            'Submit for Review'
+                            'Submit for Templating'
                           )}
                         </Button>
                       </div>
