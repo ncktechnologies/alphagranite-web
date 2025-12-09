@@ -1242,6 +1242,16 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Fab"],
             }),
+
+            // Manage final programming session (start, pause, resume, end)
+            manageFinalProgrammingSession: build.mutation<any, { fab_id: number; data: any }>({
+                query: ({ fab_id, data }) => ({
+                    url: `/final-programming/${fab_id}/session`,
+                    method: "POST",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
         };
     },
 });
@@ -1317,4 +1327,5 @@ export const {
     useAddFilesToFinalProgrammingMutation,
     useDeleteFileFromFinalProgrammingMutation,
     useUpdateFinalProgrammingMutation,
+    useManageFinalProgrammingSessionMutation, // Add the new hook
 } = jobApi;

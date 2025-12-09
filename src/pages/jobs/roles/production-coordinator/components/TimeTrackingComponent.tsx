@@ -8,7 +8,7 @@ interface TimeTrackingComponentProps {
   isPaused: boolean;
   totalTime: number;
 
-  onStart: (startDate: Date) => void;
+  onStart: (startDate: Date) => void | Promise<void>; // Allow async handler
   onPause: () => void;
   onResume: () => void;
   onEnd: (endDate: Date) => void;
@@ -38,6 +38,7 @@ export const TimeTrackingComponent = ({
   const [totalPausedTime, setTotalPausedTime] = useState<number>(0); // Track total paused time in seconds
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [isStarting, setIsStarting] = useState(false); // Track if starting process is in progress
 
   // Tick every second
   useEffect(() => {
@@ -63,13 +64,19 @@ export const TimeTrackingComponent = ({
 
 
   // ---------- HANDLERS ----------
-  const handleStart = () => {
+  const handleStart = async () => {
+    setIsStarting(true);
     const now = new Date();
     setStartTime(now);
     setPausedTime(null);
     setTotalPausedTime(0); // Reset paused time when starting fresh
 
-    onStart(now);   // 🔥 Emit timestamp upward
+    try {
+      // Call the async handler
+      await onStart(now);
+    } finally {
+      setIsStarting(false);
+    }
   };
 
   const handlePause = () => {
@@ -194,9 +201,9 @@ export const TimeTrackingComponent = ({
         <div className="flex gap-2">
 
           {!isDrafting && !hasEnded ? (
-            <Button onClick={handleStart}>
+            <Button onClick={handleStart} disabled={isStarting}>
               <Play className="w-4 h-4 mr-2" />
-              Start drafting
+              {isStarting ? 'Starting...' : 'Start drafting'}
             </Button>
           ) : isDrafting && !hasEnded ? (
             <>

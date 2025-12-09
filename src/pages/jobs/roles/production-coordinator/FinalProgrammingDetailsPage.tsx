@@ -11,7 +11,8 @@ import {
   useGetFabByIdQuery, 
   useGetFinalProgrammingSessionStatusQuery,
   useDeleteFileFromFinalProgrammingMutation,
-  useUpdateFabMutation
+  useUpdateFabMutation,
+  useManageFinalProgrammingSessionMutation // Import the new mutation
 } from '@/store/api/job';
 import { TimeTrackingComponent } from './components/TimeTrackingComponent';
 import { UploadDocuments } from './components/fileUploads';
@@ -38,6 +39,7 @@ export function FinalProgrammingDetailsPage() {
   // Mutations
   const [deleteFileFromFinalProgramming] = useDeleteFileFromFinalProgrammingMutation();
   const [updateFab] = useUpdateFabMutation();
+  const [manageFinalProgrammingSession] = useManageFinalProgrammingSessionMutation(); // Add the new mutation
 
   // Local UI state
   const [isDrafting, setIsDrafting] = useState(false);
@@ -60,12 +62,33 @@ export function FinalProgrammingDetailsPage() {
   const shouldShowUploadSection = isDrafting || uploadedFileMetas.length > 0;
 
   // Handle time tracking events
-  const handleStart = useCallback((startTime: Date) => {
+  const handleStart = useCallback(async (startTime: Date) => {
+    // Create a new final programming session when starting
+    if (fabId) {
+      try {
+        await manageFinalProgrammingSession({
+          fab_id: fabId,
+          data: {
+            action: 'start',
+            started_by: currentEmployeeId
+          }
+        }).unwrap();
+        
+        // Refresh session status after creating session
+        await refetchFPSession();
+        toast.success('Final programming session started');
+      } catch (error) {
+        console.error('Failed to start final programming session:', error);
+        toast.error('Failed to start final programming session');
+        return; // Don't proceed if session creation fails
+      }
+    }
+
     setIsDrafting(true);
     setIsPaused(false);
     setHasEnded(false);
     setDraftStart(startTime);
-  }, []);
+  }, [fabId, currentEmployeeId, manageFinalProgrammingSession, refetchFPSession]);
 
   const handlePause = useCallback(() => {
     setIsPaused(true);
