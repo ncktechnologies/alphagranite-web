@@ -37,6 +37,7 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { logout } from "@/store/slice";
 import { useDispatch, useSelector } from "react-redux";
+import { getUserInitials } from '@/utils/userUtils';
 
 export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
   // const { logout, user } = useAuth();
@@ -79,11 +80,10 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
         {/* Header */}
         <div className="flex items-center justify-between p-3">
           <div className="flex items-center gap-2">
-            {/* <img
-              className="size-9 rounded-full border-2 border-green-500"
-              src={displayAvatar}
-              alt="User avatar"
-            /> */}
+            {/* User Initials Avatar */}
+            <div className="size-9 rounded-full border-2 border-green-500 flex items-center justify-center bg-green-100 text-green-800 font-semibold">
+              {getUserInitials(user)}
+            </div>
             <div className="flex flex-col">
               <Link
                 to=""

@@ -21,6 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { z } from "zod";
 import { toast } from "sonner";
+import { Can } from '@/components/permission';
 
 const markAsCompleteSchema = z.object({
   revenue: z.string().min(1, "Revenue is required"),
@@ -159,12 +160,14 @@ export const MarkAsCompleteModal = ({
               >
                 Cancel
               </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting || !form.formState.isValid}
-              >
-                {isSubmitting ? "Submitting..." : "Submit"}
-              </Button>
+              <Can action="update" on="sct">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !form.formState.isValid}
+                >
+                  {isSubmitting ? "Submitting..." : "Submit"}
+                </Button>
+              </Can>
             </div>
           </form>
         </Form>

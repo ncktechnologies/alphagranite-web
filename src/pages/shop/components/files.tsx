@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { Drafting } from '@/store/api/job';
+import { Can } from '@/components/permission';
 
 interface FileMetadata {
   id: string;
@@ -23,35 +24,68 @@ interface FileMetadata {
 interface UploadBoxProps {
   onFileClick?: (file: FileMetadata) => void;
   draftingData?: Drafting;
+  onDeleteFile?: (fileId: string) => void;
+  draftingId?: number;
+  uploadedFileMetas?: any[]; // Newly uploaded files that haven't been saved to backend yet
 }
 
-export function Documents({ onFileClick, draftingData }: UploadBoxProps) {
+export function Documents({ onFileClick, draftingData, onDeleteFile, draftingId, uploadedFileMetas = [] }: UploadBoxProps) {
   // State for files - initialize with empty array
   const [files, setFiles] = useState<FileMetadata[]>([]);
 
-  // Update files when draftingData changes
+  // Update files when draftingData or uploadedFileMetas changes
   useEffect(() => {
-    if (draftingData && draftingData.file_ids) {
-      // Parse file_ids string into an array of file objects
-      // Since we don't have a way to get actual file details, we'll create mock files based on file_ids
-      try {
-        const fileIdsArray = draftingData.file_ids.split(',').filter(id => id.trim() !== '');
-        const mockFiles = fileIdsArray.map((id, index) => ({
-          id: id.trim(),
-          name: `Drafting_File_${index + 1}.pdf`,
-          size: 1024000 + index * 512000, // Mock size
-          type: 'application/pdf',
-          url: '/images/app/upload-file.svg',
-        }));
-        setFiles(mockFiles);
-      } catch (error) {
-        console.error('Error parsing file_ids:', error);
-        setFiles([]);
+    // Combine existing files from backend and newly uploaded files
+    let allFiles: FileMetadata[] = [];
+    
+    // First, try to use the files array if available (preferred method)
+    if (draftingData) {
+      if (draftingData.files && Array.isArray(draftingData.files) && draftingData.files.length > 0) {
+        try {
+          const actualFiles = draftingData.files.map((file: any) => ({
+            id: String(file.id),
+            name: file.name || `File_${file.id}`,
+            size: parseInt(file.file_size) || 0,
+            type: file.file_type || 'application/octet-stream',
+            url: file.file_url || '/images/app/upload-file.svg',
+          }));
+          allFiles = [...allFiles, ...actualFiles];
+        } catch (error) {
+          console.error('Error processing files array:', error);
+        }
       }
-    } else {
-      setFiles([]);
+      // Fallback to file_ids string if files array is not available
+      else if (draftingData.file_ids) {
+        try {
+          const fileIdsArray = draftingData.file_ids.split(',').filter(id => id.trim() !== '');
+          const mockFiles = fileIdsArray.map((id, index) => ({
+            id: id.trim(),
+            name: `Drafting_File_${index + 1}.pdf`,
+            size: 1024000 + index * 512000, // Mock size
+            type: 'application/pdf',
+            url: '/images/app/upload-file.svg',
+          }));
+          allFiles = [...allFiles, ...mockFiles];
+        } catch (error) {
+          console.error('Error parsing file_ids:', error);
+        }
+      }
     }
-  }, [draftingData]);
+    
+    // Add newly uploaded files that haven't been saved to backend yet
+    if (uploadedFileMetas && uploadedFileMetas.length > 0) {
+      const newFiles = uploadedFileMetas.map((meta: any) => ({
+        id: String(meta.id),
+        name: meta.name || `File_${meta.id}`,
+        size: meta.size || 0,
+        type: meta.type || 'application/octet-stream',
+        url: meta.url || (meta.file ? URL.createObjectURL(meta.file) : '/images/app/upload-file.svg'),
+      }));
+      allFiles = [...allFiles, ...newFiles];
+    }
+    
+    setFiles(allFiles);
+  }, [draftingData, uploadedFileMetas]);
 
   const getFileIcon = (file: FileMetadata) => {
     const { type } = file;
@@ -104,9 +138,21 @@ export function Documents({ onFileClick, draftingData }: UploadBoxProps) {
                   variant="ghost"
                   size="icon"
                   className="size-6 text-muted-foreground hover:text-destructive"
-                  onClick={() => console.log('Remove disabled in view-only mode')}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onDeleteFile && draftingId) {
+                      onDeleteFile(file.id);
+                    }
+                  }}
+                  disabled={!onDeleteFile || !draftingId}
                 >
-                  <X className="size-3" />
+                  {onDeleteFile && draftingId ? (
+                    <Can action="delete" on="Drafting">
+                      <X className="size-3" />
+                    </Can>
+                  ) : (
+                    <X className="size-3 opacity-30" />
+                  )}
                 </Button>
               </div>
 

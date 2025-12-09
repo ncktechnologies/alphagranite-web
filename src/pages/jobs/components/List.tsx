@@ -5,6 +5,7 @@ import { Plus, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useState, useMemo } from 'react';
 import { format } from 'date-fns';
+import { Can } from '@/components/permission';
 
 interface JobsListProps {
     jobs: Job[];
@@ -36,10 +37,12 @@ export const JobsList = ({
         <div className="w-1/3 min-w-[300px] border-r pr-6">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold">Jobs</h2>
-                <Button onClick={onNewJob} size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Job
-                </Button>
+                <Can action="create" on="jobs">
+                    <Button onClick={onNewJob} size="sm">
+                        <Plus className="h-4 w-4 mr-2" />
+                        New Job
+                    </Button>
+                </Can>
             </div>
 
             <div className="relative mb-4">

@@ -19,6 +19,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate, useParams } from "react-router";
 import { useGetFabByIdQuery, useGetTemplatingByFabIdQuery, useUnscheduleTemplatingMutation } from "@/store/api/job";
+import { Can } from '@/components/permission';
 
 const reviewChecklistSchema = z.object({
     customerInfo: z.boolean(),
@@ -163,38 +164,42 @@ export function ReviewChecklistForm() {
 
                     <div className="space-y-3 mt-6">
                         {!isScheduled && (
-                            <Button className="w-full py-6 text-base" type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? (
-                                    <span className="flex items-center gap-2">
-                                        <LoaderCircle className="w-4 h-4 animate-spin" />
-                                        Verifying...
-                                    </span>
-                                ) : (
-                                    " Schedule for templating"
-                                )}
-                            </Button>
+                            <Can action="create" on="templating">
+                                <Button className="w-full py-6 text-base" type="submit" disabled={isSubmitting}>
+                                    {isSubmitting ? (
+                                        <span className="flex items-center gap-2">
+                                            <LoaderCircle className="w-4 h-4 animate-spin" />
+                                            Verifying...
+                                        </span>
+                                    ) : (
+                                        " Schedule for templating"
+                                    )}
+                                </Button>
+                            </Can>
                         )}
                         
                         {isScheduled && (
-                            <Button 
-                                variant="outline" 
-                                className="w-full text-secondary font-bold py-6 text-base"
-                                onClick={handleUnschedule}
-                                type="button"
-                            >
-                                <X className="mr-2 h-4 w-4" />
-                                Unschedule
-                            </Button>
+                            <Can action="update" on="templating">
+                                <Button 
+                                    variant="outline" 
+                                    className="w-full text-secondary font-bold py-6 text-base"
+                                    onClick={handleUnschedule}
+                                    type="button"
+                                >
+                                    <X className="mr-2 h-4 w-4" />
+                                    Unschedule
+                                </Button>
+                            </Can>
                         )}
                         
-                        <Button variant="outline" className="w-full text-secondary font-bold py-6 text-base">
+                        {/* <Button variant="outline" className="w-full text-secondary font-bold py-6 text-base">
                             <Undo2 />
                             Return to sales
                         </Button>
                         <Button variant="ghost" className="w-full text-[#2B892B] underline py-6 text-base">
                             <Save />
                             Save to draft
-                        </Button>
+                        </Button> */}
                     </div>
                 </form>
             </Form>

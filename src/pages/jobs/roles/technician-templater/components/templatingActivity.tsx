@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router";
 import { useCompleteTemplatingMutation, useGetTemplatingByFabIdQuery, useUpdateTemplatingMutation } from '@/store/api/job';
 import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { Can } from '@/components/permission';
 
 const formSchema = z.object({
   status: z.enum(["completed", "not_completed"]),
@@ -329,9 +330,11 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
             <Button type="button" variant="outline" onClick={() => navigate('/job/templating-technician')}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save"}
-            </Button>
+            <Can action="update" on="Templating">
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : "Save"}
+              </Button>
+            </Can>
           </div>
         </form>
       </Form>

@@ -14,6 +14,7 @@ import DepartmentFormSheet from './departmentSheet';
 import { DeleteDepartmentModal } from './delete-department-modal';
 import type { Department } from '@/store/api/department';
 import { Button } from '@/components/ui/button';
+import { Can } from '@/components/permission';
 
 
 export function DropdownMenu5({ trigger, onView, department }: { trigger: ReactNode, onView?: () => void, department?: Department }) {
@@ -25,20 +26,26 @@ export function DropdownMenu5({ trigger, onView, department }: { trigger: ReactN
       <DropdownMenu>
         <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
         <DropdownMenuContent className="w-[157px]" side="bottom" align="end">
-          <DropdownMenuItem onClick={onView}>
-            <span>View</span>
-          </DropdownMenuItem>
+          <Can action="read" on="department">
+            <DropdownMenuItem onClick={onView}>
+              <span>View</span>
+            </DropdownMenuItem>
+          </Can>
           
-          <DropdownMenuItem onClick={() => setEditSheetOpen(true)}>
-            <span>Edit</span>
-          </DropdownMenuItem>
+          <Can action="update" on="department">
+            <DropdownMenuItem onClick={() => setEditSheetOpen(true)}>
+              <span>Edit</span>
+            </DropdownMenuItem>
+          </Can>
           
-          <DropdownMenuItem 
-            // onClick={() => setDeleteModalOpen(true)} 
-            variant='destructive'
-          >
-            <span>Delete</span>
-          </DropdownMenuItem>
+          <Can action="delete" on="department">
+            <DropdownMenuItem 
+              // onClick={() => setDeleteModalOpen(true)} 
+              variant='destructive'
+            >
+              <span>Delete</span>
+            </DropdownMenuItem>
+          </Can>
         </DropdownMenuContent>
       </DropdownMenu>
 

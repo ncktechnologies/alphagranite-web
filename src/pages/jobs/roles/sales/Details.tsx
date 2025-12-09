@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft, Pencil } from 'lucide-react';
 import { useAuth } from '@/auth/context/auth-context';
+import { Can } from '@/components/permission';
 
 export function SalesDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -116,10 +117,12 @@ export function SalesDetailsPage() {
             Review fabrication details
           </p>
         </div>
-        <Button onClick={handleEdit} className="flex items-center gap-2">
-          <Pencil className="h-4 w-4" />
-          Edit
-        </Button>
+        <Can action="update" on="fab">
+          <Button onClick={handleEdit} className="flex items-center gap-2">
+            <Pencil className="h-4 w-4" />
+            Edit
+          </Button>
+        </Can>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">

@@ -15,6 +15,7 @@ import { NewFabIdForm } from './NewFabIdForm';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Can } from '@/components/permission';
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
@@ -120,18 +121,22 @@ export function SalesPage() {
                 <Toolbar className=' '>
                     <ToolbarHeading title="FAB ID'S" description="View & track all Alpha granite FAB ID'S" />
                     <ToolbarActions>
-                        <Link to="/jobs/sales/new-fab-id">
-                            <Button className="">
-                                <Plus />
-                                New FAB ID
-                            </Button>
-                        </Link>
-                        <Link to="/create-jobs">
-                            <Button className="">
-                                <Plus />
-                                New Job
-                            </Button>
-                        </Link>
+                        <Can action="create" on="fab">
+                            <Link to="/jobs/sales/new-fab-id">
+                                <Button className="">
+                                    <Plus />
+                                    New FAB ID
+                                </Button>
+                            </Link>
+                        </Can>
+                        <Can action="create" on="jobs">
+                            <Link to="/create-jobs">
+                                <Button className="">
+                                    <Plus />
+                                    New Job
+                                </Button>
+                            </Link>
+                        </Can>
                     </ToolbarActions>
                 </Toolbar>
                 <JobTable jobs={transformedJobs} path='sales'  />

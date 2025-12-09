@@ -40,6 +40,7 @@ interface UploadDocumentsProps {
   onFileClick?: (file: FileMetadata) => void;
   fpId?: number;
   simulateUpload?: boolean;
+  disabled?: boolean; // Add disabled prop
 }
 
 export function UploadDocuments({
@@ -49,6 +50,7 @@ export function UploadDocuments({
   onFileClick,
   fpId,
   simulateUpload = true,
+  disabled = false, // Default to false
 }: UploadDocumentsProps) {
   const { id } = useParams<{ id: string }>();
   const fabId = id ? Number(id) : 0;
@@ -225,7 +227,8 @@ export function UploadDocuments({
                 'relative rounded-lg border p-4 transition-colors',
                 fileItem.status === 'error'
                   ? 'border-destructive/50 bg-destructive/5'
-                  : 'border-muted-foreground/25 hover:border-muted-foreground/50'
+                  : 'border-muted-foreground/25 hover:border-muted-foreground/50',
+                disabled && 'opacity-50 cursor-not-allowed'
               )}
             >
               <div className="flex items-start justify-between mb-3">
@@ -282,6 +285,7 @@ export function UploadDocuments({
                       variant="ghost"
                       size="icon"
                       className="size-6 text-destructive/80 hover:text-destructive"
+                      disabled={disabled}
                     >
                       <RefreshCwIcon className="size-3" />
                     </Button>
@@ -291,6 +295,7 @@ export function UploadDocuments({
                       variant="ghost"
                       size="icon"
                       className="size-6 text-muted-foreground hover:text-destructive"
+                      disabled={disabled}
                     >
                       <X className="size-3" />
                     </Button>
@@ -306,6 +311,7 @@ export function UploadDocuments({
                     variant="inverse"
                     size="sm"
                     className="text-sm font-semibold text-center text-primary underline  absolute bottom-3 right-3 "
+                    disabled={disabled}
                   >
                     View File
                   </Button>
@@ -318,8 +324,8 @@ export function UploadDocuments({
             </div>
           ))}
 
-          {/* Upload Boxes */}
-          {uploadBoxes.map((box) => (
+          {/* Upload Boxes - Only show if not disabled */}
+          {!disabled && uploadBoxes.map((box) => (
             <div
               key={box.id}
               className={cn(
@@ -377,14 +383,16 @@ export function UploadDocuments({
             </div>
           ))}
 
-          {/* Add More Boxes Button - Always show since there's no limit */}
-          <Button
-            variant="outline"
-            className="h-auto min-h-[120px] w-[209px] border-dashed flex flex-col items-center gap-2"
-            onClick={addUploadBox}
-          >
-            <Plus className="size-6 text-muted-foreground" />
-          </Button>
+          {/* Add More Boxes Button - Only show if not disabled */}
+          {!disabled && (
+            <Button
+              variant="outline"
+              className="h-auto min-h-[120px] w-[209px] border-dashed flex flex-col items-center gap-2"
+              onClick={addUploadBox}
+            >
+              <Plus className="size-6 text-muted-foreground" />
+            </Button>
+          )}
         </div>
 
         {/* Error Messages */}

@@ -16,6 +16,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useGetFabByIdQuery } from '@/store/api/job'; // Remove unused drafting query
 import { toast } from 'sonner';
 import { useAuth } from '@/auth/context/auth-context'; // Import auth context to get current user
+import { Can } from '@/components/permission'; // Import Can component for permissions
 
 const DraftReviewDetailsPage = () => {
     type ViewMode = 'activity' | 'file';
@@ -186,8 +187,12 @@ const DraftReviewDetailsPage = () => {
                                         </p>
                                     </CardHeading>
                                     <CardToolbar>
-                                        <Button onClick={() => setShowMarkAsCompleteModal(true)}>Mark as Complete</Button>
-                                        <Button variant="outline" onClick={() => setShowSubmissionModal(true)}>Create Revision</Button>
+                                        <Can action="update" on="SCT">
+                                            <Button onClick={() => setShowMarkAsCompleteModal(true)}>Mark as Complete</Button>
+                                        </Can>
+                                        <Can action="create" on="SCT">
+                                            <Button variant="outline" onClick={() => setShowSubmissionModal(true)}>Create Revision</Button>
+                                        </Can>
                                     </CardToolbar>
                                 </CardHeader>
                             </Card>
@@ -223,7 +228,7 @@ const DraftReviewDetailsPage = () => {
                         jobNumber={fabData.job_details?.job_number || ''}
                         totalSqFt={fabData.total_sqft}
                         pieces={draftData?.no_of_piece_drafted || 0} // Use real data from draft_data
-                        sctId={sctData?.    data?.id} // Pass SCT ID for revision update
+                        sctId={sctData?.id} // Pass SCT ID for revision update
                         // Pass sales person from FAB data
                         fabSalesPerson={fabSalesPerson}
                     />

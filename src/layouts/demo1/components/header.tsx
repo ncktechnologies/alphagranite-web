@@ -33,6 +33,8 @@ import { MegaMenu } from './mega-menu';
 import { MegaMenuMobile } from './mega-menu-mobile';
 import { SidebarMenu } from './sidebar-menu';
 import { Input } from '@/components/ui/input';
+import { useSelector } from 'react-redux';
+import { getUserInitials } from '@/utils/userUtils';
 
 export function Header() {
   const [isSidebarSheetOpen, setIsSidebarSheetOpen] = useState(false);
@@ -40,6 +42,9 @@ export function Header() {
 
   const { pathname } = useLocation();
   const mobileMode = useIsMobile();
+  
+  // Get user data from Redux store
+  const user = useSelector((state: any) => state.user.user);
 
   const scrollPosition = useScrollPosition();
   const headerSticky: boolean = scrollPosition > 0;
@@ -174,11 +179,9 @@ export function Header() {
               /> */}
               <UserDropdownMenu
                 trigger={
-                  <img
-                    className="size-9 rounded-full border-2 border-green-500 shrink-0 cursor-pointer"
-                    src={toAbsoluteUrl('/images/app/user-line.svg')}
-                    alt="User Avatar"
-                  />
+                  <div className="size-9 rounded-full border-2 border-green-500 shrink-0 cursor-pointer flex items-center justify-center bg-green-100 text-green-800 font-semibold">
+                    {getUserInitials(user)}
+                  </div>
                 }
               />
             </>

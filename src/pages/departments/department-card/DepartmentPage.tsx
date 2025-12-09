@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 import { DepartmentCard } from './DepartmentCard';
 import DepartmentFormSheet from './components/departmentSheet';
+import { Can } from '@/components/permission';
 
 export function DepartmentPage() {
     return (
@@ -15,13 +16,15 @@ export function DepartmentPage() {
                     <ToolbarHeading title=" Department" description="Manage all Alpha Granite departments" />
 
                     <ToolbarActions>
-                        <DepartmentFormSheet trigger={
+                        <Can action="create" on="department">
+                            <DepartmentFormSheet trigger={
 
-                            <Button className="">
-                                <Plus />
-                                New Department
-                            </Button>
-                        } />
+                                <Button className="">
+                                    <Plus />
+                                    New Department
+                                </Button>
+                            } />
+                        </Can>
                     </ToolbarActions>
                 </Toolbar>
                 <DepartmentCard />

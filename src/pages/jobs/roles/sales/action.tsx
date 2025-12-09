@@ -47,9 +47,9 @@ function ActionsCell({ row, onView }: ActionsCellProps) {
     if (onView) onView();
   };
 
-  const handleViewCurrentStage = () => {
-    openCurrentStageView(bulletin.fab_id, bulletin.job_name || 'Unknown Job');
-  };
+  // const handleViewCurrentStage = () => {
+  //   openCurrentStageView(bulletin.fab_id, bulletin.job_name || 'Unknown Job');
+  // };
 
   return (
     <div className="flex space-x-1">

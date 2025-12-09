@@ -6,6 +6,7 @@ import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/compone
 import { DeleteIcon, PenLine, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
+import { Can } from '@/components/permission';
 
 interface RoleHeaderProps {
     role: Role;
@@ -21,23 +22,29 @@ export const RoleHeader = ({ role, onEdit, onDelete, onActivate }: RoleHeaderPro
         <Toolbar className=' '>
             <ToolbarHeading title={role.name} description={role.description || ''} />
             <ToolbarActions>
-                <Button variant="outline" size="sm" onClick={onDelete} className='text-secondary'>
-                    <Trash2 />
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => onEdit(role)} className='text-secondary'>
-                    <PenLine />
-                    Edit
-                </Button>
-                <Button variant="outline" size="sm" className='text-secondary'>
-                    {isActive ? 'Deactivate role' : 'Activate role'}
-                    <Switch
-                        id="simple-switch"
-                        size="sm"
-                        className="ms-2"
-                        checked={isActive}
-                        onCheckedChange={() => onActivate(role.id, role.status || 1)}
-                    />
-                </Button>
+                <Can action="delete" on="settings">
+                    <Button variant="outline" size="sm" onClick={onDelete} className='text-secondary'>
+                        <Trash2 />
+                    </Button>
+                </Can>
+                <Can action="update" on="settings">
+                    <Button variant="outline" size="sm" onClick={() => onEdit(role)} className='text-secondary'>
+                        <PenLine />
+                        Edit
+                    </Button>
+                </Can>
+                <Can action="update" on="settings">
+                    <Button variant="outline" size="sm" className='text-secondary'>
+                        {isActive ? 'Deactivate role' : 'Activate role'}
+                        <Switch
+                            id="simple-switch"
+                            size="sm"
+                            className="ms-2"
+                            checked={isActive}
+                            onCheckedChange={() => onActivate(role.id, role.status || 1)}
+                        />
+                    </Button>
+                </Can>
             </ToolbarActions>
         </Toolbar>
     );

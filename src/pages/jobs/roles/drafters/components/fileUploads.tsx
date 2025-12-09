@@ -43,6 +43,7 @@ interface UploadBoxProps {
   onFilesChange?: (files: FileWithPreview[]) => void;
   onFileClick?: (file: FileMetadata) => void;
   simulateUpload?: boolean;
+  disabled?: boolean;
 }
 
 export function UploadDocuments({
@@ -51,6 +52,7 @@ export function UploadDocuments({
   onFilesChange,
   onFileClick,
   simulateUpload = true,
+  disabled = false,
 }: UploadBoxProps) {
   const [uploadFiles, setUploadFiles] = useState<FileUploadItem[]>([]);
   const [uploadBoxes, setUploadBoxes] = useState([{ id: 1 }]);
@@ -148,13 +150,13 @@ export function UploadDocuments({
   };
 
   const handleViewFile = (fileItem: FileUploadItem) => {
-    if (fileItem.status === 'completed' && fileItem.preview && onFileClick) {
+    if (fileItem.status === 'completed' && onFileClick) {
       const fileForViewer: FileMetadata = {
         id: fileItem.id,
         name: fileItem.file.name,
         size: fileItem.file.size,
         type: fileItem.file.type,
-        url: fileItem.preview,
+        url: fileItem.preview || (fileItem.file instanceof File ? URL.createObjectURL(fileItem.file) : fileItem.file.url),
       };
       onFileClick(fileForViewer);
     }
@@ -301,12 +303,13 @@ export function UploadDocuments({
               className={cn(
                 'relative rounded-lg border border-dashed px-3 py-5 min-w-fit text-center transition-colors cursor-pointer group',
                 isDragging ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-muted-foreground/50',
+                disabled && 'opacity-50 cursor-not-allowed'
               )}
-              onDragEnter={handleDragEnter}
-              onDragLeave={handleDragLeave}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              onClick={openFileDialog}
+              onDragEnter={disabled ? undefined : handleDragEnter}
+              onDragLeave={disabled ? undefined : handleDragLeave}
+              onDragOver={disabled ? undefined : handleDragOver}
+              onDrop={disabled ? undefined : handleDrop}
+              onClick={disabled ? undefined : openFileDialog}
             >
               <input {...getInputProps()} className="sr-only" />
 

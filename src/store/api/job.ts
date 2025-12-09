@@ -80,8 +80,16 @@ export interface Fab {
     templating_schedule_start_date?: string;
     templating_schedule_due_date?: string;
     technician_name?: string;
+    drafter_name?: string;
+    drafter_id?: number;
     // Job details
     job_details?: JobDetails;
+    // Draft data nested in FAB response
+    draft_data?: Drafting;
+    // Account details
+    account_id?: number;
+    account_name?: string;
+    sales_person_name?: string;
 }
 
 export interface FabCreate {
@@ -305,6 +313,15 @@ export interface EdgeListParams {
 }
 
 // Add Drafting Types
+export interface DraftingFile {
+    id: number;
+    name: string;
+    file_url: string;
+    file_type: string;
+    file_size: string;
+    created_at: string;
+}
+
 export interface Drafting {
     id: number;
     fab_id: number;
@@ -315,11 +332,19 @@ export interface Drafting {
     drafter_start_date?: string | null;
     drafter_end_date?: string | null;
     total_time_spent?: number | null;
+    total_hours_drafted?: number | null;
+    total_sqft_drafted?: string | null;
+    no_of_piece_drafted?: string | null;
+    draft_note?: string | null;
+    mentions?: string | null;
     status_id: number;
     status_name?: string;
     created_at: string;
-    updated_at?: string;
+    updated_at?: string | null;
+    updated_by?: number | null;
+    updated_by_name?: string | null;
     file_ids?: string | null;
+    files?: DraftingFile[];
 }
 
 export interface DraftingCreate {

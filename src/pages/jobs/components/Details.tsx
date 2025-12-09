@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
 import { Pencil } from 'lucide-react';
 import { useGetAccountByIdQuery } from '@/store/api/job';
+import { Can } from '@/components/permission';
 
 interface JobDetailsViewProps {
   job: Job;
@@ -26,10 +27,12 @@ export const JobDetailsView = ({ job, onEdit }: JobDetailsViewProps) => {
           <h1 className="text-2xl font-bold">{job.name}</h1>
           <p className="text-gray-500">Job Number: {job.job_number}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => onEdit(job)}>
-          <Pencil className="h-4 w-4 mr-2" />
-          Edit
-        </Button>
+        <Can action="update" on="jobs">
+          <Button variant="outline" size="sm" onClick={() => onEdit(job)}>
+            <Pencil className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
+        </Can>
       </div>
 
       <Card>
