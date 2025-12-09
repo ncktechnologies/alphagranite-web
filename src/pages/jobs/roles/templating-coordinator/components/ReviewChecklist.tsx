@@ -164,7 +164,7 @@ export function ReviewChecklistForm() {
 
                     <div className="space-y-3 mt-6">
                         {!isScheduled && (
-                            <Can action="create" on="templating">
+                            <Can action="create" on="Templating">
                                 <Button className="w-full py-6 text-base" type="submit" disabled={isSubmitting}>
                                     {isSubmitting ? (
                                         <span className="flex items-center gap-2">
@@ -179,7 +179,7 @@ export function ReviewChecklistForm() {
                         )}
                         
                         {isScheduled && (
-                            <Can action="update" on="templating">
+                            <Can action="update" on="Templating">
                                 <Button 
                                     variant="outline" 
                                     className="w-full text-secondary font-bold py-6 text-base"

@@ -300,7 +300,7 @@ export function FinalProgrammingDetailsPage() {
 
             {/* Submit Button with permission check */}
             <div className="flex justify-end mt-6">
-              <Can action="update" on="Drafting">
+              <Can action="update" on="Final Programming">
                 <Button
                   onClick={handleOpenSubmissionModal}
                   className="bg-green-600 hover:bg-green-700"
