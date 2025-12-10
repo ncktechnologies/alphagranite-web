@@ -25,19 +25,19 @@ export function SidebarHeader() {
             alt="Default Logo"
           />
           <img
-            src={toAbsoluteUrl('/images/logo/alpha-logo.svg')}
+            src={toAbsoluteUrl('/images/logo/mini-logo.svg')}
             className="small-logo h-[22px] max-w-none"
             alt="Mini Logo"
           />
         </div>
         <div className="hidden dark:block">
           <img
-            src={toAbsoluteUrl('/images/logo/alpha-logo.svg')}
+            src={toAbsoluteUrl('/images/logo/white-alpha-logo.svg')}
             className="default-logo h-[22px] max-w-none"
             alt="Default Dark Logo"
           />
           <img
-            src={toAbsoluteUrl('/images/logo/alpha-logo.svg')}
+            src={toAbsoluteUrl('/images/logo/mini-logo.svg')}
             className="small-logo h-[22px] max-w-none"
             alt="Mini Logo"
           />
