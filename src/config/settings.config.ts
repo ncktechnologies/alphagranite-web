@@ -5,7 +5,7 @@ export const APP_SETTINGS: Settings = {
   container: 'fixed',
   layouts: {
     demo1: {
-      sidebarCollapse: true,
+      sidebarCollapse: false,
       sidebarTheme: 'light',
     },
     demo2: {

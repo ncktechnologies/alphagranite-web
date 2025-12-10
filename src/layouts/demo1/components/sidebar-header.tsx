@@ -6,14 +6,14 @@ import { useSettings } from '@/providers/settings-provider';
 import { Button } from '@/components/ui/button';
 
 export function SidebarHeader() {
-  // const { settings, storeOption } = useSettings();
+  const { settings, storeOption } = useSettings();
 
-  // const handleToggleClick = () => {
-  //   storeOption(
-  //     'layouts.demo1.sidebarCollapse',
-  //     !settings.layouts.demo1.sidebarCollapse,
-  //   );
-  // };
+  const handleToggleClick = () => {
+    storeOption(
+      'layouts.demo1.sidebarCollapse',
+      !settings.layouts.demo1.sidebarCollapse,
+    );
+  };
 
   return (
     <div className="sidebar-header hidden lg:flex items-center relative justify-between px-3 lg:px-6 shrink-0 bg-white">
@@ -43,7 +43,7 @@ export function SidebarHeader() {
           />
         </div>
       </Link>
-      {/* <Button
+      <Button
         onClick={handleToggleClick}
         size="sm"
         mode="icon"
@@ -56,7 +56,7 @@ export function SidebarHeader() {
         )}
       >
         <ChevronFirst className="size-4!" />
-      </Button> */}
+      </Button>
     </div>
   );
 }
