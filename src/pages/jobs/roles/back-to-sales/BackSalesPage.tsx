@@ -4,11 +4,9 @@ import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
 import { useGetFabsQuery } from '@/store/api/job';
 import { Fab } from '@/store/api/job';
-import { useJobStageFilter } from '@/hooks/use-job-stage';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { useIsSuperAdmin } from '@/hooks/use-permission';
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
@@ -53,10 +51,6 @@ const transformFabToJob = (fab: Fab): IJob => {
 };
 
 export function AfterDraftSalesPage() {
-    const { currentStageFilter, isSuperAdmin } = useJobStageFilter();
-    const isUserSuperAdmin = useIsSuperAdmin();
-    
-    // Fetch fabs with role-based filtering
     const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
         current_stage: 'sales_ct',
         limit: 100,
@@ -97,7 +91,7 @@ export function AfterDraftSalesPage() {
             </div>
         );
     }
-
+console.log(fabs)
     // Transform Fab data to IJob format
     const jobsData: IJob[] = fabs ? fabs.data?.map(transformFabToJob) : [];
 

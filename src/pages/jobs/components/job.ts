@@ -19,8 +19,9 @@ export interface IJob {
   date: string; // e.g. "08 October, 2025"
   current_stage?: string; // Add current_stage field
   template_needed?: string; // Add template_not_needed field
-review_completed?:string;
-templating_schedule_start_date?:string;
+  review_completed?:string;
+  templating_schedule_start_date?:string;
+  sales_person_name?: string; // Add sales person name field
 }
 
 

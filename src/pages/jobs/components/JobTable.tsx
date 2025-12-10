@@ -37,15 +37,23 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
+import { useTableState } from '@/hooks/use-table-state';
 
 interface JobTableProps {
     jobs: IJob[];
-    path: string; // Keep for backward compatibility
-    getPath?: (job: IJob) => string; // Add new optional function prop
+    path: string;
+    getPath?: (job: IJob) => string;
     isSuperAdmin?: boolean;
     isLoading?: boolean;
     onRowClick?: (fabId: string) => void;
     showScheduleFilter?: boolean;
+    // Optional sales person filter
+    showSalesPersonFilter?: boolean;
+    salesPersons?: string[];
+    // Backend pagination props (optional)
+    useBackendPagination?: boolean;
+    totalRecords?: number;
+    tableState?: ReturnType<typeof useTableState>;
 }
 
 export const JobTable = ({
@@ -55,21 +63,43 @@ export const JobTable = ({
     isSuperAdmin = false,
     isLoading,
     onRowClick,
-      showScheduleFilter = false // Default to false
+    showScheduleFilter = false,
+    showSalesPersonFilter = false,
+    salesPersons = [],
+    useBackendPagination = false,
+    totalRecords = 0,
+    tableState,
 }: JobTableProps) => {
-    const [pagination, setPagination] = useState<PaginationState>({
+    const [localPagination, setLocalPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 5,
     });
-    const [sorting, setSorting] = useState<SortingState>([]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [dateFilter, setDateFilter] = useState<string>('today');
-    const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
-    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+    const [localSorting, setLocalSorting] = useState<SortingState>([]);
+    const [localSearchQuery, setLocalSearchQuery] = useState('');
+    const [localDateFilter, setLocalDateFilter] = useState<string>('today');
+    const [localFabTypeFilter, setLocalFabTypeFilter] = useState<string>('all');
+    const [localSalesPersonFilter, setLocalSalesPersonFilter] = useState<string>('all');
+    const [localDateRange, setLocalDateRange] = useState<DateRange | undefined>(undefined);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [scheduleFilter, setScheduleFilter] = useState<string>(showScheduleFilter ? 'all' : 'all');
     const navigate = useNavigate();
+
+    // Use backend state if available, otherwise use local state
+    const pagination = tableState?.pagination || localPagination;
+    const setPagination = tableState?.setPagination || setLocalPagination;
+    const sorting = tableState?.sorting || localSorting;
+    const setSorting = tableState?.setSorting || setLocalSorting;
+    const searchQuery = tableState?.searchQuery || localSearchQuery;
+    const setSearchQuery = tableState?.setSearchQuery || setLocalSearchQuery;
+    const dateFilter = tableState?.dateFilter || localDateFilter;
+    const setDateFilter = tableState?.setDateFilter || setLocalDateFilter;
+    const fabTypeFilter = tableState?.fabTypeFilter || localFabTypeFilter;
+    const setFabTypeFilter = tableState?.setFabTypeFilter || setLocalFabTypeFilter;
+    const salesPersonFilter = (tableState as any)?.salesPersonFilter || localSalesPersonFilter;
+    const setSalesPersonFilter = (tableState as any)?.setSalesPersonFilter || setLocalSalesPersonFilter;
+    const dateRange = tableState?.dateRange || localDateRange;
+    const setDateRange = tableState?.setDateRange || setLocalDateRange;
 
     // Function to get the correct path for a specific job
     const getViewPath = (job: IJob): string => {
@@ -111,7 +141,18 @@ export const JobTable = ({
         return types.sort();
     }, [jobs]);
 
+    // Get unique sales persons from jobs data
+    const uniqueSalesPersons = useMemo(() => {
+        const persons = Array.from(new Set(jobs.map(job => job.sales_person_name).filter(Boolean)));
+        return persons.sort();
+    }, [jobs]);
+
     const filteredData = useMemo(() => {
+        // Skip client-side filtering if using backend pagination
+        if (useBackendPagination) {
+            return jobs;
+        }
+
         let result = jobs;
 
         // Text search
@@ -149,8 +190,17 @@ export const JobTable = ({
             }
         }
 
+        // Sales Person filter (only when showSalesPersonFilter is true)
+        if (showSalesPersonFilter && salesPersonFilter !== 'all') {
+            if (salesPersonFilter === 'no_sales_person') {
+                result = result.filter((job) => !job.sales_person_name || job.sales_person_name === '');
+            } else {
+                result = result.filter((job) => job.sales_person_name === salesPersonFilter);
+            }
+        }
+
         return result;
-    }, [searchQuery, dateFilter, fabTypeFilter, scheduleFilter, dateRange, jobs]);
+    }, [searchQuery, dateFilter, fabTypeFilter, scheduleFilter, dateRange, jobs, useBackendPagination, salesPersonFilter]);
 
     // Function to check if a column has any data
     const columnHasData = (accessorKey: string) => {
@@ -400,7 +450,9 @@ export const JobTable = ({
     const table = useReactTable({
         columns,
         data: filteredData,
-        pageCount: Math.ceil(filteredData.length / pagination.pageSize),
+        pageCount: useBackendPagination
+            ? Math.ceil(totalRecords / pagination.pageSize)
+            : Math.ceil(filteredData.length / pagination.pageSize),
         state: { pagination, sorting },
         onPaginationChange: setPagination,
         onSortingChange: setSorting,
@@ -408,12 +460,14 @@ export const JobTable = ({
         getFilteredRowModel: getFilteredRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
+        manualPagination: useBackendPagination,
+        manualSorting: false,
     });
 
     return (
         <DataGrid
             table={table}
-            recordCount={filteredData.length}
+            recordCount={useBackendPagination ? totalRecords : filteredData.length}
             isLoading={isLoading}
             groupByDate
             dateKey="date"
@@ -470,7 +524,7 @@ export const JobTable = ({
                                 <Select value={dateFilter} onValueChange={(value) => {
                                     setDateFilter(value);
                                     if (value === 'custom') {
-                                        setIsDatePickerOpen(false);
+                                        setIsDatePickerOpen(true);
                                     }
                                 }}>
                                     <SelectTrigger className="w-[170px] h-[34px]">
@@ -551,6 +605,24 @@ export const JobTable = ({
                                         <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="scheduled">Scheduled</SelectItem>
                                         <SelectItem value="unscheduled">Unscheduled</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            )}
+
+                            {/* Sales Person Filter */}
+                            {showSalesPersonFilter && uniqueSalesPersons && uniqueSalesPersons.length > 0 && (
+                                <Select value={salesPersonFilter} onValueChange={setSalesPersonFilter}>
+                                    <SelectTrigger className="w-[180px] h-[34px]">
+                                        <SelectValue placeholder="Sales Person" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Sales Persons</SelectItem>
+                                        <SelectItem value="no_sales_person">No Sales Person</SelectItem>
+                                        {uniqueSalesPersons.map((person) => (
+                                            <SelectItem key={person || 'N/A'} value={person || ''}>
+                                                {person || 'N/A'}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             )}

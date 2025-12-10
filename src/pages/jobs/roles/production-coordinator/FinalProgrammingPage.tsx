@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { FinalProgrammingTable } from './FinalProgrammingTable';
 import { IJob } from '@/pages/jobs/components/job';
-import { Fab, useGetFabsInFinalProgrammingPendingQuery, useGetFabsQuery } from '@/store/api/job';
+import { Fab, useGetFabsQuery } from '@/store/api/job';
+import { useGetSalesPersonsQuery } from '@/store/api/employee';
 // import { transformFabToJob } from '@/pages/jobs/roles/drafters/DrafterPage';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
 import { JobTable } from '../../components/JobTable';
 import { useJobStageFilter } from '@/hooks/use-job-stage';
-import { useLocation } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { useTableState } from '@/hooks/use-table-state';
 
  const transformFabToJob = (fab: Fab): IJob => {
   return {
@@ -22,6 +24,7 @@ import { AlertCircle } from 'lucide-react';
     job_no: String(fab.job_details?.job_number),
     date: fab.created_at,
     current_stage: fab.current_stage,
+    sales_person_name: fab.sales_person_name || '',
     // Optional fields with default values
     acct_name: '',
     no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
@@ -37,17 +40,104 @@ import { AlertCircle } from 'lucide-react';
   };
 };
 const FinalProgrammingPage = () => {
-    const location = useLocation();
-    const isNewFabForm = location.pathname.includes('/new-fab-id');
-    const { currentStageFilter, isSuperAdmin } = useJobStageFilter();
-    const isUserSuperAdmin = useIsSuperAdmin();
+    const navigate = useNavigate();
     
-    // Fetch fabs with role-based filtering
-    // const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
-    //     current_stage: 'final_programming',
-    //     limit: 100,
-    // });
-    const { data: fabs, isLoading, isError, error } = useGetFabsInFinalProgrammingPendingQuery();
+    // Fetch sales persons data for filter dropdown
+    const { data: salesPersonsData } = useGetSalesPersonsQuery();
+
+    // Extract sales persons
+    const salesPersons = useMemo(() => {
+        if (!salesPersonsData) {
+            return [];
+        }
+
+        // Handle both possible response formats
+        let rawData: any[] = [];
+        if (Array.isArray(salesPersonsData)) {
+            rawData = salesPersonsData;
+        } else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData) {
+            rawData = (salesPersonsData as any).data || [];
+        }
+
+        // Extract names from sales person objects
+        const extractName = (item: { name: string } | string) => {
+            if (typeof item === 'string') {
+                return item;
+            }
+            if (typeof item === 'object' && item !== null) {
+                return item.name || String(item);
+            }
+            return String(item);
+        };
+
+        return rawData.map(extractName);
+    }, [salesPersonsData]);
+
+    // Use independent table state for final programming table
+    const tableState = useTableState({
+        tableId: 'final-programming-table',
+        defaultPagination: { pageIndex: 0, pageSize: 10 },
+        defaultDateFilter: 'today',
+        persistState: true,
+    });
+
+    // Calculate skip value for pagination
+    const skip = tableState.pagination.pageIndex * tableState.pagination.pageSize;
+
+    // Build query params for backend
+    const queryParams = useMemo(() => {
+        const params: any = {
+            skip,
+            limit: tableState.pagination.pageSize,
+            current_stage: 'final_programming',
+        };
+
+        if (tableState.searchQuery) {
+            params.search = tableState.searchQuery;
+        }
+
+        if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') {
+            params.fab_type = tableState.fabTypeFilter;
+        }
+
+        // Add sales person filter using name
+        if (tableState.salesPersonFilter && tableState.salesPersonFilter !== 'all') {
+            if (tableState.salesPersonFilter === 'no_sales_person') {
+                params.sales_person_name = '';
+            } else {
+                params.sales_person_name = tableState.salesPersonFilter;
+            }
+        }
+
+        if (tableState.dateFilter && tableState.dateFilter !== 'all') {
+            // For custom date range, use schedule_start_date and schedule_due_date
+            if (tableState.dateFilter === 'custom') {
+                if (tableState.dateRange?.from) {
+                    params.schedule_start_date = tableState.dateRange.from.toISOString().split('T')[0];
+                }
+                if (tableState.dateRange?.to) {
+                    params.schedule_due_date = tableState.dateRange.to.toISOString().split('T')[0];
+                }
+                // Don't send date_filter when using custom range
+            } else {
+                // For other filters (today, this_week, etc.), use date_filter
+                params.date_filter = tableState.dateFilter;
+            }
+        }
+
+        return params;
+    }, [
+        skip,
+        tableState.pagination.pageSize,
+        tableState.searchQuery,
+        tableState.fabTypeFilter,
+        tableState.salesPersonFilter,
+        tableState.dateFilter,
+        tableState.dateRange,
+    ]);
+
+    // Fetch data with backend pagination and filtering
+    const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
 
     if (isLoading) {
         return (
@@ -77,7 +167,7 @@ const FinalProgrammingPage = () => {
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Error</AlertTitle>
                         <AlertDescription>
-                            {error ? `Failed to load FAB data: ${JSON.stringify(error.data)}` : "Failed to load FAB data"}
+                            {error ? `Failed to load FAB data` : "Failed to load FAB data"}
                         </AlertDescription>
                     </Alert>
                 </Container>
@@ -86,7 +176,7 @@ const FinalProgrammingPage = () => {
     }
 
     // Transform Fab data to IJob format
-    const jobsData: IJob[] = fabs ? fabs.data?.map(transformFabToJob) : [];
+    const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
 
     return (
         <>
@@ -95,7 +185,16 @@ const FinalProgrammingPage = () => {
                     <ToolbarHeading title="Final Programming" description="Jobs in final CNC programming stage" />
                 </Toolbar>
 
-                <JobTable jobs={jobsData} path='final-programming' isLoading={isLoading} />
+                <JobTable 
+                    jobs={jobsData} 
+                    path='final-programming' 
+                    isLoading={isLoading || isFetching}
+                    useBackendPagination={true}
+                    totalRecords={data?.total || 0}
+                    tableState={tableState}
+                    showSalesPersonFilter={true}
+                    salesPersons={salesPersons}
+                />
 
             </Container>
 

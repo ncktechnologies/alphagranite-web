@@ -63,6 +63,7 @@ export interface Fab {
     edge_name?: string;
     input_area: string;
     total_sqft: number;
+    no_of_pieces?: number;
     notes?: string[];
     template_needed: boolean;
     drafting_needed: boolean;
@@ -82,6 +83,12 @@ export interface Fab {
     technician_name?: string;
     drafter_name?: string;
     drafter_id?: number;
+    // Final programming fields
+    final_programmer_id?: number;
+    final_programmer_name?: string;
+    programming_time_minutes?: number;
+    clock_time?: string;
+    final_programming_complete?: boolean;
     // Job details
     job_details?: JobDetails;
     // Draft data nested in FAB response
@@ -265,6 +272,7 @@ export interface FabListParams {
     search?: string;
     schedule_start_date?: string;
     schedule_due_date?: string;
+    date_filter?: string; // Add date filter for backend filtering
 }
 
 export interface TemplatingSchedule {
@@ -421,10 +429,10 @@ export interface SalesCTResponse {
 }
 
 export interface SalesCTReviewUpdate {
-  sct_completed: boolean;
-  revenue?: number;
-  slab_smith_used?: boolean;
-  notes?: string;
+    sct_completed: boolean;
+    revenue?: number;
+    slab_smith_used?: boolean;
+    notes?: string;
 }
 
 export interface SalesCTRevisionUpdate {
@@ -525,7 +533,7 @@ export const jobApi = createApi({
                 transformResponse: (response: any) => response.data || response,
                 providesTags: ["Job"],
             }),
-            
+
             getJobById: build.query<Job, number>({
                 query: (id) => ({
                     url: `/jobs/${id}`,
@@ -561,8 +569,8 @@ export const jobApi = createApi({
                 invalidatesTags: ["Job"],
             }),
 
-            // Fabs
-            getFabs: build.query<Fab[], FabListParams | void>({
+            // Fabs with pagination support
+            getFabs: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
                 query: (params) => {
                     const queryParams = params || {};
                     return {
@@ -579,11 +587,31 @@ export const jobApi = createApi({
                             ...(queryParams.search && { search: queryParams.search }),
                             ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
                             ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
+                            ...(queryParams.date_filter && { date_filter: queryParams.date_filter }),
                         }
                     };
                 },
-                transformResponse: (response: any) => response.data || response,
-                providesTags: ["Fab"],
+                transformResponse: (response: any) => {
+                    // Handle nested data structure: response.data.data
+                    if (response.data) {
+                        // Check if data is nested (response.data.data)
+                        if (response.data.data && Array.isArray(response.data.data)) {
+                            return {
+                                data: response.data.data,
+                                total: response.data.total || response.data.data.length
+                            };
+                        }
+                        // Check if data is direct array (response.data)
+                        if (Array.isArray(response.data)) {
+                            return { data: response.data, total: response.total || response.data.length };
+                        }
+                    }
+                    // Fallback for direct array response
+                    if (Array.isArray(response)) {
+                        return { data: response, total: response.length };
+                    }
+                    return { data: [], total: 0 };
+                },
             }),
 
             getFabById: build.query<Fab, number>({
@@ -604,13 +632,33 @@ export const jobApi = createApi({
                 providesTags: ["Fab"],
             }),
 
-            getFabsByStage: build.query<Fab[], { stage_name: string; params?: { skip?: number; limit?: number; search?: string } }>({
+            getFabsByStage: build.query<{ data: Fab[]; total: number }, { stage_name: string; params?: any }>({
                 query: ({ stage_name, params }) => ({
                     url: `/stages/${stage_name}/fabs`,
                     method: "get",
                     params: params || {}
                 }),
-                transformResponse: (response: any) => response.data || response,
+                transformResponse: (response: any) => {
+                    // Handle nested data structure: response.data.data
+                    if (response.data) {
+                        // Check if data is nested (response.data.data)
+                        if (response.data.data && Array.isArray(response.data.data)) {
+                            return {
+                                data: response.data.data,
+                                total: response.data.total || response.data.data.length
+                            };
+                        }
+                        // Check if data is direct array (response.data)
+                        if (Array.isArray(response.data)) {
+                            return { data: response.data, total: response.total || response.data.length };
+                        }
+                    }
+                    // Fallback for direct array response
+                    if (Array.isArray(response)) {
+                        return { data: response, total: response.length };
+                    }
+                    return { data: [], total: 0 };
+                },
                 providesTags: ["Fab"],
             }),
 
@@ -730,7 +778,7 @@ export const jobApi = createApi({
                             ...(queryParams.search && { search: queryParams.search }),
                         }
                     };
-                    
+
                 },
                 transformResponse: (response: any) => {
                     // Handle the response format with success, message, and data properties
@@ -983,7 +1031,7 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Drafting"],
             }),
-            
+
             // Add files to slab smith
             addFilesToSlabSmith: build.mutation<any, { slabsmith_id: number; files: File[] }>({
                 query: ({ slabsmith_id, files }) => {

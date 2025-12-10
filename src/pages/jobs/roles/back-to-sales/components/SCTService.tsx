@@ -53,7 +53,8 @@ export const useSCTService = ({ fabId }: SCTHookProps) => {
       setHasAttemptedCreation(true);
       handleCreateSCT({
         fab_id: fabId,
-        notes: "Sales check task created"
+        notes: "Sales check task created",
+         is_revision_needed: false,
       }).catch((error) => {
         // Track creation failure
         setCreationFailed(true);
@@ -66,13 +67,13 @@ export const useSCTService = ({ fabId }: SCTHookProps) => {
   const handleCreateSCT = async (data: CreateSCTData) => {
     try {
       const result = await createSalesCT(data).unwrap();
-      toast.success("Sales Check Task created successfully");
+      // toast.success("Sales Check Task created successfully");
       // Reset creation failure state on success
       setCreationFailed(false);
       return result;
     } catch (error) {
       console.error("Failed to create SCT:", error);
-      toast.error("Failed to create Sales Check Task");
+      // toast.error("Failed to create Sales Check Task");
       throw error;
     }
   };
