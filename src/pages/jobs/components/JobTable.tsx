@@ -82,7 +82,6 @@ export const JobTable = ({
     const [localDateRange, setLocalDateRange] = useState<DateRange | undefined>(undefined);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-    const [scheduleFilter, setScheduleFilter] = useState<string>(showScheduleFilter ? 'all' : 'all');
     const navigate = useNavigate();
 
     // Use backend state if available, otherwise use local state
@@ -100,7 +99,8 @@ export const JobTable = ({
     const setSalesPersonFilter = (tableState as any)?.setSalesPersonFilter || setLocalSalesPersonFilter;
     const dateRange = tableState?.dateRange || localDateRange;
     const setDateRange = tableState?.setDateRange || setLocalDateRange;
-
+    const scheduleFilter = tableState?.scheduleFilter || 'all';
+    const setScheduleFilter = tableState?.setScheduleFilter || (() => {}); // No-op fallback
     // Function to get the correct path for a specific job
     const getViewPath = (job: IJob): string => {
         // If getPath function is provided, use it
@@ -181,8 +181,8 @@ export const JobTable = ({
             result = result.filter((job) => job.fab_type === fabTypeFilter);
         }
 
-        // Schedule filter
-        if (scheduleFilter !== 'all') {
+        // Schedule filter (only apply client-side filtering when not using backend pagination)
+        if (!useBackendPagination && scheduleFilter !== 'all') {
             if (scheduleFilter === 'scheduled') {
                 result = result.filter((job) => job.date && job.date !== '');
             } else if (scheduleFilter === 'unscheduled') {

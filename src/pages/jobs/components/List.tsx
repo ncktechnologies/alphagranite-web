@@ -37,7 +37,7 @@ export const JobsList = ({
         <div className="w-1/3 min-w-[300px] border-r pr-6">
             <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-bold">Jobs</h2>
-                <Can action="create" on="jobs">
+                <Can action="update" on="Jobs">
                     <Button onClick={onNewJob} size="sm">
                         <Plus className="h-4 w-4 mr-2" />
                         New Job

@@ -188,7 +188,7 @@ const DraftReviewDetailsPage = () => {
                                         <Can action="update" on="SCT">
                                             <Button onClick={() => setShowMarkAsCompleteModal(true)}>Mark as Complete</Button>
                                         </Can>
-                                        <Can action="create" on="SCT">
+                                        <Can action="update" on="SCT">
                                             <Button variant="outline" onClick={() => setShowSubmissionModal(true)}>Create Revision</Button>
                                         </Can>
                                     </CardToolbar>

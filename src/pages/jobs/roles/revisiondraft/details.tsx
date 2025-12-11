@@ -19,6 +19,7 @@ import {
 } from '@/store/api/job';
 import { toast } from 'sonner';
 import { useSelector } from 'react-redux';
+import { Can } from '@/components/permission';
 
 const ReviewDetailsPage = () => {
     type ViewMode = 'activity' | 'file' | 'edit';
@@ -38,13 +39,13 @@ const ReviewDetailsPage = () => {
 
     // Fetch FAB data
     const { data: fabData, isLoading: isFabLoading, isError: isFabError } = useGetFabByIdQuery(Number(id), { skip: !id });
-    
+
     // Fetch revisions by FAB ID
     const { data: revisionsData, isLoading: isRevisionsLoading } = useGetRevisionsByFabIdQuery(Number(id), { skip: !id });
-    
+
     // Use draft_data from FAB response
     const draftData = (fabData as any)?.draft_data;
-    
+
     // SCT mutations - MUST be called unconditionally
     const [createRevision, { isLoading: isCreatingRevision }] = useCreateRevisionMutation();
     const [updateRevision] = useUpdateRevisionMutation();
@@ -81,26 +82,26 @@ const ReviewDetailsPage = () => {
         // Only create new revision if there are no existing revisions
         try {
             let revisionId;
-            
+
             // Check if there's an existing revision for this FAB
             // revisionsData is an object with a 'data' array property
             const revisionsArray = revisionsData?.data;
             const hasExistingRevisions = Array.isArray(revisionsArray) && revisionsArray.length > 0;
             console.log('Has existing revisions:', hasExistingRevisions);
             console.log('Revisions array:', revisionsArray);
-            
+
             if (hasExistingRevisions) {
                 // Use the earliest revision (lowest ID) according to project specification
-                const existingRevision = revisionsArray.reduce((earliest, current) => 
+                const existingRevision = revisionsArray.reduce((earliest, current) =>
                     (current.id < earliest.id) ? current : earliest, revisionsArray[0]
                 );
-                
+
                 console.log('UPDATING EXISTING REVISION:', existingRevision.id);
                 console.log('Updating with data:', {
                     revision_type: submissionData.revisionType || 'general',
                     revision_notes: revisionNote.replace('[REVISION REQUEST] ', '') || ''
                 });
-                
+
                 // ALWAYS UPDATE existing revision - never create new one
                 const updateResult = await updateRevision({
                     revision_id: existingRevision.id,
@@ -109,7 +110,7 @@ const ReviewDetailsPage = () => {
                         revision_notes: revisionNote.replace('[REVISION REQUEST] ', '') || ''
                     }
                 }).unwrap();
-                
+
                 revisionId = existingRevision.id;
                 console.log('Revision updated successfully with result:', updateResult);
             } else {
@@ -128,11 +129,11 @@ const ReviewDetailsPage = () => {
                     requested_by: user.id || 1, // Use user.id if available, fallback to 1
                     revision_notes: revisionNote.replace('[REVISION REQUEST] ', '') || ''
                 }).unwrap();
-                
+
                 revisionId = createResult.id;
                 console.log('Revision created successfully with result:', createResult);
             }
-            
+
             // If the revision is marked as complete, update it
             if (submissionData.complete && revisionId) {
                 console.log('UPDATING REVISION TO MARK AS COMPLETE, revisionId:', revisionId);
@@ -189,16 +190,16 @@ const ReviewDetailsPage = () => {
     if (isFabLoading || isRevisionsLoading) {
         return <div>Loading...</div>;
     }
-    
+
     if (isFabError) {
         return <div>Error loading data</div>;
     }
-    
+
     // Early return if no data
     if (!fabData) {
         return <div>No data available</div>;
     }
-    
+
     return (
         <>
             <Container className='lg:mx-0'>
@@ -213,14 +214,14 @@ const ReviewDetailsPage = () => {
                 <Container className="lg:col-span-9">
                     {/* Always render the RevisionForm but conditionally show/hide it */}
                     <div className={viewMode === 'edit' ? 'block' : 'hidden'}>
-                        <RevisionForm 
-                            onSubmit={handleSubmitDraft} 
+                        <RevisionForm
+                            onSubmit={handleSubmitDraft}
                             onClose={() => setViewMode('activity')}
                             revisionReason={revisionNote.replace('[REVISION REQUEST] ', '')}
                             draftingData={draftData}
                         />
                     </div>
-                    
+
                     {viewMode === 'file' && activeFile ? (
                         <div className="">
                             <div className="flex justify-end">
@@ -253,8 +254,13 @@ const ReviewDetailsPage = () => {
                                             {revisionNote.replace('[REVISION REQUEST] ', '') || 'No revision reason provided'}
                                         </p>
                                     </CardHeading>
+
                                     <CardToolbar>
-                                        <Button onClick={handleEditRole}>Start Revision</Button>
+                                        <Can
+                                            action="update"
+                                            on="Revisions">
+                                            <Button onClick={handleEditRole}>Start Revision</Button>
+                                        </Can>
                                     </CardToolbar>
                                 </CardHeader>
                             </Card>

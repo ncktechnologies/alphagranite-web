@@ -22,18 +22,18 @@ export const RoleHeader = ({ role, onEdit, onDelete, onActivate }: RoleHeaderPro
         <Toolbar className=' '>
             <ToolbarHeading title={role.name} description={role.description || ''} />
             <ToolbarActions>
-                <Can action="delete" on="settings">
+                <Can action="delete" on="Settings">
                     <Button variant="outline" size="sm" onClick={onDelete} className='text-secondary'>
                         <Trash2 />
                     </Button>
                 </Can>
-                <Can action="update" on="settings">
+                <Can action="update" on="Settings">
                     <Button variant="outline" size="sm" onClick={() => onEdit(role)} className='text-secondary'>
                         <PenLine />
                         Edit
                     </Button>
                 </Can>
-                <Can action="update" on="settings">
+                <Can action="update" on="Settings">
                     <Button variant="outline" size="sm" className='text-secondary'>
                         {isActive ? 'Deactivate role' : 'Activate role'}
                         <Switch

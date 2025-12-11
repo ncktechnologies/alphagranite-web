@@ -2,16 +2,17 @@ import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { useLocation, Link } from 'react-router';
+import { useLocation, Link, useNavigate } from 'react-router';
 import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { useGetFabsQuery } from '@/store/api/job';
-import { Fab } from '@/store/api/job';
+import { useGetFabsQuery, Fab } from '@/store/api/job';
+import { useGetSalesPersonsQuery } from '@/store/api/employee';
+import { useTableState } from '@/hooks/use-table-state';
+import { useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { useJobStageFilter } from '@/hooks/use-job-stage';
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
@@ -29,46 +30,160 @@ const formatDate = (dateString?: string): string => {
 };
 
 // Transform Fab data to match IJob interface
-const transformFabToJob = (fab: any): IJob => {
+const transformFabToJob = (fab: Fab): IJob => {
     return {
         id: fab.id,
         fab_type: fab.fab_type,
         fab_id: `${fab.id}`,
         job_name: fab.job_details?.name || `Job ${fab.job_id}`,
         job_no: fab.job_details?.job_number || String(fab.job_id),
-        date: fab.templating_schedule_start_date,
+        date: fab.templating_schedule_start_date || '',
         current_stage: fab.current_stage,
+        sales_person_name: fab.sales_person_name || '',
         // Optional fields with default values
         acct_name: '',
-        template_schedule: '',
+        template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '',
         template_received: fab.current_stage === 'completed' ? 'Yes' : 'No',
         templater: fab.technician_name || '-',
-        no_of_pieces: '',
-        total_sq_ft: String(fab.total_sqft),
-        revenue: '',
+        no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
+        total_sq_ft: String(fab.total_sqft || "-"),
+        revenue: fab.job_details?.project_value || "-",
+        gp: "-",
         revised: '',
         sct_completed: '',
         draft_completed: '',
-        gp: ''
     };
 };
 
 export function TemplatingPage() {
-    const { currentStageFilter, isSuperAdmin } = useJobStageFilter();
+    const navigate = useNavigate();
+    
+    // Fetch sales persons data for filter dropdown
+    const { data: salesPersonsData } = useGetSalesPersonsQuery();
 
-    // Fetch fabs filtered by current stage
-    const { data: fabs, isLoading, isError, error } = useGetFabsQuery({
-        limit: 100,
-        current_stage: "templating" // Use the stage filter from the hook
+    // Extract sales persons
+    const salesPersons = useMemo(() => {
+        if (!salesPersonsData) {
+            return [];
+        }
+
+        // Handle both possible response formats
+        let rawData: any[] = [];
+        if (Array.isArray(salesPersonsData)) {
+            rawData = salesPersonsData;
+        } else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData) {
+            rawData = (salesPersonsData as any).data || [];
+        }
+
+        // Extract names from sales person objects
+        const extractName = (item: { name: string } | string) => {
+            if (typeof item === 'string') {
+                return item;
+            }
+            if (typeof item === 'object' && item !== null) {
+                return item.name || String(item);
+            }
+            return String(item);
+        };
+
+        return rawData.map(extractName);
+    }, [salesPersonsData]);
+
+    // Use independent table state for templating table
+    const tableState = useTableState({
+        tableId: 'templating-table',
+        defaultPagination: { pageIndex: 0, pageSize: 10 },
+        defaultDateFilter: 'today',
+        persistState: true,
     });
 
+    // Calculate skip value for pagination
+    const skip = tableState.pagination.pageIndex * tableState.pagination.pageSize;
 
-    if (isLoading) {
+    // Build query params for backend
+    const queryParams = useMemo(() => {
+        const params: any = {
+            skip,
+            limit: tableState.pagination.pageSize,
+            current_stage: 'templating', // Templating stage
+        };
+
+        if (tableState.searchQuery) {
+            params.search = tableState.searchQuery;
+        }
+
+        if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') {
+            params.fab_type = tableState.fabTypeFilter;
+        }
+
+        // Add sales person filter using name
+        if (tableState.salesPersonFilter && tableState.salesPersonFilter !== 'all') {
+            if (tableState.salesPersonFilter === 'no_sales_person') {
+                params.sales_person_name = '';
+            } else {
+                params.sales_person_name = tableState.salesPersonFilter;
+            }
+        }
+
+        // Handle schedule status filter (scheduled/unscheduled)
+        if (tableState.scheduleFilter && tableState.scheduleFilter !== 'all') {
+            params.schedule_status = tableState.scheduleFilter;
+        }
+
+        if (tableState.dateFilter && tableState.dateFilter !== 'all') {
+            // For custom date range, use schedule_start_date and schedule_due_date
+            if (tableState.dateFilter === 'custom') {
+                if (tableState.dateRange?.from) {
+                    params.schedule_start_date = tableState.dateRange.from.toISOString().split('T')[0];
+                }
+                if (tableState.dateRange?.to) {
+                    params.schedule_due_date = tableState.dateRange.to.toISOString().split('T')[0];
+                }
+                // Don't send date_filter when using custom range
+            } else {
+                // For other filters (today, this_week, etc.), use date_filter
+                params.date_filter = tableState.dateFilter;
+            }
+        }
+
+        console.log('Templating Query Params:', params); // Debug log
+        return params;
+    }, [
+        skip,
+        tableState.pagination.pageSize,
+        tableState.searchQuery,
+        tableState.fabTypeFilter,
+        tableState.salesPersonFilter,
+        tableState.scheduleFilter, // Add scheduleFilter dependency
+        tableState.dateFilter,
+        tableState.dateRange,
+    ]);
+
+    // Fetch data with backend pagination and filtering
+    const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
+
+    const handleRowClick = (fabId: string) => {
+        // Check if the job has a template technician assigned to determine the path
+        const job = data?.data?.find(fab => fab.id.toString() === fabId);
+        const hasTemplateTechnician = job?.technician_name && 
+            job.technician_name !== '-' && 
+            job.technician_name.trim() !== '';
+
+        navigate(hasTemplateTechnician ? 
+            `/job/templating-details/${fabId}` : 
+            `/job/templating/${fabId}`
+        );
+    };
+
+    // Transform Fab data to IJob format
+    const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
+
+    if (isLoading && !data) {
         return (
             <Container>
                 <Toolbar>
                     <ToolbarHeading
-                        title="Templating Scheduling"
+                        title="Template Scheduling"
                         description="Manage and track all Alpha Granite templating jobs"
                     />
                 </Toolbar>
@@ -101,24 +216,10 @@ export function TemplatingPage() {
         );
     }
 
-    // Transform Fab data to IJob format
-    const jobsData: IJob[] = fabs ? fabs.data?.map(transformFabToJob) : [];
+    console.log('Templating Data:', data); // Debug log
 
-    // For super admins, we still want to show the tabs, but they should fetch data from the API
-    // with different stage filters rather than client-side filtering
-    const getJobTablePath = (jobs: IJob[]): string => {
-        // Check if any job has a template technician assigned
-        const hasTemplateTechnician = jobs.some(job =>
-            job.templater && job.templater !== '-' && job.templater.trim() !== '' && job.templater !== null
-        );
-
-        // Alternative: Check based on current stage or other criteria
-        // const hasTemplateTechnician = jobs.some(job => 
-        //     job.current_stage === 'in_progress' || job.templater !== '-'
-        // );
-
-        return hasTemplateTechnician ? 'templating-details' : 'templating';
-    };
+    // Calculate total square footage from the current page data
+    const totalSqFt = jobsData.reduce((total, job) => total + (Number(job.total_sq_ft) || 0), 0);
 
     return (
         <Container>
@@ -127,31 +228,35 @@ export function TemplatingPage() {
                     title="Template Scheduling"
                     description=""
                 />
-
             </Toolbar>
 
             <Tabs defaultValue="all" className="mt-4">
                 <TabsList className=" bg-transparent p-2 border  flex flex-wrap gap-1">
                     <TabsTrigger value="all">
-
                         <span className="flex items-center gap-2">
                             FabId
                             <span className=" bg-[#E1FCE9] text-base px-[6px] text-text rounded-[50px]" >
-                                {jobsData?.length}
+                                {data?.total || 0}
                             </span>
                         </span>
                     </TabsTrigger>
                     <div className='pl-5 text-[#4B5675] text-[14px]'>
-                        Total SQ. FT: {jobsData.reduce((total, job) => total + (Number(job.total_sq_ft) || 0), 0)}
+                        Total SQ. FT: {totalSqFt}
                     </div>
-
                 </TabsList>
 
                 <TabsContent value="all" className="mt-4">
-                    <JobTable jobs={jobsData}
+                    <JobTable 
+                        jobs={jobsData}
+                        path="templating" // Add the missing path prop
                         showScheduleFilter={true}
-                        isLoading={isLoading}
-                        path="templating"
+                        isLoading={isLoading || isFetching}
+                        onRowClick={handleRowClick}
+                        useBackendPagination={true}
+                        totalRecords={data?.total || 0}
+                        tableState={tableState}
+                        showSalesPersonFilter={false}
+                        salesPersons={salesPersons}
                         getPath={(job) => {
                             // Check if THIS SPECIFIC job has a template technician assigned
                             const hasTemplateTechnician = job.templater &&
@@ -162,7 +267,6 @@ export function TemplatingPage() {
                         }}
                     />
                 </TabsContent>
-
             </Tabs>
         </Container>
     );

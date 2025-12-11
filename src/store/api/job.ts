@@ -273,6 +273,7 @@ export interface FabListParams {
     schedule_start_date?: string;
     schedule_due_date?: string;
     date_filter?: string; // Add date filter for backend filtering
+    schedule_status?: 'scheduled' | 'unscheduled' | 'all'; // Add schedule status filter
 }
 
 export interface TemplatingSchedule {
@@ -588,6 +589,7 @@ export const jobApi = createApi({
                             ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
                             ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
                             ...(queryParams.date_filter && { date_filter: queryParams.date_filter }),
+                            ...(queryParams.schedule_status && { schedule_status: queryParams.schedule_status }),
                         }
                     };
                 },
@@ -636,7 +638,13 @@ export const jobApi = createApi({
                 query: ({ stage_name, params }) => ({
                     url: `/stages/${stage_name}/fabs`,
                     method: "get",
-                    params: params || {}
+                    params: {
+                        ...(params || {}),
+                        schedule_start_date: params?.schedule_start_date,
+                        schedule_due_date: params?.schedule_due_date,
+                        date_filter: params?.date_filter,
+                        schedule_status: params?.schedule_status, // Add schedule_status parameter
+                    }
                 }),
                 transformResponse: (response: any) => {
                     // Handle nested data structure: response.data.data

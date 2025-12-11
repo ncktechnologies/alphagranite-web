@@ -3,7 +3,7 @@ import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { FinalProgrammingTable } from './FinalProgrammingTable';
 import { IJob } from '@/pages/jobs/components/job';
-import { Fab, useGetFabsQuery } from '@/store/api/job';
+import { Fab, useGetFabsInFinalProgrammingPendingQuery, useGetFabsQuery } from '@/store/api/job';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 // import { transformFabToJob } from '@/pages/jobs/roles/drafters/DrafterPage';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
@@ -137,8 +137,9 @@ const FinalProgrammingPage = () => {
     ]);
 
     // Fetch data with backend pagination and filtering
-    const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
-
+    // const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
+      
+    const { data, isLoading, isFetching, isError, error } = useGetFabsInFinalProgrammingPendingQuery();
     if (isLoading) {
         return (
             <div className="">
@@ -189,9 +190,9 @@ const FinalProgrammingPage = () => {
                     jobs={jobsData} 
                     path='final-programming' 
                     isLoading={isLoading || isFetching}
-                    useBackendPagination={true}
-                    totalRecords={data?.total || 0}
-                    tableState={tableState}
+                    // useBackendPagination={true}
+                    // totalRecords={data?.total || 0}
+                    // tableState={tableState}
                     showSalesPersonFilter={true}
                     salesPersons={salesPersons}
                 />

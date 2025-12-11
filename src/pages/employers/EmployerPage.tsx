@@ -17,7 +17,7 @@ export function EmployeePage() {
                     <ToolbarHeading title=" Employees" description="Manage all Alpha Granite employees here" />
 
                     <ToolbarActions>
-                        <Can action="create" on="employees">
+                        <Can action="update" on="employees">
                             <EmployeeFormSheet 
                                 trigger={
                                     <Button className="" onClick={() => setIsSheetOpen(true)}>

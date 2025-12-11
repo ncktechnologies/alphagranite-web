@@ -36,6 +36,11 @@ export function FinalProgrammingPage() {
       params.fab_type = tableState.fabTypeFilter;
     }
 
+    // Handle schedule status filter (scheduled/unscheduled)
+    if (tableState.scheduleFilter && tableState.scheduleFilter !== 'all') {
+      params.schedule_status = tableState.scheduleFilter;
+    }
+
     if (tableState.dateFilter && tableState.dateFilter !== 'all') {
       params.date_filter = tableState.dateFilter;
     }
@@ -54,6 +59,7 @@ export function FinalProgrammingPage() {
     tableState.pagination.pageSize,
     tableState.searchQuery,
     tableState.fabTypeFilter,
+    tableState.scheduleFilter, // Add scheduleFilter dependency
     tableState.dateFilter,
     tableState.dateRange,
   ]);

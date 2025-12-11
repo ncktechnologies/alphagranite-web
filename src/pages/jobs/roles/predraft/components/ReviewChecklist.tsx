@@ -191,7 +191,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
         <>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <Can action="create" on="Pre-draft Review">
+                    <Can action="update" on="Pre-draft Review">
 
                         <FormField
                             control={form.control}
@@ -292,7 +292,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                     <Separator className="my-4" />
 
                     <div className="space-y-3 mt-6">
-                        <Can action="create" on="Pre-draft Review">
+                        <Can action="update" on="Pre-draft Review">
                             <Button className="w-full py-6 text-base" type="submit" disabled={isSubmitting || !form.watch("templatereceived")}>
                                 {isSubmitting ? (
                                     <span className="flex items-center gap-2">
