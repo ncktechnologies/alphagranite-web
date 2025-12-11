@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, Square } from 'lucide-react';
 import { toast } from 'sonner';
+import { Can } from '@/components/permission';
 
 interface TimeTrackingComponentProps {
   isDrafting: boolean;
@@ -98,7 +99,7 @@ export const TimeTrackingComponent = ({
   const handleEnd = () => {
     const now = new Date();
     setEndTime(now);
-    
+
     // If currently paused, add the final paused duration
     if (startTime && pausedTime) {
       const pausedDuration = Math.floor((now.getTime() - pausedTime.getTime()) / 1000);
@@ -154,7 +155,7 @@ export const TimeTrackingComponent = ({
         </div>
 
         <div className="flex items-center gap-10 flex-1">
-          
+
           {/* START TIME */}
           <div>
             <span className="text-sm text-text-foreground">Start time & Date:</span>
@@ -201,10 +202,16 @@ export const TimeTrackingComponent = ({
         <div className="flex gap-2">
 
           {!isDrafting && !hasEnded ? (
-            <Button onClick={handleStart} disabled={isStarting}>
-              <Play className="w-4 h-4 mr-2" />
-              {isStarting ? 'Starting...' : 'Start drafting'}
-            </Button>
+            // <Button onClick={handleStart} disabled={isStarting}>
+            //   <Play className="w-4 h-4 mr-2" />
+            //   {isStarting ? 'Starting...' : 'Start drafting'}
+            // </Button>
+            <Can action="update" on="Final Programming">
+              <Button onClick={handleStart} disabled={isStarting}>
+                <Play className="w-4 h-4 mr-2" />
+                {isStarting ? 'Starting...' : 'Start drafting'}
+              </Button>
+            </Can>
           ) : isDrafting && !hasEnded ? (
             <>
               {!isPaused ? (
