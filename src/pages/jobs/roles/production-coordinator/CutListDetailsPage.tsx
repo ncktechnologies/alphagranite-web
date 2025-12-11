@@ -12,31 +12,32 @@ import { Documents } from '@/pages/shop/components/files';
 import { X } from 'lucide-react';
 import { UpdateFabIdModal } from './components/UpdateFabIdModal';
 import { FileViewer } from '../drafters/components';
+import { Can } from '@/components/permission';
 
 const CutListDetailsPage = () => {
     type ViewMode = 'activity' | 'file';
     const [viewMode, setViewMode] = useState<ViewMode>('activity');
     const [activeFile, setActiveFile] = useState<any | null>(null);
     const [showScheduleModal, setShowScheduleModal] = useState(false);
-    
+
     const { id } = useParams<{ id: string }>();
     const fabId = id ? parseInt(id) : 0;
     const navigate = useNavigate();
-    
+
     const { data: fabData, isLoading } = useGetFabByIdQuery(fabId, { skip: !fabId });
-    
+
     if (isLoading) {
         return <div>Loading...</div>;
     }
-    
+
     const handleFileClick = (file: any) => {
         setActiveFile(file);
         setViewMode('file');
     };
-    
+
     // Get draft data from FAB response
     const draftData = (fabData as any)?.draft_data;
-    
+
     // Create sidebar sections with actual FAB data
     const sidebarSections = [
         {
@@ -114,9 +115,11 @@ const CutListDetailsPage = () => {
                                         </p>
                                     </CardHeading>
                                     <CardToolbar>
-                                        <Button onClick={() => setShowScheduleModal(true)}>Schedule Cut List</Button>
-                                        <Button 
-                                            variant="outline" 
+                                        <Can action="update" on="Cut List">
+                                            <Button onClick={() => setShowScheduleModal(true)}>Schedule Cut List</Button>
+                                        </Can>
+                                        <Button
+                                            variant="outline"
                                             onClick={() => navigate('/job/cut-list')}
                                         >
                                             Back to Cut List
