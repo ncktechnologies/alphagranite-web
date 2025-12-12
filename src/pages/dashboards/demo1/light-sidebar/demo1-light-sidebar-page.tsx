@@ -26,6 +26,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Link } from 'react-router';
+import { Can } from '@/components/permission';
 export function Demo1LightSidebarPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<DateRange | undefined>({
@@ -47,45 +48,47 @@ export function Demo1LightSidebarPage() {
   };
 
   const defaultStartDate = new Date(); // Default start date fallback
-    const isUserSuperAdmin = useIsSuperAdmin();
+  const isUserSuperAdmin = useIsSuperAdmin();
 
   return (
     <Fragment>
       <Container>
-       {isUserSuperAdmin ?  
-        <Toolbar>
-          <ToolbarHeading
-            title="Dashboard"
-          // description="Central Hub for Personal Customization"
-          />
-          <ToolbarActions>
-            <Select defaultValue="1">
-              <SelectTrigger className="w-28 h-8 text-sm">
-                <SelectValue placeholder="Select" />
-              </SelectTrigger>
-              <SelectContent className="w-28">
-                <SelectItem value="1">All time</SelectItem>
-                <SelectItem value="3">3 months</SelectItem>
-                <SelectItem value="6">6 months</SelectItem>
-                <SelectItem value="12">12 months</SelectItem>
-              </SelectContent>
-            </Select>
-          </ToolbarActions>
-        </Toolbar>
-:
-        <Toolbar className=' '>
-          <ToolbarHeading title="Dashboard" description="" />
-          <ToolbarActions>
-            <Link to="/jobs/sales/new-fab-id">
-              <Button className="">
-                <Plus/>
-                New FAB ID
-              </Button>
-            </Link>
-           
-          </ToolbarActions>
-        </Toolbar>
-}
+        {isUserSuperAdmin ?
+          <Toolbar>
+            <ToolbarHeading
+              title="Dashboard"
+            // description="Central Hub for Personal Customization"
+            />
+            <ToolbarActions>
+              <Select defaultValue="1">
+                <SelectTrigger className="w-28 h-8 text-sm">
+                  <SelectValue placeholder="Select" />
+                </SelectTrigger>
+                <SelectContent className="w-28">
+                  <SelectItem value="1">All time</SelectItem>
+                  <SelectItem value="3">3 months</SelectItem>
+                  <SelectItem value="6">6 months</SelectItem>
+                  <SelectItem value="12">12 months</SelectItem>
+                </SelectContent>
+              </Select>
+            </ToolbarActions>
+          </Toolbar>
+          :
+          <Toolbar className=' '>
+            <ToolbarHeading title="Dashboard" description="" />
+            <ToolbarActions>
+              <Can action="create" on="FAB IDs">
+                <Link to="/jobs/sales/new-fab-id">
+                  <Button className="">
+                    <Plus />
+                    New FAB ID
+                  </Button>
+                </Link>
+              </Can>
+
+            </ToolbarActions>
+          </Toolbar>
+        }
       </Container>
       <Container>
         {/* Super admins see the full admin dashboard, regular users see role-based dashboard */}
