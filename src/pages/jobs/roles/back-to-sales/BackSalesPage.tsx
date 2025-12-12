@@ -32,18 +32,18 @@ const transformFabToJob = (fab: Fab): IJob => {
     id: fab.id,
     fab_type: fab.fab_type,
     fab_id: String(fab.id),
-    job_name: `${fab.job_details?.name}`,
-    job_no: String(fab.job_details?.job_number),
+    job_name: `${fab.job_details?.name || ''}`,
+    job_no: String(fab.job_details?.job_number || ''),
     date: fab.templating_schedule_start_date || '',
     current_stage: fab.current_stage,
     sales_person_name: fab.sales_person_name || '',
     // Optional fields with default values
     acct_name: '',
-    no_of_pieces: fab.draft_data.no_of_piece_drafted ? `${fab.draft_data.no_of_piece_drafted}` : "-",
+    no_of_pieces: fab.draft_data?.no_of_piece_drafted ? `${fab.draft_data.no_of_piece_drafted}` : "-",
     total_sq_ft: String(fab.total_sqft || "-"),
-    revenue: fab.revenue || "-",
+    revenue: (fab as any).revenue || "-",
     gp: "-",
-    sct_completed: fab.sct_completed ? 'Yes' : 'No',
+    sct_completed: (fab as any).sct_completed ? 'Yes' : 'No',
     template_received: '',
     revised: '',
     // sct_completed: '',
@@ -187,7 +187,7 @@ export function AfterDraftSalesPage() {
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Error</AlertTitle>
                         <AlertDescription>
-                            {error ? `Failed to load FAB data: ${JSON.stringify(error.data)}` : "Failed to load FAB data"}
+                            {error ? `Failed to load FAB data` : "Failed to load FAB data"}
                         </AlertDescription>
                     </Alert>
                 </Container>
@@ -213,6 +213,7 @@ export function AfterDraftSalesPage() {
                 totalRecords={data?.total || 0}
                 tableState={tableState}
                 showSalesPersonFilter={true}
+                showScheduleFilter={false} // Remove separate schedule filter
                 salesPersons={salesPersons}
             />
         </Container>

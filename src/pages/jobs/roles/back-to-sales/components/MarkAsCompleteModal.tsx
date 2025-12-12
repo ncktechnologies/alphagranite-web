@@ -160,14 +160,14 @@ export const MarkAsCompleteModal = ({
               >
                 Cancel
               </Button>
-              <Can action="update" on="sct">
+              {/* <Can action="update" on="Sct"> */}
                 <Button
                   type="submit"
                   disabled={isSubmitting || !form.formState.isValid}
                 >
                   {isSubmitting ? "Submitting..." : "Submit"}
                 </Button>
-              </Can>
+              {/* </Can> */}
             </div>
           </form>
         </Form>

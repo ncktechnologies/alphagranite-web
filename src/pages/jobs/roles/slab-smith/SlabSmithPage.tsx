@@ -214,6 +214,7 @@ const SlabSmithPage = () => {
                     totalRecords={data?.total || 0}
                     tableState={tableState}
                     showSalesPersonFilter={false}
+                    showScheduleFilter={false} // Remove separate schedule filter
                     salesPersons={salesPersons}
                 />
             </Container>

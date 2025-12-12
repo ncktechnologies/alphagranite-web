@@ -90,9 +90,9 @@ export function PredraftPage() {
         return rawData.map(extractName);
     }, [salesPersonsData]);
 
-    // Use independent table state for pre-draft table
+    // Use independent table state for predraft table
     const tableState = useTableState({
-        tableId: 'pre-draft-table',
+        tableId: 'predraft-table',
         defaultPagination: { pageIndex: 0, pageSize: 10 },
         defaultDateFilter: 'today',
         persistState: true,
@@ -221,6 +221,7 @@ export function PredraftPage() {
                 totalRecords={data?.total || 0}
                 tableState={tableState}
                 showSalesPersonFilter={true}
+                showScheduleFilter={false} // Remove separate schedule filter
                 salesPersons={salesPersons}
             />
         </Container>

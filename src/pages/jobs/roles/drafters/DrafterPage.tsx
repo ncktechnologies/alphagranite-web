@@ -157,6 +157,7 @@ const DrafterPage = () => {
                 totalRecords={data?.total || 0}
                 tableState={tableState}
                 showSalesPersonFilter={true}
+                showScheduleFilter={false} // Remove separate schedule filter
                 salesPersons={salesPersons}
             />
         </Container>
