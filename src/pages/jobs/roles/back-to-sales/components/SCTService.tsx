@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { 
   useCreateSalesCTMutation, 
   useUpdateSCTReviewMutation, 
@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 
 interface SCTHookProps {
   fabId: number;
+  skip?: boolean;
 }
 
 interface CreateSCTData {
@@ -30,55 +31,82 @@ interface UpdateSCTRevisionData {
   revision_type?: string;
 }
 
-export const useSCTService = ({ fabId }: SCTHookProps) => {
+// DEBUG: Add logging
+let renderCount = 0;
+
+export const useSCTService = ({ fabId, skip = false }: SCTHookProps) => {
+  renderCount++;
+  
   // SCT queries and mutations
-  const { data: sctData, isLoading: isSctLoading, isError: isSctError, refetch } = useGetSalesCTByFabIdQuery(fabId, { skip: !fabId });
+  const { 
+    data: sctResponse, 
+    isLoading: isSctLoading, 
+    isError: isSctError, 
+    refetch 
+  } = useGetSalesCTByFabIdQuery(fabId, { 
+    skip: !fabId || skip,
+    refetchOnMountOrArgChange: false
+  });
+  
+  // Extract the actual data from the response
+  const sctData = sctResponse?.data;
+  
+  
   const [createSalesCT, { isLoading: isCreating }] = useCreateSalesCTMutation();
   const [updateSCTReview, { isLoading: isUpdatingReview }] = useUpdateSCTReviewMutation();
   const [updateSCTRevision, { isLoading: isUpdatingRevision }] = useUpdateSCTRevisionMutation();
   
-  // State to track if we've attempted to create an SCT
-  const [hasAttemptedCreation, setHasAttemptedCreation] = useState(false);
-  // State to track if creation failed
-  const [creationFailed, setCreationFailed] = useState(false);
-
+  // Track creation attempts
+  const creationAttemptedRef = useRef<number | null>(null);
+  
   // Create SCT if it doesn't exist
   useEffect(() => {
-    // Only attempt creation if:
-    // 1. We have a fabId
-    // 2. We haven't already attempted creation
-    // 3. We're not currently loading
-    // 4. Either there's no SCT data OR there was an error fetching SCT data
-    if (fabId && !hasAttemptedCreation && !isSctLoading && (!sctData || isSctError)) {
-      setHasAttemptedCreation(true);
-      handleCreateSCT({
+   
+
+    // Early returns
+    if (!fabId || skip || isSctLoading) return;
+    
+    // Don't create if we already attempted for this fabId
+    if (creationAttemptedRef.current === fabId) {
+      return;
+    }
+    
+    // Only create if we have NO data
+    if (!sctData) {
+      creationAttemptedRef.current = fabId;
+      
+      createSalesCT({
         fab_id: fabId,
         notes: "Sales check task created",
-         is_revision_needed: false,
-      }).catch((error) => {
-        // Track creation failure
-        setCreationFailed(true);
-        // Silently handle SCT creation errors to prevent UI blocking
-        console.warn("Failed to auto-create SCT:", error);
+        is_revision_needed: false,
+      })
+      .unwrap()
+      .then((result) => {
+        // Refetch to get the new data
+        refetch();
+      })
+      .catch((error) => {
+        // Reset so we can retry
+        creationAttemptedRef.current = null;
       });
+    } else {
+      // Track that we've seen this fabId has data
+      creationAttemptedRef.current = fabId;
     }
-  }, [fabId, sctData, isSctLoading, isSctError, hasAttemptedCreation]);
+  }, [fabId, skip, isSctLoading, sctData, createSalesCT, refetch]);
 
-  const handleCreateSCT = async (data: CreateSCTData) => {
+  const handleCreateSCT = useCallback(async (data: CreateSCTData) => {
     try {
       const result = await createSalesCT(data).unwrap();
-      // toast.success("Sales Check Task created successfully");
-      // Reset creation failure state on success
-      setCreationFailed(false);
+      await refetch();
       return result;
     } catch (error) {
       console.error("Failed to create SCT:", error);
-      // toast.error("Failed to create Sales Check Task");
       throw error;
     }
-  };
+  }, [createSalesCT, refetch]);
 
-  const handleUpdateSCTReview = async (data: UpdateSCTReviewData) => {
+  const handleUpdateSCTReview = useCallback(async (data: UpdateSCTReviewData) => {
     try {
       if (!fabId) throw new Error("FAB ID is required");
       
@@ -90,13 +118,12 @@ export const useSCTService = ({ fabId }: SCTHookProps) => {
       toast.success("Sales Check Task updated successfully");
       return result;
     } catch (error) {
-      console.error("Failed to update SCT review:", error);
       toast.error("Failed to update Sales Check Task");
       throw error;
     }
-  };
+  }, [fabId, updateSCTReview]);
 
-  const handleUpdateSCTRevision = async (sctId: number, data: UpdateSCTRevisionData) => {
+  const handleUpdateSCTRevision = useCallback(async (sctId: number, data: UpdateSCTRevisionData) => {
     try {
       const result = await updateSCTRevision({
         sct_id: sctId,
@@ -106,18 +133,18 @@ export const useSCTService = ({ fabId }: SCTHookProps) => {
       toast.success("Revision request sent successfully");
       return result;
     } catch (error) {
-      console.error("Failed to update SCT revision:", error);
       toast.error("Failed to send revision request");
       throw error;
     }
-  };
+  }, [updateSCTRevision]);
 
-  return {
-    // Data
+  // Memoize the return value to prevent unnecessary re-renders
+  const result = useMemo(() => ({
+    // Data - return both the response and the extracted data for compatibility
     sctData,
+    sctResponse,
     isSctLoading,
     isSctError,
-    creationFailed,
     
     // Mutations
     isCreating,
@@ -128,6 +155,20 @@ export const useSCTService = ({ fabId }: SCTHookProps) => {
     handleCreateSCT,
     handleUpdateSCTReview,
     handleUpdateSCTRevision,
-    refetchSCT: refetch
-  };
+    refetchSCT: refetch,
+  }), [
+    sctData,
+    sctResponse,
+    isSctLoading,
+    isSctError,
+    isCreating,
+    isUpdatingReview,
+    isUpdatingRevision,
+    handleCreateSCT,
+    handleUpdateSCTReview,
+    handleUpdateSCTRevision,
+    refetch,
+  ]);
+
+  return result;
 };

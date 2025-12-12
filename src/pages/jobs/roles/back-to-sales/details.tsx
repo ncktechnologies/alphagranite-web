@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Container } from '@/components/common/container';
 import { Card, CardContent, CardHeader, CardHeading, CardTitle, CardToolbar } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,70 +9,99 @@ import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { FileViewer } from '../drafters/components';
 import { Documents } from '@/pages/shop/components/files';
 import { RevisionModal } from './components/SubmissionModal';
-import { MarkAsCompleteModal } from './components/MarkAsCompleteModal'; // Import the new modal
+import { MarkAsCompleteModal } from './components/MarkAsCompleteModal';
 import { TimeDisplay } from './components/DisplayTime';
-import { useSCTService } from './components/SCTService'; // Import our SCT service
+import { useSCTService } from './components/SCTService';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useGetFabByIdQuery } from '@/store/api/job'; // Remove unused drafting query
+import { useGetFabByIdQuery } from '@/store/api/job';
 import { toast } from 'sonner';
-import { useAuth } from '@/auth/context/auth-context'; // Import auth context to get current user
-import { Can } from '@/components/permission'; // Import Can component for permissions
+import { useAuth } from '@/auth/context/auth-context';
+import { Can } from '@/components/permission';
+
+// Add a simple loading component
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center h-64">
+    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+  </div>
+);
 
 const DraftReviewDetailsPage = () => {
+    console.log(`📄 DraftReviewDetailsPage rendering`);
+    
     type ViewMode = 'activity' | 'file';
     const [showSubmissionModal, setShowSubmissionModal] = useState(false);
-    const [showMarkAsCompleteModal, setShowMarkAsCompleteModal] = useState(false); // Add this state
-    const [isDrafting, setIsDrafting] = useState(false);
-    const [isPaused, setIsPaused] = useState(false);
-    const [totalTime, setTotalTime] = useState(0);
-    const [uploadedFiles, setUploadedFiles] = useState<any[]>([]);
+    const [showMarkAsCompleteModal, setShowMarkAsCompleteModal] = useState(false);
     const [viewMode, setViewMode] = useState<ViewMode>('activity');
     const [activeFile, setActiveFile] = useState<any | null>(null);
-    const [hasEnded, setHasEnded] = useState(false);
-    const [resetTimeTracking, setResetTimeTracking] = useState(0);
     
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
-    const authContext = useAuth(); // Get auth context
-    const user = authContext.user; // Extract user from auth context
+    const authContext = useAuth();
+    const user = authContext.user;
     
-    // Fetch FAB data
-    const { data: fabData, isLoading: isFabLoading, isError: isFabError } = useGetFabByIdQuery(Number(id), { skip: !id });
+    // Convert id to number safely
+    const fabId = id ? parseInt(id, 10) : null;
     
-    // Remove unused drafting data query since we're using data from FAB response
-    // const { data: draftingData, isLoading: isDraftingLoading, isError: isDraftingError } = useGetDraftingByFabIdQuery(Number(id), { skip: !id });
+    console.log(`🆔 FAB ID:`, { id, fabId });
     
-    // Use our SCT service
+    // Fetch FAB data - using a stable query
+    const { 
+      data: fabData, 
+      isLoading: isFabLoading, 
+      isError: isFabError 
+    } = useGetFabByIdQuery(fabId!, { 
+      skip: !fabId,
+      refetchOnMountOrArgChange: false
+    });
+    
+    // Use a ref to track if we've loaded FAB data
+    const fabDataLoadedRef = useRef(false);
+    
+    // Update ref when FAB data is loaded
+    useEffect(() => {
+      if (fabData && !isFabLoading) {
+        fabDataLoadedRef.current = true;
+      }
+    }, [fabData, isFabLoading]);
+    
+    // Use SCT service - only when FAB data is loaded
+    const shouldSkipSCT = !fabId || isFabLoading || !fabDataLoadedRef.current;
+    
+    console.log(`⚙️ SCT Config:`, { fabId, shouldSkipSCT, isFabLoading, hasFabData: !!fabData });
+    
     const {
       sctData,
       isSctLoading,
       isSctError,
-      creationFailed,
       handleUpdateSCTReview,
-      refetchSCT
-    } = useSCTService({ fabId: Number(id) });
+    } = useSCTService({ 
+      fabId: fabId!,
+      skip: shouldSkipSCT
+    });
+    
+    console.log(`🎯 SCT State:`, { 
+      hasSCTData: !!sctData, 
+      isSctLoading, 
+      isSctError,
+      sctId: sctData?.id 
+    });
+
     const handleFileClick = (file: any) => {
         setActiveFile(file);
         setViewMode('file');
-    }
-
-    const handleSubmitDraft = (submissionData: any) => {
-        setShowSubmissionModal(false);
-        setIsDrafting(false);
-        setIsPaused(false);
-        setTotalTime(0);
-        setUploadedFiles([]);
-        setHasEnded(false)
-        setResetTimeTracking(prev => prev + 1);
     };
 
+    const handleSubmitDraft = useCallback((submissionData: any) => {
+        setShowSubmissionModal(false);
+        // Handle submission logic
+    }, []);
+
     // Handle marking as complete
-    const handleMarkAsComplete = (data: any) => {
-        if (!id) return;
+    const handleMarkAsComplete = useCallback(async (data: any) => {
+        if (!fabId) return;
         
         try {
-            // Send the actual payload with all fields from the modal
-            handleUpdateSCTReview({
+            await handleUpdateSCTReview({
                 sct_completed: data.sctCompleted,
                 revenue: parseFloat(data.revenue) || 0,
                 slab_smith_used: data.slabSmithUsed || false,
@@ -80,36 +109,35 @@ const DraftReviewDetailsPage = () => {
             });
             
             toast.success("FAB marked as complete successfully");
-            setShowMarkAsCompleteModal(false); // Close the modal
-            // Navigate to next stage or back to sales list
+            setShowMarkAsCompleteModal(false);
             navigate('/job/draft-review');
         } catch (error) {
             console.error('Failed to mark as complete:', error);
             toast.error("Failed to mark FAB as complete");
         }
-    };
+    }, [fabId, handleUpdateSCTReview, navigate]);
 
+    // Show loading while FAB is loading
     if (isFabLoading) {
-        return <div>Loading...</div>;
+        return <LoadingSpinner />;
     }
 
-    if (isFabError) {
-        return <div>Error loading data</div>;
+    if (isFabError || !fabData) {
+        return <div className="text-red-500 p-4">Error loading FAB data</div>;
     }
 
-    // Get current user's name for sales person field
+    // Get current user's name
     const currentUserName = user 
         ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || 'Unknown User'
         : 'Unknown User';
 
     // Get sales person info from FAB data
-    const fabSalesPerson = ` ${fabData?.sales_person_name
-         || 'N/A'}`;
+    const fabSalesPerson = fabData?.sales_person_name || 'N/A';
 
-    // Use draft_data from FAB response (type assertion since it's not in the interface but exists in the response)
+    // Use draft_data from FAB response
     const draftData = (fabData as any)?.draft_data;
 
-    // Create dynamic sidebar sections with actual FAB data
+    // Create sidebar sections
     const sidebarSections = [
         {
             title: "Job Details",
@@ -129,7 +157,6 @@ const DraftReviewDetailsPage = () => {
             title: "",
             sectionTitle: "Drafting Notes",
             type: "notes",
-            // Use actual drafting notes from FAB response
             notes: draftData ? [
                 {
                     id: 1,
@@ -138,18 +165,22 @@ const DraftReviewDetailsPage = () => {
                     author: draftData?.drafter_name || 'Unknown Drafter',
                     timestamp: draftData?.updated_at ? new Date(draftData.updated_at).toLocaleDateString() : 'N/A',
                 }
-            ] : [], // Empty array if no draft data
+            ] : [],
         },
     ];
+    
     return (
         <>
             <Container className='lg:mx-0'>
-                <Toolbar className=' '>
-                    <ToolbarHeading title={`FAB ID: ${fabData?.id || 'Loading...'}`} description="Review drafting activity" />
+                <Toolbar>
+                    <ToolbarHeading 
+                        title={`FAB ID: ${fabData?.id || 'Loading...'}`} 
+                        description="Review drafting activity" 
+                    />
                 </Toolbar>
             </Container>
-            <div className=" border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0  items-start lg:flex-shrink-0">
-                <div className="lg:col-span-3 w-full lg:w-[250px] xl:w-[300px] ultra:w-[400px]" >
+            <div className="border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0 items-start lg:flex-shrink-0">
+                <div className="lg:col-span-3 w-full lg:w-[250px] xl:w-[300px] ultra:w-[400px]">
                     <GraySidebar sections={sidebarSections as any} className='' />
                 </div>
                 <Container className="lg:col-span-9">
@@ -178,7 +209,7 @@ const DraftReviewDetailsPage = () => {
                     ) : (
                         <>
                             <Card className='my-4'>
-                                <CardHeader >
+                                <CardHeader>
                                     <CardHeading className='flex flex-col items-start py-4'>
                                         <CardTitle>Drafting activity</CardTitle>
                                         <p className="text-sm text-[#4B5563]">
@@ -187,10 +218,17 @@ const DraftReviewDetailsPage = () => {
                                     </CardHeading>
                                     <CardToolbar>
                                         <Can action="update" on="SCT">
-                                            <Button onClick={() => setShowMarkAsCompleteModal(true)}>Mark as Complete</Button>
+                                            <Button onClick={() => setShowMarkAsCompleteModal(true)}>
+                                                Mark as Complete
+                                            </Button>
                                         </Can>
                                         <Can action="update" on="SCT">
-                                            <Button variant="outline" onClick={() => setShowSubmissionModal(true)}>Create Revision</Button>
+                                            <Button 
+                                                variant="outline" 
+                                                onClick={() => setShowSubmissionModal(true)}
+                                            >
+                                                Create Revision
+                                            </Button>
                                         </Can>
                                     </CardToolbar>
                                 </CardHeader>
@@ -226,9 +264,8 @@ const DraftReviewDetailsPage = () => {
                         fabType={fabData.fab_type}
                         jobNumber={fabData.job_details?.job_number || ''}
                         totalSqFt={fabData.total_sqft}
-                        pieces={draftData?.no_of_piece_drafted || 0} // Use real data from draft_data
-                        sctId={sctData?.data?.id} // Pass SCT ID for revision update
-                        // Pass sales person from FAB data
+                        pieces={draftData?.no_of_piece_drafted || 0}
+                        sctId={sctData?.id} // Now using sctData directly
                         fabSalesPerson={fabSalesPerson}
                     />
                 )}

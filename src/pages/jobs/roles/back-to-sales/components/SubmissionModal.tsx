@@ -192,16 +192,16 @@ export const RevisionModal = ({
   };
 
   // Debugging: Log form state changes
-  useEffect(() => {
-    console.log("Form state:", {
-      isValid: form.formState.isValid,
-      errors: form.formState.errors,
-      isDirty: form.formState.isDirty,
-      sctId: sctId,
-      reasonValue: form.getValues("reason"),
-      reasonLength: form.getValues("reason")?.length || 0
-    });
-  }, [form.formState, sctId, form.watch("reason")]);
+  // useEffect(() => {
+  //   console.log("Form state:", {
+  //     isValid: form.formState.isValid,
+  //     errors: form.formState.errors,
+  //     isDirty: form.formState.isDirty,
+  //     sctId: sctId,
+  //     reasonValue: form.getValues("reason"),
+  //     reasonLength: form.getValues("reason")?.length || 0
+  //   });
+  // }, [form.formState, sctId, form.watch("reason")]);
 
   // Trigger validation when SCT ID becomes available
   useEffect(() => {

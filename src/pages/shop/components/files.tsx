@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -26,19 +26,30 @@ interface UploadBoxProps {
   draftingData?: Drafting;
   onDeleteFile?: (fileId: string) => void;
   draftingId?: number;
-  uploadedFileMetas?: any[]; // Newly uploaded files that haven't been saved to backend yet
+  uploadedFileMetas?: any[];
 }
 
-export function Documents({ onFileClick, draftingData, onDeleteFile, draftingId, uploadedFileMetas = [] }: UploadBoxProps) {
-  // State for files - initialize with empty array
-  const [files, setFiles] = useState<FileMetadata[]>([]);
+// Helper function to compare if two objects have the same files data
+const areFilesEqual = (files1: any[], files2: any[]) => {
+  if (files1.length !== files2.length) return false;
+  return files1.every((file, index) => 
+    file.id === files2[index]?.id && 
+    file.name === files2[index]?.name
+  );
+};
 
-  // Update files when draftingData or uploadedFileMetas changes
-  useEffect(() => {
-    // Combine existing files from backend and newly uploaded files
-    let allFiles: FileMetadata[] = [];
+export function Documents({ 
+  onFileClick, 
+  draftingData, 
+  onDeleteFile, 
+  draftingId, 
+  uploadedFileMetas = [] 
+}: UploadBoxProps) {
+  // Use useMemo to compute files instead of useState/useEffect
+  const files = useMemo(() => {
+    const allFiles: FileMetadata[] = [];
     
-    // First, try to use the files array if available (preferred method)
+    // Extract files from draftingData
     if (draftingData) {
       if (draftingData.files && Array.isArray(draftingData.files) && draftingData.files.length > 0) {
         try {
@@ -49,30 +60,30 @@ export function Documents({ onFileClick, draftingData, onDeleteFile, draftingId,
             type: file.file_type || 'application/octet-stream',
             url: file.file_url || '/images/app/upload-file.svg',
           }));
-          allFiles = [...allFiles, ...actualFiles];
+          allFiles.push(...actualFiles);
         } catch (error) {
           console.error('Error processing files array:', error);
         }
       }
-      // Fallback to file_ids string if files array is not available
+      // Fallback to file_ids string
       else if (draftingData.file_ids) {
         try {
           const fileIdsArray = draftingData.file_ids.split(',').filter(id => id.trim() !== '');
           const mockFiles = fileIdsArray.map((id, index) => ({
             id: id.trim(),
             name: `Drafting_File_${index + 1}.pdf`,
-            size: 1024000 + index * 512000, // Mock size
+            size: 1024000 + index * 512000,
             type: 'application/pdf',
             url: '/images/app/upload-file.svg',
           }));
-          allFiles = [...allFiles, ...mockFiles];
+          allFiles.push(...mockFiles);
         } catch (error) {
           console.error('Error parsing file_ids:', error);
         }
       }
     }
     
-    // Add newly uploaded files that haven't been saved to backend yet
+    // Add newly uploaded files
     if (uploadedFileMetas && uploadedFileMetas.length > 0) {
       const newFiles = uploadedFileMetas.map((meta: any) => ({
         id: String(meta.id),
@@ -81,28 +92,27 @@ export function Documents({ onFileClick, draftingData, onDeleteFile, draftingId,
         type: meta.type || 'application/octet-stream',
         url: meta.url || (meta.file ? URL.createObjectURL(meta.file) : '/images/app/upload-file.svg'),
       }));
-      allFiles = [...allFiles, ...newFiles];
+      allFiles.push(...newFiles);
     }
     
-    setFiles(allFiles);
-  }, [draftingData, uploadedFileMetas]);
+    return allFiles;
+  }, [draftingData, uploadedFileMetas]); // Only recompute when these change
 
-  const getFileIcon = (file: FileMetadata) => {
+  const getFileIcon = useCallback((file: FileMetadata) => {
     const { type } = file;
-    if (type.startsWith('image/')) return <img src="/images/app/img.svg" />;
+    if (type.startsWith('image/')) return <img src="/images/app/img.svg" alt="Image" />;
     if (type.startsWith('video/')) return <VideoIcon className="size-4" />;
     if (type.startsWith('audio/')) return <HeadphonesIcon className="size-4" />;
-    if (type.includes('pdf')) return <img src="/images/app/pdf.svg" />;
-    if (type.includes('word') || type.includes('doc')) return <img src="/images/app/doc.svg" />;
-    if (type.includes('excel') || type.includes('sheet')) return <img src="/images/app/doc.svg" />;
+    if (type.includes('pdf')) return <img src="/images/app/pdf.svg" alt="PDF" />;
+    if (type.includes('word') || type.includes('doc')) return <img src="/images/app/doc.svg" alt="Document" />;
+    if (type.includes('excel') || type.includes('sheet')) return <img src="/images/app/doc.svg" alt="Spreadsheet" />;
     if (type.includes('zip') || type.includes('rar')) return <FileArchiveIcon className="size-4" />;
     return <FileTextIcon className="size-4" />;
-  };
+  }, []);
 
-  const handleViewFile = (file: FileMetadata) => {
+  const handleViewFile = useCallback((file: FileMetadata) => {
     if (onFileClick) onFileClick(file);
-    // else window.open(file.url, '_blank');
-  };
+  }, [onFileClick]);
 
   // If no files, show a message
   if (files.length === 0) {
@@ -115,7 +125,7 @@ export function Documents({ onFileClick, draftingData, onDeleteFile, draftingId,
 
   return (
     <div className="border-none">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 ">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {files.map((file) => (
             <div
               key={file.id}

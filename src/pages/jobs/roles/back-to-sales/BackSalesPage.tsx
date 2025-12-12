@@ -138,7 +138,6 @@ export function AfterDraftSalesPage() {
             }
         }
 
-        console.log('SCT Query Params:', params); // Debug log
         return params;
     }, [
         skip,
@@ -196,7 +195,6 @@ export function AfterDraftSalesPage() {
         );
     }
 
-    console.log('SCT Data:', data); // Debug log
 
     return (
         <Container>
