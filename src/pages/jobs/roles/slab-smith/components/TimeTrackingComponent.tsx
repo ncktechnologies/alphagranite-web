@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Play, Pause, Square } from 'lucide-react';
+import { Can } from '@/components/permission';
 
 interface TimeTrackingComponentProps {
   isDrafting: boolean;
@@ -120,7 +121,7 @@ export const TimeTrackingComponent = ({
         </div>
 
         <div className="flex items-center gap-10 flex-1">
-          
+
           {/* START TIME */}
           <div>
             <span className="text-sm text-text-foreground">Start time & Date:</span>
@@ -159,10 +160,13 @@ export const TimeTrackingComponent = ({
         <div className="flex gap-2">
 
           {!isDrafting && !hasEnded ? (
-            <Button onClick={handleStart}>
-              <Play className="w-4 h-4 mr-2" />
-              Start drafting
-            </Button>
+            // 
+            <Can action="update" on="Drafting">
+              <Button onClick={handleStart} disabled={isStarting}>
+                <Play className="w-4 h-4 mr-2" />
+                {isStarting ? 'Starting...' : 'Start drafting'}
+              </Button>
+            </Can>
           ) : isDrafting && !hasEnded ? (
             <>
               {!isPaused ? (

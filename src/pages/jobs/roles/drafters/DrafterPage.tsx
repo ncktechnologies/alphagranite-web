@@ -103,11 +103,6 @@ const DrafterPage = () => {
             }
         }
 
-        // Handle schedule status filter (scheduled/unscheduled)
-        if (tableState.scheduleFilter && tableState.scheduleFilter !== 'all') {
-            params.schedule_status = tableState.scheduleFilter;
-        }
-
         if (tableState.dateFilter && tableState.dateFilter !== 'all') {
             // For custom date range, use schedule_start_date and schedule_due_date
             if (tableState.dateFilter === 'custom') {
@@ -132,7 +127,6 @@ const DrafterPage = () => {
         tableState.searchQuery,
         tableState.fabTypeFilter,
         tableState.salesPersonFilter,
-        tableState.scheduleFilter, // Add scheduleFilter dependency
         tableState.dateFilter,
         tableState.dateRange,
     ]);

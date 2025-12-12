@@ -39,16 +39,16 @@ const transformFabToJob = (fab: Fab): IJob => {
     sales_person_name: fab.sales_person_name || '',
     // Optional fields with default values
     acct_name: '',
-    no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
+    no_of_pieces: fab.draft_data.no_of_piece_drafted ? `${fab.draft_data.no_of_piece_drafted}` : "-",
     total_sq_ft: String(fab.total_sqft || "-"),
-    revenue: fab.job_details?.project_value || "-",
+    revenue: fab.revenue || "-",
     gp: "-",
-    draft_completed: fab.current_stage === 'completed' ? 'Yes' : 'No',
+    sct_completed: fab.sct_completed ? 'Yes' : 'No',
     template_received: '',
     revised: '',
-    sct_completed: '',
-    template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
-    templater: fab.technician_name || '-',
+    // sct_completed: '',
+    // template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
+    // templater: fab.technician_name || '-',
   };
 };
 

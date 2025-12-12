@@ -103,7 +103,8 @@ const DraftReviewDetailsPage = () => {
         : 'Unknown User';
 
     // Get sales person info from FAB data
-    const fabSalesPerson = `Sales ID: ${fabData?.sales_person_id || 'N/A'}`;
+    const fabSalesPerson = ` ${fabData?.sales_person_name
+         || 'N/A'}`;
 
     // Use draft_data from FAB response (type assertion since it's not in the interface but exists in the response)
     const draftData = (fabData as any)?.draft_data;

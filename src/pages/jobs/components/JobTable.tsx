@@ -100,7 +100,7 @@ export const JobTable = ({
     const dateRange = tableState?.dateRange || localDateRange;
     const setDateRange = tableState?.setDateRange || setLocalDateRange;
     const scheduleFilter = tableState?.scheduleFilter || 'all';
-    const setScheduleFilter = tableState?.setScheduleFilter || (() => {}); // No-op fallback
+    const setScheduleFilter = tableState?.setScheduleFilter || (() => { }); // No-op fallback
     // Function to get the correct path for a specific job
     const getViewPath = (job: IJob): string => {
         // If getPath function is provided, use it
@@ -168,7 +168,7 @@ export const JobTable = ({
         }
 
         // Date filter
-         if (showScheduleFilter && scheduleFilter !== 'all') {
+        if (showScheduleFilter && scheduleFilter !== 'all') {
             if (scheduleFilter === 'scheduled') {
                 result = result.filter((job) => job.date && job.date !== '');
             } else if (scheduleFilter === 'unscheduled') {
@@ -299,19 +299,7 @@ export const JobTable = ({
                 </span>
             ),
         },
-        {
-            id: "revised",
-            accessorKey: "revised",
-            accessorFn: (row: IJob) => row.revised,
-            header: ({ column }) => (
-                <DataGridColumnHeader className='uppercase' title="Revised" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[160px]">
-                    {row.original.revised}
-                </span>
-            ),
-        },
+     
         {
             id: "template_schedule",
             accessorKey: "template_schedule",
@@ -353,6 +341,45 @@ export const JobTable = ({
             cell: ({ row }) => (
                 <span className="text-sm truncate block max-w-[160px]">
                     {row.original.total_sq_ft}
+                </span>
+            ),
+        },
+            {
+            id: "revisor",
+            accessorKey: "revisor",
+            accessorFn: (row: IJob) => row.revisor,
+            header: ({ column }) => (
+                <DataGridColumnHeader className='uppercase' title="Revisor" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm truncate block max-w-[160px]">
+                    {row.original.revisor}
+                </span>
+            ),
+        },
+        {
+            id: "revised",
+            accessorKey: "revised",
+            accessorFn: (row: IJob) => row.revised,
+            header: ({ column }) => (
+                <DataGridColumnHeader className='uppercase' title="Revised?" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm truncate block max-w-[160px]">
+                    {row.original.revised}
+                </span>
+            ),
+        },
+        {
+            id: "revision_completed",
+            accessorKey: "revision_completed",
+            accessorFn: (row: IJob) => row.revised,
+            header: ({ column }) => (
+                <DataGridColumnHeader className='uppercase' title="Revision completed" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm truncate block max-w-[160px]">
+                    {row.original.revision_completed}
                 </span>
             ),
         },
@@ -487,7 +514,7 @@ export const JobTable = ({
                             <div className="relative">
                                 <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
                                 <Input
-                                    placeholder="Search Jobs..."
+                                    placeholder="Search by job, Fab ID"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="ps-9 w-[230px] h-[34px]"
@@ -610,22 +637,7 @@ export const JobTable = ({
                             )}
 
                             {/* Sales Person Filter */}
-                            {showSalesPersonFilter && uniqueSalesPersons && uniqueSalesPersons.length > 0 && (
-                                <Select value={salesPersonFilter} onValueChange={setSalesPersonFilter}>
-                                    <SelectTrigger className="w-[180px] h-[34px]">
-                                        <SelectValue placeholder="Sales Person" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Sales Persons</SelectItem>
-                                        <SelectItem value="no_sales_person">No Sales Person</SelectItem>
-                                        {uniqueSalesPersons.map((person) => (
-                                            <SelectItem key={person || 'N/A'} value={person || ''}>
-                                                {person || 'N/A'}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            )}
+
 
                             {/* Stage filter - only visible to super admins */}
                             {isSuperAdmin && (
@@ -647,6 +659,22 @@ export const JobTable = ({
                     </CardHeading>
 
                     <CardToolbar>
+                        {showSalesPersonFilter && uniqueSalesPersons && uniqueSalesPersons.length > 0 && (
+                            <Select value={salesPersonFilter} onValueChange={setSalesPersonFilter}>
+                                <SelectTrigger className="w-[180px] h-[34px]">
+                                    <SelectValue placeholder="Sales Person" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Sales Persons</SelectItem>
+                                    <SelectItem value="no_sales_person">No Sales Person</SelectItem>
+                                    {uniqueSalesPersons.map((person) => (
+                                        <SelectItem key={person || 'N/A'} value={person || ''}>
+                                            {person || 'N/A'}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
                         <Button variant="outline" onClick={() => exportTableToCSV(table, "FabId")}>
                             Export CSV
                         </Button>

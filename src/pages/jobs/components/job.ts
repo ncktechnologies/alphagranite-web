@@ -13,6 +13,8 @@ export interface IJob {
   total_sq_ft? :string;
   revenue?: string;
   revised?:string;
+  revisor?:string;
+  revision_completed?:string;
   sct_completed?:string
   draft_completed?:string
   gp?:string

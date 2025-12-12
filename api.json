@@ -2073,7 +2073,7 @@
           "roles"
         ],
         "summary": "Update Role",
-        "description": "Update role details\n\nThis endpoint updates a role's details including its permissions and members.\nYou can update any combination of fields:\n- name: New role name (must be unique)\n- description: New role description\n- action_menu_permissions: New list of action menus with CRUD permissions\n- user_ids: New list of user IDs to assign to this role\n- permission_ids: New list of permission IDs (alternative to action_menu_permissions)\n- status: New role status (1=Active, 2=Inactive)",
+        "description": "Update role details\n\nThis endpoint updates a role's details including its permissions and members.\nYou can update any combination of fields:\n- name: New role name (must be unique)\n- description: New role description\n- action_menu_permissions: New list of action menus with CRUD permissions\n- user_ids: New list of user IDs to assign to this role\n- permission_ids: New list of permission IDs (alternative to action_menu_permissions)\n- status: New role status (1=Active, 2=Inactive)\n\nPermission Requirements:\n- User must have can_update=True for \"roles\" action menu\n- If updating action_menu_permissions, user must have can_create=True for \"roles\" action menu\n- If updating user_ids (assigning/removing members), user must have can_create=True for \"roles\" action menu",
         "operationId": "update_role_roles__role_id__put",
         "security": [
           {
@@ -5224,6 +5224,62 @@
               "title": "Next Stage"
             },
             "description": "Filter by next stage"
+          },
+          {
+            "name": "schedule_start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter FABs scheduled on or after this date (YYYY-MM-DD)",
+              "title": "Schedule Start Date"
+            },
+            "description": "Filter FABs scheduled on or after this date (YYYY-MM-DD)"
+          },
+          {
+            "name": "schedule_due_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter FABs scheduled on or before this date (YYYY-MM-DD)",
+              "title": "Schedule Due Date"
+            },
+            "description": "Filter FABs scheduled on or before this date (YYYY-MM-DD)"
+          },
+          {
+            "name": "date_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Predefined date filter: today, this_week, this_month, next_week, next_month, scheduled, unscheduled",
+              "title": "Date Filter"
+            },
+            "description": "Predefined date filter: today, this_week, this_month, next_week, next_month, scheduled, unscheduled"
           }
         ],
         "responses": {
@@ -5487,6 +5543,108 @@
               "title": "Stage Name"
             }
           },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of records to skip",
+              "default": 0,
+              "title": "Skip"
+            },
+            "description": "Number of records to skip"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Number of records to return",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Number of records to return"
+          },
+          {
+            "name": "job_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by job ID",
+              "title": "Job Id"
+            },
+            "description": "Filter by job ID"
+          },
+          {
+            "name": "status_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by status ID",
+              "title": "Status Id"
+            },
+            "description": "Filter by status ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/stages/final_programming/pending": {
+      "get": {
+        "tags": [
+          "Fabs"
+        ],
+        "summary": "Get Pending Final Programming Fabs",
+        "description": "Get FABs that should be in final programming stage.\n\nCriteria:\n- current_stage == \"final_programming\" OR\n- (current_stage == \"cut_list\" AND shop_date_schedule IS NOT NULL AND final_programming_complete == False)",
+        "operationId": "get_pending_final_programming_fabs_api_v1_stages_final_programming_pending_get",
+        "parameters": [
           {
             "name": "skip",
             "in": "query",
@@ -6163,7 +6321,7 @@
           "Templating"
         ],
         "summary": "Mark Templating Received",
-        "description": "Mark templating as received, which automatically moves the fab to predraft review state",
+        "description": "Mark templating as received, which automatically moves the fab to predraft review state\nand sets template_received to True",
         "operationId": "mark_templating_received_api_v1_templating__templating_id__mark_received_post",
         "parameters": [
           {
@@ -7661,7 +7819,7 @@
           "SalesCT"
         ],
         "summary": "Update Sct Review",
-        "description": "Sales CT: Mark SCT review as complete",
+        "description": "Sales CT: Mark SCT review as complete and update revenue",
         "operationId": "update_sct_review_api_v1_sales_ct__fab_id__review_patch",
         "parameters": [
           {
@@ -7783,7 +7941,7 @@
           "SalesCT"
         ],
         "summary": "Approve And Send To Slabsmith",
-        "description": "Sales CT: Approve FAB and send to SlabSmith",
+        "description": "Sales CT: Approve FAB and send to next stage based on SlabSmith requirement",
         "operationId": "approve_and_send_to_slabsmith_api_v1_sales_ct__fab_id__approve_post",
         "parameters": [
           {
@@ -10073,6 +10231,7 @@
           "Job Extras"
         ],
         "summary": "Add Files To Final Programming",
+        "description": "Upload files to final programming, save to disk and database",
         "operationId": "add_files_to_final_programming_api_v1_finalprogramming__fp_id__files_post",
         "parameters": [
           {
@@ -10130,6 +10289,7 @@
           "Job Extras"
         ],
         "summary": "Delete File From Final Programming",
+        "description": "Delete file from final programming (soft delete in database)",
         "operationId": "delete_file_from_final_programming_api_v1_finalprogramming__fp_id__files__file_id__delete",
         "parameters": [
           {
@@ -10146,7 +10306,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
+              "type": "integer",
               "title": "File Id"
             }
           }
@@ -10520,6 +10680,7 @@
           "Job Extras"
         ],
         "summary": "Add Files To Slabsmith",
+        "description": "Upload files to SlabSmith, save to disk and database",
         "operationId": "add_files_to_slabsmith_api_v1_slabsmith__slabsmith_id__files_post",
         "parameters": [
           {
@@ -10577,6 +10738,7 @@
           "Job Extras"
         ],
         "summary": "Delete File From Slabsmith",
+        "description": "Delete file from SlabSmith (soft delete in database)",
         "operationId": "delete_file_from_slabsmith_api_v1_slabsmith__slabsmith_id__files__file_id__delete",
         "parameters": [
           {
@@ -10593,7 +10755,7 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string",
+              "type": "integer",
               "title": "File Id"
             }
           }
@@ -10633,6 +10795,7 @@
           "Job Extras"
         ],
         "summary": "Add Files To Drafting",
+        "description": "Upload files to drafting, save to disk and database",
         "operationId": "add_files_to_drafting_api_v1_drafting__drafting_id__files_post",
         "parameters": [
           {
@@ -10690,6 +10853,7 @@
           "Job Extras"
         ],
         "summary": "Delete File From Drafting",
+        "description": "Delete file from drafting (soft delete in database)",
         "operationId": "delete_file_from_drafting_api_v1_drafting__drafting_id__files__file_id__delete",
         "parameters": [
           {
@@ -10706,7 +10870,103 @@
             "in": "path",
             "required": true,
             "schema": {
+              "type": "integer",
+              "title": "File Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/files/download/{filename}": {
+      "get": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Download File",
+        "description": "Download a file by filename",
+        "operationId": "download_file_api_v1_files_download__filename__get",
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
               "type": "string",
+              "title": "Filename"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/files/{file_id}": {
+      "get": {
+        "tags": [
+          "Job Extras"
+        ],
+        "summary": "Get File Info",
+        "description": "Get file information by ID",
+        "operationId": "get_file_info_api_v1_files__file_id__get",
+        "parameters": [
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
               "title": "File Id"
             }
           }
@@ -13036,11 +13296,11 @@
       "Body_submit_draft_for_review_api_v1_drafting__drafting_id__submit_post": {
         "properties": {
           "total_sqft_drafted": {
-            "type": "string",
+            "type": "number",
             "title": "Total Sqft Drafted"
           },
           "no_of_piece_drafted": {
-            "type": "string",
+            "type": "integer",
             "title": "No Of Piece Drafted"
           },
           "is_drafting_completed": {
@@ -13138,19 +13398,47 @@
       "Body_update_employee_employees__employee_id__put": {
         "properties": {
           "first_name": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "First Name"
           },
           "last_name": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Last Name"
           },
           "email": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Email"
           },
           "phone_number": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Phone Number"
           },
           "department_id": {
@@ -13165,11 +13453,25 @@
             "title": "Department Id"
           },
           "gender": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Gender"
           },
           "home_address": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Home Address"
           },
           "role_id": {
@@ -14146,7 +14448,7 @@
           "total_sqft_drafted": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -14157,13 +14459,24 @@
           "no_of_piece_drafted": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "integer"
               },
               {
                 "type": "null"
               }
             ],
             "title": "No Of Piece Drafted"
+          },
+          "total_hours_drafted": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Hours Drafted"
           },
           "draft_note": {
             "anyOf": [
@@ -14251,6 +14564,7 @@
           "total_sqft_required_to_draft",
           "total_sqft_drafted",
           "no_of_piece_drafted",
+          "total_hours_drafted",
           "draft_note",
           "mentions",
           "file_ids",
@@ -14265,6 +14579,80 @@
       },
       "DraftingUpdate": {
         "properties": {
+          "total_sqft": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft",
+            "description": "Updated square feet"
+          },
+          "no_of_pieces": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "No Of Pieces",
+            "description": "Number of pieces"
+          },
+          "cad_review_complete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cad Review Complete",
+            "description": "Mark CAD review complete"
+          },
+          "draft_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Completed",
+            "description": "Mark draft as completed"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Drafting notes"
+          },
+          "current_stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Stage",
+            "description": "Move to different stage"
+          },
           "drafter_start_date": {
             "anyOf": [
               {
@@ -14292,7 +14680,7 @@
           "total_sqft_drafted": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -14303,7 +14691,7 @@
           "no_of_piece_drafted": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "integer"
               },
               {
                 "type": "null"
@@ -14321,6 +14709,17 @@
               }
             ],
             "title": "Draft Note"
+          },
+          "total_hours_drafted": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Hours Drafted"
           },
           "mentions": {
             "anyOf": [
@@ -14357,7 +14756,8 @@
           }
         },
         "type": "object",
-        "title": "DraftingUpdate"
+        "title": "DraftingUpdate",
+        "description": "Schema for updating drafting information"
       },
       "EdgeCreate": {
         "properties": {
@@ -14589,10 +14989,16 @@
             "title": "Edge Id"
           },
           "input_area": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 1,
-            "title": "Input Area"
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Input Area",
+            "description": "Description of input area (e.g., 'Kitchen countertop and island')"
           },
           "total_sqft": {
             "anyOf": [
@@ -14657,8 +15063,7 @@
           "stone_type_id",
           "stone_color_id",
           "stone_thickness_id",
-          "edge_id",
-          "input_area"
+          "edge_id"
         ],
         "title": "FabCreate"
       },
@@ -14979,7 +15384,14 @@
             "title": "Edge Name"
           },
           "input_area": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Input Area"
           },
           "total_sqft": {
@@ -15471,7 +15883,6 @@
           "stone_color_id",
           "stone_thickness_id",
           "edge_id",
-          "input_area",
           "total_sqft",
           "template_needed",
           "drafting_needed",
@@ -15589,15 +16000,14 @@
           "input_area": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255,
-                "minLength": 1
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Input Area"
+            "title": "Input Area",
+            "description": "Description of input area (e.g., 'Kitchen countertop and island')"
           },
           "total_sqft": {
             "anyOf": [
@@ -17376,6 +17786,10 @@
             ],
             "title": "Is Redrafting Needed"
           },
+          "is_completed": {
+            "type": "boolean",
+            "title": "Is Completed"
+          },
           "status_id": {
             "anyOf": [
               {
@@ -17408,6 +17822,7 @@
           "fab_id",
           "draft_notes",
           "is_redrafting_needed",
+          "is_completed",
           "status_id",
           "created_at",
           "updated_at",
@@ -18224,6 +18639,32 @@
             "description": "Mark SCT as complete",
             "default": true
           },
+          "revenue": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revenue"
+          },
+          "slab_smith_used": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slab Smith Used"
+          },
           "notes": {
             "anyOf": [
               {
@@ -18233,30 +18674,48 @@
                 "type": "null"
               }
             ],
-            "title": "Notes",
-            "description": "Approval notes"
+            "title": "Notes"
           }
         },
         "type": "object",
         "title": "SalesCTApprove",
-        "description": "Schema for approving FAB and sending to SlabSmith"
+        "description": "Schema for approving FAB and sending to SlabSmith",
+        "example": {
+          "notes": "Approved for production",
+          "revenue": 15000.5,
+          "sct_completed": true,
+          "slab_smith_used": true
+        }
       },
       "SalesCTCreate": {
         "properties": {
           "fab_id": {
             "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Fab Id"
+            "title": "Fab Id",
+            "description": "FAB ID"
           },
           "is_revision_needed": {
             "type": "boolean",
             "title": "Is Revision Needed",
-            "default": false
+            "description": "Whether revision is needed"
+          },
+          "revision_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Reason",
+            "description": "Reason for revision if needed"
           }
         },
         "type": "object",
         "required": [
-          "fab_id"
+          "fab_id",
+          "is_revision_needed"
         ],
         "title": "SalesCTCreate"
       },
@@ -18274,6 +18733,17 @@
             "type": "boolean",
             "title": "Is Revision Needed"
           },
+          "revision_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Reason"
+          },
           "is_revision_completed": {
             "anyOf": [
               {
@@ -18284,10 +18754,6 @@
               }
             ],
             "title": "Is Revision Completed"
-          },
-          "is_completed": {
-            "type": "boolean",
-            "title": "Is Completed"
           },
           "no_of_revisions": {
             "anyOf": [
@@ -18315,16 +18781,87 @@
             "type": "integer",
             "title": "Status Id"
           },
+          "slab_smith_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slab Smith Type"
+          },
+          "drafter_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafter Id"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "total_sqft_completed": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Sqft Completed"
+          },
+          "file_ids": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Ids"
+          },
           "created_at": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Created At"
           },
           "updated_at": {
             "anyOf": [
               {
-                "type": "string",
-                "format": "date-time"
+                "type": "string"
               },
               {
                 "type": "null"
@@ -18349,14 +18886,7 @@
           "id",
           "fab_id",
           "is_revision_needed",
-          "is_revision_completed",
-          "is_completed",
-          "no_of_revisions",
-          "current_revision_count",
-          "status_id",
-          "created_at",
-          "updated_at",
-          "updated_by"
+          "status_id"
         ],
         "title": "SalesCTResponse"
       },
@@ -18364,8 +18894,33 @@
         "properties": {
           "sct_completed": {
             "type": "boolean",
-            "title": "Sct Completed",
-            "description": "Mark SCT review as complete"
+            "title": "Sct Completed"
+          },
+          "revenue": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revenue"
+          },
+          "slab_smith_used": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slab Smith Used"
           },
           "notes": {
             "anyOf": [
@@ -18376,8 +18931,7 @@
                 "type": "null"
               }
             ],
-            "title": "Notes",
-            "description": "SCT review notes"
+            "title": "Notes"
           }
         },
         "type": "object",
@@ -18385,7 +18939,13 @@
           "sct_completed"
         ],
         "title": "SalesCTReviewUpdate",
-        "description": "Schema for Sales CT to review and mark FAB complete"
+        "description": "Schema for Sales CT review update",
+        "example": {
+          "notes": "All measurements verified and approved",
+          "revenue": 15000.5,
+          "sct_completed": true,
+          "slab_smith_used": true
+        }
       },
       "SalesCTRevisionUpdate": {
         "properties": {
@@ -20314,7 +20874,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "format": "date-time"
+                "format": "date"
               },
               {
                 "type": "null"
@@ -20326,7 +20886,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "format": "date-time"
+                "format": "date"
               },
               {
                 "type": "null"
@@ -20349,7 +20909,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "format": "date-time"
+                "format": "date"
               },
               {
                 "type": "null"
@@ -20360,7 +20920,7 @@
           "duration": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -20383,15 +20943,36 @@
             "title": "Notes"
           },
           "is_templating_schedule": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Is Templating Schedule"
           },
           "is_completed": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Is Completed"
           },
           "status_id": {
-            "type": "integer",
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Status Id"
           },
           "status_name": {
@@ -20428,8 +21009,15 @@
             "title": "Next Stage"
           },
           "created_at": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Created At"
           },
           "updated_at": {
@@ -20459,20 +21047,10 @@
         "type": "object",
         "required": [
           "id",
-          "fab_id",
-          "technician_id",
-          "schedule_start_date",
-          "schedule_due_date",
-          "total_sqft",
-          "notes",
-          "is_templating_schedule",
-          "is_completed",
-          "status_id",
-          "created_at",
-          "updated_at",
-          "updated_by"
+          "fab_id"
         ],
-        "title": "TemplatingResponse"
+        "title": "TemplatingResponse",
+        "description": "Schema for templating response"
       },
       "TemplatingReviewUpdate": {
         "properties": {
@@ -20582,8 +21160,7 @@
           "technician_id": {
             "anyOf": [
               {
-                "type": "integer",
-                "exclusiveMinimum": 0
+                "type": "integer"
               },
               {
                 "type": "null"
@@ -20595,7 +21172,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "format": "date-time"
+                "format": "date"
               },
               {
                 "type": "null"
@@ -20607,7 +21184,7 @@
             "anyOf": [
               {
                 "type": "string",
-                "format": "date-time"
+                "format": "date"
               },
               {
                 "type": "null"
@@ -20618,7 +21195,7 @@
           "total_sqft": {
             "anyOf": [
               {
-                "type": "string"
+                "type": "number"
               },
               {
                 "type": "null"
@@ -20640,7 +21217,30 @@
             ],
             "title": "Notes"
           },
-          "is_completed": {
+          "actual_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Start Date"
+          },
+          "duration": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration"
+          },
+          "is_templating_schedule": {
             "anyOf": [
               {
                 "type": "boolean"
@@ -20649,7 +21249,7 @@
                 "type": "null"
               }
             ],
-            "title": "Is Completed"
+            "title": "Is Templating Schedule"
           },
           "status_id": {
             "anyOf": [
@@ -20664,7 +21264,8 @@
           }
         },
         "type": "object",
-        "title": "TemplatingScheduleUpdate"
+        "title": "TemplatingScheduleUpdate",
+        "description": "Schema for updating templating schedule"
       },
       "TemplatingTechnicianUpdate": {
         "properties": {

@@ -134,14 +134,7 @@ export const RevisionModal = ({
   const handleSubmit = async (values: RevisionData) => {
     setIsSubmitting(true);
     try {
-      // console.log("Submitting revision:", values);
-      
-      // If no SCT ID is available, we should not try to create one here
-      // The SCTService should handle SCT creation
-      // If sctId is not provided, it means either:
-      // 1. SCT doesn't exist and couldn't be created
-      // 2. There was an error fetching SCT data
-      // In either case, we shouldn't attempt to create it again
+  
       const currentSctId = sctId;
       
       // Make sure we have a valid SCT ID before proceeding

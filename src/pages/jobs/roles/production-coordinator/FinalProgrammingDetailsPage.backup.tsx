@@ -1,0 +1,287 @@
+// Backup of FinalProgrammingDetailsPage.tsx
+import React, { useCallback, useState } from 'react';
+import { Container } from '@/components/common/container';
+import GraySidebar from '../../components/job-details.tsx/GraySidebar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { useNavigate, useParams } from 'react-router';
+import { toast } from 'sonner';
+import { 
+  useGetFabByIdQuery, 
+  useGetFinalProgrammingSessionStatusQuery,
+  useAddFilesToFinalProgrammingMutation,
+  useCompleteFinalProgrammingMutation,
+  useScheduleShopDateMutation
+} from '@/store/api/job';
+import { TimeTrackingComponent } from './components/TimeTrackingComponent';
+import { UploadDocuments } from './components/fileUploads';
+import { FileViewer } from './components/FileViewer';
+import { SubmissionModal } from './components/SubmissionModal';
+import { useSelector } from 'react-redux';
+import { FileWithPreview } from '@/hooks/use-file-upload';
+import { UploadedFileMeta } from '@/types/uploads';
+import { X } from 'lucide-react';
+
+export function FinalProgrammingDetailsPage() {
+  const { id } = useParams<{ id: string }>();
+  const fabId = id ? Number(id) : 0;
+  const navigate = useNavigate();
+
+  const currentUser = useSelector((s: any) => s.user.user);
+  const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
+
+  // Load fab and final programming session status
+  const { data: fabData, isLoading: isFabLoading } = useGetFabByIdQuery(fabId, { skip: !fabId });
+  const { data: fpSessionData, isLoading: isFPLoading } = useGetFinalProgrammingSessionStatusQuery(fabId, { skip: !fabId });
+  
+  // Mutations
+  const [addFilesToFinalProgramming] = useAddFilesToFinalProgrammingMutation();
+  const [completeFinalProgramming] = useCompleteFinalProgrammingMutation();
+  const [scheduleShopDate] = useScheduleShopDateMutation();
+
+  // Local UI state
+  const [isDrafting, setIsDrafting] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [hasEnded, setHasEnded] = useState(false);
+  const [totalTime, setTotalTime] = useState<number>(0);
+
+  // Start/end timestamps captured from child component
+  const [draftStart, setDraftStart] = useState<Date | null>(null);
+  const [draftEnd, setDraftEnd] = useState<Date | null>(null);
+
+  // Simplified file state - track files that need to be uploaded
+  const [pendingFiles, setPendingFiles] = useState<FileWithPreview[]>([]);
+  const [uploadedFileMetas, setUploadedFileMetas] = useState<UploadedFileMeta[]>([]);
+  const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+  const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
+  const [activeFile, setActiveFile] = useState<any | null>(null);
+
+  // Handle time tracking events
+  const handleStart = useCallback((startTime: Date) => {
+    setIsDrafting(true);
+    setDraftStart(startTime);
+  }, []);
+
+  const handlePause = useCallback((pauseTime: Date) => {
+    setIsDrafting(false);
+    setIsPaused(true);
+    setDraftEnd(pauseTime);
+  }, []);
+
+  const handleResume = useCallback(() => {
+    setIsDrafting(true);
+    setIsPaused(false);
+    setDraftEnd(null);
+  }, []);
+
+  const handleEnd = useCallback((endTime: Date) => {
+    setIsDrafting(false);
+    setIsPaused(false);
+    setHasEnded(true);
+    setDraftEnd(endTime);
+  }, []);
+
+  // Handle file uploads
+  const handleFilesChange = useCallback((files: FileWithPreview[]) => {
+    setPendingFiles(files);
+  }, []);
+
+  // Handle file clicks for viewing
+  const handleFileClick = (file: any) => {
+    setActiveFile(file);
+    setViewMode('file');
+  };
+
+  // Handle submission modal
+  const handleOpenSubmissionModal = () => {
+    if (pendingFiles.length === 0 && uploadedFileMetas.length === 0) {
+      toast.error('Please upload at least one file before submitting');
+      return;
+    }
+    setShowSubmissionModal(true);
+  };
+
+  // Handle submission
+  const onSubmitModal = async (values: any) => {
+    try {
+      // First, upload any pending files
+      if (pendingFiles.length > 0 && fpSessionData?.id) {
+        // Extract the actual File objects from FileWithPreview
+        const actualFiles = pendingFiles.map(file => {
+          // If it's already a File, return it directly
+          if (file instanceof File) {
+            return file;
+          }
+          // Otherwise, we might need to recreate it - but for now, let's assume it's a File
+          return file as unknown as File;
+        });
+
+        await addFilesToFinalProgramming({
+          fp_id: fpSessionData.id,
+          files: actualFiles
+        }).unwrap();
+
+        toast.success(`${pendingFiles.length} file(s) uploaded successfully`);
+        setPendingFiles([]);
+      }
+
+      // Then complete the final programming
+      await completeFinalProgramming({
+        fab_id: fabId,
+        data: {
+          final_programming_complete: true,
+          notes: values.draftNotes || null,
+          drafter_id: currentEmployeeId,
+          wj_time_minutes: values.wjTimeMinutes ? parseInt(values.wjTimeMinutes) : null
+        }
+      }).unwrap();
+
+      toast.success('Final programming completed successfully');
+      navigate('/job/final-programming');
+    } catch (error) {
+      console.error('Error completing final programming:', error);
+      toast.error('Failed to complete final programming');
+    }
+  };
+
+  // Check if we can open the submit modal
+  const canOpenSubmit = (pendingFiles.length > 0 || uploadedFileMetas.length > 0) && hasEnded;
+
+  // Create sidebar sections with actual FAB data
+  const sidebarSections = [
+    {
+      title: "Job Details",
+      type: "details",
+      items: [
+        { label: "Stone Type", value: fabData?.stone_type_name || 'N/A' },
+        { label: "Stone Color", value: fabData?.stone_color_name || 'N/A' },
+        { label: "Stone Thickness", value: fabData?.stone_thickness_value || 'N/A' },
+        { label: "Edge Profile", value: fabData?.edge_name || 'N/A' },
+        { label: "Total Sq Ft", value: fabData?.total_sqft?.toString() || 'N/A' },
+        { label: "Input Area", value: fabData?.input_area || 'N/A' },
+        { label: "FAB Type", value: fabData?.fab_type || 'N/A' },
+      ],
+    },
+    {
+      title: "",
+      sectionTitle: "Final Programming notes",
+      type: "notes",
+      notes: fabData?.notes?.map((note: string, index: number) => ({
+        id: index,
+        avatar: "FP",
+        content: note,
+        author: "Final Programming",
+        timestamp: "",
+      })) || [],
+    },
+  ];
+
+  if (isFabLoading || isFPLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (viewMode === 'file' && activeFile) {
+    return (
+      <Container className="lg:mx-0">
+        <div className="flex justify-end mb-4">
+          <Button
+            variant="inverse"
+            size="sm"
+            onClick={() => {
+              setViewMode('activity');
+              setActiveFile(null);
+            }}
+          >
+            <X className="w-6 h-6" />
+          </Button>
+        </div>
+        <FileViewer
+          file={activeFile}
+          onClose={() => {
+            setViewMode('activity');
+            setActiveFile(null);
+          }}
+        />
+      </Container>
+    );
+  }
+
+  return (
+    <div className=" border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0  items-start lg:flex-shrink-0">
+      <div className="lg:col-span-3 w-full lg:w-[250px] xl:w-[300px] ultra:w-[400px]" >
+        <GraySidebar sections={sidebarSections as any} className='' />
+      </div>
+      
+      <Container className="lg:col-span-9">
+        <div className="pt-6">
+          <div className="flex justify-between items-start">
+            <div className="text-black">
+              <p className="font-bold text-base">FAB-{fabData?.id || 'N/A'}</p>
+              <p className="text-sm">{fabData?.job_details?.name || 'N/A'}</p>
+            </div>
+          </div>
+        </div>
+
+        <Separator className="my-6" />
+
+        <Card>
+          
+          <CardContent>
+            <TimeTrackingComponent
+              isDrafting={isDrafting}
+              isPaused={isPaused}
+              totalTime={totalTime}
+              onStart={handleStart}
+              onPause={handlePause}
+              onResume={handleResume}
+              onEnd={handleEnd}
+              onTimeUpdate={setTotalTime}
+              hasEnded={hasEnded}
+            />
+          </CardContent>
+        </Card>
+
+        <Separator className="my-6" />
+
+        <UploadDocuments
+          onFilesChange={handleFilesChange}
+          onFileClick={handleFileClick}
+          fpId={fpSessionData?.id}
+        />
+
+        <Separator className="my-6" />
+
+        <div className="flex justify-end mb-10">
+          <Button
+            onClick={handleOpenSubmissionModal}
+            disabled={!canOpenSubmit}
+            className="bg-green-600 hover:bg-green-700"
+            size="lg"
+          >
+            Submit Final Programming
+          </Button>
+        </div>
+
+        <SubmissionModal
+          open={showSubmissionModal}
+          onClose={(success?: boolean) => {
+            setShowSubmissionModal(false);
+            if (success) {
+              onSubmitModal({});
+            }
+          }}
+          drafting={fpSessionData}
+          uploadedFiles={uploadedFileMetas.map(meta => ({ ...meta }))}
+          draftStart={draftStart}
+          draftEnd={draftEnd}
+          fabId={fabId}
+          userId={currentEmployeeId}
+          fabData={fabData}
+        />
+      </Container>
+    </div>
+  );
+}
+
+export default FinalProgrammingDetailsPage;

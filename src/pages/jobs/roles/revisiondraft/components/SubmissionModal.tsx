@@ -27,6 +27,7 @@ import { UploadedFileMeta } from "@/types/uploads";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Drafting } from '@/store/api/job';
+import { useNavigate } from "react-router";
 
 const revisionSchema = z.object({
   revisionType: z.string().min(1, "Select revision type"),
@@ -52,6 +53,7 @@ export const RevisionForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [addFilesToDrafting, { isLoading: isUploadingFiles }] = useAddFilesToDraftingMutation();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const navigate = useNavigate();
 
   const form = useForm<RevisionData>({
     resolver: zodResolver(revisionSchema),
@@ -111,9 +113,7 @@ export const RevisionForm = ({
   };
 
   const handleFormSubmit = async (values: RevisionData) => {
-    console.log('Form values:', values);
-    console.log('Uploaded files:', uploadedFiles);
-    
+  
     setIsSubmitting(true);
     
     try {
@@ -126,10 +126,11 @@ export const RevisionForm = ({
       
       console.log('Submitting data:', submissionData);
       await onSubmit(submissionData);
-      console.log('Submission successful');
+      toast.success("Revision submitted successfully");
+      navigate("/job/revision"); // Refresh the page to reflect changes
     } catch (error) {
       console.error("Failed to submit revision:", error);
-      toast.error("Failed to submit revision");
+     
     } finally {
       setIsSubmitting(false);
     }
