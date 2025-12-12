@@ -38,6 +38,7 @@ interface CanProps {
  *   <Button onClick={handleCreate}>Add Employee</Button>
  * </Can>
  * 
+ * 
  * @example
  * // Show different content if no permission
  * <Can 

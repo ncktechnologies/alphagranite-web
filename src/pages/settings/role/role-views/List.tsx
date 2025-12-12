@@ -25,7 +25,7 @@ export const RolesList = ({
     <div className="w-80 space-y-4 pr-6 border-r">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-gray-900">Roles</h2>
-        <Can action="create" on="Settings">
+        <Can action="update" on="Settings">
           <Button onClick={onNewRole} className="bg-green-600 hover:bg-green-700">
             + New role
           </Button>

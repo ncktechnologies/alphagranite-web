@@ -121,7 +121,7 @@ export function SalesPage() {
                 <Toolbar className=' '>
                     <ToolbarHeading title="FAB ID'S" description="View & track all Alpha granite FAB ID'S" />
                     <ToolbarActions>
-                        <Can action="create" on="FAB IDs">
+                        <Can action="update" on="FAB IDs">
                             <Link to="/jobs/sales/new-fab-id">
                                 <Button className="">
                                     <Plus />
@@ -129,7 +129,7 @@ export function SalesPage() {
                                 </Button>
                             </Link>
                         </Can>
-                        <Can action="create" on="Jobs">
+                        <Can action="update" on="Jobs">
                             <Link to="/create-jobs">
                                 <Button className="">
                                     <Plus />
