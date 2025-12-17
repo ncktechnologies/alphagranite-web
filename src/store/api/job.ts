@@ -93,6 +93,8 @@ export interface Fab {
     job_details?: JobDetails;
     // Draft data nested in FAB response
     draft_data?: Drafting;
+    // Sales CT data for revisions
+    sales_ct_data?: any;
     // Account details
     account_id?: number;
     account_name?: string;

@@ -15,6 +15,9 @@ export interface IJob {
   revised?:string;
   revisor?:string;
   revision_completed?:string;
+  revision_number?:string;
+  revision_reason?:string;
+  revision_type?:string;
   sct_completed?:string
   draft_completed?:string
   gp?:string

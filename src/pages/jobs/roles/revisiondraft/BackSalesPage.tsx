@@ -11,23 +11,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 
-// Format date to "08 Oct, 2025" format
-const formatDate = (dateString?: string): string => {
-  if (!dateString) return '-';
-  
-  try {
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = date.toLocaleString('en-US', { month: 'short' });
-    const year = date.getFullYear();
-    return `${day} ${month}, ${year}`;
-  } catch (error) {
-    return '-';
-  }
-};
 
 // Transform Fab data to match IJob interface
 const transformFabToJob = (fab: Fab): IJob => {
+  const fabData = fab as any; // Cast to any to access API-specific properties
   return {
     id: fab.id,
     fab_type: fab.fab_type,
@@ -43,8 +30,11 @@ const transformFabToJob = (fab: Fab): IJob => {
     total_sq_ft: String(fab.total_sqft || "-"),
     // revenue: fab.job_details?.project_value || "-",
     // gp: "-",
-    revision_completed: fab.sales_ct_data.is_revision_completed ? 'Yes' : 'No',
-    revisor: fab.sales_ct_data.updated_by_name || '',
+    revision_completed: fabData.sales_ct_data?.is_revision_completed ? 'Yes' : 'No',
+    revisor: fabData.sales_ct_data?.updated_by_name || '',
+    revision_number: fabData.sales_ct_data?.current_revision_count ? `#${fabData.sales_ct_data.current_revision_count}` : '#1',
+    revision_reason: fabData.sales_ct_data?.revision_reason || fabData.sales_ct_data?.draft_note || 'N/A',
+    revision_type: fabData.sales_ct_data?.revision_type || '-',
     sct_completed: '',
     // template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
     // template_received: '',

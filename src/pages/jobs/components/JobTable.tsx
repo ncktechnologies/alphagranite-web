@@ -334,7 +334,8 @@ export const JobTable = ({
             header: ({ column }) => (
                 <DataGridColumnHeader title="FAB TYPE" column={column} />
             ),
-            cell: ({ row }) => <span className="text-sm">{row.original.fab_type}</span>,
+            cell: ({ row }) => <span className="text-xs">{row.original.fab_type}</span>,
+            size: 100,
         },
         {
             id: "fab_id",
@@ -343,7 +344,8 @@ export const JobTable = ({
             header: ({ column }) => (
                 <DataGridColumnHeader title="FAB ID" column={column} />
             ),
-            cell: ({ row }) => <span className="text-sm">{row.original.fab_id}</span>,
+            cell: ({ row }) => <span className="text-xs">{row.original.fab_id}</span>,
+            size: 80,
         },
         {
             id: "job_name",
@@ -353,10 +355,11 @@ export const JobTable = ({
                 <DataGridColumnHeader title="JOB NAME" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[200px]">
+                <span className="text-xs truncate block max-w-[180px]">
                     {row.original.job_name}
                 </span>
             ),
+            size: 160,
         },
         {
             id: "job_no",
@@ -365,7 +368,8 @@ export const JobTable = ({
             header: ({ column }) => (
                 <DataGridColumnHeader title="JOB NO" column={column} />
             ),
-            cell: ({ row }) => <span className="text-sm">{row.original.job_no}</span>,
+            cell: ({ row }) => <span className="text-xs">{row.original.job_no}</span>,
+            size: 100,
         },
         {
             id: "template_needed",
@@ -374,7 +378,8 @@ export const JobTable = ({
             header: ({ column }) => (
                 <DataGridColumnHeader title="Template not needed" column={column} />
             ),
-            cell: ({ row }) => <span className="text-sm">{row.original.template_needed}</span>,
+            cell: ({ row }) => <span className="text-xs">{row.original.template_needed}</span>,
+            size: 110,
         },
         {
             id: "acct_name",
@@ -384,10 +389,11 @@ export const JobTable = ({
                 <DataGridColumnHeader title="ACCT NAME" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[160px]">
+                <span className="text-xs truncate block max-w-[140px]">
                     {row.original.acct_name}
                 </span>
             ),
+            size: 120,
         },
         {
             id: "no_of_pieces",
@@ -397,10 +403,11 @@ export const JobTable = ({
                 <DataGridColumnHeader className='uppercase' title="No. of pieces" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[160px]">
+                <span className="text-xs truncate block max-w-[110px]">
                     {row.original.no_of_pieces}
                 </span>
             ),
+            size: 90,
         },
      
         {
@@ -411,9 +418,10 @@ export const JobTable = ({
                 <DataGridColumnHeader title="TEMPLATE SCHEDULE" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm">{row.original.template_schedule}</span>
+                <span className="text-xs">{row.original.template_schedule}</span>
             ),
             enableSorting: false, // Disable sorting since we pre-sort the data
+            size: 120,
         },
         {
             id: "template_received",
@@ -423,8 +431,9 @@ export const JobTable = ({
                 <DataGridColumnHeader title="TEMPLATE RECEIVED" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm">{row.original.template_received}</span>
+                <span className="text-xs">{row.original.template_received}</span>
             ),
+            size: 120,
         },
         {
             id: "templater",
@@ -433,7 +442,8 @@ export const JobTable = ({
             header: ({ column }) => (
                 <DataGridColumnHeader title="TEMPLATER" column={column} />
             ),
-            cell: ({ row }) => <span className="text-sm">{row.original.templater}</span>,
+            cell: ({ row }) => <span className="text-xs">{row.original.templater}</span>,
+            size: 130,
         },
         {
             id: "total_sq_ft",
@@ -443,10 +453,11 @@ export const JobTable = ({
                 <DataGridColumnHeader className='uppercase' title="Total Sq ft " column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[160px]">
+                <span className="text-xs truncate block max-w-[100px]">
                     {row.original.total_sq_ft}
                 </span>
             ),
+            size: 100,
         },
             {
             id: "revisor",
@@ -456,10 +467,11 @@ export const JobTable = ({
                 <DataGridColumnHeader className='uppercase' title="Revisor" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[160px]">
+                <span className="text-xs truncate block max-w-[120px]">
                     {row.original.revisor}
                 </span>
             ),
+            size: 100,
         },
         {
             id: "revised",
@@ -469,10 +481,11 @@ export const JobTable = ({
                 <DataGridColumnHeader className='uppercase' title="Revised?" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[160px]">
+                <span className="text-xs truncate block max-w-[100px]">
                     {row.original.revised}
                 </span>
             ),
+            size: 80,
         },
         {
             id: "revision_completed",
@@ -486,6 +499,49 @@ export const JobTable = ({
                     {row.original.revision_completed}
                 </span>
             ),
+            size: 130,
+        },
+        {
+            id: "revision_number",
+            accessorKey: "revision_number",
+            accessorFn: (row: IJob) => row.revision_number,
+            header: ({ column }) => (
+                <DataGridColumnHeader className='uppercase' title="Revision #" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm truncate block max-w-[80px]">
+                    {row.original.revision_number}
+                </span>
+            ),
+            size: 100,
+        },
+        {
+            id: "revision_reason",
+            accessorKey: "revision_reason",
+            accessorFn: (row: IJob) => row.revision_reason,
+            header: ({ column }) => (
+                <DataGridColumnHeader className='uppercase' title="Revision reason" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm truncate block max-w-[200px]" title={row.original.revision_reason}>
+                    {row.original.revision_reason}
+                </span>
+            ),
+            size: 150,
+        },
+        {
+            id: "revision_type",
+            accessorKey: "revision_type",
+            accessorFn: (row: IJob) => row.revision_type,
+            header: ({ column }) => (
+                <DataGridColumnHeader className='uppercase' title="Revision type" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm truncate block max-w-[120px]">
+                    {row.original.revision_type}
+                </span>
+            ),
+            size: 120,
         },
         {
             id: "revenue",
@@ -495,10 +551,11 @@ export const JobTable = ({
                 <DataGridColumnHeader className='uppercase' title="Revenue" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[160px]">
+                <span className="text-xs truncate block max-w-[160px]">
                     {row.original.revenue}
                 </span>
             ),
+            size: 110,
         },
         {
             id: "gp",
@@ -510,6 +567,7 @@ export const JobTable = ({
             cell: ({ row }) => (
                 <span className="text-sm">{row.original.gp}</span>
             ),
+            size: 80,
         },
         {
             id: "sct_completed",
@@ -523,6 +581,7 @@ export const JobTable = ({
                     {row.original.sct_completed}
                 </span>
             ),
+            size: 120,
         },
         {
             id: "draft_completed",
@@ -536,6 +595,7 @@ export const JobTable = ({
                     {row.original.draft_completed}
                 </span>
             ),
+            size: 130,
         },
         {
             id: "review_completed",
@@ -549,6 +609,7 @@ export const JobTable = ({
                     {row.original.draft_completed}
                 </span>
             ),
+            size: 140,
         },
         {
             id: 'actions',
