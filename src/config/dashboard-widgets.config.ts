@@ -22,18 +22,8 @@ export interface WidgetConfig {
 }
 
 export const DASHBOARD_WIDGETS: WidgetConfig[] = [
-  // Stats Widgets - These match the menu_name from permissions
-  {
-    id: 'FAB IDs',
-    title: 'FAB IDs',
-    requiredPermission: 'FAB IDs',
-    requiredAction: 'read',
-    component: 'StatWidget',
-    category: 'stats',
-    domain: 'job', // Added domain
-    order: 1,
-    data: { icon: 'user-fill.svg', bgColor: 'bg-[#9CC15E]' }
-  },
+  // Stats Widgets - Reordered according to workflow sequence
+  // Template (1)
   {
     id: 'Templating',
     title: 'Templating',
@@ -41,10 +31,11 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
-    domain: 'job', // Added domain
-    order: 2,
+    domain: 'job',
+    order: 1,
     data: { icon: 'tape-measure.svg', bgColor: 'bg-[#EE7575]' }
   },
+  // Pre-Draft (2)
   {
     id: 'Pre-draft Review',
     title: 'Pre-draft Review',
@@ -52,69 +43,11 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
-    domain: 'job', // Added domain
-    order: 3,
+    domain: 'job',
+    order: 2,
     data: { icon: 'magnifier.svg', bgColor: 'bg-[#EA3DB1]' }
   },
-  {
-    id: 'Drafting',
-    title: 'Drafting',
-    requiredPermission: 'Drafting',
-    requiredAction: 'read',
-    component: 'StatWidget',
-    category: 'stats',
-    domain: 'job', // Added domain
-    order: 4,
-    data: { icon: 'icon-6.svg', bgColor: 'bg-[#51BCF4]' }
-  },
-  
-  // Stats Widgets - Row 2: SCT, SlabSmith Request, Final Programming, Cut List
-  {
-    id: 'SCT',
-    title: 'SCT',
-    requiredPermission: 'SCT',
-    requiredAction: 'read',
-    component: 'StatWidget',
-    category: 'stats',
-    domain: 'job', // Added domain
-    order: 5,
-    data: { icon: 'money.svg', bgColor: 'bg-[#0BC33F]' }
-  },
-  {
-    id: 'SlabSmith Request',
-    title: 'SlabSmith Request',
-    requiredPermission: 'SlabSmith Request',
-    requiredAction: 'read',
-    component: 'StatWidget',
-    category: 'stats',
-    domain: 'job', // Added domain
-    order: 6,
-    data: { icon: 'package-up.svg', bgColor: 'bg-[#C1BE5E]' }
-  },
-  {
-    id: 'Final Programming',
-    title: 'Final Programming',
-    requiredPermission: 'Final Programming',
-    requiredAction: 'read',
-    component: 'StatWidget',
-    category: 'stats',
-    domain: 'job', // Added domain
-    order: 7,
-    data: { icon: 'settings.svg', bgColor: 'bg-[#573DEA]' }
-  },
-  {
-    id: 'Cut List',
-    title: 'Cut List',
-    requiredPermission: 'Cut List',
-    requiredAction: 'read',
-    component: 'StatWidget',
-    category: 'stats',
-    domain: 'job', // Added domain
-    order: 8,
-    data: { icon: 'hand-saw.svg', bgColor: 'bg-[#5DD40D]' }
-  },
-  
-  // Stats Widgets - Row 3: Retrofit Scheduling, Retrofit, Install Scheduling, Install Completion
+  // Resurfacing (3)
   {
     id: 'Resurface Scheduling',
     title: 'Resurface Scheduling',
@@ -122,10 +55,48 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
-    domain: 'job', // Added domain
-    order: 9,
+    domain: 'job',
+    order: 3,
     data: { icon: 'icon-4.svg', bgColor: 'bg-[#C30B7C]' }
   },
+  // Draft (4)
+  {
+    id: 'Drafting',
+    title: 'Drafting',
+    requiredPermission: 'Drafting',
+    requiredAction: 'read',
+    component: 'StatWidget',
+    category: 'stats',
+    domain: 'job',
+    order: 4,
+    data: { icon: 'icon-6.svg', bgColor: 'bg-[#51BCF4]' }
+  },
+  
+  // SlabSmith (5)
+  {
+    id: 'SlabSmith Request',
+    title: 'SlabSmith Request',
+    requiredPermission: 'SlabSmith Request',
+    requiredAction: 'read',
+    component: 'StatWidget',
+    category: 'stats',
+    domain: 'job',
+    order: 5,
+    data: { icon: 'package-up.svg', bgColor: 'bg-[#C1BE5E]' }
+  },
+  // SCT (6)
+  {
+    id: 'SCT',
+    title: 'SCT',
+    requiredPermission: 'SCT',
+    requiredAction: 'read',
+    component: 'StatWidget',
+    category: 'stats',
+    domain: 'job',
+    order: 6,
+    data: { icon: 'money.svg', bgColor: 'bg-[#0BC33F]' }
+  },
+  // Revisions (7)
   {
     id: 'Revisions',
     title: 'Revisions',
@@ -133,10 +104,36 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
-    domain: 'job', // Added domain
-    order: 10,
+    domain: 'job',
+    order: 7,
     data: { icon: 'icon-3.svg', bgColor: 'bg-[#DA5D0F]' }
   },
+  // Cut (8)
+  {
+    id: 'Cut List',
+    title: 'Cut List',
+    requiredPermission: 'Cut List',
+    requiredAction: 'read',
+    component: 'StatWidget',
+    category: 'stats',
+    domain: 'job',
+    order: 8,
+    data: { icon: 'hand-saw.svg', bgColor: 'bg-[#5DD40D]' }
+  },
+  
+  // Final Program (9)
+  {
+    id: 'Final Programming',
+    title: 'Final Programming',
+    requiredPermission: 'Final Programming',
+    requiredAction: 'read',
+    component: 'StatWidget',
+    category: 'stats',
+    domain: 'job',
+    order: 9,
+    data: { icon: 'settings.svg', bgColor: 'bg-[#573DEA]' }
+  },
+  // Install to schedule (10)
   {
     id: 'Install Scheduling',
     title: 'Install Scheduling',
@@ -144,10 +141,11 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
-    domain: 'job', // Added domain
-    order: 11,
+    domain: 'job',
+    order: 10,
     data: { icon: 'calendar-pin.svg', bgColor: 'bg-[#CF2675]' }
   },
+  // Install Scheduled (11)
   {
     id: 'Install Completion',
     title: 'Install Completion',
@@ -155,8 +153,8 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
-    domain: 'job', // Added domain
-    order: 12,
+    domain: 'job',
+    order: 11,
     data: { icon: 'icon-1.svg', bgColor: 'bg-[#13D6C6]' }
   },
   

@@ -150,7 +150,60 @@ export const JobTable = ({
     const filteredData = useMemo(() => {
         // Skip client-side filtering if using backend pagination
         if (useBackendPagination) {
-            return jobs;
+            // Even with backend pagination, we still need to sort by date
+            let result = jobs;
+
+            // Sort by date: items with dates first (oldest first), then items without dates
+            result = result.sort((a, b) => {
+                const getValidDate = (dateValue: any): number | null => {
+                    // Handle null, undefined, or non-string values
+                    if (dateValue == null) {
+                        return null;
+                    }
+
+                    // Convert to string and trim
+                    const dateStr = String(dateValue).trim();
+
+                    // Check for empty strings, dashes, or other placeholder values
+                    if (dateStr === '' || dateStr === '-' || dateStr.toLowerCase() === 'null' || dateStr.toLowerCase() === 'undefined') {
+                        return null;
+                    }
+
+                    try {
+                        const date = new Date(dateStr);
+                        // Check if date is valid
+                        if (isNaN(date.getTime())) {
+                            return null;
+                        }
+                        return date.getTime();
+                    } catch {
+                        return null;
+                    }
+                };
+
+                const dateA = getValidDate(a.date);
+                const dateB = getValidDate(b.date);
+
+                // Both have valid dates: sort by oldest first
+                if (dateA !== null && dateB !== null) {
+                    return dateA - dateB;
+                }
+
+                // Only A has valid date: A comes first (before B)
+                if (dateA !== null && dateB === null) {
+                    return -1;
+                }
+
+                // Only B has valid date: B comes first (before A)
+                if (dateA === null && dateB !== null) {
+                    return 1;
+                }
+
+                // Neither has valid date: maintain original order
+                return 0;
+            });
+
+            return result;
         }
 
         let result = jobs;
@@ -198,6 +251,56 @@ export const JobTable = ({
                 result = result.filter((job) => job.sales_person_name === salesPersonFilter);
             }
         }
+
+        // Sort by date: items with dates first (oldest first), then items without dates
+        result = result.sort((a, b) => {
+            const getValidDate = (dateValue: any): number | null => {
+                // Handle null, undefined, or non-string values
+                if (dateValue == null) {
+                    return null;
+                }
+
+                // Convert to string and trim
+                const dateStr = String(dateValue).trim();
+
+                // Check for empty strings, dashes, or other placeholder values
+                if (dateStr === '' || dateStr === '-' || dateStr.toLowerCase() === 'null' || dateStr.toLowerCase() === 'undefined') {
+                    return null;
+                }
+
+                try {
+                    const date = new Date(dateStr);
+                    // Check if date is valid
+                    if (isNaN(date.getTime())) {
+                        return null;
+                    }
+                    return date.getTime();
+                } catch {
+                    return null;
+                }
+            };
+
+            const dateA = getValidDate(a.date);
+            const dateB = getValidDate(b.date);
+
+            // Both have valid dates: sort by oldest first
+            if (dateA !== null && dateB !== null) {
+                return dateA - dateB;
+            }
+
+            // Only A has valid date: A comes first (before B)
+            if (dateA !== null && dateB === null) {
+                return -1;
+            }
+
+            // Only B has valid date: B comes first (before A)
+            if (dateA === null && dateB !== null) {
+                return 1;
+            }
+
+            // Neither has valid date: maintain original order
+            return 0;
+        });
 
         return result;
     }, [searchQuery, dateFilter, fabTypeFilter, scheduleFilter, dateRange, jobs, useBackendPagination, salesPersonFilter]);
@@ -310,6 +413,7 @@ export const JobTable = ({
             cell: ({ row }) => (
                 <span className="text-sm">{row.original.template_schedule}</span>
             ),
+            enableSorting: false, // Disable sorting since we pre-sort the data
         },
         {
             id: "template_received",
@@ -488,7 +592,7 @@ export const JobTable = ({
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         manualPagination: useBackendPagination,
-        manualSorting: false,
+        manualSorting: true, // Enable manual sorting to respect pre-sorted data
     });
 
     return (
