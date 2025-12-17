@@ -79,8 +79,8 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
         const createResponse = await createDrafting({
           fab_id: fabId,
           drafter_id: userId,
-          scheduled_start_date: fabData?.templating_schedule_start_date || new Date().toISOString(),
-          scheduled_end_date: fabData?.templating_schedule_due_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+          scheduled_start_date: fabData?.templating_schedule_start_date,
+          scheduled_end_date: fabData?.templating_schedule_due_date ,
           total_sqft_required_to_draft: String(fabData?.total_sqft || values.totalSqFt || "0")
         }).unwrap();
         

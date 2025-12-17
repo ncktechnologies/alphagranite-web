@@ -35,7 +35,7 @@ const transformFabToJob = (fab: Fab): IJob => {
     fab_id: String(fab.id),
     job_name: `${fab.job_details?.name}`,
     job_no: String(fab.job_details?.job_number),
-    date: fab.updated_at || fab.templating_schedule_start_date || '',
+    date: fab.updated_at || fab.templating_schedule_due_date || '',
     current_stage: fab.current_stage,
     sales_person_name: fab.sales_person_name || '',
     // Optional fields with default values

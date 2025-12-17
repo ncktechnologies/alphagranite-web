@@ -379,7 +379,7 @@ export const JobTable = ({
                 <DataGridColumnHeader title="Template not needed" column={column} />
             ),
             cell: ({ row }) => <span className="text-xs">{row.original.template_needed}</span>,
-            size: 110,
+            size: 120,
         },
         {
             id: "acct_name",
@@ -407,7 +407,7 @@ export const JobTable = ({
                     {row.original.no_of_pieces}
                 </span>
             ),
-            size: 90,
+            size: 100,
         },
      
         {

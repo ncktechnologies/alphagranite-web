@@ -155,7 +155,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                         try {
                             // Use the templating schedule dates for drafting
                             const startDate = fabData?.templating_schedule_start_date || new Date().toISOString();
-                            const endDate = fabData?.templating_schedule_due_date || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+                            const endDate = fabData?.templating_schedule_due_date ;
 
                             await createDrafting({
                                 fab_id: fabId,
