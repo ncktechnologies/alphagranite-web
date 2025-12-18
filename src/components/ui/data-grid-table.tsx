@@ -21,8 +21,8 @@ const headerCellSpacingVariants = cva('', {
 const bodyCellSpacingVariants = cva('', {
   variants: {
     size: {
-      dense: 'px-2.5 py-2',
-      default: 'px-4 py-3',
+      dense: 'px-1.5 py-0.5',
+      default: 'px-2 py-1',
     },
   },
   defaultVariants: {
@@ -137,7 +137,7 @@ function DataGridTableHeadRowCell<TData>({
       data-pinned={isPinned || undefined}
       data-last-col={isLastLeftPinned ? 'left' : isFirstRightPinned ? 'right' : undefined}
       className={cn(
-        'relative h-10 text-left rtl:text-right align-middle font-normal text-accent-foreground [&:has([role=checkbox])]:pe-0',
+        'relative h-6 text-left rtl:text-right align-middle font-normal text-accent-foreground [&:has([role=checkbox])]:pe-0',
         headerCellSpacing,
         props.tableLayout?.cellBorder && 'border-e',
         props.tableLayout?.columnsPinnable &&
@@ -259,7 +259,7 @@ function DataGridTableBodyRow<TData>({
       data-state={table.options.enableRowSelection && row.getIsSelected() ? 'selected' : undefined}
       onClick={() => props.onRowClick && props.onRowClick(row.original)}
       className={cn(
-        'hover:bg-muted/40 data-[state=selected]:bg-muted/50',
+        'hover:bg-muted/40 data-[state=selected]:bg-muted/50 h-8',
         props.onRowClick && 'cursor-pointer',
         !props.tableLayout?.stripped &&
         props.tableLayout?.rowBorder &&
@@ -561,7 +561,7 @@ function DataGridTable<TData extends object>() {
                         <th
                           key={header.id}
                           style={{ width: header.getSize() }}
-                          className="p-4 text-left font-normal"
+                          className="px-2 py-1 text-left font-normal"
                         >
                           {isFirstColumn ? (
                             <span className="text-[15px] leading-[15px] text-text whitespace-nowrap">{date}</span>
