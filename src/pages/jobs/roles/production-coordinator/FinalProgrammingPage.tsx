@@ -77,7 +77,7 @@ const FinalProgrammingPage = () => {
     const tableState = useTableState({
         tableId: 'final-programming-table',
         defaultPagination: { pageIndex: 0, pageSize: 10 },
-        defaultDateFilter: 'today',
+        defaultDateFilter: 'all',
         persistState: true,
     });
 

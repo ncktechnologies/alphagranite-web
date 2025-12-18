@@ -90,7 +90,7 @@ export function AfterDraftSalesPage() {
     const tableState = useTableState({
         tableId: 'sct-table',
         defaultPagination: { pageIndex: 0, pageSize: 10 },
-        defaultDateFilter: 'today',
+        defaultDateFilter: 'all',
         persistState: true,
     });
 

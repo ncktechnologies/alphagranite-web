@@ -82,7 +82,7 @@ export function DraftRevisionPage() {
     const tableState = useTableState({
         tableId: 'revision-table',
         defaultPagination: { pageIndex: 0, pageSize: 10 },
-        defaultDateFilter: 'today',
+        defaultDateFilter: 'all',
         persistState: true,
     });
 

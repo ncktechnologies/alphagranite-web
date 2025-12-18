@@ -91,7 +91,7 @@ const SlabSmithPage = () => {
     const tableState = useTableState({
         tableId: 'slab-smith-table',
         defaultPagination: { pageIndex: 0, pageSize: 10 },
-        defaultDateFilter: 'today',
+        defaultDateFilter: 'all',
         persistState: true,
     });
 

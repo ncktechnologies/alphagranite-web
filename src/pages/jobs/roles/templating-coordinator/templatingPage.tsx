@@ -93,7 +93,7 @@ export function TemplatingPage() {
     const tableState = useTableState({
         tableId: 'templating-table',
         defaultPagination: { pageIndex: 0, pageSize: 10 },
-        defaultDateFilter: 'today',
+        defaultDateFilter: 'all',
         persistState: true,
     });
 
