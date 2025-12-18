@@ -39,7 +39,7 @@ export function useTableState(options: UseTableStateOptions) {
   const {
     tableId,
     defaultPagination = DEFAULT_PAGINATION,
-    defaultDateFilter = 'today',
+    defaultDateFilter = 'all',
     defaultScheduleFilter = 'all',
     persistState = true,
   } = options;

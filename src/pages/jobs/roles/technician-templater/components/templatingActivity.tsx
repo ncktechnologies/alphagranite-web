@@ -284,7 +284,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
               )}
             />
 
-            <FormField
+            {/* <FormField
               control={form.control}
               name="duration"
               render={({ field }) => (
@@ -296,7 +296,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
           </div>
 
           <div>

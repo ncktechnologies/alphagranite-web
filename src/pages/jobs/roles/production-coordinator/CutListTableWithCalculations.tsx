@@ -313,7 +313,7 @@ export const CutListTableWithCalculations = ({
         }
     };
     const handleView = (id: string) => {
-            navigate(`/cut-list/${id}`);
+            navigate(`/job/cut-list/${id}`);
         };
 
     const baseColumns = useMemo<ColumnDef<CalculatedCutListData>[]>(() => [

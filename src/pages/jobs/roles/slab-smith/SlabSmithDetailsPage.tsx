@@ -112,7 +112,7 @@ export function SlabSmithDetailsPage() {
           drafter_id: currentEmployeeId,
           start_date: new Date().toISOString()
         }).unwrap();
-        slabSmithId = result.data?.id;
+        slabSmithId = result.id;
       } catch (error) {
         console.error('Failed to create slab smith entry:', error);
         toast.error('Failed to initialize slab smith work');
@@ -136,11 +136,11 @@ export function SlabSmithDetailsPage() {
       console.log('File upload response:', response);
 
       let uploadedIds: number[] = [];
-      if (response?.data && Array.isArray(response.data)) {
-        uploadedIds = response.data.map((file: any) => file.id);
-        
+      if (response && Array.isArray(response)) {
+        uploadedIds = response.map((file: any) => file.id);
+
         // Update file metas with real IDs
-        const updatedMetas = response.data.map((fileData: any, index: number) => ({
+        const updatedMetas = response.map((fileData: any, index: number) => ({
           id: fileData.id,
           name: fileData.name || pendingFiles[index].name,
           size: fileData.size || pendingFiles[index].size,

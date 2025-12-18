@@ -75,9 +75,8 @@ const handleFinalSubmit = async (values: SubmissionData) => {
         total_sqft_completed: String(fabData?.total_sqft || values.totalSqFt || "0")
       }).unwrap();
       
-      // Handle different response structures - extract ID from response
-      const responseAny: any = createResponse;
-      currentSlabSmithId = responseAny.data?.id || responseAny.id;
+      // Response is already transformed to the data object
+      currentSlabSmithId = createResponse.id;
       console.log('Created slab smith with ID:', currentSlabSmithId);
       toast.success("Slab smith entry created successfully");
     } catch (createError) {
@@ -119,8 +118,8 @@ const handleFinalSubmit = async (values: SubmissionData) => {
         console.log('File upload response:', response);
 
         // Extract file IDs from the response
-        if (response && response.data && Array.isArray(response.data)) {
-          fileIds = response.data.map((file: any) => file.id);
+        if (response && Array.isArray(response)) {
+          fileIds = response.map((file: any) => file.id);
         }
       } catch (fileError) {
         console.error('File upload failed:', fileError);

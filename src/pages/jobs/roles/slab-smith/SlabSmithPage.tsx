@@ -34,16 +34,16 @@ const transformFabToJob = (fab: Fab): IJob => {
     fab_id: String(fab.id),
     job_name: fab.job_details?.name || '',
     job_no: String(fab.job_details?.job_number || ''),
-    date: fab.templating_schedule_start_date || '',
+    date: fab.draft_data?.drafter_end_date || '',
     current_stage: fab.current_stage,
     sales_person_name: fab.sales_person_name || '',
     // Optional fields with default values
     acct_name: '',
-    no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
+    no_of_pieces: fab.no_of_piece_drafted ? `${fab.no_of_piece_drafted}` : "-",
     total_sq_ft: String(fab.total_sqft || "-"),
     revenue: fab.job_details?.project_value || "-",
     gp: "-",
-    draft_completed: fab.current_stage === 'completed' ? 'Yes' : 'No',
+    draft_completed: fab.draft_completed ? 'Yes' : 'No',
     template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
     template_received: '',
     templater: fab.technician_name || '-',
@@ -209,7 +209,7 @@ const SlabSmithPage = () => {
                     jobs={jobsData}
                     path='slab-smith'
                     isLoading={isLoading || isFetching}
-                    onRowClick={handleRowClick}
+                    // onRowClick={handleRowClick}
                     useBackendPagination={true}
                     totalRecords={data?.total || 0}
                     tableState={tableState}

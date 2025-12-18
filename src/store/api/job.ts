@@ -83,6 +83,7 @@ export interface Fab {
     technician_name?: string;
     drafter_name?: string;
     drafter_id?: number;
+    draft_completed?: boolean;
     // Final programming fields
     final_programmer_id?: number;
     final_programmer_name?: string;
@@ -442,6 +443,37 @@ export interface SalesCTRevisionUpdate {
     is_revision_completed?: boolean;
     draft_note?: string;
     revision_type?: string;
+}
+
+// Slabsmith Types
+export interface SlabSmithCreate {
+    fab_id: number;
+    slab_smith_type: string;
+    drafter_id: number;
+    start_date: string;
+    end_date?: string | null;
+    total_sqft_completed?: string | null;
+}
+
+export interface SlabSmithUpdate {
+    end_date?: string | null;
+    total_sqft_completed?: string | null;
+    is_completed?: boolean | null;
+    status_id?: number | null;
+}
+
+export interface SlabSmithResponse {
+    id: number;
+    fab_id: number;
+    slab_smith_type: string;
+    drafter_id: number;
+    start_date: string;
+    end_date?: string | null;
+    total_sqft_completed?: string | null;
+    is_completed: boolean;
+    status_id?: number | null;
+    created_at: string;
+    updated_at?: string | null;
 }
 
 // Add revision interfaces
@@ -1071,41 +1103,45 @@ export const jobApi = createApi({
             }),
 
             // Get slab smith by FAB ID
-            getSlabSmithByFabId: build.query<any, number>({
+            getSlabSmithByFabId: build.query<SlabSmithResponse, number>({
                 query: (fab_id) => ({
                     url: `/slabsmith/fab/${fab_id}`,
                     method: "get"
                 }),
+                transformResponse: (response: any) => response.data || response,
                 providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
             }),
 
             // Create slab smith
-            createSlabSmith: build.mutation<any, any>({
+            createSlabSmith: build.mutation<SlabSmithResponse, SlabSmithCreate>({
                 query: (data) => ({
                     url: "/slabsmith",
                     method: "post",
                     data
                 }),
+                transformResponse: (response: any) => response.data || response,
                 invalidatesTags: ["Fab"],
             }),
 
             // Update slab smith
-            updateSlabSmith: build.mutation<any, { slabsmith_id: number; data: any }>({
+            updateSlabSmith: build.mutation<SlabSmithResponse, { slabsmith_id: number; data: SlabSmithUpdate }>({
                 query: ({ slabsmith_id, data }) => ({
                     url: `/slabsmith/${slabsmith_id}`,
                     method: "put",
                     data
                 }),
+                transformResponse: (response: any) => response.data || response,
                 invalidatesTags: ["Fab"],
             }),
 
             // Mark slab smith as completed
-            markSlabSmithCompleted: build.mutation<any, { slabsmith_id: number; updated_by?: number }>({
+            markSlabSmithCompleted: build.mutation<SlabSmithResponse, { slabsmith_id: number; updated_by?: number }>({
                 query: ({ slabsmith_id, updated_by = 1 }) => ({
                     url: `/slabsmith/${slabsmith_id}/complete`,
                     method: "post",
                     params: { updated_by }
                 }),
+                transformResponse: (response: any) => response.data || response,
                 invalidatesTags: ["Fab"],
             }),
 

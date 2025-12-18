@@ -94,7 +94,7 @@ export function PredraftPage() {
     const tableState = useTableState({
         tableId: 'predraft-table',
         defaultPagination: { pageIndex: 0, pageSize: 10 },
-        defaultDateFilter: 'today',
+        defaultDateFilter: 'all',
         persistState: true,
     });
 

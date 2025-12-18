@@ -26,7 +26,7 @@ export function YourPage() {
   const tableState = useTableState({
     tableId: 'your-unique-table-id', // MUST be unique per table instance
     defaultPagination: { pageIndex: 0, pageSize: 10 },
-    defaultDateFilter: 'today',
+    defaultDateFilter: 'all',
     defaultScheduleFilter: 'all',
     persistState: true, // Enable localStorage persistence
   });
@@ -232,8 +232,8 @@ See `FinalProgrammingPage.tsx` for a complete working example:
 const tableState = useTableState({
   tableId: 'final-programming-table',
   defaultPagination: { pageIndex: 0, pageSize: 10 },
-  defaultDateFilter: 'today',
-  defaultScheduleFilter: 'scheduled',
+  defaultDateFilter: 'all',
+  defaultScheduleFilter: 'all',
   persistState: true,
 });
 ```

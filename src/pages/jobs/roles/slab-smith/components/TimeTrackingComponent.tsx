@@ -33,6 +33,7 @@ export const TimeTrackingComponent = ({
   const [pausedTime, setPausedTime] = useState<Date | null>(null);
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const [isStarting, setIsStarting] = useState(false); // Track if starting process is in progress
 
   // Tick every second
   useEffect(() => {
