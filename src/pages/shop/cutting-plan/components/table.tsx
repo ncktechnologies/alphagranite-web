@@ -147,7 +147,7 @@ const CuttingPlan = () => {
 
     const filteredData = useMemo(() => {
         let result = dummyData;
-        
+
         // Text search
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
@@ -158,14 +158,14 @@ const CuttingPlan = () => {
                     item.fab_info.toLowerCase().includes(q)
             );
         }
-        
+
         // FAB type filter
         if (fabTypeFilter !== 'all') {
             result = result.filter((item) => item.fab_type.toLowerCase() === fabTypeFilter.toLowerCase());
         }
-        
+
         // Sales person filter (if we had that data, for now skip)
-        
+
         // Date range filter
         if (dateRange?.from && dateRange?.to) {
             result = result.filter((item) => {
@@ -176,7 +176,7 @@ const CuttingPlan = () => {
                 return itemDate >= start && itemDate <= end;
             });
         }
-        
+
         return result;
     }, [searchQuery, fabTypeFilter, salesPersonFilter, dateRange]);
 
@@ -236,6 +236,7 @@ const CuttingPlan = () => {
                     </span>
                 ),
                 enableSorting: true,
+                size: 200,
             },
             {
                 id: 'shop_cut_date_scheduled',
@@ -249,6 +250,7 @@ const CuttingPlan = () => {
                     </span>
                 ),
                 enableSorting: true,
+                size: 150,
             },
             {
                 id: 'office_cut_date_scheduled',
@@ -262,6 +264,7 @@ const CuttingPlan = () => {
                     </span>
                 ),
                 enableSorting: true,
+                size: 150,
             },
             {
                 id: 'fab_completion_date',
@@ -275,6 +278,7 @@ const CuttingPlan = () => {
                     </span>
                 ),
                 enableSorting: true,
+                size: 150,
             },
             {
                 id: 'fab_type',
@@ -288,6 +292,7 @@ const CuttingPlan = () => {
                     </span>
                 ),
                 enableSorting: true,
+                size: 100,
             },
             {
                 id: 'fab_id',
@@ -304,6 +309,7 @@ const CuttingPlan = () => {
                     </button>
                 ),
                 enableSorting: true,
+                size: 100,
             },
             {
                 id: 'job_no',
@@ -315,6 +321,7 @@ const CuttingPlan = () => {
                     <span className="text-sm text-text">{row.original.job_no}</span>
                 ),
                 enableSorting: true,
+                size: 100,
             },
             {
                 id: 'fab_info',
@@ -323,11 +330,12 @@ const CuttingPlan = () => {
                     <DataGridColumnHeader title="FAB INFO" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <span className="text-sm text-text whitespace-nowrap">
+                    <span className="text-sm text-text">
                         {row.original.fab_info}
                     </span>
                 ),
                 enableSorting: true,
+                size: 500, // Increase the size for better readability
             },
             {
                 id: 'pieces',
@@ -449,11 +457,12 @@ const CuttingPlan = () => {
                     <DataGridColumnHeader title="NOTES" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <span className="text-sm text-text whitespace-nowrap">
+                    <span className="text-sm text-text">
                         {row.original.notes || '-'}
                     </span>
                 ),
                 enableSorting: true,
+                size: 300, // Increase the size for better readability
             },
         ],
         []
@@ -609,7 +618,7 @@ const CuttingPlan = () => {
                                             {headerGroup.headers.map((header) => (
                                                 <th
                                                     key={header.id}
-                                                    className="px-2 py-2 text-left text-xs font-medium text-muted-foreground border-b border-border"
+                                                    className="px-4 py-3 text-left text-xs font-medium text-muted-foreground border-b border-border bg-muted/50" // Added padding and background
                                                     style={{ width: header.getSize() }}
                                                 >
                                                     {header.isPlaceholder
@@ -627,11 +636,11 @@ const CuttingPlan = () => {
                                         <tr className="bg-muted/30 font-medium border-b-2 border-border">
                                             {table.getVisibleFlatColumns().map((column) => {
                                                 const columnId = column.id;
-                                                
+
                                                 // Checkbox column - show "Total"
                                                 if (columnId === 'id') {
                                                     return (
-                                                        <td key={column.id} className="px-2 py-2 text-sm font-semibold border-r border-border">
+                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border">
                                                             Total
                                                         </td>
                                                     );
@@ -639,7 +648,7 @@ const CuttingPlan = () => {
                                                 // Month column - show "-"
                                                 else if (columnId === 'month') {
                                                     return (
-                                                        <td key={column.id} className="px-2 py-2 text-sm font-semibold border-r border-border">
+                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border">
                                                             -
                                                         </td>
                                                     );
@@ -647,119 +656,103 @@ const CuttingPlan = () => {
                                                 // Numeric columns with totals
                                                 else if (columnId === 'pieces') {
                                                     return (
-                                                        <td key={column.id} className="px-2 py-2 text-sm font-semibold border-r border-border">
+                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border">
                                                             {overallTotals.pieces}
                                                         </td>
                                                     );
                                                 } else if (columnId === 'total_sq_ft') {
                                                     return (
-                                                        <td key={column.id} className="px-2 py-2 text-sm font-semibold border-r border-border">
+                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border">
                                                             {overallTotals.total_sq_ft.toFixed(1)}
                                                         </td>
                                                     );
                                                 } else if (columnId === 'total_cut_ln_ft') {
                                                     return (
-                                                        <td key={column.id} className="px-2 py-2 text-sm font-semibold border-r border-border">
+                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border">
                                                             {overallTotals.total_cut_ln_ft.toFixed(1)}
                                                         </td>
                                                     );
                                                 } else if (columnId === 'saw_cut_ln_ft') {
                                                     return (
-                                                        <td key={column.id} className="px-2 py-2 text-sm font-semibold border-r border-border">
+                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border">
                                                             {overallTotals.saw_cut_ln_ft.toFixed(1)}
                                                         </td>
                                                     );
                                                 } else if (columnId === 'water_jet_ln_ft') {
                                                     return (
-                                                        <td key={column.id} className="px-2 py-2 text-sm font-semibold border-r border-border">
+                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border">
                                                             {overallTotals.water_jet_ln_ft.toFixed(1)}
                                                         </td>
                                                     );
                                                 } else {
+                                                    // All other columns - EMPTY (not dash)
                                                     return (
-                                                        <td key={column.id} className="px-2 py-2 text-sm border-r border-border">
-                                                            -
+                                                        <td key={column.id} className="px-4 py-2 text-sm border-r border-border">
+                                                            {/* Empty - no dash */}
                                                         </td>
                                                     );
                                                 }
                                             })}
                                         </tr>
                                     )}
-                                    
+
                                     {/* Month Groups */}
                                     {Object.entries(groupedData).map(([month, groupData]) => {
-                                        const monthRows = table.getRowModel().rows.filter((row) => 
+                                        const monthRows = table.getRowModel().rows.filter((row) =>
                                             groupData.rows.some((r: CutPlanningData) => r.id === row.original.id)
                                         );
-                                        
+
                                         return (
                                             <React.Fragment key={month}>
-                                                {/* Month Header Row with Primary Background - Only Month Column Filled */}
-                                                <tr className="bg-primary text-primary-foreground font-medium">
-                                                    {table.getVisibleFlatColumns().map((column) => {
-                                                        const columnId = column.id;
-                                                        if (columnId === 'month') {
-                                                            // Month column - show full date (day, month, year) with primary background, no wrapping
-                                                            return (
-                                                                <td 
-                                                                    key={column.id} 
-                                                                    className="px-2 py-2 text-sm font-semibold border-r border-primary-foreground/20 whitespace-nowrap"
-                                                                    rowSpan={monthRows.length}
-                                                                >
-                                                                    {groupData.monthDate}
-                                                                </td>
-                                                            );
-                                                        } else {
-                                                            // All other columns are empty in the header row
-                                                            return (
-                                                                <td 
-                                                                    key={column.id} 
-                                                                    className="px-2 py-2 text-sm border-r border-primary-foreground/20"
-                                                                >
-                                                                    {/* Empty - header row only shows month date */}
-                                                                </td>
-                                                            );
-                                                        }
-                                                    })}
+                                                {/* Month Header Row - Spans ALL columns */}
+                                                <tr className="bg-[#F6FFE7] ">
+                                                    <td
+                                                        className="px-4 py-2 text-xs font-medium text-gray-800 text-start" // Added font-medium and text color
+                                                        colSpan={table.getVisibleFlatColumns().length}
+                                                    >
+                                                        {groupData.monthDate}
+                                                    </td>
                                                 </tr>
-                                                
-                                                {/* Data Rows for this Month - Month column is skipped (handled by rowSpan) */}
-                                                {monthRows.map((row) => {
-                                                    // Create a map of cells by column id for quick lookup
-                                                    const cellMap = new Map(row.getVisibleCells().map(cell => [cell.column.id, cell]));
-                                                    
-                                                    return (
-                                                        <tr key={row.id} className="border-b border-border hover:bg-muted/50">
-                                                            {table.getVisibleFlatColumns().map((column) => {
-                                                                const columnId = column.id;
-                                                                
-                                                                // Skip month column - it's handled by rowSpan in header row
-                                                                if (columnId === 'month') {
-                                                                    return null;
-                                                                }
-                                                                
-                                                                // Get the cell for this column
-                                                                const cell = cellMap.get(columnId);
-                                                                if (!cell) return null;
-                                                                
+
+                                                {/* Data Rows for this Month - Month column is EMPTY */}
+                                                {monthRows.map((row) => (
+                                                    <tr key={row.id} className="border-b border-border hover:bg-muted/50">
+                                                        {row.getVisibleCells().map((cell) => {
+                                                            // If this is the month column, show empty cell
+                                                            if (cell.column.id === 'month') {
                                                                 return (
                                                                     <td
                                                                         key={cell.id}
-                                                                        className="px-2 py-2 text-sm border-r border-border last:border-r-0 whitespace-nowrap"
+                                                                        className="px-4 py-2 text-sm border-r border-border last:border-r-0 whitespace-nowrap"
                                                                     >
-                                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                                        {/* Empty - month already shown in header row */}
                                                                     </td>
                                                                 );
-                                                            })}
-                                                        </tr>
-                                                    );
-                                                })}
+                                                            }
+
+                                                            // For FAB INFO and NOTES columns, allow wrapping
+                                                            const isLongTextColumn = cell.column.id === 'fab_info' || cell.column.id === 'notes';
+                                                            const cellClassName = `px-4 py-2 text-sm border-r border-border last:border-r-0 ${isLongTextColumn ? 'whitespace-normal break-words min-w-[200px]' : 'whitespace-nowrap'
+                                                                }`;
+
+                                                            // For all other columns, render normally
+                                                            return (
+                                                                <td
+                                                                    key={cell.id}
+                                                                    className={cellClassName}
+                                                                >
+                                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                                </td>
+                                                            );
+                                                        })}
+                                                    </tr>
+                                                ))}
                                             </React.Fragment>
                                         );
                                     })}
                                     {Object.keys(groupedData).length === 0 && (
                                         <tr>
-                                            <td colSpan={table.getVisibleFlatColumns().length} className="px-2 py-8 text-center text-sm text-muted-foreground">
+                                            <td colSpan={table.getVisibleFlatColumns().length} className="px-4 py-8 text-center text-sm text-muted-foreground">
                                                 No data available
                                             </td>
                                         </tr>
