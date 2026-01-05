@@ -81,7 +81,7 @@ function DataGridColumnHeader<TData, TValue>({
     return (
       <div
         className={cn(
-          'text-accent-foreground font-normal inline-flex h-6 items-center gap-1.5 text-xs leading-tight [&_svg]:size-3 [&_svg]:opacity-60 break-words whitespace-normal text-left',
+          'text-accent-foreground font-normal inline-flex h-8 items-center gap-1.5 text-xs leading-tight [&_svg]:size-3 [&_svg]:opacity-60 break-words whitespace-normal text-left',
           className,
         )}
       >
@@ -155,7 +155,7 @@ function DataGridColumnHeader<TData, TValue>({
 
   const headerControls = () => {
     return (
-      <div className="flex items-center h-6 gap-1.5 justify-between min-w-0 w-full">
+      <div className="flex items-center h-8 gap-1.5 justify-between min-w-0 w-full">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <div className="min-w-0 flex-1"> {/* Wrapper for proper sizing */}
@@ -288,7 +288,7 @@ function DataGridColumnHeader<TData, TValue>({
   }
 
   if (column.getCanSort() || (props.tableLayout?.columnsResizable && column.getCanResize())) {
-    return <div className="flex items-center h-6 min-w-0 w-full">{headerButton()}</div>;
+    return <div className="flex items-center h-8 min-w-0 w-full">{headerButton()}</div>;
   }
 
   return headerLabel();

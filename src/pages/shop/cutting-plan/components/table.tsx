@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { flexRender } from '@tanstack/react-table';
 import {
     ColumnDef,
     getCoreRowModel,
@@ -15,82 +16,265 @@ import {
     Card,
     CardFooter,
     CardHeader,
-    CardHeading,
     CardTable,
-    CardTitle,
     CardToolbar,
 } from '@/components/ui/card';
 import { DataGrid } from '@/components/ui/data-grid';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
 import { DataGridPagination } from '@/components/ui/data-grid-pagination';
-import { DataGridTable, DataGridTableRowSelect, DataGridTableRowSelectAll } from '@/components/ui/data-grid-table';
+import { DataGridTableRowSelect, DataGridTableRowSelectAll } from '@/components/ui/data-grid-table';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Search, X, Calendar } from 'lucide-react';
+import { Search, CalendarDays } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { exportTableToCSV } from '@/lib/exportToCsv';
-import { Link, useNavigate } from 'react-router';
-import { toAbsoluteUrl } from '@/lib/helpers';
-import { dummyData, salesPersons, ShopData } from '../../components/shop';
-import ActionsCell from '../../components/action';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { DateRange } from 'react-day-picker';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
+export interface CutPlanningData {
+    id: number;
+    month: string;
+    monthDate?: string; // Full date format like "08 DECEMBER, 2025"
+    shop_cut_date_scheduled: string;
+    office_cut_date_scheduled: string;
+    fab_completion_date: string;
+    fab_type: string;
+    fab_id: string;
+    job_no: string;
+    fab_info: string;
+    pieces: number;
+    total_sq_ft: number;
+    percent_complete: number;
+    total_cut_ln_ft: number;
+    saw_cut_ln_ft: number;
+    water_jet_ln_ft: number;
+    machining_workstation: string;
+    hours_scheduled: number;
+    machine_operator: string;
+    notes: string;
+}
 
+const dummyData: CutPlanningData[] = [
+    {
+        id: 1,
+        month: 'DECEMBER 2025',
+        monthDate: '08 DECEMBER, 2025',
+        shop_cut_date_scheduled: '11/24/2025',
+        office_cut_date_scheduled: '1/24/2025',
+        fab_completion_date: '11/24/2025',
+        fab_type: 'AG Redo',
+        fab_id: '14769',
+        job_no: '20413',
+        fab_info: 'Waller Building company, LLC. AG modification: Kitchen perimeter and pantry. GF - FUJIMAKI - 3cm - Rope 7x4',
+        pieces: 2,
+        total_sq_ft: 8.5,
+        percent_complete: 0.0,
+        total_cut_ln_ft: 0,
+        saw_cut_ln_ft: 0,
+        water_jet_ln_ft: 0,
+        machining_workstation: '-',
+        hours_scheduled: 0,
+        machine_operator: '-',
+        notes: '-',
+    },
+    {
+        id: 2,
+        month: 'NOVEMBER 2025',
+        monthDate: '26 NOVEMBER, 2025',
+        shop_cut_date_scheduled: '11/13/2025',
+        office_cut_date_scheduled: '11/13/2025',
+        fab_completion_date: '12/4/2025',
+        fab_type: 'Standard',
+        fab_id: '14104',
+        job_no: '20408',
+        fab_info: 'Vbek Moiver, 345 Pecan Groove Drive - Powder',
+        pieces: 10,
+        total_sq_ft: 201,
+        percent_complete: 92.90,
+        total_cut_ln_ft: 446.1,
+        saw_cut_ln_ft: 255.2,
+        water_jet_ln_ft: 16.7,
+        machining_workstation: 'Outside saw',
+        hours_scheduled: 0,
+        machine_operator: 'Louis',
+        notes: 'Linear drain ETA pending but start cut on 11-13',
+    },
+    {
+        id: 3,
+        month: 'NOVEMBER 2025',
+        monthDate: '26 NOVEMBER, 2025',
+        shop_cut_date_scheduled: '11/21/2025',
+        office_cut_date_scheduled: '7/21/2025',
+        fab_completion_date: '-',
+        fab_type: 'FAB only',
+        fab_id: '16771',
+        job_no: '20766',
+        fab_info: 'Lisa Parker Interiors, 6201 River Place Boulevard Unit 4 - Fire place',
+        pieces: 1,
+        total_sq_ft: 23,
+        percent_complete: 53.23,
+        total_cut_ln_ft: 0,
+        saw_cut_ln_ft: 0,
+        water_jet_ln_ft: 0,
+        machining_workstation: 'Water jet',
+        hours_scheduled: 0,
+        machine_operator: 'Louis',
+        notes: 'Backsplash and pencil caps',
+    },
+];
 
-// const StatusBadge = ({ status }: { status: ShopData['status'] }) => {
-//     const colors: Record<ShopData['status'], string> = {
-//         Active: 'bg-green-100 text-green-700',
-//         Deactivated: 'bg-gray-100 text-gray-600',
-//     };
-
-//     return (
-//         <span
-//             className={`px-2 py-0.5 text-xs font-medium rounded-full ${colors[status]}`}
-//         >
-//             {status}
-//         </span>
-//     );
-// };
+const salesPersons = ['Mike Rodriguez', 'Sarah Johnson', 'Bruno Pires', 'Maria Garcia'];
 
 const CuttingPlan = () => {
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
-        pageSize: 5,
+        pageSize: 10,
     });
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
-    const [dateFilter, setDateFilter] = useState<string>('all');
-    const [customStartDate, setCustomStartDate] = useState<Date | undefined>(undefined);
-    const [customEndDate, setCustomEndDate] = useState<Date | undefined>(undefined);
-    const [showCustomDate, setShowCustomDate] = useState(false);
-    const navigate = useNavigate();
+    const [dateRange, setDateRange] = useState<DateRange | undefined>({
+        from: new Date(2025, 5, 2), // June 2, 2025
+        to: new Date(2025, 5, 9), // June 9, 2025
+    });
+    const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
+    const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+    const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
+    const [salesPersonFilter, setSalesPersonFilter] = useState<string>('all');
 
     const filteredData = useMemo(() => {
-        const q = searchQuery.toLowerCase()
-        return dummyData.filter(
-            (item) =>
-                item.job_no.toLowerCase().includes(q) ||
-                item.fab_id.toLowerCase().includes(q)
-        )
-    }, [dummyData, searchQuery])
+        let result = dummyData;
+        
+        // Text search
+        if (searchQuery) {
+            const q = searchQuery.toLowerCase();
+            result = result.filter(
+                (item) =>
+                    item.job_no.toLowerCase().includes(q) ||
+                    item.fab_id.toLowerCase().includes(q) ||
+                    item.fab_info.toLowerCase().includes(q)
+            );
+        }
+        
+        // FAB type filter
+        if (fabTypeFilter !== 'all') {
+            result = result.filter((item) => item.fab_type.toLowerCase() === fabTypeFilter.toLowerCase());
+        }
+        
+        // Sales person filter (if we had that data, for now skip)
+        
+        // Date range filter
+        if (dateRange?.from && dateRange?.to) {
+            result = result.filter((item) => {
+                const itemDate = new Date(item.shop_cut_date_scheduled);
+                const start = new Date(dateRange.from!);
+                const end = new Date(dateRange.to!);
+                end.setHours(23, 59, 59, 999);
+                return itemDate >= start && itemDate <= end;
+            });
+        }
+        
+        return result;
+    }, [searchQuery, fabTypeFilter, salesPersonFilter, dateRange]);
 
-    const handleView = (id: string) => {
-        navigate(`/shop/${id}`);
+    // Group data by month and get the month date format
+    const groupedData = useMemo(() => {
+        const groups: Record<string, { rows: CutPlanningData[]; monthDate: string }> = {};
+        filteredData.forEach((item) => {
+            const month = item.month;
+            if (!groups[month]) {
+                groups[month] = {
+                    rows: [],
+                    monthDate: item.monthDate || month, // Use monthDate if available, fallback to month
+                };
+            }
+            groups[month].rows.push(item);
+        });
+        return groups;
+    }, [filteredData]);
+
+    // Calculate totals for all data (single total row at top)
+    const overallTotals = useMemo(() => {
+        return {
+            pieces: filteredData.reduce((sum, row) => sum + row.pieces, 0),
+            total_sq_ft: filteredData.reduce((sum, row) => sum + row.total_sq_ft, 0),
+            total_cut_ln_ft: filteredData.reduce((sum, row) => sum + row.total_cut_ln_ft, 0),
+            saw_cut_ln_ft: filteredData.reduce((sum, row) => sum + row.saw_cut_ln_ft, 0),
+            water_jet_ln_ft: filteredData.reduce((sum, row) => sum + row.water_jet_ln_ft, 0),
+        };
+    }, [filteredData]);
+
+    const handleFabIdClick = (fabId: string) => {
+        // TODO: Open PDF diagram for this FAB ID
+        console.log('Opening PDF for FAB ID:', fabId);
+        // You can implement PDF viewer modal here
     };
 
-    const columns = useMemo<ColumnDef<ShopData>[]>(
+    const columns = useMemo<ColumnDef<CutPlanningData>[]>(
         () => [
             {
                 accessorKey: 'id',
-                accessorFn: (row: ShopData) => row.id,
+                accessorFn: (row: CutPlanningData) => row.id,
                 header: () => <DataGridTableRowSelectAll />,
                 cell: ({ row }) => <DataGridTableRowSelect row={row} />,
                 enableSorting: false,
                 enableHiding: false,
                 size: 48,
+            },
+            {
+                id: 'month',
+                accessorFn: (row) => row.month,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="MONTH" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text font-medium">
+                        {row.original.month}
+                    </span>
+                ),
+                enableSorting: true,
+            },
+            {
+                id: 'shop_cut_date_scheduled',
+                accessorFn: (row) => row.shop_cut_date_scheduled,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="SHOP CUT DATE SCHEDULED" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text">
+                        {row.original.shop_cut_date_scheduled || '-'}
+                    </span>
+                ),
+                enableSorting: true,
+            },
+            {
+                id: 'office_cut_date_scheduled',
+                accessorFn: (row) => row.office_cut_date_scheduled,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="OFFICE CUT DATE SCHEDULED" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text">
+                        {row.original.office_cut_date_scheduled || '-'}
+                    </span>
+                ),
+                enableSorting: true,
+            },
+            {
+                id: 'fab_completion_date',
+                accessorFn: (row) => row.fab_completion_date,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="FAB COMPLETION DATE" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text">
+                        {row.original.fab_completion_date || '-'}
+                    </span>
+                ),
+                enableSorting: true,
             },
             {
                 id: 'fab_type',
@@ -99,7 +283,7 @@ const CuttingPlan = () => {
                     <DataGridColumnHeader title="FAB TYPE" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <span className="text-sm text-text truncate block max-w-[120px]">
+                    <span className="text-sm text-text whitespace-nowrap">
                         {row.original.fab_type}
                     </span>
                 ),
@@ -112,7 +296,12 @@ const CuttingPlan = () => {
                     <DataGridColumnHeader title="FAB ID" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <span className="text-sm text-text">{row.original.fab_id}</span>
+                    <button
+                        onClick={() => handleFabIdClick(row.original.fab_id)}
+                        className="text-sm text-primary hover:underline cursor-pointer"
+                    >
+                        {row.original.fab_id}
+                    </button>
                 ),
                 enableSorting: true,
             },
@@ -124,6 +313,19 @@ const CuttingPlan = () => {
                 ),
                 cell: ({ row }) => (
                     <span className="text-sm text-text">{row.original.job_no}</span>
+                ),
+                enableSorting: true,
+            },
+            {
+                id: 'fab_info',
+                accessorFn: (row) => row.fab_info,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="FAB INFO" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text whitespace-nowrap">
+                        {row.original.fab_info}
+                    </span>
                 ),
                 enableSorting: true,
             },
@@ -145,79 +347,128 @@ const CuttingPlan = () => {
                     <DataGridColumnHeader title="TOTAL SQ FT" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <span className="text-sm text-text max-w-[200px]">{row.original.total_sq_ft}</span>
+                    <span className="text-sm text-text">{row.original.total_sq_ft}</span>
                 ),
                 enableSorting: true,
             },
             {
-                id: 'wj_time',
-                accessorFn: (row) => row.wj_time,
+                id: 'percent_complete',
+                accessorFn: (row) => row.percent_complete,
                 header: ({ column }) => (
-                    <DataGridColumnHeader title="WJ TIME (MINUTES)" column={column} />
+                    <DataGridColumnHeader title="% COMPLETE" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <span className="text-sm text-text max-w-[300px]">{row.original.wj_time}</span>
+                    <span className="text-sm text-text">
+                        {row.original.percent_complete.toFixed(2)}%
+                    </span>
                 ),
                 enableSorting: true,
             },
             {
-                id: 'machine',
-                accessorFn: (row) => row.machine,
+                id: 'total_cut_ln_ft',
+                accessorFn: (row) => row.total_cut_ln_ft,
                 header: ({ column }) => (
-                    <DataGridColumnHeader title="MACHINE" column={column} />
+                    <DataGridColumnHeader title="TOTAL CUT LN FT" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <span className="text-sm text-text max-w-[200px]">{row.original.machine}</span>
+                    <span className="text-sm text-text">
+                        {row.original.total_cut_ln_ft || '-'}
+                    </span>
                 ),
                 enableSorting: true,
             },
             {
-                id: 'confirmed',
-                accessorFn: (row) => row.confirmed,
+                id: 'saw_cut_ln_ft',
+                accessorFn: (row) => row.saw_cut_ln_ft,
                 header: ({ column }) => (
-                    <DataGridColumnHeader title="CONFIRMED" column={column} />
+                    <DataGridColumnHeader title="SAW CUT LN FT" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <span className="text-sm text-text max-w-[200px]">{row.original.confirmed}</span>
+                    <span className="text-sm text-text">
+                        {row.original.saw_cut_ln_ft || '-'}
+                    </span>
                 ),
                 enableSorting: true,
             },
             {
-                id: 'revenue',
-                accessorFn: (row) => row.revenue,
+                id: 'water_jet_ln_ft',
+                accessorFn: (row) => row.water_jet_ln_ft,
                 header: ({ column }) => (
-                    <DataGridColumnHeader title="REVENUE" column={column} />
+                    <DataGridColumnHeader title="WATER JET LN FT" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <span className="text-sm text-text max-w-[200px]">{row.original.revenue}</span>
+                    <span className="text-sm text-text">
+                        {row.original.water_jet_ln_ft || '-'}
+                    </span>
                 ),
                 enableSorting: true,
             },
             {
-                id: 'fp_complete',
-                accessorFn: (row) => row.fp_complete,
+                id: 'machining_workstation',
+                accessorFn: (row) => row.machining_workstation,
                 header: ({ column }) => (
-                    <DataGridColumnHeader title="FP COMPLETE" column={column} />
+                    <DataGridColumnHeader title="MACHINING WORKSTATION" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <span className="text-sm text-text truncate block max-w-[200px]">{row.original.fp_complete}</span>
+                    <span className="text-sm text-text">
+                        {row.original.machining_workstation || '-'}
+                    </span>
                 ),
                 enableSorting: true,
             },
             {
-                id: 'actions',
-                header: '',
-                cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(row.original.fab_id)} />,
-                enableSorting: false,
-                size: 60,
+                id: 'hours_scheduled',
+                accessorFn: (row) => row.hours_scheduled,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="HOURS SCHEDULED" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text">
+                        {row.original.hours_scheduled || '0'}
+                    </span>
+                ),
+                enableSorting: true,
             },
-        ], [])
+            {
+                id: 'machine_operator',
+                accessorFn: (row) => row.machine_operator,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="MACHINE OPERATOR" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text">
+                        {row.original.machine_operator || '-'}
+                    </span>
+                ),
+                enableSorting: true,
+            },
+            {
+                id: 'notes',
+                accessorFn: (row) => row.notes,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="NOTES" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text whitespace-nowrap">
+                        {row.original.notes || '-'}
+                    </span>
+                ),
+                enableSorting: true,
+            },
+        ],
+        []
+    );
+
+    // Flatten grouped data for table (we'll render groups manually)
+    const flatData = useMemo(() => {
+        return Object.values(groupedData).flatMap((group) => group.rows);
+    }, [groupedData]);
 
     const table = useReactTable({
         columns,
-        data: filteredData,
-        pageCount: Math.ceil((filteredData?.length || 0) / pagination.pageSize),
-        getRowId: (row: ShopData) => String(row.id),
+        data: flatData,
+        pageCount: Math.ceil((flatData?.length || 0) / pagination.pageSize),
+        getRowId: (row: CutPlanningData) => String(row.id),
         state: { pagination, sorting, rowSelection },
         columnResizeMode: 'onChange',
         onPaginationChange: setPagination,
@@ -233,7 +484,7 @@ const CuttingPlan = () => {
     return (
         <DataGrid
             table={table}
-            recordCount={filteredData?.length || 0}
+            recordCount={flatData?.length || 0}
             tableLayout={{
                 columnsPinnable: true,
                 columnsMovable: true,
@@ -247,69 +498,90 @@ const CuttingPlan = () => {
                         <div className="relative">
                             <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
                             <Input
-                                placeholder="Search by job or FAB ID"
+                                placeholder="Search by job, Fab ID"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="ps-9 w-[230px] h-[34px]"
                             />
                         </div>
 
-                        <Select value={dateFilter} onValueChange={(value) => {
-                            setDateFilter(value)
-                            if (value === 'custom') {
-                                setShowCustomDate(true)
-                            } else {
-                                setShowCustomDate(false)
-                                setCustomStartDate(undefined)
-                                setCustomEndDate(undefined)
-                            }
-                        }}>
-                            <SelectTrigger className="w-[150px] h-[34px]">
-                                <SelectValue placeholder="Date Filter" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Time</SelectItem>
-                                <SelectItem value="today">Today</SelectItem>
-                                <SelectItem value="7days">Last 7 Days</SelectItem>
-                                <SelectItem value="30days">Last 30 Days</SelectItem>
-                                <SelectItem value="custom">Custom Range</SelectItem>
-                            </SelectContent>
-                        </Select>
-
-                        {showCustomDate && (
-                            <>
-                                <DateTimePicker
-                                    value={customStartDate}
-                                    onChange={setCustomStartDate}
-                                    placeholder="Start Date"
+                        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    className={cn(
+                                        'w-[200px] h-[34px] justify-start text-left font-normal',
+                                        !dateRange && 'text-muted-foreground'
+                                    )}
+                                >
+                                    <CalendarDays className="mr-2 h-4 w-4" />
+                                    {dateRange?.from ? (
+                                        dateRange.to ? (
+                                            <>
+                                                {format(dateRange.from, 'd MMMM')} - {format(dateRange.to, 'd MMMM')}
+                                            </>
+                                        ) : (
+                                            format(dateRange.from, 'd MMMM')
+                                        )
+                                    ) : (
+                                        <span>Pick a date range</span>
+                                    )}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={dateRange?.from || new Date()}
+                                    selected={tempDateRange}
+                                    onSelect={setTempDateRange}
+                                    numberOfMonths={2}
                                 />
-                                <DateTimePicker
-                                    value={customEndDate}
-                                    onChange={setCustomEndDate}
-                                    placeholder="End Date"
-                                />
-                            </>
-                        )}
+                                <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => {
+                                            setTempDateRange(undefined);
+                                            setDateRange(undefined);
+                                        }}
+                                    >
+                                        Reset
+                                    </Button>
+                                    <Button
+                                        size="sm"
+                                        onClick={() => {
+                                            setDateRange(tempDateRange);
+                                            setIsDatePickerOpen(false);
+                                        }}
+                                    >
+                                        Apply
+                                    </Button>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
 
-                        <Select>
+                        <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
                             <SelectTrigger className="w-[120px] h-[34px]">
                                 <SelectValue placeholder="FAB type" />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="all">All Types</SelectItem>
                                 <SelectItem value="standard">Standard</SelectItem>
                                 <SelectItem value="premium">Premium</SelectItem>
+                                <SelectItem value="ag redo">AG Redo</SelectItem>
+                                <SelectItem value="fab only">FAB only</SelectItem>
                             </SelectContent>
                         </Select>
-
-
                     </div>
 
                     <CardToolbar>
-                        <Select>
+                        <Select value={salesPersonFilter} onValueChange={setSalesPersonFilter}>
                             <SelectTrigger className="w-[205px] h-[34px]">
                                 <SelectValue placeholder="Select sales person" />
                             </SelectTrigger>
                             <SelectContent>
+                                <SelectItem value="all">All Sales Persons</SelectItem>
                                 {salesPersons.map((person) => (
                                     <SelectItem key={person} value={person}>
                                         {person}
@@ -319,7 +591,7 @@ const CuttingPlan = () => {
                         </Select>
                         <Button
                             variant="outline"
-                            onClick={() => exportTableToCSV(table, 'shop-data')}
+                            onClick={() => exportTableToCSV(table, 'cut-planning-data')}
                         >
                             Export CSV
                         </Button>
@@ -328,7 +600,173 @@ const CuttingPlan = () => {
 
                 <CardTable>
                     <ScrollArea>
-                        <DataGridTable />
+                        <div className="relative">
+                            <table className="w-full border-collapse">
+                                {/* Table Header */}
+                                <thead>
+                                    {table.getHeaderGroups().map((headerGroup) => (
+                                        <tr key={headerGroup.id}>
+                                            {headerGroup.headers.map((header) => (
+                                                <th
+                                                    key={header.id}
+                                                    className="px-2 py-2 text-left text-xs font-medium text-muted-foreground border-b border-border"
+                                                    style={{ width: header.getSize() }}
+                                                >
+                                                    {header.isPlaceholder
+                                                        ? null
+                                                        : flexRender(header.column.columnDef.header, header.getContext())}
+                                                </th>
+                                            ))}
+                                        </tr>
+                                    ))}
+                                </thead>
+                                {/* Table Body */}
+                                <tbody>
+                                    {/* Single Total Row at Top */}
+                                    {filteredData.length > 0 && (
+                                        <tr className="bg-muted/30 font-medium border-b-2 border-border">
+                                            {table.getVisibleFlatColumns().map((column) => {
+                                                const columnId = column.id;
+                                                
+                                                // Checkbox column - show "Total"
+                                                if (columnId === 'id') {
+                                                    return (
+                                                        <td key={column.id} className="px-2 py-2 text-sm font-semibold border-r border-border">
+                                                            Total
+                                                        </td>
+                                                    );
+                                                }
+                                                // Month column - show "-"
+                                                else if (columnId === 'month') {
+                                                    return (
+                                                        <td key={column.id} className="px-2 py-2 text-sm font-semibold border-r border-border">
+                                                            -
+                                                        </td>
+                                                    );
+                                                }
+                                                // Numeric columns with totals
+                                                else if (columnId === 'pieces') {
+                                                    return (
+                                                        <td key={column.id} className="px-2 py-2 text-sm font-semibold border-r border-border">
+                                                            {overallTotals.pieces}
+                                                        </td>
+                                                    );
+                                                } else if (columnId === 'total_sq_ft') {
+                                                    return (
+                                                        <td key={column.id} className="px-2 py-2 text-sm font-semibold border-r border-border">
+                                                            {overallTotals.total_sq_ft.toFixed(1)}
+                                                        </td>
+                                                    );
+                                                } else if (columnId === 'total_cut_ln_ft') {
+                                                    return (
+                                                        <td key={column.id} className="px-2 py-2 text-sm font-semibold border-r border-border">
+                                                            {overallTotals.total_cut_ln_ft.toFixed(1)}
+                                                        </td>
+                                                    );
+                                                } else if (columnId === 'saw_cut_ln_ft') {
+                                                    return (
+                                                        <td key={column.id} className="px-2 py-2 text-sm font-semibold border-r border-border">
+                                                            {overallTotals.saw_cut_ln_ft.toFixed(1)}
+                                                        </td>
+                                                    );
+                                                } else if (columnId === 'water_jet_ln_ft') {
+                                                    return (
+                                                        <td key={column.id} className="px-2 py-2 text-sm font-semibold border-r border-border">
+                                                            {overallTotals.water_jet_ln_ft.toFixed(1)}
+                                                        </td>
+                                                    );
+                                                } else {
+                                                    return (
+                                                        <td key={column.id} className="px-2 py-2 text-sm border-r border-border">
+                                                            -
+                                                        </td>
+                                                    );
+                                                }
+                                            })}
+                                        </tr>
+                                    )}
+                                    
+                                    {/* Month Groups */}
+                                    {Object.entries(groupedData).map(([month, groupData]) => {
+                                        const monthRows = table.getRowModel().rows.filter((row) => 
+                                            groupData.rows.some((r: CutPlanningData) => r.id === row.original.id)
+                                        );
+                                        
+                                        return (
+                                            <React.Fragment key={month}>
+                                                {/* Month Header Row with Primary Background - Only Month Column Filled */}
+                                                <tr className="bg-primary text-primary-foreground font-medium">
+                                                    {table.getVisibleFlatColumns().map((column) => {
+                                                        const columnId = column.id;
+                                                        if (columnId === 'month') {
+                                                            // Month column - show full date (day, month, year) with primary background, no wrapping
+                                                            return (
+                                                                <td 
+                                                                    key={column.id} 
+                                                                    className="px-2 py-2 text-sm font-semibold border-r border-primary-foreground/20 whitespace-nowrap"
+                                                                    rowSpan={monthRows.length}
+                                                                >
+                                                                    {groupData.monthDate}
+                                                                </td>
+                                                            );
+                                                        } else {
+                                                            // All other columns are empty in the header row
+                                                            return (
+                                                                <td 
+                                                                    key={column.id} 
+                                                                    className="px-2 py-2 text-sm border-r border-primary-foreground/20"
+                                                                >
+                                                                    {/* Empty - header row only shows month date */}
+                                                                </td>
+                                                            );
+                                                        }
+                                                    })}
+                                                </tr>
+                                                
+                                                {/* Data Rows for this Month - Month column is skipped (handled by rowSpan) */}
+                                                {monthRows.map((row) => {
+                                                    // Create a map of cells by column id for quick lookup
+                                                    const cellMap = new Map(row.getVisibleCells().map(cell => [cell.column.id, cell]));
+                                                    
+                                                    return (
+                                                        <tr key={row.id} className="border-b border-border hover:bg-muted/50">
+                                                            {table.getVisibleFlatColumns().map((column) => {
+                                                                const columnId = column.id;
+                                                                
+                                                                // Skip month column - it's handled by rowSpan in header row
+                                                                if (columnId === 'month') {
+                                                                    return null;
+                                                                }
+                                                                
+                                                                // Get the cell for this column
+                                                                const cell = cellMap.get(columnId);
+                                                                if (!cell) return null;
+                                                                
+                                                                return (
+                                                                    <td
+                                                                        key={cell.id}
+                                                                        className="px-2 py-2 text-sm border-r border-border last:border-r-0 whitespace-nowrap"
+                                                                    >
+                                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                                    </td>
+                                                                );
+                                                            })}
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </React.Fragment>
+                                        );
+                                    })}
+                                    {Object.keys(groupedData).length === 0 && (
+                                        <tr>
+                                            <td colSpan={table.getVisibleFlatColumns().length} className="px-2 py-8 text-center text-sm text-muted-foreground">
+                                                No data available
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
+                        </div>
                         <ScrollBar orientation="horizontal" />
                     </ScrollArea>
                 </CardTable>
