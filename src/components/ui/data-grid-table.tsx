@@ -137,7 +137,7 @@ function DataGridTableHeadRowCell<TData>({
       data-pinned={isPinned || undefined}
       data-last-col={isLastLeftPinned ? 'left' : isFirstRightPinned ? 'right' : undefined}
       className={cn(
-        'relative h-6 text-left rtl:text-right align-middle font-normal text-accent-foreground [&:has([role=checkbox])]:pe-0',
+        'relative h-6 text-left rtl:text-right align-middle font-normal text-accent-foreground [&:has([role=checkbox])]:pe-0 break-words whitespace-normal',
         headerCellSpacing,
         props.tableLayout?.cellBorder && 'border-e',
         props.tableLayout?.columnsPinnable &&
@@ -221,10 +221,10 @@ function DataGridTableBodyRowSkeletonCell<TData>({ children, column }: { childre
   return (
     <td
       className={cn(
-        'align-middle',
+        'align-middle break-words whitespace-normal',
         bodyCellSpacing,
         props.tableLayout?.cellBorder && 'border-e',
-        props.tableLayout?.columnsResizable && column.getCanResize() && 'truncate',
+        props.tableLayout?.columnsResizable && column.getCanResize() && 'break-words',
         column.columnDef.meta?.cellClassName,
         props.tableLayout?.columnsPinnable &&
         column.getCanPin() &&
@@ -323,10 +323,10 @@ function DataGridTableBodyRowCell<TData>({
       data-pinned={isPinned || undefined}
       data-last-col={isLastLeftPinned ? 'left' : isFirstRightPinned ? 'right' : undefined}
       className={cn(
-        'align-middle',
+        'align-middle break-words whitespace-normal',
         bodyCellSpacing,
         props.tableLayout?.cellBorder && 'border-e',
-        props.tableLayout?.columnsResizable && column.getCanResize() && 'truncate',
+        props.tableLayout?.columnsResizable && column.getCanResize() && 'break-words',
         cell.column.columnDef.meta?.cellClassName,
         props.tableLayout?.columnsPinnable &&
         column.getCanPin() &&

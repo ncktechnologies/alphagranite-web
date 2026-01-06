@@ -355,7 +355,7 @@ export const JobTable = ({
                 <DataGridColumnHeader title="JOB NAME" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-xs truncate block max-w-[180px]">
+                <span className="text-xs break-words max-w-[180px]">
                     {row.original.job_name}
                 </span>
             ),
@@ -389,7 +389,7 @@ export const JobTable = ({
                 <DataGridColumnHeader title="ACCT NAME" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-xs truncate block max-w-[140px]">
+                <span className="text-xs break-words max-w-[140px]">
                     {row.original.acct_name}
                 </span>
             ),
@@ -403,7 +403,7 @@ export const JobTable = ({
                 <DataGridColumnHeader className='uppercase' title="No. of pieces" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-xs truncate block max-w-[110px]">
+                <span className="text-xs break-words max-w-[110px]">
                     {row.original.no_of_pieces}
                 </span>
             ),
@@ -415,7 +415,7 @@ export const JobTable = ({
             accessorKey: "template_schedule",
             accessorFn: (row: IJob) => row.template_schedule,
             header: ({ column }) => (
-                <DataGridColumnHeader title="TEMPLATE SCHEDULE" column={column} />
+                <DataGridColumnHeader className='uppercase' title="TEMPLATE SCHEDULE" column={column} />
             ),
             cell: ({ row }) => (
                 <span className="text-xs">{row.original.template_schedule}</span>
@@ -453,7 +453,7 @@ export const JobTable = ({
                 <DataGridColumnHeader className='uppercase' title="Total Sq ft " column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-xs truncate block max-w-[100px]">
+                <span className="text-xs break-words max-w-[100px]">
                     {row.original.total_sq_ft}
                 </span>
             ),
@@ -467,7 +467,7 @@ export const JobTable = ({
                 <DataGridColumnHeader className='uppercase' title="Revisor" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-xs truncate block max-w-[120px]">
+                <span className="text-xs break-words max-w-[120px]">
                     {row.original.revisor}
                 </span>
             ),
@@ -481,7 +481,7 @@ export const JobTable = ({
                 <DataGridColumnHeader className='uppercase' title="Revised?" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-xs truncate block max-w-[100px]">
+                <span className="text-xs break-words max-w-[100px]">
                     {row.original.revised}
                 </span>
             ),
@@ -495,7 +495,7 @@ export const JobTable = ({
                 <DataGridColumnHeader className='uppercase' title="Revision completed" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[160px]">
+                <span className="text-sm break-words max-w-[160px]">
                     {row.original.revision_completed}
                 </span>
             ),
@@ -509,7 +509,7 @@ export const JobTable = ({
                 <DataGridColumnHeader className='uppercase' title="Revision #" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[80px]">
+                <span className="text-sm break-words max-w-[80px]">
                     {row.original.revision_number}
                 </span>
             ),
@@ -523,7 +523,7 @@ export const JobTable = ({
                 <DataGridColumnHeader className='uppercase' title="Revision reason" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[200px]" title={row.original.revision_reason}>
+                <span className="text-sm break-words max-w-[200px]" title={row.original.revision_reason}>
                     {row.original.revision_reason}
                 </span>
             ),
@@ -537,7 +537,7 @@ export const JobTable = ({
                 <DataGridColumnHeader className='uppercase' title="Revision type" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[120px]">
+                <span className="text-sm break-words max-w-[120px]">
                     {row.original.revision_type}
                 </span>
             ),
@@ -551,7 +551,7 @@ export const JobTable = ({
                 <DataGridColumnHeader className='uppercase' title="Revenue" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-xs truncate block max-w-[160px]">
+                <span className="text-xs break-words max-w-[160px]">
                     {row.original.revenue}
                 </span>
             ),
@@ -577,7 +577,7 @@ export const JobTable = ({
                 <DataGridColumnHeader className='uppercase' title="Sct Completed" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[160px]">
+                <span className="text-sm break-words max-w-[160px]">
                     {row.original.sct_completed}
                 </span>
             ),
@@ -591,7 +591,7 @@ export const JobTable = ({
                 <DataGridColumnHeader title="DRAFT COMPLETED" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[160px]">
+                <span className="text-sm break-words max-w-[160px]">
                     {row.original.draft_completed}
                 </span>
             ),
@@ -605,8 +605,8 @@ export const JobTable = ({
                 <DataGridColumnHeader title="REVIEW COMPLETED" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[160px]">
-                    {row.original.draft_completed}
+                <span className="text-sm break-words max-w-[160px]">
+                    {row.original.review_completed}
                 </span>
             ),
             size: 140,

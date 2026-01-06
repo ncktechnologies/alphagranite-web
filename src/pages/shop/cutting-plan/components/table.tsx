@@ -618,7 +618,7 @@ const CuttingPlan = () => {
                                             {headerGroup.headers.map((header) => (
                                                 <th
                                                     key={header.id}
-                                                    className="px-4 py-3 text-left text-xs font-medium text-muted-foreground border-b border-border bg-muted/50" // Added padding and background
+                                                    className="px-4 py-3 text-left text-xs font-medium text-muted-foreground border-b border-border bg-muted/50 break-words whitespace-normal" // Added padding and background
                                                     style={{ width: header.getSize() }}
                                                 >
                                                     {header.isPlaceholder
@@ -640,7 +640,7 @@ const CuttingPlan = () => {
                                                 // Checkbox column - show "Total"
                                                 if (columnId === 'id') {
                                                     return (
-                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border">
+                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border break-words">
                                                             Total
                                                         </td>
                                                     );
@@ -648,7 +648,7 @@ const CuttingPlan = () => {
                                                 // Month column - show "-"
                                                 else if (columnId === 'month') {
                                                     return (
-                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border">
+                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border break-words">
                                                             -
                                                         </td>
                                                     );
@@ -656,38 +656,38 @@ const CuttingPlan = () => {
                                                 // Numeric columns with totals
                                                 else if (columnId === 'pieces') {
                                                     return (
-                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border">
+                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border break-words">
                                                             {overallTotals.pieces}
                                                         </td>
                                                     );
                                                 } else if (columnId === 'total_sq_ft') {
                                                     return (
-                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border">
+                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border break-words">
                                                             {overallTotals.total_sq_ft.toFixed(1)}
                                                         </td>
                                                     );
                                                 } else if (columnId === 'total_cut_ln_ft') {
                                                     return (
-                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border">
+                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border break-words">
                                                             {overallTotals.total_cut_ln_ft.toFixed(1)}
                                                         </td>
                                                     );
                                                 } else if (columnId === 'saw_cut_ln_ft') {
                                                     return (
-                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border">
+                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border break-words">
                                                             {overallTotals.saw_cut_ln_ft.toFixed(1)}
                                                         </td>
                                                     );
                                                 } else if (columnId === 'water_jet_ln_ft') {
                                                     return (
-                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border">
+                                                        <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border break-words">
                                                             {overallTotals.water_jet_ln_ft.toFixed(1)}
                                                         </td>
                                                     );
                                                 } else {
                                                     // All other columns - EMPTY (not dash)
                                                     return (
-                                                        <td key={column.id} className="px-4 py-2 text-sm border-r border-border">
+                                                        <td key={column.id} className="px-4 py-2 text-sm border-r border-border break-words">
                                                             {/* Empty - no dash */}
                                                         </td>
                                                     );
@@ -707,7 +707,7 @@ const CuttingPlan = () => {
                                                 {/* Month Header Row - Spans ALL columns */}
                                                 <tr className="bg-[#F6FFE7] ">
                                                     <td
-                                                        className="px-4 py-2 text-xs font-medium text-gray-800 text-start" // Added font-medium and text color
+                                                        className="px-4 py-2 text-xs font-medium text-gray-800 text-start break-words" // Added font-medium and text color
                                                         colSpan={table.getVisibleFlatColumns().length}
                                                     >
                                                         {groupData.monthDate}
@@ -723,7 +723,7 @@ const CuttingPlan = () => {
                                                                 return (
                                                                     <td
                                                                         key={cell.id}
-                                                                        className="px-4 py-2 text-sm border-r border-border last:border-r-0 whitespace-nowrap"
+                                                                        className="px-4 py-2 text-sm border-r border-border last:border-r-0 break-words"
                                                                     >
                                                                         {/* Empty - month already shown in header row */}
                                                                     </td>
@@ -732,7 +732,7 @@ const CuttingPlan = () => {
 
                                                             // For FAB INFO and NOTES columns, allow wrapping
                                                             const isLongTextColumn = cell.column.id === 'fab_info' || cell.column.id === 'notes';
-                                                            const cellClassName = `px-4 py-2 text-sm border-r border-border last:border-r-0 ${isLongTextColumn ? 'whitespace-normal break-words min-w-[200px]' : 'whitespace-nowrap'
+                                                            const cellClassName = `px-4 py-2 text-sm border-r border-border last:border-r-0 ${isLongTextColumn ? 'whitespace-normal break-words min-w-[200px]' : 'break-words'}
                                                                 }`;
 
                                                             // For all other columns, render normally

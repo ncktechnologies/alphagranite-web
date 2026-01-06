@@ -81,12 +81,12 @@ function DataGridColumnHeader<TData, TValue>({
     return (
       <div
         className={cn(
-          'text-accent-foreground font-normal inline-flex h-8 items-center gap-1.5 text-xs leading-tight [&_svg]:size-3 [&_svg]:opacity-60 break-words whitespace-normal text-left',
+          'text-accent-foreground font-normal inline-flex min-h-8 items-center gap-1.5 text-xs leading-tight [&_svg]:size-3 [&_svg]:opacity-60 break-words whitespace-normal text-left',
           className,
         )}
       >
         {icon && icon}
-        <span className="block text-left truncate sm:whitespace-normal sm:break-words sm:truncate-0 max-w-full" title={title}>
+        <span className="block text-left max-w-full" title={title}>
           {title}
         </span>
 
@@ -102,7 +102,7 @@ function DataGridColumnHeader<TData, TValue>({
       <Button
         variant="ghost"
         className={cn(
-          'text-[#7C8689] leading-[15px] ultra:text-[15px] rounded-md font-normal -ms-2 p-0 h-7 hover:bg-secondary/5 data-[state=open]:bg-secondary/5 hover:text-foreground data-[state=open]:text-foreground max-w-full text-left whitespace-normal break-words',
+          'text-[#7C8689] leading-[15px] ultra:text-[15px] rounded-md font-normal -ms-2 p-0 min-h-7 hover:bg-secondary/5 data-[state=open]:bg-secondary/5 hover:text-foreground data-[state=open]:text-foreground max-w-full text-left break-words whitespace-normal',
           className,
         )}
         disabled={isLoading || recordCount === 0}
@@ -119,7 +119,7 @@ function DataGridColumnHeader<TData, TValue>({
       >
         {icon && icon}
         {/* <span className="break-words whitespace-normal">{title}</span> */}
-        <span className="block text-left truncate sm:whitespace-normal sm:break-words sm:truncate-0 max-w-full" title={title}>
+        <span className="block text-left max-w-full" title={title}>
           {title}
         </span>
 

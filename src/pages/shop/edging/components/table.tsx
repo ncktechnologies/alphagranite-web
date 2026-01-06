@@ -141,7 +141,7 @@ const CuttingPlan = () => {
                     <DataGridColumnHeader title="FAB TYPE" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <span className="text-sm text-text truncate block max-w-[120px]">
+                    <span className="text-sm text-text break-words max-w-[120px]">
                         {row.original.fab_type}
                     </span>
                 ),
@@ -253,7 +253,7 @@ const CuttingPlan = () => {
                     <DataGridColumnHeader title="FP COMPLETE" column={column} />
                 ),
                 cell: ({ row }) => (
-                    <span className="text-sm text-text truncate block max-w-[200px]">{row.original.fp_complete}</span>
+                    <span className="text-sm text-text break-words max-w-[200px]">{row.original.fp_complete}</span>
                 ),
                 enableSorting: true,
             },
