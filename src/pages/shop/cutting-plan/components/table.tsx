@@ -618,7 +618,7 @@ const CuttingPlan = () => {
                                             {headerGroup.headers.map((header) => (
                                                 <th
                                                     key={header.id}
-                                                    className="px-4 py-3 text-left text-xs font-medium text-muted-foreground border-b border-border bg-muted/50 break-words whitespace-normal" // Added padding and background
+                                                    className="px-4 py-3 text-left text-xs font-medium text-muted-foreground border-b border-border bg-muted/50 break-words whitespace-normal min-h-10" // Added padding and background
                                                     style={{ width: header.getSize() }}
                                                 >
                                                     {header.isPlaceholder
