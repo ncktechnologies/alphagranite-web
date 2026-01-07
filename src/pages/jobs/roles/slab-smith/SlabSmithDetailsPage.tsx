@@ -110,7 +110,7 @@ export function SlabSmithDetailsPage() {
           fab_id: fabId,
           slab_smith_type: 'standard',
           drafter_id: currentEmployeeId,
-          start_date: new Date().toISOString()
+          start_date: new Date().toISOString().substring(0, 19)
         }).unwrap();
         slabSmithId = result.id;
       } catch (error) {

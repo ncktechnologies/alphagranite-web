@@ -70,8 +70,8 @@ const handleFinalSubmit = async (values: SubmissionData) => {
         fab_id: fabId,
         slab_smith_type: 'standard',
         drafter_id: userId,
-        start_date: fabData?.templating_schedule_start_date || new Date().toISOString(),
-        end_date: new Date().toISOString(),
+        start_date: fabData?.templating_schedule_start_date || new Date().toISOString().substring(0, 19),
+        end_date: new Date().toISOString().substring(0, 19),
         total_sqft_completed: String(fabData?.total_sqft || values.totalSqFt || "0")
       }).unwrap();
       
@@ -130,8 +130,8 @@ const handleFinalSubmit = async (values: SubmissionData) => {
 
     // Update slab smith with other data
     const payload: any = {
-      start_date: draftStart ? draftStart.toISOString() : null,
-      end_date: draftEnd ? draftEnd.toISOString() : null,
+      start_date: draftStart ? draftStart.toISOString().substring(0, 19) : null,
+      end_date: draftEnd ? draftEnd.toISOString().substring(0, 19) : null,
       total_sqft_completed: values.totalSqFt || null,
       no_of_piece_completed: values.numberOfPieces || null,
       total_hours_completed: calculateTotalHours(draftStart || null, draftEnd || null), // Fix type issue

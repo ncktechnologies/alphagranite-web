@@ -41,6 +41,31 @@ const updateFabSchema = z.object({
 
 type UpdateFabData = z.infer<typeof updateFabSchema>;
 
+// Helper function to format date as YYYY-MM-DD
+const formatDate = (date: Date | undefined): string => {
+  if (!date) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Helper function to parse date string to Date object (handles timezone correctly)
+const parseDateString = (dateString: string | undefined): Date | undefined => {
+  if (!dateString) return undefined;
+  
+  // If the string is already in YYYY-MM-DD format, parse it correctly
+  const parts = dateString.split('-');
+  if (parts.length === 3) {
+    // Create date in local timezone (not UTC)
+    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  }
+  
+  // Fallback to Date constructor
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? undefined : date;
+};
+
 // ------------------ COMPONENT ------------------ //
 export function UpdateFabIdModal({
   open,
@@ -116,7 +141,7 @@ export function UpdateFabIdModal({
         edging_linft: values.edgingLinFt ? parseFloat(values.edgingLinFt) : undefined,
         cnc_linft: values.cncLinFt ? parseFloat(values.cncLinFt) : undefined,
         miter_linft: values.miterLinFt ? parseFloat(values.miterLinFt) : undefined,
-        shop_date_schedule: values.shopDate, // Changed from shop_schedule_date to shop_date_schedule
+        shop_date_schedule: values.shopDate,
         installation_date: values.installationDate,
         revision_complete: values.revisionComplete,
       };
@@ -160,7 +185,6 @@ export function UpdateFabIdModal({
         <DialogHeader className="border-b">
           <DialogTitle>Update FAB ID</DialogTitle>
         </DialogHeader>
-        {/* <Separator /> */}
 
         {/* ---------- FAB HEADER ---------- */}
         <div className="space-y-1 mb-4">
@@ -171,7 +195,6 @@ export function UpdateFabIdModal({
             {fabData?.jobName || fabData?.job_details?.name || "Conference Table - Quartz"}
           </p>
         </div>
-
 
         {/* ---------- JOB INFO GRID ---------- */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6">
@@ -295,12 +318,10 @@ export function UpdateFabIdModal({
                       <FormLabel>Shop date schedule</FormLabel>
                       <DateTimePicker
                         mode="date"
-                        value={field.value ? new Date(field.value) : undefined}
-                        onChange={(date) =>
-                          field.onChange(
-                            date?.toISOString().split("T")[0]
-                          )
-                        }
+                        value={parseDateString(field.value)}
+                        onChange={(date) => {
+                          field.onChange(formatDate(date));
+                        }}
                       />
                       <FormMessage />
                     </FormItem>
@@ -316,12 +337,10 @@ export function UpdateFabIdModal({
                       <FormLabel>Installation date</FormLabel>
                       <DateTimePicker
                         mode="date"
-                        value={field.value ? new Date(field.value) : undefined}
-                        onChange={(date) =>
-                          field.onChange(
-                            date?.toISOString().split("T")[0]
-                          )
-                        }
+                        value={parseDateString(field.value)}
+                        onChange={(date) => {
+                          field.onChange(formatDate(date));
+                        }}
                       />
                       <FormMessage />
                     </FormItem>
