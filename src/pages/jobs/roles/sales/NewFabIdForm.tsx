@@ -56,6 +56,8 @@ const fabIdFormSchema = z.object({
   stoneThickness: z.string().min(1, 'Stone Thickness is required'),
   edge: z.string().min(1, 'Edge is required'),
   totalSqFt: z.string().min(1, 'Total Sq Ft is required'),
+  revenue: z.string().min(1, 'Revenue is required')
+    .refine((val) => !isNaN(parseFloat(val)), { message: 'Revenue must be a number' }),
   selectedSalesPerson: z.string().min(1, 'Sales Person is required'),
   notes: z.string().optional(), // Keep as string
   templateNotNeeded: z.boolean(),
@@ -171,6 +173,7 @@ const NewFabIdForm = () => {
       stoneThickness: '',
       edge: '',
       totalSqFt: '',
+      revenue: '',
       selectedSalesPerson: '',
       notes: '',
       templateNotNeeded: false,
@@ -381,6 +384,7 @@ const NewFabIdForm = () => {
         edge_id: selectedEdge.id,
         input_area: values.area,
         total_sqft: parseFloat(values.totalSqFt) || 0,
+        revenue: parseFloat(values.revenue) || 0,
         notes: notesValue, // Send as array
         template_needed: !values.templateNotNeeded,
         drafting_needed: !values.draftNotNeeded,
@@ -409,7 +413,7 @@ const NewFabIdForm = () => {
 
       // Navigate based on user's department/role instead of always going to templating
       // For sales role, navigate back to sales jobs page
-      navigate('/job/sales');
+      navigate('/job');
 
     } catch (err: any) {
       console.error('Submission error:', err);
@@ -1016,6 +1020,27 @@ const NewFabIdForm = () => {
                               <FormLabel>Total Sq Ft *</FormLabel>
                               <FormControl>
                                 <Input placeholder="Enter total size" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Revenue Field */}
+                        <FormField
+                          control={form.control}
+                          name="revenue"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Revenue ($) *</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="Enter revenue amount" 
+                                  {...field} 
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
