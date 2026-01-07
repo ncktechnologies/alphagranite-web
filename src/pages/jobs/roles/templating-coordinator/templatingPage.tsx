@@ -47,7 +47,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         templater: fab.technician_name || '-',
         no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
         total_sq_ft: String(fab.total_sqft || "-"),
-        revenue: fab.job_details?.project_value || "-",
+        revenue: fab.revenue || "-",
         gp: "-",
         revised: '',
         sct_completed: '',
