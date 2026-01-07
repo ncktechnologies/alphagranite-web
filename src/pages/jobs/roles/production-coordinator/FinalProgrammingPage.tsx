@@ -1,12 +1,9 @@
-import { useState, useEffect, useMemo } from 'react';
 import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { FinalProgrammingTable } from './FinalProgrammingTable';
 import { IJob } from '@/pages/jobs/components/job';
-import { Fab, useGetFabsInFinalProgrammingPendingQuery, useGetFabsQuery } from '@/store/api/job';
+import { Fab, useGetFabsQuery } from '@/store/api/job';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
-// import { transformFabToJob } from '@/pages/jobs/roles/drafters/DrafterPage';
-import { useIsSuperAdmin } from '@/hooks/use-permission';
 import { JobTable } from '../../components/JobTable';
 import { useJobStageFilter } from '@/hooks/use-job-stage';
 import { useLocation, useNavigate } from 'react-router';
@@ -14,6 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { useTableState } from '@/hooks/use-table-state';
+import { useMemo } from 'react';
+import { useIsSuperAdmin } from '@/hooks/use-permission';
 
  const transformFabToJob = (fab: Fab): IJob => {
   return {
@@ -22,7 +21,7 @@ import { useTableState } from '@/hooks/use-table-state';
     fab_id: String(fab.id),
     job_name: `${fab.job_details?.name}`,
     job_no: String(fab.job_details?.job_number),
-    date: fab.shop_date_schedule || '',
+    date: fab.updated_at || '',
     current_stage: fab.current_stage,
     sales_person_name: fab.sales_person_name || '',
     // Optional fields with default values
@@ -137,9 +136,14 @@ const FinalProgrammingPage = () => {
     ]);
 
     // Fetch data with backend pagination and filtering
-    // const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
-      
-    const { data, isLoading, isFetching, isError, error } = useGetFabsInFinalProgrammingPendingQuery();
+    const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(
+        queryParams,
+    );
+    
+    const handleRowClick = (fabId: string) => {
+        navigate(`/job/final-programming/${fabId}`);
+    };
+    
     if (isLoading) {
         return (
             <div className="">
@@ -157,24 +161,7 @@ const FinalProgrammingPage = () => {
         );
     }
 
-    if (isError) {
-        return (
-            <div className="">
-                <Container>
-                    <Toolbar className=' '>
-                        <ToolbarHeading title="Final Programming" description="" />
-                    </Toolbar>
-                    <Alert variant="destructive" className="mt-4">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
-                        <AlertDescription>
-                            {error ? `Failed to load FAB data` : "Failed to load FAB data"}
-                        </AlertDescription>
-                    </Alert>
-                </Container>
-            </div>
-        );
-    }
+
 
     // Transform Fab data to IJob format
     const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
@@ -186,14 +173,16 @@ const FinalProgrammingPage = () => {
                     <ToolbarHeading title="Final Programming" description="Jobs in final CNC programming stage" />
                 </Toolbar>
 
-                <JobTable 
-                    jobs={jobsData} 
-                    path='final-programming' 
+                <JobTable
+                    jobs={jobsData}
+                    path='final-programming'
                     isLoading={isLoading || isFetching}
-                    // useBackendPagination={true}
-                    // totalRecords={data?.total || 0}
-                    // tableState={tableState}
+                    onRowClick={handleRowClick}
+                    useBackendPagination={true}
+                    totalRecords={data?.total || 0}
+                    tableState={tableState}
                     showSalesPersonFilter={true}
+                    showScheduleFilter={false} // Remove separate schedule filter
                     salesPersons={salesPersons}
                 />
 
@@ -201,7 +190,7 @@ const FinalProgrammingPage = () => {
 
             {/* <div className="mt-6">
                 <FinalProgrammingTable 
-                    jobs={jobs}
+                    jobs={jobsData}
                     path="/job/final-programming"
                     isLoading={isLoading}
                     onRowClick={handleRowClick}

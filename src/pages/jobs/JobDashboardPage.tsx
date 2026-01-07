@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAllPermissions, useIsSuperAdmin } from '@/hooks/use-permission';
 import { DASHBOARD_WIDGETS, WIDGET_SECTIONS, type WidgetConfig } from '@/config/dashboard-widgets.config';
 import { CommunityBadges } from '@/pages/dashboards/demo1/light-sidebar/components/fab';
@@ -8,11 +8,14 @@ import { FinanceStats } from '@/pages/dashboards/demo1/light-sidebar/components/
 import { EarningsChart } from '@/pages/dashboards/demo1/light-sidebar/components/earnings-chart';
 import { Teams } from '@/pages/dashboards/demo1/light-sidebar/components/teams';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { InfoIcon } from 'lucide-react';
+import { InfoIcon, Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { toAbsoluteUrl } from '@/lib/helpers';
 import { useGetStagesQuery } from '@/store/api/job';
 import { Container } from '@/components/common/container';
+import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+import { Can } from '@/components/permission';
+import { Button } from '@/components/ui/button';
 
 /**
  * Job Dashboard Component
@@ -24,7 +27,7 @@ export function JobDashboardPage() {
   const permissions = useAllPermissions();
   const isSuperAdmin = useIsSuperAdmin();
   const navigate = useNavigate();
-  
+
   // Fetch stage statistics
   const { data: stagesData, isLoading: isStagesLoading, isError: isStagesError } = useGetStagesQuery();
 
@@ -54,7 +57,7 @@ export function JobDashboardPage() {
    */
   const getFabCountForStage = (widgetId: string): number => {
     if (!stagesData) return 0;
-    
+
     // Create a mapping of widget IDs to stage names
     const stageNameMap: Record<string, string> = {
       'Templating': 'templating',
@@ -70,7 +73,7 @@ export function JobDashboardPage() {
       'Install Completion': 'install_completion',
       'FAB IDs': 'fab_created'
     };
-    
+
     const stageName = stageNameMap[widgetId] || widgetId.toLowerCase().replace(/ /g, '_');
     const stage = stagesData.find(s => s.stage_name === stageName);
     return stage ? stage.fab_count : 0;
@@ -81,7 +84,7 @@ export function JobDashboardPage() {
    */
   const jobWidgets = useMemo(() => {
     // Filter widgets to only include job-related ones (domain === 'job')
-    const filteredWidgets = DASHBOARD_WIDGETS.filter(widget => 
+    const filteredWidgets = DASHBOARD_WIDGETS.filter(widget =>
       widget.domain === 'job'
     );
 
@@ -93,7 +96,7 @@ export function JobDashboardPage() {
     // Filter widgets based on permissions
     return filteredWidgets.filter((widget) => {
       const menuPermissions = permissions[widget.requiredPermission];
-      
+
       if (!menuPermissions) return false;
 
       // Check specific action permission if required
@@ -133,7 +136,7 @@ export function JobDashboardPage() {
     const data = widget.data;
     const icon = data?.icon || 'h119.svg';
     const bgColor = data?.bgColor || 'bg-[#9CC15E]';
-    
+
     // Get FAB count for this widget's stage
     const fabCount = getFabCountForStage(widget.id);
 
@@ -234,6 +237,27 @@ export function JobDashboardPage() {
 
   return (
     <Container className="grid gap-5 lg:gap-7.5">
+      <Toolbar className=' '>
+        <ToolbarHeading title="FAB ID'S" description="View & track all Alpha granite FAB ID'S" />
+        <ToolbarActions>
+          <Can action="create" on="FAB IDs">
+            <Link to="/jobs/sales/new-fab-id">
+              <Button className="">
+                <Plus/>
+                New FAB ID
+              </Button>
+            </Link>
+          </Can>
+          <Can action="create" on="Jobs">
+            <Link to="/create-jobs">
+              <Button className="">
+                <Plus />
+                New Job
+              </Button>
+            </Link>
+          </Can>
+        </ToolbarActions>
+      </Toolbar>
       {/* Stats Section - 4 columns grid for all stat widgets */}
       {widgetsByCategory.stats.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-7.5">
@@ -241,7 +265,7 @@ export function JobDashboardPage() {
         </div>
       )}
 
-     
+
     </Container>
   );
 }
