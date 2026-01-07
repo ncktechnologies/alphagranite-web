@@ -76,7 +76,7 @@ export const JobTable = ({
     });
     const [localSorting, setLocalSorting] = useState<SortingState>([]);
     const [localSearchQuery, setLocalSearchQuery] = useState('');
-    const [localDateFilter, setLocalDateFilter] = useState<string>('today');
+    const [localDateFilter, setLocalDateFilter] = useState<string>('all');
     const [localFabTypeFilter, setLocalFabTypeFilter] = useState<string>('all');
     const [localSalesPersonFilter, setLocalSalesPersonFilter] = useState<string>('all');
     const [localDateRange, setLocalDateRange] = useState<DateRange | undefined>(undefined);

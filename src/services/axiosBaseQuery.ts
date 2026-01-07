@@ -87,9 +87,21 @@ instance.interceptors.response.use(
 
       if (!refreshToken) {
         // No refresh token available, logout user
+        // Clear user data
         localStorage.removeItem('user');
         localStorage.removeItem('token');
         localStorage.removeItem('refresh_token');
+        
+        // Clear all table state entries from localStorage
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('table-state-')) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        
         // window.location.replace('/');
         return Promise.reject(err);
       }
@@ -129,9 +141,21 @@ instance.interceptors.response.use(
         processQueue(refreshError, null);
         isRefreshing = false;
 
+        // Clear user data
         localStorage.removeItem('user');
         localStorage.removeItem('token');
         localStorage.removeItem('refresh_token');
+        
+        // Clear all table state entries from localStorage
+        const keysToRemove: string[] = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('table-state-')) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        
         toast.error('Your session has expired. Please login again.');
         window.location.replace('/');
 

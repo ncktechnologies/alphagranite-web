@@ -1,7 +1,7 @@
 import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { useGetFabsByStageQuery } from '@/store/api/job';
-import { FinalProgrammingTable } from './FinalProgrammingTable';
+import { FinalProgrammingTable } from '../../jobs/roles/production-coordinator/FinalProgrammingTable';
 import { useNavigate } from 'react-router-dom';
 import { useTableState } from '@/hooks/use-table-state';
 import { useMemo } from 'react';
@@ -13,7 +13,7 @@ export function FinalProgrammingPage() {
   const tableState = useTableState({
     tableId: 'final-programming-table',
     defaultPagination: { pageIndex: 0, pageSize: 10 },
-    defaultDateFilter: 'today',
+    defaultDateFilter: 'all',
     defaultScheduleFilter: 'scheduled',
     persistState: true,
   });
