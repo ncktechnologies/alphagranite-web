@@ -77,7 +77,7 @@ export function Demo1LightSidebarPage() {
           <Toolbar className=' '>
             <ToolbarHeading title="Dashboard" description="" />
             <ToolbarActions>
-              <Can action="update" on="FAB IDs">
+              <Can action="create" on="FAB IDs">
                 <Link to="/jobs/sales/new-fab-id">
                   <Button className="">
                     <Plus />
