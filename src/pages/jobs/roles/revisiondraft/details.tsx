@@ -3,7 +3,7 @@ import { Container } from '@/components/common/container';
 import { Card, CardContent, CardHeader, CardHeading, CardTitle, CardToolbar } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
-import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Separator } from '@/components/ui/separator';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { FileViewer } from '../drafters/components';
@@ -20,6 +20,7 @@ import {
 import { toast } from 'sonner';
 import { useSelector } from 'react-redux';
 import { Can } from '@/components/permission';
+import { BackButton } from '@/components/common/BackButton';
 
 const ReviewDetailsPage = () => {
     type ViewMode = 'activity' | 'file' | 'edit';
@@ -71,7 +72,7 @@ const ReviewDetailsPage = () => {
         console.log('ID:', id);
         console.log('User:', user);
         console.log('Existing revisions:', revisionsData);
-        console.log('Number of existing revisions:', revisionsData?.data?.length);
+        console.log('Number of existing revisions:', revisionsData?.length);
 
         if (!id || !user) {
             console.log('Missing id or user, returning early');
@@ -84,11 +85,12 @@ const ReviewDetailsPage = () => {
             let revisionId;
 
             // Check if there's an existing revision for this FAB
-            // revisionsData is an object with a 'data' array property
-            const revisionsArray = revisionsData?.data;
+            // revisionsData is an array of revisions
+            const revisionsArray = revisionsData || [];
             const hasExistingRevisions = Array.isArray(revisionsArray) && revisionsArray.length > 0;
             console.log('Has existing revisions:', hasExistingRevisions);
             console.log('Revisions array:', revisionsArray);
+            console.log('Number of existing revisions:', revisionsArray.length);
 
             if (hasExistingRevisions) {
                 // Use the earliest revision (lowest ID) according to project specification
@@ -205,6 +207,9 @@ const ReviewDetailsPage = () => {
             <Container className='lg:mx-0'>
                 <Toolbar className=' '>
                     <ToolbarHeading title={`FAB ID: ${fabData?.id || 'Loading...'}`} description="Update drafting activity" />
+                    <ToolbarActions>
+                        <BackButton fallbackUrl="/job/revision" />
+                    </ToolbarActions>
                 </Toolbar>
             </Container>
             <div className=" border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0  items-start lg:flex-shrink-0">

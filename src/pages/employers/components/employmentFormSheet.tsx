@@ -200,7 +200,7 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
                                                 )}
                                             />
 
-                                            <FormField
+                                            {/* <FormField
                                                 control={form.control}
                                                 name="home_address"
                                                 render={({ field }) => (
@@ -210,11 +210,11 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}
-                                            />
+                                            /> */}
                                             <FormField control={form.control} name="phone" render={({ field }) => (
                                                 <FormItem>
                                                     <FormLabel>Phone</FormLabel>
-                                                    <FormControl><Input placeholder="Your phone number" type="text" {...field} /></FormControl>
+                                                    <FormControl><Input placeholder="Enter phone number" type="text" {...field} /></FormControl>
                                                     <FormMessage />
                                                 </FormItem>
                                             )} />

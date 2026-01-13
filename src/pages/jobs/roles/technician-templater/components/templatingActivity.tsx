@@ -327,7 +327,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
           />
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="outline" onClick={() => navigate('/job/templating-technician')}>
+            <Button type="button" variant="outline" onClick={() => navigate('/job/templating')}>
               Cancel
             </Button>
             <Can action="update" on="Templating">

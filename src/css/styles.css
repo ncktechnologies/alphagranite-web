@@ -59,6 +59,12 @@
   tr {
     transition: background-color 0.2s ease;
   }
+  
+  /* Remove hover effects from table rows */
+  .data-grid-table tbody tr:hover,
+  .card-table .data-grid-table tr:hover {
+    background-color: transparent !important;
+  }
 }
 
 /* Metronic Components  */

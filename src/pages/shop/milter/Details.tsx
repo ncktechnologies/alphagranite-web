@@ -3,12 +3,13 @@ import { Container } from '@/components/common/container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
-import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Separator } from '@/components/ui/separator';
 import GraySidebar from '@/pages/jobs/components/job-details.tsx/GraySidebar';
 import { FileViewer } from '@/pages/jobs/roles/drafters/components';
 import { Documents } from '../components/files';
 import { ScheduleCuttingModal } from './components/SubmissionModal';
+import { BackButton } from '@/components/common/BackButton';
 // import { jobInfo } from '@/pages/jobs/roles/templating-coordinator/components/details';
 
 const MiterDetailsPage = () => {
@@ -92,6 +93,9 @@ const jobInfo = [
             <Container className='lg:mx-0'>
                 <Toolbar className=' '>
                     {/* <ToolbarHeading title="FAB ID: 4456" description="Update templating activity" /> */}
+                    <ToolbarActions>
+                        <BackButton fallbackUrl="/shop/milter" />
+                    </ToolbarActions>
                 </Toolbar>
             </Container>
             <div className=" border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0  items-start lg:flex-shrink-0">

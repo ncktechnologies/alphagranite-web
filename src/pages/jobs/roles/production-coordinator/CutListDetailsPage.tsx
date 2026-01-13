@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate, useParams } from 'react-router';
 import { useGetFabByIdQuery } from '@/store/api/job';
 import { toast } from 'sonner';
-import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { TimeDisplay } from '../../roles/back-to-sales/components/DisplayTime';
 import { Documents } from '@/pages/shop/components/files';
@@ -13,6 +13,7 @@ import { X } from 'lucide-react';
 import { UpdateFabIdModal } from './components/UpdateFabIdModal';
 import { FileViewer } from '../drafters/components';
 import { Can } from '@/components/permission';
+import { BackButton } from '@/components/common/BackButton';
 
 const CutListDetailsPage = () => {
     type ViewMode = 'activity' | 'file';
@@ -75,6 +76,9 @@ const CutListDetailsPage = () => {
             <Container className='lg:mx-0'>
                 <Toolbar className=' '>
                     <ToolbarHeading title={`FAB ID: ${fabData?.id || 'Loading...'}`} description="Review drafting activity and schedule cut list" />
+                    <ToolbarActions>
+                        <BackButton fallbackUrl="/job/cut-list" />
+                    </ToolbarActions>
                 </Toolbar>
             </Container>
             <div className=" border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0  items-start lg:flex-shrink-0">

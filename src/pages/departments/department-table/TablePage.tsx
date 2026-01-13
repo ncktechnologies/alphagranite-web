@@ -4,6 +4,7 @@ import { DepartmentTable } from './DepartmentTable';
 import { useParams } from 'react-router';
 import { useGetDepartmentByIdQuery } from '@/store/api';
 import { Skeleton } from '@/components/ui/skeleton';
+import { BackButton } from '@/components/common/BackButton';
 
 export function DepartmentDetailsPage() {
     const { id } = useParams<{ id: string }>();
@@ -50,6 +51,9 @@ export function DepartmentDetailsPage() {
                         title={department.name} 
                         description={department.description || 'No description available'} 
                     />
+                    <ToolbarActions>
+                        <BackButton fallbackUrl="/departments" />
+                    </ToolbarActions>
                 </Toolbar>
                 <DepartmentTable employees={department.users || []} />
             </Container>

@@ -20,6 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { useNavigate, useParams } from "react-router";
 import { useGetFabByIdQuery, useGetTemplatingByFabIdQuery, useUnscheduleTemplatingMutation } from "@/store/api/job";
 import { Can } from '@/components/permission';
+import { BackButton } from "@/components/common/BackButton";
 
 const reviewChecklistSchema = z.object({
     customerInfo: z.boolean(),
@@ -38,10 +39,10 @@ export function ReviewChecklistForm() {
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const { data: fab } = useGetFabByIdQuery(Number(id));
-    
+
     // Get templating data to check if there's a schedule
     const { data: templatingData, isLoading: isTemplatingLoading } = useGetTemplatingByFabIdQuery(Number(id));
-    
+
     // Mutation for unscheduling
     const [unscheduleTemplating] = useUnscheduleTemplatingMutation();
 
@@ -58,9 +59,9 @@ export function ReviewChecklistForm() {
 
     const onSubmit = async (values: ReviewChecklistData) => {
         // Check if any checkboxes are checked (not all required)
-        const anyChecked = values.customerInfo || values.materialSpecs || values.stoneType || 
+        const anyChecked = values.customerInfo || values.materialSpecs || values.stoneType ||
             values.stoneColour || values.fabType;
-            
+
         if (!anyChecked) {
             toast.error("Please check at least one checklist item");
             return;
@@ -69,11 +70,11 @@ export function ReviewChecklistForm() {
         // Open the assign technician modal instead of submitting directly
         setOpenModal(true);
     };
-    
+
     const handleUnschedule = async () => {
         try {
             if (templatingData?.data?.id) {
-                await unscheduleTemplating({ 
+                await unscheduleTemplating({
                     templating_id: templatingData.data.id
                 }).unwrap();
                 toast.success('Templating unscheduled successfully');
@@ -177,11 +178,11 @@ export function ReviewChecklistForm() {
                                 </Button>
                             </Can>
                         )}
-                        
+
                         {isScheduled && (
                             <Can action="update" on="Templating">
-                                <Button 
-                                    variant="outline" 
+                                <Button
+                                    variant="outline"
                                     className="w-full text-secondary font-bold py-6 text-base"
                                     onClick={handleUnschedule}
                                     type="button"
@@ -191,12 +192,13 @@ export function ReviewChecklistForm() {
                                 </Button>
                             </Can>
                         )}
-                        
+                        <BackButton className="w-full text-secondary font-bold py-6 text-base" fallbackUrl="/job/templating" label="Cancel"  />
+
                         {/* <Button variant="outline" className="w-full text-secondary font-bold py-6 text-base">
                             <Undo2 />
                             Return to sales
-                        </Button>
-                        <Button variant="ghost" className="w-full text-[#2B892B] underline py-6 text-base">
+                        </Button> */}
+                        {/* <Button variant="ghost" className="w-full text-[#2B892B] underline py-6 text-base">
                             <Save />
                             Save to draft
                         </Button> */}
