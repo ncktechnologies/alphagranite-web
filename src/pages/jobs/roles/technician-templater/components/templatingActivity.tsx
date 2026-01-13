@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
-import { useCompleteTemplatingMutation, useGetTemplatingByFabIdQuery, useUpdateTemplatingMutation } from '@/store/api/job';
+import { useCompleteTemplatingMutation, useGetTemplatingByFabIdQuery, useUpdateTemplatingMutation, useGetFabByIdQuery } from "@/store/api/job";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Can } from '@/components/permission';
 
@@ -106,7 +106,13 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
     }
   }
 
-  // Fetch templating record by FAB ID
+  // Fetch FAB record by FAB ID
+  const { data: fabData, isLoading: isFabLoading } = useGetFabByIdQuery(
+    Number(fabId),
+    { skip: !fabId }
+  );
+
+  // Fetch templating record by FAB ID (still needed for submission)
   const { data: templatingData, isLoading: isTemplatingLoading } = useGetTemplatingByFabIdQuery(
     Number(fabId),
     { skip: !fabId }
@@ -115,7 +121,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      status: "not_completed",
+      status: undefined,
       start_date: "",
       duration: "",
       notes: "",
@@ -136,36 +142,28 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
   // }, [squareFtValue]);
 
   useEffect(() => {
-    // Debugging: Log the templating data
-    // console.log("Templating data:", templatingData);
+    // Debugging: Log the FAB data
+    // console.log("FAB data:", fabData);
 
-    // Populate form with templating data when it's available
-    if (templatingData?.data) {
-      // console.log("Populating form with templating data:", templatingData.data);
+    // Populate form with FAB data when it's available
+    if (fabData) {
+      console.log("Populating form with FAB data:", fabData);
 
       // Prepare values for the form
-      const formValues: Partial<z.infer<typeof formSchema>> & { status: "not_completed" } = {
+      const formValues: Partial<z.infer<typeof formSchema>> = {
         status: "not_completed",
-        start_date: templatingData.data.schedule_start_date
-          ? (() => {
-            const date = new Date(templatingData.data.schedule_start_date);
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-          })()
-          : "",
+        start_date: "",
         duration: "",
         notes: "",
-        square_ft: templatingData.data.total_sqft?.toString() || ''
+        square_ft: fabData.total_sqft?.toString() || ''
       };
 
       console.log("Resetting form with values:", formValues);
       form.reset(formValues);
     }
-  }, [templatingData, form]);
+  }, [fabData, form]);
 
-  if (isTemplatingLoading) {
+  if (isFabLoading || isTemplatingLoading) {
     return <div>Loading...</div>;
   }
 
