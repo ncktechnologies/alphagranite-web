@@ -84,6 +84,11 @@ export const MENU_SIDEBAR: MenuConfig = [
     title: 'Jobs',
     icon: 'building.svg',
     path: '/job', // Changed from '/job/sales' to '/job' for dashboard
+    children: [
+          { title: 'Job Widget', path: '/job' },
+          { title: 'Create Jobs', path: '/create-jobs' },
+          { title: 'All Fabs', path: '/job/sales' },
+        ],
   },
   {
     title: 'Shop',

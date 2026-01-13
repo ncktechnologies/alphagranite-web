@@ -5034,6 +5034,51 @@
             "BearerAuth": []
           }
         ]
+      },
+      "post": {
+        "tags": [
+          "Fab Types"
+        ],
+        "summary": "Create Fab Type",
+        "description": "Create a new fabrication type",
+        "operationId": "create_fab_type_api_v1_fab_types_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FabTypeCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_FabTypeResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
       }
     },
     "/api/v1/fabs": {
@@ -5264,6 +5309,24 @@
             "description": "Filter FABs scheduled on or before this date (YYYY-MM-DD)"
           },
           {
+            "name": "schedule_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by schedule status: scheduled or unscheduled",
+              "title": "Schedule Status"
+            },
+            "description": "Filter by schedule status: scheduled or unscheduled"
+          },
+          {
             "name": "date_filter",
             "in": "query",
             "required": false,
@@ -5276,10 +5339,28 @@
                   "type": "null"
                 }
               ],
-              "description": "Predefined date filter: today, this_week, this_month, next_week, next_month, scheduled, unscheduled",
+              "description": "Predefined date filter: today, this_week, this_month, next_week, next_month",
               "title": "Date Filter"
             },
-            "description": "Predefined date filter: today, this_week, this_month, next_week, next_month, scheduled, unscheduled"
+            "description": "Predefined date filter: today, this_week, this_month, next_week, next_month"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search by FAB ID, Job Name, or Job Number",
+              "title": "Search"
+            },
+            "description": "Search by FAB ID, Job Name, or Job Number"
           }
         ],
         "responses": {
@@ -5753,6 +5834,72 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessResponse_List_dict__"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/fabs/{fab_id}/hold": {
+      "patch": {
+        "tags": [
+          "Fabs"
+        ],
+        "summary": "Set Fab Hold",
+        "description": "Mark or toggle a FAB as on-hold.\n- on_hold=true  -\u003E status_id=0\n- on_hold=false -\u003E status_id=1\n- on_hold omitted -\u003E toggle 0 \u003C-\u003E 1",
+        "operationId": "set_fab_hold_api_v1_fabs__fab_id__hold_patch",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          },
+          {
+            "name": "on_hold",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "If provided, set hold state. If omitted, toggle between on-hold (0) and active (1)",
+              "title": "On Hold"
+            },
+            "description": "If provided, set hold state. If omitted, toggle between on-hold (0) and active (1)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_FabResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -6563,6 +6710,158 @@
               "application/json": {
                 "schema": {
 
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/drafting/{fab_id}/session": {
+      "post": {
+        "tags": [
+          "Drafting"
+        ],
+        "summary": "Manage Drafting Session",
+        "description": "Manage drafting session: start, pause, resume, on_hold, or end",
+        "operationId": "manage_drafting_session_api_v1_drafting__fab_id__session_post",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DraftingSessionAction"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_DraftingSessionResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Drafting"
+        ],
+        "summary": "Get Current Drafting Session",
+        "description": "Get current active drafting session for a fab",
+        "operationId": "get_current_drafting_session_api_v1_drafting__fab_id__session_get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_DraftingSessionResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/drafting/{fab_id}/session/history": {
+      "get": {
+        "tags": [
+          "Drafting"
+        ],
+        "summary": "Get Drafting Session History",
+        "description": "Get all drafting sessions history for a fab",
+        "operationId": "get_drafting_session_history_api_v1_drafting__fab_id__session_history_get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_DraftingSessionHistoryResponse_"
                 }
               }
             }
@@ -10907,10 +11206,10 @@
     "/api/v1/files/download/{filename}": {
       "get": {
         "tags": [
-          "Job Extras"
+          "public"
         ],
         "summary": "Download File",
-        "description": "Download a file by filename",
+        "description": "Public endpoint to download files without authentication",
         "operationId": "download_file_api_v1_files_download__filename__get",
         "parameters": [
           {
@@ -12450,6 +12749,33 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/test-public": {
+      "get": {
+        "tags": [
+          "public"
+        ],
+        "summary": "Test Public Route",
+        "description": "Test endpoint to verify public access without authentication",
+        "operationId": "test_public_route_api_v1_test_public_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
                 }
               }
             }
@@ -14577,6 +14903,269 @@
         ],
         "title": "DraftingResponse"
       },
+      "DraftingSessionAction": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "title": "Action",
+            "description": "Action: 'start', 'pause', 'resume', 'on_hold', or 'end'"
+          },
+          "drafter_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Drafter Id"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note",
+            "description": "Session note"
+          },
+          "sqft_drafted": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sqft Drafted",
+            "description": "Square feet drafted so far"
+          },
+          "work_percentage_done": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Percentage Done"
+          },
+          "session_start_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Start Time"
+          },
+          "session_end_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session End Time"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action",
+          "drafter_id"
+        ],
+        "title": "DraftingSessionAction",
+        "description": "Schema for drafting session actions"
+      },
+      "DraftingSessionHistoryResponse": {
+        "properties": {
+          "fab_id": {
+            "type": "integer",
+            "title": "Fab Id"
+          },
+          "sessions": {
+            "items": {
+              "$ref": "#/components/schemas/DraftingSessionResponse"
+            },
+            "type": "array",
+            "title": "Sessions"
+          },
+          "total_sessions": {
+            "type": "integer",
+            "title": "Total Sessions"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fab_id",
+          "sessions",
+          "total_sessions"
+        ],
+        "title": "DraftingSessionHistoryResponse"
+      },
+      "DraftingSessionNoteResponse": {
+        "properties": {
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "action": {
+            "type": "string",
+            "title": "Action"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "sqft_drafted": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sqft Drafted"
+          },
+          "work_percentage_done": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Percentage Done"
+          }
+        },
+        "type": "object",
+        "required": [
+          "timestamp",
+          "action",
+          "note",
+          "sqft_drafted",
+          "work_percentage_done"
+        ],
+        "title": "DraftingSessionNoteResponse"
+      },
+      "DraftingSessionResponse": {
+        "properties": {
+          "session_id": {
+            "type": "integer",
+            "title": "Session Id"
+          },
+          "fab_id": {
+            "type": "integer",
+            "title": "Fab Id"
+          },
+          "drafter_id": {
+            "type": "integer",
+            "title": "Drafter Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "current_session_start_time": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Current Session Start Time"
+          },
+          "last_action_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Action Time"
+          },
+          "total_time_spent": {
+            "type": "integer",
+            "title": "Total Time Spent"
+          },
+          "cumulative_sqft_drafted": {
+            "type": "string",
+            "title": "Cumulative Sqft Drafted"
+          },
+          "work_percentage_done": {
+            "type": "integer",
+            "title": "Work Percentage Done"
+          },
+          "current_pause_start_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Current Pause Start Time"
+          },
+          "total_pause_duration": {
+            "type": "integer",
+            "title": "Total Pause Duration"
+          },
+          "notes": {
+            "items": {
+              "$ref": "#/components/schemas/DraftingSessionNoteResponse"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "session_id",
+          "fab_id",
+          "drafter_id",
+          "status",
+          "current_session_start_time",
+          "last_action_time",
+          "total_time_spent",
+          "cumulative_sqft_drafted",
+          "work_percentage_done",
+          "current_pause_start_time",
+          "total_pause_duration",
+          "notes"
+        ],
+        "title": "DraftingSessionResponse"
+      },
       "DraftingUpdate": {
         "properties": {
           "total_sqft": {
@@ -14987,6 +15576,18 @@
             "type": "integer",
             "exclusiveMinimum": 0,
             "title": "Edge Id"
+          },
+          "revenue": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revenue",
+            "description": "Revenue amount"
           },
           "input_area": {
             "anyOf": [
@@ -15898,8 +16499,40 @@
         ],
         "title": "FabResponse"
       },
+      "FabTypeCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1,
+            "title": "Name",
+            "description": "Fab type name"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Fab type description"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name"
+        ],
+        "title": "FabTypeCreate"
+      },
       "FabTypeResponse": {
         "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
           "name": {
             "type": "string",
             "title": "Name"
@@ -15914,11 +16547,30 @@
               }
             ],
             "title": "Description"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
           }
         },
         "type": "object",
         "required": [
-          "name"
+          "id",
+          "name",
+          "created_at"
         ],
         "title": "FabTypeResponse"
       },
@@ -17186,6 +17838,19 @@
             ],
             "title": "Project Value",
             "description": "Project value/amount"
+          },
+          "sales_person_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sales Person Id",
+            "description": "Sales person ID"
           }
         },
         "type": "object",
@@ -17333,6 +17998,17 @@
             ],
             "title": "Project Value"
           },
+          "sales_person_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sales Person Id"
+          },
           "status_id": {
             "type": "integer",
             "title": "Status Id"
@@ -17431,6 +18107,17 @@
               }
             ],
             "title": "Status Id"
+          },
+          "sales_person_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sales Person Id"
           }
         },
         "type": "object",
@@ -19783,6 +20470,62 @@
         ],
         "title": "SuccessResponse[DraftingResponse]"
       },
+      "SuccessResponse_DraftingSessionHistoryResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DraftingSessionHistoryResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[DraftingSessionHistoryResponse]"
+      },
+      "SuccessResponse_DraftingSessionResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DraftingSessionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[DraftingSessionResponse]"
+      },
       "SuccessResponse_EdgeResponse_": {
         "properties": {
           "success": {
@@ -19866,6 +20609,34 @@
           "message"
         ],
         "title": "SuccessResponse[FabResponse]"
+      },
+      "SuccessResponse_FabTypeResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/FabTypeResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[FabTypeResponse]"
       },
       "SuccessResponse_InstallCompletionResponse_": {
         "properties": {

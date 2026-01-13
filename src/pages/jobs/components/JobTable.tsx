@@ -396,7 +396,7 @@ export const JobTable = ({
             header: ({ column }) => (
                 <DataGridColumnHeader title="FAB TYPE" column={column} />
             ),
-            cell: ({ row }) => <span className="text-xs uppercase">{row.original.fab_type}</span>,
+            cell: ({ row }) => <span className="text-xs capitalize">{row.original.fab_type}</span>,
             size: 100,
         },
         {

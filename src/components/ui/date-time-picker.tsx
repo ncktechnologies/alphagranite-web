@@ -215,26 +215,14 @@ const DateTimePicker = ({
       const [hours, minutes] = timeValue.split(":").map(Number)
       const newDate = new Date(dateValue)
       newDate.setHours(hours, minutes, 0, 0)
-      // Only call onChange if the new date is different from the current value
-      if (!value || newDate.getTime() !== value.getTime()) {
-        onChange(newDate)
-      }
+      onChange(newDate)
     } else if (dateValue && mode === "date") {
-      // Only call onChange if the date is different from the current value
-      if (!value || dateValue.getTime() !== value.getTime()) {
-        onChange(dateValue)
-      }
+      onChange(dateValue)
     }
-  }, [dateValue, timeValue, onChange, mode, value])
+  }, [dateValue, timeValue, onChange, mode])
 
   const handleDateSelect = (date: Date | undefined) => {
-    if (date) {
-      // Create a new date object to avoid timezone issues
-      const selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      setDateValue(selectedDate);
-    } else {
-      setDateValue(date);
-    }
+    setDateValue(date)
     // Reset time when date changes in datetime mode
     if (mode === "datetime" && !timeValue) {
       setTimeValue(undefined)

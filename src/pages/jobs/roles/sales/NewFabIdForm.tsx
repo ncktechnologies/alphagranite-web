@@ -1,3 +1,5 @@
+"use client"
+
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,7 +22,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { ArrowLeft, Plus, AlertCircle, Check, LoaderCircleIcon, Search, ChevronDown, Info, InfoIcon } from 'lucide-react';
+import { ArrowLeft, Plus, AlertCircle, Check, LoaderCircleIcon, Search, ChevronDown, InfoIcon } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { RiInformationFill } from '@remixicon/react';
 import { toast } from 'sonner';
@@ -41,7 +43,6 @@ import {
   useGetJobsByAccountQuery
 } from '@/store/api/job';
 import { useAuth } from '@/auth/context/auth-context';
-import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 
 // Update the Zod schema - remove jobName and jobNumber as required fields since they'll be selected
@@ -153,12 +154,10 @@ const NewFabIdForm = () => {
   // Nested popover states for adding new items
   const [showAddThickness, setShowAddThickness] = useState(false);
   const [showAddAccount, setShowAddAccount] = useState(false);
-  const [showAddTemplate, setShowAddTemplate] = useState(false);
 
   // New item states
   const [newThickness, setNewThickness] = useState('');
   const [newAccount, setNewAccount] = useState('');
-  const [newTemplate, setNewTemplate] = useState('');
 
   const form = useForm<FabIdFormData>({
     resolver: zodResolver(fabIdFormSchema),
@@ -192,7 +191,7 @@ const NewFabIdForm = () => {
   const selectedAccount = accountsData?.find((account: any) => account.name === accountValue);
   const selectedAccountId = selectedAccount?.id;
 
-  // Effect to auto-populate job number when job name is selected
+  // Watch for job name and number changes
   const jobNameValue = form.watch('jobName');
   const jobNumberValue = form.watch('jobNumber');
 
@@ -212,29 +211,68 @@ const NewFabIdForm = () => {
   const isEffectiveJobsLoading = selectedAccountId ? isAccountJobsLoading : isLoadingJobs;
   const isEffectiveJobsError = selectedAccountId ? isAccountJobsError : isJobsError;
 
+  // Get sales persons
+  const {
+    data: salesPersonsData,
+    isLoading: isLoadingSalesPersons,
+    isError: isSalesPersonsError
+  } = useGetSalesPersonsQuery();
+
+  const salesPersons = Array.isArray(salesPersonsData) ? salesPersonsData : [];
+
   // Filter jobs for job dropdowns - use account-specific jobs when available
   const jobNames = (!isEffectiveJobsError && Array.isArray(effectiveJobsData) ? effectiveJobsData : []).map((job: any) => job.name);
   const jobNumbers = (!isEffectiveJobsError && Array.isArray(effectiveJobsData) ? effectiveJobsData : []).map((job: any) => job.job_number);
 
-
-  // Update the useEffect hooks to use effectiveJobsData
+  // ========== AUTO-POPULATION LOGIC ==========
+  
+  // Effect 1: Auto-populate job number and sales person when job name is selected
   useEffect(() => {
-    if (jobNameValue && effectiveJobsData && Array.isArray(effectiveJobsData)) {
+    if (jobNameValue && effectiveJobsData && Array.isArray(effectiveJobsData) && salesPersons.length > 0) {
       const selectedJob = effectiveJobsData.find((job: any) => job.name === jobNameValue);
-      if (selectedJob && selectedJob.job_number !== jobNumberValue) {
-        form.setValue('jobNumber', selectedJob.job_number);
+      if (selectedJob) {
+        // Auto-populate job number
+        if (selectedJob.job_number !== jobNumberValue) {
+          form.setValue('jobNumber', selectedJob.job_number);
+        }
+        
+        // Auto-populate sales person using sales_person_id
+        if (selectedJob.sales_person_id) {
+          const salesPersonForJob = salesPersons.find((person: any) => 
+            person.id === selectedJob.sales_person_id
+          );
+          
+          if (salesPersonForJob && salesPersonForJob.name !== form.getValues('selectedSalesPerson')) {
+            form.setValue('selectedSalesPerson', salesPersonForJob.name);
+          }
+        }
       }
     }
-  }, [jobNameValue, effectiveJobsData, form, jobNumberValue]);
+  }, [jobNameValue, effectiveJobsData, form, jobNumberValue, salesPersons]);
 
+  // Effect 2: Auto-populate job name and sales person when job number is selected
   useEffect(() => {
-    if (jobNumberValue && effectiveJobsData && Array.isArray(effectiveJobsData)) {
+    if (jobNumberValue && effectiveJobsData && Array.isArray(effectiveJobsData) && salesPersons.length > 0) {
       const selectedJob = effectiveJobsData.find((job: any) => job.job_number === jobNumberValue);
-      if (selectedJob && selectedJob.name !== jobNameValue) {
-        form.setValue('jobName', selectedJob.name);
+      if (selectedJob) {
+        // Auto-populate job name
+        if (selectedJob.name !== jobNameValue) {
+          form.setValue('jobName', selectedJob.name);
+        }
+        
+        // Auto-populate sales person using sales_person_id
+        if (selectedJob.sales_person_id) {
+          const salesPersonForJob = salesPersons.find((person: any) => 
+            person.id === selectedJob.sales_person_id
+          );
+          
+          if (salesPersonForJob && salesPersonForJob.name !== form.getValues('selectedSalesPerson')) {
+            form.setValue('selectedSalesPerson', salesPersonForJob.name);
+          }
+        }
       }
     }
-  }, [jobNumberValue, effectiveJobsData, form, jobNameValue]);
+  }, [jobNumberValue, effectiveJobsData, form, jobNameValue, salesPersons]);
 
   // Filter functions for search with error handling
   const filteredFabTypes = (!isFabTypesError && Array.isArray(fabTypesData) && fabTypesData?.map((type: any) => type.name) || []).filter((type: string) =>
@@ -253,20 +291,6 @@ const NewFabIdForm = () => {
   const stoneTypes = !isStoneTypesError && Array.isArray(stoneTypesData) ? (stoneTypesData?.map((type: any) => type.name) || []) : [];
   const stoneColors = !isStoneColorsError && Array.isArray(stoneColorsData) ? (stoneColorsData?.map((color: any) => color.name) || []) : [];
   const edgeOptions = !isEdgesError && Array.isArray(edgesData) ? (edgesData?.map((edge: any) => edge.name) || []) : [];
-  const { user } = useAuth();
-
-  // Get sales persons using the new API endpoint
-  const {
-    data: salesPersonsData,
-    isLoading: isLoadingSalesPersons,
-    isError: isSalesPersonsError
-  } = useGetSalesPersonsQuery();
-
-  // Extract sales persons from the response
-  const salesPersons = Array.isArray(salesPersonsData) ? salesPersonsData : [];
-
-  // Set default sales person to current user
-
 
   // Functions to add new items
   const handleAddThickness = async () => {
@@ -308,15 +332,6 @@ const NewFabIdForm = () => {
           toast.error('Failed to add account');
         }
       }
-    }
-  };
-
-  const handleAddTemplate = () => {
-    if (newTemplate.trim()) {
-      // Handle template addition logic here
-      // This would likely call an API to schedule templating
-      setNewTemplate('');
-      setShowAddTemplate(false);
     }
   };
 
@@ -435,36 +450,17 @@ const NewFabIdForm = () => {
   return (
     <div className="">
       <Container>
-        {/* <Toolbar className='flex flex-col items-start '>
-          <ToolbarBreadcrumbs />
-        </Toolbar> */}
         <div className="py-6">
-          {/* Header */}
-          {/* <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">New Fab ID Submission</h1>
-              <p className="text-sm text-gray-600 mt-1">
-                Submit a new Standard Fabrication Form with project specifications for templating review.
-              </p>
-            </div>
-            <Button variant="outline" size="sm">
-              Draft mode
-            </Button>
-          </div> */}
           <Card className="max-w-4xl mx-auto mb-4 py-6">
             <CardHeader className='flex flex-col justify-start items-start '>
               <CardTitle className='text-2xl font-bold text-[#111827]'>
                 New Fab ID Submission
               </CardTitle>
-              {/* <Button variant="outline" size="sm">
-                Draft mode
-              </Button> */}
               <CardDescription className='text-sm text-[#4B5563]'>Submit a new Standard Fabrication Form with project specifications for templating review.</CardDescription>
             </CardHeader>
           </Card>
 
           <div className="max-w-4xl mx-auto">
-            {/* Main Form */}
             <div>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -477,24 +473,6 @@ const NewFabIdForm = () => {
                     </CardHeader>
                     <CardContent className='space-y-6'>
                       <div className="space-y-4 grid grid-cols-2 gap-x-4">
-
-                        {/* {error && (
-                          <Alert variant="destructive">
-                            <AlertIcon>
-                              <AlertCircle className="h-4 w-4" />
-                            </AlertIcon>
-                            <AlertTitle>{error}</AlertTitle>
-                          </Alert>
-                        )} */}
-
-                        {/* {success && (
-                          <Alert>
-                            <AlertIcon>
-                              <Check className="h-4 w-4 text-green-500" />
-                            </AlertIcon>
-                            <AlertTitle>{success}</AlertTitle>
-                          </Alert>
-                        )} */}
 
                         {/* FAB Type with Popover */}
                         <FormField
@@ -678,13 +656,7 @@ const NewFabIdForm = () => {
                               <Select
                                 onValueChange={(value) => {
                                   field.onChange(value);
-                                  // Auto-populate job number
-                                  if (effectiveJobsData && Array.isArray(effectiveJobsData)) {
-                                    const selectedJob = effectiveJobsData.find((job: any) => job.name === value);
-                                    if (selectedJob) {
-                                      form.setValue('jobNumber', selectedJob.job_number);
-                                    }
-                                  }
+                                  // Auto-populate job number and sales person will happen in useEffect
                                 }}
                                 value={field.value}
                                 disabled={isEffectiveJobsLoading || (selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0)}
@@ -746,13 +718,7 @@ const NewFabIdForm = () => {
                               <Select
                                 onValueChange={(value) => {
                                   field.onChange(value);
-                                  // Auto-populate job name
-                                  if (effectiveJobsData && Array.isArray(effectiveJobsData)) {
-                                    const selectedJob = effectiveJobsData.find((job: any) => job.job_number === value);
-                                    if (selectedJob) {
-                                      form.setValue('jobName', selectedJob.name);
-                                    }
-                                  }
+                                  // Auto-populate job name and sales person will happen in useEffect
                                 }}
                                 value={field.value}
                                 disabled={isEffectiveJobsLoading || (selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0)}
@@ -1047,28 +1013,44 @@ const NewFabIdForm = () => {
                           )}
                         />
 
-                        {/* Sales Person */}
+                        {/* Sales Person - Auto-populates when job is selected */}
                         <FormField
                           control={form.control}
                           name="selectedSalesPerson"
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Select Sales Person *</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value}>
+                              <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingSalesPersons}>
                                 <FormControl>
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select salesperson" />
+                                    <SelectValue placeholder={
+                                      isLoadingSalesPersons ? 'Loading sales persons...' : 'Select salesperson'
+                                    } />
                                   </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                  {salesPersons.map((person: any) => (
-                                    <SelectItem
-                                      key={person.id}
-                                      value={person.name}
-                                    >
-                                      {person.name}
-                                    </SelectItem>
-                                  ))}
+                                  {isLoadingSalesPersons ? (
+                                    <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                      Loading sales persons...
+                                    </div>
+                                  ) : isSalesPersonsError ? (
+                                    <div className="px-3 py-2 text-sm text-red-500 text-center">
+                                      Failed to load sales persons
+                                    </div>
+                                  ) : salesPersons.length === 0 ? (
+                                    <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                      No sales persons found
+                                    </div>
+                                  ) : (
+                                    salesPersons.map((person: any) => (
+                                      <SelectItem
+                                        key={person.id}
+                                        value={person.name}
+                                      >
+                                        {person.name}
+                                      </SelectItem>
+                                    ))
+                                  )}
                                 </SelectContent>
                               </Select>
                               <FormMessage />
@@ -1175,14 +1157,7 @@ const NewFabIdForm = () => {
                           )}
                         />
                       </div>
-                      {/* <div>
-                        <FormLabel>Sales Person</FormLabel>
-                        <div className="mt-1 p-3 bg-gray-50 rounded-md">
-                          <p className="text-sm font-medium text-gray-900">
-                            {user?.first_name}
-                          </p>
-                        </div>
-                      </div> */}
+
                       {/* Notes */}
                       <FormField
                         control={form.control}
@@ -1191,36 +1166,6 @@ const NewFabIdForm = () => {
                           <FormItem>
                             <div className="flex items-center justify-between">
                               <FormLabel>Notes</FormLabel>
-                              {/* <Popover open={showAddTemplate} onOpenChange={setShowAddTemplate}>
-                                <PopoverTrigger asChild>
-                                  <Button variant="ghost" size="sm">
-                                    <Plus className="w-4 h-4 mr-1" />
-                                    Schedule template
-                                  </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-80" align="end">
-                                  <div className="space-y-3">
-                                    <div>
-                                      <Label htmlFor="newTemplate">Template Details</Label>
-                                      <Textarea
-                                        id="newTemplate"
-                                        placeholder="Enter template details"
-                                        value={newTemplate}
-                                        onChange={(e) => setNewTemplate(e.target.value)}
-                                        rows={3}
-                                      />
-                                    </div>
-                                    <div className="flex justify-end gap-2">
-                                      <Button variant="outline" size="sm" onClick={() => setShowAddTemplate(false)}>
-                                        Cancel
-                                      </Button>
-                                      <Button size="sm" onClick={handleAddTemplate}>
-                                        Schedule
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </PopoverContent>
-                              </Popover> */}
                             </div>
                             <FormControl>
                               <Textarea

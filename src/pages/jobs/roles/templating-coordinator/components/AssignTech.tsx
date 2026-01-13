@@ -35,12 +35,7 @@ const assignTechnicianSchema = z.object({
   date: z
     .string()
     .min(1, { message: "date is required." })
-    .refine((date) => {
-      // Accept both YYYY-MM-DD and MM/DD/YYYY formats
-      const isoFormat = /^\d{4}-\d{2}-\d{2}$/;
-      const usFormat = /^\d{1,2}\/\d{1,2}\/\d{4}$/;
-      return isoFormat.test(date) || usFormat.test(date);
-    }, { message: "Date must be in MM/DD/YYYY or YYYY-MM-DD format." }),
+    .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Date must be in YYYY-MM-DD format." }),
   notes: z.string().optional(),
 });
 
@@ -78,18 +73,11 @@ export function AssignTechnicianModal({
         //   (emp: any) => `${emp.id}` === values.technician
         // );
 
-        // Convert date format if it's in US format (MM/DD/YYYY)
-        let scheduleDate = values.date;
-        if (/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(values.date)) {
-          const [month, day, year] = values.date.split("/");
-          scheduleDate = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
-        }
-
         const response = await scheduleTemplating({
           fab_id: Number(id),
           technician_id: Number(values.technician),
-          schedule_start_date: scheduleDate,
-          schedule_due_date: new Date(new Date(scheduleDate).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days after start
+          schedule_start_date: values.date,
+          schedule_due_date: new Date(new Date(values.date).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days after start
           total_sqft: "0", // This would be updated with actual value
           notes: [values.notes || ""],
         }).unwrap();
