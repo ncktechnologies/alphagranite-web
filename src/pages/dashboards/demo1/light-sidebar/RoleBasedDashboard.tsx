@@ -33,7 +33,7 @@ export function RoleBasedDashboard() {
    */
   const getRouteForWidget = (widgetId: string): string => {
     const routeMap: Record<string, string> = {
-      'FAB IDs': '/job/sales',
+      'FAB IDs': '/fabs',
       'Templating': '/job/templating',
       'Pre-draft Review': '/job/predraft',
       'Drafting': '/job/draft',

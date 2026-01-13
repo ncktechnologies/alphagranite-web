@@ -78,7 +78,7 @@ export function AppRoutingSetup() {
             element={<DepartmentDetailsPage />}
           />
           <Route
-            path="/job/sales"
+            path="/fabs"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <SalesPage/>
@@ -86,7 +86,7 @@ export function AppRoutingSetup() {
             }
           />
           <Route
-            path="/job/sales/:id"
+            path="/fabs/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <SalesDetailsPage/>
@@ -94,7 +94,7 @@ export function AppRoutingSetup() {
             }
           />
           <Route
-            path="/job/sales/edit/:id"
+            path="/fabs/edit/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <EditFabIdForm/>

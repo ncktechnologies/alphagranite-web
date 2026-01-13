@@ -104,7 +104,7 @@ export function SalesDetailsPage() {
   }
 
   const handleEdit = () => {
-    navigate(`/job/sales/edit/${id}`);
+    navigate(`/fabs/edit/${id}`);
   };
 
   return (
@@ -160,7 +160,7 @@ export function SalesDetailsPage() {
                   <Pencil className="h-4 w-4" />
                   Edit FAB Details
                 </Button>
-                <Link to="/job/sales">
+                <Link to="/fabs">
                   <Button variant="outline" className="w-full flex items-center gap-2">
                     <ArrowLeft className="h-4 w-4" />
                     Back to Sales

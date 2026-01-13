@@ -44,6 +44,11 @@ import { toast } from 'sonner';
 import { Can } from '@/components/permission';
 import JobFormSheet from './components/JobFormSheet';
 
+interface ExtendedJob extends Job {
+  sales_person_name?: string;
+  status?: string;
+}
+
 export const JobsSection = () => {
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -80,22 +85,25 @@ export const JobsSection = () => {
       status_id: job.status_id,
       created_at: job.created_at,
       updated_at: job.updated_at || 'N/A',
-    }));
+      // Add default values for sales person and status since they're not in the Job interface
+      sales_person_name: 'N/A',
+      status: job.status_id === 1 ? 'Active' : job.status_id === 2 ? 'Inactive' : job.status_id === 3 ? 'Completed' : 'N/A',
+    } as ExtendedJob));
   }, [jobsData]);
 
-  const handleView = (job: Job) => {
-    setSelectedJob(job);
+  const handleView = (job: ExtendedJob) => {
+    setSelectedJob(job as Job);
     setSheetMode('view');
     setIsSheetOpen(true);
   };
 
-  const handleEdit = (job: Job) => {
-    setSelectedJob(job);
+  const handleEdit = (job: ExtendedJob) => {
+    setSelectedJob(job as Job);
     setSheetMode('edit');
     setIsSheetOpen(true);
   };
 
-  const handleDelete = async (job: Job) => {
+  const handleDelete = async (job: ExtendedJob) => {
     if (window.confirm(`Are you sure you want to delete job ${job.name}?`)) {
       try {
         await deleteJob(job.id).unwrap();
@@ -118,18 +126,9 @@ export const JobsSection = () => {
     setPagination(prev => ({ ...prev, pageIndex: 0 }));
   }, [searchQuery, selectedStatus]);
 
-  const columns = useMemo<ColumnDef<Job>[]>(
+  const columns = useMemo<ColumnDef<ExtendedJob>[]>(
     () => [
-      // {
-      //   accessorKey: 'id',
-      //   accessorFn: (row) => row.id,
-      //   header: () => <DataGridTableRowSelectAll />,
-      //   cell: ({ row }) => <DataGridTableRowSelect row={row} />,
-      //   enableSorting: false,
-      //   enableHiding: false,
-      //   enableResizing: false,
-      //   size: 51,
-      // },
+    
       {
         id: 'name',
         accessorFn: (row) => row.name,
@@ -180,19 +179,30 @@ export const JobsSection = () => {
         enableSorting: true,
         size: 150,
       },
+    
       {
-        id: 'updated_at',
-        accessorFn: (row) => row.updated_at,
+        id: 'sales_person',
+        accessorFn: (row: any) => row.sales_person_name || 'N/A',
         header: ({ column }) => (
-          <DataGridColumnHeader title="UPDATED AT" column={column} />
+          <DataGridColumnHeader title="SALES PERSON" column={column} />
         ),
         cell: ({ row }) => (
-          <span className="text-sm text-text">
-            {row.original.updated_at && row.original.updated_at !== 'N/A' ? new Date(row.original.updated_at).toLocaleDateString() : 'N/A'}
-          </span>
+          <span className="text-sm text-text">{(row.original as any).sales_person_name || 'N/A'}</span>
         ),
         enableSorting: true,
         size: 150,
+      },
+      {
+        id: 'status',
+        accessorFn: (row: any) => row.status || 'N/A',
+        header: ({ column }) => (
+          <DataGridColumnHeader title="STATUS" column={column} />
+        ),
+        cell: ({ row }) => (
+          <span className="text-sm text-text">{(row.original as any).status || 'N/A'}</span>
+        ),
+        enableSorting: true,
+        size: 120,
       },
       {
         id: 'actions',
@@ -214,12 +224,7 @@ export const JobsSection = () => {
                 Edit
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem
-                className="text-destructive focus:text-destructive"
-                onClick={() => handleDelete(row.original)}
-              >
-                Delete
-              </DropdownMenuItem>
+             
             </DropdownMenuContent>
           </DropdownMenu>
         ),
@@ -234,7 +239,7 @@ export const JobsSection = () => {
     columns,
     data: jobs,
     pageCount: jobsData ? Math.ceil(jobsData.length / pagination.pageSize) : -1,
-    getRowId: (row: Job) => String(row.id),
+    getRowId: (row: ExtendedJob) => String(row.id),
     state: { pagination, sorting, rowSelection },
     columnResizeMode: 'onChange',
     onPaginationChange: setPagination,

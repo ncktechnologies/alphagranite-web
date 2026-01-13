@@ -376,19 +376,19 @@ export const JobTable = ({
     };
 
     const baseColumns = useMemo<ColumnDef<IJob>[]>(() => [
-        {
-            accessorKey: 'id',
-            accessorFn: (row: IJob) => row.id,
-            header: () => <DataGridTableRowSelectAll />,
-            cell: ({ row }) => <DataGridTableRowSelect row={row} />,
-            enableSorting: false,
-            enableHiding: false,
-            enableResizing: false,
-            size: 48,
-            meta: {
-                cellClassName: '',
-            },
-        },
+        // {
+        //     accessorKey: 'id',
+        //     accessorFn: (row: IJob) => row.id,
+        //     header: () => <DataGridTableRowSelectAll />,
+        //     cell: ({ row }) => <DataGridTableRowSelect row={row} />,
+        //     enableSorting: false,
+        //     enableHiding: false,
+        //     enableResizing: false,
+        //     size: 48,
+        //     meta: {
+        //         cellClassName: '',
+        //     },
+        // },
         {
             id: "fab_type",
             accessorKey: "fab_type",
