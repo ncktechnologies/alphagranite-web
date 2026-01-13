@@ -43,7 +43,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         // Optional fields with default values
         acct_name: '',
         template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '',
-        template_received: fab.current_stage === 'completed' ? 'Yes' : 'No',
+        // template_received: fab.current_stage === 'completed' ? 'Yes' : 'No',
         templater: fab.technician_name || '-',
         // no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
         total_sq_ft: String(fab.total_sqft || "-"),
