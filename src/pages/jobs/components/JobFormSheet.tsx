@@ -290,10 +290,10 @@ const JobFormSheet = ({
                         name="description"
                         render={({ field }) => (
                           <FormItem className="md:col-span-2">
-                            <FormLabel>Description</FormLabel>
+                            <FormLabel>Notes</FormLabel>
                             <FormControl>
                               <Textarea 
-                                placeholder="Enter job description" 
+                                placeholder="Enter job notes" 
                                 {...field} 
                                 disabled={isViewMode}
                                 rows={3}
