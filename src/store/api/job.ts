@@ -349,6 +349,7 @@ export interface Drafting {
     no_of_piece_drafted?: string | null;
     draft_note?: string | null;
     mentions?: string | null;
+    work_percentage_done?: number | null; // Percentage of work completed
     status_id: number;
     status_name?: string;
     created_at: string;
@@ -371,6 +372,7 @@ export interface DraftingUpdate {
     scheduled_start_date?: string;
     scheduled_end_date?: string;
     status_id?: number;
+    work_percentage_done?: number | null; // Add percentage of work completed
 }
 
 export interface DraftingSubmitReview {
@@ -1346,6 +1348,43 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Fab"],
             }),
+
+            // Manage drafting session (start, pause, resume, end)
+            manageDraftingSession: build.mutation<any, { fab_id: number; data: any }>({
+                query: ({ fab_id, data }) => ({
+                    url: `/drafting/${fab_id}/session`,
+                    method: "POST",
+                    data
+                }),
+                invalidatesTags: ["Fab", "Drafting"],
+            }),
+
+            // Get drafting session status
+            getDraftingSessionStatus: build.query<any, number>({
+                query: (fab_id) => ({
+                    url: `/drafting/${fab_id}/session-status`,
+                    method: "GET"
+                }),
+                providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
+            }),
+
+            // NEW: Get current drafting session details
+            getCurrentDraftingSession: build.query<any, number>({
+                query: (fab_id) => ({
+                    url: `/drafting/${fab_id}/session`,
+                    method: "GET"
+                }),
+                providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
+            }),
+
+            // NEW: Get drafting session history
+            getDraftingSessionHistory: build.query<any, number>({
+                query: (fab_id) => ({
+                    url: `/drafting/${fab_id}/session/history`,
+                    method: "GET"
+                }),
+                providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
+            }),
         };
     },
 });
@@ -1422,4 +1461,9 @@ export const {
     useDeleteFileFromFinalProgrammingMutation,
     useUpdateFinalProgrammingMutation,
     useManageFinalProgrammingSessionMutation, // Add the new hook
+    useManageDraftingSessionMutation, // Add drafting session management hook
+    useGetDraftingSessionStatusQuery, // Add drafting session status hook
+    // NEW: Export the new hooks
+    useGetCurrentDraftingSessionQuery,
+    useGetDraftingSessionHistoryQuery,
 } = jobApi;

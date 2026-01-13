@@ -5,6 +5,8 @@ import { useDataGrid } from '@/components/ui/data-grid';
 import { Cell, Column, flexRender, Header, HeaderGroup, Row } from '@tanstack/react-table';
 import { cva } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
+import { formatCalendarDate, formatUsDate } from '@/utils/date-utils';
+import { parseISO, isValid } from 'date-fns';
 
 const headerCellSpacingVariants = cva('', {
   variants: {
@@ -251,6 +253,10 @@ function DataGridTableBodyRow<TData>({
   dndStyle?: CSSProperties;
 }) {
   const { props, table } = useDataGrid();
+  
+  // Get custom row attributes from table meta
+  const customRowAttributes = (table.options.meta as any)?.['getRowAttributes'] ? 
+    (table.options.meta as any)['getRowAttributes'](row) : {};
 
   return (
     <tr
@@ -258,15 +264,16 @@ function DataGridTableBodyRow<TData>({
       style={{ ...(dndStyle ? dndStyle : null) }}
       data-state={table.options.enableRowSelection && row.getIsSelected() ? 'selected' : undefined}
       onClick={() => props.onRowClick && props.onRowClick(row.original)}
+      {...customRowAttributes}
       className={cn(
         'hover:bg-muted/40 data-[state=selected]:bg-muted/50 h-8',
         props.onRowClick && 'cursor-pointer',
         !props.tableLayout?.stripped &&
         props.tableLayout?.rowBorder &&
         'border-b border-border [&:not(:last-child)>td]:border-b',
-        props.tableLayout?.cellBorder && '[&_>:last-child]:border-e-0',
+        props.tableLayout?.cellBorder && '[&_:last-child]:border-e-0',
         props.tableLayout?.stripped && 'odd:bg-muted/90 hover:bg-transparent odd:hover:bg-muted',
-        table.options.enableRowSelection && '[&_>:first-child]:relative',
+        table.options.enableRowSelection && '[&_:first-child]:relative',
         props.tableClassNames?.bodyRow,
       )}
     >
@@ -437,7 +444,7 @@ function DataGridTable<TData extends object>() {
         }
 
         try {
-          const date = new Date(dateValue).toLocaleDateString();
+          const date = formatCalendarDate(dateValue);
           if (!acc[date]) acc[date] = [];
           acc[date].push(row);
         } catch (error) {
@@ -564,7 +571,20 @@ function DataGridTable<TData extends object>() {
                           className="px-2 py-1 text-left font-normal"
                         >
                           {isFirstColumn ? (
-                            <span className="text-[15px] leading-[15px] text-text whitespace-nowrap">{date}</span>
+                            <span className="text-[15px] leading-[15px] text-text whitespace-nowrap">
+                              {(() => {
+                                // Try to format the date as US format if it's a valid date
+                                try {
+                                  const parsedDate = typeof date === 'string' ? parseISO(date) : date;
+                                  if (isValid(parsedDate)) {
+                                    return formatUsDate(parsedDate);
+                                  }
+                                  return date; // fallback to original if not a valid date
+                                } catch {
+                                  return date; // fallback to original if parsing fails
+                                }
+                              })()}
+                            </span>
                           ) : shouldShowTotal ? (
                             <span className="text-[13px] leading-[13px] font-medium text-text">
                               {columnTotals[columnId]?.toFixed(1)}

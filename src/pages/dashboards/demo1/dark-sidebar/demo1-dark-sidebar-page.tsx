@@ -4,7 +4,8 @@ import {
   ToolbarActions,
   ToolbarHeading,
 } from '@/layouts/demo1/components/toolbar';
-import { addDays, format } from 'date-fns';
+import { addDays } from 'date-fns';
+import { formatDateRange, formatForDisplay } from '@/utils/date-utils';
 import { CalendarDays } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
@@ -38,12 +39,9 @@ const Demo1DarkSidebarPage = () => {
                   <CalendarDays size={16} className="me-0.5" />
                   {date?.from ? (
                     date.to ? (
-                      <>
-                        {format(date.from, 'LLL dd, y')} -{' '}
-                        {format(date.to, 'LLL dd, y')}
-                      </>
+                      formatDateRange(date.from, date.to)
                     ) : (
-                      format(date.from, 'LLL dd, y')
+                      formatForDisplay(date.from, 'DISPLAY_SHORT')
                     )
                   ) : (
                     <span>Pick a date range</span>

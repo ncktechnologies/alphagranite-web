@@ -36,6 +36,7 @@ const assignTechnicianSchema = z.object({
     .string()
     .min(1, { message: "date is required." })
     .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Date must be in YYYY-MM-DD format." }),
+  notes: z.string().optional(),
 });
 
 type AssignTechnicianData = z.infer<typeof assignTechnicianSchema>;
@@ -193,7 +194,7 @@ export function AssignTechnicianModal({
                       value={field.value ? new Date(field.value) : undefined}
                       onChange={(date) => {
                         if (!date) return field.onChange("");
-                        const formatted = date.toLocaleDateString("en-CA"); // YYYY-MM-DD without timezone issues
+                        const formatted = date.toLocaleDateString("en-US"); // MM/DD/YYYY format
                         field.onChange(formatted);
                       }}
 
@@ -229,9 +230,22 @@ export function AssignTechnicianModal({
                 </FormItem>
               )}
             />
-
-
-
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter any additional notes"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <DialogFooter className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={onClose}>

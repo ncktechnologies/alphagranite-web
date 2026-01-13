@@ -3,6 +3,15 @@ import { Button } from '@/components/ui/button';
 import { Play, Pause, Square } from 'lucide-react';
 import { toast } from 'sonner';
 import { Can } from '@/components/permission'; // Import Can component for permissions
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 
 interface TimeTrackingComponentProps {
   isDrafting: boolean;
@@ -10,9 +19,10 @@ interface TimeTrackingComponentProps {
   totalTime: number;
 
   onStart: (startDate: Date) => void | Promise<void>; // Allow async handler
-  onPause: () => void;
-  onResume: () => void;
+  onPause: (data?: { note?: string; sqft_drafted?: string }) => void | Promise<void>; // Add sqft parameter
+  onResume: (data?: { note?: string; sqft_drafted?: string }) => void | Promise<void>; // Add sqft parameter
   onEnd: (endDate: Date) => void;
+  onOnHold?: (data?: { note?: string; sqft_drafted?: string }) => void | Promise<void>; // Add sqft parameter - optional
 
   onTimeUpdate: (time: number) => void;
   hasEnded: boolean;
@@ -28,6 +38,7 @@ export const TimeTrackingComponent = ({
   onPause,
   onResume,
   onEnd,
+  onOnHold, // Make sure to destructure this prop
   onTimeUpdate,
   hasEnded,
   pendingFilesCount = 0,
@@ -40,6 +51,17 @@ export const TimeTrackingComponent = ({
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [isStarting, setIsStarting] = useState(false); // Track if starting process is in progress
+  
+  // Pause/Resume/OnHold notes state
+  const [pauseNote, setPauseNote] = useState<string>('');
+  const [pauseSqFt, setPauseSqFt] = useState<string>(''); // New state for square footage during pause
+  const [resumeNote, setResumeNote] = useState<string>('');
+  const [resumeSqFt, setResumeSqFt] = useState<string>(''); // New state for square footage during resume
+  const [onHoldNote, setOnHoldNote] = useState<string>('');
+  const [onHoldSqFt, setOnHoldSqFt] = useState<string>(''); // New state for square footage during on hold
+  const [showPauseModal, setShowPauseModal] = useState(false);
+  const [showResumeModal, setShowResumeModal] = useState(false);
+  const [showOnHoldModal, setShowOnHoldModal] = useState(false);
 
   // Tick every second
   useEffect(() => {
@@ -81,19 +103,106 @@ export const TimeTrackingComponent = ({
   };
 
   const handlePause = () => {
+    setShowPauseModal(true);
+  };
+
+  const confirmPause = async () => {
     const now = new Date();
     setPausedTime(now);
-    onPause();
+    try {
+      // Pass both note and sqft_drafted to the parent
+      await onPause({
+        note: pauseNote,
+        sqft_drafted: pauseSqFt
+      });
+      setPauseNote('');
+      setPauseSqFt(''); // Reset sqft after pause
+      setShowPauseModal(false);
+    } catch (error) {
+      console.error('Failed to pause:', error);
+      toast.error('Failed to pause drafting session');
+    }
+  };
+
+  const cancelPause = () => {
+    setPauseNote('');
+    setPauseSqFt('');
+    setShowPauseModal(false);
   };
 
   const handleResume = () => {
+    setShowResumeModal(true);
+  };
+
+  const confirmResume = async () => {
     if (startTime && pausedTime) {
       // Calculate paused duration and add to total paused time
       const pausedDuration = Math.floor((new Date().getTime() - pausedTime.getTime()) / 1000);
       setTotalPausedTime(prev => prev + pausedDuration);
     }
     setPausedTime(null);
-    onResume();
+    try {
+      // Pass both note and sqft_drafted to the parent
+      await onResume({
+        note: resumeNote,
+        sqft_drafted: resumeSqFt
+      });
+      setResumeNote('');
+      setResumeSqFt(''); // Reset sqft after resume
+      setShowResumeModal(false);
+    } catch (error) {
+      console.error('Failed to resume:', error);
+      toast.error('Failed to resume drafting session');
+    }
+  };
+
+  const cancelResume = () => {
+    setResumeNote('');
+    setResumeSqFt('');
+    setShowResumeModal(false);
+  };
+
+  const handleOnHold = () => {
+    setShowOnHoldModal(true);
+  };
+
+  const confirmOnHold = async () => {
+    const now = new Date();
+    setEndTime(now);
+    
+    // If currently paused, add the final paused duration
+    if (startTime && pausedTime) {
+      const pausedDuration = Math.floor((now.getTime() - pausedTime.getTime()) / 1000);
+      setTotalPausedTime(prev => prev + pausedDuration);
+    }
+
+    // Remove file requirement for on hold
+    // Show toast if no files have been uploaded, but don't prevent holding
+    if ((pendingFilesCount + uploadedFilesCount) === 0) {
+      toast.info('No files have been uploaded. Session will be placed on hold.');
+    }
+
+    try {
+      if (onOnHold) {
+        // Pass both note and sqft_drafted to the parent
+        await onOnHold({
+          note: onHoldNote,
+          sqft_drafted: onHoldSqFt
+        });
+      }
+      setOnHoldNote('');
+      setOnHoldSqFt(''); // Reset sqft after on hold
+      setShowOnHoldModal(false);
+    } catch (error) {
+      console.error('Failed to put on hold:', error);
+      toast.error('Failed to put drafting session on hold');
+    }
+  };
+
+  const cancelOnHold = () => {
+    setOnHoldNote('');
+    setOnHoldSqFt('');
+    setShowOnHoldModal(false);
   };
 
   const handleEnd = () => {
@@ -141,7 +250,6 @@ export const TimeTrackingComponent = ({
       .toString()
       .padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
-
 
   // ---------- RENDER ----------
   return (
@@ -222,24 +330,142 @@ export const TimeTrackingComponent = ({
                 </Button>
               )}
               <Button
-                onClick={handleEnd}
+                onClick={handleOnHold}
                 variant="inverse"
-                className="text-[#EF4444] border border-[#EF4444]"
-                disabled={(pendingFilesCount + uploadedFilesCount) === 0}
+                className="text-[#FF8C00] border border-[#FF8C00]"
+                // Remove file requirement for on hold
                 onMouseEnter={() => {
-                  if ((pendingFilesCount + uploadedFilesCount) === 0) {
-                    toast.warning('Please upload files before ending the session');
-                  }
+                  // Remove the file upload warning on mouse enter for on hold
                 }}
               >
                 <Square className="w-4 h-4 mr-2" />
-                End
+                On Hold
               </Button>
             </>
           ) : null}
         </div>
 
       </div>
+
+      {/* Modals - Using inline JSX instead of functions to avoid scope issues */}
+      <>
+        {/* Pause Modal */}
+        <Dialog open={showPauseModal} onOpenChange={setShowPauseModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Pause Drafting Session</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <label htmlFor="pause-sqft" className="block text-sm font-medium mb-2">
+                Square Feet Drafted So Far
+              </label>
+              <Input
+                id="pause-sqft"
+                value={pauseSqFt}
+                onChange={(e) => setPauseSqFt(e.target.value)}
+                placeholder="Enter square feet drafted"
+              />
+              
+              <label htmlFor="pause-note" className="block text-sm font-medium mt-4 mb-2">
+                Notes (Optional)
+              </label>
+              <Textarea
+                id="pause-note"
+                value={pauseNote}
+                onChange={(e) => setPauseNote(e.target.value)}
+                placeholder="Add notes about why you're pausing..."
+                rows={4}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={cancelPause}>
+                Cancel
+              </Button>
+              <Button type="button" onClick={confirmPause}>
+                Confirm Pause
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Resume Modal */}
+        <Dialog open={showResumeModal} onOpenChange={setShowResumeModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Resume Drafting Session</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <label htmlFor="resume-sqft" className="block text-sm font-medium mb-2">
+                Total Square Feet Drafted (Including Previous Sessions)
+              </label>
+              <Input
+                id="resume-sqft"
+                value={resumeSqFt}
+                onChange={(e) => setResumeSqFt(e.target.value)}
+                placeholder="Enter cumulative square feet drafted"
+              />
+              
+              <label htmlFor="resume-note" className="block text-sm font-medium mt-4 mb-2">
+                Notes (Optional)
+              </label>
+              <Textarea
+                id="resume-note"
+                value={resumeNote}
+                onChange={(e) => setResumeNote(e.target.value)}
+                placeholder="Add notes about why you're resuming..."
+                rows={4}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={cancelResume}>
+                Cancel
+              </Button>
+              <Button type="button" onClick={confirmResume}>
+                Confirm Resume
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* On Hold Modal */}
+        <Dialog open={showOnHoldModal} onOpenChange={setShowOnHoldModal}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Put Drafting Session On Hold</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <label htmlFor="onhold-sqft" className="block text-sm font-medium mb-2">
+                Total Square Feet Drafted So Far
+              </label>
+              <Input
+                id="onhold-sqft"
+                value={onHoldSqFt}
+                onChange={(e) => setOnHoldSqFt(e.target.value)}
+                placeholder="Enter total square feet drafted"
+              />
+              
+              <label htmlFor="onhold-note" className="block text-sm font-medium mt-4 mb-2">
+                Notes (Optional)
+              </label>
+              <Textarea
+                id="onhold-note"
+                value={onHoldNote}
+                onChange={(e) => setOnHoldNote(e.target.value)}
+                placeholder="Add notes about why you're putting on hold..."
+                rows={4}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={cancelOnHold}>
+                Cancel
+              </Button>
+              <Button type="button" onClick={confirmOnHold}>
+                Confirm On Hold
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </>
     </div>
   );
 };

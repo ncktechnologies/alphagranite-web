@@ -29,7 +29,8 @@ import {
 import { CalendarIcon, Check } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+// Use timezone-aware date utilities
+import { formatForDisplay, getCalendarMonth } from "@/utils/date-utils";
 import { cn } from "@/lib/utils";
 import { Alert, AlertIcon, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
@@ -150,8 +151,7 @@ export const ScheduleCuttingModal = ({
                 )}
               />
             </div>
-            {/* Schedule Date */}
-            {/* Schedule Date */}
+            {/* Schedule Date - TIMEZONE AWARE */}
             <FormField
               control={form.control}
               name="scheduleDate"
@@ -164,7 +164,8 @@ export const ScheduleCuttingModal = ({
                         <InputWrapper className="cursor-pointer">
                           <div className="flex items-center justify-between w-full px-3 py-2">
                             <span className={cn("text-sm", !field.value && "text-muted-foreground")}>
-                              {field.value ? format(field.value, "PPP") : "Select date"}
+                              {/* Use timezone-aware formatting */}
+                              {field.value ? formatForDisplay(field.value, 'DISPLAY_MEDIUM') : "Select date"}
                             </span>
                             <CalendarIcon className="w-4 h-4 text-muted-foreground" />
                           </div>
@@ -177,6 +178,8 @@ export const ScheduleCuttingModal = ({
                         selected={field.value}
                         onSelect={field.onChange}
                         disabled={(date) => date < new Date()}
+                        // Use timezone-consistent month navigation
+                        defaultMonth={getCalendarMonth(field.value)}
                       />
                     </PopoverContent>
                   </Popover>

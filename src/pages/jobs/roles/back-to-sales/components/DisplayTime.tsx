@@ -1,4 +1,4 @@
-import { format } from 'date-fns'
+import { formatForDisplay } from '@/utils/date-utils'
 
 interface TimeDisplayProps {
     startTime?: Date | null
@@ -9,9 +9,7 @@ interface TimeDisplayProps {
 export const TimeDisplay = ({ startTime, endTime, totalTime }: TimeDisplayProps) => {
     const formatTime = (date?: Date | null) => {
         if (!date) return '--'
-        return (
-            format(date, 'dd MMM yyyy | hh:mm a')
-        )
+        return formatForDisplay(date, 'DISPLAY_WITH_TIME')
     }
 
     const formatDuration = (seconds?: number) => {

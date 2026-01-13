@@ -38,7 +38,7 @@ import ActionsCell from '../../components/action';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DateRange } from 'react-day-picker';
-import { format } from 'date-fns';
+import { formatDate, formatDateRange } from '@/utils/date-utils';
 
 
 
@@ -305,9 +305,9 @@ const CuttingPlan = () => {
                                     <SelectValue placeholder="Date Filter">
                                         {dateFilter === 'custom' && dateRange?.from ? (
                                             dateRange.to ? (
-                                                `Custom: ${format(dateRange.from, 'd MMM yyyy')} - ${format(dateRange.to, 'd MMM yyyy')}`
+                                                `Custom: ${formatDateRange(dateRange.from, dateRange.to)}`
                                             ) : (
-                                                `Custom: ${format(dateRange.from, 'd MMM yyyy')}`
+                                                `Custom: ${formatDate(dateRange.from, 'DISPLAY_SHORT')}`
                                             )
                                         ) : (
                                             dateFilter === 'custom' ? 'Custom Range' : undefined
@@ -337,6 +337,7 @@ const CuttingPlan = () => {
                                     <Calendar
                                         initialFocus
                                         mode="range"
+                                        // Use consistent default month to prevent calendar jumping
                                         defaultMonth={tempDateRange?.from || new Date()}
                                         selected={tempDateRange}
                                         onSelect={setTempDateRange}

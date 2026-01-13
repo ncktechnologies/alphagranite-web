@@ -36,7 +36,8 @@ import { JOB_STAGES } from '@/hooks/use-job-stage';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DateRange } from 'react-day-picker';
-import { format } from 'date-fns';
+// Replace date-fns format with timezone-aware utilities
+import { formatDateRange, formatForDisplay } from '@/utils/date-utils';
 import { useTableState } from '@/hooks/use-table-state';
 
 interface JobTableProps {
@@ -96,8 +97,23 @@ export const JobTable = ({
     const fabTypeFilter = tableState?.fabTypeFilter || localFabTypeFilter;
     const setFabTypeFilter = tableState?.setFabTypeFilter || setLocalFabTypeFilter;
     const salesPersonFilter = (tableState as any)?.salesPersonFilter || localSalesPersonFilter;
-    const setSalesPersonFilter = (tableState as any)?.setSalesPersonFilter || setLocalSalesPersonFilter;
+    const setSalesPersonFilter = (tableState as any)?.setSalesPersonFilter || localSalesPersonFilter;
     const dateRange = tableState?.dateRange || localDateRange;
+    
+    // Helper function to safely render date range
+    const renderDateRange = () => {
+        if (dateRange && dateRange.from) {
+            if (dateRange.to) {
+                // Use US format for date range
+                return <>{formatForDisplay(dateRange.from, 'DISPLAY_US_FORMAT')} - {formatForDisplay(dateRange.to, 'DISPLAY_US_FORMAT')}</>;
+            } else {
+                // Use US format for single date
+                return <>{formatForDisplay(dateRange.from, 'DISPLAY_US_FORMAT')}</>;
+            }
+        }
+        return <span>Pick dates</span>;
+    };
+    
     const setDateRange = tableState?.setDateRange || setLocalDateRange;
     const scheduleFilter = tableState?.scheduleFilter || 'all';
     const setScheduleFilter = tableState?.setScheduleFilter || (() => { }); // No-op fallback
@@ -313,6 +329,52 @@ export const JobTable = ({
         });
     };
 
+    // Function to get row background color based on fab_type
+    const getRowBackgroundColor = (fabType: string) => {
+        switch (fabType?.toLowerCase()) {
+            case 'standard':
+                return 'bg-green-50 hover:bg-green-100';
+            case 'cust redo':
+                return 'bg-yellow-50 hover:bg-yellow-100';
+            case 'fast track':
+                return 'bg-red-50 hover:bg-red-100';
+            default:
+                return '';
+        }
+    };
+
+    // Function to generate fab info string
+    const generateFabInfo = (job: IJob) => {
+        const parts = [];
+        
+        // Add account name if available
+        if (job.acct_name) {
+            parts.push(job.acct_name);
+        }
+        
+        // Add job details
+        if (job.job_name) {
+            parts.push(job.job_name);
+        }
+        
+        // Add job number
+        if (job.job_no) {
+            parts.push(job.job_no);
+        }
+        
+        // Add pieces count
+        if (job.no_of_pieces) {
+            parts.push(`${job.no_of_pieces} pieces`);
+        }
+        
+        // Add square footage
+        if (job.total_sq_ft) {
+            parts.push(`${job.total_sq_ft} sq ft`);
+        }
+        
+        return parts.join(' - ');
+    };
+
     const baseColumns = useMemo<ColumnDef<IJob>[]>(() => [
         {
             accessorKey: 'id',
@@ -334,7 +396,7 @@ export const JobTable = ({
             header: ({ column }) => (
                 <DataGridColumnHeader title="FAB TYPE" column={column} />
             ),
-            cell: ({ row }) => <span className="text-xs">{row.original.fab_type}</span>,
+            cell: ({ row }) => <span className="text-xs capitalize">{row.original.fab_type}</span>,
             size: 100,
         },
         {
@@ -612,6 +674,18 @@ export const JobTable = ({
             size: 140,
         },
         {
+            id: "fab_info",
+            header: ({ column }) => (
+                <DataGridColumnHeader title="FAB INFO" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-xs break-words max-w-[300px]">
+                    {generateFabInfo(row.original)}
+                </span>
+            ),
+            size: 300,
+        },
+        {
             id: 'actions',
             header: '',
             cell: ({ row }) => (
@@ -623,7 +697,7 @@ export const JobTable = ({
             enableSorting: false,
             size: 60,
         },
-    ], [getPath, path]); // Add both getPath and path to dependencies
+    ], [getPath, path, dateRange]); // Add both getPath and path to dependencies
 
     // Filter columns based on data availability
     const columns = useMemo<ColumnDef<IJob>[]>(() => {
@@ -654,23 +728,30 @@ export const JobTable = ({
         getSortedRowModel: getSortedRowModel(),
         manualPagination: useBackendPagination,
         manualSorting: true, // Enable manual sorting to respect pre-sorted data
+        meta: {
+            getRowAttributes: (row: any) => ({
+                'data-fab-type': row.original.fab_type?.toLowerCase()
+            })
+        }
     });
 
     return (
-        <DataGrid
-            table={table}
-            recordCount={useBackendPagination ? totalRecords : filteredData.length}
-            isLoading={isLoading}
-            groupByDate
-            dateKey="date"
-            tableLayout={{
-                columnsPinnable: true,
-                columnsMovable: true,
-                columnsVisibility: true,
-                cellBorder: true,
-            }}
-            onRowClick={onRowClick ? (row) => handleRowClickInternal(row) : undefined}
-        >
+        <>
+
+            <DataGrid
+                table={table}
+                recordCount={useBackendPagination ? totalRecords : filteredData.length}
+                isLoading={isLoading}
+                groupByDate
+                dateKey="date"
+                tableLayout={{
+                    columnsPinnable: true,
+                    columnsMovable: true,
+                    columnsVisibility: true,
+                    cellBorder: true,
+                }}
+                onRowClick={onRowClick ? (row) => handleRowClickInternal(row) : undefined}
+            >
             {/* Rest of your component remains the same... */}
             <Card>
                 <CardHeader className="py-3.5 border-b">
@@ -733,30 +814,21 @@ export const JobTable = ({
                                     </SelectContent>
                                 </Select>
 
-                                {/* Custom Date Range Picker */}
+                                {/* Custom Date Range Picker - TIMEZONE AWARE */}
                                 {dateFilter === 'custom' && (
                                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                         <PopoverTrigger asChild>
                                             <Button variant="outline" size="sm" className="h-[34px]">
                                                 <CalendarDays className="h-4 w-4 mr-2" />
-                                                {dateRange?.from ? (
-                                                    dateRange.to ? (
-                                                        <>
-                                                            {format(dateRange.from, 'MMM dd')} - {format(dateRange.to, 'MMM dd, yyyy')}
-                                                        </>
-                                                    ) : (
-                                                        format(dateRange.from, 'MMM dd, yyyy')
-                                                    )
-                                                ) : (
-                                                    <span>Pick dates</span>
-                                                )}
+                                               {renderDateRange()}
                                             </Button>
                                         </PopoverTrigger>
                                         <PopoverContent className="w-auto p-0" align="start">
                                             <Calendar
                                                 initialFocus
                                                 mode="range"
-                                                defaultMonth={tempDateRange?.from || new Date()}
+                                                // Use timezone-consistent month navigation
+                                                defaultMonth={tempDateRange?.from ? new Date(tempDateRange.from) : new Date()}
                                                 selected={tempDateRange}
                                                 onSelect={setTempDateRange}
                                                 numberOfMonths={2}
@@ -858,5 +930,6 @@ export const JobTable = ({
                 </CardFooter>
             </Card>
         </DataGrid>
+        </>
     );
 };

@@ -19,7 +19,8 @@ const submissionSchema = z.object({
   totalSqFt: z.string().optional(),
   numberOfPieces: z.string().optional(),
   draftNotes: z.string().optional(),
-  mentions: z.string().optional(),
+  mentions: z.string().optional(), // Single string for multiple mentions (comma-separated)
+  workPercentage: z.string().optional(), // Percentage of work done
 });
 
 type SubmissionData = z.infer<typeof submissionSchema>;
@@ -36,9 +37,9 @@ interface SubmissionModalProps {
   onClose: (success?: boolean) => void;
   drafting: any; // the existing drafting response object (drafting.data must exist)
   uploadedFiles: UploadedFile[]; // uploaded file meta (must contain .id and .file)
-  draftStart?: Date | null;
-  draftEnd?: Date | null;
-  totalTime?: number; // tracked total time in seconds
+  draftStart?: Date | null; // NOTE: We don't use session timing data here anymore
+  draftEnd?: Date | null;   // NOTE: We don't use session timing data here anymore
+  totalTime?: number; // NOTE: We don't use session timing data here anymore
   fabId: number; // Add fabId prop
   userId: number; // Add userId prop for drafter ID
   fabData?: any; // Add fabData prop to get scheduling information
@@ -64,11 +65,13 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
     defaultValues: {
       totalSqFt: '',
       numberOfPieces: '',
-      draftNotes: ''
+      draftNotes: '',
+      mentions: '', // Initialize with empty string
+      workPercentage: '', // Initialize with empty string for percentage
     }
   });
 
-  // Updated handleFinalSubmit function
+  // Updated handleFinalSubmit function - REMOVED session timing data
   const handleFinalSubmit = async (values: SubmissionData) => {
     // Check if we have a drafting ID or need to create one
     let draftingId = drafting?.id ?? drafting?.data?.id;
@@ -138,16 +141,16 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
         }
       }
 
-      // Update drafting with other data
-      // Use the tracked totalTime passed from parent component for accurate time calculation
+      // Update drafting with ONLY final submission data (NO session timing data)
       const payload: any = {
-        drafter_start_date: draftStart ? draftStart.toISOString() : null,
-        drafter_end_date: draftEnd ? draftEnd.toISOString() : null,
+        // REMOVED: drafter_start_date: draftStart ? draftStart.toISOString() : null,
+        // REMOVED: drafter_end_date: draftEnd ? draftEnd.toISOString() : null,
         total_sqft_drafted: values.totalSqFt || null,
         no_of_piece_drafted: values.numberOfPieces || null,
-        total_hours_drafted: calculateTotalHoursFromTrackedTime(totalTime), // Use tracked time
+        // REMOVED: total_hours_drafted: calculateTotalHoursFromTrackedTime(totalTime), // Use tracked time
         draft_note: values.draftNotes || null,
         mentions: values.mentions || null,
+        work_percentage_done: values.workPercentage ? parseInt(values.workPercentage as string) || null : null, // Add percentage to payload
         is_completed: true,
         status_id: 1
       };
@@ -233,7 +236,7 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
               name="mentions"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Assign to sales</FormLabel>
+                  <FormLabel>Notify sales</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
@@ -244,6 +247,32 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
                       {salesPersons.map((person: any) => (
                         <SelectItem key={person.id} value={`${person.id}`}>
                           {person.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            {/* Work Percentage Done */}
+            <FormField
+              control={form.control}
+              name="workPercentage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Work Completed (%)</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select percentage completed" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((percent) => (
+                        <SelectItem key={percent} value={percent.toString()}>
+                          {percent}%
                         </SelectItem>
                       ))}
                     </SelectContent>
