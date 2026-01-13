@@ -904,8 +904,8 @@ export const jobApi = createApi({
 
             updateTemplating: build.mutation<any, { templating_id: number; notes?: string[] }>({
                 query: ({ templating_id, ...data }) => ({
-                    url: `/templating/technician/update/${templating_id}`,
-                    method: "patch",
+                    url: `/templating/${templating_id}`,
+                    method: "put",
                     data // Send as request body
                 }),
                 invalidatesTags: ["Fab"],
