@@ -43,7 +43,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         // Optional fields with default values
         acct_name: '',
         template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '',
-        // template_received: fab.current_stage === 'completed' ? 'Yes' : 'No',
+        template_received: fab.template_received  ? 'Yes' : 'No',
         templater: fab.technician_name || '-',
         // no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
         total_sq_ft: String(fab.total_sqft || "-"),
@@ -62,10 +62,10 @@ export function TemplatingPage() {
     // Fetch sales persons data for filter dropdown
     const { data: salesPersonsData } = useGetSalesPersonsQuery();
 
-    // Extract sales persons
-    const salesPersons = useMemo(() => {
+    // Create map of sales person names to IDs
+    const salesPersonIdMap = useMemo(() => {
         if (!salesPersonsData) {
-            return [];
+            return new Map<string, number>();
         }
 
         // Handle both possible response formats
@@ -76,19 +76,22 @@ export function TemplatingPage() {
             rawData = (salesPersonsData as any).data || [];
         }
 
-        // Extract names from sales person objects
-        const extractName = (item: { name: string } | string) => {
-            if (typeof item === 'string') {
-                return item;
+        // Create map of name -> id
+        const map = new Map<string, number>();
+        rawData.forEach(item => {
+            if (typeof item === 'object' && item !== null && item.id) {
+                const name = item.name || `${item.first_name} ${item.last_name}`.trim() || String(item);
+                map.set(name, item.id);
             }
-            if (typeof item === 'object' && item !== null) {
-                return item.name || String(item);
-            }
-            return String(item);
-        };
+        });
 
-        return rawData.map(extractName);
+        return map;
     }, [salesPersonsData]);
+
+    // Extract sales person names for dropdown
+    const salesPersons = useMemo(() => {
+        return Array.from(salesPersonIdMap.keys()).sort();
+    }, [salesPersonIdMap]);
 
     // Use independent table state for templating table
     const tableState = useTableState({
@@ -117,12 +120,15 @@ export function TemplatingPage() {
             params.fab_type = tableState.fabTypeFilter;
         }
 
-        // Add sales person filter using name
+        // Add sales person filter using ID
         if (tableState.salesPersonFilter && tableState.salesPersonFilter !== 'all') {
             if (tableState.salesPersonFilter === 'no_sales_person') {
-                params.sales_person_name = '';
+                params.sales_person_id = 0; // Assuming 0 or null represents no sales person
             } else {
-                params.sales_person_name = tableState.salesPersonFilter;
+                const salesPersonId = salesPersonIdMap.get(tableState.salesPersonFilter);
+                if (salesPersonId) {
+                    params.sales_person_id = salesPersonId;
+                }
             }
         }
 
@@ -256,9 +262,10 @@ export function TemplatingPage() {
                         useBackendPagination={true}
                         totalRecords={data?.total || 0}
                         tableState={tableState}
-                        showSalesPersonFilter={false}
+                        showSalesPersonFilter={true}
                         salesPersons={salesPersons}
-                        visibleColumns={['id', 'fab_id', 'job_name', 'date', 'current_stage', 'sales_person_name', 'templater', 'total_sq_ft', 'revenue', 'templating_notes', 'actions']}
+                        salesPersonFilterLabel="Filter by Templater"
+                        visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'template_received', 'templater']}
                         getPath={(job) => {
                             // Check if THIS SPECIFIC job has a template technician assigned
                             const hasTemplateTechnician = job.templater &&

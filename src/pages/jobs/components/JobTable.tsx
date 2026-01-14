@@ -51,6 +51,8 @@ interface JobTableProps {
     // Optional sales person filter
     showSalesPersonFilter?: boolean;
     salesPersons?: string[];
+    // Custom label for sales person filter (defaults to "Sales Person")
+    salesPersonFilterLabel?: string;
     // Backend pagination props (optional)
     useBackendPagination?: boolean;
     totalRecords?: number;
@@ -69,6 +71,7 @@ export const JobTable = ({
     showScheduleFilter = false,
     showSalesPersonFilter = false,
     salesPersons = [],
+    salesPersonFilterLabel = "Sales Person",
     useBackendPagination = false,
     totalRecords = 0,
     tableState,
@@ -262,8 +265,8 @@ export const JobTable = ({
             }
         }
 
-        // Sales Person filter (only when showSalesPersonFilter is true)
-        if (showSalesPersonFilter && salesPersonFilter !== 'all') {
+        // Sales Person filter (only apply client-side filtering when not using backend pagination)
+        if (!useBackendPagination && showSalesPersonFilter && salesPersonFilter !== 'all') {
             if (salesPersonFilter === 'no_sales_person') {
                 result = result.filter((job) => !job.sales_person_name || job.sales_person_name === '');
             } else {
@@ -1017,11 +1020,11 @@ export const JobTable = ({
                         {showSalesPersonFilter && uniqueSalesPersons && uniqueSalesPersons.length > 0 && (
                             <Select value={salesPersonFilter} onValueChange={setSalesPersonFilter}>
                                 <SelectTrigger className="w-[180px] h-[34px]">
-                                    <SelectValue placeholder="Sales Person" />
+                                    <SelectValue placeholder={salesPersonFilterLabel} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">All Sales Persons</SelectItem>
-                                    <SelectItem value="no_sales_person">No Sales Person</SelectItem>
+                                    <SelectItem value="all">{salesPersonFilterLabel.includes("Templater") ? "All Templaters" : "All Sales Persons"}</SelectItem>
+                                    <SelectItem value="no_sales_person">{salesPersonFilterLabel.includes("Templater") ? "No Templater" : "No Sales Person"}</SelectItem>
                                     {uniqueSalesPersons.map((person) => (
                                         <SelectItem key={person || 'N/A'} value={person || ''}>
                                             {person || 'N/A'}
