@@ -41,6 +41,8 @@ const transformFabToJob = (fab: Fab): IJob => {
     // templater: fab.technician_name || '-',
     draft_completed: '',
     review_completed: '',
+    file: (fabData.files && fabData.files.length > 0) ? fabData.files[0]?.name || 'File' : 'No File',
+    notes: fabData.notes?.length > 0 ? fabData.notes[0] || 'Notes' : 'No Notes',
   };
 };
 
@@ -180,7 +182,7 @@ export function DraftRevisionPage() {
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Error</AlertTitle>
                         <AlertDescription>
-                            {error ? `Failed to load FAB data: ${JSON.stringify(error.data)}` : "Failed to load FAB data"}
+                            {error ? `Failed to load FAB data: ${JSON.stringify((error as any)?.data || (error as any) || 'Unknown error')}` : "Failed to load FAB data"}
                         </AlertDescription>
                     </Alert>
                 </Container>
@@ -208,6 +210,7 @@ export function DraftRevisionPage() {
                 tableState={tableState}
                 showSalesPersonFilter={true}
                 salesPersons={salesPersons}
+                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'revision_reason', 'file', 'no_of_pieces', 'total_sq_ft', 'draft_notes', 'sales_person_name', 'revisor', 'revision_type', 'notes', 'revision_completed']}
             />
         </Container>
     );

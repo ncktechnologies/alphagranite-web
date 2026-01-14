@@ -53,6 +53,11 @@ interface JobTableProps {
     salesPersons?: string[];
     // Custom label for sales person filter (defaults to "Sales Person")
     salesPersonFilterLabel?: string;
+    // Optional templater filter
+    showTemplaterFilter?: boolean;
+    templaters?: string[];
+    templaterFilter?: string;
+    setTemplaterFilter?: (value: string) => void;
     // Backend pagination props (optional)
     useBackendPagination?: boolean;
     totalRecords?: number;
@@ -72,6 +77,10 @@ export const JobTable = ({
     showSalesPersonFilter = false,
     salesPersons = [],
     salesPersonFilterLabel = "Sales Person",
+    showTemplaterFilter = false,
+    templaters = [],
+    templaterFilter = "all",
+    setTemplaterFilter = () => {},
     useBackendPagination = false,
     totalRecords = 0,
     tableState,
@@ -752,7 +761,8 @@ export const JobTable = ({
                 <DataGridColumnHeader title="Drafting Notes" column={column} />
             ),
             cell: ({ row }) => {
-                const fabNotes = row.original.fab_notes || row.original.notes || [];
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
+                               Array.isArray(row.original.notes) ? row.original.notes : [];
                 const draftNotes = fabNotes.filter(note => note.stage === 'drafting');
                 
                 if (draftNotes.length === 0) {
@@ -779,7 +789,8 @@ export const JobTable = ({
                 <DataGridColumnHeader title="Final Programming Notes" column={column} />
             ),
             cell: ({ row }) => {
-                const fabNotes = row.original.fab_notes || row.original.notes || [];
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
+                               Array.isArray(row.original.notes) ? row.original.notes : [];
                 const fpNotes = fabNotes.filter(note => note.stage === 'final_programming');
                 
                 if (fpNotes.length === 0) {
@@ -806,7 +817,8 @@ export const JobTable = ({
                 <DataGridColumnHeader title="Pre-Draft Notes" column={column} />
             ),
             cell: ({ row }) => {
-                const fabNotes = row.original.fab_notes || row.original.notes || [];
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
+                               Array.isArray(row.original.notes) ? row.original.notes : [];
                 const preDraftNotes = fabNotes.filter(note => note.stage === 'pre_draft_review');
                 
                 if (preDraftNotes.length === 0) {
@@ -833,7 +845,8 @@ export const JobTable = ({
                 <DataGridColumnHeader title="Cutting Notes" column={column} />
             ),
             cell: ({ row }) => {
-                const fabNotes = row.original.fab_notes || row.original.notes || [];
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
+                               Array.isArray(row.original.notes) ? row.original.notes : [];
                 const cuttingNotes = fabNotes.filter(note => note.stage === 'cutting');
                 
                 if (cuttingNotes.length === 0) {
@@ -860,7 +873,8 @@ export const JobTable = ({
                 <DataGridColumnHeader title="Slab Smith Notes" column={column} />
             ),
             cell: ({ row }) => {
-                const fabNotes = row.original.fab_notes || row.original.notes || [];
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
+                               Array.isArray(row.original.notes) ? row.original.notes : [];
                 const slabSmithNotes = fabNotes.filter(note => note.stage === 'slab_smith');
                 
                 if (slabSmithNotes.length === 0) {
@@ -887,7 +901,8 @@ export const JobTable = ({
                 <DataGridColumnHeader title="SCT Notes" column={column} />
             ),
             cell: ({ row }) => {
-                const fabNotes = row.original.fab_notes || row.original.notes || [];
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
+                               Array.isArray(row.original.notes) ? row.original.notes : [];
                 const sctNotes = fabNotes.filter(note => note.stage === 'sales_ct');
                 
                 if (sctNotes.length === 0) {
@@ -914,7 +929,8 @@ export const JobTable = ({
                 <DataGridColumnHeader title="Draft/Revision Notes" column={column} />
             ),
             cell: ({ row }) => {
-                const fabNotes = row.original.fab_notes || row.original.notes || [];
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
+                               Array.isArray(row.original.notes) ? row.original.notes : [];
                 const draftRevisionNotes = fabNotes.filter(note => 
                     note.stage === 'draft' || note.stage === 'revision'
                 );
@@ -937,6 +953,58 @@ export const JobTable = ({
             },
             enableSorting: false,
             size: 180,
+        },
+        
+        // Draft Notes Column
+        {
+            id: 'draft_notes',
+            header: ({ column }) => (
+                <DataGridColumnHeader title="Draft Notes" column={column} />
+            ),
+            cell: ({ row }) => {
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
+                               Array.isArray(row.original.notes) ? row.original.notes : [];
+                const draftNotes = fabNotes.filter(note => note.stage === 'drafting');
+                
+                if (draftNotes.length === 0) {
+                    return <span className="text-xs text-gray-500 italic">No notes</span>;
+                }
+                
+                const latestNote = draftNotes[0];
+                return (
+                    <div className="text-xs max-w-xs" title={latestNote.note}>
+                        <div className="font-medium text-green-700 truncate">D:</div>
+                        <div className="truncate">{latestNote.note}</div>
+                        <div className="text-gray-500 text-xs">by {latestNote.created_by_name || 'Unknown'}</div>
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 180,
+        },
+        
+        // File Column
+        {
+            id: 'file',
+            accessorKey: 'file',
+            accessorFn: (row: IJob) => row.file,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="FILE" column={column} />
+            ),
+            cell: ({ row }) => <span className="text-xs">{row.original.file || '-'}</span>,
+            size: 120,
+        },
+        
+        // Notes Column
+        {
+            id: 'notes',
+            accessorKey: 'notes',
+            accessorFn: (row: IJob) => row.notes,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="NOTES" column={column} />
+            ),
+            cell: ({ row }) => <span className="text-xs">{row.original.notes || '-'}</span>,
+            size: 150,
         },
         {
             id: 'actions',
@@ -1168,6 +1236,23 @@ export const JobTable = ({
                                     {uniqueSalesPersons.map((person) => (
                                         <SelectItem key={person || 'N/A'} value={person || ''}>
                                             {person || 'N/A'}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
+                        
+                        {showTemplaterFilter && templaters && templaters.length > 0 && (
+                            <Select value={templaterFilter} onValueChange={setTemplaterFilter}>
+                                <SelectTrigger className="w-[180px] h-[34px]">
+                                    <SelectValue placeholder="Filter by Templater" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Templaters</SelectItem>
+                                    <SelectItem value="no_templater">No Templater Assigned</SelectItem>
+                                    {templaters.map((templater) => (
+                                        <SelectItem key={templater} value={templater}>
+                                            {templater}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>

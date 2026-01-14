@@ -6,10 +6,11 @@ import { useLocation, Link, useNavigate } from 'react-router';
 import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useGetFabsQuery, Fab } from '@/store/api/job';
-import { useGetSalesPersonsQuery } from '@/store/api/employee';
+import { useGetTemplatersQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
@@ -41,7 +42,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         current_stage: fab.current_stage,
         sales_person_name: fab.sales_person_name || '',
         // Optional fields with default values
-        acct_name: '',
+        acct_name: fab.account_name || '',
         template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '',
         template_received: fab.template_received  ? 'Yes' : 'No',
         templater: fab.technician_name || '-',
@@ -53,27 +54,36 @@ const transformFabToJob = (fab: Fab): IJob => {
         sct_completed: '',
         draft_completed: '',
         fab_notes: fab.fab_notes || [],
+        // Add material specification fields
+        stone_type_name: fab.stone_type_name || '',
+        stone_color_name: fab.stone_color_name || '',
+        stone_thickness_value: fab.stone_thickness_value || '',
+        edge_name: fab.edge_name || '',
+        no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
     };
 };
 
 export function TemplatingPage() {
     const navigate = useNavigate();
     
-    // Fetch sales persons data for filter dropdown
-    const { data: salesPersonsData } = useGetSalesPersonsQuery();
-
-    // Create map of sales person names to IDs
-    const salesPersonIdMap = useMemo(() => {
-        if (!salesPersonsData) {
+    // Fetch templaters data for filter dropdown
+    const { data: templatersData } = useGetTemplatersQuery();
+    
+    // Separate state for templater filter
+    const [templaterFilter, setTemplaterFilter] = useState<string>('all');
+    
+    // Create map of templater names to IDs
+    const templaterIdMap = useMemo(() => {
+        if (!templatersData) {
             return new Map<string, number>();
         }
 
         // Handle both possible response formats
         let rawData: any[] = [];
-        if (Array.isArray(salesPersonsData)) {
-            rawData = salesPersonsData;
-        } else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData) {
-            rawData = (salesPersonsData as any).data || [];
+        if (Array.isArray(templatersData)) {
+            rawData = templatersData;
+        } else if (typeof templatersData === 'object' && 'data' in templatersData) {
+            rawData = (templatersData as any).data || [];
         }
 
         // Create map of name -> id
@@ -86,12 +96,12 @@ export function TemplatingPage() {
         });
 
         return map;
-    }, [salesPersonsData]);
+    }, [templatersData]);
 
-    // Extract sales person names for dropdown
-    const salesPersons = useMemo(() => {
-        return Array.from(salesPersonIdMap.keys()).sort();
-    }, [salesPersonIdMap]);
+    // Extract templater names for dropdown
+    const templaters = useMemo(() => {
+        return Array.from(templaterIdMap.keys()).sort();
+    }, [templaterIdMap]);
 
     // Use independent table state for templating table
     const tableState = useTableState({
@@ -120,14 +130,14 @@ export function TemplatingPage() {
             params.fab_type = tableState.fabTypeFilter;
         }
 
-        // Add sales person filter using ID
-        if (tableState.salesPersonFilter && tableState.salesPersonFilter !== 'all') {
-            if (tableState.salesPersonFilter === 'no_sales_person') {
-                params.sales_person_id = 0; // Assuming 0 or null represents no sales person
+        // Add templater filter using templater_id
+        if (templaterFilter !== 'all') {
+            if (templaterFilter === 'no_templater') {
+                params.templater_id = 0; // Assuming 0 or null represents no templater
             } else {
-                const salesPersonId = salesPersonIdMap.get(tableState.salesPersonFilter);
-                if (salesPersonId) {
-                    params.sales_person_id = salesPersonId;
+                const templaterId = templaterIdMap.get(templaterFilter);
+                if (templaterId) {
+                    params.templater_id = templaterId;
                 }
             }
         }
@@ -160,10 +170,11 @@ export function TemplatingPage() {
         tableState.pagination.pageSize,
         tableState.searchQuery,
         tableState.fabTypeFilter,
-        tableState.salesPersonFilter,
-        tableState.scheduleFilter, // Add scheduleFilter dependency
+        templaterFilter,
+        tableState.scheduleFilter,
         tableState.dateFilter,
         tableState.dateRange,
+        templaterIdMap, // Add templaterIdMap dependency
     ]);
 
     // Fetch data with backend pagination and filtering
@@ -255,16 +266,17 @@ export function TemplatingPage() {
                 <TabsContent value="all" className="mt-4">
                     <JobTable 
                         jobs={jobsData}
-                        path="templating" // Add the missing path prop
+                        path="templating"
                         showScheduleFilter={true}
                         isLoading={isLoading || isFetching}
-                        // onRowClick={handleRowClick}
                         useBackendPagination={true}
                         totalRecords={data?.total || 0}
                         tableState={tableState}
-                        showSalesPersonFilter={true}
-                        salesPersons={salesPersons}
-                        salesPersonFilterLabel="Filter by Templater"
+                        showTemplaterFilter={true}
+                        templaters={templaters}
+                        templaterFilter={templaterFilter}
+                        setTemplaterFilter={setTemplaterFilter}
+
                         visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'templating_notes',  'templater']}
                         getPath={(job) => {
                             // Check if THIS SPECIFIC job has a template technician assigned
