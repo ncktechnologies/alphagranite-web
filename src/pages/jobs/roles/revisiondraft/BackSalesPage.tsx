@@ -14,36 +14,41 @@ import { AlertCircle } from 'lucide-react';
 
 // Transform Fab data to match IJob interface
 const transformFabToJob = (fab: Fab): IJob => {
-  const fabData = fab as any; // Cast to any to access API-specific properties
-  return {
-    id: fab.id,
-    fab_type: fab.fab_type,
-    fab_id: String(fab.id),
-    job_name: `${fab.job_details?.name}`,
-    job_no: String(fab.job_details?.job_number),
-    date: fab.updated_at || '',
-    current_stage: fab.current_stage,
-    sales_person_name: fab.sales_person_name || '',
-    // Optional fields with default values
-    acct_name: '',
-    no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
-    total_sq_ft: String(fab.total_sqft || "-"),
-    // revenue: fab.job_details?.project_value || "-",
-    // gp: "-",
-    revision_completed: fabData.sales_ct_data?.is_revision_completed ? 'Yes' : 'No',
-    revisor: fabData.sales_ct_data?.updated_by_name || '',
-    revision_number: fabData.sales_ct_data?.current_revision_count ? `#${fabData.sales_ct_data.current_revision_count}` : '#1',
-    revision_reason: fabData.sales_ct_data?.revision_reason || fabData.sales_ct_data?.draft_note || 'N/A',
-    revision_type: fabData.sales_ct_data?.revision_type || '-',
-    sct_completed: '',
-    // template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
-    // template_received: '',
-    // templater: fab.technician_name || '-',
-    draft_completed: '',
-    review_completed: '',
-    file: (fabData.files && fabData.files.length > 0) ? fabData.files[0]?.name || 'File' : 'No File',
-    notes: fabData.notes?.length > 0 ? fabData.notes[0] || 'Notes' : 'No Notes',
-  };
+    const fabData = fab as any; // Cast to any to access API-specific properties
+    return {
+        id: fab.id,
+        fab_type: fab.fab_type,
+        fab_id: String(fab.id),
+        job_name: `${fab.job_details?.name}`,
+        job_no: String(fab.job_details?.job_number),
+        date: fab.updated_at || '',
+        current_stage: fab.current_stage,
+        sales_person_name: fab.sales_person_name || '',
+        // Optional fields with default values
+        acct_name: '',
+        no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
+        total_sq_ft: String(fab.total_sqft || "-"),
+        // revenue: fab.job_details?.project_value || "-",
+        // gp: "-",
+        revision_completed: fabData.sales_ct_data?.is_revision_completed ? 'Yes' : 'No',
+        revisor: fabData.sales_ct_data?.updated_by_name || '',
+        revision_number: fabData.sales_ct_data?.current_revision_count ? `#${fabData.sales_ct_data.current_revision_count}` : '#1',
+        revision_reason: fabData.sales_ct_data?.revision_reason || fabData.sales_ct_data?.draft_note || 'N/A',
+        revision_type: fabData.sales_ct_data?.revision_type || '-',
+        sct_completed: '',
+        // template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
+        // template_received: '',
+        // templater: fab.technician_name || '-',
+        draft_completed: '',
+        review_completed: '',
+        file: (fabData.files && fabData.files.length > 0) ? fabData.files[0]?.name || 'File' : 'No File',
+        notes: fabData.notes?.length > 0 ? fabData.notes[0] || 'Notes' : 'No Notes',
+        stone_type_name: fab.stone_type_name || '',
+        stone_color_name: fab.stone_color_name || '',
+        stone_thickness_value: fab.stone_thickness_value || '',
+        edge_name: fab.edge_name || '',
+        fab_notes: fab.fab_notes || [],
+    };
 };
 
 export function DraftRevisionPage() {

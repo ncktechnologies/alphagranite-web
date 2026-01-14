@@ -52,6 +52,11 @@ const transformFabToJob = (fab: Fab): IJob => {
     // sct_completed: '',
     // template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
     // templater: fab.technician_name || '-',
+         // Add material specification fields
+        stone_type_name: fab.stone_type_name || '',
+        stone_color_name: fab.stone_color_name || '',
+        stone_thickness_value: fab.stone_thickness_value || '',
+        edge_name: fab.edge_name || '',
   };
 };
 

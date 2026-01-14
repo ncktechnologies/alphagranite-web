@@ -14,47 +14,51 @@ import { useIsSuperAdmin } from '@/hooks/use-permission';
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
-  if (!dateString) return '-';
-  
-  try {
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = date.toLocaleString('en-US', { month: 'short' });
-    const year = date.getFullYear();
-    return `${day} ${month}, ${year}`;
-  } catch (error) {
-    return '-';
-  }
+    if (!dateString) return '-';
+
+    try {
+        const date = new Date(dateString);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = date.toLocaleString('en-US', { month: 'short' });
+        const year = date.getFullYear();
+        return `${day} ${month}, ${year}`;
+    } catch (error) {
+        return '-';
+    }
 };
 
 // Transform Fab data to match IJob interface
 const transformFabToJob = (fab: Fab): IJob => {
-  return {
-    id: fab.id,
-    fab_type: fab.fab_type,
-    fab_id: String(fab.id),
-    job_name: `${fab.job_details?.name}`,
-    job_no: String(fab.job_details?.job_number),
-    date: fab.updated_at || fab.templating_schedule_due_date || '',
-    current_stage: fab.current_stage,
-    sales_person_name: fab.sales_person_name || '',
-    // Optional fields with default values
-    acct_name: '',
-    template_received: fab.template_received ? 'Yes' : 'No',
-    template_needed: fab.template_needed ? 'No' : 'Yes',
-    // no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
-    total_sq_ft: String(fab.total_sqft || "-"),
-    revenue: fab.job_details?.project_value || "-",
-    gp: "-",
-    revised: '',
-    sct_completed: '',
-    draft_completed: '',
-    review_completed: fab.current_stage === 'completed' ? 'Yes' : 'No',
-    template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
-    templater: fab.technician_name || '-',
-    fab_notes: fab.fab_notes || [],
+    return {
+        id: fab.id,
+        fab_type: fab.fab_type,
+        fab_id: String(fab.id),
+        job_name: `${fab.job_details?.name}`,
+        job_no: String(fab.job_details?.job_number),
+        date: fab.updated_at || fab.templating_schedule_due_date || '',
+        current_stage: fab.current_stage,
+        sales_person_name: fab.sales_person_name || '',
+        // Optional fields with default values
+        acct_name: '',
+        template_received: fab.template_received ? 'Yes' : 'No',
+        template_needed: fab.template_needed ? 'No' : 'Yes',
+        // no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
+        total_sq_ft: String(fab.total_sqft || "-"),
+        revenue: fab.job_details?.project_value || "-",
+        gp: "-",
+        revised: '',
+        sct_completed: '',
+        draft_completed: '',
+        review_completed: fab.current_stage === 'completed' ? 'Yes' : 'No',
+        template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
+        templater: fab.technician_name || '-',
+        stone_type_name: fab.stone_type_name || '',
+        stone_color_name: fab.stone_color_name || '',
+        stone_thickness_value: fab.stone_thickness_value || '',
+        edge_name: fab.edge_name || '',
+        fab_notes: fab.fab_notes || [],
 
-  };
+    };
 };
 
 export function PredraftPage() {

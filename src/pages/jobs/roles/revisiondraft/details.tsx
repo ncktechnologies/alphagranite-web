@@ -22,6 +22,16 @@ import { useSelector } from 'react-redux';
 import { Can } from '@/components/permission';
 import { BackButton } from '@/components/common/BackButton';
 
+// Helper function to filter fab notes by stage
+const filterNotesByStage = (fabNotes: any[], stage: string) => {
+  return fabNotes.filter(note => note.stage === stage);
+};
+
+// Helper function to get all fab notes (unfiltered)
+const getAllFabNotes = (fabNotes: any[]) => {
+  return fabNotes || [];
+};
+
 const ReviewDetailsPage = () => {
     type ViewMode = 'activity' | 'file' | 'edit';
     const [showSubmissionModal, setShowSubmissionModal] = useState(false);
@@ -173,8 +183,7 @@ const ReviewDetailsPage = () => {
             ],
         },
         {
-            title: "",
-            sectionTitle: "Drafting notes",
+            title: "Drafting Notes",
             type: "notes",
             notes: draftData ? [
                 {
@@ -186,6 +195,17 @@ const ReviewDetailsPage = () => {
                 }
             ] : [], // Empty array if no draft data
         },
+        {
+            title: "FAB Notes",
+            type: "notes",
+            notes: getAllFabNotes(fabData?.fab_notes || []).map(note => ({
+                id: note.id,
+                avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+                content: note.note,
+                author: note.created_by_name || 'Unknown',
+                timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+            }))
+        }
     ];
 
     // Handle loading and error states AFTER all hooks are declared

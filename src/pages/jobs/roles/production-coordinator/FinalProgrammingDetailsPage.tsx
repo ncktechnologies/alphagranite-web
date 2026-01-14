@@ -24,6 +24,16 @@ import { UploadedFileMeta } from '@/types/uploads';
 import { X } from 'lucide-react';
 import { Can } from '@/components/permission'; // Import Can component for permissions
 
+// Helper function to filter fab notes by stage
+const filterNotesByStage = (fabNotes: any[], stage: string) => {
+  return fabNotes.filter(note => note.stage === stage);
+};
+
+// Helper function to get all fab notes (unfiltered)
+const getAllFabNotes = (fabNotes: any[]) => {
+  return fabNotes || [];
+};
+
 export function FinalProgrammingDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const fabId = id ? Number(id) : 0;
@@ -209,6 +219,17 @@ export function FinalProgrammingDetailsPage() {
         timestamp: "",
       })) || [],
     },
+    {
+      title: "FAB Notes",
+      type: "notes",
+      notes: getAllFabNotes(fabData?.fab_notes || []).map(note => ({
+        id: note.id,
+        avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+        content: note.note,
+        author: note.created_by_name || 'Unknown',
+        timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+      }))
+    }
   ];
 
   if (isFabLoading || isFPLoading) {

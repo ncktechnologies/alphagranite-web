@@ -15,6 +15,16 @@ import { FileViewer } from '../drafters/components';
 import { Can } from '@/components/permission';
 import { BackButton } from '@/components/common/BackButton';
 
+// Helper function to filter fab notes by stage
+const filterNotesByStage = (fabNotes: any[], stage: string) => {
+  return fabNotes.filter(note => note.stage === stage);
+};
+
+// Helper function to get all fab notes (unfiltered)
+const getAllFabNotes = (fabNotes: any[]) => {
+  return fabNotes || [];
+};
+
 const CutListDetailsPage = () => {
     type ViewMode = 'activity' | 'file';
     const [viewMode, setViewMode] = useState<ViewMode>('activity');
@@ -55,8 +65,7 @@ const CutListDetailsPage = () => {
             ],
         },
         {
-            title: "",
-            sectionTitle: "Drafting Notes",
+            title: "Drafting Notes",
             type: "notes",
             // Use actual drafting notes from FAB response
             notes: draftData ? [
@@ -69,6 +78,17 @@ const CutListDetailsPage = () => {
                 }
             ] : [], // Empty array if no draft data
         },
+        {
+            title: "FAB Notes",
+            type: "notes",
+            notes: getAllFabNotes(fabData?.fab_notes || []).map(note => ({
+                id: note.id,
+                avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+                content: note.note,
+                author: note.created_by_name || 'Unknown',
+                timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+            }))
+        }
     ];
 
     return (

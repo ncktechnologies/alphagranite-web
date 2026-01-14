@@ -9,6 +9,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 
+// Helper function to filter fab notes by stage
+const filterNotesByStage = (fabNotes: any[], stage: string) => {
+  return fabNotes.filter(note => note.stage === stage);
+};
+
+// Helper function to get all fab notes (unfiltered)
+const getAllFabNotes = (fabNotes: any[]) => {
+  return fabNotes || [];
+};
+
 export function PreDraftDetailsPage() {
     const { id } = useParams<{ id: string }>();
     const { data: fab, isLoading, isError, error } = useGetFabByIdQuery(Number(id));
@@ -108,24 +118,23 @@ export function PreDraftDetailsPage() {
         { label: 'Total square ft', value: String(fab.total_sqft) },
     ] : [];
 
-    const sidebarSections = fab && (fab as any).templating_notes ? [
+    const sidebarSections = [
         {
-            title: "Notes",
-            type: "notes",
-            notes: (fab as any).templating_notes.map((note: string, index: number) => ({
-                id: index + 1,
-                avatar: fab.technician_name ? fab.technician_name.charAt(0) : 'T',
-                content: note,
-                author: fab.technician_name || 'Technician',
-                timestamp: fab.templating_schedule_start_date ? new Date(fab.templating_schedule_start_date).toLocaleDateString() : 'N/A',
-            })),
+            title: "Job Information",
+            type: "details",
+            items: jobInfo,
         },
-    ] : [
         {
-            title: "Notes",
+            title: "FAB Notes",
             type: "notes",
-            notes: [],
-        },
+            notes: getAllFabNotes(fab?.fab_notes || []).map(note => ({
+                id: note.id,
+                avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+                content: note.note,
+                author: note.created_by_name || 'Unknown',
+                timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+            }))
+        }
     ];
 
     return (

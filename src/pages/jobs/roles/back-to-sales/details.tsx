@@ -18,6 +18,16 @@ import { toast } from 'sonner';
 import { useAuth } from '@/auth/context/auth-context';
 import { Can } from '@/components/permission';
 
+// Helper function to filter fab notes by stage
+const filterNotesByStage = (fabNotes: any[], stage: string) => {
+  return fabNotes.filter(note => note.stage === stage);
+};
+
+// Helper function to get all fab notes (unfiltered)
+const getAllFabNotes = (fabNotes: any[]) => {
+  return fabNotes || [];
+};
+
 // Add a simple loading component
 const LoadingSpinner = () => (
   <div className="flex items-center justify-center h-64">
@@ -154,8 +164,7 @@ const DraftReviewDetailsPage = () => {
             ],
         },
         {
-            title: "",
-            sectionTitle: "Drafting Notes",
+            title: "Drafting Notes",
             type: "notes",
             notes: draftData ? [
                 {
@@ -167,6 +176,17 @@ const DraftReviewDetailsPage = () => {
                 }
             ] : [],
         },
+        {
+            title: "FAB Notes",
+            type: "notes",
+            notes: getAllFabNotes(fabData?.fab_notes || []).map(note => ({
+                id: note.id,
+                avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+                content: note.note,
+                author: note.created_by_name || 'Unknown',
+                timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+            }))
+        }
     ];
     
     return (

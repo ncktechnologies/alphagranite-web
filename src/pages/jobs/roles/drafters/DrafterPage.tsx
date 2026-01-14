@@ -30,6 +30,12 @@ export const transformFabToJob = (fab: Fab): IJob => {
         template_received: '',
         revised: '',
         sct_completed: '',
+             // Add material specification fields
+        stone_type_name: fab.stone_type_name || '',
+        stone_color_name: fab.stone_color_name || '',
+        stone_thickness_value: fab.stone_thickness_value || '',
+        edge_name: fab.edge_name || '',
+        fab_notes: fab.fab_notes || [],
     };
 };
 

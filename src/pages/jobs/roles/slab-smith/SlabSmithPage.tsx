@@ -13,52 +13,57 @@ import { AlertCircle } from 'lucide-react';
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
-  if (!dateString) return '-';
-  
-  try {
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = date.toLocaleString('en-US', { month: 'short' });
-    const year = date.getFullYear();
-    return `${day} ${month}, ${year}`;
-  } catch (error) {
-    return '-';
-  }
+    if (!dateString) return '-';
+
+    try {
+        const date = new Date(dateString);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = date.toLocaleString('en-US', { month: 'short' });
+        const year = date.getFullYear();
+        return `${day} ${month}, ${year}`;
+    } catch (error) {
+        return '-';
+    }
 };
 
 // Transform Fab data to match IJob interface
 const transformFabToJob = (fab: Fab): IJob => {
-  return {
-    id: fab.id,
-    fab_type: fab.fab_type,
-    fab_id: String(fab.id),
-    job_name: fab.job_details?.name || '',
-    job_no: String(fab.job_details?.job_number || ''),
-    date: fab.draft_data?.drafter_end_date || '',
-    current_stage: fab.current_stage,
-    sales_person_name: fab.sales_person_name || '',
-    // Optional fields with default values
-    acct_name: '',
-    no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
-    total_sq_ft: String(fab.total_sqft || "-"),
-    revenue: fab.job_details?.project_value || "-",
-    gp: "-",
-    draft_completed: fab.draft_completed ? 'Yes' : 'No',
-    slabsmith_completed: (fab as any).slab_smith_data?.is_completed ? 'Yes' : 'No',
-    slabsmith_clock_complete: (fab as any).slab_smith_data?.end_date ? 'Yes' : 'No',
-    drafter: fab.drafter_name || '-',
-    template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
-    template_received: '',
-    templater: fab.technician_name || '-',
-    revised: '',
-    sct_completed: '',
-  };
+    return {
+        id: fab.id,
+        fab_type: fab.fab_type,
+        fab_id: String(fab.id),
+        job_name: fab.job_details?.name || '',
+        job_no: String(fab.job_details?.job_number || ''),
+        date: fab.draft_data?.drafter_end_date || '',
+        current_stage: fab.current_stage,
+        sales_person_name: fab.sales_person_name || '',
+        // Optional fields with default values
+        acct_name: '',
+        no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
+        total_sq_ft: String(fab.total_sqft || "-"),
+        revenue: fab.job_details?.project_value || "-",
+        gp: "-",
+        draft_completed: fab.draft_completed ? 'Yes' : 'No',
+        slabsmith_completed: (fab as any).slab_smith_data?.is_completed ? 'Yes' : 'No',
+        slabsmith_clock_complete: (fab as any).slab_smith_data?.end_date ? 'Yes' : 'No',
+        drafter: fab.drafter_name || '-',
+        template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
+        template_received: '',
+        templater: fab.technician_name || '-',
+        revised: '',
+        sct_completed: '',
+        stone_type_name: fab.stone_type_name || '',
+        stone_color_name: fab.stone_color_name || '',
+        stone_thickness_value: fab.stone_thickness_value || '',
+        edge_name: fab.edge_name || '',
+        fab_notes: fab.fab_notes || [],
+    };
 };
 
 const SlabSmithPage = () => {
     const location = useLocation();
     const navigate = useNavigate();
-    
+
     // Fetch sales persons data for filter dropdown
     const { data: salesPersonsData } = useGetSalesPersonsQuery();
 

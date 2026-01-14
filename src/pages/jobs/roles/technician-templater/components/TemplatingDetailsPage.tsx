@@ -11,6 +11,16 @@ import { AlertCircle } from 'lucide-react';
 import { Fab } from '@/store/api/job';
 import { formatDate } from '../TechnicianPage';
 
+// Helper function to filter fab notes by stage
+const filterNotesByStage = (fabNotes: any[], stage: string) => {
+  return fabNotes.filter(note => note.stage === stage);
+};
+
+// Helper function to get all fab notes (unfiltered)
+const getAllFabNotes = (fabNotes: any[]) => {
+  return fabNotes || [];
+};
+
 export function TemplatingDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { data: fab, isLoading, isError, error } = useGetFabByIdQuery(Number(id));
@@ -31,6 +41,30 @@ export function TemplatingDetailsPage() {
         { label: "Assigned to", value: String(fab.technician_name) },
       ],
     },
+    // Option 1: Show ALL fab notes (current)
+    {
+      title: "FAB Notes",
+      type: "notes",
+      notes: getAllFabNotes(fab.fab_notes || []).map(note => ({
+        id: note.id,
+        avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+        content: note.note,
+        author: note.created_by_name || 'Unknown',
+        timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+      }))
+    }
+    // Option 2: Show only TEMPLATING stage notes (commented out)
+    // {
+    //   title: "Templating Notes",
+    //   type: "notes",
+    //   notes: filterNotesByStage(fab.fab_notes || [], 'templating').map(note => ({
+    //     id: note.id,
+    //     avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+    //     content: note.note,
+    //     author: note.created_by_name || 'Unknown',
+    //     timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+    //   }))
+    // }
   ] : [
     {
       title: "Job Details",
@@ -46,6 +80,11 @@ export function TemplatingDetailsPage() {
         { label: "Assigned to", value: 'N/A' },
       ],
     },
+    {
+      title: "FAB Notes",
+      type: "notes",
+      notes: []
+    }
   ];
 
   if (isLoading) {

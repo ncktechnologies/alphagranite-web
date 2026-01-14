@@ -15,33 +15,43 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { useTableState } from '@/hooks/use-table-state';
 
- const transformFabToJob = (fab: Fab): IJob => {
-  return {
-    id: fab.id,
-    fab_type: fab.fab_type,
-    fab_id: String(fab.id),
-    job_name: `${fab.job_details?.name}`,
-    job_no: String(fab.job_details?.job_number),
-    date: fab.shop_date_schedule || '',
-    current_stage: fab.current_stage,
-    sales_person_name: fab.sales_person_name || '',
-    // Optional fields with default values
-    acct_name: '',
-    no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
-    total_sq_ft: String(fab.total_sqft || "-"),
-    revenue:fab.job_details?.project_value || "-",
-    gp: "-",
-    draft_completed: fab.current_stage === 'completed' ? 'Yes' : 'No',
-    // template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
-    template_received: '',
-    // templater: fab.technician_name || '-',
-    revised: '',
-    sct_completed: '',
-  };
+const transformFabToJob = (fab: Fab): IJob => {
+    return {
+        id: fab.id,
+        fab_type: fab.fab_type,
+        fab_id: String(fab.id),
+        job_name: `${fab.job_details?.name}`,
+        job_no: String(fab.job_details?.job_number),
+        date: fab.templating_schedule_start_date || '',
+        current_stage: fab.current_stage,
+        sales_person_name: fab.sales_person_name || '',
+        // Optional fields with default values
+        acct_name: '',
+        no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
+        total_sq_ft: String(fab.total_sqft || "-"),
+        revenue: fab.job_details?.project_value || "-",
+        gp: "-",
+        draft_completed: fab.current_stage === 'completed' ? 'Yes' : 'No',
+        // template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
+        template_received: '',
+        // templater: fab.technician_name || '-',
+        revised: '',
+        sct_completed: '',
+        // Final programming specific fields
+        shop_date_scheduled: fab.templating_schedule_start_date || '',
+        wj_time_minutes: fab.programming_time_minutes ? String(fab.programming_time_minutes) : null,
+        final_programming_completed: fab.final_programming_complete ? 'Yes' : 'No',
+        final_programmer: fab.final_programmer_name || '',
+        stone_type_name: fab.stone_type_name || '',
+        stone_color_name: fab.stone_color_name || '',
+        stone_thickness_value: fab.stone_thickness_value || '',
+        edge_name: fab.edge_name || '',
+        fab_notes: fab.fab_notes || [],
+    };
 };
 const FinalProgrammingPage = () => {
     const navigate = useNavigate();
-    
+
     // Fetch sales persons data for filter dropdown
     const { data: salesPersonsData } = useGetSalesPersonsQuery();
 
@@ -138,7 +148,7 @@ const FinalProgrammingPage = () => {
 
     // Fetch data with backend pagination and filtering
     // const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
-      
+
     const { data, isLoading, isFetching, isError, error } = useGetFabsInFinalProgrammingPendingQuery();
     if (isLoading) {
         return (
@@ -186,9 +196,9 @@ const FinalProgrammingPage = () => {
                     <ToolbarHeading title="Final Programming" description="Jobs in final CNC programming stage" />
                 </Toolbar>
 
-                <JobTable 
-                    jobs={jobsData} 
-                    path='final-programming' 
+                <JobTable
+                    jobs={jobsData}
+                    path='final-programming'
                     isLoading={isLoading || isFetching}
                     // useBackendPagination={true}
                     // totalRecords={data?.total || 0}

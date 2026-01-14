@@ -95,6 +95,9 @@ export interface IJob {
   cnc_linft?: string | null;
   miter_linft?: string | null;
   wj_time_minutes?: string | null;
+  final_programming_completed?: string;
+  final_programmer?: string;
+  shop_date_scheduled?: string;
   
   // ========== ASSIGNMENT FIELDS ==========
   sales_person_id?: number;

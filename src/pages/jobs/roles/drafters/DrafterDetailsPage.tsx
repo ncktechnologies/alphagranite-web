@@ -20,6 +20,16 @@ import { Documents } from '@/pages/shop/components/files';
 import { Can } from '@/components/permission';
 import { useTabClosingWarning } from '@/hooks';
 
+// Helper function to filter fab notes by stage
+const filterNotesByStage = (fabNotes: any[], stage: string) => {
+  return fabNotes.filter(note => note.stage === stage);
+};
+
+// Helper function to get all fab notes (unfiltered)
+const getAllFabNotes = (fabNotes: any[]) => {
+  return fabNotes || [];
+};
+
 export function DrafterDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const fabId = id ? Number(id) : 0;
@@ -344,6 +354,17 @@ export function DrafterDetailsPage() {
         timestamp: "",
       })) || [],
     },
+    {
+      title: "FAB Notes",
+      type: "notes",
+      notes: getAllFabNotes(fabData?.fab_notes || []).map(note => ({
+        id: note.id,
+        avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+        content: note.note,
+        author: note.created_by_name || 'Unknown',
+        timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+      }))
+    }
   ];
 
   // Prepare files for SubmissionModal

@@ -997,13 +997,53 @@ export const JobTable = ({
         
         // Notes Column
         {
+            id: 'shop_date_scheduled',
+            accessorKey: 'shop_date_scheduled',
+            accessorFn: (row: IJob) => row.shop_date_scheduled,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="SHOP DATE SCHEDULED" column={column} />
+            ),
+            cell: ({ row }) => <span className="text-xs">{row.original.shop_date_scheduled || '-'}</span>,
+            size: 150,
+        },
+        {
+            id: 'wj_time_minutes',
+            accessorKey: 'wj_time_minutes',
+            accessorFn: (row: IJob) => row.wj_time_minutes,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="WJ TIME MINUTES" column={column} />
+            ),
+            cell: ({ row }) => <span className="text-xs">{row.original.wj_time_minutes || '-'}</span>,
+            size: 150,
+        },
+        {
+            id: 'final_programming_completed',
+            accessorKey: 'final_programming_completed',
+            accessorFn: (row: IJob) => row.final_programming_completed,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="FINAL PROGRAMMING COMPLETED" column={column} />
+            ),
+            cell: ({ row }) => <span className="text-xs">{row.original.final_programming_completed || '-'}</span>,
+            size: 150,
+        },
+        {
+            id: 'final_programmer',
+            accessorKey: 'final_programmer',
+            accessorFn: (row: IJob) => row.final_programmer,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="FINAL PROGRAMMER" column={column} />
+            ),
+            cell: ({ row }) => <span className="text-xs">{row.original.final_programmer || '-'}</span>,
+            size: 150,
+        },
+        {
             id: 'notes',
             accessorKey: 'notes',
-            accessorFn: (row: IJob) => row.notes,
+            accessorFn: (row: IJob) => typeof row.notes === 'string' ? row.notes : '',
             header: ({ column }) => (
                 <DataGridColumnHeader title="NOTES" column={column} />
             ),
-            cell: ({ row }) => <span className="text-xs">{row.original.notes || '-'}</span>,
+            cell: ({ row }) => <span className="text-xs">{typeof row.original.notes === 'string' ? row.original.notes : '-'}</span>,
             size: 150,
         },
         {
