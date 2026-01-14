@@ -753,7 +753,7 @@ export const JobTable = ({
             ),
             cell: ({ row }) => {
                 const fabNotes = row.original.fab_notes || row.original.notes || [];
-                const draftNotes = fabNotes.filter(note => note.stage === 'draft');
+                const draftNotes = fabNotes.filter(note => note.stage === 'drafting');
                 
                 if (draftNotes.length === 0) {
                     return <span className="text-xs text-gray-500 italic">No notes</span>;
@@ -871,6 +871,65 @@ export const JobTable = ({
                 return (
                     <div className="text-xs max-w-xs" title={latestNote.note}>
                         <div className="font-medium text-red-700 truncate">SS:</div>
+                        <div className="truncate">{latestNote.note}</div>
+                        <div className="text-gray-500 text-xs">by {latestNote.created_by_name || 'Unknown'}</div>
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 180,
+        },
+        
+        // SCT Notes Column
+        {
+            id: 'sct_notes',
+            header: ({ column }) => (
+                <DataGridColumnHeader title="SCT Notes" column={column} />
+            ),
+            cell: ({ row }) => {
+                const fabNotes = row.original.fab_notes || row.original.notes || [];
+                const sctNotes = fabNotes.filter(note => note.stage === 'sales_ct');
+                
+                if (sctNotes.length === 0) {
+                    return <span className="text-xs text-gray-500 italic">No notes</span>;
+                }
+                
+                const latestNote = sctNotes[0];
+                return (
+                    <div className="text-xs max-w-xs" title={latestNote.note}>
+                        <div className="font-medium text-yellow-700 truncate">SCT:</div>
+                        <div className="truncate">{latestNote.note}</div>
+                        <div className="text-gray-500 text-xs">by {latestNote.created_by_name || 'Unknown'}</div>
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 180,
+        },
+        
+        // Draft/Revision Notes Column
+        {
+            id: 'draft_revision_notes',
+            header: ({ column }) => (
+                <DataGridColumnHeader title="Draft/Revision Notes" column={column} />
+            ),
+            cell: ({ row }) => {
+                const fabNotes = row.original.fab_notes || row.original.notes || [];
+                const draftRevisionNotes = fabNotes.filter(note => 
+                    note.stage === 'draft' || note.stage === 'revision'
+                );
+                
+                if (draftRevisionNotes.length === 0) {
+                    return <span className="text-xs text-gray-500 italic">No notes</span>;
+                }
+                
+                const latestNote = draftRevisionNotes[0];
+                const stagePrefix = latestNote.stage === 'draft' ? 'D:' : 'R:';
+                const textColor = latestNote.stage === 'draft' ? 'text-green-700' : 'text-purple-700';
+                
+                return (
+                    <div className="text-xs max-w-xs" title={latestNote.note}>
+                        <div className={`font-medium ${textColor} truncate`}>{stagePrefix}</div>
                         <div className="truncate">{latestNote.note}</div>
                         <div className="text-gray-500 text-xs">by {latestNote.created_by_name || 'Unknown'}</div>
                     </div>

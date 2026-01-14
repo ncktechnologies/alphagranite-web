@@ -39,13 +39,16 @@ const transformFabToJob = (fab: Fab): IJob => {
     sales_person_name: fab.sales_person_name || '',
     // Optional fields with default values
     acct_name: '',
-    no_of_pieces: fab.draft_data?.no_of_piece_drafted ? `${fab.draft_data.no_of_piece_drafted}` : "-",
+    no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
     total_sq_ft: String(fab.total_sqft || "-"),
-    revenue: (fab as any).revenue || "-",
+    revenue: fab.job_details?.project_value || "-",
     gp: "-",
-    sct_completed: (fab as any).sct_completed ? 'Yes' : 'No',
+    sct_completed: (fab as any).sales_ct_data?.is_completed ? 'Yes' : 'No',
+    slabsmith_used: fab.slab_smith_used ? 'Yes' : 'No',
+    draft_revision_notes: '', // Will be populated from fab_notes
     template_received: '',
-    revised: '',
+    revised: (fab as any).sales_ct_data?.is_revision_needed ? 'Yes' : 'No',
+    sales_person_name: fab.sales_person_name || '',
     // sct_completed: '',
     // template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
     // templater: fab.technician_name || '-',
@@ -215,6 +218,7 @@ export function AfterDraftSalesPage() {
                 showSalesPersonFilter={true}
                 showScheduleFilter={false} // Remove separate schedule filter
                 salesPersons={salesPersons}
+                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'slabsmith_used', 'sct_notes', 'sct_completed', 'revenue', 'sales_person_name', 'draft_revision_notes', 'revised']}
             />
         </Container>
     );

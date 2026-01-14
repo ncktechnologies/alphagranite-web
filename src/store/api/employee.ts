@@ -218,6 +218,20 @@ export const employeeApi = createApi({
                 },
                 providesTags: ["Employee"],
             }),
+              getTemplaters: build.query<any, void>({
+                query: () => ({
+                    url: "/api/v1/templaters",
+                    method: "get"
+                }),
+                transformResponse: (response: any) => {
+                    // Handle the response format with success, message, and data properties
+                    if (response && response.data) {
+                        return response.data;
+                    }
+                    return response;
+                },
+                providesTags: ["Employee"],
+            }),
         };
     },
 });
@@ -236,4 +250,5 @@ export const {
     useCheckEmailUniqueQuery,
     useLazyCheckEmailUniqueQuery,
     useGetSalesPersonsQuery,
+    useGetTemplatersQuery,
 } = employeeApi;

@@ -273,6 +273,7 @@ export interface FabListParams {
     job_id?: number;
     fab_type?: string;
     sales_person_id?: number;
+    templater_id?: number;
     status_id?: number;
     current_stage?: string;
     search?: string;
@@ -629,6 +630,8 @@ export const jobApi = createApi({
                             ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
                             ...(queryParams.date_filter && { date_filter: queryParams.date_filter }),
                             ...(queryParams.schedule_status && { schedule_status: queryParams.schedule_status }),
+                            // Add templater_id filter
+                            ...(queryParams.templater_id !== undefined && { templater_id: queryParams.templater_id }),
                         }
                     };
                 },

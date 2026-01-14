@@ -44,9 +44,14 @@ import { toast } from 'sonner';
 import { Can } from '@/components/permission';
 import JobFormSheet from './components/JobFormSheet';
 
+// Update the ExtendedJob interface to include API fields
 interface ExtendedJob extends Job {
   sales_person_name?: string;
   status?: string;
+  project_value?: string | number | null;
+  account_name?: string;
+  account_id?: number;
+  // Add any other fields that come from API
 }
 
 export const JobsSection = () => {
@@ -76,18 +81,14 @@ export const JobsSection = () => {
   // Transform API data to match table structure
   const jobs = useMemo(() => {
     if (!jobsData) return [];
-    return jobsData.map((job: Job) => ({
+    return jobsData.map((job: any) => ({
       ...job,
-      id: job.id,
-      name: job.name,
-      job_number: job.job_number,
+      // Only transform what's necessary
       project_value: job.project_value || 'N/A',
-      status_id: job.status_id,
-      created_at: job.created_at,
       updated_at: job.updated_at || 'N/A',
-      // Add default values for sales person and status since they're not in the Job interface
-      sales_person_name: 'N/A',
       status: job.status_id === 1 ? 'Active' : job.status_id === 2 ? 'Inactive' : job.status_id === 3 ? 'Completed' : 'N/A',
+      // The API already provides sales_person_name, so don't override it
+      // sales_person_name is already included from the spread operator
     } as ExtendedJob));
   }, [jobsData]);
 
@@ -128,7 +129,6 @@ export const JobsSection = () => {
 
   const columns = useMemo<ColumnDef<ExtendedJob>[]>(
     () => [
-    
       {
         id: 'name',
         accessorFn: (row) => row.name,
@@ -160,7 +160,11 @@ export const JobsSection = () => {
           <DataGridColumnHeader title="PROJECT VALUE" column={column} />
         ),
         cell: ({ row }) => (
-          <span className="text-sm text-text">{row.original.project_value}</span>
+          <span className="text-sm text-text">
+            {typeof row.original.project_value === 'number' 
+              ? `$${row.original.project_value.toLocaleString()}` 
+              : row.original.project_value}
+          </span>
         ),
         enableSorting: true,
         size: 150,
@@ -179,27 +183,28 @@ export const JobsSection = () => {
         enableSorting: true,
         size: 150,
       },
-    
       {
-        id: 'sales_person',
-        accessorFn: (row: any) => row.sales_person_name || 'N/A',
+        id: 'sales_person_name',
+        accessorFn: (row) => row.sales_person_name,
         header: ({ column }) => (
           <DataGridColumnHeader title="SALES PERSON" column={column} />
         ),
         cell: ({ row }) => (
-          <span className="text-sm text-text">{(row.original as any).sales_person_name || 'N/A'}</span>
+          <span className="text-sm text-text">
+            {row.original.sales_person_name || 'N/A'}
+          </span>
         ),
         enableSorting: true,
         size: 150,
       },
       {
         id: 'status',
-        accessorFn: (row: any) => row.status || 'N/A',
+        accessorFn: (row) => row.status,
         header: ({ column }) => (
           <DataGridColumnHeader title="STATUS" column={column} />
         ),
         cell: ({ row }) => (
-          <span className="text-sm text-text">{(row.original as any).status || 'N/A'}</span>
+          <span className="text-sm text-text">{row.original.status || 'N/A'}</span>
         ),
         enableSorting: true,
         size: 120,
@@ -224,7 +229,12 @@ export const JobsSection = () => {
                 Edit
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-             
+              <DropdownMenuItem 
+                onClick={() => handleDelete(row.original)}
+                className="text-destructive"
+              >
+                Delete
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ),
@@ -275,7 +285,6 @@ export const JobsSection = () => {
         }}
       >
         <Container>
-
           <Card>
             <CardHeader className="py-3.5 border-b">
               <CardHeading>
