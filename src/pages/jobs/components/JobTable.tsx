@@ -55,6 +55,8 @@ interface JobTableProps {
     useBackendPagination?: boolean;
     totalRecords?: number;
     tableState?: ReturnType<typeof useTableState>;
+    // Specify which columns to show (if not provided, show all)
+    visibleColumns?: string[];
 }
 
 export const JobTable = ({
@@ -70,6 +72,7 @@ export const JobTable = ({
     useBackendPagination = false,
     totalRecords = 0,
     tableState,
+    visibleColumns,
 }: JobTableProps) => {
     const [localPagination, setLocalPagination] = useState<PaginationState>({
         pageIndex: 0,
@@ -685,6 +688,113 @@ export const JobTable = ({
             ),
             size: 300,
         },
+        // Templating Notes Column
+        {
+            id: 'templating_notes',
+            header: ({ column }) => (
+                <DataGridColumnHeader title="Templating Notes" column={column} />
+            ),
+            cell: ({ row }) => {
+                const fabNotes = row.original.fab_notes || row.original.notes || [];
+                const templatingNotes = fabNotes.filter(note => note.stage === 'templating');
+                
+                if (templatingNotes.length === 0) {
+                    return <span className="text-xs text-gray-500 italic">No notes</span>;
+                }
+                
+                const latestNote = templatingNotes[0];
+                return (
+                    <div className="text-xs max-w-xs" title={latestNote.note}>
+                        <div className="font-medium text-blue-700 truncate">T:</div>
+                        <div className="truncate">{latestNote.note}</div>
+                        <div className="text-gray-500 text-xs">by {latestNote.created_by_name || 'Unknown'}</div>
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 180,
+        },
+        
+        // Drafting Notes Column
+        {
+            id: 'drafting_notes',
+            header: ({ column }) => (
+                <DataGridColumnHeader title="Drafting Notes" column={column} />
+            ),
+            cell: ({ row }) => {
+                const fabNotes = row.original.fab_notes || row.original.notes || [];
+                const draftNotes = fabNotes.filter(note => note.stage === 'draft');
+                
+                if (draftNotes.length === 0) {
+                    return <span className="text-xs text-gray-500 italic">No notes</span>;
+                }
+                
+                const latestNote = draftNotes[0];
+                return (
+                    <div className="text-xs max-w-xs" title={latestNote.note}>
+                        <div className="font-medium text-green-700 truncate">D:</div>
+                        <div className="truncate">{latestNote.note}</div>
+                        <div className="text-gray-500 text-xs">by {latestNote.created_by_name || 'Unknown'}</div>
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 180,
+        },
+        
+        // Final Programming Notes Column
+        {
+            id: 'final_programming_notes',
+            header: ({ column }) => (
+                <DataGridColumnHeader title="Final Programming Notes" column={column} />
+            ),
+            cell: ({ row }) => {
+                const fabNotes = row.original.fab_notes || row.original.notes || [];
+                const fpNotes = fabNotes.filter(note => note.stage === 'final_programming');
+                
+                if (fpNotes.length === 0) {
+                    return <span className="text-xs text-gray-500 italic">No notes</span>;
+                }
+                
+                const latestNote = fpNotes[0];
+                return (
+                    <div className="text-xs max-w-xs" title={latestNote.note}>
+                        <div className="font-medium text-purple-700 truncate">FP:</div>
+                        <div className="truncate">{latestNote.note}</div>
+                        <div className="text-gray-500 text-xs">by {latestNote.created_by_name || 'Unknown'}</div>
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 180,
+        },
+        
+        // Cutting Notes Column
+        {
+            id: 'cutting_notes',
+            header: ({ column }) => (
+                <DataGridColumnHeader title="Cutting Notes" column={column} />
+            ),
+            cell: ({ row }) => {
+                const fabNotes = row.original.fab_notes || row.original.notes || [];
+                const cuttingNotes = fabNotes.filter(note => note.stage === 'cutting');
+                
+                if (cuttingNotes.length === 0) {
+                    return <span className="text-xs text-gray-500 italic">No notes</span>;
+                }
+                
+                const latestNote = cuttingNotes[0];
+                return (
+                    <div className="text-xs max-w-xs" title={latestNote.note}>
+                        <div className="font-medium text-orange-700 truncate">C:</div>
+                        <div className="truncate">{latestNote.note}</div>
+                        <div className="text-gray-500 text-xs">by {latestNote.created_by_name || 'Unknown'}</div>
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 180,
+        },
         {
             id: 'actions',
             header: '',
@@ -699,19 +809,27 @@ export const JobTable = ({
         },
     ], [getPath, path, dateRange]); // Add both getPath and path to dependencies
 
-    // Filter columns based on data availability
+    // Filter columns based on data availability and visibleColumns prop
     const columns = useMemo<ColumnDef<IJob>[]>(() => {
         return baseColumns.filter(column => {
+            // Always show ID and actions columns
             if (column.id === 'id' || column.id === 'actions') {
                 return true;
             }
+            
+            // If visibleColumns is specified, only show those columns
+            if (visibleColumns && visibleColumns.length > 0) {
+                return visibleColumns.includes(column.id);
+            }
+            
+            // Otherwise, filter based on data availability
             const accessor = (column as any).accessorKey as string | undefined;
             if (accessor) {
                 return columnHasData(accessor);
             }
             return true;
         });
-    }, [baseColumns, filteredData]);
+    }, [baseColumns, filteredData, visibleColumns]);
 
     const table = useReactTable({
         columns,

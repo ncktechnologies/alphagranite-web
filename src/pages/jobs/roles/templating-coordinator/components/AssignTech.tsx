@@ -23,7 +23,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { LoaderCircle, Check } from "lucide-react";
 import { toast } from "sonner";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
-import { useScheduleTemplatingMutation } from "@/store/api/job";
+import { useScheduleTemplatingMutation, useCreateFabNoteMutation } from "@/store/api/job";
 import { useNavigate, useParams } from "react-router";
 import { useGetEmployeesQuery, useGetSalesPersonsQuery } from "@/store/api/employee";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -54,6 +54,7 @@ export function AssignTechnicianModal({
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [scheduleTemplating] = useScheduleTemplatingMutation();
+  const [createFabNote] = useCreateFabNoteMutation();
   const { data: employeesData, isLoading, isError, error } = useGetSalesPersonsQuery();
 
   const form = useForm<AssignTechnicianData>({
@@ -73,11 +74,25 @@ export function AssignTechnicianModal({
         //   (emp: any) => `${emp.id}` === values.technician
         // );
 
+        // Create fab note if notes exist
+        if (values.notes && values.notes.trim()) {
+          try {
+            await createFabNote({
+              fab_id: Number(id),
+              note: values.notes.trim(),
+              stage: "templating"
+            }).unwrap();
+          } catch (noteError) {
+            console.error("Error creating fab note:", noteError);
+            // Don't prevent scheduling if note creation fails
+          }
+        }
+
         const response = await scheduleTemplating({
           fab_id: Number(id),
           technician_id: Number(values.technician),
-          schedule_start_date: values.date,
-          schedule_due_date: new Date(new Date(values.date).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 7 days after start
+          schedule_start_date: values.date ? new Date(values.date).toISOString().split('T')[0] : "",
+          schedule_due_date: values.date ? new Date(new Date(values.date).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : "", // 7 days after start
           total_sqft: "0", // This would be updated with actual value
           notes: [values.notes || ""],
         }).unwrap();
@@ -194,7 +209,7 @@ export function AssignTechnicianModal({
                       value={field.value ? new Date(field.value) : undefined}
                       onChange={(date) => {
                         if (!date) return field.onChange("");
-                        const formatted = date.toLocaleDateString("en-US"); // MM/DD/YYYY format
+                        const formatted = date.toISOString().split('T')[0]; // YYYY-MM-DD format
                         field.onChange(formatted);
                       }}
 

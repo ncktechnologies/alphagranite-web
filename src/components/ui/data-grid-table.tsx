@@ -198,13 +198,13 @@ function DataGridTableBodyRowSkeleton({ children }: { children: ReactNode }) {
   return (
     <tr
       className={cn(
-        'hover:bg-muted data-[state=selected]:bg-muted',
+        'hover:bg-transparent data-[state=selected]:bg-transparent',
         props.onRowClick && 'cursor-pointer',
         !props.tableLayout?.stripped &&
         props.tableLayout?.rowBorder &&
         'border-b border-border [&:not(:last-child)>td]:border-b',
         props.tableLayout?.cellBorder && '[&_>:last-child]:border-e-0',
-        props.tableLayout?.stripped && 'odd:bg-muted/90 hover:bg-transparent odd:hover:bg-muted',
+        props.tableLayout?.stripped && 'odd:bg-muted/90 hover:bg-transparent odd:hover:bg-transparent',
         table.options.enableRowSelection && '[&_>:first-child]:relative',
         props.tableClassNames?.bodyRow,
       )}
@@ -266,13 +266,13 @@ function DataGridTableBodyRow<TData>({
       onClick={() => props.onRowClick && props.onRowClick(row.original)}
       {...customRowAttributes}
       className={cn(
-        'hover:bg-muted/40 data-[state=selected]:bg-muted/50 h-8',
+        ' data-[state=selected]:bg-transparent h-8',
         props.onRowClick && 'cursor-pointer',
         !props.tableLayout?.stripped &&
         props.tableLayout?.rowBorder &&
         'border-b border-border [&:not(:last-child)>td]:border-b',
         props.tableLayout?.cellBorder && '[&_:last-child]:border-e-0',
-        props.tableLayout?.stripped && 'odd:bg-muted/90 hover:bg-transparent odd:hover:bg-muted',
+        props.tableLayout?.stripped && 'odd:bg-muted/90 hover:bg-transparent odd:hover:bg-transparent',
         table.options.enableRowSelection && '[&_:first-child]:relative',
         props.tableClassNames?.bodyRow,
       )}

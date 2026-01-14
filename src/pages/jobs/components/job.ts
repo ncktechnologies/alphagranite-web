@@ -27,6 +27,9 @@ export interface IJob {
   review_completed?:string;
   templating_schedule_start_date?:string;
   sales_person_name?: string; // Add sales person name field
+  notes_count?: number; // Number of notes for this FAB
+  fab_notes?: Array<{ id: number; note: string; created_by_name?: string; created_at?: string; stage?: string }>; // Array of notes for this FAB
+  notes?: Array<{ id: number; note: string; created_by_name?: string; created_at?: string; stage?: string }>; // Alternative notes array name
 }
 
 

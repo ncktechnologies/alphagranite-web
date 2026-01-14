@@ -18,7 +18,7 @@ import { AssignTechnicianModal } from "./AssignTech";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { useNavigate, useParams } from "react-router";
-import { useGetFabByIdQuery, useGetTemplatingByFabIdQuery, useUnscheduleTemplatingMutation } from "@/store/api/job";
+import { useGetFabByIdQuery, useGetTemplatingByFabIdQuery, useUnscheduleTemplatingMutation, useCreateFabNoteMutation } from "@/store/api/job";
 import { Can } from '@/components/permission';
 import { BackButton } from "@/components/common/BackButton";
 
@@ -45,6 +45,8 @@ export function ReviewChecklistForm() {
 
     // Mutation for unscheduling
     const [unscheduleTemplating] = useUnscheduleTemplatingMutation();
+    // Mutation for creating fab notes
+    const [createFabNote] = useCreateFabNoteMutation();
 
     const form = useForm<ReviewChecklistData>({
         resolver: zodResolver(reviewChecklistSchema),
@@ -65,6 +67,22 @@ export function ReviewChecklistForm() {
         if (!anyChecked) {
             toast.error("Please check at least one checklist item");
             return;
+        }
+
+        // Handle notes submission if notes exist
+        if (values.notes && values.notes.trim()) {
+            try {
+                await createFabNote({
+                    fab_id: Number(id),
+                    note: values.notes.trim(),
+                    stage: "templating"
+                }).unwrap();
+                toast.success("Note added successfully");
+            } catch (error) {
+                console.error("Error creating note:", error);
+                toast.error("Failed to add note");
+                // Don't prevent form submission if note creation fails
+            }
         }
 
         // Open the assign technician modal instead of submitting directly

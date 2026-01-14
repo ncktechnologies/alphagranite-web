@@ -202,7 +202,7 @@ export function DraftRevisionPage() {
                 jobs={jobsData}
                 path='revision'
                 isLoading={isLoading || isFetching}
-                onRowClick={handleRowClick}
+                // onRowClick={handleRowClick}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}
                 tableState={tableState}

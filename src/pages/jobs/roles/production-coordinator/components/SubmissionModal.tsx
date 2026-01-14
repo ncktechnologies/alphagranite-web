@@ -8,7 +8,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { useAddFilesToFinalProgrammingMutation, useCompleteFinalProgrammingMutation, useUpdateFabMutation } from '@/store/api/job';
+import { useAddFilesToFinalProgrammingMutation, useCompleteFinalProgrammingMutation, useUpdateFabMutation, useCreateFabNoteMutation } from "@/store/api/job";
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -57,6 +57,7 @@ export function SubmissionModal({
   const [addFilesToFinalProgramming] = useAddFilesToFinalProgrammingMutation();
   const [completeFinalProgramming] = useCompleteFinalProgrammingMutation();
   const [updateFab] = useUpdateFabMutation();
+  const [createFabNote] = useCreateFabNoteMutation();
 
   const form = useForm<SubmissionData>({
     resolver: zodResolver(submissionSchema),
@@ -113,6 +114,20 @@ export function SubmissionModal({
 
     setIsSubmitting(true);
     try {
+      // Create fab note if notes exist
+      if (values.draftNotes && values.draftNotes.trim()) {
+        try {
+          await createFabNote({
+            fab_id: fabId,
+            note: values.draftNotes.trim(),
+            stage: "final_programming"
+          }).unwrap();
+        } catch (noteError) {
+          console.error("Error creating fab note:", noteError);
+          // Don't prevent submission if note creation fails
+        }
+      }
+
       // Filter only files that haven't been uploaded yet (no ID or temporary ID)
       const filesToUpload = uploadedFiles.filter(f => 
         !f.id || // No ID at all

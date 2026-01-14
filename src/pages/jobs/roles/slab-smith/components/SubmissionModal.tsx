@@ -8,7 +8,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { useUpdateSlabSmithMutation, useAddFilesToSlabSmithMutation, useCreateSlabSmithMutation } from '@/store/api/job';
+import { useUpdateSlabSmithMutation, useAddFilesToSlabSmithMutation, useCreateSlabSmithMutation, useCreateFabNoteMutation } from "@/store/api/job";
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -48,6 +48,7 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
   const [updateSlabSmith] = useUpdateSlabSmithMutation();
   const [addFilesToSlabSmith] = useAddFilesToSlabSmithMutation();
   const [createSlabSmith] = useCreateSlabSmithMutation(); // Add createSlabSmith mutation
+  const [createFabNote] = useCreateFabNoteMutation();
 
   const form = useForm<SubmissionData>({
     resolver: zodResolver(submissionSchema),
@@ -95,6 +96,20 @@ const handleFinalSubmit = async (values: SubmissionData) => {
 
   setIsSubmitting(true);
   try {
+    // Create fab note if notes exist
+    if (values.draftNotes && values.draftNotes.trim()) {
+      try {
+        await createFabNote({
+          fab_id: fabId,
+          note: values.draftNotes.trim(),
+          stage: "slab_smith"
+        }).unwrap();
+      } catch (noteError) {
+        console.error("Error creating fab note:", noteError);
+        // Don't prevent submission if note creation fails
+      }
+    }
+
     // Filter only files that haven't been uploaded yet (no ID or temporary ID)
     const filesToUpload = uploadedFiles.filter(f => 
       !f.id || // No ID at all

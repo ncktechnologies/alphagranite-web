@@ -100,6 +100,9 @@ export interface Fab {
     account_id?: number;
     account_name?: string;
     sales_person_name?: string;
+    template_received?: boolean;
+    revenue?: number;
+    fab_notes?: Array<{ id: number; note: string; created_by_name?: string; created_at?: string; stage?: string }>;
 }
 
 export interface FabCreate {
@@ -650,6 +653,7 @@ export const jobApi = createApi({
                     }
                     return { data: [], total: 0 };
                 },
+                providesTags: ["Fab"],
             }),
 
             getFabById: build.query<Fab, number>({
@@ -1377,6 +1381,20 @@ export const jobApi = createApi({
                 providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
             }),
 
+            // Create FAB note
+            createFabNote: build.mutation<any, { fab_id: number; note: string; stage?: string }>({
+                query: ({ fab_id, note, stage }) => ({
+                    url: `/fab_notes`,
+                    method: "POST",
+                    data: {
+                        fab_id,
+                        note,
+                        stage
+                    }
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
             // NEW: Get drafting session history
             getDraftingSessionHistory: build.query<any, number>({
                 query: (fab_id) => ({
@@ -1466,4 +1484,5 @@ export const {
     // NEW: Export the new hooks
     useGetCurrentDraftingSessionQuery,
     useGetDraftingSessionHistoryQuery,
+    useCreateFabNoteMutation,
 } = jobApi;

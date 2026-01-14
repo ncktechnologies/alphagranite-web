@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
-import { useCompleteTemplatingMutation, useGetTemplatingByFabIdQuery, useUpdateTemplatingMutation } from '@/store/api/job';
+import { useCompleteTemplatingMutation, useGetTemplatingByFabIdQuery, useUpdateTemplatingMutation, useCreateFabNoteMutation } from "@/store/api/job";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Can } from '@/components/permission';
 
@@ -38,6 +38,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
   const navigate = useNavigate();
   const [completeTemplating] = useCompleteTemplatingMutation();
   const [updateTemplating] = useUpdateTemplatingMutation();
+  const [createFabNote] = useCreateFabNoteMutation();
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
@@ -48,6 +49,20 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
       const id = fabId;
       if (!id) {
         throw new Error("FAB ID is missing");
+      }
+
+      // Create fab note if notes exist
+      if (values.notes && values.notes.trim()) {
+        try {
+          await createFabNote({
+            fab_id: Number(id),
+            note: values.notes.trim(),
+            stage: "templating"
+          }).unwrap();
+        } catch (noteError) {
+          console.error("Error creating fab note:", noteError);
+          // Don't prevent submission if note creation fails
+        }
       }
 
       // Get the templating ID from the templating data

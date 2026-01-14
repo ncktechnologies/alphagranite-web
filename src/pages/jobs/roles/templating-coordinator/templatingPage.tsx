@@ -47,11 +47,12 @@ const transformFabToJob = (fab: Fab): IJob => {
         templater: fab.technician_name || '-',
         // no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
         total_sq_ft: String(fab.total_sqft || "-"),
-        revenue: fab.revenue || "-",
+        revenue: fab.revenue?.toString() || "-",
         // gp: "-",
         revised: '',
         sct_completed: '',
         draft_completed: '',
+        fab_notes: fab.fab_notes || [],
     };
 };
 
@@ -251,12 +252,13 @@ export function TemplatingPage() {
                         path="templating" // Add the missing path prop
                         showScheduleFilter={true}
                         isLoading={isLoading || isFetching}
-                        onRowClick={handleRowClick}
+                        // onRowClick={handleRowClick}
                         useBackendPagination={true}
                         totalRecords={data?.total || 0}
                         tableState={tableState}
                         showSalesPersonFilter={false}
                         salesPersons={salesPersons}
+                        visibleColumns={['id', 'fab_id', 'job_name', 'date', 'current_stage', 'sales_person_name', 'templater', 'total_sq_ft', 'revenue', 'templating_notes', 'actions']}
                         getPath={(job) => {
                             // Check if THIS SPECIFIC job has a template technician assigned
                             const hasTemplateTechnician = job.templater &&
