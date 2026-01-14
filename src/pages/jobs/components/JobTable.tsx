@@ -852,6 +852,33 @@ export const JobTable = ({
             enableSorting: false,
             size: 180,
         },
+        
+        // Slab Smith Notes Column
+        {
+            id: 'slabsmith_notes',
+            header: ({ column }) => (
+                <DataGridColumnHeader title="Slab Smith Notes" column={column} />
+            ),
+            cell: ({ row }) => {
+                const fabNotes = row.original.fab_notes || row.original.notes || [];
+                const slabSmithNotes = fabNotes.filter(note => note.stage === 'slab_smith');
+                
+                if (slabSmithNotes.length === 0) {
+                    return <span className="text-xs text-gray-500 italic">No notes</span>;
+                }
+                
+                const latestNote = slabSmithNotes[0];
+                return (
+                    <div className="text-xs max-w-xs" title={latestNote.note}>
+                        <div className="font-medium text-red-700 truncate">SS:</div>
+                        <div className="truncate">{latestNote.note}</div>
+                        <div className="text-gray-500 text-xs">by {latestNote.created_by_name || 'Unknown'}</div>
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 180,
+        },
         {
             id: 'actions',
             header: '',

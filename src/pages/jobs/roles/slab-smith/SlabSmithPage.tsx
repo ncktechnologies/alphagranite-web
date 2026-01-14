@@ -39,11 +39,14 @@ const transformFabToJob = (fab: Fab): IJob => {
     sales_person_name: fab.sales_person_name || '',
     // Optional fields with default values
     acct_name: '',
-    no_of_pieces: fab.no_of_piece_drafted ? `${fab.no_of_piece_drafted}` : "-",
+    no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
     total_sq_ft: String(fab.total_sqft || "-"),
     revenue: fab.job_details?.project_value || "-",
     gp: "-",
     draft_completed: fab.draft_completed ? 'Yes' : 'No',
+    slabsmith_completed: (fab as any).slab_smith_data?.is_completed ? 'Yes' : 'No',
+    slabsmith_clock_complete: (fab as any).slab_smith_data?.end_date ? 'Yes' : 'No',
+    drafter: fab.drafter_name || '-',
     template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
     template_received: '',
     templater: fab.technician_name || '-',
@@ -216,6 +219,7 @@ const SlabSmithPage = () => {
                     showSalesPersonFilter={false}
                     showScheduleFilter={false} // Remove separate schedule filter
                     salesPersons={salesPersons}
+                    visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'slabsmith_completed', 'slabsmith_notes', 'drafter', 'slabsmith_clock_complete']}
                 />
             </Container>
         </div>

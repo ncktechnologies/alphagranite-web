@@ -21,6 +21,8 @@ export interface IJob {
   sct_completed?: string;
   draft_completed?: string;
   drafter?: string; // Add drafter field
+  slabsmith_completed?: string; // Add slabsmith completed field
+  slabsmith_clock_complete?: string; // Add slabsmith clock complete field
   gp?: string;
   date: string; // e.g. "08 October, 2025"
   current_stage?: string; // Add current_stage field
