@@ -52,6 +52,8 @@ const transformFabToJob = (fab: Fab): IJob => {
     review_completed: fab.current_stage === 'completed' ? 'Yes' : 'No',
     template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
     templater: fab.technician_name || '-',
+    fab_notes: fab.fab_notes || [],
+
   };
 };
 
@@ -223,6 +225,7 @@ export function PredraftPage() {
                 showSalesPersonFilter={true}
                 showScheduleFilter={false} // Remove separate schedule filter
                 salesPersons={salesPersons}
+                visibleColumns={['template_needed', 'template_received', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'pre_draft_notes', 'review_completed']}
             />
         </Container>
     );

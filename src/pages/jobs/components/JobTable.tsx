@@ -351,35 +351,52 @@ export const JobTable = ({
 
     // Function to generate fab info string
     const generateFabInfo = (job: IJob) => {
-        const parts = [];
-        
-        // Add account name if available
-        if (job.acct_name) {
-            parts.push(job.acct_name);
-        }
-        
-        // Add job details
-        if (job.job_name) {
-            parts.push(job.job_name);
-        }
-        
-        // Add job number
-        if (job.job_no) {
-            parts.push(job.job_no);
-        }
-        
-        // Add pieces count
-        if (job.no_of_pieces) {
-            parts.push(`${job.no_of_pieces} pieces`);
-        }
-        
-        // Add square footage
-        if (job.total_sq_ft) {
-            parts.push(`${job.total_sq_ft} sq ft`);
-        }
-        
-        return parts.join(' - ');
-    };
+    const parts = [];
+    
+    // Add account name if available
+    if (job.acct_name) {
+        parts.push(job.acct_name);
+    }
+    
+    // Add job details
+    if (job.job_name) {
+        parts.push(job.job_name);
+    }
+    
+    // Add job number
+    if (job.job_no) {
+        parts.push(job.job_no);
+    }
+    
+    // Add pieces count
+    if (job.no_of_pieces) {
+        parts.push(`${job.no_of_pieces} pieces`);
+    }
+    
+    // Add square footage
+    if (job.total_sq_ft) {
+        parts.push(`${job.total_sq_ft} sq ft`);
+    }
+
+    // Add material specifications if available
+    if (job.stone_type_name) {
+        parts.push(`Stone: ${job.stone_type_name}`);
+    }
+    
+    if (job.stone_color_name) {
+        parts.push(`Color: ${job.stone_color_name}`);
+    }
+    
+    if (job.stone_thickness_value) {
+        parts.push(`Thickness: ${job.stone_thickness_value}`);
+    }
+    
+    if (job.edge_name) {
+        parts.push(`Edge: ${job.edge_name}`);
+    }
+    
+    return parts.join(' - ');
+};
 
     const baseColumns = useMemo<ColumnDef<IJob>[]>(() => [
         // {
@@ -511,6 +528,16 @@ export const JobTable = ({
                 <DataGridColumnHeader title="TEMPLATER" column={column} />
             ),
             cell: ({ row }) => <span className="text-xs">{row.original.templater}</span>,
+            size: 130,
+        },
+        {
+            id: "drafter",
+            accessorKey: "drafter",
+            accessorFn: (row: IJob) => row.drafter,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="DRAFTER" column={column} />
+            ),
+            cell: ({ row }) => <span className="text-xs">{row.original.drafter}</span>,
             size: 130,
         },
         {
@@ -656,7 +683,7 @@ export const JobTable = ({
             accessorKey: "draft_completed",
             accessorFn: (row: IJob) => row.draft_completed,
             header: ({ column }) => (
-                <DataGridColumnHeader title="DRAFT COMPLETED" column={column} />
+                <DataGridColumnHeader title="DRAFT Status" column={column} />
             ),
             cell: ({ row }) => (
                 <span className="text-sm break-words max-w-[160px]">
@@ -763,6 +790,33 @@ export const JobTable = ({
                 return (
                     <div className="text-xs max-w-xs" title={latestNote.note}>
                         <div className="font-medium text-purple-700 truncate">FP:</div>
+                        <div className="truncate">{latestNote.note}</div>
+                        <div className="text-gray-500 text-xs">by {latestNote.created_by_name || 'Unknown'}</div>
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 180,
+        },
+        
+        // Pre-Draft Notes Column
+        {
+            id: 'pre_draft_notes',
+            header: ({ column }) => (
+                <DataGridColumnHeader title="Pre-Draft Notes" column={column} />
+            ),
+            cell: ({ row }) => {
+                const fabNotes = row.original.fab_notes || row.original.notes || [];
+                const preDraftNotes = fabNotes.filter(note => note.stage === 'pre_draft_review');
+                
+                if (preDraftNotes.length === 0) {
+                    return <span className="text-xs text-gray-500 italic">No notes</span>;
+                }
+                
+                const latestNote = preDraftNotes[0];
+                return (
+                    <div className="text-xs max-w-xs" title={latestNote.note}>
+                        <div className="font-medium text-indigo-700 truncate">PD:</div>
                         <div className="truncate">{latestNote.note}</div>
                         <div className="text-gray-500 text-xs">by {latestNote.created_by_name || 'Unknown'}</div>
                     </div>

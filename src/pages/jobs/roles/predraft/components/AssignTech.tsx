@@ -140,7 +140,6 @@ export function AssignTechnicianModal({
                         <SelectItem value="loading" disabled>Loading drafters...</SelectItem>
                       ) : (
                         <>
-                          {/* Empty option for no drafter selection */}
                           <SelectItem value="none">No drafter assigned</SelectItem>
                           {drafters.map((drafter: any) => (
                             <SelectItem key={drafter.id} value={drafter.id.toString()}>

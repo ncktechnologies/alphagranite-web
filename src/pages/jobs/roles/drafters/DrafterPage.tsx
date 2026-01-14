@@ -25,7 +25,8 @@ export const transformFabToJob = (fab: Fab): IJob => {
         total_sq_ft: String(fab.total_sqft || "-"),
         revenue: fab.job_details?.project_value || "-",
         gp: "-",
-        draft_completed: fab.current_stage === 'completed' ? 'Yes' : 'No',
+        draft_completed: fab.current_stage === 'completed' ? 'completed' : 'Not completed',
+        drafter: fab.drafter_name || '-',
         template_received: '',
         revised: '',
         sct_completed: '',
@@ -159,6 +160,7 @@ const DrafterPage = () => {
                 showSalesPersonFilter={true}
                 showScheduleFilter={false} // Remove separate schedule filter
                 salesPersons={salesPersons}
+                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'revenue', 'gp', 'drafting_notes', 'draft_completed', 'drafter']}
             />
         </Container>
     );

@@ -265,7 +265,7 @@ export function TemplatingPage() {
                         showSalesPersonFilter={true}
                         salesPersons={salesPersons}
                         salesPersonFilterLabel="Filter by Templater"
-                        visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'template_received', 'templater']}
+                        visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'templater']}
                         getPath={(job) => {
                             // Check if THIS SPECIFIC job has a template technician assigned
                             const hasTemplateTechnician = job.templater &&
