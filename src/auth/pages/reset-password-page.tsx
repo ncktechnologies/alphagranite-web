@@ -42,6 +42,12 @@ export function ResetPasswordPage() {
 
   // Function to extract error message from API response
   const getErrorMessage = (error: any): string => {
+    // First check for the message field in the response
+    if (error?.data?.message) {
+      return error.data.message;
+    }
+    
+    // Fallback to detail field for other error formats
     if (error?.data?.detail) {
       if (Array.isArray(error.data.detail)) {
         // Handle array of validation errors
@@ -54,6 +60,8 @@ export function ResetPasswordPage() {
         return error.data.detail.msg || JSON.stringify(error.data.detail);
       }
     }
+    
+    // Final fallback
     return error?.message || 'Failed to send reset password email. Please try again.';
   };
 
