@@ -12,6 +12,7 @@ import { ClassicLayout } from './layouts/classic';
 import { OtpVerifyPage } from './pages/otp-verify';
 import LoginStepper from './pages/steppers/login-stepper';
 import { CompleteProfilePage } from './pages/profile-settings/profilepage';
+import { ResetPasswordConfirmPage } from './pages/reset-password-confirm-page';
 
 // Define the auth routes
 export const authRoutes: RouteObject[] = [
@@ -81,8 +82,8 @@ export const authRoutes: RouteObject[] = [
       },
       /* Extended examples */
       {
-        path: 'classic/2fa',
-        element: <TwoFactorAuth />,
+        path: 'reset-password-confirm',
+        element: <ResetPasswordConfirmPage />,
       },
       {
         path: 'classic/check-email',

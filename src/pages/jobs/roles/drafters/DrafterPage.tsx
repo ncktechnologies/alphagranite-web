@@ -27,7 +27,7 @@ export const transformFabToJob = (fab: Fab): IJob => {
         revenue: fab.job_details?.project_value || "-",
         gp: "-",
         draft_completed: fab.current_stage === 'completed' ? 'completed' : 'Not completed',
-        drafter: fab.drafter_name || '-',
+        drafter: fab.draft_data?.drafter_name || '-',
         template_received: '',
         revised: '',
         sct_completed: '',

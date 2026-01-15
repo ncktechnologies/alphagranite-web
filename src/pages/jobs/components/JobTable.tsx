@@ -863,12 +863,12 @@ export const JobTable = ({
         {
             id: 'final_programming_notes',
             header: ({ column }) => (
-                <DataGridColumnHeader title="Final Programming Notes" column={column} />
+                <DataGridColumnHeader title="Notes" column={column} />
             ),
             cell: ({ row }) => {
                 const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
                                Array.isArray(row.original.notes) ? row.original.notes : [];
-                const fpNotes = fabNotes.filter(note => note.stage === 'final_programming');
+                const fpNotes = fabNotes.filter(note => note.stage === 'cut_list');
                 
                 if (fpNotes.length === 0) {
                     return <span className="text-xs text-gray-500 italic">No notes</span>;

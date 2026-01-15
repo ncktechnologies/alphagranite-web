@@ -33,9 +33,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
 import { JOB_STAGES } from '@/hooks/use-job-stage';
-import { Fragment } from 'react';
-import { Fab } from '@/store/api/job'; // Import the Fab type
-import ActionsCell from '@/pages/shop/components/action';
+import { Fragment } from "react";
+import { Fab } from "@/store/api/job"; // Import the Fab type
+
+
+import ActionsCell from "@/pages/shop/components/action";
+import { NotesModal } from "@/components/common/NotesModal";
 
 // Define the interface for calculated cut list data
 export interface CalculatedCutListData {
@@ -92,7 +95,7 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
         no_of_pcs: fabWithExtraFields.no_of_pieces || 0,
         total_sq_ft: fab.total_sqft || 0,
         wl_ln_ft: fabWithExtraFields.wj_linft || 0,
-        // sl_ln_ft: calculateSlLnFt(),
+        sl_ln_ft: fabWithExtraFields.sl_linft || 0,
         edging_ln_ft: fabWithExtraFields.edging_linft || 0,
         cnc_ln_ft: fabWithExtraFields.cnc_linft || 0,
         milter_ln_ft: fabWithExtraFields.miter_linft || 0,
@@ -126,6 +129,7 @@ interface CutListTableWithCalculationsProps {
     setSalesPersonFilter?: (filter: string) => void;
     dateRange?: DateRange | undefined;
     setDateRange?: (range: DateRange | undefined) => void;
+    onAddNote?: (fabId: string, note: string) => void;
 }
 
 export const CutListTableWithCalculations = ({
@@ -147,7 +151,8 @@ export const CutListTableWithCalculations = ({
     salesPersonFilter,
     setSalesPersonFilter,
     dateRange,
-    setDateRange
+    setDateRange,
+    onAddNote
 }: CutListTableWithCalculationsProps) => {
     // Use passed pagination state or default to local state
     const [localPagination, setLocalPagination] = useState<PaginationState>({
@@ -166,6 +171,8 @@ export const CutListTableWithCalculations = ({
     const [localDateRange, setLocalDateRange] = useState<DateRange | undefined>(undefined);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+    const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
+    const [selectedFabId, setSelectedFabId] = useState<string>('');
 
     const effectiveSearchQuery = searchQuery !== undefined ? searchQuery : localSearchQuery;
     const setEffectiveSearchQuery = setSearchQuery || setLocalSearchQuery;
@@ -314,6 +321,25 @@ export const CutListTableWithCalculations = ({
     };
     const handleView = (id: string) => {
         navigate(`/job/cut-list/${id}`);
+    };
+
+    const handleAddNote = (id: string) => {
+        setSelectedFabId(id);
+        setIsNotesModalOpen(true);
+    };
+
+    const handleNoteSubmit = async (note: string, fabId: string) => {
+        if (onAddNote) {
+            onAddNote(fabId, note);
+        }
+        // Close modal after submission
+        setIsNotesModalOpen(false);
+        setSelectedFabId('');
+    };
+
+    const handleCloseNotesModal = () => {
+        setIsNotesModalOpen(false);
+        setSelectedFabId('');
     };
 
     const baseColumns = useMemo<ColumnDef<CalculatedCutListData>[]>(() => [
@@ -545,9 +571,17 @@ export const CutListTableWithCalculations = ({
         {
             id: 'actions',
             header: '',
-            cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(row.original.fab_id)} />,
+            cell: ({ row }) => (
+                <div className="flex items-center gap-2">
+                    <ActionsCell 
+                        row={row as any}
+                        onView={() => handleView(row.original.fab_id)}
+                        onAddNote={handleAddNote}
+                    />
+                </div>
+            ),
             enableSorting: false,
-            size: 60,
+            size: 120,
         },
     ], [path]);
 
@@ -582,7 +616,8 @@ export const CutListTableWithCalculations = ({
     });
 
     return (
-        <DataGrid
+        <>
+            <DataGrid
             table={table}
             recordCount={filteredData.length}
             isLoading={isLoading}
@@ -767,6 +802,16 @@ export const CutListTableWithCalculations = ({
                     <DataGridPagination />
                 </CardFooter>
             </Card>
-        </DataGrid>
+            </DataGrid>
+            
+            <NotesModal
+                isOpen={isNotesModalOpen}
+                onClose={handleCloseNotesModal}
+                fabId={selectedFabId}
+                onSubmit={handleNoteSubmit}
+            />
+        </>
     );
 };
+
+export default CutListTableWithCalculations;

@@ -72,21 +72,19 @@ export function OtpVerifyPage() {
         try {
             console.log('Submitting OTP:', otp);
             
-            // For password reset flow, navigate to change password page
+            // For password reset flow, navigate to reset password confirm page
             if (from === 'reset-password' && username) {
-                // Navigate to change password page with OTP and username
-                navigate('/auth/change-password', { 
-                    state: { 
-                        otp: otp,
-                        username: username,
-                        from: 'reset-password'
-                    } 
-                });
+                // Store OTP and username in sessionStorage for the reset flow
+                sessionStorage.setItem('password_reset_data', JSON.stringify({
+                    username: username,
+                    otp: otp
+                }));
+                // Navigate to reset password confirm page
+                navigate('/auth/reset-password-confirm');
             } else {
                 // For other flows, just simulate verification
                 await new Promise((res) => setTimeout(res, 1000));
                 toast.success(`OTP Verified: ${otp}`);
-                navigate('/auth/reset-password')
             }
         } catch (error: any) {
             console.error('OTP Error', error);

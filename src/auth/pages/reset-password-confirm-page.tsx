@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { AlertCircle, Check, Eye, EyeOff } from 'lucide-react';
+import { AlertCircle, Check, Eye, EyeOff, MoveLeft } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
   Form,
+  FormControl,
   FormField,
   FormItem,
   FormLabel,
@@ -15,42 +16,27 @@ import {
 import { Input } from '@/components/ui/input';
 import { LoaderCircleIcon } from 'lucide-react';
 import {
-  getNewPasswordSchema,
+  getPasswordResetSchema,
   NewPasswordSchemaType,
+  PasswordResetSchemaType as ResetPasswordFormType,
 } from '../forms/reset-password-schema';
 import { Card, CardContent } from '@/components/ui/card';
 import { FormHeader } from '@/components/ui/form-header';
-import Popup from '@/components/ui/popup';
-import { useChangePasswordMutation } from '@/store/api/auth';
+import { useResetPasswordMutation } from '@/store/api/auth';
 import { toast } from 'sonner';
-import { useLazyGetProfileQuery } from '@/store/api/auth';
-import { useDispatch } from 'react-redux';
-import { setCredentials } from '@/store/slice';
 
-export function ChangePasswordPage() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const dispatch = useDispatch();
-  const [currentPasswordVisible, setCurrentPasswordVisible] = useState(false);
-  const [passwordVisible, setPasswordVisible] = useState(false);
-  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+export function ResetPasswordConfirmPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [showPopover, setShowPopover] = useState(false);
-  const [changePassword] = useChangePasswordMutation();
-  const [getProfile] = useLazyGetProfileQuery();
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
+  const navigate = useNavigate();
+  const [resetPassword] = useResetPasswordMutation();
 
-  // Check if this is a first-time login
-  const isFirstTimeLogin = () => {
-    const token = localStorage.getItem('token');
-    return !!token;
-  };
-
-  const form = useForm<NewPasswordSchemaType>({
-    resolver: zodResolver(getNewPasswordSchema()),
+  const form = useForm<ResetPasswordFormType>({
+    resolver: zodResolver(getPasswordResetSchema()),
     defaultValues: {
-      currentPassword: '',
       password: '',
       confirmPassword: '',
     },
@@ -70,50 +56,45 @@ export function ChangePasswordPage() {
         return error.data.detail.msg || JSON.stringify(error.data.detail);
       }
     }
-    return error?.message || 'Failed to change password. Please try again.';
+    return error?.message || 'Failed to reset password. Please try again.';
   };
 
-  async function onSubmit(values: NewPasswordSchemaType) {
+  async function onSubmit(values: ResetPasswordFormType) {
     try {
       setIsProcessing(true);
       setError(null);
 
-      // Log the values being sent
-      // console.log('Sending password change request:', {
-      //   current_password: values.currentPassword,
-      //   new_password: values.password,
-      //   confirm_password: values.confirmPassword
-      // });
-
-      // Call the API to change password
-      await changePassword({ 
-        current_password: values.currentPassword,
-        new_password: values.password,
-        confirm_password: values.confirmPassword
-      }).unwrap();
-
-      toast.success('Password changed successfully!');
-      setSuccessMessage('Password changed successfully!');
-      setShowPopover(true);
+      // Get username and OTP from sessionStorage
+      const storedData = sessionStorage.getItem('password_reset_data');
+      if (!storedData) {
+        setError('Session expired. Please restart the password reset process.');
+        return;
+      }
       
-      // For first-time login, we need to complete the login flow
-      if (isFirstTimeLogin()) {
-        // Get user profile
-        const profileData = await getProfile().unwrap();
-        const accessToken = localStorage.getItem('token');
-        if (accessToken) {
-          dispatch(
-            setCredentials({
-              admin: profileData,
-              access_token: accessToken,
-              permissions: profileData?.action_permissions || [], // Pass permissions to Redux
-            })
-          );
-        }
+      const { username, otp } = JSON.parse(storedData);
+      
+      if (!username || !otp) {
+        setError('Missing required data for password reset. Please restart the process.');
+        return;
       }
 
-      // Reset form
-      form.reset();
+      // Call the API to reset password using the new endpoint
+      await resetPassword({ 
+        username_or_email: username,
+        otp: otp,
+        new_password: values.password
+      }).unwrap();
+
+      // Clear stored data
+      sessionStorage.removeItem('password_reset_data');
+
+      // Set success message
+      setSuccessMessage('Password reset successfully! You can now sign in with your new password.');
+      
+      // Redirect to sign in page after a delay
+      setTimeout(() => {
+        navigate('/auth/signin?pwd_reset=success');
+      }, 2000);
     } catch (err: any) {
       console.error('Password reset error:', err);
       const errorMessage = getErrorMessage(err);
@@ -123,26 +104,16 @@ export function ChangePasswordPage() {
     }
   }
 
-  const handleClosePopup = () => {
-    setShowPopover(false);
-    // If this was a first-time login, redirect to update profile page
-    if (isFirstTimeLogin()) {
-      navigate('/auth/update-profile');
-    } else {
-      navigate('/');
-    }
-  };
-
   return (
     <div className="w-full flex flex-col items-center justify-center">
-      <FormHeader title="Change password" caption={isFirstTimeLogin() 
-        ? 'Please change your default password to a new desired password' 
-        : 'Please change your password to a new desired password'} />
+      <FormHeader 
+        title="Reset Your Password" 
+        caption='Enter your new password to complete the reset process'
+      />
       <Card className="w-full max-w-[398px] overflow-y-auto flex flex-wrap border-[#DFDFDF]">
         <CardContent className="px-6 py-12">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-
 
               {error && (
                 <Alert variant="destructive">
@@ -165,45 +136,13 @@ export function ChangePasswordPage() {
               <div className="space-y-4">
                 <FormField
                   control={form.control}
-                  name="currentPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Current Password *</FormLabel>
-                      <div className="relative">
-                        <Input
-                          placeholder="******************"
-                          type={currentPasswordVisible ? 'text' : 'password'}
-                          autoComplete="current-password"
-                          {...field}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          mode="icon"
-                          onClick={() => setCurrentPasswordVisible(!currentPasswordVisible)}
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                        >
-                          {currentPasswordVisible ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
                   name="password"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>New Password *</FormLabel>
                       <div className="relative">
                         <Input
-                          placeholder="******************"
+                          placeholder="Enter new password"
                           type={passwordVisible ? 'text' : 'password'}
                           autoComplete="new-password"
                           {...field}
@@ -235,7 +174,7 @@ export function ChangePasswordPage() {
                       <FormLabel>Confirm Password *</FormLabel>
                       <div className="relative">
                         <Input
-                          placeholder="******************"
+                          placeholder="Confirm new password"
                           type={confirmPasswordVisible ? 'text' : 'password'}
                           autoComplete="new-password"
                           {...field}
@@ -265,35 +204,26 @@ export function ChangePasswordPage() {
               <Button type="submit" className="w-full" disabled={isProcessing}>
                 {isProcessing ? (
                   <span className="flex items-center gap-2">
-                    <LoaderCircleIcon className="h-4 w-4" /> Updating Password...
+                    <LoaderCircleIcon className="h-4 w-4" /> Resetting Password...
                   </span>
                 ) : (
-                  'Update password'
+                  'Reset Password'
                 )}
               </Button>
-
 
             </form>
           </Form>
         </CardContent>
       </Card>
-      <Popup isOpen={showPopover}
-        title='Password updated'
-        description='Your password was updated successfully'
-
-      >
-
-        <div className="flex flex-col items-center mt-4">
-
-
-          <Button
-            className="px-8"
-            onClick={handleClosePopup}
-          >
-            Continue
-          </Button>
-        </div>
-      </Popup>
+      
+      <div className="text-center text-sm mt-4">
+        <Link
+          to="/auth/signin"
+          className="inline-flex items-center gap-2 text-sm font-semibold text-accent-foreground hover:underline hover:underline-offset-2"
+        >
+          <MoveLeft className="size-3.5 opacity-70" /> Back to Sign In
+        </Link>
+      </div>
     </div>
   );
 }

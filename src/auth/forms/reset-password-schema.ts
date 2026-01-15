@@ -9,7 +9,7 @@ export const getResetRequestSchema = () => {
   });
 };
 
-// Schema for setting a new password
+// Schema for changing password (requires current password)
 export const getNewPasswordSchema = () => {
   return z
     .object({
@@ -35,9 +35,35 @@ export const getNewPasswordSchema = () => {
     });
 };
 
+// Schema for resetting password (via OTP, no current password required)
+export const getPasswordResetSchema = () => {
+  return z
+    .object({
+      password: z
+        .string()
+        .min(8, { message: 'Password must be at least 8 characters.' })
+        .regex(/[A-Z]/, {
+          message: 'Password must contain at least one uppercase letter.',
+        })
+        .regex(/[0-9]/, {
+          message: 'Password must contain at least one number.',
+        }),
+      confirmPassword: z
+        .string()
+        .min(1, { message: 'Please confirm your password.' }),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: "Passwords don't match",
+      path: ['confirmPassword'],
+    });
+};
+
 export type ResetRequestSchemaType = z.infer<
   ReturnType<typeof getResetRequestSchema>
 >;
 export type NewPasswordSchemaType = z.infer<
   ReturnType<typeof getNewPasswordSchema>
+>;
+export type PasswordResetSchemaType = z.infer<
+  ReturnType<typeof getPasswordResetSchema>
 >;

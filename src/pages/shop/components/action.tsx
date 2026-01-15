@@ -1,6 +1,6 @@
 import { Row } from '@tanstack/react-table';
 import { toast } from 'sonner';
-import { EllipsisVertical, Eye } from 'lucide-react';
+import { EllipsisVertical, Eye, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -17,17 +17,19 @@ import { ShopData } from './table';
 interface ActionsCellProps {
 // id:string
 row: Row<ShopData>,
-onView?: () => void
+onView?: () => void,
+onAddNote?: (fabId: string) => void
 }
 
-function ActionsCell({  row,onView}: ActionsCellProps) {
+function ActionsCell({  row,onView,onAddNote}: ActionsCellProps) {
   const bulletin = row.original;
   const [selectedBulletin, setSelectedBulletin] = useState<ShopData | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  const handleViewDetails = () => {
+  const handleViewDetails = (e: React.MouseEvent) => {
+    e.stopPropagation();
     setSelectedBulletin(bulletin);
     // setDetailsOpen(true);
   };
@@ -42,9 +44,15 @@ function ActionsCell({  row,onView}: ActionsCellProps) {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           {/* <DropdownMenuLabel>Actions</DropdownMenuLabel> */}
-          <DropdownMenuItem onClick={onView}>
+          <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onView?.(); }}>
            View
           </DropdownMenuItem>
+          {onAddNote && (
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAddNote(row.original.id?.toString()); }}>
+              <MessageSquare className="mr-2 h-4 w-4" />
+              Add Note
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
      
