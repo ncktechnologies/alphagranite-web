@@ -65,8 +65,8 @@ export interface CalculatedCutListData {
 export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
     // Access additional fields that exist in the backend response but not in the Fab interface
     const fabWithExtraFields = fab as any;
-    
-   
+
+
 
     // Calculate cost of stone based on actual project value
     const calculateCostOfStone = (): number => {
@@ -101,7 +101,7 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
         fp_completed: fabWithExtraFields.final_programming_complete ? 'Yes' : 'No',
         cip: '', // Placeholder - would need to get CIP from backend
         install_date: fabWithExtraFields.installation_date || '',
-        shop_date_schedule:fabWithExtraFields.shop_date_schedule || "",
+        shop_date_schedule: fabWithExtraFields.shop_date_schedule || "",
         sales_person: fabWithExtraFields.sales_person_name || '',
     };
 };
@@ -313,30 +313,30 @@ export const CutListTableWithCalculations = ({
         }
     };
     const handleView = (id: string) => {
-            navigate(`/job/cut-list/${id}`);
-        };
+        navigate(`/job/cut-list/${id}`);
+    };
 
     const baseColumns = useMemo<ColumnDef<CalculatedCutListData>[]>(() => [
-        {
-            accessorKey: 'id',
-            accessorFn: (row: CalculatedCutListData) => row.id,
-            header: () => <DataGridTableRowSelectAll />,
-            cell: ({ row }) => <DataGridTableRowSelect row={row} />,
-            enableSorting: false,
-            enableHiding: false,
-            enableResizing: false,
-            size: 48,
-            meta: {
-                cellClassName: '',
-            },
-        },
+        // {
+        //     accessorKey: 'id',
+        //     accessorFn: (row: CalculatedCutListData) => row.id,
+        //     header: () => <DataGridTableRowSelectAll />,
+        //     cell: ({ row }) => <DataGridTableRowSelect row={row} />,
+        //     enableSorting: false,
+        //     enableHiding: false,
+        //     enableResizing: false,
+        //     size: 48,
+        //     meta: {
+        //         cellClassName: '',
+        //     },
+        // },
         {
             id: "fab_type",
             accessorKey: "fab_type",
             header: ({ column }) => (
                 <DataGridColumnHeader title="FAB TYPE" column={column} />
             ),
-            cell: ({ row }) => <span className="text-sm">{row.original.fab_type}</span>,
+            cell: ({ row }) => <span className="text-sm uppercase">{row.original.fab_type}</span>,
         },
         {
             id: "fab_id",
@@ -418,7 +418,7 @@ export const CutListTableWithCalculations = ({
                 </span>
             ),
         },
-       
+
         {
             id: "edging_ln_ft",
             accessorKey: "edging_ln_ft",
@@ -545,223 +545,228 @@ export const CutListTableWithCalculations = ({
         {
             id: 'actions',
             header: '',
-            cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(row.original.fab_id)}/>,
+            cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(row.original.fab_id)} />,
             enableSorting: false,
             size: 60,
         },
     ], [path]);
-        
 
 
-const [sorting, setSorting] = useState<SortingState>([]);
 
-const table = useReactTable({
-    columns: baseColumns,
-    data: filteredData,
-    pageCount: Math.ceil(filteredData.length / effectivePagination.pageSize),
-    state: { pagination: effectivePagination, sorting },
-    onPaginationChange: (updater) => {
-        // Handle both functional and direct updates
-        const newPagination = typeof updater === 'function'
-            ? updater(effectivePagination)
-            : updater;
-        if (newPagination) {
-            setEffectivePagination(newPagination as PaginationState);
+    const [sorting, setSorting] = useState<SortingState>([]);
+
+    const table = useReactTable({
+        columns: baseColumns,
+        data: filteredData,
+        pageCount: Math.ceil(filteredData.length / effectivePagination.pageSize),
+        state: { pagination: effectivePagination, sorting },
+        onPaginationChange: (updater) => {
+            // Handle both functional and direct updates
+            const newPagination = typeof updater === 'function'
+                ? updater(effectivePagination)
+                : updater;
+            if (newPagination) {
+                setEffectivePagination(newPagination as PaginationState);
+            }
+        },
+        onSortingChange: setSorting,
+        getCoreRowModel: getCoreRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        meta: {
+            getRowAttributes: (row: any) => ({
+                'data-fab-type': row.original.fab_type?.toLowerCase()
+            })
         }
-    },
-    onSortingChange: setSorting,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-});
+    });
 
-return (
-    <DataGrid
-        table={table}
-        recordCount={filteredData.length}
-        isLoading={isLoading}
-        groupByDate={true}
-        dateKey="shop_date_schedule"
-        tableLayout={{
-            columnsPinnable: true,
-            columnsMovable: true,
-            columnsVisibility: true,
-            cellBorder: true,
-        }}
-        onRowClick={(row) => handleRowClickInternal(row as CalculatedCutListData)}
-    >
-        <Card>
-            <CardHeader className="py-3.5 border-b">
-                <CardHeading>
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                        {/* Search Input */}
-                        <div className="relative">
-                            <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
-                            <Input
-                                placeholder="Search Cut Lists..."
-                                value={effectiveSearchQuery}
-                                onChange={(e) => setEffectiveSearchQuery(e.target.value)}
-                                className="ps-9 w-[230px] h-[34px]"
-                            />
-                            {effectiveSearchQuery && (
-                                <Button
-                                    mode="icon"
-                                    variant="ghost"
-                                    className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                                    onClick={() => setEffectiveSearchQuery('')}
-                                >
-                                    <X />
-                                </Button>
-                            )}
-                        </div>
+    return (
+        <DataGrid
+            table={table}
+            recordCount={filteredData.length}
+            isLoading={isLoading}
+            groupByDate={true}
+            dateKey="shop_date_schedule"
+            tableLayout={{
+                columnsPinnable: true,
+                columnsMovable: true,
+                columnsVisibility: true,
+                cellBorder: true,
+            }}
+            onRowClick={(row) => handleRowClickInternal(row as CalculatedCutListData)}
+        >
+            <Card>
+                <CardHeader className="py-3.5 border-b">
+                    <CardHeading>
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                            {/* Search Input */}
+                            <div className="relative">
+                                <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                                <Input
+                                    placeholder="Search Cut Lists..."
+                                    value={effectiveSearchQuery}
+                                    onChange={(e) => setEffectiveSearchQuery(e.target.value)}
+                                    className="ps-9 w-[230px] h-[34px]"
+                                />
+                                {effectiveSearchQuery && (
+                                    <Button
+                                        mode="icon"
+                                        variant="ghost"
+                                        className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                                        onClick={() => setEffectiveSearchQuery('')}
+                                    >
+                                        <X />
+                                    </Button>
+                                )}
+                            </div>
 
-                        {/* Fab Type Filter */}
-                        <Select value={effectiveFabTypeFilter} onValueChange={setEffectiveFabTypeFilter}>
-                            <SelectTrigger className="w-[150px] h-[34px]">
-                                <SelectValue placeholder="Fab Type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Fab Types</SelectItem>
-                                {uniqueFabTypes.map((type) => (
-                                    <SelectItem key={type} value={type}>
-                                        {type}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-
-                        {/* Date Filter */}
-                        <div className="flex items-center gap-2">
-                            <Select value={effectiveDateFilter} onValueChange={(value) => {
-                                setEffectiveDateFilter(value);
-                                if (value === 'custom') {
-                                    setIsDatePickerOpen(false);
-                                }
-                            }}>
-                                <SelectTrigger className="w-[170px] h-[34px]">
-                                    <SelectValue placeholder="Install Date" />
+                            {/* Fab Type Filter */}
+                            <Select value={effectiveFabTypeFilter} onValueChange={setEffectiveFabTypeFilter}>
+                                <SelectTrigger className="w-[150px] h-[34px]">
+                                    <SelectValue placeholder="Fab Type" />
                                 </SelectTrigger>
-                                <SelectContent className="w-48">
-                                    <SelectItem value="all">All</SelectItem>
-                                    <SelectItem value="today">Today</SelectItem>
-                                    <SelectItem value="this_week">This Week</SelectItem>
-                                    <SelectItem value="this_month">This Month</SelectItem>
-                                    <SelectItem value="next_week">Next Week</SelectItem>
-                                    <SelectItem value="next_month">Next Month</SelectItem>
-                                    <SelectItem value="unscheduled">Unscheduled</SelectItem>
-                                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                                    <SelectItem value="custom">Custom</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            {/* Custom Date Range Picker */}
-                            {effectiveDateFilter === 'custom' && (
-                                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" size="sm" className="h-[34px]">
-                                            <CalendarDays className="h-4 w-4 mr-2" />
-                                            {effectiveDateRange?.from ? (
-                                                effectiveDateRange.to ? (
-                                                    <>
-                                                        {format(effectiveDateRange.from, 'MMM dd')} - {format(effectiveDateRange.to, 'MMM dd, yyyy')}
-                                                    </>
-                                                ) : (
-                                                    format(effectiveDateRange.from, 'MMM dd, yyyy')
-                                                )
-                                            ) : (
-                                                <span>Pick dates</span>
-                                            )}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar
-                                            initialFocus
-                                            mode="range"
-                                            defaultMonth={tempDateRange?.from || new Date()}
-                                            selected={tempDateRange}
-                                            onSelect={setTempDateRange}
-                                            numberOfMonths={2}
-                                        />
-                                        <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                onClick={() => {
-                                                    setTempDateRange(undefined);
-                                                    setEffectiveDateRange(undefined);
-                                                }}
-                                            >
-                                                Reset
-                                            </Button>
-                                            <Button
-                                                size="sm"
-                                                onClick={() => {
-                                                    setEffectiveDateRange(tempDateRange);
-                                                    setIsDatePickerOpen(false);
-                                                }}
-                                            >
-                                                Apply
-                                            </Button>
-                                        </div>
-                                    </PopoverContent>
-                                </Popover>
-                            )}
-                        </div>
-
-                        {/* Sales Person Filter */}
-                        <Select value={effectiveSalesPersonFilter} onValueChange={setEffectiveSalesPersonFilter}>
-                            <SelectTrigger className="w-[180px] h-[34px]">
-                                <SelectValue placeholder="Sales Person" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Sales Persons</SelectItem>
-                                <SelectItem value="no_sales_person">No Sales Person</SelectItem>
-                                {uniqueSalesPersons.map((person) => (
-                                    <SelectItem key={person || 'N/A'} value={person || ''}>
-                                        {person || 'N/A'}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-
-                        {/* Stage filter - only visible to super admins */}
-                        {isSuperAdmin && (
-                            <Select onValueChange={handleStageFilterChange}>
-                                <SelectTrigger className="w-[170px] h-[34px]">
-                                    <SelectValue placeholder="Go to stage" />
-                                </SelectTrigger>
-                                <SelectContent className="w-48">
-                                    <SelectItem value="all">All Stages</SelectItem>
-                                    {Object.values(JOB_STAGES).map((stage) => (
-                                        <SelectItem key={stage.stage} value={stage.stage}>
-                                            {stage.title}
+                                <SelectContent>
+                                    <SelectItem value="all">All Fab Types</SelectItem>
+                                    {uniqueFabTypes.map((type) => (
+                                        <SelectItem key={type} value={type}>
+                                            {type}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
-                        )}
-                    </div>
-                </CardHeading>
 
-                <CardToolbar>
-                    <Button variant="outline" onClick={() => exportTableToCSV(table, "CutList")}>
-                        Export CSV
-                    </Button>
-                </CardToolbar>
-            </CardHeader>
+                            {/* Date Filter */}
+                            <div className="flex items-center gap-2">
+                                <Select value={effectiveDateFilter} onValueChange={(value) => {
+                                    setEffectiveDateFilter(value);
+                                    if (value === 'custom') {
+                                        setIsDatePickerOpen(false);
+                                    }
+                                }}>
+                                    <SelectTrigger className="w-[170px] h-[34px]">
+                                        <SelectValue placeholder="Install Date" />
+                                    </SelectTrigger>
+                                    <SelectContent className="w-48">
+                                        <SelectItem value="all">All</SelectItem>
+                                        <SelectItem value="today">Today</SelectItem>
+                                        <SelectItem value="this_week">This Week</SelectItem>
+                                        <SelectItem value="this_month">This Month</SelectItem>
+                                        <SelectItem value="next_week">Next Week</SelectItem>
+                                        <SelectItem value="next_month">Next Month</SelectItem>
+                                        <SelectItem value="unscheduled">Unscheduled</SelectItem>
+                                        <SelectItem value="scheduled">Scheduled</SelectItem>
+                                        <SelectItem value="custom">Custom</SelectItem>
+                                    </SelectContent>
+                                </Select>
 
-            <CardTable>
-                <ScrollArea>
-                    <DataGridTable />
-                    <ScrollBar orientation="horizontal" />
-                </ScrollArea>
-            </CardTable>
+                                {/* Custom Date Range Picker */}
+                                {effectiveDateFilter === 'custom' && (
+                                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button variant="outline" size="sm" className="h-[34px]">
+                                                <CalendarDays className="h-4 w-4 mr-2" />
+                                                {effectiveDateRange?.from ? (
+                                                    effectiveDateRange.to ? (
+                                                        <>
+                                                            {format(effectiveDateRange.from, 'MMM dd')} - {format(effectiveDateRange.to, 'MMM dd, yyyy')}
+                                                        </>
+                                                    ) : (
+                                                        format(effectiveDateRange.from, 'MMM dd, yyyy')
+                                                    )
+                                                ) : (
+                                                    <span>Pick dates</span>
+                                                )}
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-auto p-0" align="start">
+                                            <Calendar
+                                                initialFocus
+                                                mode="range"
+                                                defaultMonth={tempDateRange?.from || new Date()}
+                                                selected={tempDateRange}
+                                                onSelect={setTempDateRange}
+                                                numberOfMonths={2}
+                                            />
+                                            <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setTempDateRange(undefined);
+                                                        setEffectiveDateRange(undefined);
+                                                    }}
+                                                >
+                                                    Reset
+                                                </Button>
+                                                <Button
+                                                    size="sm"
+                                                    onClick={() => {
+                                                        setEffectiveDateRange(tempDateRange);
+                                                        setIsDatePickerOpen(false);
+                                                    }}
+                                                >
+                                                    Apply
+                                                </Button>
+                                            </div>
+                                        </PopoverContent>
+                                    </Popover>
+                                )}
+                            </div>
 
-            <CardFooter>
-                <DataGridPagination />
-            </CardFooter>
-        </Card>
-    </DataGrid>
-);
+                            {/* Sales Person Filter */}
+                            <Select value={effectiveSalesPersonFilter} onValueChange={setEffectiveSalesPersonFilter}>
+                                <SelectTrigger className="w-[180px] h-[34px]">
+                                    <SelectValue placeholder="Sales Person" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Sales Persons</SelectItem>
+                                    <SelectItem value="no_sales_person">No Sales Person</SelectItem>
+                                    {uniqueSalesPersons.map((person) => (
+                                        <SelectItem key={person || 'N/A'} value={person || ''}>
+                                            {person || 'N/A'}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            {/* Stage filter - only visible to super admins */}
+                            {isSuperAdmin && (
+                                <Select onValueChange={handleStageFilterChange}>
+                                    <SelectTrigger className="w-[170px] h-[34px]">
+                                        <SelectValue placeholder="Go to stage" />
+                                    </SelectTrigger>
+                                    <SelectContent className="w-48">
+                                        <SelectItem value="all">All Stages</SelectItem>
+                                        {Object.values(JOB_STAGES).map((stage) => (
+                                            <SelectItem key={stage.stage} value={stage.stage}>
+                                                {stage.title}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                        </div>
+                    </CardHeading>
+
+                    <CardToolbar>
+                        <Button variant="outline" onClick={() => exportTableToCSV(table, "CutList")}>
+                            Export CSV
+                        </Button>
+                    </CardToolbar>
+                </CardHeader>
+
+                <CardTable>
+                    <ScrollArea>
+                        <DataGridTable />
+                        <ScrollBar orientation="horizontal" />
+                    </ScrollArea>
+                </CardTable>
+
+                <CardFooter>
+                    <DataGridPagination />
+                </CardFooter>
+            </Card>
+        </DataGrid>
+    );
 };

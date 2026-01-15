@@ -23,7 +23,7 @@ import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
 import { DataGridPagination } from '@/components/ui/data-grid-pagination';
 import { DataGridTable, DataGridTableRowSelect, DataGridTableRowSelectAll } from '@/components/ui/data-grid-table';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Search, X, CalendarDays } from 'lucide-react';
+import { Search, X, CalendarDays, EllipsisVertical } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { exportTableToCSV } from '@/lib/exportToCsv';
@@ -33,7 +33,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
 import { JOB_STAGES } from '@/hooks/use-job-stage'; // Add this import
-import ActionsCell from '../sales/action';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export interface CutList {
     id: number;
@@ -89,7 +96,7 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
     // Get unique sales persons - FIXED: Handle undefined cutLists
     const salesPersons = useMemo(() => {
         if (!cutLists || !Array.isArray(cutLists)) return [];
-        const persons = Array.from(new Set(cutLists.map(list => list.sales_person).filter(Boolean)));
+        const persons = Array.from(new Set(cutLists.map(list => list.sales_person).filter((person): person is string => Boolean(person))));
         return persons.sort();
     }, [cutLists]);
 
@@ -233,7 +240,15 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
             header: ({ column }) => (
                 <DataGridColumnHeader title="FAB TYPE" column={column} />
             ),
-            cell: ({ row }) => <span className="text-sm">{row.original.fab_type}</span>,
+            cell: ({ row }) => {
+                const fabType = row.original.fab_type;
+                
+                return (
+                    <span className="text-xs font-medium px-2.5 py-0.5 rounded-full">
+                        {fabType}
+                    </span>
+                );
+            },
         },
         {
             id: "fab_id",
@@ -456,7 +471,18 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
         {
             id: 'actions',
             header: '',
-            cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(path, row.original.fab_id)} />,
+            cell: ({ row }) => (
+                <Button 
+                    variant="ghost" 
+                    className="h-8 w-8 p-0"
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        handleView(path, row.original.fab_id);
+                    }}
+                >
+                    <EllipsisVertical className="h-4 w-4" />
+                </Button>
+            ),
             enableSorting: false,
             size: 60,
         },
@@ -474,6 +500,11 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
         getFilteredRowModel: getFilteredRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
+        meta: {
+            getRowAttributes: (row: any) => ({
+                'data-fab-type': row.original.fab_type?.toLowerCase()
+            })
+        }
     });
 
     return (
@@ -618,8 +649,8 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
                                     <SelectItem value="all">All Sales Persons</SelectItem>
                                     <SelectItem value="no_sales_person">No Sales Person</SelectItem>
                                     {salesPersons.map((person) => (
-                                        <SelectItem key={person} value={person}>
-                                            {person}
+                                        <SelectItem key={person || 'unknown'} value={person || 'unknown'}>
+                                            {person || 'Unknown'}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
