@@ -7,9 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
-import { 
-  useGetFabByIdQuery, 
-  useGetDraftingByFabIdQuery, 
+import {
+  useGetFabByIdQuery,
+  useGetDraftingByFabIdQuery,
   useGetSlabSmithByFabIdQuery,
   useCreateSlabSmithMutation,
   useAddFilesToSlabSmithMutation
@@ -56,7 +56,9 @@ export function SlabSmithDetailsPage() {
   const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
 
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
-
+  const getAllFabNotes = (fabNotes: any[]) => {
+    return fabNotes || [];
+  };
   // Fixed handleFilesChange - REPLACES files instead of accumulating
   const handleFilesChange = useCallback(async (files: FileWithPreview[]) => {
     if (!files || files.length === 0) {
@@ -68,7 +70,7 @@ export function SlabSmithDetailsPage() {
 
     // Filter to only actual File objects
     const validFiles = files.filter((fileItem) => fileItem.file instanceof File);
-    
+
     if (validFiles.length === 0) {
       console.log('No valid files to process');
       setPendingFiles([]);
@@ -77,7 +79,7 @@ export function SlabSmithDetailsPage() {
 
     // Extract the File objects
     const fileObjects = validFiles.map(f => f.file as File);
-    
+
     // REPLACE the pending files (don't accumulate)
     setPendingFiles(fileObjects);
 
@@ -90,7 +92,7 @@ export function SlabSmithDetailsPage() {
     }));
 
     setUploadedFileMetas(newFileMetas);
-    
+
     console.log('Set pending files:', fileObjects.length);
     console.log('File names:', fileObjects.map(f => f.name));
 
@@ -146,7 +148,7 @@ export function SlabSmithDetailsPage() {
           size: fileData.size || pendingFiles[index].size,
           type: fileData.type || pendingFiles[index].type,
         }));
-        
+
         setUploadedFileMetas(updatedMetas);
       }
 
@@ -224,7 +226,7 @@ export function SlabSmithDetailsPage() {
   };
 
   if (isFabLoading || isDraftingLoading || isSlabSmithLoading) return <div>Loading...</div>;
-  
+
   const sidebarSections = [
     {
       title: "Job Details",
@@ -244,19 +246,17 @@ export function SlabSmithDetailsPage() {
       ],
     },
     {
-      title: "",
-      sectionTitle: "Slab Smith notes",
+      title: "FAB Notes",
       type: "notes",
-      notes: [
-        {
-          id: 1,
-          avatar: "MR",
-          content: "Lorem ipsum dolor sit amee magna aliqua. veniam, quis nostrud exercitation ",
-          author: "Mike Rodriguez",
-          timestamp: "Oct 3, 2025",
-        },
-      ],
-    },
+      notes: getAllFabNotes(fabData?.fab_notes || []).map(note => ({
+        id: note.id,
+        avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+        content: note.note,
+        author: note.created_by_name || 'Unknown',
+        timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+      }))
+    }
+   
   ];
 
   if (viewMode === 'file' && activeFile) {
@@ -290,7 +290,7 @@ export function SlabSmithDetailsPage() {
       <div className="lg:col-span-3 w-full lg:w-[250px] xl:w-[300px] ultra:w-[400px]" >
         <GraySidebar sections={sidebarSections as any} className='' />
       </div>
-      
+
       <Container className="lg:col-span-9">
         <div className="pt-6">
           <div className="flex justify-between items-start">
@@ -304,7 +304,7 @@ export function SlabSmithDetailsPage() {
         <Separator className="my-6" />
 
         <Card>
-        
+
           <CardContent>
             <TimeTrackingComponent
               isDrafting={isDrafting}
