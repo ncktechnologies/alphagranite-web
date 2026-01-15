@@ -473,22 +473,29 @@ export const JobTable = ({
         {
             accessorKey: 'id',
             accessorFn: (row: IJob) => row.id,
-            header: () => enableMultiSelect ? <Checkbox 
-                checked={effectiveSelectedRows.length === filteredData.length && filteredData.length > 0}
-                onCheckedChange={toggleAllRowsSelection}
-                aria-label="Select all"
-            /> : <></>,
-            cell: ({ row }) => enableMultiSelect ? <Checkbox 
-                checked={effectiveSelectedRows.includes(row.original.fab_id)}
-                onCheckedChange={() => toggleRowSelection(row.original.fab_id)}
-                aria-label="Select row"
-            /> : <></>,
+            header: () => enableMultiSelect ? 
+                <div className="w-full h-full flex items-center justify-center">
+                    <Checkbox 
+                        checked={effectiveSelectedRows.length === filteredData.length && filteredData.length > 0}
+                        onCheckedChange={toggleAllRowsSelection}
+                        aria-label="Select all"
+                    />
+                </div> : <></>,
+            cell: ({ row }) => enableMultiSelect ? 
+                <div className="w-full h-full flex items-center justify-center">
+                    <Checkbox 
+                        checked={effectiveSelectedRows.includes(row.original.fab_id)}
+                        onCheckedChange={() => toggleRowSelection(row.original.fab_id)}
+                        aria-label="Select row"
+                    />
+                </div> : <></>,
             enableSorting: false,
             enableHiding: false,
             enableResizing: false,
             size: 48,
             meta: {
-                cellClassName: 'flex items-center justify-center',
+                cellClassName: 'flex items-center justify-center h-full min-h-[40px] align-middle p-0',
+                headerClassName: '!px-2',
             },
         },
         {
