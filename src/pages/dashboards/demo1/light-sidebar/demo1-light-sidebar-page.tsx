@@ -36,6 +36,7 @@ export function Demo1LightSidebarPage() {
   const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(
     date,
   );
+  const [timePeriod, setTimePeriod] = useState('all');
   const isSuperAdmin = useIsSuperAdmin();
 
   const handleDateRangeApply = () => {
@@ -45,6 +46,10 @@ export function Demo1LightSidebarPage() {
 
   const handleDateRangeReset = () => {
     setTempDateRange(undefined); // Reset the temporary date range
+  };
+
+  const handleTimePeriodChange = (newTimePeriod: string) => {
+    setTimePeriod(newTimePeriod);
   };
 
   const defaultStartDate = new Date(); // Default start date fallback
@@ -60,15 +65,15 @@ export function Demo1LightSidebarPage() {
             // description="Central Hub for Personal Customization"
             />
             <ToolbarActions>
-              <Select defaultValue="1">
-                <SelectTrigger className="w-28 h-8 text-sm">
-                  <SelectValue placeholder="Select" />
+              <Select value={timePeriod} onValueChange={handleTimePeriodChange}>
+                <SelectTrigger className="w-32 h-8 text-sm">
+                  <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="w-28">
-                  <SelectItem value="1">All time</SelectItem>
-                  <SelectItem value="3">3 months</SelectItem>
-                  <SelectItem value="6">6 months</SelectItem>
-                  <SelectItem value="12">12 months</SelectItem>
+                <SelectContent className="w-32">
+                  <SelectItem value="all">All time</SelectItem>
+                  <SelectItem value="today">Today</SelectItem>
+                  <SelectItem value="7days">Last 7 days</SelectItem>
+                  <SelectItem value="30days">Last 30 days</SelectItem>
                 </SelectContent>
               </Select>
             </ToolbarActions>
@@ -92,7 +97,11 @@ export function Demo1LightSidebarPage() {
       </Container>
       <Container>
         {/* Super admins see the full admin dashboard, regular users see role-based dashboard */}
-        {isSuperAdmin ? <Demo1LightSidebarContent /> : <RoleBasedDashboard />}
+        {isSuperAdmin ? 
+          <Demo1LightSidebarContent timePeriod={timePeriod} /> 
+          : 
+          <RoleBasedDashboard />
+        }
       </Container>
     </Fragment>
   );

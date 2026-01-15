@@ -12,15 +12,15 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 
-// Hardcoded dummy data for the performance overview chart
-const dummyChartData = {
-  inProgress: [32, 28, 35, 42, 38, 45, 40, 48, 52, 58, 62, 68],
-  paused: [12, 8, 10, 15, 18, 12, 8, 10, 8, 12, 15, 18],
-  completed: [24, 28, 22, 18, 20, 25, 24, 28, 30, 32, 35, 38],
+// Use empty data when no backend data is available
+const emptyChartData = {
+  inProgress: [],
+  paused: [],
+  completed: [],
 };
 
 const EarningsChart = () => {
-  const [chartData, setChartData] = useState(dummyChartData);
+  const [chartData, setChartData] = useState(emptyChartData);
   const categories: string[] = [
     'Jan',
     'Feb',
@@ -37,8 +37,8 @@ const EarningsChart = () => {
   ];
 
   useEffect(() => {
-    // No need to fetch data, just use the dummy data directly
-    setChartData(dummyChartData);
+    // Initialize with empty data - should be replaced with backend data
+    setChartData(emptyChartData);
   }, []);
 
   const options: ApexOptions = {

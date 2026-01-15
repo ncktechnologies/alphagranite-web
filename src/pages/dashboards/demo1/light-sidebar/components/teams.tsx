@@ -51,72 +51,11 @@ interface IData {
   stage: 'Completed' | 'Drafting' | 'Programming';
 }
 
-const data: IData[] = [
-  {
-    id: 1,
-    status: 'Standard',
-    fabId: '13453',
-    description: 'Preston Kitchen floor',
-    siteName: '9999',
-    date: 'Oct 06, 2025',
-    templater: "Esther Howard",
-    isNew: true,
-    isAssigned: true,
-    isCompleted: true,
-    stage: 'Completed',
-  },
-  {
-    id: 2,
-    status: 'FAB only',
-    fabId: '97346',
-    description: 'Preston Kitchen floor',
-    siteName: '8997',
-    date: 'Oct 06, 2025',
-    templater: "Esther Howard",
-    isNew: false,
-    isAssigned: true,
-    isCompleted: true,
-    stage: 'Drafting',
-  },
-  {
-    id: 3,
-    status: 'FAB only',
-    fabId: '60015',
-    description: 'Preston Kitchen floor',
-    siteName: '9989',
-    templater: "Esther Howard",
-    date: 'Oct 06, 2025',
-    isNew: true,
-    isAssigned: false,
-    isCompleted: true,
-    stage: 'Drafting',
-  },
-  {
-    id: 4,
-    status: 'Standard',
-    fabId: '80950',
-    description: 'Preston Kitchen floor',
-    siteName: '9089',
-    date: 'Oct 06, 2025',
-    templater: "Esther Howard",
-    isNew: true,
-    isAssigned: false,
-    isCompleted: false,
-    stage: 'Programming',
-  },
-  {
-    id: 5,
-    status: 'FAB only',
-    fabId: '67900',
-    description: 'Preston Kitchen floor',
-    siteName: '9098',
-    date: 'Oct 06, 2025',
-    isNew: true,
-    isAssigned: true,
-    isCompleted: false,
-    stage: 'Programming',
-  },
-];
+interface ITeamsProps {
+  recentJobs?: any[]; // RecentJob[] from dashboard API
+}
+
+
 
 const BooleanPill = ({ value }: { value: boolean }) => {
   return (
@@ -145,25 +84,53 @@ const StageBadge = ({ stage }: { stage: IData['stage'] }) => {
   );
 };
 
-const Teams = () => {
+const Teams = ({ recentJobs }: ITeamsProps) => {
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 5,
   });
   const [sorting, setSorting] = useState<SortingState>([
-    { id: 'updated_at', desc: true },
+    { id: 'date', desc: true },
   ]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredData = useMemo(() => {
-    if (!searchQuery) return data;
-    return data.filter(
+  // Map RecentJob data to table format
+  const mapRecentJobsToTableData = (recentJobsData: any[]): IData[] => {
+    return recentJobsData.map((job, index) => ({
+      id: job.fab_id || index + 1,
+      status: job.fab_type === 'Standard' ? 'Standard' : 'FAB only',
+      fabId: job.fab_id?.toString() || '',
+      description: job.job_name || '',
+      siteName: job.job_number || '',
+      templater: job.salesperson || '',
+      date: new Date(job.created_at).toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: '2-digit', 
+        year: 'numeric' 
+      }),
+      isNew: true, // Assuming all recent jobs are new
+      isAssigned: job.stage !== 'Drafting',
+      isCompleted: job.status === 'Completed',
+      stage: job.stage as 'Completed' | 'Drafting' | 'Programming' || 'Drafting',
+    }));
+  };
+
+
+
+  const tableData = useMemo(() => {
+    // Only use backend data - no fallback values
+    const sourceData: IData[] = recentJobs && recentJobs.length > 0 
+      ? mapRecentJobsToTableData(recentJobs)
+      : [];
+    
+    if (!searchQuery) return sourceData;
+    return sourceData.filter(
       (item) =>
         item.fabId.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.description.toLowerCase().includes(searchQuery.toLowerCase()),
     );
-  }, [searchQuery]);
+  }, [recentJobs, searchQuery]);
 
   const columns = useMemo<ColumnDef<IData>[]>(() => [
     // {
@@ -312,8 +279,8 @@ const Teams = () => {
 
   const table = useReactTable({
     columns,
-    data: filteredData,
-    pageCount: Math.ceil((filteredData?.length || 0) / pagination.pageSize),
+    data: tableData,
+    pageCount: Math.ceil((tableData?.length || 0) / pagination.pageSize),
     getRowId: (row: IData) => String(row.id),
     state: {
       pagination,
@@ -334,7 +301,7 @@ const Teams = () => {
   return (
     <DataGrid
       table={table}
-      recordCount={filteredData?.length || 0}
+      recordCount={tableData?.length || 0}
       tableLayout={{
         columnsPinnable: true,
         columnsMovable: true,
@@ -345,28 +312,11 @@ const Teams = () => {
       <Card>
         <CardHeader className="py-3.5 border-b">
           <CardTitle>Recent Jobs</CardTitle>
-          <CardToolbar className="relative">
-            {/* <Search className="size-4 text-text absolute start-3 top-1/2 -translate-y-1/2" />
-            <Input
-              placeholder="Search Teams..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="ps-9 w-40"
-            />
-            {searchQuery.length > 0 && (
-              <Button
-                mode="icon"
-                variant="ghost"
-                className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                onClick={() => setSearchQuery('')}
-              >
-                <X />
-              </Button>
-            )} */}
+          <CardToolbar className="flex items-center gap-3">
             <Button
               variant="inverse"
               size="lg"
-              className="text-primary font-semibold text-[16px] font-[24px]  underline"
+              className="text-primary font-semibold text-[16px] font-[24px] underline ml-auto"
             >
               See all
             </Button>

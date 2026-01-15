@@ -1,45 +1,44 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { NewlyAssignedFab } from '@/store/api/job';
 
 interface ICommunityBadge {
   title: string;
   subtitle: string;
-  status: 'Drafting' | 'SCT' | 'Programming';
+  status: 'Drafting' | 'SCT' | 'Programming' | string;
   statusColor: string; // Tailwind classes like 'text-purple-600 bg-purple-100'
 }
 
 interface IFABProps {
   cardTitle: string;
+  newlyAssignedFabs?: NewlyAssignedFab[];
+  pausedJobs?: any[];
 }
 
-const CommunityBadges = ({ cardTitle }: IFABProps) => {
-  const items: ICommunityBadge[] = [
-    {
-      title: 'Preston kitchen floor',
-      subtitle: 'FAB ID: 34567',
-      status: 'Drafting',
-      statusColor: 'text-purple-600 bg-purple-100',
-    },
-    {
-      title: 'Preston kitchen floor',
-      subtitle: 'FAB ID: 34567',
-      status: 'SCT',
-      statusColor: 'text-red-600 bg-red-100',
-    },
-    {
-      title: 'Preston kitchen floor',
-      subtitle: 'FAB ID: 34567',
-      status: 'Drafting',
-      statusColor: 'text-purple-600 bg-purple-100',
-    },
-    {
-      title: 'Preston kitchen floor',
-      subtitle: 'FAB ID: 34567',
-      status: 'Programming',
-      statusColor: 'bg-[#E2E4ED] text-[#4B5675]',
-    },
-  ];
+const CommunityBadges = ({ cardTitle, newlyAssignedFabs, pausedJobs }: IFABProps) => {
+  // Function to get status color based on stage
+  const getStatusColor = (stage: string) => {
+    const stageColors: Record<string, string> = {
+      'drafting': 'text-purple-600 bg-purple-100',
+      'slab_smith_request': 'text-orange-600 bg-orange-100',
+      'cut_list': 'text-blue-600 bg-blue-100',
+      'templating': 'text-green-600 bg-green-100',
+      'cost_of_stones': 'text-yellow-600 bg-yellow-100',
+      'default': 'bg-[#E2E4ED] text-[#4B5675]'
+    };
+    
+    return stageColors[stage] || stageColors.default;
+  };
+
+  // Transform dashboard data to badge items
+  const items: ICommunityBadge[] = newlyAssignedFabs ? 
+    newlyAssignedFabs.slice(0, 4).map(fab => ({
+      title: fab.job_name,
+      subtitle: `FAB ID: ${fab.fab_id}`,
+      status: fab.stage.replace('_', ' ').replace(/w/g, l => l.toUpperCase()),
+      statusColor: getStatusColor(fab.stage)
+    })) : [];
 
   return (
     <Card className='h-full'>

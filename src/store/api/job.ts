@@ -524,6 +524,65 @@ export interface RevisionResponse {
     updated_by?: number;
 }
 
+// Admin Dashboard Interfaces
+export interface DashboardKPIs {
+    total_fabs: number;
+    total_jobs: number;
+    pending_installations: number;
+    average_revisions: number;
+    completion_rate: number;
+}
+
+export interface OverallStatistics {
+    completed: number;
+    in_progress: number;
+    paused: number;
+    total: number;
+    completion_percentage: number;
+}
+
+export interface FinanceStats {
+    revenue_installed: number;
+    revenue_templated: number;
+    gross_profit: number;
+}
+
+export interface NewlyAssignedFab {
+    fab_id: number;
+    fab_type: string;
+    assigned_to: string;
+    stage: string;
+    job_name: string;
+    created_at: string;
+}
+
+export interface RecentJob {
+    fab_id: number;
+    fab_type: string;
+    created_at: string;
+    job_name: string;
+    job_number: string;
+    salesperson: string;
+    stage: string;
+    status: string;
+}
+
+export interface PerformanceOverview {
+    months: string[];
+    data: number[];
+}
+
+export interface AdminDashboardResponse {
+    kpis: DashboardKPIs;
+    overall_statistics: OverallStatistics;
+    finance: FinanceStats;
+    newly_assigned_fabs: NewlyAssignedFab[];
+    paused_jobs: any[];
+    performance_overview: PerformanceOverview;
+    recent_jobs: RecentJob[];
+    time_period: string;
+}
+
 export const jobApi = createApi({
     reducerPath: "jobApi",
     baseQuery: axiosBaseQuery({ baseUrl: `${baseUrl}/api/v1` }),
@@ -1406,6 +1465,19 @@ export const jobApi = createApi({
                 }),
                 providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
             }),
+
+            // Admin Dashboard endpoint
+            getAdminDashboard: build.query<AdminDashboardResponse, { time_period?: string }>({
+                query: ({ time_period = "all" }) => ({
+                    url: `/dashboard`,
+                    method: "GET",
+                    params: {
+                        time_period
+                    }
+                }),
+                transformResponse: (response: any) => response.data || response,
+                providesTags: ["Job"],
+            }),
         };
     },
 });
@@ -1488,4 +1560,6 @@ export const {
     useGetCurrentDraftingSessionQuery,
     useGetDraftingSessionHistoryQuery,
     useCreateFabNoteMutation,
+    // Admin Dashboard hook
+    useGetAdminDashboardQuery,
 } = jobApi;

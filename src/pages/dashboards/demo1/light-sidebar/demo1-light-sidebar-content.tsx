@@ -10,14 +10,51 @@ import {
 import { Contributions } from './components/chart';
 import { CommunityBadges } from './components/fab';
 import { FinanceStats } from './components/finance';
+import { useGetAdminDashboardQuery } from '@/store/api/job';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export function Demo1LightSidebarContent() {
+interface IDemo1LightSidebarContentProps {
+  timePeriod: string;
+}
+
+export function Demo1LightSidebarContent({ timePeriod }: IDemo1LightSidebarContentProps) {
+  const { data: dashboardData, isLoading, isError } = useGetAdminDashboardQuery({ time_period: timePeriod });
+
+  if (isLoading) {
+    return (
+      <div className="grid gap-5 lg:gap-7.5">
+        <div className="grid lg:grid-cols-3 gap-y-5 lg:gap-7.5 items-stretch">
+          <div className="lg:col-span-3">
+            <div className="grid grid-cols-4 gap-5 lg:gap-7.5 h-full items-stretch">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-32 w-full rounded-lg" />
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="grid lg:grid-cols-3 gap-5 lg:gap-7.5 items-stretch">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-64 w-full rounded-lg" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !dashboardData) {
+    return (
+      <div className="text-center py-10">
+        <p className="text-red-500">Failed to load dashboard data</p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid gap-5 lg:gap-7.5">
       <div className="grid lg:grid-cols-3 gap-y-5 lg:gap-7.5 items-stretch">
         <div className="lg:col-span-3">
           <div className="grid grid-cols-4 gap-5 lg:gap-7.5 h-full items-stretch">
-            <ChannelStats />
+            <ChannelStats dashboardData={dashboardData.kpis} />
           </div>
         </div>
         {/* <div className="lg:col-span-2">
@@ -26,25 +63,19 @@ export function Demo1LightSidebarContent() {
       </div>
       <div className="grid lg:grid-cols-3 gap-5 lg:gap-7.5 items-stretch">
         <div className="lg:col-span-1">
-          <CommunityBadges cardTitle='Newly assigned FAB ID' />
+          <CommunityBadges 
+            cardTitle='Newly assigned FAB ID' 
+            newlyAssignedFabs={dashboardData.newly_assigned_fabs}
+          />
         </div>
         <div className="lg:col-span-1">
-          <Contributions title='Overall Statistics' />
-
+          <Contributions 
+            title='Overall Statistics' 
+            overallStats={dashboardData.overall_statistics}
+          />
         </div>
         <div className='lg:col-span-1'>
-          {/* <Card className="p-2 h-full">
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="text-[20px] leading-[24px]">Finance</CardTitle>
-
-            </CardHeader>
-            <CardContent className="flex justify-center items-center relative py-2 ">
-              <div className='h-60'></div>
-
-
-            </CardContent>
-          </Card> */}
-          <FinanceStats/>
+          <FinanceStats financeData={dashboardData.finance} />
         </div>
       </div>
       <div className="grid lg:grid-cols-3 gap-5 lg:gap-7.5 items-stretch">
@@ -52,8 +83,10 @@ export function Demo1LightSidebarContent() {
           <EarningsChart />
         </div>
         <div className="lg:col-span-1">
-          <CommunityBadges cardTitle='Paused jobs' />
-
+          <CommunityBadges 
+            cardTitle='Paused jobs' 
+            pausedJobs={dashboardData.paused_jobs}
+          />
         </div>
       </div>
       <div className="grid lg:grid-cols-3 gap-5 lg:gap-7.5 items-stretch">
@@ -61,7 +94,7 @@ export function Demo1LightSidebarContent() {
           <TeamMeeting />
         </div> */}
         <div className="lg:col-span-3">
-          <Teams />
+          <Teams recentJobs={dashboardData?.recent_jobs} />
         </div>
       </div>
     </div>

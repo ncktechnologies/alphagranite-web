@@ -3,6 +3,7 @@ import { toAbsoluteUrl } from '@/lib/helpers';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingDown, TrendingUp } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FinanceStats as FinanceStatsData } from '@/store/api/job';
 
 interface IChannelStatsItem {
     logo: string;
@@ -15,27 +16,50 @@ interface IChannelStatsItem {
 }
 type IChannelStatsItems = Array<IChannelStatsItem>;
 
-const FinanceStats = () => {
+interface IFinanceStatsProps {
+    financeData?: FinanceStatsData;
+}
+
+const FinanceStats = ({ financeData }: IFinanceStatsProps) => {
+    // Only use backend data - no fallback values
+    if (!financeData) {
+        return (
+            <Card className='h-full'>
+                <CardHeader className="pt-3.5">
+                    <CardTitle className="text-[20px] leading-[24px]">Finance</CardTitle>
+                </CardHeader>
+                <CardContent className="flex items-center justify-center py-10">
+                    <p className="text-gray-500">No finance data available</p>
+                </CardContent>
+            </Card>
+        );
+    }
+
     const items: IChannelStatsItems = [
-        { logo: 'dollar-exchange.svg', info: '$10,050', title: 'Revenue Installed', path: '', desc: '+1', bgColor: 'bg-[#9CC15E]' },
-        { logo: 'dollar-exchange.svg', info: '$12,150', title: 'Revenue Templated', path: '', desc: '+4', bgColor: 'bg-[#EA3DB1]' },
+        { 
+            logo: 'dollar-exchange.svg', 
+            info: `$${financeData.revenue_installed.toLocaleString()}`, 
+            title: 'Revenue Installed', 
+            path: '', 
+            desc: '+1', 
+            bgColor: 'bg-[#9CC15E]' 
+        },
+        { 
+            logo: 'dollar-exchange.svg', 
+            info: `$${financeData.revenue_templated.toLocaleString()}`, 
+            title: 'Revenue Templated', 
+            path: '', 
+            desc: '+4', 
+            bgColor: 'bg-[#EA3DB1]' 
+        },
         {
             logo: 'dollar-coin.svg',
-            info: '$22,200',
+            info: `$${financeData.gross_profit.toLocaleString()}`,
             title: 'Gross profit',
             path: '',
             desc: '+4',
             bgColor: 'bg-[#51BCF4]'
         },
-        // {
-        //     logo: 'h156.svg',
-        //     logoDark: 'h156.svg',
-        //     info: '96%',
-        //     title: 'Completion Rate',
-        //     path: '',
-        //     desc: '-1',
-        //     bgColor: 'bg-[#0BC33F]'
-        // },
     ];
 
     const renderItem = (item: IChannelStatsItem, index: number) => {

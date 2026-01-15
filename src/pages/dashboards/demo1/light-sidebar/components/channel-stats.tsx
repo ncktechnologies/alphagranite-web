@@ -2,11 +2,12 @@ import { Fragment } from 'react';
 import { toAbsoluteUrl } from '@/lib/helpers';
 import { Card, CardContent } from '@/components/ui/card';
 import { TrendingDown, TrendingUp } from 'lucide-react';
+import { DashboardKPIs } from '@/store/api/job';
 
 interface IChannelStatsItem {
   logo: string;
   logoDark?: string;
-  info: string;
+  info: string | number;
   desc: string;
   path: string;
   title: string;
@@ -14,8 +15,46 @@ interface IChannelStatsItem {
 }
 type IChannelStatsItems = Array<IChannelStatsItem>;
 
-const ChannelStats = () => {
-  const items: IChannelStatsItems = [
+interface IChannelStatsProps {
+  dashboardData?: DashboardKPIs;
+}
+
+const ChannelStats = ({ dashboardData }: IChannelStatsProps) => {
+  const items: IChannelStatsItems = dashboardData ? [
+    { 
+      logo: 'h119.svg', 
+      info: dashboardData.total_jobs, 
+      title: 'Total Jobs', 
+      path: '', 
+      desc: '+1', 
+      bgColor: 'bg-[#9CC15E]' 
+    },
+    { 
+      logo: 'h131.svg', 
+      info: dashboardData.pending_installations, 
+      title: 'Pending Installations', 
+      path: '', 
+      desc: '+4', 
+      bgColor: 'bg-[#EA3DB1]' 
+    },
+    {
+      logo: 'h143.svg',
+      info: dashboardData.average_revisions.toFixed(1),
+      title: 'Average Revisions',
+      path: '',
+      desc: '+4',
+      bgColor: 'bg-[#51BCF4]'
+    },
+    {
+      logo: 'h156.svg',
+      logoDark: 'h156.svg',
+      info: `${dashboardData.completion_rate}%`,
+      title: 'Completion Rate',
+      path: '',
+      desc: '-1',
+      bgColor: 'bg-[#0BC33F]'
+    },
+  ] : [
     { logo: 'h119.svg', info: '240', title: 'Total Jobs', path: '', desc: '+1', bgColor: 'bg-[#9CC15E]' },
     { logo: 'h131.svg', info: '24%', title: 'Pending Installations', path: '', desc: '+4', bgColor: 'bg-[#EA3DB1]' },
     {

@@ -4,19 +4,63 @@ import { EllipsisVertical } from 'lucide-react';
 import ApexChart from 'react-apexcharts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { OverallStatistics } from '@/store/api/job';
 
 interface IContributionsProps {
   title: string;
+  overallStats?: OverallStatistics;
 }
 
-const Contributions = ({ title }: IContributionsProps) => {
-  const data: number[] = [55, 30, 15];
+const Contributions = ({ title, overallStats }: IContributionsProps) => {
+  // Only use backend data - no fallback values
+  if (!overallStats) {
+    return (
+      <Card className="p-2 h-full flex flex-col">
+        <CardHeader className="flex flex-row items-center justify-between flex-shrink-0">
+          <CardTitle className="text-[20px] leading-[24px]">{title}</CardTitle>
+        </CardHeader>
+        <CardContent className="flex flex-col flex-1 py-2">
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-gray-500">No statistics data available</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // Use the actual data from backend
+  // Handle zero values properly - show empty chart when all data is 0
+  const hasData = overallStats.completed > 0 || overallStats.in_progress > 0 || overallStats.paused > 0;
+  const data: number[] = hasData ? 
+    [overallStats.completed, overallStats.in_progress, overallStats.paused] : 
+    [0, 0, 0];
+  
+  // Verify data integrity - total should equal sum of parts
+  const calculatedTotal = overallStats.completed + overallStats.in_progress + overallStats.paused;
+  const dataMismatch = calculatedTotal !== overallStats.total;
+  
+  // Log warning if there's a mismatch (for debugging purposes)
+  if (dataMismatch) {
+    console.warn('Data mismatch in OverallStatistics:', {
+      calculatedTotal,
+      reportedTotal: overallStats.total,
+      completed: overallStats.completed,
+      in_progress: overallStats.in_progress,
+      paused: overallStats.paused
+    });
+  }
   const labels: string[] = ['Completed', 'In Progress', 'Paused'];
   const colors: string[] = ['#9CC15E', '#51BCF4', '#EA3DB1'];
 
   // Updated for larger chart - increased radius and center
   const getLabelPosition = (index: number, radius: number = 120) => {
     const total = data.reduce((sum, value) => sum + value, 0);
+    
+    // Handle zero data case - position labels at center
+    if (total === 0) {
+      return { x: 120, y: 120 }; // Center position
+    }
+    
     let cumulativeAngle = -90;
     
     for (let i = 0; i < index; i++) {
@@ -34,17 +78,26 @@ const Contributions = ({ title }: IContributionsProps) => {
     return { x: x + 120, y: y + 120 }; // Updated center to 150 for 300x300 chart
   };
 
+
+  
   const options: ApexOptions = {
     series: data,
     labels: labels,
     colors: colors,
-    chart: {
-      type: 'donut',
-      toolbar: { show: false },
+    // Force colors and ensure they're visible
+    fill: {
+      colors: colors,
+      opacity: 1
     },
+    // Make sure strokes don't interfere
     stroke: {
       show: false,
       width: 0,
+      colors: ['transparent']
+    },
+    chart: {
+      type: 'donut',
+      toolbar: { show: false },
     },
     dataLabels: {
       enabled: false,
@@ -100,47 +153,67 @@ const Contributions = ({ title }: IContributionsProps) => {
             {/* Custom center circle with shadow - increased size */}
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="bg-white rounded-full shadow-lg flex items-center justify-center" 
-                   style={{width: '112px', height: '112px'}}> {/* Increased from 80px to 110px */}
-                <span className="text-xl font-bold text-gray-800">100%</span> {/* Increased font size */}
+                   style={{width: '112px', height: '112px'}}>
+                <span className="text-xl font-bold text-gray-800">
+                  {overallStats.total > 0 ? '100%' : '0%'}
+                </span>
               </div>
             </div>
 
             {/* Custom percentage labels positioned at segment centers - updated for larger chart */}
-            <div 
-              className="absolute transform -translate-x-1/2 -translate-y-1/2"
-              style={{
-                left: `${getLabelPosition(0).x}px`,
-                top: `${getLabelPosition(0).y}px`
-              }}
-            >
-              <div className="bg-white text-text rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap shadow-sm">
-                55%
-              </div>
-            </div>
+            {/* Show labels for non-zero values, hide when total is 0 */}
+            {overallStats.total > 0 && (
+              <>
+                {/* Completed label - show if value > 0 */}
+                {overallStats.completed > 0 && (
+                  <div 
+                    className="absolute transform -translate-x-1/2 -translate-y-1/2"
+                    style={{
+                      left: `${getLabelPosition(0).x}px`,
+                      top: `${getLabelPosition(0).y}px`
+                    }}
+                  >
+                    <div className="bg-white text-text rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap shadow-sm">
+                      {Math.round((overallStats.completed / overallStats.total) * 100)}%
+                      {dataMismatch && overallStats.completion_percentage !== undefined && 
+                        ` (${Math.round(overallStats.completion_percentage)}%)`}
+                    </div>
+                  </div>
+                )}
+                
+                {/* In Progress label - show if value > 0 */}
+                {overallStats.in_progress > 0 && (
+                  <div 
+                    className="absolute transform -translate-x-1/2 -translate-y-1/2"
+                    style={{
+                      left: `${getLabelPosition(1).x}px`,
+                      top: `${getLabelPosition(1).y}px`
+                    }}
+                  >
+                    <div className="bg-white text-text rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap shadow-sm">
+                      {Math.round((overallStats.in_progress / overallStats.total) * 100)}%
+                    </div>
+                  </div>
+                )}
+                
+                {/* Paused label - show if value > 0 */}
+                {overallStats.paused > 0 && (
+                  <div 
+                    className="absolute transform -translate-x-1/2 -translate-y-1/2"
+                    style={{
+                      left: `${getLabelPosition(2).x}px`,
+                      top: `${getLabelPosition(2).y}px`
+                    }}
+                  >
+                    <div className="bg-white text-text rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap shadow-sm">
+                      {Math.round((overallStats.paused / overallStats.total) * 100)}%
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
             
-            <div 
-              className="absolute transform -translate-x-1/2 -translate-y-1/2"
-              style={{
-                left: `${getLabelPosition(1).x}px`,
-                top: `${getLabelPosition(1).y}px`
-              }}
-            >
-              <div className="bg-white text-text rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap shadow-sm">
-                30%
-              </div>
-            </div>
-            
-            <div 
-              className="absolute transform -translate-x-1/2 -translate-y-1/2"
-              style={{
-                left: `${getLabelPosition(2).x}px`,
-                top: `${getLabelPosition(2).y}px`
-              }}
-            >
-              <div className="bg-white text-text rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap shadow-sm">
-                15%
-              </div>
-            </div>
+
           </div>
         </div>
         
