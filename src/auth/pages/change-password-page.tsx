@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { AlertCircle, Check, Eye, EyeOff } from 'lucide-react';
 import { useForm } from 'react-hook-form';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Alert, AlertIcon, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
@@ -29,8 +29,14 @@ import { setCredentials } from '@/store/slice';
 
 export function ChangePasswordPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchParams] = useSearchParams();
   const dispatch = useDispatch();
+  
+  // Check if this is a password reset flow
+  const isResetFlow = location.state?.from === 'reset-password';
+  const otp = location.state?.otp;
+  const username = location.state?.username;
   const [currentPasswordVisible, setCurrentPasswordVisible] = useState(false);
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
@@ -44,7 +50,7 @@ export function ChangePasswordPage() {
   // Check if this is a first-time login
   const isFirstTimeLogin = () => {
     const token = localStorage.getItem('token');
-    return !!token;
+    return !!token && !isResetFlow;
   };
 
   const form = useForm<NewPasswordSchemaType>({
@@ -78,14 +84,20 @@ export function ChangePasswordPage() {
       setIsProcessing(true);
       setError(null);
 
-      // Log the values being sent
-      // console.log('Sending password change request:', {
-      //   current_password: values.currentPassword,
-      //   new_password: values.password,
-      //   confirm_password: values.confirmPassword
-      // });
+      if (isResetFlow && otp && username) {
+        // For password reset flow, use reset password API
+        await changePassword({ 
+          current_password: otp, // Use OTP as current password for reset flow
+          new_password: values.password,
+          confirm_password: values.confirmPassword
+        }).unwrap();
+        
+        toast.success('Password reset successfully!');
+        navigate('/auth/signin?pwd_reset=success');
+        return;
+      }
 
-      // Call the API to change password
+      // For regular change password flow
       await changePassword({ 
         current_password: values.currentPassword,
         new_password: values.password,
@@ -106,7 +118,7 @@ export function ChangePasswordPage() {
             setCredentials({
               admin: profileData,
               access_token: accessToken,
-              permissions: profileData?.action_permissions || [], // Pass permissions to Redux
+              permissions: profileData?.permissions || [], // Pass permissions to Redux
             })
           );
         }
@@ -135,7 +147,9 @@ export function ChangePasswordPage() {
 
   return (
     <div className="w-full flex flex-col items-center justify-center">
-      <FormHeader title="Change password" caption={isFirstTimeLogin() 
+      <FormHeader title={isResetFlow ? "Reset Password" : "Change password"} caption={isResetFlow
+        ? 'Please create a new password for your account'
+        : isFirstTimeLogin() 
         ? 'Please change your default password to a new desired password' 
         : 'Please change your password to a new desired password'} />
       <Card className="w-full max-w-[398px] overflow-y-auto flex flex-wrap border-[#DFDFDF]">
@@ -153,7 +167,7 @@ export function ChangePasswordPage() {
                 </Alert>
               )}
 
-              {successMessage && (
+              {successMessage && !isResetFlow && (
                 <Alert>
                   <AlertIcon>
                     <Check className="h-4 w-4 text-green-500" />
@@ -163,37 +177,39 @@ export function ChangePasswordPage() {
               )}
 
               <div className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="currentPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Current Password *</FormLabel>
-                      <div className="relative">
-                        <Input
-                          placeholder="******************"
-                          type={currentPasswordVisible ? 'text' : 'password'}
-                          autoComplete="current-password"
-                          {...field}
-                        />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          mode="icon"
-                          onClick={() => setCurrentPasswordVisible(!currentPasswordVisible)}
-                          className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                        >
-                          {currentPasswordVisible ? (
-                            <EyeOff className="h-4 w-4" />
-                          ) : (
-                            <Eye className="h-4 w-4" />
-                          )}
-                        </Button>
-                      </div>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {!isResetFlow && (
+                  <FormField
+                    control={form.control}
+                    name="currentPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Current Password *</FormLabel>
+                        <div className="relative">
+                          <Input
+                            placeholder="******************"
+                            type={currentPasswordVisible ? 'text' : 'password'}
+                            autoComplete="current-password"
+                            {...field}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            mode="icon"
+                            onClick={() => setCurrentPasswordVisible(!currentPasswordVisible)}
+                            className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                          >
+                            {currentPasswordVisible ? (
+                              <EyeOff className="h-4 w-4" />
+                            ) : (
+                              <Eye className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
 
                 <FormField
                   control={form.control}
@@ -268,7 +284,7 @@ export function ChangePasswordPage() {
                     <LoaderCircleIcon className="h-4 w-4" /> Updating Password...
                   </span>
                 ) : (
-                  'Update password'
+                  isResetFlow ? 'Reset Password' : 'Update password'
                 )}
               </Button>
 
@@ -277,11 +293,11 @@ export function ChangePasswordPage() {
           </Form>
         </CardContent>
       </Card>
-      <Popup isOpen={showPopover}
-        title='Password updated'
-        description='Your password was updated successfully'
-
-      >
+      {!isResetFlow && (
+        <Popup isOpen={showPopover}
+          title='Password updated'
+          description='Your password was updated successfully'
+        >
 
         <div className="flex flex-col items-center mt-4">
 
@@ -294,6 +310,7 @@ export function ChangePasswordPage() {
           </Button>
         </div>
       </Popup>
+      )}
     </div>
   );
 }

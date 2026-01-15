@@ -7,11 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
-import { useStepper } from "@/components/ui/stepper";
 import { useResetPasswordMutation } from '@/store/api/auth';
 
 export function OtpVerifyPage() {
-    const { setActiveStep } = useStepper()
     const OTP_LENGTH = 6;
     const SPLIT_INDEX = 3; // Show hyphen after 3 digits
 
@@ -21,7 +19,7 @@ export function OtpVerifyPage() {
     const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
     const navigate = useNavigate();
     const location = useLocation();
-    const email = location.state?.email;
+    const username = location.state?.username || location.state?.email;
     const from = location.state?.from;
     const [resetPassword] = useResetPasswordMutation();
 
@@ -74,20 +72,21 @@ export function OtpVerifyPage() {
         try {
             console.log('Submitting OTP:', otp);
             
-            // For password reset flow, call the reset password API
-            if (from === 'reset-password' && email) {
-                await resetPassword({ 
-                    token: otp, 
-                    new_password: '' // This would need to be collected in the next step
-                }).unwrap();
-                
-                toast.success('Password reset successfully!');
-                navigate('/auth/signin?pwd_reset=success');
+            // For password reset flow, navigate to change password page
+            if (from === 'reset-password' && username) {
+                // Navigate to change password page with OTP and username
+                navigate('/auth/change-password', { 
+                    state: { 
+                        otp: otp,
+                        username: username,
+                        from: 'reset-password'
+                    } 
+                });
             } else {
                 // For other flows, just simulate verification
                 await new Promise((res) => setTimeout(res, 1000));
-                setActiveStep(2);
                 toast.success(`OTP Verified: ${otp}`);
+                navigate('/auth/reset-password')
             }
         } catch (error: any) {
             console.error('OTP Error', error);
@@ -108,7 +107,7 @@ export function OtpVerifyPage() {
     
     return (
         <div className="w-full flex flex-col items-center justify-center">
-            <FormHeader title="Verify OTP" caption={`Enter the code sent to your email address ${email} to verify password reset`} />
+            <FormHeader title="Verify OTP" caption={`Enter the code sent to ${username} to verify password reset`} />
             {/* Form content goes here */}
             <Card className="w-full max-w-[398px] overflow-y-auto flex flex-wrap border-[#DFDFDF]">
                 <CardContent className="px-6 py-12">

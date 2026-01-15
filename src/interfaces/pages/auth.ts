@@ -93,7 +93,7 @@ export interface PasswordChangeRequest {
 }
 
 export interface PasswordResetRequest {
-  email: string;
+  username_or_email: string;
 }
 
 export interface PasswordResetConfirm {

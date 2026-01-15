@@ -65,8 +65,8 @@ export const authRoutes: RouteObject[] = [
       },
       {
         path: 'forgot-password',
-        // element: <ResetPasswordPage />,
-        element: <LoginStepper/>,
+        element: <ResetPasswordPage />,
+        // element: <LoginStepper/>,
 
       },
       {

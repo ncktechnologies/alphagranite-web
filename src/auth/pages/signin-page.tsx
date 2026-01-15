@@ -260,14 +260,12 @@ export function SignInPage() {
           <span className='text-text '>
             Forgot Password?
           </span>
-          <a
-            href="https://mail.google.com/mail/?view=cm&fs=1&to=support@alphagranite.com&su=Password%20Assistance&body=Hello%20Support%2C%0AI%20need%20help%20with%20my%20account."
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            to="/auth/forgot-password"
             className="text-sm text-primary pl-2 hover:underline"
           >
-            Contact Now
-          </a>
+            Reset Password
+          </Link>
 
         </div>
         <FormField

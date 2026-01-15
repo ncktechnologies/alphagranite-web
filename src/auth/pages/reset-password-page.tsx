@@ -64,16 +64,16 @@ export function ResetPasswordPage() {
 
       console.log('Submitting password reset for:', values.email);
 
-      // Call the API to request password reset
-      await requestPasswordReset({ email: values.email }).unwrap();
+      // Call the API to request password reset with correct payload
+      await requestPasswordReset({ username_or_email: values.email }).unwrap();
       
-      // Set success message
-      setSuccessMessage(
-        `Password reset link sent to ${values.email}! Please check your inbox and spam folder.`,
-      );
-
-      // Reset form
-      form.reset();
+      // Navigate to OTP page with username
+      navigate('/auth/otp-verify', { 
+        state: { 
+          username: values.email, 
+          from: 'reset-password' 
+        } 
+      });
     } catch (err: any) {
       console.error('Password reset request error:', err);
       const errorMessage = getErrorMessage(err);
@@ -85,7 +85,7 @@ export function ResetPasswordPage() {
 
   return (
     <div className="w-full flex flex-col items-center justify-center">
-      <FormHeader title="Reset your password" caption='Enter your registered email used for the account you want to reset the password'/>
+      <FormHeader title="Reset your password" caption='Enter your username to receive a password reset code'/>
       <Card className="w-full max-w-[398px] overflow-y-auto flex flex-wrap border-[#DFDFDF]">
         <CardContent className="px-6 py-12">
           <Form {...form}>
@@ -101,27 +101,18 @@ export function ResetPasswordPage() {
                 </Alert>
               )}
 
-              {successMessage && (
-                <Alert>
-                  <AlertIcon>
-                    <Check className="h-4 w-4 text-green-500" />
-                  </AlertIcon>
-                  <AlertTitle>{successMessage}</AlertTitle>
-                </Alert>
-              )}
-
               <div className="space-y-5">
                 <FormField
                   control={form.control}
                   name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email *</FormLabel>
+                      <FormLabel>Username *</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="Enter email address"
-                          type="email"
-                          autoComplete="email"
+                          placeholder="Enter your username"
+                          type="text"
+                          autoComplete="username"
                           {...field}
                         />
                       </FormControl>
@@ -133,7 +124,7 @@ export function ResetPasswordPage() {
                 <Button type="submit" className="w-full" disabled={isProcessing}>
                   {isProcessing ? (
                     <span className="flex items-center gap-2">
-                      <LoaderCircleIcon className="h-4 w-4 animate-spin" /> Sending Link...
+                      <LoaderCircleIcon className="h-4 w-4 animate-spin" /> Sending Code...
                     </span>
                   ) : (
                     'Send Code'

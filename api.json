@@ -357,6 +357,53 @@
         ]
       }
     },
+    "/auth/resend-reset-otp": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Resend Reset Otp",
+        "description": "Resend OTP for password reset",
+        "operationId": "resend_reset_otp_auth_resend_reset_otp_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PasswordResetRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Resend Reset Otp Auth Resend Reset Otp Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/health/": {
       "get": {
         "tags": [
@@ -3203,9 +3250,9 @@
         "tags": [
           "Jobs"
         ],
-        "summary": "Get Job",
-        "description": "Get a specific job by ID",
-        "operationId": "get_job_api_v1_jobs__job_id__get",
+        "summary": "Get Job By Id",
+        "description": "Get job details by job ID with FAB count and media files",
+        "operationId": "get_job_by_id_api_v1_jobs__job_id__get",
         "parameters": [
           {
             "name": "job_id",
@@ -3223,7 +3270,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JobResponse"
+
                 }
               }
             }
@@ -3322,6 +3369,363 @@
         "responses": {
           "204": {
             "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/jobs/{job_id}/upload-media": {
+      "post": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Upload Job Media",
+        "description": "Upload media files (photos, videos, etc) for a job.\nSupports multiple file uploads at once.",
+        "operationId": "upload_job_media_api_v1_jobs__job_id__upload_media_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_job_media_api_v1_jobs__job_id__upload_media_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/jobs/{job_id}/media": {
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Get Job Media",
+        "description": "Get all media files uploaded for a job.\nOptionally filter by media type (photo, video, document).",
+        "operationId": "get_job_media_api_v1_jobs__job_id__media_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "media_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by type: photo, video, or document",
+              "title": "Media Type"
+            },
+            "description": "Filter by type: photo, video, or document"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/jobs/{job_id}/media/{file_id}/download": {
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Download Job Media",
+        "description": "Download a media file for a job",
+        "operationId": "download_job_media_api_v1_jobs__job_id__media__file_id__download_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "File Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/jobs/{job_id}/media/{file_id}": {
+      "delete": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Delete Job Media",
+        "description": "Delete a media file from a job",
+        "operationId": "delete_job_media_api_v1_jobs__job_id__media__file_id__delete",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "File Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/jobs/number/{job_number}": {
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Get Job By Number",
+        "description": "Get job details by job number with FAB count and media files",
+        "operationId": "get_job_by_number_api_v1_jobs_number__job_number__get",
+        "parameters": [
+          {
+            "name": "job_number",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Job Number"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/jobs/{job_id}/toggle-invoice": {
+      "patch": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Toggle Need To Invoice",
+        "description": "Toggle the need_to_invoice flag for a job",
+        "operationId": "toggle_need_to_invoice_api_v1_jobs__job_id__toggle_invoice_patch",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
           },
           "422": {
             "description": "Validation Error",
@@ -5217,6 +5621,24 @@
             "description": "Filter by sales person ID"
           },
           {
+            "name": "templater_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by templater/technician ID",
+              "title": "Templater Id"
+            },
+            "description": "Filter by templater/technician ID"
+          },
+          {
             "name": "status_id",
             "in": "query",
             "required": false,
@@ -5339,10 +5761,10 @@
                   "type": "null"
                 }
               ],
-              "description": "Predefined date filter: today, this_week, this_month, next_week, next_month",
+              "description": "Predefined date filter: today, this_week, last_week, this_month, last_month, next_week, next_month",
               "title": "Date Filter"
             },
-            "description": "Predefined date filter: today, this_week, this_month, next_week, next_month"
+            "description": "Predefined date filter: today, this_week, last_week, this_month, last_month, next_week, next_month"
           },
           {
             "name": "search",
@@ -5834,72 +6256,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessResponse_List_dict__"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      }
-    },
-    "/api/v1/fabs/{fab_id}/hold": {
-      "patch": {
-        "tags": [
-          "Fabs"
-        ],
-        "summary": "Set Fab Hold",
-        "description": "Mark or toggle a FAB as on-hold.\n- on_hold=true  -\u003E status_id=0\n- on_hold=false -\u003E status_id=1\n- on_hold omitted -\u003E toggle 0 \u003C-\u003E 1",
-        "operationId": "set_fab_hold_api_v1_fabs__fab_id__hold_patch",
-        "parameters": [
-          {
-            "name": "fab_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Fab Id"
-            }
-          },
-          {
-            "name": "on_hold",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "boolean"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "If provided, set hold state. If omitted, toggle between on-hold (0) and active (1)",
-              "title": "On Hold"
-            },
-            "description": "If provided, set hold state. If omitted, toggle between on-hold (0) and active (1)"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse_FabResponse_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -6732,6 +7088,33 @@
         ]
       }
     },
+    "/api/v1/templaters": {
+      "get": {
+        "tags": [
+          "Templating"
+        ],
+        "summary": "Get Templaters",
+        "description": "Get list of all templaters (users in TEMPLATE department)",
+        "operationId": "get_templaters_api_v1_templaters_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_List_dict__"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/drafting/{fab_id}/session": {
       "post": {
         "tags": [
@@ -6890,13 +7273,13 @@
           "Drafting"
         ],
         "summary": "Create Drafting",
-        "description": "Create a new drafting entry",
+        "description": "Create drafting entries for multiple fabs with individual details",
         "operationId": "create_drafting_api_v1_drafting_post",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DraftingCreate"
+                "$ref": "#/components/schemas/DraftingCreateBulk"
               }
             }
           },
@@ -6908,7 +7291,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse_DraftingResponse_"
+                  "$ref": "#/components/schemas/SuccessResponse_List_DraftingResponse__"
                 }
               }
             }
@@ -12761,6 +13144,57 @@
         ]
       }
     },
+    "/api/v1/dashboard": {
+      "get": {
+        "tags": [
+          "Dashboard"
+        ],
+        "summary": "Get Dashboard",
+        "description": "Get comprehensive dashboard data with KPIs, charts, and recent jobs",
+        "operationId": "get_dashboard_api_v1_dashboard_get",
+        "parameters": [
+          {
+            "name": "time_period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Time period: 'all', 'today', 'this_week', 'this_month'",
+              "default": "all",
+              "title": "Time Period"
+            },
+            "description": "Time period: 'all', 'today', 'this_week', 'this_month'"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/test-public": {
       "get": {
         "tags": [
@@ -14097,6 +14531,23 @@
         ],
         "title": "Body_upload_file_files_upload_post"
       },
+      "Body_upload_job_media_api_v1_jobs__job_id__upload_media_post": {
+        "properties": {
+          "files": {
+            "items": {
+              "type": "string",
+              "format": "binary"
+            },
+            "type": "array",
+            "title": "Files"
+          }
+        },
+        "type": "object",
+        "required": [
+          "files"
+        ],
+        "title": "Body_upload_job_media_api_v1_jobs__job_id__upload_media_post"
+      },
       "BulkEmployeeActivateRequest": {
         "properties": {
           "employee_ids": {
@@ -14682,42 +15133,74 @@
         "type": "object",
         "title": "DepartmentUpdate"
       },
-      "DraftingCreate": {
+      "DraftingCreateBulk": {
+        "properties": {
+          "drafter_id": {
+            "type": "integer",
+            "title": "Drafter Id"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DraftingCreateItem"
+            },
+            "type": "array",
+            "title": "Items"
+          }
+        },
+        "type": "object",
+        "required": [
+          "drafter_id",
+          "items"
+        ],
+        "title": "DraftingCreateBulk"
+      },
+      "DraftingCreateItem": {
         "properties": {
           "fab_id": {
             "type": "integer",
-            "exclusiveMinimum": 0,
             "title": "Fab Id"
           },
-          "drafter_id": {
-            "type": "integer",
-            "exclusiveMinimum": 0,
-            "title": "Drafter Id"
-          },
           "scheduled_start_date": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Scheduled Start Date"
           },
           "scheduled_end_date": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Scheduled End Date"
           },
           "total_sqft_required_to_draft": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Total Sqft Required To Draft"
           }
         },
         "type": "object",
         "required": [
-          "fab_id",
-          "drafter_id",
-          "scheduled_start_date",
-          "scheduled_end_date",
-          "total_sqft_required_to_draft"
+          "fab_id"
         ],
-        "title": "DraftingCreate"
+        "title": "DraftingCreateItem"
       },
       "DraftingResponse": {
         "properties": {
@@ -14732,6 +15215,17 @@
           "drafter_id": {
             "type": "integer",
             "title": "Drafter Id"
+          },
+          "drafter_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Drafter Name"
           },
           "scheduled_start_date": {
             "type": "string",
@@ -15654,6 +16148,34 @@
             "type": "boolean",
             "title": "Final Programming Needed",
             "default": true
+          },
+          "cost_of_stone_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Of Stone Id",
+            "description": "Cost of stone record ID"
+          },
+          "cost_of_stone": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Of Stone",
+            "description": "Cost of stone amount"
           }
         },
         "type": "object",
@@ -16472,6 +16994,31 @@
               }
             ],
             "title": "Fab Notes"
+          },
+          "cost_of_stone_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Of Stone Id",
+            "description": "Cost of stone record ID"
+          },
+          "cost_of_stone": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Of Stone",
+            "description": "Cost of stone amount"
           }
         },
         "type": "object",
@@ -17057,6 +17604,34 @@
               }
             ],
             "title": "Status Id"
+          },
+          "cost_of_stone_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Of Stone Id",
+            "description": "Cost of stone record ID"
+          },
+          "cost_of_stone": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Of Stone",
+            "description": "Cost of stone amount"
           }
         },
         "type": "object",
@@ -17851,6 +18426,11 @@
             ],
             "title": "Sales Person Id",
             "description": "Sales person ID"
+          },
+          "need_to_invoice": {
+            "type": "boolean",
+            "title": "Need To Invoice",
+            "default": false
           }
         },
         "type": "object",
@@ -18009,6 +18589,17 @@
             ],
             "title": "Sales Person Id"
           },
+          "sales_person_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sales Person Name"
+          },
           "status_id": {
             "type": "integer",
             "title": "Status Id"
@@ -18044,6 +18635,17 @@
               }
             ],
             "title": "Updated By"
+          },
+          "need_to_invoice": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Need To Invoice"
           }
         },
         "type": "object",
@@ -18118,6 +18720,17 @@
               }
             ],
             "title": "Sales Person Id"
+          },
+          "need_to_invoice": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Need To Invoice"
           }
         },
         "type": "object",
@@ -18166,38 +18779,44 @@
       },
       "PasswordResetConfirm": {
         "properties": {
-          "token": {
+          "username_or_email": {
             "type": "string",
-            "title": "Token"
+            "title": "Username Or Email",
+            "description": "Username or email address"
+          },
+          "otp": {
+            "type": "string",
+            "maxLength": 6,
+            "minLength": 6,
+            "title": "Otp",
+            "description": "6-digit OTP"
           },
           "new_password": {
             "type": "string",
-            "title": "New Password"
-          },
-          "confirm_password": {
-            "type": "string",
-            "title": "Confirm Password"
+            "minLength": 8,
+            "title": "New Password",
+            "description": "New password"
           }
         },
         "type": "object",
         "required": [
-          "token",
-          "new_password",
-          "confirm_password"
+          "username_or_email",
+          "otp",
+          "new_password"
         ],
         "title": "PasswordResetConfirm"
       },
       "PasswordResetRequest": {
         "properties": {
-          "email": {
+          "username_or_email": {
             "type": "string",
-            "format": "email",
-            "title": "Email"
+            "title": "Username Or Email",
+            "description": "Username or email address"
           }
         },
         "type": "object",
         "required": [
-          "email"
+          "username_or_email"
         ],
         "title": "PasswordResetRequest"
       },
@@ -20725,6 +21344,38 @@
           "message"
         ],
         "title": "SuccessResponse[List[AccountResponse]]"
+      },
+      "SuccessResponse_List_DraftingResponse__": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/DraftingResponse"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[List[DraftingResponse]]"
       },
       "SuccessResponse_List_EdgeResponse__": {
         "properties": {

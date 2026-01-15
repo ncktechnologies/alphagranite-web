@@ -1,12 +1,11 @@
 import { z } from 'zod';
 
-// Schema for requesting a password reset email
+// Schema for requesting a password reset with email/username
 export const getResetRequestSchema = () => {
   return z.object({
     email: z
       .string()
-      .email({ message: 'Please enter a valid email address.' })
-      .min(1, { message: 'Email is required.' }),
+      .min(1, { message: 'Username is required.' }),
   });
 };
 
