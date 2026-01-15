@@ -46,6 +46,7 @@ import { useAuth } from '@/auth/context/auth-context';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 
 // Update the Zod schema - remove jobName and jobNumber as required fields since they'll be selected
+// Added cost_of_stone field
 const fabIdFormSchema = z.object({
   fabType: z.string().min(1, 'FAB Type is required'),
   account: z.string().min(1, 'Account is required'),
@@ -59,6 +60,8 @@ const fabIdFormSchema = z.object({
   totalSqFt: z.string().min(1, 'Total Sq Ft is required'),
   revenue: z.string().min(1, 'Revenue is required')
     .refine((val) => !isNaN(parseFloat(val)), { message: 'Revenue must be a number' }),
+  cost_of_stone: z.string().min(1, 'Cost of Stone is required')
+    .refine((val) => !isNaN(parseFloat(val)), { message: 'Cost of Stone must be a number' }),
   selectedSalesPerson: z.string().min(1, 'Sales Person is required'),
   notes: z.string().optional(), // Keep as string
   templateNotNeeded: z.boolean(),
@@ -133,7 +136,6 @@ const NewFabIdForm = () => {
 
   // Mutations
   const [createFab] = useCreateFabMutation();
-  const [createAccount] = useCreateAccountMutation();
   const [createStoneThickness] = useCreateStoneThicknessMutation();
   const [createStoneType] = useCreateStoneTypeMutation();
   const [createStoneColor] = useCreateStoneColorMutation();
@@ -153,11 +155,9 @@ const NewFabIdForm = () => {
 
   // Nested popover states for adding new items
   const [showAddThickness, setShowAddThickness] = useState(false);
-  const [showAddAccount, setShowAddAccount] = useState(false);
 
   // New item states
   const [newThickness, setNewThickness] = useState('');
-  const [newAccount, setNewAccount] = useState('');
 
   const form = useForm<FabIdFormData>({
     resolver: zodResolver(fabIdFormSchema),
@@ -173,6 +173,7 @@ const NewFabIdForm = () => {
       edge: '',
       totalSqFt: '',
       revenue: '',
+      cost_of_stone: '', // Added default value for new field
       selectedSalesPerson: '',
       notes: '',
       templateNotNeeded: false,
@@ -314,27 +315,6 @@ const NewFabIdForm = () => {
     }
   };
 
-  const handleAddAccount = async () => {
-    if (newAccount.trim()) {
-      try {
-        await createAccount({ name: newAccount.trim() }).unwrap();
-        setNewAccount('');
-        setShowAddAccount(false);
-        setAccountPopoverOpen(false); // Close the main popover
-        toast.success('Account added successfully');
-      } catch (error: any) {
-        console.error('Failed to add account:', error);
-        if (error?.status === 'FETCH_ERROR') {
-          toast.error('Network error: Unable to add account. Please check your connection and try again.');
-        } else if (error?.data?.message) {
-          toast.error(`Failed to add account: ${error.data.message}`);
-        } else {
-          toast.error('Failed to add account');
-        }
-      }
-    }
-  };
-
   const onSubmit = async (values: FabIdFormData) => {
     try {
       setIsSubmitting(true);
@@ -400,6 +380,7 @@ const NewFabIdForm = () => {
         input_area: values.area,
         total_sqft: parseFloat(values.totalSqFt) || 0,
         revenue: parseFloat(values.revenue) || 0,
+        cost_of_stone: parseFloat(values.cost_of_stone) || 0, // Added cost_of_stone field
         notes: notesValue, // Send as array
         template_needed: !values.templateNotNeeded,
         drafting_needed: !values.draftNotNeeded,
@@ -540,7 +521,7 @@ const NewFabIdForm = () => {
                           )}
                         />
 
-                        {/* Account with Popover */}
+                        {/* Account with Popover - REMOVED ADD FUNCTIONALITY */}
                         <FormField
                           control={form.control}
                           name="account"
@@ -564,38 +545,6 @@ const NewFabIdForm = () => {
                                 </PopoverTrigger>
                                 <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                                   <div className="p-2">
-                                    <div className="flex items-center justify-between mb-2">
-                                      <span className="text-sm font-medium">Accounts</span>
-                                      <Popover open={showAddAccount} onOpenChange={setShowAddAccount}>
-                                        <PopoverTrigger asChild>
-                                          <Button variant="ghost" size="sm" className="h-7 px-2">
-                                            <Plus className="w-3 h-3 mr-1" />
-                                            Add
-                                          </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-80" align="end">
-                                          <div className="space-y-3">
-                                            <div>
-                                              <Label htmlFor="newAccount">Account Name</Label>
-                                              <Input
-                                                id="newAccount"
-                                                placeholder="Enter account name"
-                                                value={newAccount}
-                                                onChange={(e) => setNewAccount(e.target.value)}
-                                              />
-                                            </div>
-                                            <div className="flex justify-end gap-2">
-                                              <Button variant="outline" size="sm" onClick={() => setShowAddAccount(false)}>
-                                                Cancel
-                                              </Button>
-                                              <Button size="sm" onClick={handleAddAccount}>
-                                                Add
-                                              </Button>
-                                            </div>
-                                          </div>
-                                        </PopoverContent>
-                                      </Popover>
-                                    </div>
                                     <div className="relative mb-2">
                                       <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
                                       <Input
@@ -1002,6 +951,27 @@ const NewFabIdForm = () => {
                               <FormControl>
                                 <Input 
                                   placeholder="Enter revenue amount" 
+                                  {...field} 
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* NEW FIELD: Cost of Stone */}
+                        <FormField
+                          control={form.control}
+                          name="cost_of_stone"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Cost of Stone ($) *</FormLabel>
+                              <FormControl>
+                                <Input 
+                                  placeholder="Enter cost of stone" 
                                   {...field} 
                                   type="number"
                                   step="0.01"
