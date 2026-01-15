@@ -945,7 +945,7 @@ export const JobTable = ({
             cell: ({ row }) => {
                 const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
                                Array.isArray(row.original.notes) ? row.original.notes : [];
-                const slabSmithNotes = fabNotes.filter(note => note.stage === 'slab_smith');
+                const slabSmithNotes = fabNotes.filter(note => note.stage === 'slab_smith_request');
                 
                 if (slabSmithNotes.length === 0) {
                     return <span className="text-xs text-gray-500 italic">No notes</span>;
