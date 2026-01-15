@@ -8,7 +8,7 @@ import { IJob } from '../../components/job';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useGetFabsQuery, Fab } from '@/store/api/job';
-import { useGetTemplatersQuery } from '@/store/api/employee';
+import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
 import { useMemo, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -67,7 +67,7 @@ export function TemplatingPage() {
     const navigate = useNavigate();
     
     // Fetch templaters data for filter dropdown
-    const { data: templatersData } = useGetTemplatersQuery();
+    const { data: templatersData } = useGetSalesPersonsQuery();
     
     // Separate state for templater filter
     const [templaterFilter, setTemplaterFilter] = useState<string>('all');

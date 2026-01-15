@@ -368,19 +368,19 @@ export const JobTable = ({
     }
     
     // Add job details
-    if (job.job_name) {
-        parts.push(job.job_name);
-    }
+    // if (job.job_name) {
+    //     parts.push(job.job_name);
+    // }
     
-    // Add job number
-    if (job.job_no) {
-        parts.push(job.job_no);
-    }
+    // // Add job number
+    // if (job.job_no) {
+    //     parts.push(job.job_no);
+    // }
     
     // Add pieces count
-    if (job.no_of_pieces) {
-        parts.push(`${job.no_of_pieces} pieces`);
-    }
+    // if (job.no_of_pieces) {
+    //     parts.push(`${job.no_of_pieces} pieces`);
+    // }
     
     // Add square footage
     if (job.total_sq_ft) {
