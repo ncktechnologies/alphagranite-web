@@ -27,6 +27,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CalendarDays, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { IJob } from './job';
 import { groupData } from '@/lib/groupData';
 import { exportTableToCSV } from '@/lib/exportToCsv';
@@ -64,6 +65,13 @@ interface JobTableProps {
     tableState?: ReturnType<typeof useTableState>;
     // Specify which columns to show (if not provided, show all)
     visibleColumns?: string[];
+    // Multi-select functionality
+    enableMultiSelect?: boolean;
+    selectedRows?: string[];
+    setSelectedRows?: (rows: string[]) => void;
+    // Additional button props
+    showAssignDrafterButton?: boolean;
+    onAssignDrafterClick?: () => void;
 }
 
 export const JobTable = ({
@@ -85,7 +93,13 @@ export const JobTable = ({
     totalRecords = 0,
     tableState,
     visibleColumns,
+    enableMultiSelect = false,
+    selectedRows = [],
+    setSelectedRows = () => {},
+    showAssignDrafterButton = false,
+    onAssignDrafterClick = () => {}
 }: JobTableProps) => {
+    const [localSelectedRows, setLocalSelectedRows] = useState<string[]>([]);
     const [localPagination, setLocalPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 5,
@@ -132,6 +146,11 @@ export const JobTable = ({
     const setDateRange = tableState?.setDateRange || setLocalDateRange;
     const scheduleFilter = tableState?.scheduleFilter || 'all';
     const setScheduleFilter = tableState?.setScheduleFilter || (() => { }); // No-op fallback
+    
+    // Use provided state if available, otherwise use local state
+    const effectiveSelectedRows = selectedRows !== undefined ? selectedRows : localSelectedRows;
+    const setEffectiveSelectedRows = setSelectedRows || setLocalSelectedRows;
+    
     // Function to get the correct path for a specific job
     const getViewPath = (job: IJob): string => {
         // If getPath function is provided, use it
@@ -344,6 +363,49 @@ export const JobTable = ({
         });
     };
 
+    // Function to handle multi-select
+    const toggleRowSelection = (fabId: string) => {
+        if (setSelectedRows) {
+            // Using prop-provided state - update directly
+            if (effectiveSelectedRows.includes(fabId)) {
+                setSelectedRows(effectiveSelectedRows.filter(id => id !== fabId));
+            } else {
+                setSelectedRows([...effectiveSelectedRows, fabId]);
+            }
+        } else {
+            // Using local state - can use functional update
+            setLocalSelectedRows(prevSelectedRows => {
+                if (prevSelectedRows.includes(fabId)) {
+                    return prevSelectedRows.filter(id => id !== fabId);
+                } else {
+                    return [...prevSelectedRows, fabId];
+                }
+            });
+        }
+    };
+
+    const toggleAllRowsSelection = () => {
+        if (setSelectedRows) {
+            // Using prop-provided state - update directly
+            const allFabIds = filteredData.map(job => job.fab_id);
+            if (effectiveSelectedRows.length === allFabIds.length) {
+                setSelectedRows([]);
+            } else {
+                setSelectedRows(allFabIds);
+            }
+        } else {
+            // Using local state - can use functional update
+            setLocalSelectedRows(prevSelectedRows => {
+                const allFabIds = filteredData.map(job => job.fab_id);
+                if (prevSelectedRows.length === allFabIds.length) {
+                    return [];
+                } else {
+                    return allFabIds;
+                }
+            });
+        }
+    };
+
     // Function to get row background color based on fab_type
     const getRowBackgroundColor = (fabType: string) => {
         switch (fabType?.toLowerCase()) {
@@ -408,19 +470,27 @@ export const JobTable = ({
 };
 
     const baseColumns = useMemo<ColumnDef<IJob>[]>(() => [
-        // {
-        //     accessorKey: 'id',
-        //     accessorFn: (row: IJob) => row.id,
-        //     header: () => <DataGridTableRowSelectAll />,
-        //     cell: ({ row }) => <DataGridTableRowSelect row={row} />,
-        //     enableSorting: false,
-        //     enableHiding: false,
-        //     enableResizing: false,
-        //     size: 48,
-        //     meta: {
-        //         cellClassName: '',
-        //     },
-        // },
+        {
+            accessorKey: 'id',
+            accessorFn: (row: IJob) => row.id,
+            header: () => enableMultiSelect ? <Checkbox 
+                checked={effectiveSelectedRows.length === filteredData.length && filteredData.length > 0}
+                onCheckedChange={toggleAllRowsSelection}
+                aria-label="Select all"
+            /> : <></>,
+            cell: ({ row }) => enableMultiSelect ? <Checkbox 
+                checked={effectiveSelectedRows.includes(row.original.fab_id)}
+                onCheckedChange={() => toggleRowSelection(row.original.fab_id)}
+                aria-label="Select row"
+            /> : <></>,
+            enableSorting: false,
+            enableHiding: false,
+            enableResizing: false,
+            size: 48,
+            meta: {
+                cellClassName: 'flex items-center justify-center',
+            },
+        },
         {
             id: "fab_type",
             accessorKey: "fab_type",
@@ -1058,19 +1128,19 @@ export const JobTable = ({
             enableSorting: false,
             size: 60,
         },
-    ], [getPath, path, dateRange]); // Add both getPath and path to dependencies
+    ], [getPath, path, dateRange, enableMultiSelect, effectiveSelectedRows, filteredData]); // Add dependencies for multi-select functionality
 
     // Filter columns based on data availability and visibleColumns prop
     const columns = useMemo<ColumnDef<IJob>[]>(() => {
         return baseColumns.filter(column => {
-            // Always show ID and actions columns
-            if (column.id === 'id' || column.id === 'actions') {
+            // Always show ID column if multi-select is enabled, and actions column
+            if ((column.id === 'id' && enableMultiSelect) || column.id === 'actions') {
                 return true;
             }
             
-            // If visibleColumns is specified, only show those columns
-            if (visibleColumns && visibleColumns.length > 0) {
-                return visibleColumns.includes(column.id);
+            // If visibleColumns is specified, only show those columns (excluding id/actions which are handled separately)
+            if (visibleColumns && visibleColumns.length > 0 && column.id) {
+                return visibleColumns.includes(column.id as string);
             }
             
             // Otherwise, filter based on data availability
@@ -1080,7 +1150,7 @@ export const JobTable = ({
             }
             return true;
         });
-    }, [baseColumns, filteredData, visibleColumns]);
+    }, [baseColumns, filteredData, visibleColumns, enableMultiSelect]);
 
     const table = useReactTable({
         columns,
@@ -1297,6 +1367,15 @@ export const JobTable = ({
                                     ))}
                                 </SelectContent>
                             </Select>
+                        )}
+                        {showAssignDrafterButton && (
+                            <Button 
+                                variant="outline" 
+                                onClick={onAssignDrafterClick}
+                                disabled={selectedRows.length === 0}
+                            >
+                                Assign Drafter ({selectedRows.length})
+                            </Button>
                         )}
                         <Button variant="outline" onClick={() => exportTableToCSV(table, "FabId")}>
                             Export CSV

@@ -8,7 +8,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { useUpdateDraftingMutation, useAddFilesToDraftingMutation, useCreateDraftingMutation } from '@/store/api/job';
+import { useUpdateDraftingMutation, useAddFilesToDraftingMutation } from '@/store/api/job';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -51,7 +51,7 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
 
   const [updateDrafting] = useUpdateDraftingMutation();
   const [addFilesToDrafting] = useAddFilesToDraftingMutation();
-  const [createDrafting] = useCreateDraftingMutation(); // Add createDrafting mutation
+
   const { data: employeesData, isLoading, isError, error } = useGetSalesPersonsQuery();
 
   // Calculate total hours from tracked time instead of date difference
@@ -76,27 +76,10 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
     // Check if we have a drafting ID or need to create one
     let draftingId = drafting?.id ?? drafting?.data?.id;
     
-    // If no drafting exists, create one using FAB data
+    // If no drafting exists, show error since drafting should already exist
     if (!draftingId) {
-      try {
-        const createResponse = await createDrafting({
-          fab_id: fabId,
-          drafter_id: userId,
-          scheduled_start_date: fabData?.templating_schedule_start_date,
-          scheduled_end_date: fabData?.templating_schedule_due_date ,
-          total_sqft_required_to_draft: String(fabData?.total_sqft || values.totalSqFt || "0")
-        }).unwrap();
-        
-        // Handle different response structures - extract ID from response
-        const responseAny: any = createResponse;
-        draftingId = responseAny.data?.id || responseAny.id;
-        console.log('Created draft with ID:', draftingId);
-        toast.success("Drafting created successfully");
-      } catch (createError) {
-        console.error('Failed to create drafting:', createError);
-        toast.error('Failed to create drafting');
-        return;
-      }
+      toast.error('Drafting record does not exist. Please assign drafter first.');
+      return;
     }
 
     if (!isConfirmed) {

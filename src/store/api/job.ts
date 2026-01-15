@@ -388,6 +388,14 @@ export interface DraftingSubmitReview {
     is_completed: boolean;
 }
 
+// Bulk Drafting Assignment Interface
+export interface BulkDraftingAssignment {
+    fab_id: number;
+    scheduled_start_date: string;
+    scheduled_end_date: string;
+    total_sqft_required_to_draft: string | number;
+}
+
 export interface Stage {
     id: number;
     name: string;
@@ -1075,6 +1083,16 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Fab"],
             }),
+            
+            // Bulk assign drafting to multiple FABs
+            bulkAssignDrafting: build.mutation<any, { drafter_id: number; items: BulkDraftingAssignment[] }>({
+                query: (data) => ({
+                    url: "/drafting",
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
 
             // Get drafting by ID
             getDraftingById: build.query<Drafting, number>({
@@ -1556,6 +1574,7 @@ export const {
     useManageFinalProgrammingSessionMutation, // Add the new hook
     useManageDraftingSessionMutation, // Add drafting session management hook
     useGetDraftingSessionStatusQuery, // Add drafting session status hook
+    useBulkAssignDraftingMutation, // Add bulk assignment hook
     // NEW: Export the new hooks
     useGetCurrentDraftingSessionQuery,
     useGetDraftingSessionHistoryQuery,

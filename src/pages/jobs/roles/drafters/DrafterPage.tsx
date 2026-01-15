@@ -6,7 +6,8 @@ import { Container } from '@/components/common/container';
 import { useGetFabsByStageQuery, Fab, useGetFabsQuery } from '@/store/api/job';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { AssignDrafterModal } from './components/AssignDrafterModal';
 
 // Transform Fab data to match IJob interface
 export const transformFabToJob = (fab: Fab): IJob => {
@@ -148,7 +149,45 @@ const DrafterPage = () => {
     };
 
     // Transform Fab data to IJob format
+    const [selectedRows, setSelectedRows] = useState<string[]>([]);
+    const [showAssignModal, setShowAssignModal] = useState<boolean>(false);
+
     const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
+
+    // Create a mapping of FAB IDs to their square footage values
+    const sqftPerFab = useMemo(() => {
+        const mapping: {[key: string]: string} = {};
+        if (data?.data) {
+            data.data.forEach(fab => {
+                mapping[String(fab.id)] = String(fab.total_sqft || '0');
+            });
+        }
+        return mapping;
+    }, [data]);
+
+    // Create a mapping of FAB IDs to their template schedule dates (if available)
+    const datePerFab = useMemo(() => {
+        const startDateMapping: {[key: string]: string} = {};
+        const endDateMapping: {[key: string]: string} = {};
+        if (data?.data) {
+            data.data.forEach(fab => {
+                // Use templating schedule dates if available, otherwise fall back to draft_data
+                startDateMapping[String(fab.id)] = fab.templating_schedule_start_date || (fab.draft_data?.scheduled_start_date || '');
+                endDateMapping[String(fab.id)] = fab.templating_schedule_due_date || (fab.draft_data?.scheduled_end_date || '');
+            });
+        }
+        return { startDateMapping, endDateMapping };
+    }, [data]);
+
+    const handleAssignDrafterClick = () => {
+        if (selectedRows.length > 0) {
+            setShowAssignModal(true);
+        }
+    };
+
+    const handleCloseModal = () => {
+        setShowAssignModal(false);
+    };
 
     return (
         <Container>
@@ -166,12 +205,24 @@ const DrafterPage = () => {
                 showSalesPersonFilter={true}
                 showScheduleFilter={false} // Remove separate schedule filter
                 salesPersons={salesPersons}
+                enableMultiSelect={true}
+                selectedRows={selectedRows}
+                setSelectedRows={setSelectedRows}
+                showAssignDrafterButton={true}
+                onAssignDrafterClick={handleAssignDrafterClick}
                 visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'revenue', 'gp', 'drafting_notes', 'draft_completed', 'drafter']}
+            />
+            <AssignDrafterModal
+                open={showAssignModal}
+                onClose={handleCloseModal}
+                selectedFabIds={selectedRows}
+                initialSqftValues={sqftPerFab}
+                initialStartDates={datePerFab.startDateMapping}
+                initialEndDates={datePerFab.endDateMapping}
             />
         </Container>
     );
 }
-
 
 
 export default DrafterPage;

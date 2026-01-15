@@ -119,11 +119,11 @@ export function PreDraftDetailsPage() {
     ] : [];
 
     const sidebarSections = [
-        {
-            title: "Job Information",
-            type: "details",
-            items: jobInfo,
-        },
+        // {
+        //     title: "Job Information",
+        //     type: "details",
+        //     items: jobInfo,
+        // },
         {
             title: "FAB Notes",
             type: "notes",

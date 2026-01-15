@@ -25,8 +25,7 @@ import {
     useCompleteTemplatingMutation,
     useMarkTemplatingReceivedMutation,
     useGetTemplatingByFabIdQuery,
-    useGetFabByIdQuery,
-    useCreateDraftingMutation
+    useGetFabByIdQuery
 } from "@/store/api/job";
 import { useGetSalesPersonsQuery } from "@/store/api";
 import { Can } from '@/components/permission';
@@ -62,7 +61,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
     const [updateFab] = useUpdateFabMutation();
     const [completeTemplating] = useCompleteTemplatingMutation();
     const [markTemplatingReceived] = useMarkTemplatingReceivedMutation();
-    const [createDrafting] = useCreateDraftingMutation();
+
     const { data: templatingData } = useGetTemplatingByFabIdQuery(fabId || 0, { skip: !fabId });
     const { data: fabData } = useGetFabByIdQuery(fabId || 0, { skip: !fabId });
 
@@ -150,27 +149,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                         }).unwrap();
                     }
 
-                    // If a drafter was selected, create a drafting assignment
-                    if (values.drafter && values.drafter !== "none") {
-                        try {
-                            // Use the templating schedule dates for drafting
-                            const startDate = fabData?.templating_schedule_start_date || new Date().toISOString();
-                            const endDate = fabData?.templating_schedule_due_date ;
 
-                            await createDrafting({
-                                fab_id: fabId,
-                                drafter_id: values.drafter && values.drafter !== 'none' ? parseInt(values.drafter, 10) : 0,
-                                scheduled_start_date: startDate,
-                                scheduled_end_date: endDate,
-                                total_sqft_required_to_draft: values.square_ft || "0"
-                            }).unwrap();
-
-                            toast.success("Drafting assignment created successfully");
-                        } catch (draftError) {
-                            console.error("Failed to create drafting assignment:", draftError);
-                            toast.error("Failed to create drafting assignment");
-                        }
-                    }
                 }
             }
 
@@ -232,40 +211,6 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                                 <FormItem>
                                     <FormLabel>Square Ft</FormLabel>
                                     <Input placeholder="146" {...field} /> {/* Removed disabled prop */}
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="drafter"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Assign to Drafter</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value} disabled={!form.watch("templatereceived") || isLoadingSalesPersons}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder={form.watch("templatereceived") ? "Select drafter (optional)" : "Template not received"} />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {isLoadingSalesPersons ? (
-                                                <SelectItem value="loading" disabled>Loading drafters...</SelectItem>
-                                            ) : (
-                                                <>
-                                                    <SelectItem value="none">No drafter assigned</SelectItem>
-                                                    {salesPersons.map((drafter: any) => (
-                                                        <SelectItem key={drafter.id} value={drafter.id.toString()}>
-                                                            {drafter.name}
-                                                        </SelectItem>
-                                                    ))}
-                                                </>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    {!form.watch("templatereceived") && (
-                                        <p className="text-sm text-yellow-600">Template must be received before assigning a drafter</p>
-                                    )}
-                                    <FormMessage />
                                 </FormItem>
                             )}
                         />
