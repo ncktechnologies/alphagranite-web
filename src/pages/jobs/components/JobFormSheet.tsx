@@ -14,16 +14,32 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { LoaderCircleIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { LoaderCircleIcon, Plus, Search } from "lucide-react";
+import { Label } from "@/components/ui/label";
 import type { Job } from "@/store/api/job";
-import { useCreateJobMutation, useUpdateJobMutation, useGetAccountsQuery } from "@/store/api/job";
+import {
+  useCreateJobMutation,
+  useUpdateJobMutation,
+  useGetAccountsQuery,
+  useCreateAccountMutation,
+} from "@/store/api/job";
 import { useGetSalesPersonsQuery } from "@/store/api/employee";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// Schema for validation
+// =======================
+// Schema
+// =======================
 const jobSchema = z.object({
   name: z.string().min(1, "Job name is required"),
   job_number: z.string().min(1, "Job number is required"),
@@ -38,53 +54,67 @@ type JobFormType = z.infer<typeof jobSchema>;
 interface JobFormSheetProps {
   trigger: ReactNode;
   job?: Job;
-  mode?: 'create' | 'edit' | 'view';
+  mode?: "create" | "edit" | "view";
   onSubmitSuccess?: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
 
-const JobFormSheet = ({ 
-  trigger, 
-  job, 
-  mode = 'create',
-  onSubmitSuccess, 
-  open: controlledOpen, 
-  onOpenChange 
+const JobFormSheet = ({
+  trigger,
+  job,
+  mode = "create",
+  onSubmitSuccess,
+  open: controlledOpen,
+  onOpenChange,
 }: JobFormSheetProps) => {
   const [internalOpen, setInternalOpen] = useState(false);
-  
-  const isSheetOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
+  const isSheetOpen = controlledOpen ?? internalOpen;
   const setIsSheetOpen = onOpenChange || setInternalOpen;
-  
+
+  const isEditMode = mode === "edit";
+  const isViewMode = mode === "view";
+
   const [createJob, { isLoading: isCreating }] = useCreateJobMutation();
   const [updateJob, { isLoading: isUpdating }] = useUpdateJobMutation();
-  const { data: accountsData, isLoading: accountsLoading } = useGetAccountsQuery();
-  const { data: salesPersonsData, isLoading: salesPersonsLoading } = useGetSalesPersonsQuery();
-  
-  // Extract sales persons from the response
+  const { data: accountsData, isLoading: accountsLoading } =
+    useGetAccountsQuery();
+  const [createAccount] = useCreateAccountMutation();
+  const { data: salesPersonsData, isLoading: salesPersonsLoading } =
+    useGetSalesPersonsQuery();
+
+  const isSubmitting = isCreating || isUpdating;
+
+  // =======================
+  // Account UI state
+  // =======================
+  const [accountSearch, setAccountSearch] = useState("");
+  const [showAddAccount, setShowAddAccount] = useState(false);
+  const [newAccount, setNewAccount] = useState("");
+
+  const filteredAccounts = useMemo(() => {
+    if (!accountsData) return [];
+    return accountsData.filter((a) =>
+      a.name.toLowerCase().includes(accountSearch.toLowerCase())
+    );
+  }, [accountsData, accountSearch]);
+
+  // =======================
+  // Sales persons
+  // =======================
   const salesPersons = useMemo(() => {
     if (!salesPersonsData) return [];
-    
-    // Handle both possible response formats
-    let rawData: any[] = [];
-    if (Array.isArray(salesPersonsData)) {
-      rawData = salesPersonsData;
-    } else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData) {
-      rawData = (salesPersonsData as any).data || [];
-    }
-    
-    // Extract names and IDs from sales person objects
-    return rawData.map((item: any) => ({
-      id: item.id || item.user_id,
-      name: typeof item === 'string' ? item : (item.name || item.first_name + ' ' + item.last_name)
-    }));
+    return Array.isArray(salesPersonsData)
+      ? salesPersonsData.map((sp: any) => ({
+        id: sp.id || sp.user_id,
+        name: sp.name || `${sp.first_name} ${sp.last_name}`,
+      }))
+      : [];
   }, [salesPersonsData]);
-  
-  const isSubmitting = isCreating || isUpdating;
-  const isEditMode = mode === 'edit';
-  const isViewMode = mode === 'view';
 
+  // =======================
+  // Form
+  // =======================
   const form = useForm<JobFormType>({
     resolver: zodResolver(jobSchema),
     defaultValues: {
@@ -97,293 +127,358 @@ const JobFormSheet = ({
     },
   });
 
-  // Prefill form when editing or viewing
   useEffect(() => {
     if (isSheetOpen && job) {
-      const resetData = {
+      form.reset({
         name: job.name || "",
         job_number: job.job_number || "",
         project_value: job.project_value || "",
         account_id: job.account_id ? String(job.account_id) : "",
         description: (job as any).description || "",
-        sales_person_id: (job as any).sales_person_id ? String((job as any).sales_person_id) : "",
-      };
-      
-      form.reset(resetData);
-    } else if (isSheetOpen && !job) {
-      // Reset to empty for create mode
-      form.reset({
-        name: "",
-        job_number: "",
-        project_value: "",
-        account_id: "",
-        description: "",
-        sales_person_id: "",
+        sales_person_id: (job as any).sales_person_id
+          ? String((job as any).sales_person_id)
+          : "",
       });
+    } else if (isSheetOpen) {
+      form.reset();
     }
-  }, [job, form, isSheetOpen]);
+  }, [job, isSheetOpen, form]);
+
+  // =======================
+  // Handlers
+  // =======================
+  const handleAddAccount = async () => {
+    if (!newAccount.trim()) return;
+
+    try {
+      const created = await createAccount({
+        name: newAccount.trim(),
+      }).unwrap();
+
+      if (created?.id) {
+        form.setValue("account_id", String(created.id));
+      }
+
+      setNewAccount("");
+      setAccountSearch("");
+      setShowAddAccount(false);
+
+      toast.success("Account created successfully");
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to create account");
+    }
+  };
 
   async function onSubmit(values: JobFormType) {
     if (isViewMode) return;
 
     try {
-      const jobData: any = {
+      const payload: any = {
         name: values.name,
         job_number: values.job_number,
         project_value: values.project_value || undefined,
-        account_id: values.account_id ? parseInt(values.account_id) : undefined,
+        account_id: values.account_id
+          ? parseInt(values.account_id)
+          : undefined,
         description: values.description || undefined,
       };
 
-      // Add sales person for create mode
       if (!isEditMode && values.sales_person_id) {
-        jobData.sales_person_id = parseInt(values.sales_person_id);
+        payload.sales_person_id = parseInt(values.sales_person_id);
       }
 
-      // Set status to completed (3) when updating existing job
       if (isEditMode && job) {
-        jobData.status_id = 3; // completed status
-        await updateJob({ 
-          id: job.id, 
-          data: jobData 
-        }).unwrap();
-        toast.success("Job updated successfully and marked as completed");
+        payload.status_id = 3;
+        await updateJob({ id: job.id, data: payload }).unwrap();
+        toast.success("Job updated successfully");
       } else {
-        await createJob(jobData).unwrap();
+        await createJob(payload).unwrap();
         toast.success("Job created successfully");
       }
 
       form.reset();
       setIsSheetOpen(false);
-      if (onSubmitSuccess) onSubmitSuccess();
-    } catch (error: any) {
-      const errorMessage = error?.data?.detail || error?.data?.message || 
-        `Failed to ${isEditMode ? 'update' : 'create'} job`;
-      toast.error(errorMessage);
+      onSubmitSuccess?.();
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to save job");
     }
   }
 
-  const handleCancel = () => {
-    form.reset();
-    setIsSheetOpen(false);
-  };
-
-  const getTitle = () => {
-    if (isViewMode) return "View job";
-    if (isEditMode) return "Edit job";
-    return "Add new job";
-  };
 
   return (
-    <>
-      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
-        <SheetTrigger asChild>{trigger}</SheetTrigger>
-        <SheetContent className="gap-0 sm:w-[500px] sm:max-w-none inset-5 start-auto h-auto rounded-lg p-4">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="h-full flex flex-col">
-              <SheetHeader className="mb-3 border-border pb-3.5 border-b">
-                <SheetTitle>{getTitle()}</SheetTitle>
-              </SheetHeader>
+    <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+      <SheetTrigger asChild>{trigger}</SheetTrigger>
 
-              <SheetBody className="flex-1">
-                <ScrollArea className="h-full">
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Job Name *</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Enter job name" 
-                                {...field} 
-                                disabled={isViewMode}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+      <SheetContent className="sm:w-[500px] rounded-lg p-4">
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col h-full"
+          >
+            <SheetHeader className="mb-3 border-b pb-3">
+              <SheetTitle>
+                {isViewMode ? "View job" : isEditMode ? "Edit job" : "Add new job"}
+              </SheetTitle>
+            </SheetHeader>
 
-                      <FormField
-                        control={form.control}
-                        name="job_number"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Job Number *</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Enter job number" 
-                                {...field} 
-                                disabled={isViewMode}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="project_value"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Project Value</FormLabel>
-                            <FormControl>
-                              <Input 
-                                placeholder="Enter project value" 
-                                {...field} 
-                                disabled={isViewMode}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="account_id"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Account</FormLabel>
-                            <Select 
-                              value={field.value} 
-                              onValueChange={field.onChange}
-                              disabled={isViewMode || accountsLoading}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder={
-                                    accountsLoading ? "Loading accounts..." : "Select Account"
-                                  }>
-                                    {accountsLoading ? "Loading..." : field.value ? 
-                                      accountsData?.find(acc => String(acc.id) === field.value)?.name : 
-                                      "Select Account"
-                                    }
-                                  </SelectValue>
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {accountsData?.map((account) => (
-                                  <SelectItem key={account.id} value={String(account.id)}>
-                                    {account.name}
-                                  </SelectItem>
-                                ))}
-                                {(!accountsData || accountsData.length === 0) && !accountsLoading && (
-                                  <div className="px-2 py-1.5 text-sm text-muted-foreground text-center">
-                                    No accounts available
-                                  </div>
-                                )}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      {/* Description Field */}
-                      <FormField
-                        control={form.control}
-                        name="description"
-                        render={({ field }) => (
-                          <FormItem className="md:col-span-2">
-                            <FormLabel>Notes</FormLabel>
-                            <FormControl>
-                              <Textarea 
-                                placeholder="Enter job notes" 
-                                {...field} 
-                                disabled={isViewMode}
-                                rows={3}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      {/* Sales Person Field - Only show for create mode */}
-                      {!isEditMode && (
-                        <FormField
-                          control={form.control}
-                          name="sales_person_id"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Sales Person</FormLabel>
-                              <Select 
-                                value={field.value} 
-                                onValueChange={field.onChange}
-                                disabled={isViewMode || salesPersonsLoading}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder={
-                                      salesPersonsLoading ? "Loading sales persons..." : "Select Sales Person"
-                                    }>
-                                      {salesPersonsLoading ? "Loading..." : field.value ? 
-                                        salesPersons.find(sp => String(sp.id) === field.value)?.name : 
-                                        "Select Sales Person"
-                                      }
-                                    </SelectValue>
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {salesPersons.map((salesPerson) => (
-                                    <SelectItem key={salesPerson.id} value={String(salesPerson.id)}>
-                                      {salesPerson.name}
-                                    </SelectItem>
-                                  ))}
-                                  {(!salesPersons || salesPersons.length === 0) && !salesPersonsLoading && (
-                                    <div className="px-2 py-1.5 text-sm text-muted-foreground text-center">
-                                      No sales persons available
-                                    </div>
-                                  )}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      )}
-                    </div>
-                  </div>
-                </ScrollArea>
-              </SheetBody>
-
-              <SheetFooter className="py-3.5 px-5 border-border flex justify-end gap-3 mt-auto">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleCancel}
-                  disabled={isSubmitting && !isViewMode}
-                >
-                  {isViewMode ? 'Close' : 'Cancel'}
-                </Button>
-                {!isViewMode && (
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    disabled={isSubmitting}
-                    className="justify-center"
-                  >
-                    {isSubmitting ? (
-                      <span className="flex items-center gap-2">
-                        <LoaderCircleIcon className="h-4 w-4 animate-spin" />
-                        {isEditMode ? "Updating..." : "Saving..."}
-                      </span>
-                    ) : (
-                      isEditMode ? "Save changes" : "Save job"
+            <SheetBody className="flex-1">
+              <ScrollArea className="h-full">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Job Name */}
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Job Name *</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={isViewMode} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                  </Button>
-                )}
-              </SheetFooter>
-            </form>
-          </Form>
-        </SheetContent>
-      </Sheet>
-    </>
+                  />
+
+                  {/* Job Number */}
+                  <FormField
+                    control={form.control}
+                    name="job_number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Job Number *</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={isViewMode} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Project Value */}
+                  <FormField
+                    control={form.control}
+                    name="project_value"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Project Value</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={isViewMode} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                  {/* Sales Person */}
+                  <FormField
+                    control={form.control}
+                    name="sales_person_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sales Person</FormLabel>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={isViewMode || salesPersonsLoading}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue
+                                placeholder={
+                                  salesPersonsLoading
+                                    ? "Loading sales persons..."
+                                    : "Select Sales Person"
+                                }
+                              >
+                                {salesPersonsLoading
+                                  ? "Loading..."
+                                  : field.value
+                                    ? salesPersons.find(
+                                      (sp) => String(sp.id) === field.value
+                                    )?.name
+                                    : "Select Sales Person"}
+                              </SelectValue>
+                            </SelectTrigger>
+                          </FormControl>
+
+                          <SelectContent>
+                            {salesPersons.map((salesPerson) => (
+                              <SelectItem
+                                key={salesPerson.id}
+                                value={String(salesPerson.id)}
+                              >
+                                {salesPerson.name}
+                              </SelectItem>
+                            ))}
+
+                            {!salesPersonsLoading && salesPersons.length === 0 && (
+                              <div className="px-2 py-1.5 text-sm text-muted-foreground text-center">
+                                No sales persons available
+                              </div>
+                            )}
+                          </SelectContent>
+                        </Select>
+
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {/* Account (FAB-style) */}
+                  <FormField
+                    control={form.control}
+                    name="account_id"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Account</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className="w-full h-10 px-3 justify-between font-normal"
+                                disabled={isViewMode || accountsLoading}
+                              >
+                                {accountsLoading
+                                  ? "Loading..."
+                                  : field.value
+                                    ? accountsData?.find(
+                                      (a) =>
+                                        String(a.id) === field.value
+                                    )?.name
+                                    : "Select account"}
+                                <Search className="h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+
+                          <PopoverContent className="w-[--radix-popover-trigger-width] p-2">
+                            <div className="flex justify-between mb-2">
+                              <span className="text-sm font-medium">
+                                Accounts
+                              </span>
+
+                              {!isViewMode && (
+                                <Popover
+                                  open={showAddAccount}
+                                  onOpenChange={setShowAddAccount}
+                                >
+                                  <PopoverTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                    >
+                                      <Plus className="w-3 h-3 mr-1" />
+                                      Add
+                                    </Button>
+                                  </PopoverTrigger>
+
+                                  <PopoverContent className="w-72">
+                                    <div className="space-y-3">
+                                      <Label>Account Name</Label>
+                                      <Input
+                                        value={newAccount}
+                                        onChange={(e) =>
+                                          setNewAccount(e.target.value)
+                                        }
+                                      />
+                                      <div className="flex justify-end gap-2">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          onClick={() =>
+                                            setShowAddAccount(false)
+                                          }
+                                        >
+                                          Cancel
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          onClick={handleAddAccount}
+                                        >
+                                          Add
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </PopoverContent>
+                                </Popover>
+                              )}
+                            </div>
+
+                            <Input
+                              placeholder="Search account..."
+                              value={accountSearch}
+                              onChange={(e) =>
+                                setAccountSearch(e.target.value)
+                              }
+                              className="mb-2"
+                            />
+
+                            <div className="max-h-48 overflow-y-auto">
+                              {filteredAccounts.map((account) => (
+                                <div
+                                  key={account.id}
+                                  className="px-3 py-2 text-sm hover:bg-muted rounded cursor-pointer"
+                                  onClick={() =>
+                                    field.onChange(String(account.id))
+                                  }
+                                >
+                                  {account.name}
+                                </div>
+                              ))}
+                            </div>
+                          </PopoverContent>
+                        </Popover>
+                      </FormItem>
+                    )}
+                  />
+                  {/* Sales Person Field - Create mode only */}
+                  
+
+                  {/* Notes */}
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Notes</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            rows={3}
+                            disabled={isViewMode}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </ScrollArea>
+            </SheetBody>
+
+            <SheetFooter className="flex justify-end gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsSheetOpen(false)}
+              >
+                {isViewMode ? "Close" : "Cancel"}
+              </Button>
+
+              {!isViewMode && (
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <LoaderCircleIcon className="h-4 w-4 animate-spin mr-2" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save job"
+                  )}
+                </Button>
+              )}
+            </SheetFooter>
+          </form>
+        </Form>
+      </SheetContent>
+    </Sheet>
   );
 };
 

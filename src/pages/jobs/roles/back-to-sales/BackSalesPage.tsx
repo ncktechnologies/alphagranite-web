@@ -48,7 +48,6 @@ const transformFabToJob = (fab: Fab): IJob => {
     draft_revision_notes: '', // Will be populated from fab_notes
     template_received: '',
     revised: (fab as any).sales_ct_data?.is_revision_needed ? 'Yes' : 'No',
-    sales_person_name: fab.sales_person_name || '',
     // sct_completed: '',
     // template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
     // templater: fab.technician_name || '-',
