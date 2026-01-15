@@ -1002,7 +1002,7 @@ export const JobTable = ({
                 const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
                                Array.isArray(row.original.notes) ? row.original.notes : [];
                 const draftRevisionNotes = fabNotes.filter(note => 
-                    note.stage === 'draft' || note.stage === 'revision'
+                    note.stage === 'draft' || note.stage === 'revisions'
                 );
                 
                 if (draftRevisionNotes.length === 0) {
