@@ -52,7 +52,9 @@ const transformFabToJob = (fab: Fab): IJob => {
     revised: '',
     sct_completed: '',
     draft_completed: '',
-    gp: ''
+    gp: '',
+        job_id: fab.job_id,
+
   };
 };
 

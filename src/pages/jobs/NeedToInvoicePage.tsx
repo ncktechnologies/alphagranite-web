@@ -1,5 +1,4 @@
-// components/JobsSection.tsx
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   ColumnDef,
   getCoreRowModel,
@@ -39,7 +38,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useGetJobsQuery, useCreateJobMutation, useUpdateJobMutation, useDeleteJobMutation, Job, useGetJobByIdQuery, JobListParams } from '@/store/api/job';
+import { useGetJobsQuery, useGetJobByIdQuery, Job, JobListParams } from '@/store/api/job';
 import { toast } from 'sonner';
 import { Can } from '@/components/permission';
 import JobFormSheet from './components/JobFormSheet';
@@ -58,7 +57,7 @@ interface ExtendedJob extends Omit<Job, 'project_value'> {
   // Add any other fields that come from API
 }
 
-export const JobsSection = () => {
+export const NeedToInvoicePage = () => {
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -78,9 +77,9 @@ export const JobsSection = () => {
     limit: pagination.pageSize,
     ...(searchQuery && { search: searchQuery }),
     ...(selectedStatus !== 'all' && { status_id: parseInt(selectedStatus) }),
+    need_to_invoice: true, // Filter to show only jobs that need invoicing
   });
 
-  const [deleteJob] = useDeleteJobMutation();
   const [toggleNeedToInvoice] = useToggleNeedToInvoiceMutation();
 
   // Transform API data to match table structure
@@ -92,9 +91,9 @@ export const JobsSection = () => {
       project_value: job.project_value || 'N/A',
       updated_at: job.updated_at || 'N/A',
       status: job.status_id === 1 ? 'Active' : job.status_id === 2 ? 'Inactive' : job.status_id === 3 ? 'Completed' : 'N/A',
-      need_to_invoice: job.need_to_invoice, // Add the need_to_invoice field from API
       // The API already provides sales_person_name, so don't override it
       // sales_person_name is already included from the spread operator
+      need_to_invoice: job.need_to_invoice, // Add the need_to_invoice field from API
     } as ExtendedJob));
   }, [jobsData]);
 
@@ -108,18 +107,6 @@ export const JobsSection = () => {
     setSelectedJob(job as Job);
     setSheetMode('edit');
     setIsSheetOpen(true);
-  };
-
-  const handleDelete = async (job: ExtendedJob) => {
-    if (window.confirm(`Are you sure you want to delete job ${job.name}?`)) {
-      try {
-        await deleteJob(job.id).unwrap();
-        toast.success('Job deleted successfully');
-        refetch();
-      } catch (error) {
-        toast.error('Failed to delete job');
-      }
-    }
   };
 
   const handleCreateNew = () => {
@@ -208,73 +195,61 @@ export const JobsSection = () => {
         enableSorting: true,
         size: 150,
       },
-      {
-        id: 'status',
-        accessorFn: (row) => row.status,
-        header: ({ column }) => (
-          <DataGridColumnHeader title="STATUS" column={column} />
-        ),
-        cell: ({ row }) => (
-          <span className="text-sm text-text">{row.original.status || 'N/A'}</span>
-        ),
-        enableSorting: true,
-        size: 120,
-      },
-      {
-        id: 'need_to_invoice',
-        accessorFn: (row) => row.need_to_invoice,
-        header: ({ column }) => (
-          <DataGridColumnHeader title="NEED TO INVOICE" column={column} />
-        ),
-        cell: ({ row }) => (
-          <div className="flex justify-center">
-            <Switch
-              checked={row.original.need_to_invoice}
-              onCheckedChange={async (checked) => {
-                try {
-                  await toggleNeedToInvoice(row.original.id).unwrap();
-                  toast.success(`Invoice requirement ${checked ? 'enabled' : 'disabled'} successfully`);
-                  refetch();
-                } catch (error) {
-                  console.error('Error toggling invoice requirement:', error);
-                  toast.error(`Failed to ${checked ? 'enable' : 'disable'} invoice requirement`);
-                }
-              }}
-            />
-          </div>
-        ),
-        enableSorting: false,
-        size: 150,
-      },
-      {
-        id: 'actions',
-        header: '',
-        cell: ({ row }) => (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <Ellipsis className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => handleView(row.original)}>
-                View
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleEdit(row.original)}>
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
+    //   {
+    //     id: 'need_to_invoice',
+    //     accessorFn: (row) => row.need_to_invoice,
+    //     header: ({ column }) => (
+    //       <DataGridColumnHeader title="NEED TO INVOICE" column={column} />
+    //     ),
+    //     cell: ({ row }) => (
+    //       <div className="flex justify-center">
+    //         <Switch
+    //           checked={row.original.need_to_invoice}
+    //           onCheckedChange={async (checked) => {
+    //             try {
+    //               await toggleNeedToInvoice(row.original.id).unwrap();
+    //               toast.success(`Invoice requirement ${checked ? 'enabled' : 'disabled'} successfully`);
+    //               refetch();
+    //             } catch (error) {
+    //               console.error('Error toggling invoice requirement:', error);
+    //               toast.error(`Failed to ${checked ? 'enable' : 'disable'} invoice requirement`);
+    //             }
+    //           }}
+    //         />
+    //       </div>
+    //     ),
+    //     enableSorting: false,
+    //     size: 150,
+    //   },
+    //   {
+    //     id: 'actions',
+    //     header: '',
+    //     cell: ({ row }) => (
+    //       <DropdownMenu>
+    //         <DropdownMenuTrigger asChild>
+    //           <Button variant="ghost" className="h-8 w-8 p-0">
+    //             <span className="sr-only">Open menu</span>
+    //             <Ellipsis className="h-4 w-4" />
+    //           </Button>
+    //         </DropdownMenuTrigger>
+    //         <DropdownMenuContent align="end">
+    //           <DropdownMenuLabel>Actions</DropdownMenuLabel>
+    //           <DropdownMenuItem onClick={() => handleView(row.original)}>
+    //             View
+    //           </DropdownMenuItem>
+    //           <DropdownMenuItem onClick={() => handleEdit(row.original)}>
+    //             Edit
+    //           </DropdownMenuItem>
+    //           <DropdownMenuSeparator />
               
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ),
-        enableSorting: false,
-        size: 60,
-      },
+    //         </DropdownMenuContent>
+    //       </DropdownMenu>
+    //     ),
+    //     enableSorting: false,
+    //     size: 60,
+    //   },
     ],
-    [],
+    [toggleNeedToInvoice, refetch],
   );
 
   const table = useReactTable({
@@ -353,14 +328,14 @@ export const JobsSection = () => {
                   </Select>
                 </div>
               </CardHeading>
-              <CardToolbar>
+              {/* <CardToolbar>
                 <Can action="create" on="jobs">
                   <Button onClick={handleCreateNew}>
                     <Plus className="mr-2 h-4 w-4" />
                     New Job
                   </Button>
                 </Can>
-              </CardToolbar>
+              </CardToolbar> */}
             </CardHeader>
             <CardTable>
               <ScrollArea>

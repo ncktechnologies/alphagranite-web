@@ -48,6 +48,7 @@ export interface CalculatedCutListData {
     fab_id_0?: string;
     job_name: string;
     job_no: string;
+    job_id?: number;
     no_of_pcs: number;
     total_sq_ft: number;
     wl_ln_ft: number;
@@ -92,6 +93,7 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
         fab_id_0: '', // Placeholder, can be populated if needed
         job_name: fab.job_details?.name || '',
         job_no: fab.job_details?.job_number || '',
+        job_id: fab.job_id,
         no_of_pcs: fabWithExtraFields.no_of_pieces || 0,
         total_sq_ft: fab.total_sqft || 0,
         wl_ln_ft: fabWithExtraFields.wj_linft || 0,
@@ -400,7 +402,20 @@ export const CutListTableWithCalculations = ({
             header: ({ column }) => (
                 <DataGridColumnHeader title="JOB NO" column={column} />
             ),
-            cell: ({ row }) => <span className="text-sm">{row.original.job_no}</span>,
+            cell: ({ row }) => (
+                row.original.job_id ? (
+                    <Link
+                        to={`/job/details/${row.original.job_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                        {row.original.job_no}
+                    </Link>
+                ) : (
+                    <span className="text-sm">{row.original.job_no}</span>
+                )
+            ),
         },
         {
             id: "no_of_pcs",

@@ -17,6 +17,7 @@ export interface Job {
     created_by: number;
     updated_at?: string;
     updated_by?: number;
+    need_to_invoice?: boolean;
 }
 
 export interface JobCreate {
@@ -45,6 +46,7 @@ export interface JobDetails {
     created_by: number;
     updated_at?: string;
     updated_by?: number;
+    need_to_invoice?: boolean;
 }
 
 // Fab Types
@@ -254,6 +256,7 @@ export interface JobListParams {
     search?: string;
     schedule_start_date?: string;
     schedule_due_date?: string;
+    need_to_invoice?: boolean;
 }
 
 // Add this interface for jobs by account
@@ -265,6 +268,7 @@ export interface JobsByAccountParams {
     search?: string;
     schedule_start_date?: string;
     schedule_due_date?: string;
+    need_to_invoice?: boolean;
 }
 
 export interface FabListParams {
@@ -535,16 +539,13 @@ export interface RevisionResponse {
 // Media Interfaces
 export interface JobMediaFile {
     id: number;
-    job_id: number;
-    filename: string;
-    original_filename: string;
-    file_url: string;
+    name: string;
     file_type: string;
-    file_size: number;
-    media_type: 'photo' | 'video' | 'document';
+    file_size: string;
+    file_url: string;
+    uploaded_by: number;
+    uploader_name: string;
     created_at: string;
-    created_by: number;
-    created_by_name?: string;
 }
 
 export interface JobMediaUploadResponse {
@@ -642,6 +643,7 @@ export const jobApi = createApi({
                             ...(queryParams.search && { search: queryParams.search }),
                             ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
                             ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
+                            ...(queryParams.need_to_invoice !== undefined && { need_to_invoice: queryParams.need_to_invoice }),
                         }
                     };
                 },
@@ -663,6 +665,7 @@ export const jobApi = createApi({
                             ...(queryParams.search && { search: queryParams.search }),
                             ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
                             ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
+                            ...(queryParams.need_to_invoice !== undefined && { need_to_invoice: queryParams.need_to_invoice }),
                         }
                     };
                 },
@@ -1519,6 +1522,7 @@ export const jobApi = createApi({
                     method: "get",
                     params: params || {}
                 }),
+                transformResponse: (response: any) => response.data?.data || [],
                 providesTags: (_result, _error, { job_id }) => [{ type: "Job", id: job_id }],
             }),
 
@@ -1567,6 +1571,15 @@ export const jobApi = createApi({
                 }),
                 transformResponse: (response: any) => response.data || response,
                 providesTags: ["Job"],
+            }),
+            
+            // Toggle Need To Invoice endpoint
+            toggleNeedToInvoice: build.mutation<Job, number>({
+                query: (job_id) => ({
+                    url: `/jobs/${job_id}/toggle-invoice`,
+                    method: "PATCH",
+                }),
+                invalidatesTags: ["Job"],
             }),
         };
     },
@@ -1658,4 +1671,6 @@ export const {
     useDeleteJobMediaMutation,
     // Admin Dashboard hook
     useGetAdminDashboardQuery,
+    // Toggle Need To Invoice hook
+    useToggleNeedToInvoiceMutation,
 } = jobApi;

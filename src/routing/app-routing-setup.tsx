@@ -48,6 +48,7 @@ import { EditFabIdForm } from '@/pages/jobs/roles/sales/EditFabIdForm';
 import { SlabSmithDetailsPage, SlabSmithPage } from '@/pages/jobs/roles/slab-smith';
 import { JobDashboardPage } from '@/pages/jobs';
 import { JobDetailsPage } from '@/pages/jobs/JobDetailsPage';
+import { NeedToInvoicePage } from '@/pages/jobs/NeedToInvoicePage';
 import { StoreDashboardPage } from '@/pages/shop';
 
 export function AppRoutingSetup() {
@@ -62,6 +63,7 @@ export function AppRoutingSetup() {
           <Route path="/settings/notifications" element={<NotificationsSection />} />
           <Route path="/settings/permissions" element={<PermissionsSection />} />
           <Route path="/create-jobs" element={<JobsSection />} />
+          <Route path="/job/need-to-invoice" element={<NeedToInvoicePage />} />
           
           {/* Job Dashboard Route */}
           <Route path="/job" element={<JobDashboardPage />} />

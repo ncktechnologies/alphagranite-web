@@ -32,7 +32,7 @@ import { IJob } from './job';
 import { groupData } from '@/lib/groupData';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import ActionsCell from '../roles/sales/action';
-import { useNavigate } from 'react-router';
+import { useNavigate, Link } from 'react-router-dom';
 import { JOB_STAGES } from '@/hooks/use-job-stage';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -539,7 +539,21 @@ export const JobTable = ({
             header: ({ column }) => (
                 <DataGridColumnHeader title="JOB NO" column={column} />
             ),
-            cell: ({ row }) => <span className="text-xs">{row.original.job_no}</span>,
+            cell: ({ row }) => (
+                row.original.job_id ? (
+                    <Link
+                        to={`/job/details/${row.original.job_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                        {row.original.job_no}
+                    </Link>
+                ) : (
+                    
+                    <span className="text-xs">{row.original.job_no}</span>
+                )
+            ),
             size: 100,
         },
         {

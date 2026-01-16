@@ -60,6 +60,8 @@ const transformFabToJob = (fab: Fab): IJob => {
         stone_thickness_value: fab.stone_thickness_value || '',
         edge_name: fab.edge_name || '',
         no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
+        job_id: fab.job_id,
+
     };
 };
 

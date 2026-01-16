@@ -37,6 +37,7 @@ export const transformFabToJob = (fab: Fab): IJob => {
         stone_thickness_value: fab.stone_thickness_value || '',
         edge_name: fab.edge_name || '',
         fab_notes: fab.fab_notes || [],
+        job_id: fab.job_id,
     };
 };
 

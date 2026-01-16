@@ -1,24 +1,33 @@
 import { useState } from 'react';
 import { Container } from '@/components/common/container';
-import { Card, CardContent, CardHeader, CardTitle, CardToolbar } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardHeading, CardTitle, CardToolbar } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useGetJobByIdQuery, useGetFabsByJobQuery } from '@/store/api/job';
+import { useGetJobByIdQuery, useGetFabsByJobQuery, useGetJobMediaQuery } from '@/store/api/job';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, ArrowLeft, Camera, Video, FileText, Plus } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Camera, Video, FileText, Plus, Download, Trash2, Image, Play, X } from 'lucide-react';
 import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Can } from '@/components/permission';
 import { BackButton } from '@/components/common/BackButton';
 import { Badge } from '@/components/ui/badge';
+import { JobMediaUpload } from './components/JobMediaUpload';
 
 export function JobDetailsPage() {
   const { job_id } = useParams<{ job_id: string }>();
   const navigate = useNavigate();
   const jobId = job_id ? parseInt(job_id) : 0;
 
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: string; name: string } | null>(null);
+
   const { data: job, isLoading, isError, error } = useGetJobByIdQuery(jobId, { skip: !jobId });
   const { data: fabs, isLoading: fabsLoading } = useGetFabsByJobQuery(jobId, { skip: !jobId });
+  const { data: mediaFiles, isLoading: mediaLoading, refetch: refetchMedia } = useGetJobMediaQuery(
+    { job_id: jobId },
+    { skip: !jobId }
+  );
 
   // Create job info based on actual job data
   const jobInfo = job ? [
@@ -26,16 +35,16 @@ export function JobDetailsPage() {
     { label: 'Job Name', value: job.name },
     { label: 'Account', value: job.account_name || 'N/A' },
     { label: 'Account Number', value: job.account_number || 'N/A' },
-    { label: 'Contact Person', value: job.account_contact_person || 'N/A' },
-    { label: 'Email', value: job.account_email || 'N/A' },
-    { label: 'Phone', value: job.account_phone || 'N/A' },
+    // { label: 'Contact Person', value: job.account_contact_person || 'N/A' },
+    // { label: 'Email', value: job.account_email || 'N/A' },
+    // { label: 'Phone', value: job.account_phone || 'N/A' },
     { label: 'Project Value', value: job.project_value ? `$${job.project_value.toLocaleString()}` : 'N/A' },
     { label: 'Sales Person', value: job.sales_person_name || 'N/A' },
     { label: 'Priority', value: job.priority || 'N/A' },
     { label: 'Status', value: getStatusText(job.status_id) },
     { label: 'Created Date', value: new Date(job.created_at).toLocaleDateString() },
-    { label: 'Start Date', value: job.start_date ? new Date(job.start_date).toLocaleDateString() : 'N/A' },
-    { label: 'Due Date', value: job.due_date ? new Date(job.due_date).toLocaleDateString() : 'N/A' },
+    // { label: 'Start Date', value: job.start_date ? new Date(job.start_date).toLocaleDateString() : 'N/A' },
+    // { label: 'Due Date', value: job.due_date ? new Date(job.due_date).toLocaleDateString() : 'N/A' },
   ] : [];
 
   // Get status text based on status_id
@@ -119,6 +128,72 @@ export function JobDetailsPage() {
     );
   }
 
+  // Media viewer modal component - FIXED VERSION
+  const MediaViewer = () => {
+    if (!selectedMedia) return null;
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+        <div className="relative w-full max-w-7xl max-h-[90vh] bg-white rounded-lg overflow-hidden shadow-2xl">
+          {/* Close button */}
+          <button
+            onClick={() => setSelectedMedia(null)}
+            className="absolute top-4 right-4 z-10 p-2 bg-white/90 hover:bg-white text-gray-800 rounded-full shadow-lg transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          
+          {/* Header with file name */}
+          <div className="px-6 py-4 bg-gray-50 border-b">
+            <h3 className="font-semibold text-lg truncate text-gray-900">{selectedMedia.name}</h3>
+          </div>
+          
+          {/* Media content area */}
+          <div className="flex items-center justify-center p-6 bg-gray-100 min-h-[400px] max-h-[calc(90vh-140px)]">
+            {selectedMedia.type === 'photo' ? (
+              <div className="w-full h-full flex items-center justify-center">
+                <img
+                  src={selectedMedia.url}
+                  alt={selectedMedia.name}
+                  className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+                />
+              </div>
+            ) : selectedMedia.type === 'video' ? (
+              <div className="w-full max-w-4xl">
+                <video
+                  src={selectedMedia.url}
+                  controls
+                  controlsList="nodownload"
+                  className="w-full h-auto max-h-[70vh] rounded-lg"
+                />
+              </div>
+            ) : (
+              <div className="text-center p-8">
+                <FileText className="h-20 w-20 mx-auto text-gray-400 mb-4" />
+                <p className="text-gray-600 text-lg">Preview not available for this file type</p>
+              </div>
+            )}
+          </div>
+          
+          {/* Footer with download button */}
+          {/* <div className="px-6 py-4 bg-gray-50 border-t flex justify-between items-center">
+            <div className="text-sm text-gray-600">
+              {selectedMedia.type === 'photo' ? 'Image' : selectedMedia.type === 'video' ? 'Video' : 'Document'}
+            </div>
+            <a
+              href={selectedMedia.url}
+              download
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Download
+            </a>
+          </div> */}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <>
       <Container className='lg:mx-0'>
@@ -129,6 +204,7 @@ export function JobDetailsPage() {
           </ToolbarActions>
         </Toolbar>
       </Container>
+      {selectedMedia && <MediaViewer />}
 
       <div className="border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0 items-start lg:flex-shrink-0">
         {/* LEFT: Job Info */}
@@ -161,14 +237,14 @@ export function JobDetailsPage() {
                   Fabrication items associated with this job
                 </p>
               </CardHeading>
-              <CardToolbar>
+              {/* <CardToolbar>
                 <Can action="create" on="fab">
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
                     Add FAB
                   </Button>
                 </Can>
-              </CardToolbar>
+              </CardToolbar> */}
             </CardHeader>
             <CardContent>
               {fabsLoading ? (
@@ -214,12 +290,12 @@ export function JobDetailsPage() {
               ) : (
                 <div className="text-center py-8">
                   <p className="text-gray-500">No FABs found for this job</p>
-                  <Can action="create" on="fab">
+                  {/* <Can action="create" on="fab">
                     <Button className="mt-4">
                       <Plus className="h-4 w-4 mr-2" />
                       Create First FAB
                     </Button>
-                  </Can>
+                  </Can> */}
                 </div>
               )}
             </CardContent>
@@ -236,37 +312,200 @@ export function JobDetailsPage() {
               </CardHeading>
               <CardToolbar>
                 <Can action="create" on="jobs">
-                  <Button>
-                    <Camera className="h-4 w-4 mr-2" />
-                    Upload Media
-                  </Button>
+                  <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+                    <DialogTrigger asChild>
+                      <Button>
+                        <Camera className="h-4 w-4 mr-2" />
+                        Upload Media
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Upload Media Files</DialogTitle>
+                      </DialogHeader>
+                      <JobMediaUpload
+                        jobId={jobId}
+                        onUploadComplete={refetchMedia}
+                        onClose={() => setShowUploadDialog(false)}
+                      />
+                    </DialogContent>
+                  </Dialog>
                 </Can>
               </CardToolbar>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <div className="flex justify-center space-x-8 mb-4">
-                  <div className="text-center">
-                    <Camera className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">Photos (0)</p>
+              {mediaLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((item) => (
+                    <div key={item} className="flex items-center space-x-4 p-4 border rounded-lg">
+                      <Skeleton className="h-16 w-16 rounded" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-48" />
+                        <Skeleton className="h-3 w-32" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : mediaFiles && mediaFiles.length > 0 ? (
+                <div className="space-y-4">
+                  {/* Media Stats */}
+                  <div className="flex justify-center space-x-8 mb-6">
+                    <div className="text-center">
+                      <Camera className="h-8 w-8 text-blue-500 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600">Photos</p>
+                      <p className="text-lg font-semibold">
+                        {mediaFiles.filter(f => f.file_type === 'photo').length}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <Video className="h-8 w-8 text-red-500 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600">Videos</p>
+                      <p className="text-lg font-semibold">
+                        {mediaFiles.filter(f => f.file_type === 'video').length}
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <FileText className="h-8 w-8 text-gray-500 mx-auto mb-2" />
+                      <p className="text-sm text-gray-600">Documents</p>
+                      <p className="text-lg font-semibold">
+                        {mediaFiles.filter(f => f.file_type === 'document').length}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-center">
-                    <Video className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">Videos (0)</p>
-                  </div>
-                  <div className="text-center">
-                    <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500">Documents (0)</p>
+
+                  {/* Media Files Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {mediaFiles.map((file) => (
+                      <div key={file.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                        {/* Media Preview */}
+                        <div className="aspect-video bg-gray-100 relative cursor-pointer">
+                          {file.file_type === 'photo' && (
+                            <img
+                              src={file.file_url}
+                              alt={file.name}
+                              className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
+                              onClick={() => setSelectedMedia({
+                                url: file.file_url,
+                                type: file.file_type,
+                                name: file.name
+                              })}
+                            />
+                          )}
+                          {file.file_type === 'video' && (
+                            <div 
+                              className="w-full h-full flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300"
+                              onClick={() => setSelectedMedia({
+                                url: file.file_url,
+                                type: file.file_type,
+                                name: file.name
+                              })}
+                            >
+                              <Play className="h-12 w-12 text-gray-500" />
+                            </div>
+                          )}
+                          {file.file_type === 'document' && (
+                            <div 
+                              className="w-full h-full flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300"
+                              onClick={() => setSelectedMedia({
+                                url: file.file_url,
+                                type: file.file_type,
+                                name: file.name
+                              })}
+                            >
+                              <FileText className="h-12 w-12 text-gray-500" />
+                            </div>
+                          )}
+
+                          {/* File Type Badge */}
+                          <Badge
+                            variant="secondary"
+                            className="absolute top-2 left-2 text-xs capitalize"
+                          >
+                            {file.file_type}
+                          </Badge>
+                        </div>
+
+                        {/* File Info */}
+                        <div className="p-3">
+                          <h4 
+                            className="font-medium text-sm truncate hover:text-blue-600 cursor-pointer" 
+                            title={file.name}
+                            onClick={() => setSelectedMedia({
+                              url: file.file_url,
+                              type: file.file_type,
+                              name: file.name
+                            })}
+                          >
+                            {file.name}
+                          </h4>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {(parseInt(file.file_size) / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Uploaded by {file.uploader_name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {new Date(file.created_at).toLocaleDateString()}
+                          </p>
+
+                          {/* Action Buttons */}
+                          <div className="flex gap-2 mt-3">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 text-xs"
+                              onClick={() => setSelectedMedia({
+                                url: file.file_url,
+                                type: file.file_type,
+                                name: file.name
+                              })}
+                            >
+                              <Download className="h-3 w-3 mr-1" />
+                              View
+                            </Button>
+                            <Can action="delete" on="jobs">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </Can>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
-                <p className="text-gray-500">No media files uploaded yet</p>
-                <Can action="create" on="jobs">
-                  <Button className="mt-4">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Upload First File
-                  </Button>
-                </Can>
-              </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="flex justify-center space-x-8 mb-4">
+                    <div className="text-center">
+                      <Camera className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">Photos (0)</p>
+                    </div>
+                    <div className="text-center">
+                      <Video className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">Videos (0)</p>
+                    </div>
+                    <div className="text-center">
+                      <FileText className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">Documents (0)</p>
+                    </div>
+                  </div>
+                  <p className="text-gray-500">No media files uploaded yet</p>
+                  <Can action="create" on="jobs">
+                    <Button
+                      className="mt-4"
+                      onClick={() => setShowUploadDialog(true)}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      Upload First File
+                    </Button>
+                  </Can>
+                </div>
+              )}
             </CardContent>
           </Card>
         </Container>
@@ -287,7 +526,7 @@ export function JobDetailsPage() {
                     <ArrowLeft className="h-4 w-4" />
                     Back to Jobs
                   </Button>
-                  <Can action="update" on="jobs">
+                  {/* <Can action="update" on="jobs">
                     <Button variant="outline" className="w-full flex items-center gap-2">
                       Edit Job Details
                     </Button>
@@ -297,7 +536,7 @@ export function JobDetailsPage() {
                       <Plus className="h-4 w-4" />
                       Create FAB
                     </Button>
-                  </Can>
+                  </Can> */}
                 </div>
               </CardContent>
             </Card>
