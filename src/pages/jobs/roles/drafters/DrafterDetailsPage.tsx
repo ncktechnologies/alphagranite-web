@@ -281,6 +281,7 @@ export function DrafterDetailsPage() {
     setIsPaused(false);
     setHasEnded(true);
     setDraftEnd(endDate);
+    // Note: We're keeping the old behavior here but setIsOnHold is still managed separately
   };
 
   // Updated onHold handler
@@ -295,8 +296,18 @@ export function DrafterDetailsPage() {
     console.log('On hold with data:', data);
   };
 
-  // Determine if submission is allowed (only after on hold)
-  const canOpenSubmit = isOnHold && totalTime > 0 && (pendingFiles.length > 0 || uploadedFileMetas.length > 0);
+  // Handler for normal end (not on hold)
+  const handleNormalEnd = (endDate: Date) => {
+    setIsDrafting(false);
+    setIsPaused(false);
+    setIsOnHold(false); // Not on hold, just ended normally
+    setHasEnded(true);
+    setDraftEnd(endDate);
+    console.log('Normal end with date:', endDate);
+  };
+
+  // Determine if submission is allowed (after on hold OR after ending normally)
+  const canOpenSubmit = (isOnHold || (hasEnded && !isOnHold)) && totalTime > 0 && (pendingFiles.length > 0 || uploadedFileMetas.length > 0);
 
   // Modified to handle file upload before showing modal
   const handleOpenSubmissionModal = async () => {
@@ -448,14 +459,14 @@ export function DrafterDetailsPage() {
                   
 
 
-                  {/* Submit Button - only show after on hold */}
-                  {viewMode === 'activity' && isOnHold && (
+                  {/* Submit Button - show after on hold OR after ending normally */}
+                  {viewMode === 'activity' && (isOnHold ||  !isOnHold)&& (
                     <div className="flex justify-end">
                       <Can action="update" on="Drafting">
                         <Button
                           onClick={handleOpenSubmissionModal}
                           className="bg-green-600 hover:bg-green-700"
-                          disabled={!canOpenSubmit}
+                          // disabled={!canOpenSubmit}
                         >
                           Submit draft
                         </Button>
