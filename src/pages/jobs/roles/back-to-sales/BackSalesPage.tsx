@@ -56,8 +56,9 @@ const transformFabToJob = (fab: Fab): IJob => {
         stone_color_name: fab.stone_color_name || '',
         stone_thickness_value: fab.stone_thickness_value || '',
         edge_name: fab.edge_name || '',
-        fab_notes: fab.fab_notes || '',
+        fab_notes: fab.fab_notes || [],
         job_id: fab.job_id,
+        on_hold: fab.on_hold,
   };
 };
 

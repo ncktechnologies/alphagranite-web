@@ -54,7 +54,7 @@ const transformFabToJob = (fab: Fab): IJob => {
     draft_completed: '',
     gp: '',
         job_id: fab.job_id,
-
+        on_hold: fab.on_hold,
   };
 };
 

@@ -61,7 +61,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         edge_name: fab.edge_name || '',
         no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
         job_id: fab.job_id,
-
+        on_hold: fab.on_hold,
     };
 };
 

@@ -27,7 +27,7 @@ import { Search, X, CalendarDays } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { exportTableToCSV } from '@/lib/exportToCsv';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DateRange } from 'react-day-picker';
@@ -701,7 +701,9 @@ export const CutListTableWithCalculations = ({
                                         <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="today">Today</SelectItem>
                                         <SelectItem value="this_week">This Week</SelectItem>
+                                        <SelectItem value="last_week">Last Week</SelectItem>
                                         <SelectItem value="this_month">This Month</SelectItem>
+                                        <SelectItem value="last_month">Last Month</SelectItem>
                                         <SelectItem value="next_week">Next Week</SelectItem>
                                         <SelectItem value="next_month">Next Month</SelectItem>
                                         <SelectItem value="unscheduled">Unscheduled</SelectItem>

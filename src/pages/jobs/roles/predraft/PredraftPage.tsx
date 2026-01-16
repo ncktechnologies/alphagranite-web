@@ -58,7 +58,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         edge_name: fab.edge_name || '',
         fab_notes: fab.fab_notes || [],
         job_id: fab.job_id,
-
+        on_hold: fab.on_hold,
     };
 };
 

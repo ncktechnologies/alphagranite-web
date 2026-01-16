@@ -31,6 +31,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { IJob } from './job';
 import { groupData } from '@/lib/groupData';
 import { exportTableToCSV } from '@/lib/exportToCsv';
+import { useToggleFabOnHoldMutation } from '@/store/api/job';
+import { Switch } from '@/components/ui/switch';
 import ActionsCell from '../roles/sales/action';
 import { useNavigate, Link } from 'react-router-dom';
 import { JOB_STAGES } from '@/hooks/use-job-stage';
@@ -113,6 +115,8 @@ export const JobTable = ({
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const navigate = useNavigate();
+    
+    const [toggleFabOnHold] = useToggleFabOnHoldMutation();
 
     // Use backend state if available, otherwise use local state
     const pagination = tableState?.pagination || localPagination;
@@ -268,6 +272,80 @@ export const JobTable = ({
                 job.template_schedule?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 job.templater?.toLowerCase().includes(searchQuery.toLowerCase())
             );
+        }
+
+        // Date filter (only apply client-side filtering when not using backend pagination)
+        if (!useBackendPagination && dateFilter !== 'all' && dateFilter !== 'custom') {
+            result = result.filter((job) => {
+                if (!job.date) return false;
+                
+                const jobDate = new Date(job.date);
+                const today = new Date();
+                
+                // Reset time part for accurate date comparison
+                const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                
+                // Calculate week boundaries
+                const startOfWeek = new Date(todayDate);
+                startOfWeek.setDate(todayDate.getDate() - todayDate.getDay());
+                const endOfWeek = new Date(startOfWeek);
+                endOfWeek.setDate(startOfWeek.getDate() + 6);
+                
+                const startOfLastWeek = new Date(startOfWeek);
+                startOfLastWeek.setDate(startOfWeek.getDate() - 7);
+                const endOfLastWeek = new Date(startOfWeek);
+                endOfLastWeek.setDate(startOfWeek.getDate() - 1);
+                
+                const startOfNextWeek = new Date(endOfWeek);
+                startOfNextWeek.setDate(endOfWeek.getDate() + 1);
+                const endOfNextWeek = new Date(startOfNextWeek);
+                endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
+                
+                // Calculate month boundaries
+                const startOfMonth = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
+                const endOfMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0);
+                
+                const startOfLastMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() - 1, 1);
+                const endOfLastMonth = new Date(todayDate.getFullYear(), todayDate.getMonth(), 0);
+                
+                const startOfNextMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 1);
+                const endOfNextMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 2, 0);
+                
+                switch (dateFilter) {
+                    case 'today':
+                        return jobDate.toDateString() === todayDate.toDateString();
+                    case 'this_week':
+                        return jobDate >= startOfWeek && jobDate <= endOfWeek;
+                    case 'last_week':
+                        return jobDate >= startOfLastWeek && jobDate <= endOfLastWeek;
+                    case 'this_month':
+                        return jobDate >= startOfMonth && jobDate <= endOfMonth;
+                    case 'last_month':
+                        return jobDate >= startOfLastMonth && jobDate <= endOfLastMonth;
+                    case 'next_week':
+                        return jobDate >= startOfNextWeek && jobDate <= endOfNextWeek;
+                    case 'next_month':
+                        return jobDate >= startOfNextMonth && jobDate <= endOfNextMonth;
+                    default:
+                        return true;
+                }
+            });
+        }
+
+        // Custom date range filter
+        if (!useBackendPagination && dateFilter === 'custom' && dateRange?.from) {
+            result = result.filter((job) => {
+                if (!job.date) return false;
+                
+                const jobDate = new Date(job.date);
+                const startDate = new Date(dateRange.from);
+                const endDate = dateRange.to ? new Date(dateRange.to) : startDate;
+                
+                // Set end time to end of day
+                endDate.setHours(23, 59, 59, 999);
+                
+                return jobDate >= startDate && jobDate <= endDate;
+            });
         }
 
         // Date filter
@@ -507,6 +585,36 @@ export const JobTable = ({
             ),
             cell: ({ row }) => <span className="text-xs uppercase">{row.original.fab_type}</span>,
             size: 100,
+        },
+        {
+            id: "on_hold",
+            accessorKey: "on_hold",
+            accessorFn: (row: IJob) => row.on_hold,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="ON HOLD" column={column} />
+            ),
+            cell: ({ row }) => {
+                const fabId = parseInt(row.original.fab_id);
+                return (
+                    <div className="flex justify-center">
+                        <Switch
+                            checked={row.original.on_hold}
+                            onCheckedChange={async (checked) => {
+                                try {
+                                    await toggleFabOnHold(fabId).unwrap();
+                                    // Update the row data to reflect the change
+                                    row.original.on_hold = checked;
+                                } catch (error) {
+                                    console.error('Failed to toggle on hold status:', error);
+                                }
+                            }}
+                            aria-label="Toggle on hold"
+                        />
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 80,
         },
         {
             id: "fab_id",
@@ -1266,7 +1374,9 @@ export const JobTable = ({
                                     <SelectContent className="w-48">
                                         <SelectItem value="today">Today</SelectItem>
                                         <SelectItem value="this_week">This Week</SelectItem>
+                                        <SelectItem value="last_week">Last Week</SelectItem>
                                         <SelectItem value="this_month">This Month</SelectItem>
+                                        <SelectItem value="last_month">Last Month</SelectItem>
                                         <SelectItem value="next_week">Next Week</SelectItem>
                                         <SelectItem value="next_month">Next Month</SelectItem>
                                         <SelectItem value="all">All</SelectItem>

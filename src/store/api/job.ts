@@ -79,6 +79,7 @@ export interface Fab {
     created_by: number;
     updated_at?: string;
     updated_by?: number;
+    on_hold?: boolean;
     // Templating schedule fields
     templating_schedule_start_date?: string;
     templating_schedule_due_date?: string;
@@ -1581,6 +1582,15 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Job"],
             }),
+            
+            // Toggle FAB On Hold endpoint
+            toggleFabOnHold: build.mutation<Fab, number>({
+                query: (fab_id) => ({
+                    url: `/fabs/${fab_id}/toggle-on-hold`,
+                    method: "PATCH",
+                }),
+                invalidatesTags: ["Fab"],
+            }),
         };
     },
 });
@@ -1673,4 +1683,6 @@ export const {
     useGetAdminDashboardQuery,
     // Toggle Need To Invoice hook
     useToggleNeedToInvoiceMutation,
+    // Toggle FAB On Hold hook
+    useToggleFabOnHoldMutation,
 } = jobApi;
