@@ -577,7 +577,9 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
                                         <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="today">Today</SelectItem>
                                         <SelectItem value="this_week">This Week</SelectItem>
+                                        <SelectItem value="last_week">Last Week</SelectItem>
                                         <SelectItem value="this_month">This Month</SelectItem>
+                                        <SelectItem value="last_month">Last Month</SelectItem>
                                         <SelectItem value="next_week">Next Week</SelectItem>
                                         <SelectItem value="next_month">Next Month</SelectItem>
                                         <SelectItem value="unscheduled">Unscheduled</SelectItem>
