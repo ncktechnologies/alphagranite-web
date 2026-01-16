@@ -532,6 +532,34 @@ export interface RevisionResponse {
     updated_by?: number;
 }
 
+// Media Interfaces
+export interface JobMediaFile {
+    id: number;
+    job_id: number;
+    filename: string;
+    original_filename: string;
+    file_url: string;
+    file_type: string;
+    file_size: number;
+    media_type: 'photo' | 'video' | 'document';
+    created_at: string;
+    created_by: number;
+    created_by_name?: string;
+}
+
+export interface JobMediaUploadResponse {
+    id: number;
+    filename: string;
+    file_url: string;
+    media_type: string;
+}
+
+export interface JobMediaListParams {
+    skip?: number;
+    limit?: number;
+    media_type?: 'photo' | 'video' | 'document';
+}
+
 // Admin Dashboard Interfaces
 export interface DashboardKPIs {
     total_fabs: number;
@@ -1484,6 +1512,50 @@ export const jobApi = createApi({
                 providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
             }),
 
+            // Job Media endpoints
+            getJobMedia: build.query<JobMediaFile[], { job_id: number; params?: JobMediaListParams }>({
+                query: ({ job_id, params }) => ({
+                    url: `/jobs/${job_id}/media`,
+                    method: "get",
+                    params: params || {}
+                }),
+                providesTags: (_result, _error, { job_id }) => [{ type: "Job", id: job_id }],
+            }),
+
+            uploadJobMedia: build.mutation<JobMediaUploadResponse[], { job_id: number; files: File[] }>({
+                query: ({ job_id, files }) => {
+                    const formData = new FormData();
+                    files.forEach((file) => {
+                        formData.append('files', file);
+                    });
+                    return {
+                        url: `/jobs/${job_id}/upload-media`,
+                        method: "post",
+                        data: formData,
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
+                    };
+                },
+                invalidatesTags: (_result, _error, { job_id }) => [{ type: "Job", id: job_id }],
+            }),
+
+            downloadJobMedia: build.query<Blob, { job_id: number; file_id: number }>({
+                query: ({ job_id, file_id }) => ({
+                    url: `/jobs/${job_id}/media/${file_id}/download`,
+                    method: "get",
+                    responseType: 'blob',
+                }),
+            }),
+
+            deleteJobMedia: build.mutation<void, { job_id: number; file_id: number }>({
+                query: ({ job_id, file_id }) => ({
+                    url: `/jobs/${job_id}/media/${file_id}`,
+                    method: "delete"
+                }),
+                invalidatesTags: (_result, _error, { job_id }) => [{ type: "Job", id: job_id }],
+            }),
+
             // Admin Dashboard endpoint
             getAdminDashboard: build.query<AdminDashboardResponse, { time_period?: string }>({
                 query: ({ time_period = "all" }) => ({
@@ -1579,6 +1651,11 @@ export const {
     useGetCurrentDraftingSessionQuery,
     useGetDraftingSessionHistoryQuery,
     useCreateFabNoteMutation,
+    // Job Media hooks
+    useGetJobMediaQuery,
+    useUploadJobMediaMutation,
+    useDownloadJobMediaQuery,
+    useDeleteJobMediaMutation,
     // Admin Dashboard hook
     useGetAdminDashboardQuery,
 } = jobApi;

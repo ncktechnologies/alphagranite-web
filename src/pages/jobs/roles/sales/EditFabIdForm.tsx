@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Alert, AlertDescription, AlertIcon, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import {
     Form,
     FormControl,
@@ -20,7 +20,7 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form';
-import { ArrowLeft, Plus, AlertCircle, Check, LoaderCircleIcon, Search, ChevronDown, Info, InfoIcon } from 'lucide-react';
+import { ArrowLeft, Plus, AlertCircle, Check, LoaderCircleIcon, Search, ChevronDown } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { RiInformationFill } from '@remixicon/react';
 import { toast } from 'sonner';
@@ -41,155 +41,155 @@ import {
     useUpdateFabMutation,
     useGetJobsByAccountQuery
 } from '@/store/api/job';
-import { useAuth } from '@/auth/context/auth-context';
-import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 
 // Custom Currency Input Component
-interface CurrencyInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-    value: string;
-    onChange: (value: string) => void;
+interface CurrencyInputProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
 }
 
-const CurrencyInput = ({ value, onChange, ...props }: CurrencyInputProps) => {
-    const inputRef = useRef<HTMLInputElement>(null);
-
-    // Format number with commas and dollar sign
-    const formatCurrency = useCallback((val: string): string => {
-        if (!val || val === '0') return '$0';
-
-        // Remove any non-numeric characters except decimal point
-        const numericString = val.replace(/[^0-9.]/g, '');
-
-        // Parse as float
-        const num = parseFloat(numericString);
-
-        if (isNaN(num)) return '$0';
-
-        // Format with commas
-        return '$' + num.toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-    }, []);
-
-    const [displayValue, setDisplayValue] = useState<string>(() => {
-        if (value && value !== '0') {
-            const num = parseFloat(value);
-            return isNaN(num) ? '$0' : formatCurrency(value);
-        }
-        return '$0';
+const CurrencyInput = ({ value, onChange, placeholder, ...props }: CurrencyInputProps & React.InputHTMLAttributes<HTMLInputElement>) => {
+  const inputRef = useRef<HTMLInputElement>(null);
+  
+  // Format number with commas and dollar sign
+  const formatCurrency = useCallback((val: string): string => {
+    if (!val || val === '0') return '$0';
+    
+    // Remove any non-numeric characters except decimal point
+    const numericString = val.replace(/[^0-9.]/g, '');
+    
+    // Parse as float
+    const num = parseFloat(numericString);
+    
+    if (isNaN(num)) return '$0';
+    
+    // Format with commas
+    return '$' + num.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
     });
+  }, []);
 
-    const [isFocused, setIsFocused] = useState(false);
+  const [displayValue, setDisplayValue] = useState<string>(() => {
+    if (value && value !== '0') {
+      const num = parseFloat(value);
+      return isNaN(num) ? '$0' : formatCurrency(value);
+    }
+    return '$0';
+  });
 
-    // Update display value when value prop changes
-    useEffect(() => {
-        if (!isFocused) {
-            if (value && value !== '0') {
-                const num = parseFloat(value);
-                if (!isNaN(num) && num > 0) {
-                    setDisplayValue(formatCurrency(value));
-                } else {
-                    setDisplayValue('$0');
-                }
-            } else {
-                setDisplayValue('$0');
-            }
-        }
-    }, [value, isFocused, formatCurrency]);
+  const [isFocused, setIsFocused] = useState(false);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const input = e.target.value;
-
-        // Allow only numbers and decimal point
-        const sanitized = input.replace(/[^0-9.]/g, '');
-
-        // Ensure only one decimal point
-        const parts = sanitized.split('.');
-        let finalValue = parts[0];
-        if (parts.length > 1) {
-            finalValue = parts[0] + '.' + parts.slice(1).join('').substring(0, 2);
-        }
-
-        // Update form value (raw number without formatting)
-        onChange(finalValue || '');
-
-        // Update display value with formatting
-        if (finalValue) {
-            const num = parseFloat(finalValue);
-            if (!isNaN(num)) {
-                setDisplayValue(formatCurrency(finalValue));
-            } else {
-                setDisplayValue('$0');
-            }
+  // Update display value when value prop changes
+  useEffect(() => {
+    if (!isFocused) {
+      if (value && value !== '0') {
+        const num = parseFloat(value);
+        if (!isNaN(num) && num > 0) {
+          setDisplayValue(formatCurrency(value));
         } else {
-            setDisplayValue('$0');
+          setDisplayValue('$0');
         }
-    };
+      } else {
+        setDisplayValue('$0');
+      }
+    }
+  }, [value, isFocused, formatCurrency]);
 
-    const handleFocus = () => {
-        setIsFocused(true);
-        // When focused, show raw number without formatting for editing
-        if (value && value !== '0') {
-            setDisplayValue(value);
-        } else {
-            setDisplayValue('');
-        }
-    };
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target.value;
+    
+    // Allow only numbers and decimal point
+    const sanitized = input.replace(/[^0-9.]/g, '');
+    
+    // Ensure only one decimal point
+    const parts = sanitized.split('.');
+    let finalValue = parts[0];
+    if (parts.length > 1) {
+      finalValue = parts[0] + '.' + parts.slice(1).join('').substring(0, 2);
+    }
+    
+    // Update form value (raw number without formatting)
+    onChange(finalValue || '');
+    
+    // Update display value with formatting
+    if (finalValue) {
+      const num = parseFloat(finalValue);
+      if (!isNaN(num)) {
+        setDisplayValue(formatCurrency(finalValue));
+      } else {
+        setDisplayValue('$0');
+      }
+    } else {
+      setDisplayValue('$0');
+    }
+  };
 
-    const handleBlur = () => {
-        setIsFocused(false);
-        // When blurred, format with dollar sign and commas
-        if (value) {
-            const num = parseFloat(value);
-            if (!isNaN(num) && num > 0) {
-                setDisplayValue(formatCurrency(value));
-            } else {
-                setDisplayValue('$0');
-                onChange('0');
-            }
-        } else {
-            setDisplayValue('$0');
-            onChange('0');
-        }
-    };
+  const handleFocus = () => {
+    setIsFocused(true);
+    // When focused, show raw number without formatting for editing
+    if (value && value !== '0') {
+      setDisplayValue(value);
+    } else {
+      setDisplayValue('');
+    }
+  };
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        // Allow: backspace, delete, tab, escape, enter, decimal point, numbers
-        if (
-            [46, 8, 9, 27, 13, 110, 190].includes(e.keyCode) ||
-            // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-            (e.keyCode === 65 && (e.ctrlKey || e.metaKey)) ||
-            (e.keyCode === 67 && (e.ctrlKey || e.metaKey)) ||
-            (e.keyCode === 86 && (e.ctrlKey || e.metaKey)) ||
-            (e.keyCode === 88 && (e.ctrlKey || e.metaKey)) ||
-            // Allow: home, end, left, right
-            (e.keyCode >= 35 && e.keyCode <= 39) ||
-            // Allow: numbers on keypad
-            (e.keyCode >= 96 && e.keyCode <= 105)
-        ) {
-            return;
-        }
+  const handleBlur = () => {
+    setIsFocused(false);
+    // When blurred, format with dollar sign and commas
+    if (value) {
+      const num = parseFloat(value);
+      if (!isNaN(num) && num > 0) {
+        setDisplayValue(formatCurrency(value));
+      } else {
+        setDisplayValue('$0');
+        onChange('0');
+      }
+    } else {
+      setDisplayValue('$0');
+      onChange('0');
+    }
+  };
 
-        // Ensure it's a number
-        if ((e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
-            e.preventDefault();
-        }
-    };
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Allow: backspace, delete, tab, escape, enter, decimal point, numbers
+    if (
+      [46, 8, 9, 27, 13, 110, 190].includes(e.keyCode) ||
+      // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+      (e.keyCode === 65 && (e.ctrlKey || e.metaKey)) ||
+      (e.keyCode === 67 && (e.ctrlKey || e.metaKey)) ||
+      (e.keyCode === 86 && (e.ctrlKey || e.metaKey)) ||
+      (e.keyCode === 88 && (e.ctrlKey || e.metaKey)) ||
+      // Allow: home, end, left, right
+      (e.keyCode >= 35 && e.keyCode <= 39) ||
+      // Allow: numbers on keypad
+      (e.keyCode >= 96 && e.keyCode <= 105)
+    ) {
+      return;
+    }
+    
+    // Ensure it's a number
+    if ((e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
+      e.preventDefault();
+    }
+  };
 
-    return (
-        <Input
-            {...props}
-            ref={inputRef}
-            value={displayValue}
-            onChange={handleChange}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
-            className="font-mono"
-        />
-    );
+  return (
+    <Input
+      {...props}
+      ref={inputRef}
+      value={displayValue}
+      onChange={handleChange}
+      onFocus={handleFocus}
+      onBlur={handleBlur}
+      onKeyDown={handleKeyDown}
+      className="font-mono"
+      placeholder={placeholder}
+    />
+  );
 };
 
 // Update the Zod schema
@@ -205,15 +205,15 @@ const fabIdFormSchema = z.object({
     edge: z.string().min(1, 'Edge is required'),
     totalSqFt: z.string().min(1, 'Total Sq Ft is required'),
     revenue: z.string().min(1, 'Revenue is required')
-        .refine((val) => {
-            const num = parseFloat(val);
-            return !isNaN(num) && num >= 0;
-        }, { message: 'Revenue must be a valid number' }),
+      .refine((val) => {
+        const num = parseFloat(val);
+        return !isNaN(num) && num >= 0;
+      }, { message: 'Revenue must be a valid number' }),
     cost_of_stone: z.string().min(1, 'Cost of Stone is required')
-        .refine((val) => {
-            const num = parseFloat(val);
-            return !isNaN(num) && num >= 0;
-        }, { message: 'Cost of Stone must be a valid number' }),
+      .refine((val) => {
+        const num = parseFloat(val);
+        return !isNaN(num) && num >= 0;
+      }, { message: 'Cost of Stone must be a valid number' }),
     selectedSalesPerson: z.string().min(1, 'Sales Person is required'),
     notes: z.string().optional(),
     templateNotNeeded: z.boolean(),
@@ -325,6 +325,7 @@ const EditFabIdForm = () => {
     const [newThickness, setNewThickness] = useState('');
     const [newAccount, setNewAccount] = useState('');
     const [newEdge, setNewEdge] = useState('');
+    const hasAttemptedLoadRef = useRef(false);
 
     const form = useForm<FabIdFormData>({
         resolver: zodResolver(fabIdFormSchema),
@@ -374,12 +375,12 @@ const EditFabIdForm = () => {
     const isEffectiveJobsLoading = selectedAccountId ? isAccountJobsLoading : isLoadingJobs;
 
     // Extract unique sales persons to avoid duplicate key error
-    const salesPersons = Array.isArray(salesPersonsData)
+    const salesPersons = Array.isArray(salesPersonsData) 
         ? salesPersonsData.filter((person: any, index: number, self: any[]) =>
-            index === self.findIndex((p: any) =>
+            index === self.findIndex((p: any) => 
                 p.name === person.name // Filter by unique name to avoid duplicates
             )
-        )
+          )
         : [];
 
     // Filter functions
@@ -408,124 +409,126 @@ const EditFabIdForm = () => {
     const jobNames = Array.isArray(effectiveJobsData) ? effectiveJobsData.map((job: any) => job.name) : [];
     const jobNumbers = Array.isArray(effectiveJobsData) ? effectiveJobsData.map((job: any) => job.job_number) : [];
 
-    // Auto-population effects
+    // Auto-population effects - only run after initial data is loaded
     useEffect(() => {
-        if (jobNameValue && effectiveJobsData.length > 0 && salesPersons.length > 0) {
+        if (hasInitialDataLoaded && jobNameValue && effectiveJobsData.length > 0 && salesPersons.length > 0) {
             const selectedJob = effectiveJobsData.find((job: any) => job.name === jobNameValue);
             if (selectedJob) {
                 if (selectedJob.job_number !== jobNumberValue) {
                     form.setValue('jobNumber', selectedJob.job_number);
                 }
-
-                if (selectedJob.sales_person_id) {
-                    const salesPersonForJob = salesPersons.find((person: any) =>
+                
+                // Safely access sales_person_id - check if property exists
+                if (selectedJob && 'sales_person_id' in selectedJob && selectedJob.sales_person_id) {
+                    const salesPersonForJob = salesPersons.find((person: any) => 
                         person.id === selectedJob.sales_person_id
                     );
-
+                    
                     if (salesPersonForJob && salesPersonForJob.name !== form.getValues('selectedSalesPerson')) {
                         form.setValue('selectedSalesPerson', salesPersonForJob.name);
                     }
                 }
             }
         }
-    }, [jobNameValue, effectiveJobsData, form, jobNumberValue, salesPersons]);
+    }, [jobNameValue, effectiveJobsData, form, jobNumberValue, salesPersons, hasInitialDataLoaded]);
 
     useEffect(() => {
-        if (jobNumberValue && effectiveJobsData.length > 0 && salesPersons.length > 0) {
+        if (hasInitialDataLoaded && jobNumberValue && effectiveJobsData.length > 0 && salesPersons.length > 0) {
             const selectedJob = effectiveJobsData.find((job: any) => job.job_number === jobNumberValue);
             if (selectedJob) {
                 if (selectedJob.name !== jobNameValue) {
                     form.setValue('jobName', selectedJob.name);
                 }
-
-                if (selectedJob.sales_person_id) {
-                    const salesPersonForJob = salesPersons.find((person: any) =>
+                
+                // Safely access sales_person_id - check if property exists
+                if (selectedJob && 'sales_person_id' in selectedJob && selectedJob.sales_person_id) {
+                    const salesPersonForJob = salesPersons.find((person: any) => 
                         person.id === selectedJob.sales_person_id
                     );
-
+                    
                     if (salesPersonForJob && salesPersonForJob.name !== form.getValues('selectedSalesPerson')) {
                         form.setValue('selectedSalesPerson', salesPersonForJob.name);
                     }
                 }
             }
         }
-    }, [jobNumberValue, effectiveJobsData, form, jobNameValue, salesPersons]);
+    }, [jobNumberValue, effectiveJobsData, form, jobNameValue, salesPersons, hasInitialDataLoaded]);
 
     // Load form data from existing FAB
     useEffect(() => {
         const loadFormData = async () => {
-            if (existingFab && !isLoadingFab && !hasInitialDataLoaded && !isLoadingFormData) {
+            console.log('Checking if should load form data...');
+            
+            // Only attempt to load once using ref to prevent multiple attempts
+            if (existingFab && !isLoadingFab && !hasInitialDataLoaded && !hasAttemptedLoadRef.current) {
+                hasAttemptedLoadRef.current = true;
                 setIsLoadingFormData(true);
+                
+                console.log('Using timer approach to populate ALL form fields...');
+                
+                setTimeout(async () => {
+                    try {
+                        console.log('Loading form data from existing FAB:', existingFab);
+                        
+                        // Type assertion to bypass strict typing
+                        const fabData: any = existingFab;
+                        
+                        // Prepare form data
+                        const formData = {
+                            fabType: fabData.fab_type || '',
+                            account: fabData.account_name || '',
+                            jobName: fabData.job_details?.name || '',
+                            jobNumber: fabData.job_details?.job_number || '',
+                            area: fabData.input_area || '',
+                            stoneType: fabData.stone_type_name || '',
+                            stoneColor: fabData.stone_color_name || '',
+                            stoneThickness: fabData.stone_thickness_value || '',
+                            edge: fabData.edge_name || '',
+                            totalSqFt: String(fabData.total_sqft || ''),
+                            revenue: String(fabData.revenue || '0'),
+                            cost_of_stone: String(fabData.cost_of_stone || '0'),
+                            selectedSalesPerson: fabData.sales_person_name || '',
+                            notes: '',
+                            templateNotNeeded: !fabData.template_needed,
+                            draftNotNeeded: !fabData.drafting_needed,
+                            slabSmithCustNotNeeded: !fabData.slab_smith_cust_needed,
+                            sctNotNeeded: !fabData.sct_needed,
+                            slabSmithAGNotNeeded: !fabData.slab_smith_ag_needed,
+                            finalProgrammingNotNeeded: !fabData.final_programming_needed,
+                        };
 
-                try {
-                    console.log('Loading form data from existing FAB:', existingFab);
-
-                    // Extract data from API response
-                    const accountName = existingFab.account_name || '';
-                    const jobName = existingFab.job_details?.name || '';
-                    const jobNumber = existingFab.job_details?.job_number || '';
-                    const stoneTypeName = existingFab.stone_type_name || '';
-                    const stoneColorName = existingFab.stone_color_name || '';
-                    const stoneThicknessValue = existingFab.stone_thickness_value || '';
-                    const edgeName = existingFab.edge_name || '';
-                    const salesPersonName = existingFab.sales_person_name || '';
-
-                    // Handle notes - could be array or string
-                    let notesValue = '';
-                    if (existingFab.notes && Array.isArray(existingFab.notes) && existingFab.notes.length > 0) {
-                        notesValue = existingFab.notes[0];
-                    } else if (typeof existingFab.notes === 'string') {
-                        notesValue = existingFab.notes;
-                    }
-
-                    // Prepare form data
-                    const formData = {
-                        fabType: existingFab.fab_type || '',
-                        account: accountName,
-                        jobName: jobName,
-                        jobNumber: jobNumber,
-                        area: existingFab.input_area || '',
-                        stoneType: stoneTypeName,
-                        stoneColor: stoneColorName,
-                        stoneThickness: stoneThicknessValue,
-                        edge: edgeName,
-                        totalSqFt: String(existingFab.total_sqft || ''),
-                        revenue: String(existingFab.revenue || '0'),
-                        cost_of_stone: String(existingFab.cost_of_stone || '0'),
-                        selectedSalesPerson: salesPersonName,
-                        notes: notesValue,
-                        templateNotNeeded: !existingFab.template_needed,
-                        draftNotNeeded: !existingFab.drafting_needed,
-                        slabSmithCustNotNeeded: !existingFab.slab_smith_cust_needed,
-                        sctNotNeeded: !existingFab.sct_needed,
-                        slabSmithAGNotNeeded: !existingFab.slab_smith_ag_needed,
-                        finalProgrammingNotNeeded: !existingFab.final_programming_needed,
-                    };
-
-                    console.log('Setting form data:', formData);
-
-                    // Reset form with data
-                    form.reset(formData);
-
-                    // Set selected account ID
-                    if (accountName && accountsData.length > 0) {
-                        const account = accountsData.find((acc: any) => acc.name === accountName);
-                        if (account) {
-                            setSelectedAccountId(account.id);
+                        // Handle notes
+                        if (fabData.notes && Array.isArray(fabData.notes) && fabData.notes.length > 0) {
+                            formData.notes = fabData.notes[0];
+                        } else if (typeof fabData.notes === 'string') {
+                            formData.notes = fabData.notes;
                         }
-                    }
 
-                    setHasInitialDataLoaded(true);
-                } catch (error) {
-                    console.error('Error loading form data:', error);
-                } finally {
-                    setIsLoadingFormData(false);
-                }
+                        console.log('Prepared form data:', formData);
+                        
+                        // Reset form with data
+                        form.reset(formData);
+                        
+                        // Set selected account ID
+                        if (formData.account && accountsData.length > 0) {
+                            const account = accountsData.find((acc: any) => acc.name === formData.account);
+                            if (account) {
+                                setSelectedAccountId(account.id);
+                            }
+                        }
+                        
+                        setHasInitialDataLoaded(true);
+                    } catch (error) {
+                        console.error('Error loading form data:', error);
+                    } finally {
+                        setIsLoadingFormData(false);
+                    }
+                }, 300);
             }
         };
 
         loadFormData();
-    }, [existingFab, isLoadingFab, form, accountsData, hasInitialDataLoaded, isLoadingFormData]);
+    }, [existingFab, isLoadingFab, hasInitialDataLoaded, form, accountsData]);
 
     // Functions to add new items
     const handleAddThickness = async () => {
@@ -561,7 +564,7 @@ const EditFabIdForm = () => {
     const handleAddEdge = async () => {
         if (newEdge.trim()) {
             try {
-                await createEdge({ name: newEdge.trim() }).unwrap();
+                await createEdge({ name: newEdge.trim(), edge_type: 'standard' }).unwrap();
                 setNewEdge('');
                 setShowAddEdge(false);
                 setEdgePopoverOpen(false);
@@ -617,14 +620,14 @@ const EditFabIdForm = () => {
                 throw new Error('Please select valid options for all dropdown fields. Missing: ' + missingFields.join(', '));
             }
 
-            // Prepare notes - send as string
+            // Prepare notes - send as string as expected by API
             let notesValue: string | undefined = undefined;
             if (values.notes && values.notes.trim()) {
                 notesValue = values.notes.trim();
             }
 
             // Prepare update payload
-            const updatePayload = {
+            const updatePayload: any = {
                 job_id: selectedJob.id,
                 fab_type: selectedFabType.name,
                 sales_person_id: selectedSalesPerson.id,
@@ -658,9 +661,9 @@ const EditFabIdForm = () => {
 
         } catch (err: any) {
             console.error('Submission error:', err);
-
+            
             let errorMessage = 'An unexpected error occurred. Please try again.';
-
+            
             if (err?.status === 'FETCH_ERROR') {
                 errorMessage = 'Network error: Unable to connect to the server.';
             } else if (err?.data?.message) {
@@ -668,7 +671,7 @@ const EditFabIdForm = () => {
             } else if (err?.message) {
                 errorMessage = err.message;
             }
-
+            
             setError(errorMessage);
             toast.error('Failed to update FAB ID. ' + errorMessage);
         } finally {
@@ -676,7 +679,7 @@ const EditFabIdForm = () => {
         }
     };
 
-    if (isLoadingFab) {
+    if (isLoadingFab || isLoadingFormData) {
         return (
             <Container className="border-t">
                 <div className="flex items-center justify-between mb-6">
@@ -717,9 +720,7 @@ const EditFabIdForm = () => {
                 </div>
                 <div className="max-w-4xl mx-auto">
                     <Alert variant="destructive">
-                        <AlertIcon>
-                            <AlertCircle className="h-4 w-4" />
-                        </AlertIcon>
+                        <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Error</AlertTitle>
                         <AlertDescription>
                             Failed to load FAB data. Please try again.
@@ -758,10 +759,9 @@ const EditFabIdForm = () => {
                                     <CardContent className='space-y-6'>
                                         {error && (
                                             <Alert variant="destructive">
-                                                <AlertIcon>
-                                                    <AlertCircle className="h-4 w-4" />
-                                                </AlertIcon>
-                                                <AlertTitle>{error}</AlertTitle>
+                                                <AlertCircle className="h-4 w-4" />
+                                                <AlertTitle>Error</AlertTitle>
+                                                <AlertDescription>{error}</AlertDescription>
                                             </Alert>
                                         )}
 
@@ -1016,9 +1016,9 @@ const EditFabIdForm = () => {
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>Stone Type *</FormLabel>
-                                                        <Select
-                                                            onValueChange={field.onChange}
-                                                            value={field.value}
+                                                        <Select 
+                                                            onValueChange={field.onChange} 
+                                                            value={field.value} 
                                                             disabled={isLoadingStoneTypes}
                                                         >
                                                             <FormControl>
@@ -1051,9 +1051,9 @@ const EditFabIdForm = () => {
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>Stone Color *</FormLabel>
-                                                        <Select
-                                                            onValueChange={field.onChange}
-                                                            value={field.value}
+                                                        <Select 
+                                                            onValueChange={field.onChange} 
+                                                            value={field.value} 
                                                             disabled={isLoadingStoneColors}
                                                         >
                                                             <FormControl>
@@ -1280,7 +1280,7 @@ const EditFabIdForm = () => {
                                                 )}
                                             />
 
-                                            {/* Revenue */}
+                                             {/* Revenue */}
                                             <FormField
                                                 control={form.control}
                                                 name="revenue"
@@ -1288,8 +1288,10 @@ const EditFabIdForm = () => {
                                                     <FormItem>
                                                         <FormLabel>Revenue ($) *</FormLabel>
                                                         <FormControl>
-                                                            <CurrencyInput
+                                                            <Input
                                                                 placeholder="Enter revenue amount"
+                                                                type="text"
+                                                                inputMode="decimal"
                                                                 value={field.value}
                                                                 onChange={field.onChange}
                                                             />
@@ -1307,8 +1309,10 @@ const EditFabIdForm = () => {
                                                     <FormItem>
                                                         <FormLabel>Cost of Stone ($) *</FormLabel>
                                                         <FormControl>
-                                                            <CurrencyInput
+                                                            <Input
                                                                 placeholder="Enter cost of stone"
+                                                                type="text"
+                                                                inputMode="decimal"
                                                                 value={field.value}
                                                                 onChange={field.onChange}
                                                             />
@@ -1325,9 +1329,9 @@ const EditFabIdForm = () => {
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>Select Sales Person *</FormLabel>
-                                                        <Select
-                                                            onValueChange={field.onChange}
-                                                            value={field.value}
+                                                        <Select 
+                                                            onValueChange={field.onChange} 
+                                                            value={field.value} 
                                                             disabled={isLoadingSalesPersons}
                                                         >
                                                             <FormControl>
@@ -1486,7 +1490,7 @@ const EditFabIdForm = () => {
                                             <Link to="/job/sales">
                                                 <Button variant="outline" type="button">Cancel</Button>
                                             </Link>
-                                            <Button type="submit" disabled={isSubmitting || isLoadingFormData}>
+                                            <Button type="submit" disabled={isSubmitting || isLoadingFormData || !hasInitialDataLoaded}>
                                                 {isSubmitting ? (
                                                     <>
                                                         <LoaderCircleIcon className="mr-2 h-4 w-4 animate-spin" />

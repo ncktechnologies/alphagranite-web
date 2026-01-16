@@ -47,6 +47,7 @@ import { NewFabIdForm } from '@/pages/jobs/roles';
 import { EditFabIdForm } from '@/pages/jobs/roles/sales/EditFabIdForm';
 import { SlabSmithDetailsPage, SlabSmithPage } from '@/pages/jobs/roles/slab-smith';
 import { JobDashboardPage } from '@/pages/jobs';
+import { JobDetailsPage } from '@/pages/jobs/JobDetailsPage';
 import { StoreDashboardPage } from '@/pages/shop';
 
 export function AppRoutingSetup() {
@@ -64,6 +65,14 @@ export function AppRoutingSetup() {
           
           {/* Job Dashboard Route */}
           <Route path="/job" element={<JobDashboardPage />} />
+
+          {/* Job Details Route */}
+          <Route
+            path="/job/details/:job_id"
+            element={
+              <JobDetailsPage />
+            }
+          />
 
           <Route
             path="/employees"
