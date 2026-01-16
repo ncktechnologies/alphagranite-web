@@ -3,16 +3,18 @@ import { Container } from '@/components/common/container';
 import { Card, CardContent, CardHeader, CardHeading, CardTitle, CardToolbar } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useGetJobByIdQuery, useGetFabsByJobQuery, useGetJobMediaQuery } from '@/store/api/job';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useGetJobByIdQuery, useGetFabsByJobQuery, useGetJobMediaQuery, useDeleteJobMediaMutation } from '@/store/api/job';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, ArrowLeft, Camera, Video, FileText, Plus, Download, Trash2, Image, Play, X } from 'lucide-react';
+import { AlertCircle, ArrowLeft, Camera, Video, FileText, Plus, Download, Trash2, Play, X } from 'lucide-react';
 import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+import { toast } from 'sonner';
 import { Can } from '@/components/permission';
 import { BackButton } from '@/components/common/BackButton';
 import { Badge } from '@/components/ui/badge';
 import { JobMediaUpload } from './components/JobMediaUpload';
+import Popup from '@/components/ui/popup';
 
 export function JobDetailsPage() {
   const { job_id } = useParams<{ job_id: string }>();
@@ -21,6 +23,8 @@ export function JobDetailsPage() {
 
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: string; name: string } | null>(null);
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<{ id: number; name: string } | null>(null);
 
   const { data: job, isLoading, isError, error } = useGetJobByIdQuery(jobId, { skip: !jobId });
   const { data: fabs, isLoading: fabsLoading } = useGetFabsByJobQuery(jobId, { skip: !jobId });
@@ -28,6 +32,7 @@ export function JobDetailsPage() {
     { job_id: jobId },
     { skip: !jobId }
   );
+  const [deleteJobMedia, { isLoading: isDeleting }] = useDeleteJobMediaMutation();
 
   // Create job info based on actual job data
   const jobInfo = job ? [
@@ -35,16 +40,11 @@ export function JobDetailsPage() {
     { label: 'Job Name', value: job.name },
     { label: 'Account', value: job.account_name || 'N/A' },
     { label: 'Account Number', value: job.account_number || 'N/A' },
-    // { label: 'Contact Person', value: job.account_contact_person || 'N/A' },
-    // { label: 'Email', value: job.account_email || 'N/A' },
-    // { label: 'Phone', value: job.account_phone || 'N/A' },
     { label: 'Project Value', value: job.project_value ? `$${job.project_value.toLocaleString()}` : 'N/A' },
     { label: 'Sales Person', value: job.sales_person_name || 'N/A' },
     { label: 'Priority', value: job.priority || 'N/A' },
     { label: 'Status', value: getStatusText(job.status_id) },
     { label: 'Created Date', value: new Date(job.created_at).toLocaleDateString() },
-    // { label: 'Start Date', value: job.start_date ? new Date(job.start_date).toLocaleDateString() : 'N/A' },
-    // { label: 'Due Date', value: job.due_date ? new Date(job.due_date).toLocaleDateString() : 'N/A' },
   ] : [];
 
   // Get status text based on status_id
@@ -56,6 +56,27 @@ export function JobDetailsPage() {
       default: return 'Unknown';
     }
   }
+
+  const handleDeleteClick = (file: { id: number; name: string }) => {
+    setFileToDelete(file);
+    setDeleteConfirmationOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!fileToDelete || !jobId) return;
+
+    try {
+      await deleteJobMedia({ job_id: jobId, file_id: fileToDelete.id }).unwrap();
+      toast.success('File deleted successfully');
+      refetchMedia(); // Refresh the media list
+    } catch (error) {
+      toast.error('Failed to delete file');
+      console.error('Delete media error:', error);
+    } finally {
+      setDeleteConfirmationOpen(false);
+      setFileToDelete(null);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -128,7 +149,7 @@ export function JobDetailsPage() {
     );
   }
 
-  // Media viewer modal component - FIXED VERSION
+  // Media viewer modal component
   const MediaViewer = () => {
     if (!selectedMedia) return null;
 
@@ -176,7 +197,7 @@ export function JobDetailsPage() {
           </div>
           
           {/* Footer with download button */}
-          {/* <div className="px-6 py-4 bg-gray-50 border-t flex justify-between items-center">
+          <div className="px-6 py-4 bg-gray-50 border-t flex justify-between items-center">
             <div className="text-sm text-gray-600">
               {selectedMedia.type === 'photo' ? 'Image' : selectedMedia.type === 'video' ? 'Video' : 'Document'}
             </div>
@@ -188,7 +209,7 @@ export function JobDetailsPage() {
               <Download className="h-4 w-4" />
               Download
             </a>
-          </div> */}
+          </div>
         </div>
       </div>
     );
@@ -237,14 +258,6 @@ export function JobDetailsPage() {
                   Fabrication items associated with this job
                 </p>
               </CardHeading>
-              {/* <CardToolbar>
-                <Can action="create" on="fab">
-                  <Button>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add FAB
-                  </Button>
-                </Can>
-              </CardToolbar> */}
             </CardHeader>
             <CardContent>
               {fabsLoading ? (
@@ -290,12 +303,6 @@ export function JobDetailsPage() {
               ) : (
                 <div className="text-center py-8">
                   <p className="text-gray-500">No FABs found for this job</p>
-                  {/* <Can action="create" on="fab">
-                    <Button className="mt-4">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create First FAB
-                    </Button>
-                  </Can> */}
                 </div>
               )}
             </CardContent>
@@ -468,6 +475,13 @@ export function JobDetailsPage() {
                                 variant="outline"
                                 size="sm"
                                 className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteClick({
+                                    id: file.id,
+                                    name: file.name
+                                  });
+                                }}
                               >
                                 <Trash2 className="h-3 w-3" />
                               </Button>
@@ -526,23 +540,42 @@ export function JobDetailsPage() {
                     <ArrowLeft className="h-4 w-4" />
                     Back to Jobs
                   </Button>
-                  {/* <Can action="update" on="jobs">
-                    <Button variant="outline" className="w-full flex items-center gap-2">
-                      Edit Job Details
-                    </Button>
-                  </Can>
-                  <Can action="create" on="fab">
-                    <Button variant="outline" className="w-full flex items-center gap-2">
-                      <Plus className="h-4 w-4" />
-                      Create FAB
-                    </Button>
-                  </Can> */}
                 </div>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
+
+      {/* Delete Confirmation Popup */}
+      <Popup
+        isOpen={deleteConfirmationOpen}
+        onClose={() => {
+          setDeleteConfirmationOpen(false);
+          setFileToDelete(null);
+        }}
+        title="Delete File"
+        description={`Are you sure you want to delete "${fileToDelete?.name}"? This action cannot be undone.`}
+      >
+        <div className="flex justify-end space-x-3 mt-6 pb-3">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setDeleteConfirmationOpen(false);
+              setFileToDelete(null);
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleDeleteConfirm}
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
+          </Button>
+        </div>
+      </Popup>
     </>
   );
 }

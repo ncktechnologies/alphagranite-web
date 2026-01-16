@@ -1584,10 +1584,11 @@ export const jobApi = createApi({
             }),
             
             // Toggle FAB On Hold endpoint
-            toggleFabOnHold: build.mutation<Fab, number>({
-                query: (fab_id) => ({
-                    url: `/fabs/${fab_id}/toggle-on-hold`,
+            toggleFabOnHold: build.mutation<Fab, { fab_id: number; on_hold: boolean }>({
+                query: ({ fab_id, on_hold }) => ({
+                    url: `/fabs/${fab_id}/hold`,
                     method: "PATCH",
+                    params: { on_hold }
                 }),
                 invalidatesTags: ["Fab"],
             }),

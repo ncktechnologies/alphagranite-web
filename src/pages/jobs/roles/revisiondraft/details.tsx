@@ -77,95 +77,98 @@ const ReviewDetailsPage = () => {
     };
 
     const handleSubmitDraft = async (submissionData: any) => {
-        console.log('=== handleSubmitDraft called ===');
-        console.log('Parent component received submission data:', submissionData);
-        console.log('ID:', id);
-        console.log('User:', user);
-        console.log('Existing revisions:', revisionsData);
-        console.log('Number of existing revisions:', revisionsData?.length);
+    console.log('=== handleSubmitDraft called ===');
+    
+    if (!id || !user) {
+        console.log('Missing id or user, returning early');
+        toast.error("Missing required data");
+        return;
+    }
 
-        if (!id || !user) {
-            console.log('Missing id or user, returning early');
-            return;
-        }
+    // CRITICAL FIX: Check if revisionsData is loaded and has data
+    if (isRevisionsLoading) {
+        toast.error("Please wait, revisions data is still loading");
+        return;
+    }
 
-        // Always use update endpoint if there are existing revisions
-        // Only create new revision if there are no existing revisions
-        try {
-            let revisionId;
+    try {
+        let revisionId;
 
-            // Check if there's an existing revision for this FAB
-            // revisionsData is an array of revisions
-            const revisionsArray = revisionsData || [];
-            const hasExistingRevisions = Array.isArray(revisionsArray) && revisionsArray.length > 0;
-            console.log('Has existing revisions:', hasExistingRevisions);
-            console.log('Revisions array:', revisionsArray);
-            console.log('Number of existing revisions:', revisionsArray.length);
+        // Check revisionsData structure - it might be { data: [...] } or directly an array
+        const revisionsArray = revisionsData?.data || revisionsData || [];
+        console.log('Fetched revisions:', revisionsArray);
+        console.log('Type:', typeof revisionsArray);
+        console.log('Is array?', Array.isArray(revisionsArray));
+        console.log('Length:', revisionsArray.length);
 
-            if (hasExistingRevisions) {
-                // Use the earliest revision (lowest ID) according to project specification
-                const existingRevision = revisionsArray.reduce((earliest, current) =>
-                    (current.id < earliest.id) ? current : earliest, revisionsArray[0]
-                );
+        // Get the earliest revision if any exist
+        const existingRevisions = Array.isArray(revisionsArray) ? revisionsArray : [];
+        const hasExistingRevisions = existingRevisions.length > 0;
 
-                console.log('UPDATING EXISTING REVISION:', existingRevision.id);
-                console.log('Updating with data:', {
-                    revision_type: submissionData.revisionType || 'general',
-                    revision_notes: revisionNote.replace('[REVISION REQUEST] ', '') || ''
-                });
+        if (hasExistingRevisions) {
+            // Find the earliest revision (lowest ID)
+            const earliestRevision = existingRevisions.reduce((earliest, current) => 
+                current.id < earliest.id ? current : earliest, 
+                existingRevisions[0]
+            );
 
-                // ALWAYS UPDATE existing revision - never create new one
-                const updateResult = await updateRevision({
-                    revision_id: existingRevision.id,
-                    data: {
-                        revision_type: submissionData.revisionType || 'general',
-                        revision_notes: revisionNote.replace('[REVISION REQUEST] ', '') || ''
-                    }
-                }).unwrap();
-
-                revisionId = existingRevision.id;
-                console.log('Revision updated successfully with result:', updateResult);
-            } else {
-                // ONLY create a new revision if there are NO existing revisions
-                console.log('CREATING NEW REVISION - no existing revisions found');
-                console.log('Creating with data:', {
-                    fab_id: Number(id),
-                    revision_type: submissionData.revisionType || 'general',
-                    requested_by: user.id || 1,
-                    revision_notes: revisionNote.replace('[REVISION REQUEST] ', '') || ''
-                });
-
-                const createResult = await createRevision({
-                    fab_id: Number(id),
-                    revision_type: submissionData.revisionType || 'general',
-                    requested_by: user.id || 1, // Use user.id if available, fallback to 1
-                    revision_notes: revisionNote.replace('[REVISION REQUEST] ', '') || ''
-                }).unwrap();
-
-                revisionId = createResult.id;
-                console.log('Revision created successfully with result:', createResult);
+            console.log('UPDATING EXISTING REVISION ID:', earliestRevision.id);
+            
+            // Prepare update data
+            const updateData: any = {
+                revision_type: submissionData.revisionType || 'general',
+                revision_notes: revisionNote.replace('[REVISION REQUEST] ', '') || ''
+            };
+            
+            // Add completion status if needed
+            if (submissionData.complete) {
+                updateData.is_completed = true;
             }
 
-            // If the revision is marked as complete, update it
-            if (submissionData.complete && revisionId) {
-                console.log('UPDATING REVISION TO MARK AS COMPLETE, revisionId:', revisionId);
-                await updateRevision({
-                    revision_id: revisionId,
-                    data: {
-                        is_completed: true
-                    }
-                }).unwrap();
-                console.log('Revision marked as complete');
+            // Update the existing revision
+            await updateRevision({
+                revision_id: earliestRevision.id,
+                data: updateData
+            }).unwrap();
+
+            revisionId = earliestRevision.id;
+            console.log('Successfully updated revision');
+            
+        } else {
+            // Only create if truly no revisions exist
+            console.log('CREATING NEW REVISION - no existing revisions found');
+            
+            // Prepare creation data
+            const createData: any = {
+                fab_id: Number(id),
+                revision_type: submissionData.revisionType || 'general',
+                requested_by: user.id || 1,
+                revision_notes: revisionNote.replace('[REVISION REQUEST] ', '') || ''
+            };
+            
+            // Set as completed if needed
+            if (submissionData.complete) {
+                createData.is_completed = true;
             }
 
-            toast.success("Revision submitted successfully");
-            setShowSubmissionModal(false);
-            setViewMode('activity');
-        } catch (error) {
-            console.error('Failed to submit revision:', error);
-            toast.error("Failed to submit revision");
+            const createResult = await createRevision(createData).unwrap();
+            revisionId = createResult.id;
+            console.log('Created new revision with ID:', revisionId);
         }
-    };
+
+        // Refresh the revisions data
+        // You might want to trigger a refetch here
+        // dispatch(api.endpoints.getRevisionsByFabId.initiate(Number(id), { forceRefetch: true }));
+        
+        toast.success("Revision submitted successfully");
+        setShowSubmissionModal(false);
+        setViewMode('activity');
+        
+    } catch (error) {
+        console.error('Failed to submit revision:', error);
+        toast.error("Failed to submit revision. Please try again.");
+    }
+};
 
     const sidebarSections = [
         {

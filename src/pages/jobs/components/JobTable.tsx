@@ -586,36 +586,7 @@ export const JobTable = ({
             cell: ({ row }) => <span className="text-xs uppercase">{row.original.fab_type}</span>,
             size: 100,
         },
-        {
-            id: "on_hold",
-            accessorKey: "on_hold",
-            accessorFn: (row: IJob) => row.on_hold,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="ON HOLD" column={column} />
-            ),
-            cell: ({ row }) => {
-                const fabId = parseInt(row.original.fab_id);
-                return (
-                    <div className="flex justify-center">
-                        <Switch
-                            checked={row.original.on_hold}
-                            onCheckedChange={async (checked) => {
-                                try {
-                                    await toggleFabOnHold(fabId).unwrap();
-                                    // Update the row data to reflect the change
-                                    row.original.on_hold = checked;
-                                } catch (error) {
-                                    console.error('Failed to toggle on hold status:', error);
-                                }
-                            }}
-                            aria-label="Toggle on hold"
-                        />
-                    </div>
-                );
-            },
-            enableSorting: false,
-            size: 80,
-        },
+       
         {
             id: "fab_id",
             accessorKey: "fab_id",
@@ -1244,6 +1215,36 @@ export const JobTable = ({
             ),
             cell: ({ row }) => <span className="text-xs">{typeof row.original.notes === 'string' ? row.original.notes : '-'}</span>,
             size: 150,
+        },
+         {
+            id: "on_hold",
+            accessorKey: "on_hold",
+            accessorFn: (row: IJob) => row.on_hold,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="ON HOLD" column={column} />
+            ),
+            cell: ({ row }) => {
+                const fabId = parseInt(row.original.fab_id);
+                return (
+                    <div className="flex justify-center">
+                        <Switch
+                            checked={row.original.on_hold}
+                            onCheckedChange={async (checked) => {
+                                try {
+                                    await toggleFabOnHold({ fab_id: fabId, on_hold: checked }).unwrap();
+                                    // Update the row data to reflect the change
+                                    row.original.on_hold = checked;
+                                } catch (error) {
+                                    console.error('Failed to toggle on hold status:', error);
+                                }
+                            }}
+                            aria-label="Toggle on hold"
+                        />
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 80,
         },
         {
             id: 'actions',

@@ -217,7 +217,7 @@ export function DraftRevisionPage() {
                 tableState={tableState}
                 showSalesPersonFilter={true}
                 salesPersons={salesPersons}
-                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'revision_reason', 'file', 'no_of_pieces', 'total_sq_ft', 'draft_notes', 'sales_person_name', 'revisor', 'revision_type', 'revision_notes', 'revision_completed']}
+                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'revision_reason', 'file', 'no_of_pieces', 'total_sq_ft', 'draft_notes', 'sales_person_name', 'revisor', 'revision_type', 'revision_notes', 'revision_completed', 'on_hold']}
             />
         </Container>
     );

@@ -226,7 +226,7 @@ const SlabSmithPage = () => {
                     showSalesPersonFilter={false}
                     showScheduleFilter={false} // Remove separate schedule filter
                     salesPersons={salesPersons}
-                    visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'slabsmith_completed', 'slabsmith_notes', 'drafter', 'slabsmith_clock_complete']}
+                    visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'slabsmith_completed', 'slabsmith_notes', 'drafter', 'slabsmith_clock_complete', 'on_hold']}
                 />
             </Container>
         </div>

@@ -212,7 +212,7 @@ const DrafterPage = () => {
                 setSelectedRows={setSelectedRows}
                 showAssignDrafterButton={true}
                 onAssignDrafterClick={handleAssignDrafterClick}
-                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'revenue', 'gp', 'drafting_notes', 'draft_completed', 'drafter']}
+                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'revenue', 'gp', 'drafting_notes', 'draft_completed', 'drafter', 'on_hold']}
             />
             <AssignDrafterModal
                 open={showAssignModal}

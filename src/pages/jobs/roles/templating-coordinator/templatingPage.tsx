@@ -279,7 +279,7 @@ export function TemplatingPage() {
                         templaterFilter={templaterFilter}
                         setTemplaterFilter={setTemplaterFilter}
 
-                        visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'templating_notes',  'templater']}
+                        visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'templating_notes',  'templater', 'on_hold']}
                         getPath={(job) => {
                             // Check if THIS SPECIFIC job has a template technician assigned
                             const hasTemplateTechnician = job.templater &&

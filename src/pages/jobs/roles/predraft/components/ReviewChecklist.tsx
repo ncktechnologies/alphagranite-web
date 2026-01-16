@@ -238,16 +238,32 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
 
                     <div className="space-y-3 mt-6">
                         <Can action="update" on="Pre-draft Review">
-                            <Button className="w-full py-6 text-base" type="submit" disabled={isSubmitting || !form.watch("templatereceived")}>
-                                {isSubmitting ? (
-                                    <span className="flex items-center gap-2">
-                                        <LoaderCircle className="w-4 h-4 animate-spin" />
-                                        Verifying...
-                                    </span>
-                                ) : (
-                                    "Schedule for drafting"
+                            <div className="mb-2">
+                                <Button
+                                    className="w-full py-6 text-base"
+                                    type="submit"
+                                    disabled={isSubmitting || !form.watch("templatereceived") || !form.watch("templatereview")}
+                                >
+                                    {isSubmitting ? (
+                                        <span className="flex items-center gap-2">
+                                            <LoaderCircle className="w-4 h-4 animate-spin" />
+                                            Verifying...
+                                        </span>
+                                    ) : (
+                                        "Schedule for drafting"
+                                    )}
+                                </Button>
+                                {(!form.watch("templatereceived") || !form.watch("templatereview")) && (
+                                    <p className="text-xs text-gray-500 mt-1 text-center">
+                                        {!form.watch("templatereceived") && !form.watch("templatereview")
+                                            ? "Please check both boxes above"
+                                            : !form.watch("templatereceived")
+                                                ? "Please check 'Template received'"
+                                                : "Please check 'Template review complete'"
+                                        }
+                                    </p>
                                 )}
-                            </Button>
+                            </div>
                         </Can>
                         <Button variant="outline" type="button" className="w-full text-secondary font-bold py-6 text-base" onClick={() => navigate('/job/predraft')}>
                             Cancel

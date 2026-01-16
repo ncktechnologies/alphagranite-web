@@ -207,7 +207,7 @@ const FinalProgrammingPage = () => {
                     // tableState={tableState}
                     showSalesPersonFilter={true}
                     salesPersons={salesPersons}
-                    visibleColumns={['date', 'shop_date_scheduled', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'wj_time_minutes', 'final_programming_notes', 'final_programming_completed', 'final_programmer']}
+                    visibleColumns={['date', 'shop_date_scheduled', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'wj_time_minutes', 'final_programming_notes', 'final_programming_completed', 'final_programmer', 'on_hold']}
                 />
 
             </Container>
