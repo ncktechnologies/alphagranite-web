@@ -62,6 +62,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
         job_id: fab.job_id,
         on_hold: fab.on_hold,
+         status_id: fab.status_id,
     };
 };
 

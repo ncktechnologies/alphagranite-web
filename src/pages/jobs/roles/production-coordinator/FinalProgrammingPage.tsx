@@ -49,6 +49,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         fab_notes: fab.fab_notes || [],
         job_id: fab.job_id,
         on_hold: fab.on_hold,
+         status_id: fab.status_id,
     };
 };
 const FinalProgrammingPage = () => {

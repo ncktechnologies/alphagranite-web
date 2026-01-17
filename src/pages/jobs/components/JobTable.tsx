@@ -1218,8 +1218,8 @@ export const JobTable = ({
         },
          {
             id: "on_hold",
-            accessorKey: "on_hold",
-            accessorFn: (row: IJob) => row.on_hold,
+            accessorKey: "status_id",
+            accessorFn: (row: IJob) => row.status_id === 0, // 0 = on hold (true), 1 = not on hold (false)
             header: ({ column }) => (
                 <DataGridColumnHeader title="ON HOLD" column={column} />
             ),
@@ -1228,14 +1228,22 @@ export const JobTable = ({
                 return (
                     <div className="flex justify-center">
                         <Switch
-                            checked={row.original.on_hold}
+                            checked={row.original.status_id === 0} // status_id: 0 = on hold (true), 1 = not on hold (false)
                             onCheckedChange={async (checked) => {
+                                // Store original value for rollback in case of error
+                                const originalStatusId = row.original.status_id;
+                                
                                 try {
+                                    // Optimistic update
+                                    row.original.status_id = checked ? 0 : 1;
+                                    
                                     await toggleFabOnHold({ fab_id: fabId, on_hold: checked }).unwrap();
-                                    // Update the row data to reflect the change
-                                    row.original.on_hold = checked;
+                                    
+                                    // Update successful, new state is already applied
                                 } catch (error) {
                                     console.error('Failed to toggle on hold status:', error);
+                                    // Rollback to original value if API call fails
+                                    row.original.status_id = originalStatusId;
                                 }
                             }}
                             aria-label="Toggle on hold"

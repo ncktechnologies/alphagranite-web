@@ -35,8 +35,8 @@ import { format } from 'date-fns';
 import { JOB_STAGES } from '@/hooks/use-job-stage';
 import { Fragment } from "react";
 import { Fab } from "@/store/api/job"; // Import the Fab type
-
-
+import { Switch } from '@/components/ui/switch';
+import { useToggleFabOnHoldMutation } from '@/store/api/job';
 import ActionsCell from "@/pages/shop/components/action";
 import { NotesModal } from "@/components/common/NotesModal";
 
@@ -63,6 +63,7 @@ export interface CalculatedCutListData {
     install_date: string;
     sales_person?: string;
     shop_date_schedule: string;
+    status_id?: number; // Add status_id field
 }
 
 // Update the calculateCutListData function to work with Fab
@@ -108,6 +109,7 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
         install_date: fabWithExtraFields.installation_date || '',
         shop_date_schedule: fabWithExtraFields.shop_date_schedule || "",
         sales_person: fabWithExtraFields.sales_person_name || '',
+        status_id: fabWithExtraFields.status_id || 1, // Default to 1 (not on hold)
     };
 };
 
@@ -156,6 +158,8 @@ export const CutListTableWithCalculations = ({
     setDateRange,
     onAddNote
 }: CutListTableWithCalculationsProps) => {
+    const [toggleFabOnHold] = useToggleFabOnHoldMutation();
+    
     // Use passed pagination state or default to local state
     const [localPagination, setLocalPagination] = useState<PaginationState>({
         pageIndex: 0,
@@ -582,6 +586,45 @@ export const CutListTableWithCalculations = ({
                     {row.original.sales_person || 'N/A'}
                 </span>
             ),
+        },
+        {
+            id: "on_hold",
+            accessorKey: "status_id",
+            accessorFn: (row: CalculatedCutListData) => row.status_id === 0, // 0 = on hold (true), 1 = not on hold (false)
+            header: ({ column }) => (
+                <DataGridColumnHeader title="ON HOLD" column={column} />
+            ),
+            cell: ({ row }) => {
+                const fabId = parseInt(row.original.fab_id);
+                return (
+                    <div className="flex justify-center">
+                        <Switch
+                            checked={row.original.status_id === 0} // status_id: 0 = on hold (true), 1 = not on hold (false)
+                            onCheckedChange={async (checked) => {
+                                // Store original value for rollback in case of error
+                                const originalStatusId = row.original.status_id;
+                                
+                                try {
+                                    // Optimistic update
+                                    row.original.status_id = checked ? 0 : 1;
+                                    
+                                    await toggleFabOnHold({ fab_id: fabId, on_hold: checked }).unwrap();
+                                    
+                                    // Update successful, new state is already applied
+                                } catch (error) {
+                                    console.error('Failed to toggle on hold status:', error);
+                                    // Rollback to original value if API call fails
+                                    row.original.status_id = originalStatusId;
+                                }
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label="Toggle on hold"
+                        />
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 80,
         },
         {
             id: 'actions',
