@@ -163,7 +163,7 @@ export const CutListTableWithCalculations = ({
     // Use passed pagination state or default to local state
     const [localPagination, setLocalPagination] = useState<PaginationState>({
         pageIndex: 0,
-        pageSize: 5,
+        pageSize: 25,
     });
 
     const effectivePagination = pagination || localPagination;

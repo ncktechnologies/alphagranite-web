@@ -109,7 +109,7 @@ export function TemplatingPage() {
     // Use independent table state for templating table
     const tableState = useTableState({
         tableId: 'templating-table',
-        defaultPagination: { pageIndex: 0, pageSize: 10 },
+        defaultPagination: { pageIndex: 0, pageSize: 25 },
         defaultDateFilter: 'all',
         persistState: true,
     });

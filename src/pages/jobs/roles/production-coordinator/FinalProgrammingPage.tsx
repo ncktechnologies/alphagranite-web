@@ -89,7 +89,7 @@ const FinalProgrammingPage = () => {
     // Use independent table state for final programming table
     const tableState = useTableState({
         tableId: 'final-programming-table',
-        defaultPagination: { pageIndex: 0, pageSize: 10 },
+        defaultPagination: { pageIndex: 0, pageSize: 25 },
         defaultDateFilter: 'all',
         persistState: true,
     });

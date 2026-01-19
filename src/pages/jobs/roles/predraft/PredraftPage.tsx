@@ -101,7 +101,7 @@ export function PredraftPage() {
     // Use independent table state for predraft table
     const tableState = useTableState({
         tableId: 'predraft-table',
-        defaultPagination: { pageIndex: 0, pageSize: 10 },
+        defaultPagination: { pageIndex: 0, pageSize: 25 },
         defaultDateFilter: 'all',
         persistState: true,
     });

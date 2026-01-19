@@ -60,7 +60,7 @@ interface ExtendedJob extends Omit<Job, 'project_value'> {
 export const NeedToInvoicePage = () => {
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 25,
   });
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});

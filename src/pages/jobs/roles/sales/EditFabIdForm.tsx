@@ -209,11 +209,8 @@ const fabIdFormSchema = z.object({
         const num = parseFloat(val);
         return !isNaN(num) && num >= 0;
       }, { message: 'Revenue must be a valid number' }),
-    cost_of_stone: z.string().min(1, 'Cost of Stone is required')
-      .refine((val) => {
-        const num = parseFloat(val);
-        return !isNaN(num) && num >= 0;
-      }, { message: 'Cost of Stone must be a valid number' }),
+    cost_of_stone: z.string().optional()
+      .refine((val) => val === '' || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), { message: 'Cost of Stone must be a valid number' }),
     selectedSalesPerson: z.string().min(1, 'Sales Person is required'),
     notes: z.string().optional(),
     templateNotNeeded: z.boolean(),

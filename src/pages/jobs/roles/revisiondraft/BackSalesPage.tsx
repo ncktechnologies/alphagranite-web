@@ -91,7 +91,7 @@ export function DraftRevisionPage() {
     // Use independent table state for revision table
     const tableState = useTableState({
         tableId: 'revision-table',
-        defaultPagination: { pageIndex: 0, pageSize: 10 },
+        defaultPagination: { pageIndex: 0, pageSize: 25 },
         defaultDateFilter: 'all',
         persistState: true,
     });

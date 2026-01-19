@@ -101,7 +101,7 @@ const SlabSmithPage = () => {
     // Use independent table state for slab smith table
     const tableState = useTableState({
         tableId: 'slab-smith-table',
-        defaultPagination: { pageIndex: 0, pageSize: 10 },
+        defaultPagination: { pageIndex: 0, pageSize: 25 },
         defaultDateFilter: 'all',
         persistState: true,
     });

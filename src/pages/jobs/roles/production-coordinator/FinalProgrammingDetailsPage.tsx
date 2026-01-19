@@ -222,13 +222,32 @@ export function FinalProgrammingDetailsPage() {
     {
       title: "FAB Notes",
       type: "notes",
-      notes: getAllFabNotes(fabData?.fab_notes || []).map(note => ({
-        id: note.id,
-        avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
-        content: note.note,
-        author: note.created_by_name || 'Unknown',
-        timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
-      }))
+      notes: getAllFabNotes(fabData?.fab_notes || []).map(note => {
+        // Stage display mapping
+        const stageConfig: Record<string, { label: string; color: string }> = {
+          templating: { label: 'Templating', color: 'text-blue-700' },
+          pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
+          drafting: { label: 'Drafting', color: 'text-green-700' },
+          sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
+          slab_smith_request: { label: 'Slab Smith Request', color: 'text-red-700' },
+          cut_list: { label: 'Final Programming', color: 'text-purple-700' },
+          cutting: { label: 'Cutting', color: 'text-orange-700' },
+          revisions: { label: 'Revisions', color: 'text-purple-700' },
+          draft: { label: 'Draft', color: 'text-green-700' },
+          general: { label: 'General', color: 'text-gray-700' }
+        };
+
+        const stage = note.stage || 'general';
+        const config = stageConfig[stage] || stageConfig.general;
+
+        return {
+          id: note.id,
+          avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+          content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${note.note}`,
+          author: note.created_by_name || 'Unknown',
+          timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+        };
+      })
     }
   ];
 

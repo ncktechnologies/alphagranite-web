@@ -64,7 +64,10 @@ export default function GraySidebar({ sections, className = '' }: GraySidebarPro
                                         </AvatarFallback>
                                     </Avatar>
                                     <div className="flex-1">
-                                        <p className="text-sm text-black mb-1 bg-[#FAFAFA] p-3 rounded-lg">{note.content}</p>
+                                        <div
+                                            className="text-sm text-black mb-1 bg-[#FAFAFA] p-3 rounded-lg"
+                                            dangerouslySetInnerHTML={{ __html: note.content }}
+                                        />
                                         <p className="text-sm text-text-foreground">
                                             {note.author} • {note.timestamp}
                                         </p>

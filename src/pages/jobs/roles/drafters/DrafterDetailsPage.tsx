@@ -38,43 +38,89 @@ export function DrafterDetailsPage() {
   const currentUser = useSelector((s: any) => s.user.user);
   const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
 
-  // load fab & drafting data (draft_data is included in FAB response)
+  // Load fab & drafting data
   const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, { skip: !fabId });
   const { data: draftingData, isLoading: isDraftingLoading, refetch: refetchDrafting } = useGetDraftingByFabIdQuery(fabId, { skip: !fabId });
-  // NEW: Get current session state
+  
+  // Get current session state
   const { data: sessionData, isLoading: isSessionLoading, refetch: refetchSession } = useGetCurrentDraftingSessionQuery(fabId, { skip: !fabId });
   
   const [addFilesToDrafting] = useAddFilesToDraftingMutation();
   const [deleteFileFromDrafting] = useDeleteFileFromDraftingMutation();
+  const [manageDraftingSession, { isLoading: isManagingSession }] = useManageDraftingSessionMutation();
 
   // Use draft_data from FAB response for displaying existing files
   const draftData = fabData?.draft_data;
 
-  // local UI state
-  const [isDrafting, setIsDrafting] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [hasEnded, setHasEnded] = useState(false);
-  const [isOnHold, setIsOnHold] = useState(false); // New state for on-hold status
+  // Local UI state
   const [totalTime, setTotalTime] = useState<number>(0);
+  const [draftStart, setDraftStart] = useState<Date | null>(null);
+  const [draftEnd, setDraftEnd] = useState<Date | null>(null);
+  
+  // Session status derived from sessionData
+  const [sessionStatus, setSessionStatus] = useState<'idle' | 'drafting' | 'paused' | 'on_hold' | 'ended'>('idle');
+  const [sessionId, setSessionId] = useState<number | null>(null);
 
-  // Session management
-  const [manageDraftingSession] = useManageDraftingSessionMutation();
+  // File state
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [uploadedFileMetas, setUploadedFileMetas] = useState<UploadedFileMeta[]>([]);
+  const [activeFile, setActiveFile] = useState<any | null>(null);
+  const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
+  const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
+  const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+
+  // Initialize session state from server data
+  useEffect(() => {
+    if (sessionData && !isSessionLoading) {
+      const session = sessionData?.data;
+      if (session) {
+        setSessionId(session.id);
+        setSessionStatus(session.status || 'idle');
+        
+        if (session.total_time_spent) {
+          setTotalTime(session.total_time_spent);
+        }
+        
+        if (session.start_time) {
+          setDraftStart(new Date(session.start_time));
+        }
+        
+        if (session.end_time) {
+          setDraftEnd(new Date(session.end_time));
+        }
+      } else {
+        // No active session found
+        setSessionStatus('idle');
+        setSessionId(null);
+        setTotalTime(0);
+        setDraftStart(null);
+        setDraftEnd(null);
+      }
+    }
+  }, [sessionData, isSessionLoading]);
+
+  // Helper functions to check session state
+  const isDrafting = sessionStatus === 'drafting';
+  const isPaused = sessionStatus === 'paused';
+  const isOnHold = sessionStatus === 'on_hold';
+  const hasEnded = sessionStatus === 'ended';
 
   // Tab closing warning - active when drafting but not paused or ended
   useTabClosingWarning({
-    isActive: isDrafting && !isPaused && !hasEnded,
+    isActive: isDrafting && !isPaused,
     warningMessage: '⚠️ ACTIVE DRAFTING SESSION ⚠️\n\nYou have an active drafting session in progress. Closing this tab will pause your session and may result in lost work.\n\nPlease pause your session properly before leaving.',
     onBeforeUnload: async (event) => {
       // Auto-pause the session when tab is closing
-      if (isDrafting && !isPaused && !hasEnded && fabId && currentEmployeeId) {
+      if (isDrafting && fabId && currentEmployeeId) {
         try {
           await manageDraftingSession({
             fab_id: fabId,
             data: {
-              action: 'auto_pause',
+              action: 'pause',
               drafter_id: currentEmployeeId,
               timestamp: new Date().toISOString(),
-              note: 'Auto-paused due to tab closing/browser navigation'
+              total_time_spent: totalTime,
+              note: 'Auto-paused due to tab closing'
             }
           }).unwrap();
           console.log('Auto-paused drafting session due to tab closing');
@@ -85,50 +131,108 @@ export function DrafterDetailsPage() {
     }
   });
 
-  // NEW: Effect to initialize state from session data
-  useEffect(() => {
-    if (sessionData && !isSessionLoading) {
-      // Set UI state based on the current session status
-      const status = sessionData?.data?.status;
-      if (status === 'drafting') {
-        setIsDrafting(true);
-        setIsPaused(false);
-        setHasEnded(false);
-        setIsOnHold(false);
-      } else if (status === 'paused') {
-        setIsDrafting(true); // Still in a session, just paused
-        setIsPaused(true);
-        setHasEnded(false);
-        setIsOnHold(false);
-      } else if (status === 'on_hold') {
-        setIsDrafting(false);
-        setIsPaused(false);
-        setHasEnded(true);
-        setIsOnHold(true);
+  // Session management functions
+  const createOrStartSession = async (action: 'start' | 'resume', startDate: Date, note?: string, sqftDrafted?: string) => {
+    try {
+      const response = await manageDraftingSession({
+        fab_id: fabId,
+        data: {
+          action: action,
+          drafter_id: currentEmployeeId,
+          timestamp: startDate.toISOString(),
+          total_time_spent: action === 'start' ? 0 : totalTime,
+          note: note,
+          sqft_drafted: sqftDrafted
+        }
+      }).unwrap();
+
+      setSessionStatus('drafting');
+      setDraftStart(startDate);
+      setDraftEnd(null);
+      
+      if (response?.data?.id) {
+        setSessionId(response.data.id);
       }
       
-      // Set time if available
-      if (sessionData?.data?.total_time_spent) {
-        setTotalTime(sessionData?.data?.total_time_spent);
-      }
+      await refetchSession();
+      toast.success(`Session ${action === 'start' ? 'started' : 'resumed'} successfully`);
+    } catch (error) {
+      console.error(`Failed to ${action} session:`, error);
+      toast.error(`Failed to ${action} session`);
+      throw error;
     }
-  }, [sessionData, isSessionLoading]);
+  };
 
-  // start/end timestamps captured from child component
-  const [draftStart, setDraftStart] = useState<Date | null>(null);
-  const [draftEnd, setDraftEnd] = useState<Date | null>(null);
+  const updateSession = async (action: 'pause' | 'on_hold' | 'end', timestamp: Date, note?: string, sqftDrafted?: string) => {
+    try {
+      await manageDraftingSession({
+        fab_id: fabId,
+        data: {
+          action: action,
+          drafter_id: currentEmployeeId,
+          timestamp: timestamp.toISOString(),
+          total_time_spent: totalTime,
+          note: note,
+          sqft_drafted: sqftDrafted
+        }
+      }).unwrap();
 
-  // Simplified file state - track files that need to be uploaded
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-  const [uploadedFileMetas, setUploadedFileMetas] = useState<UploadedFileMeta[]>([]);
-  const [activeFile, setActiveFile] = useState<any | null>(null);
-  const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
-  const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
+      setSessionStatus(action === 'end' ? 'ended' : action === 'on_hold' ? 'on_hold' : 'paused');
+      setDraftEnd(timestamp);
+      
+      await refetchSession();
+      toast.success(`Session ${action}ed successfully`);
+    } catch (error) {
+      console.error(`Failed to ${action} session:`, error);
+      toast.error(`Failed to ${action} session`);
+      throw error;
+    }
+  };
 
-  const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+  // Time tracking handlers
+  const handleStart = async (startDate: Date, data?: { note?: string; sqft_drafted?: string }) => {
+    try {
+      await createOrStartSession('start', startDate, data?.note, data?.sqft_drafted);
+    } catch (error) {
+      // Error handled in createOrStartSession
+    }
+  };
+
+  const handlePause = async (data?: { note?: string; sqft_drafted?: string }) => {
+    try {
+      await updateSession('pause', new Date(), data?.note, data?.sqft_drafted);
+    } catch (error) {
+      // Error handled in updateSession
+    }
+  };
+
+  const handleResume = async (data?: { note?: string; sqft_drafted?: string }) => {
+    try {
+      await createOrStartSession('resume', new Date(), data?.note, data?.sqft_drafted);
+    } catch (error) {
+      // Error handled in createOrStartSession
+    }
+  };
+
+  const handleEnd = async (endDate: Date, data?: { note?: string; sqft_drafted?: string }) => {
+    try {
+      await updateSession('end', endDate, data?.note, data?.sqft_drafted);
+    } catch (error) {
+      // Error handled in updateSession
+    }
+  };
+
+  const handleOnHold = async (data?: { note?: string; sqft_drafted?: string }) => {
+    try {
+      await updateSession('on_hold', new Date(), data?.note, data?.sqft_drafted);
+    } catch (error) {
+      // Error handled in updateSession
+    }
+  };
 
   // Show files section if there are existing files OR if user has uploaded files
   const shouldShowFilesSection = (draftData && (draftData.files?.length ?? 0) > 0) || uploadedFileMetas.length > 0;
+  
   // Show upload section when timer is running OR when files have been uploaded (to maintain visibility after ending)
   const shouldShowUploadSection = isDrafting || uploadedFileMetas.length > 0;
 
@@ -255,59 +359,8 @@ export function DrafterDetailsPage() {
     }
   };
 
-  // Time tracking handlers
-  const handleStart = (startDate: Date) => {
-    setIsDrafting(true);
-    setIsPaused(false);
-    setHasEnded(false);
-    setIsOnHold(false); // Reset on-hold when starting
-    setDraftStart(startDate);
-  };
-
-  const handlePause = (data?: { note?: string; sqft_drafted?: string }) => {
-    setIsPaused(true);
-    // You can handle the square footage and notes here
-    console.log('Paused with data:', data);
-  };
-
-  const handleResume = (data?: { note?: string; sqft_drafted?: string }) => {
-    setIsPaused(false);
-    // You can handle the square footage and notes here
-    console.log('Resumed with data:', data);
-  };
-
-  const handleEnd = (endDate: Date) => {
-    setIsDrafting(false);
-    setIsPaused(false);
-    setHasEnded(true);
-    setDraftEnd(endDate);
-    // Note: We're keeping the old behavior here but setIsOnHold is still managed separately
-  };
-
-  // Updated onHold handler
-  const handleOnHold = (data?: { note?: string; sqft_drafted?: string }) => {
-    // Set the session as on hold
-    setIsDrafting(false);
-    setIsPaused(false);
-    setIsOnHold(true); // Mark as on hold
-    setHasEnded(true);
-    setDraftEnd(new Date()); // Set end time when putting on hold
-    // You can handle the square footage and notes here
-    console.log('On hold with data:', data);
-  };
-
-  // Handler for normal end (not on hold)
-  const handleNormalEnd = (endDate: Date) => {
-    setIsDrafting(false);
-    setIsPaused(false);
-    setIsOnHold(false); // Not on hold, just ended normally
-    setHasEnded(true);
-    setDraftEnd(endDate);
-    console.log('Normal end with date:', endDate);
-  };
-
   // Determine if submission is allowed (after on hold OR after ending normally)
-  const canOpenSubmit = (isOnHold || (hasEnded && !isOnHold)) && totalTime > 0 && (pendingFiles.length > 0 || uploadedFileMetas.length > 0);
+  const canOpenSubmit = (isOnHold || hasEnded) && totalTime > 0 && (pendingFiles.length > 0 || uploadedFileMetas.length > 0);
 
   // Modified to handle file upload before showing modal
   const handleOpenSubmissionModal = async () => {
@@ -333,7 +386,8 @@ export function DrafterDetailsPage() {
       setTotalTime(0);
       setDraftStart(null);
       setDraftEnd(null);
-      setIsOnHold(false); // Reset on-hold status after submission
+      setSessionStatus('idle');
+      setSessionId(null);
       navigate('/job/draft');
     } catch (err) {
       console.error(err);
@@ -368,13 +422,32 @@ export function DrafterDetailsPage() {
     {
       title: "FAB Notes",
       type: "notes",
-      notes: getAllFabNotes(fabData?.fab_notes || []).map(note => ({
-        id: note.id,
-        avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
-        content: note.note,
-        author: note.created_by_name || 'Unknown',
-        timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
-      }))
+      notes: getAllFabNotes(fabData?.fab_notes || []).map(note => {
+        // Stage display mapping
+        const stageConfig: Record<string, { label: string; color: string }> = {
+          templating: { label: 'Templating', color: 'text-blue-700' },
+          pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
+          drafting: { label: 'Drafting', color: 'text-green-700' },
+          sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
+          slab_smith_request: { label: 'Slab Smith Request', color: 'text-red-700' },
+          cut_list: { label: 'Final Programming', color: 'text-purple-700' },
+          cutting: { label: 'Cutting', color: 'text-orange-700' },
+          revisions: { label: 'Revisions', color: 'text-purple-700' },
+          draft: { label: 'Draft', color: 'text-green-700' },
+          general: { label: 'General', color: 'text-gray-700' }
+        };
+
+        const stage = note.stage || 'general';
+        const config = stageConfig[stage] || stageConfig.general;
+
+        return {
+          id: note.id,
+          avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+          content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${note.note}`,
+          author: note.created_by_name || 'Unknown',
+          timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+        };
+      })
     }
   ];
 
@@ -432,7 +505,7 @@ export function DrafterDetailsPage() {
                     onPause={handlePause}
                     onResume={handleResume}
                     onEnd={handleEnd}
-                    onOnHold={handleOnHold} // Pass the new onHold handler
+                    onOnHold={handleOnHold}
                     onTimeUpdate={setTotalTime}
                     hasEnded={hasEnded}
                     pendingFilesCount={pendingFiles.length}
@@ -441,34 +514,33 @@ export function DrafterDetailsPage() {
 
                   <Separator className="my-3" />
 
-                  {/* Only show upload if timer has started */}
+                  {/* Only show upload if timer has started or there are uploaded files */}
                   {shouldShowUploadSection && (
                     <UploadDocuments
                       onFileClick={handleFileClick}
                       onFilesChange={handleFilesChange}
                       simulateUpload={false}
-                      disabled={hasEnded}
+                      disabled={hasEnded || isOnHold}
                     />
                   )}
+                  
                   {/* Show message when timer hasn't started yet */}
-                  {!shouldShowFilesSection && !isDrafting && (
+                  {!shouldShowFilesSection && !isDrafting && sessionStatus === 'idle' && (
                     <div className="text-center py-4 text-muted-foreground">
                       Start the timer to enable file uploads
                     </div>
                   )}
-                  
-
 
                   {/* Submit Button - show after on hold OR after ending normally */}
-                  {viewMode === 'activity' && (isOnHold ||  !isOnHold)&& (
+                  {viewMode === 'activity' && (isOnHold || hasEnded) && (
                     <div className="flex justify-end">
                       <Can action="update" on="Drafting">
                         <Button
                           onClick={handleOpenSubmissionModal}
                           className="bg-green-600 hover:bg-green-700"
-                          // disabled={!canOpenSubmit}
+                          disabled={!canOpenSubmit || isUploadingDocuments}
                         >
-                          Submit draft
+                          {isUploadingDocuments ? 'Uploading...' : 'Submit draft'}
                         </Button>
                       </Can>
                     </div>

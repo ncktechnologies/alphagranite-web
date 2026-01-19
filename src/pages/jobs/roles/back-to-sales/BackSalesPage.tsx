@@ -100,7 +100,7 @@ export function AfterDraftSalesPage() {
     // Use independent table state for SCT table
     const tableState = useTableState({
         tableId: 'sct-table',
-        defaultPagination: { pageIndex: 0, pageSize: 10 },
+        defaultPagination: { pageIndex: 0, pageSize: 25 },
         defaultDateFilter: 'all',
         persistState: true,
     });

@@ -13,7 +13,7 @@ const CutListPage = () => {
     const [fabTypeFilter, setFabTypeFilter] = useState('all');
     const [salesPersonFilter, setSalesPersonFilter] = useState('all');
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 20 });
+    const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 25 });
 
     // Fetch all fab types and sales persons for filter dropdowns
     const { data: fabTypesData } = useGetFabTypesQuery();

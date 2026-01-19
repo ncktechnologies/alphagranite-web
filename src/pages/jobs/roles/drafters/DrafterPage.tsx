@@ -80,7 +80,7 @@ const DrafterPage = () => {
     // Use independent table state for drafting table
     const tableState = useTableState({
         tableId: 'drafting-table',
-        defaultPagination: { pageIndex: 0, pageSize: 10 },
+        defaultPagination: { pageIndex: 0, pageSize: 25 },
         defaultDateFilter: 'all',
         persistState: true,
     });

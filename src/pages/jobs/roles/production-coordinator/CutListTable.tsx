@@ -75,7 +75,7 @@ interface CutListTableProps {
 export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, onRowClick }: CutListTableProps) => {
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
-        pageSize: 5, // Same as JobTable
+        pageSize: 25, // Same as JobTable
     });
     const [sorting, setSorting] = useState<SortingState>([]);
     const [searchQuery, setSearchQuery] = useState('');

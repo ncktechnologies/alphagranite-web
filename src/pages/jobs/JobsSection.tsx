@@ -19,15 +19,13 @@ import {
   CardHeader,
   CardHeading,
   CardTable,
-  CardTitle,
   CardToolbar,
 } from '@/components/ui/card';
 import { DataGrid } from '@/components/ui/data-grid';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
 import { DataGridPagination } from '@/components/ui/data-grid-pagination';
-import { DataGridTable, DataGridTableRowSelect, DataGridTableRowSelectAll } from '@/components/ui/data-grid-table';
+import { DataGridTable } from '@/components/ui/data-grid-table';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Search, X, Plus, Ellipsis } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -39,7 +37,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useGetJobsQuery, useCreateJobMutation, useUpdateJobMutation, useDeleteJobMutation, Job, useGetJobByIdQuery, JobListParams } from '@/store/api/job';
+import { useGetJobsQuery, useDeleteJobMutation, Job, useGetAccountsQuery } from '@/store/api/job';
 import { toast } from 'sonner';
 import { Can } from '@/components/permission';
 import JobFormSheet from './components/JobFormSheet';
@@ -52,6 +50,7 @@ interface ExtendedJob extends Omit<Job, 'project_value'> {
   sales_person_name?: string;
   status?: string;
   project_value?: string;
+  square_footage?: string;
   account_name?: string;
   account_id?: number;
   need_to_invoice?: boolean;
@@ -61,7 +60,7 @@ interface ExtendedJob extends Omit<Job, 'project_value'> {
 export const JobsSection = () => {
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
-    pageSize: 10,
+    pageSize: 25,
   });
   const [sorting, setSorting] = useState<SortingState>([]);
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -80,8 +79,16 @@ export const JobsSection = () => {
     ...(selectedStatus !== 'all' && { status_id: parseInt(selectedStatus) }),
   });
 
+  const { data: accountsData } = useGetAccountsQuery({ limit: 1000 });
+
   const [deleteJob] = useDeleteJobMutation();
   const [toggleNeedToInvoice] = useToggleNeedToInvoiceMutation();
+
+  // Create account name mapping
+  const accountNameMap = useMemo(() => {
+    if (!accountsData) return new Map<number, string>();
+    return new Map(accountsData.map(account => [account.id, account.name]));
+  }, [accountsData]);
 
   // Transform API data to match table structure
   const jobs = useMemo(() => {
@@ -90,13 +97,15 @@ export const JobsSection = () => {
       ...job,
       // Only transform what's necessary
       project_value: job.project_value || 'N/A',
+      square_footage: job.square_footage || 'N/A',
       updated_at: job.updated_at || 'N/A',
       status: job.status_id === 1 ? 'Active' : job.status_id === 2 ? 'Inactive' : job.status_id === 3 ? 'Completed' : 'N/A',
       need_to_invoice: job.need_to_invoice, // Add the need_to_invoice field from API
+      account_name: job.account_id ? accountNameMap.get(job.account_id) || 'N/A' : 'N/A',
       // The API already provides sales_person_name, so don't override it
       // sales_person_name is already included from the spread operator
     } as ExtendedJob));
-  }, [jobsData]);
+  }, [jobsData, accountNameMap]);
 
   const handleView = (job: ExtendedJob) => {
     setSelectedJob(job as Job);
@@ -181,6 +190,20 @@ export const JobsSection = () => {
         size: 150,
       },
       {
+        id: 'square_footage',
+        accessorFn: (row) => row.square_footage,
+        header: ({ column }) => (
+          <DataGridColumnHeader title="SQUARE FOOTAGE" column={column} />
+        ),
+        cell: ({ row }) => (
+          <span className="text-sm text-text">
+            {row.original.square_footage || 'N/A'}
+          </span>
+        ),
+        enableSorting: true,
+        size: 130,
+      },
+      {
         id: 'created_at',
         accessorFn: (row) => row.created_at,
         header: ({ column }) => (
@@ -189,6 +212,20 @@ export const JobsSection = () => {
         cell: ({ row }) => (
           <span className="text-sm text-text">
             {new Date(row.original.created_at).toLocaleDateString()}
+          </span>
+        ),
+        enableSorting: true,
+        size: 150,
+      },
+      {
+        id: 'account_name',
+        accessorFn: (row) => row.account_name,
+        header: ({ column }) => (
+          <DataGridColumnHeader title="ACCOUNT NAME" column={column} />
+        ),
+        cell: ({ row }) => (
+          <span className="text-sm text-text">
+            {row.original.account_name || 'N/A'}
           </span>
         ),
         enableSorting: true,

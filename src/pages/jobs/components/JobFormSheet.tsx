@@ -44,12 +44,21 @@ const jobSchema = z.object({
   name: z.string().min(1, "Job name is required"),
   job_number: z.string().min(1, "Job number is required"),
   project_value: z.string().optional(),
+  square_footage: z.string().optional(),
   account_id: z.string().optional(),
   description: z.string().optional(),
   sales_person_id: z.string().optional(),
 });
 
 type JobFormType = z.infer<typeof jobSchema>;
+
+interface JobFormData {
+  name: string;
+  job_number: string;
+  project_value: string;
+  square_footage: string;
+  account_id?: number;
+}
 
 interface JobFormSheetProps {
   trigger: ReactNode;
@@ -121,6 +130,7 @@ const JobFormSheet = ({
       name: "",
       job_number: "",
       project_value: "",
+      square_footage: "",
       account_id: "",
       description: "",
       sales_person_id: "",
@@ -133,16 +143,26 @@ const JobFormSheet = ({
         name: job.name || "",
         job_number: job.job_number || "",
         project_value: job.project_value || "",
+        square_footage: (job as any).square_footage || "",
         account_id: job.account_id ? String(job.account_id) : "",
         description: (job as any).description || "",
         sales_person_id: (job as any).sales_person_id
           ? String((job as any).sales_person_id)
           : "",
       });
-    } else if (isSheetOpen) {
-      form.reset();
+    } else if (isSheetOpen && mode === 'create') {
+      // Explicitly reset to empty values for new job creation
+      form.reset({
+        name: "",
+        job_number: "",
+        project_value: "",
+        square_footage: "",
+        account_id: "",
+        description: "",
+        sales_person_id: "",
+      });
     }
-  }, [job, isSheetOpen, form]);
+  }, [job, isSheetOpen, mode, form]);
 
   // =======================
   // Handlers
@@ -177,6 +197,7 @@ const JobFormSheet = ({
         name: values.name,
         job_number: values.job_number,
         project_value: values.project_value || undefined,
+        square_footage: values.square_footage || undefined,
         account_id: values.account_id
           ? parseInt(values.account_id)
           : undefined,
@@ -263,6 +284,20 @@ const JobFormSheet = ({
                         <FormLabel>Project Value</FormLabel>
                         <FormControl>
                           <Input {...field} disabled={isViewMode} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Square Footage */}
+                  <FormField
+                    control={form.control}
+                    name="square_footage"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Square Footage</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={isViewMode} placeholder="Enter square footage" />
                         </FormControl>
                       </FormItem>
                     )}

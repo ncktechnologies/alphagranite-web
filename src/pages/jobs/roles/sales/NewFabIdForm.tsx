@@ -60,8 +60,8 @@ const fabIdFormSchema = z.object({
   totalSqFt: z.string().min(1, 'Total Sq Ft is required'),
   revenue: z.string().min(1, 'Revenue is required')
     .refine((val) => !isNaN(parseFloat(val)), { message: 'Revenue must be a number' }),
-  cost_of_stone: z.string().min(1, 'Cost of Stone is required')
-    .refine((val) => !isNaN(parseFloat(val)), { message: 'Cost of Stone must be a number' }),
+  cost_of_stone: z.string().optional()
+    .refine((val) => val === '' || !isNaN(parseFloat(val)), { message: 'Cost of Stone must be a number' }),
   selectedSalesPerson: z.string().min(1, 'Sales Person is required'),
   notes: z.string().optional(), // Keep as string
   templateNotNeeded: z.boolean(),
@@ -82,6 +82,16 @@ const NewFabIdForm = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const navigate = useNavigate();
+  const firstFieldRef = useRef<HTMLButtonElement>(null);
+
+  // Focus first field when form opens
+  useEffect(() => {
+    if (firstFieldRef.current) {
+      setTimeout(() => {
+        firstFieldRef.current?.focus();
+      }, 100); // Small delay to ensure DOM is ready
+    }
+  }, []);
 
   // API hooks for dropdown data with error handling
   const {
@@ -466,6 +476,7 @@ const NewFabIdForm = () => {
                                 <PopoverTrigger asChild>
                                   <FormControl>
                                     <Button
+                                      ref={firstFieldRef}
                                       variant="outline"
                                       className="w-full justify-between h-[48px] px-4 text-sm border-input shadow-xs shadow-black/5"
                                       disabled={isLoadingFabTypes}

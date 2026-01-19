@@ -104,7 +104,7 @@ export const JobTable = ({
     const [localSelectedRows, setLocalSelectedRows] = useState<string[]>([]);
     const [localPagination, setLocalPagination] = useState<PaginationState>({
         pageIndex: 0,
-        pageSize: 5,
+        pageSize: 25,
     });
     const [localSorting, setLocalSorting] = useState<SortingState>([]);
     const [localSearchQuery, setLocalSearchQuery] = useState('');
