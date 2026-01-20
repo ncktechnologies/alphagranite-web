@@ -360,7 +360,7 @@ export function DrafterDetailsPage() {
   };
 
   // Determine if submission is allowed (after on hold OR after ending normally)
-  const canOpenSubmit = (isOnHold || hasEnded) && totalTime > 0 && (pendingFiles.length > 0 || uploadedFileMetas.length > 0);
+  const canOpenSubmit = totalTime > 0 && (pendingFiles.length > 0 || uploadedFileMetas.length > 0);
 
   // Modified to handle file upload before showing modal
   const handleOpenSubmissionModal = async () => {
@@ -532,9 +532,9 @@ export function DrafterDetailsPage() {
                   )}
 
                   {/* Submit Button - show after on hold OR after ending normally */}
-                  {viewMode === 'activity' && (isOnHold || hasEnded) && (
+                  {viewMode === 'activity'  && (
                     <div className="flex justify-end">
-                      <Can action="update" on="Drafting">
+                      <Can action="create" on="Drafting">
                         <Button
                           onClick={handleOpenSubmissionModal}
                           className="bg-green-600 hover:bg-green-700"
