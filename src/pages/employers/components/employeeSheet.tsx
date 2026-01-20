@@ -11,7 +11,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -49,26 +49,26 @@ interface EmployeeFormSheetProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-const EmployeeFormSheet = ({ 
-  trigger, 
-  employee, 
+const EmployeeFormSheet = ({
+  trigger,
+  employee,
   mode = 'create',
-  onSubmitSuccess, 
-  open: controlledOpen, 
-  onOpenChange 
+  onSubmitSuccess,
+  open: controlledOpen,
+  onOpenChange
 }: EmployeeFormSheetProps) => {
   const [showPopover, setShowPopover] = useState(false);
   const [internalOpen, setInternalOpen] = useState(false);
   const [profileImage, setProfileImage] = useState<File | null>(null);
-  
+
   const isSheetOpen = controlledOpen !== undefined ? controlledOpen : internalOpen;
   const setIsSheetOpen = onOpenChange || setInternalOpen;
-  
+
   const [createEmployee, { isLoading: isCreating }] = useCreateEmployeeMutation();
   const [updateEmployee, { isLoading: isUpdating }] = useUpdateEmployeeMutation();
   const { data: departmentsData, isLoading: departmentsLoading } = useGetDepartmentsQuery();
   const { data: rolesData, isLoading: rolesLoading } = useGetRolesQuery();
-  
+
   const isSubmitting = isCreating || isUpdating;
   const isEditMode = mode === 'edit';
   const isViewMode = mode === 'view';
@@ -92,7 +92,7 @@ const EmployeeFormSheet = ({
     if (isSheetOpen && employee) {
       console.log('Employee data for form:', employee);
       console.log('Available departments:', departmentsData?.items);
-      
+
       // Use employee.department (which contains the ID) instead of employee.department_id
       const resetData = {
         first_name: employee.first_name || "",
@@ -104,7 +104,7 @@ const EmployeeFormSheet = ({
         gender: employee.gender || "",
         role_id: employee.role_id ? String(employee.role_id) : "",
       };
-      
+
       console.log('Form reset data:', resetData);
       form.reset(resetData);
     } else if (isSheetOpen && !employee) {
@@ -146,7 +146,7 @@ const EmployeeFormSheet = ({
       formData.append('department', values.department);
       formData.append('home_address', values.home_address || '');
       formData.append('phone', values.phone || '');
-      
+
       if (values.gender) {
         formData.append('gender', values.gender);
       }
@@ -158,9 +158,9 @@ const EmployeeFormSheet = ({
       }
 
       if (isEditMode && employee) {
-        await updateEmployee({ 
-          id: employee.id, 
-          data: formData 
+        await updateEmployee({
+          id: employee.id,
+          data: formData
         }).unwrap();
         toast.success("Employee updated successfully");
       } else {
@@ -174,7 +174,7 @@ const EmployeeFormSheet = ({
       setIsSheetOpen(false);
       if (onSubmitSuccess) onSubmitSuccess();
     } catch (error: any) {
-      const errorMessage = error?.data?.detail || error?.data?.message || 
+      const errorMessage = error?.data?.detail || error?.data?.message ||
         `Failed to ${isEditMode ? 'update' : 'create'} employee`;
       toast.error(errorMessage);
     }
@@ -206,7 +206,7 @@ const EmployeeFormSheet = ({
               <SheetBody className="flex-1">
                 <ScrollArea className="h-full">
                   <div className="space-y-6">
-                    
+
 
                     {!isViewMode && (
                       <div className="space-y-2">
@@ -225,9 +225,9 @@ const EmployeeFormSheet = ({
                           <FormItem>
                             <FormLabel>First Name *</FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="Enter first name" 
-                                {...field} 
+                              <Input
+                                placeholder="Enter first name"
+                                {...field}
                                 disabled={isViewMode}
                               />
                             </FormControl>
@@ -243,9 +243,9 @@ const EmployeeFormSheet = ({
                           <FormItem>
                             <FormLabel>Last Name *</FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="Enter last name" 
-                                {...field} 
+                              <Input
+                                placeholder="Enter last name"
+                                {...field}
                                 disabled={isViewMode}
                               />
                             </FormControl>
@@ -261,9 +261,9 @@ const EmployeeFormSheet = ({
                           <FormItem>
                             <FormLabel>Email address</FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="Enter email address" 
-                                {...field} 
+                              <Input
+                                placeholder="Enter email address"
+                                {...field}
                                 disabled={isViewMode}
                               />
                             </FormControl>
@@ -278,8 +278,8 @@ const EmployeeFormSheet = ({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Department *</FormLabel>
-                            <Select 
-                              value={field.value} 
+                            <Select
+                              value={field.value}
                               onValueChange={field.onChange}
                               disabled={isViewMode || departmentsLoading}
                             >
@@ -288,8 +288,8 @@ const EmployeeFormSheet = ({
                                   <SelectValue placeholder={
                                     departmentsLoading ? "Loading departments..." : "Select Department"
                                   }>
-                                    {departmentsLoading ? "Loading..." : field.value ? 
-                                      departmentsData?.items?.find(dept => String(dept.id) === field.value)?.name : 
+                                    {departmentsLoading ? "Loading..." : field.value ?
+                                      departmentsData?.items?.find(dept => String(dept.id) === field.value)?.name :
                                       "Select Department"
                                     }
                                   </SelectValue>
@@ -320,9 +320,9 @@ const EmployeeFormSheet = ({
                           <FormItem>
                             <FormLabel>Home address</FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="Enter home address" 
-                                {...field} 
+                              <Input
+                                placeholder="Enter home address"
+                                {...field}
                                 disabled={isViewMode}
                               />
                             </FormControl>
@@ -338,9 +338,9 @@ const EmployeeFormSheet = ({
                           <FormItem>
                             <FormLabel>Phone</FormLabel>
                             <FormControl>
-                              <Input 
-                                placeholder="Your phone number" 
-                                {...field} 
+                              <Input
+                                placeholder="Your phone number"
+                                {...field}
                                 disabled={isViewMode}
                               />
                             </FormControl>
@@ -381,8 +381,8 @@ const EmployeeFormSheet = ({
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel>Role</FormLabel>
-                            <Select 
-                              value={field.value} 
+                            <Select
+                              value={field.value}
                               onValueChange={field.onChange}
                               disabled={isViewMode || rolesLoading}
                             >
@@ -412,6 +412,8 @@ const EmployeeFormSheet = ({
                       />
                     </div>
                   </div>
+                  <ScrollBar orientation="vertical" />
+
                 </ScrollArea>
               </SheetBody>
 

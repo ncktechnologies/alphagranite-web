@@ -378,16 +378,7 @@ export const CutListTableWithCalculations = ({
             ),
             cell: ({ row }) => <span className="text-sm">{row.original.fab_id}</span>,
         },
-        {
-            id: "fab_id_0",
-            accessorKey: "fab_id_0",
-            header: ({ column }) => (
-                <DataGridColumnHeader title="SECOND FAB ID" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm">{row.original.fab_id_0 || 'N/A'}</span>
-            ),
-        },
+       
         {
             id: "job_name",
             accessorKey: "job_name",

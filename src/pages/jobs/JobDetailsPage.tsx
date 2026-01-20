@@ -556,8 +556,9 @@ export function JobDetailsPage() {
         }}
         title="Delete File"
         description={`Are you sure you want to delete "${fileToDelete?.name}"? This action cannot be undone.`}
+        centered={true}
       >
-        <div className="flex justify-end space-x-3 mt-6 pb-3">
+        <div className="flex justify-end space-x-3 my-3">
           <Button
             variant="outline"
             onClick={() => {
