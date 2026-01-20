@@ -8,19 +8,24 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { useUpdateDraftingMutation, useAddFilesToDraftingMutation } from '@/store/api/job';
+import { useUpdateDraftingMutation, useAddFilesToDraftingMutation, useManageDraftingSessionMutation } from '@/store/api/job';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { Can } from '@/components/permission';
 
+// Helper function to format timestamp without 'Z'
+const formatTimestamp = (date: Date) => {
+  return date.toISOString().slice(0, -1);
+};
+
 const submissionSchema = z.object({
   totalSqFt: z.string().optional(),
   numberOfPieces: z.string().optional(),
   draftNotes: z.string().optional(),
-  mentions: z.string().optional(), // Single string for multiple mentions (comma-separated)
-  workPercentage: z.string().optional(), // Percentage of work done
+  mentions: z.string().optional(),
+  workPercentage: z.string().optional(),
 });
 
 type SubmissionData = z.infer<typeof submissionSchema>;
@@ -29,35 +34,57 @@ interface UploadedFile {
   id: string | number;
   name: string;
   url?: string;
-  file?: File; // Add the actual File object
+  file?: File;
 }
 
 interface SubmissionModalProps {
   open: boolean;
   onClose: (success?: boolean) => void;
-  drafting: any; // the existing drafting response object (drafting.data must exist)
-  uploadedFiles: UploadedFile[]; // uploaded file meta (must contain .id and .file)
-  draftStart?: Date | null; // NOTE: We don't use session timing data here anymore
-  draftEnd?: Date | null;   // NOTE: We don't use session timing data here anymore
-  totalTime?: number; // NOTE: We don't use session timing data here anymore
-  fabId: number; // Add fabId prop
-  userId: number; // Add userId prop for drafter ID
-  fabData?: any; // Add fabData prop to get scheduling information
+  drafting: any;
+  uploadedFiles: UploadedFile[];
+  fabId: number;
+  userId: number;
+  fabData?: any;
 }
 
-export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftStart, draftEnd, totalTime = 0, fabId, userId, fabData }: SubmissionModalProps) => {
+export const SubmissionModal = ({ 
+  open, 
+  onClose, 
+  drafting, 
+  uploadedFiles, 
+  fabId, 
+  userId, 
+  fabData 
+}: SubmissionModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
+  const [sessionData, setSessionData] = useState<any>(null);
 
   const [updateDrafting] = useUpdateDraftingMutation();
   const [addFilesToDrafting] = useAddFilesToDraftingMutation();
+  const [manageDraftingSession] = useManageDraftingSessionMutation();
 
-  const { data: employeesData, isLoading, isError, error } = useGetSalesPersonsQuery();
+  const { data: employeesData } = useGetSalesPersonsQuery();
+  const salesPersons = Array.isArray(employeesData) ? employeesData : [];
 
-  // Calculate total hours from tracked time instead of date difference
-  const calculateTotalHoursFromTrackedTime = (trackedSeconds: number): number => {
-    const hours = trackedSeconds / 3600;
-    return parseFloat(hours.toFixed(2));
+  // Function to extract session timing data
+  const extractSessionData = (sessionResponse: any) => {
+    if (!sessionResponse?.data) return null;
+    
+    const { notes, total_time_spent, current_session_start_time, last_action_time } = sessionResponse.data;
+    
+    // Find start and end dates from notes
+    const startNote = notes.find((note: any) => note.action === 'start');
+    const endNote = notes.find((note: any) => note.action === 'end');
+    
+    return {
+      drafter_start_date: startNote?.timestamp || current_session_start_time,
+      drafter_end_date: endNote?.timestamp || last_action_time,
+      total_hours_drafted: total_time_spent || 0,
+      total_time_spent: total_time_spent || 0,
+      work_percentage_done: sessionResponse.data.work_percentage_done || 0,
+      cumulative_sqft_drafted: sessionResponse.data.cumulative_sqft_drafted || "0",
+    };
   };
 
   const form = useForm<SubmissionData>({
@@ -66,17 +93,46 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
       totalSqFt: '',
       numberOfPieces: '',
       draftNotes: '',
-      mentions: '', // Initialize with empty string
-      workPercentage: '', // Initialize with empty string for percentage
+      mentions: '',
+      workPercentage: '',
     }
   });
 
-  // Updated handleFinalSubmit function - REMOVED session timing data
+  // End the session and get session data
+  const endDraftingSession = async () => {
+    if (!fabId) {
+      toast.error('Fab ID is required to end session');
+      return null;
+    }
+
+    try {
+      const sessionResponse = await manageDraftingSession({
+        fab_id: fabId,
+        data: {
+          action: 'end',
+          drafter_id: userId,
+          timestamp: formatTimestamp(new Date()),
+          note: 'Draft submitted and session ended'
+        }
+      }).unwrap();
+
+      console.log('Session ended successfully:', sessionResponse);
+      
+      // Extract session data for later use
+      const extractedData = extractSessionData(sessionResponse);
+      setSessionData(extractedData);
+      
+      return sessionResponse;
+    } catch (error: any) {
+      console.error('Failed to end drafting session:', error);
+      toast.error(error?.data?.message || 'Failed to end drafting session');
+      return null;
+    }
+  };
+
   const handleFinalSubmit = async (values: SubmissionData) => {
-    // Check if we have a drafting ID or need to create one
     let draftingId = drafting?.id ?? drafting?.data?.id;
     
-    // If no drafting exists, show error since drafting should already exist
     if (!draftingId) {
       toast.error('Drafting record does not exist. Please assign drafter first.');
       return;
@@ -87,33 +143,36 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
       return;
     }
 
-    console.log('Submitting draft with ID:', draftingId, 'Files:', uploadedFiles);
-
     setIsSubmitting(true);
+
     try {
-      // Filter only files that haven't been uploaded yet (no ID or temporary ID)
+      // Step 1: First end the session and get session data
+      const sessionResponse = await endDraftingSession();
+      
+      if (!sessionResponse) {
+        throw new Error('Failed to end drafting session');
+      }
+
+      // Extract session timing data
+      const sessionTimingData = extractSessionData(sessionResponse);
+      
+      // Step 2: Upload files if any
+      let fileIds: number[] = [];
       const filesToUpload = uploadedFiles.filter(f => 
-        !f.id || // No ID at all
-        typeof f.id === 'string' && f.id.includes('temp') || // Temporary ID
-        f.file instanceof File // Has File object (not yet uploaded)
+        !f.id || 
+        typeof f.id === 'string' && f.id.includes('temp') || 
+        f.file instanceof File
       );
 
-      console.log('Files to upload:', filesToUpload);
-
-      let fileIds: number[] = [];
-      
       if (filesToUpload.length > 0) {
         const fileObjects = filesToUpload.map(f => f.file as File);
         
         try {
-          console.log('Uploading files:', fileObjects);
           const response = await addFilesToDrafting({
             drafting_id: draftingId,
             files: fileObjects
           }).unwrap();
-          console.log('File upload response:', response);
 
-          // Extract file IDs from the response
           if (response && response.data && Array.isArray(response.data)) {
             fileIds = response.data.map((file: any) => file.id);
           }
@@ -124,23 +183,43 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
         }
       }
 
-      // Update drafting with ONLY final submission data (NO session timing data)
+      // Step 3: Update drafting with form data AND session timing data
       const payload: any = {
-        // REMOVED: drafter_start_date: draftStart ? draftStart.toISOString() : null,
-        // REMOVED: drafter_end_date: draftEnd ? draftEnd.toISOString() : null,
-        total_sqft_drafted: values.totalSqFt || null,
+        // Session timing data from ended session
+        drafter_start_date: sessionTimingData?.drafter_start_date || null,
+        drafter_end_date: sessionTimingData?.drafter_end_date || null,
+        total_hours_drafted: sessionTimingData?.total_hours_drafted || null,
+        
+        // Form data
+        total_sqft_drafted: values.totalSqFt || sessionTimingData?.cumulative_sqft_drafted || null,
         no_of_piece_drafted: values.numberOfPieces || null,
-        // REMOVED: total_hours_drafted: calculateTotalHoursFromTrackedTime(totalTime), // Use tracked time
         draft_note: values.draftNotes || null,
         mentions: values.mentions || null,
-        work_percentage_done: values.workPercentage ? parseInt(values.workPercentage as string) || null : null, // Add percentage to payload
+        
+        // Work percentage - prioritize form input, fallback to session data
+        work_percentage_done: values.workPercentage 
+          ? parseInt(values.workPercentage as string) 
+          : sessionTimingData?.work_percentage_done || null,
+        
+        // Status flags
         is_completed: true,
         status_id: 1
       };
 
+      // If we have file IDs, update the file_ids field
+      if (fileIds.length > 0) {
+        const existingFileIds = drafting?.data?.file_ids 
+          ? drafting.data.file_ids.split(',').filter((id: string) => id.trim())
+          : [];
+        const allFileIds = [...existingFileIds, ...fileIds];
+        payload.file_ids = allFileIds.join(',');
+      }
+
       console.log('Updating draft with payload:', payload);
-      await updateDrafting({ id: draftingId, data: payload }).unwrap();
-      console.log('Draft update successful');
+      await updateDrafting({ 
+        id: draftingId, 
+        data: payload 
+      }).unwrap();
 
       toast.success('Draft submitted successfully');
       onClose(true);
@@ -152,7 +231,6 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
       setIsSubmitting(false);
     }
   };
-  const salesPersons = Array.isArray(employeesData) ? employeesData : [];
 
   return (
     <Dialog open={open} onOpenChange={() => onClose(false)}>
@@ -161,12 +239,6 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
           <div className="border-b">
             <DialogTitle className="text-[15px] font-semibold py-2">Submit Draft</DialogTitle>
           </div>
-          {/* <div className="space-y-1 mt-2">
-            <p className="font-semibold text-black leading-4">
-              {jobDetails.fabId}
-            </p>
-            <p className="text-sm text-black">{jobDetails.area}</p>
-          </div> */}
         </DialogHeader>
 
         <Form {...form}>
@@ -178,7 +250,7 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
                 <FormItem>
                   <FormLabel>Total Sq Ft</FormLabel>
                   <FormControl>
-                    <Input placeholder="(1)" {...field} />
+                    <Input placeholder="Enter total square feet" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -192,7 +264,7 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
                 <FormItem>
                   <FormLabel>No. of pieces</FormLabel>
                   <FormControl>
-                    <Input placeholder="5" {...field} />
+                    <Input placeholder="Enter number of pieces" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -212,8 +284,6 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
               )}
             />
 
-        
-            {/* Assign to Sales */}
             <FormField
               control={form.control}
               name="mentions"
@@ -239,7 +309,6 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
               )}
             />
             
-            {/* Work Percentage Done */}
             <FormField
               control={form.control}
               name="workPercentage"
@@ -264,7 +333,7 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
                 </FormItem>
               )}
             />
-            {/* Confirmation Checkbox */}
+
             <div className="flex flex-row items-center space-x-3 mt-4">
               <Checkbox
                 checked={isConfirmed}

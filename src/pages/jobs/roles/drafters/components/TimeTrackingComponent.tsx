@@ -17,6 +17,9 @@ interface TimeTrackingComponentProps {
   isDrafting: boolean;
   isPaused: boolean;
   totalTime: number;
+  draftStart?: Date | null; // Add server session data
+  draftEnd?: Date | null;
+  sessionData?: any; // Add full session data for initialization
 
   onStart: (startDate: Date) => void | Promise<void>; // Allow async handler
   onPause: (data?: { note?: string; sqft_drafted?: string }) => void | Promise<void>; // Add sqft parameter
@@ -34,6 +37,9 @@ export const TimeTrackingComponent = ({
   isDrafting,
   isPaused,
   totalTime,
+  draftStart,
+  draftEnd,
+  sessionData,
   onStart,
   onPause,
   onResume,
@@ -62,6 +68,38 @@ export const TimeTrackingComponent = ({
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [showOnHoldModal, setShowOnHoldModal] = useState(false);
+
+  // Initialize component state from server session data
+  useEffect(() => {
+    if (sessionData?.data) {
+      const session = sessionData.data;
+
+      // Set start time from server data
+      if (session.current_session_start_time) {
+        setStartTime(new Date(session.current_session_start_time));
+      } else if (draftStart) {
+        setStartTime(draftStart);
+      }
+
+      // Set end time if session is ended
+      if (session.status === 'ended' && session.last_action_time) {
+        setEndTime(new Date(session.last_action_time));
+      } else if (draftEnd) {
+        setEndTime(draftEnd);
+      }
+
+      // Set paused time if session is paused
+      if (session.status === 'paused' && session.current_pause_start_time) {
+        setPausedTime(new Date(session.current_pause_start_time));
+      }
+    } else if (draftStart) {
+      // Fallback to prop data
+      setStartTime(draftStart);
+      if (draftEnd) {
+        setEndTime(draftEnd);
+      }
+    }
+  }, [sessionData, draftStart, draftEnd]);
 
   // Tick every second
   useEffect(() => {
@@ -309,7 +347,14 @@ export const TimeTrackingComponent = ({
 
         <div className="flex gap-2">
 
-          {!isDrafting && !hasEnded ? (
+          {isPaused && !hasEnded ? (
+            <Can action="update" on="Drafting">
+              <Button onClick={handleResume} variant="inverse" className="bg-[#4B545D] text-white">
+                <Play className="w-4 h-4 mr-2" />
+                Resume
+              </Button>
+            </Can>
+          ) : !isDrafting && !hasEnded && !isPaused ? (
             <Can action="update" on="Drafting">
               <Button onClick={handleStart} disabled={isStarting}>
                 <Play className="w-4 h-4 mr-2" />

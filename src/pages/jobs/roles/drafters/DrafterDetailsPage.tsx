@@ -1,5 +1,5 @@
 // DrafterDetailsPageRefactor.tsx - FIXED VERSION
-import React, { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { Container } from '@/components/common/container';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
-import { useGetFabByIdQuery, useGetDraftingByFabIdQuery, useAddFilesToDraftingMutation, useDeleteFileFromDraftingMutation, useManageDraftingSessionMutation, useGetCurrentDraftingSessionQuery } from '@/store/api/job';
+import { useGetFabByIdQuery, useGetDraftingByFabIdQuery, useManageDraftingSessionMutation, useGetCurrentDraftingSessionQuery } from '@/store/api/job';
 import { TimeTrackingComponent } from './components/TimeTrackingComponent';
 import { UploadDocuments } from './components/fileUploads';
 import { FileViewer } from './components/FileViewer';
@@ -16,13 +16,12 @@ import { useSelector } from 'react-redux';
 import { FileWithPreview } from '@/hooks/use-file-upload';
 import { UploadedFileMeta } from '@/types/uploads';
 import { X } from 'lucide-react';
-import { Documents } from '@/pages/shop/components/files';
 import { Can } from '@/components/permission';
 import { useTabClosingWarning } from '@/hooks';
 
-// Helper function to filter fab notes by stage
-const filterNotesByStage = (fabNotes: any[], stage: string) => {
-  return fabNotes.filter(note => note.stage === stage);
+// Helper function to format timestamp without 'Z'
+const formatTimestamp = (date: Date) => {
+  return date.toISOString().slice(0, -1);
 };
 
 // Helper function to get all fab notes (unfiltered)
@@ -45,9 +44,7 @@ export function DrafterDetailsPage() {
   // Get current session state
   const { data: sessionData, isLoading: isSessionLoading, refetch: refetchSession } = useGetCurrentDraftingSessionQuery(fabId, { skip: !fabId });
   
-  const [addFilesToDrafting] = useAddFilesToDraftingMutation();
-  const [deleteFileFromDrafting] = useDeleteFileFromDraftingMutation();
-  const [manageDraftingSession, { isLoading: isManagingSession }] = useManageDraftingSessionMutation();
+  const [manageDraftingSession] = useManageDraftingSessionMutation();
 
   // Use draft_data from FAB response for displaying existing files
   const draftData = fabData?.draft_data;
@@ -59,14 +56,12 @@ export function DrafterDetailsPage() {
   
   // Session status derived from sessionData
   const [sessionStatus, setSessionStatus] = useState<'idle' | 'drafting' | 'paused' | 'on_hold' | 'ended'>('idle');
-  const [sessionId, setSessionId] = useState<number | null>(null);
 
   // File state
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploadedFileMetas, setUploadedFileMetas] = useState<UploadedFileMeta[]>([]);
   const [activeFile, setActiveFile] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
-  const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
 
   // Initialize session state from server data
@@ -74,24 +69,25 @@ export function DrafterDetailsPage() {
     if (sessionData && !isSessionLoading) {
       const session = sessionData?.data;
       if (session) {
-        setSessionId(session.id);
         setSessionStatus(session.status || 'idle');
-        
+
         if (session.total_time_spent) {
           setTotalTime(session.total_time_spent);
         }
-        
-        if (session.start_time) {
-          setDraftStart(new Date(session.start_time));
+
+        // Map API field names to local state
+        if (session.current_session_start_time) {
+          setDraftStart(new Date(session.current_session_start_time));
         }
-        
-        if (session.end_time) {
-          setDraftEnd(new Date(session.end_time));
+
+        if (session.last_action_time && (session.status === 'ended' || session.status === 'on_hold')) {
+          setDraftEnd(new Date(session.last_action_time));
+        } else {
+          setDraftEnd(null); // Clear end time for active/paused sessions
         }
       } else {
         // No active session found
         setSessionStatus('idle');
-        setSessionId(null);
         setTotalTime(0);
         setDraftStart(null);
         setDraftEnd(null);
@@ -109,7 +105,7 @@ export function DrafterDetailsPage() {
   useTabClosingWarning({
     isActive: isDrafting && !isPaused,
     warningMessage: '⚠️ ACTIVE DRAFTING SESSION ⚠️\n\nYou have an active drafting session in progress. Closing this tab will pause your session and may result in lost work.\n\nPlease pause your session properly before leaving.',
-    onBeforeUnload: async (event) => {
+    onBeforeUnload: async () => {
       // Auto-pause the session when tab is closing
       if (isDrafting && fabId && currentEmployeeId) {
         try {
@@ -118,12 +114,10 @@ export function DrafterDetailsPage() {
             data: {
               action: 'pause',
               drafter_id: currentEmployeeId,
-              timestamp: new Date().toISOString(),
-              total_time_spent: totalTime,
+              timestamp: formatTimestamp(new Date()),
               note: 'Auto-paused due to tab closing'
             }
           }).unwrap();
-          console.log('Auto-paused drafting session due to tab closing');
         } catch (error) {
           console.error('Failed to auto-pause session:', error);
         }
@@ -134,13 +128,12 @@ export function DrafterDetailsPage() {
   // Session management functions
   const createOrStartSession = async (action: 'start' | 'resume', startDate: Date, note?: string, sqftDrafted?: string) => {
     try {
-      const response = await manageDraftingSession({
+      await manageDraftingSession({
         fab_id: fabId,
         data: {
           action: action,
           drafter_id: currentEmployeeId,
-          timestamp: startDate.toISOString(),
-          total_time_spent: action === 'start' ? 0 : totalTime,
+          timestamp: formatTimestamp(startDate),
           note: note,
           sqft_drafted: sqftDrafted
         }
@@ -149,10 +142,6 @@ export function DrafterDetailsPage() {
       setSessionStatus('drafting');
       setDraftStart(startDate);
       setDraftEnd(null);
-      
-      if (response?.data?.id) {
-        setSessionId(response.data.id);
-      }
       
       await refetchSession();
       toast.success(`Session ${action === 'start' ? 'started' : 'resumed'} successfully`);
@@ -170,8 +159,7 @@ export function DrafterDetailsPage() {
         data: {
           action: action,
           drafter_id: currentEmployeeId,
-          timestamp: timestamp.toISOString(),
-          total_time_spent: totalTime,
+          timestamp: formatTimestamp(timestamp),
           note: note,
           sqft_drafted: sqftDrafted
         }
@@ -233,8 +221,8 @@ export function DrafterDetailsPage() {
   // Show files section if there are existing files OR if user has uploaded files
   const shouldShowFilesSection = (draftData && (draftData.files?.length ?? 0) > 0) || uploadedFileMetas.length > 0;
   
-  // Show upload section when timer is running OR when files have been uploaded (to maintain visibility after ending)
-  const shouldShowUploadSection = isDrafting || uploadedFileMetas.length > 0;
+  // Show upload section when timer is running, paused, OR when files have been uploaded (to maintain visibility after ending)
+  const shouldShowUploadSection = (isDrafting || isPaused) || uploadedFileMetas.length > 0;
 
   // Handle files change - accumulate unique files only
   const handleFilesChange = useCallback(async (files: FileWithPreview[]) => {
@@ -280,114 +268,40 @@ export function DrafterDetailsPage() {
 
     console.log('Added unique pending files:', uniqueFileObjects.length);
 
-  }, [pendingFiles]); // Dependencies include pendingFiles for duplicate checking
+  }, [pendingFiles]);
 
-  // Upload files when needed (like when opening submission modal)
-  const uploadPendingFiles = useCallback(async () => {
-    if (pendingFiles.length === 0 || !draftingData?.id) {
-      return [];
-    }
-
-    try {
-      setIsUploadingDocuments(true);
-      console.log('Uploading pending files:', pendingFiles);
-
-      const response = await addFilesToDrafting({
-        drafting_id: draftingData.id,
-        files: pendingFiles
-      }).unwrap();
-
-      console.log('File upload response:', response);
-
-      let uploadedIds: number[] = [];
-      if (response?.data && Array.isArray(response.data)) {
-        uploadedIds = response.data.map((file: any) => file.id);
-
-        // Update file metas with real IDs
-        const updatedMetas = response.data.map((fileData: any) => {
-          // Find the corresponding pending file by name
-          const pendingFile = pendingFiles.find(f => f.name === fileData.name);
-          return {
-            id: fileData.id,
-            name: fileData.name || (pendingFile ? pendingFile.name : `File_${fileData.id}`),
-            size: fileData.size || (pendingFile ? pendingFile.size : 0),
-            type: fileData.type || (pendingFile ? pendingFile.type : 'application/octet-stream'),
-          };
-        });
-
-        setUploadedFileMetas(updatedMetas);
-      }
-
-      // Clear pending files after successful upload
-      setPendingFiles([]);
-      return uploadedIds;
-
-    } catch (error) {
-      console.error('Failed to upload files:', error);
-      toast.error('Failed to upload files');
-      throw error;
-    } finally {
-      setIsUploadingDocuments(false);
-    }
-  }, [pendingFiles, draftingData, addFilesToDrafting]);
+  // File upload now handled only in submission modal
 
   const handleFileClick = (file: any) => {
-    setActiveFile(file);
-    setViewMode('file');
+    // For now, just log the file click - file viewing is handled in submission modal
+    console.log('File clicked:', file);
   };
 
-  // Handle file deletion with permission check
-  const handleDeleteFile = async (fileId: string) => {
-    if (!draftData?.id) {
-      toast.error('Drafting data not available');
-      return;
-    }
 
-    try {
-      await deleteFileFromDrafting({
-        drafting_id: draftData.id,
-        file_id: fileId
-      }).unwrap();
-
-      toast.success('File deleted successfully');
-      // Refetch to update the UI
-      await refetchFab();
-      await refetchDrafting();
-    } catch (error) {
-      console.error('Failed to delete file:', error);
-      toast.error('Failed to delete file');
-    }
-  };
 
   // Determine if submission is allowed (after on hold OR after ending normally)
   const canOpenSubmit = totalTime > 0 && (pendingFiles.length > 0 || uploadedFileMetas.length > 0);
 
-  // Modified to handle file upload before showing modal
+  // Open submission modal directly (file upload happens in modal)
   const handleOpenSubmissionModal = async () => {
-    try {
-      // Upload any pending files first
-      if (pendingFiles.length > 0) {
-        await uploadPendingFiles();
-      }
-      setShowSubmissionModal(true);
-    } catch (error) {
-      console.error('Failed to prepare files for submission:', error);
-      // Don't open modal if file upload fails
-    }
+    setShowSubmissionModal(true);
   };
 
-  const onSubmitModal = async (payload: any) => {
+  const onSubmitModal = async () => {
     try {
+      // Files are already uploaded in the submission modal
       await refetchDrafting();
       await refetchFab(); // Also refetch FAB data to get updated draft_data
+
       setShowSubmissionModal(false);
+      // Clear all local state after successful submission
       setPendingFiles([]);
       setUploadedFileMetas([]);
       setTotalTime(0);
       setDraftStart(null);
       setDraftEnd(null);
       setSessionStatus('idle');
-      setSessionId(null);
+
       navigate('/job/draft');
     } catch (err) {
       console.error(err);
@@ -501,6 +415,9 @@ export function DrafterDetailsPage() {
                     isDrafting={isDrafting}
                     isPaused={isPaused}
                     totalTime={totalTime}
+                    draftStart={draftStart}
+                    draftEnd={draftEnd}
+                    sessionData={sessionData}
                     onStart={handleStart}
                     onPause={handlePause}
                     onResume={handleResume}
@@ -523,7 +440,7 @@ export function DrafterDetailsPage() {
                       disabled={hasEnded || isOnHold}
                     />
                   )}
-                  
+
                   {/* Show message when timer hasn't started yet */}
                   {!shouldShowFilesSection && !isDrafting && sessionStatus === 'idle' && (
                     <div className="text-center py-4 text-muted-foreground">
@@ -538,11 +455,30 @@ export function DrafterDetailsPage() {
                         <Button
                           onClick={handleOpenSubmissionModal}
                           className="bg-green-600 hover:bg-green-700"
-                          disabled={!canOpenSubmit || isUploadingDocuments}
+                          disabled={!canOpenSubmit}
                         >
-                          {isUploadingDocuments ? 'Uploading...' : 'Submit draft'}
+                          Submit draft
                         </Button>
                       </Can>
+                    </div>
+                  )}
+
+                  <Separator className="my-3" />
+
+                  {/* Only show upload if timer has started or there are uploaded files */}
+                  {/* {shouldShowUploadSection && (
+                    <UploadDocuments
+                      onFileClick={handleFileClick}
+                      onFilesChange={handleFilesChange}
+                      simulateUpload={false}
+                      disabled={hasEnded || isOnHold}
+                    />
+                  )} */}
+
+                  {/* Show message when timer hasn't started yet */}
+                  {!shouldShowFilesSection && !isDrafting && sessionStatus === 'idle' && (
+                    <div className="text-center py-4 text-muted-foreground">
+                      Start the timer to enable file uploads
                     </div>
                   )}
                 </CardContent>
@@ -556,7 +492,7 @@ export function DrafterDetailsPage() {
             open={showSubmissionModal}
             onClose={(success?: boolean) => {
               setShowSubmissionModal(false);
-              if (success) onSubmitModal({});
+              if (success) onSubmitModal();
             }}
             drafting={draftingData}
             uploadedFiles={filesForSubmission}
