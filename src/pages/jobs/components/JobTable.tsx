@@ -1153,6 +1153,36 @@ export const JobTable = ({
             size: 180,
         },
         
+        // Revision Notes Column
+        {
+            id: 'revision_notes',
+            header: ({ column }) => (
+                <DataGridColumnHeader title="Revision Notes" column={column} />
+            ),
+            cell: ({ row }) => {
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
+                               Array.isArray(row.original.notes) ? row.original.notes : [];
+                const revisionNotes = fabNotes.filter(note => 
+                    note.stage === 'revision' || note.stage === 'revisions'
+                );
+                
+                if (revisionNotes.length === 0) {
+                    return <span className="text-xs text-gray-500 italic">No notes</span>;
+                }
+                
+                const latestNote = revisionNotes[0];
+                return (
+                    <div className="text-xs max-w-xs" title={latestNote.note}>
+                        <div className="font-medium text-purple-700 truncate">R:</div>
+                        <div className="truncate">{latestNote.note}</div>
+                        <div className="text-gray-500 text-xs">by {latestNote.created_by_name || 'Unknown'}</div>
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 180,
+        },
+        
         // File Column
         {
             id: 'file',
