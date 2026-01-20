@@ -294,6 +294,7 @@ export interface TemplatingSchedule {
     schedule_start_date: string;
     schedule_due_date: string;
     total_sqft: string;
+    revenue?: number;
     notes?: string[];
     created_by?: number;
 }

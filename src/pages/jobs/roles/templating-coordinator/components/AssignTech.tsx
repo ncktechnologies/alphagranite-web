@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -18,6 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { LoaderCircle, Check } from "lucide-react";
@@ -36,6 +37,8 @@ const assignTechnicianSchema = z.object({
     .string()
     .min(1, { message: "date is required." })
     .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Date must be in YYYY-MM-DD format." }),
+  revenue: z.string().optional()
+    .refine((val) => val === "" || !isNaN(parseFloat(val)), { message: "Revenue must be a valid number" }),
   notes: z.string().optional(),
 });
 
@@ -61,8 +64,16 @@ export function AssignTechnicianModal({
     resolver: zodResolver(assignTechnicianSchema),
     defaultValues: {
       technician: "",
+      revenue: "",
     },
   });
+
+  // Auto-populate revenue from FAB data when available
+  useEffect(() => {
+    if (fabData?.revenue && !form.getValues('revenue')) {
+      form.setValue('revenue', String(fabData.revenue));
+    }
+  }, [fabData, form]);
 
   const onSubmit = async (values: AssignTechnicianData) => {
     setIsSubmitting(true);
@@ -94,6 +105,7 @@ export function AssignTechnicianModal({
           schedule_start_date: values.date ? new Date(values.date).toISOString().split('T')[0] : "",
           schedule_due_date: values.date ? new Date(new Date(values.date).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : "", // 7 days after start
           total_sqft: "0", // This would be updated with actual value
+          revenue: values.revenue ? parseFloat(values.revenue) : undefined,
           notes: [values.notes || ""],
         }).unwrap();
 
@@ -241,6 +253,25 @@ export function AssignTechnicianModal({
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="revenue"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Revenue</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="Enter revenue amount"
+                      {...field}
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
