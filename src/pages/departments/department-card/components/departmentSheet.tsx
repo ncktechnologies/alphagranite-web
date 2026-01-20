@@ -111,14 +111,14 @@ const DepartmentFormSheet = ({ trigger, department, onSubmitSuccess, open: contr
     <>
       <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetTrigger asChild>{trigger}</SheetTrigger>
-        <SheetContent className="gap-0 sm:w-[500px] sm:max-w-none inset-5 start-auto h-auto rounded-lg p-4">
+        <SheetContent className="gap-0 sm:w-[500px] sm:max-w-none inset-5 start-auto h-[calc(100vh-2rem)] rounded-lg p-4">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="h-full flex flex-col">
               <SheetHeader className="mb-3 border-border pb-3.5 border-b">
                 <SheetTitle>{isEditMode ? "Edit department" : "Create new department"}</SheetTitle>
               </SheetHeader>
 
-              <SheetBody className="flex-1">
+              <SheetBody className="flex-1 overflow-hidden">
                 <ScrollArea className="h-full">
                   <div className="space-y-6">
                     <FormField

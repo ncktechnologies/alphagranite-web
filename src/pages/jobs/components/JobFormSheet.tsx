@@ -230,7 +230,7 @@ const JobFormSheet = ({
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
       <SheetTrigger asChild>{trigger}</SheetTrigger>
 
-      <SheetContent className="sm:w-[500px] rounded-lg p-4">
+      <SheetContent className="sm:w-[500px] rounded-lg p-4 h-[calc(100vh-2rem)]">
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
@@ -242,7 +242,7 @@ const JobFormSheet = ({
               </SheetTitle>
             </SheetHeader>
 
-            <SheetBody className="flex-1">
+            <SheetBody className="flex-1 overflow-hidden">
               <ScrollArea className="h-full">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Job Name */}
