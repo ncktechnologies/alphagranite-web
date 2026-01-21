@@ -303,11 +303,7 @@ export const JobsSection = () => {
                 Edit
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <Can action="delete" on="jobs">
-                <DropdownMenuItem onClick={() => handleDelete(row.original)} className="text-red-600 hover:bg-red-50">
-                  Delete
-                </DropdownMenuItem>
-              </Can>
+              
             </DropdownMenuContent>
           </DropdownMenu>
         ),
