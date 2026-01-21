@@ -44,7 +44,7 @@ function DataGridColumnHeader<TData, TValue>({
   icon,
   className,
   filter,
-  visibility = false,
+  visibility = true,
 }: DataGridColumnHeaderProps<TData, TValue>) {
   const { isLoading, table, props, recordCount } = useDataGrid();
 

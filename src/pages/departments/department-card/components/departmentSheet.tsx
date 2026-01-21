@@ -118,9 +118,9 @@ const DepartmentFormSheet = ({ trigger, department, onSubmitSuccess, open: contr
                 <SheetTitle>{isEditMode ? "Edit department" : "Create new department"}</SheetTitle>
               </SheetHeader>
 
-              <SheetBody className="flex-1 overflow-hidden">
-                <ScrollArea className="h-full">
-                  <div className="space-y-6">
+              <SheetBody className="flex-1 overflow-y-auto">
+                {/* Removed ScrollArea to fix tab focus issue - using native overflow instead */}
+                <div className="space-y-6">
                     <FormField
                       control={form.control}
                       name="name"
@@ -149,7 +149,6 @@ const DepartmentFormSheet = ({ trigger, department, onSubmitSuccess, open: contr
                       )}
                     />
                   </div>
-                </ScrollArea>
               </SheetBody>
 
               <SheetFooter className="py-3.5 px-5 border-border flex justify-end gap-3 mt-auto">

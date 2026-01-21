@@ -203,9 +203,9 @@ const EmployeeFormSheet = ({
                 <SheetTitle>{getTitle()}</SheetTitle>
               </SheetHeader>
 
-              <SheetBody className="flex-1 overflow-hidden">
-                <ScrollArea className="h-full">
-                  <div className="space-y-6">
+              <SheetBody className="flex-1 overflow-y-auto">
+                {/* Removed ScrollArea to fix tab focus issue - using native overflow instead */}
+                <div className="space-y-6">
 
 
                     {!isViewMode && (
@@ -412,9 +412,7 @@ const EmployeeFormSheet = ({
                       />
                     </div>
                   </div>
-                  <ScrollBar orientation="vertical" />
-
-                </ScrollArea>
+                
               </SheetBody>
 
               <SheetFooter className="py-3.5 px-5 border-border flex justify-end gap-3 mt-auto">

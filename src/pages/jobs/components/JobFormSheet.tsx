@@ -44,7 +44,7 @@ const jobSchema = z.object({
   name: z.string().min(1, "Job name is required"),
   job_number: z.string().min(1, "Job number is required"),
   project_value: z.string().optional(),
-  square_footage: z.string().optional(),
+  sq_ft: z.string().optional(),
   account_id: z.string().optional(),
   description: z.string().optional(),
   sales_person_id: z.string().optional(),
@@ -56,7 +56,7 @@ interface JobFormData {
   name: string;
   job_number: string;
   project_value: string;
-  square_footage: string;
+  sq_ft: string;
   account_id?: number;
 }
 
@@ -130,7 +130,7 @@ const JobFormSheet = ({
       name: "",
       job_number: "",
       project_value: "",
-      square_footage: "",
+      sq_ft: "",
       account_id: "",
       description: "",
       sales_person_id: "",
@@ -143,7 +143,7 @@ const JobFormSheet = ({
         name: job.name || "",
         job_number: job.job_number || "",
         project_value: job.project_value || "",
-        square_footage: (job as any).square_footage || "",
+        sq_ft: (job as any).sq_ft || "",
         account_id: job.account_id ? String(job.account_id) : "",
         description: (job as any).description || "",
         sales_person_id: (job as any).sales_person_id
@@ -156,7 +156,7 @@ const JobFormSheet = ({
         name: "",
         job_number: "",
         project_value: "",
-        square_footage: "",
+        sq_ft: "",
         account_id: "",
         description: "",
         sales_person_id: "",
@@ -197,7 +197,7 @@ const JobFormSheet = ({
         name: values.name,
         job_number: values.job_number,
         project_value: values.project_value || undefined,
-        square_footage: values.square_footage || undefined,
+        sq_ft: values.sq_ft || undefined,
         account_id: values.account_id
           ? parseInt(values.account_id)
           : undefined,
@@ -242,9 +242,9 @@ const JobFormSheet = ({
               </SheetTitle>
             </SheetHeader>
 
-            <SheetBody className="flex-1 overflow-hidden">
-              <ScrollArea className="h-full">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <SheetBody className="flex-1 overflow-y-auto">
+              {/* Removed ScrollArea to fix tab focus issue - using native overflow instead */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Job Name */}
                   <FormField
                     control={form.control}
@@ -292,7 +292,7 @@ const JobFormSheet = ({
                   {/* Square Footage */}
                   <FormField
                     control={form.control}
-                    name="square_footage"
+                    name="sq_ft"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Square Footage</FormLabel>
@@ -485,7 +485,6 @@ const JobFormSheet = ({
                     )}
                   />
                 </div>
-              </ScrollArea>
             </SheetBody>
 
             <SheetFooter className="flex justify-end gap-3 pt-4">

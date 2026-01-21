@@ -93,7 +93,7 @@ export const SubmissionModal = ({
       totalSqFt: '',
       numberOfPieces: '',
       draftNotes: '',
-      mentions: '',
+      mentions: fabData?.sales_person_id || fabData?.sales_person || fabData?.salesPersonId || fabData?.salesPerson || '', // Pre-populate with sales person from fab
       workPercentage: '',
     }
   });
@@ -290,7 +290,7 @@ export const SubmissionModal = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Notify sales</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value || (fabData?.sales_person_id || fabData?.sales_person || fabData?.salesPersonId || fabData?.salesPerson || '')}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select sales person" />
@@ -308,7 +308,7 @@ export const SubmissionModal = ({
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="workPercentage"

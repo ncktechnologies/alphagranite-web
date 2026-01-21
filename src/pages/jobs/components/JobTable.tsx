@@ -548,6 +548,7 @@ export const JobTable = ({
 };
 
     const baseColumns = useMemo<ColumnDef<IJob>[]>(() => [
+       
         {
             accessorKey: 'id',
             accessorFn: (row: IJob) => row.id,
@@ -572,7 +573,7 @@ export const JobTable = ({
             enableResizing: false,
             size: 48,
             meta: {
-                cellClassName: 'flex items-center justify-center h-full min-h-[40px] align-middle p-0',
+                cellClassName: 'flex items-center justify-start h-full min-h-[40px] align-center p-0',
                 headerClassName: '!px-2',
             },
         },
@@ -585,6 +586,8 @@ export const JobTable = ({
             ),
             cell: ({ row }) => <span className="text-xs uppercase">{row.original.fab_type}</span>,
             size: 100,
+            enableHiding: true,
+
         },
        
         {

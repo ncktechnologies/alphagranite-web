@@ -50,7 +50,7 @@ interface ExtendedJob extends Omit<Job, 'project_value'> {
   sales_person_name?: string;
   status?: string;
   project_value?: string;
-  square_footage?: string;
+  sq_ft?: string;
   account_name?: string;
   account_id?: number;
   need_to_invoice?: boolean;
@@ -97,7 +97,7 @@ export const JobsSection = () => {
       ...job,
       // Only transform what's necessary
       project_value: job.project_value || 'N/A',
-      square_footage: job.square_footage || 'N/A',
+      sq_ft: job.sq_ft || 'N/A',
       updated_at: job.updated_at || 'N/A',
       status: job.status_id === 1 ? 'Active' : job.status_id === 2 ? 'Inactive' : job.status_id === 3 ? 'Completed' : 'N/A',
       need_to_invoice: job.need_to_invoice, // Add the need_to_invoice field from API
@@ -190,14 +190,14 @@ export const JobsSection = () => {
         size: 150,
       },
       {
-        id: 'square_footage',
-        accessorFn: (row) => row.square_footage,
+        id: 'sq_ft',
+        accessorFn: (row) => row.sq_ft,
         header: ({ column }) => (
           <DataGridColumnHeader title="SQUARE FOOTAGE" column={column} />
         ),
         cell: ({ row }) => (
           <span className="text-sm text-text">
-            {row.original.square_footage || 'N/A'}
+            {row.original.sq_ft || 'N/A'}
           </span>
         ),
         enableSorting: true,
