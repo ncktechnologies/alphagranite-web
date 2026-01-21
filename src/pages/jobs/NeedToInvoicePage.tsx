@@ -199,7 +199,7 @@ export const NeedToInvoicePage = () => {
         id: 'account_name',
         accessorFn: (row) => row.account_name,
         header: ({ column }) => (
-          <DataGridColumnHeader title="ACCOUNT" column={column} />
+          <DataGridColumnHeader title="ACCOUNT NAME" column={column} />
         ),
         cell: ({ row }) => (
           <span className="text-sm text-text">
