@@ -313,6 +313,7 @@ const Teams = ({ recentJobs }: ITeamsProps) => {
         <CardHeader className="py-3.5 border-b">
           <CardTitle>Recent Jobs</CardTitle>
           <CardToolbar className="flex items-center gap-3">
+            <Link to="/create-jobs">
             <Button
               variant="inverse"
               size="lg"
@@ -320,6 +321,7 @@ const Teams = ({ recentJobs }: ITeamsProps) => {
             >
               See all
             </Button>
+            </Link>
           </CardToolbar>
         </CardHeader>
         <CardTable>

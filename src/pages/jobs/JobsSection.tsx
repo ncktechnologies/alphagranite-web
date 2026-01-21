@@ -193,7 +193,7 @@ export const JobsSection = () => {
         id: 'sq_ft',
         accessorFn: (row) => row.sq_ft,
         header: ({ column }) => (
-          <DataGridColumnHeader title="SQUARE FOOTAGE" column={column} />
+          <DataGridColumnHeader title="SQUARE FOOT" column={column} />
         ),
         cell: ({ row }) => (
           <span className="text-sm text-text">

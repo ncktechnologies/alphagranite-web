@@ -44,13 +44,13 @@ const CommunityBadges = ({ cardTitle, newlyAssignedFabs, pausedJobs }: IFABProps
     <Card className='h-full'>
       <CardHeader className="flex flex-row items-center justify-between ">
         <CardTitle className="text-[20px] leading-[24px]">{cardTitle}</CardTitle>
-        <Button
+        {/* <Button
           variant="inverse"
           size="lg"
           className="text-primary font-semibold text-[16px] font-[24px] underline"
         >
           See all
-        </Button>
+        </Button> */}
       </CardHeader>
       <CardContent className="space-y-3">
         {items.map((item, index) => (
