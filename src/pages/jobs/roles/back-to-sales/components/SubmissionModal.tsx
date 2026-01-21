@@ -24,16 +24,25 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router";
 import { useUploadImageMutation } from "@/store/api/auth";
 import { UploadedFileMeta } from "@/types/uploads";
-import { 
+import {
   useGetSalesCTByFabIdQuery,
   useSetSCTReviewYesMutation,
-  useSendToDraftingMutation
+  useSendToDraftingMutation,
+  useUpdateSCTRevisionMutation
 } from "@/store/api/job";
 // Remove the employee API import since we'll get sales person from FAB data
 // import { useGetEmployeesQuery } from "@/store/api/employee";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 const revisionSchema = z.object({
   // Remove salesPerson from schema since we'll use FAB data
+  revisionType: z.string().min(1, "Select revision type"),
   reason: z.string().min(1, "Revision reason is required"),
   files: z.array(z.any()).optional(),
 });
@@ -76,20 +85,22 @@ export const RevisionModal = ({
   const [uploadImage] = useUploadImageMutation();
   const [setSCTReviewYes] = useSetSCTReviewYesMutation();
   const [sendToDrafting] = useSendToDraftingMutation();
+  const [updateSCTRevision] = useUpdateSCTRevisionMutation();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
-  
+
   // Remove employee API call since we're getting sales person from FAB data
   // const { data: employeesData, isLoading: isEmployeesLoading } = useGetEmployeesQuery({
   //   department_id: 1, // Assuming sales department ID is 1, adjust as needed
   //   role_id: 2, // Assuming sales role ID is 2, adjust as needed
   // });
-  
+
   const form = useForm<RevisionData>({
     resolver: zodResolver(revisionSchema),
     defaultValues: {
       // Remove salesPerson from default values
       // salesPerson,
+      revisionType: "",
       reason: "",
       files: [],
     },
@@ -134,28 +145,38 @@ export const RevisionModal = ({
   const handleSubmit = async (values: RevisionData) => {
     setIsSubmitting(true);
     try {
-  
+
       const currentSctId = sctId;
-      
+
       // Make sure we have a valid SCT ID before proceeding
       if (!currentSctId) {
         toast.error("No Sales Check Task available. Please refresh the page and try again.");
         return;
       }
-      
+
       // Collect file IDs if any files were uploaded
       let fileIds: string | undefined;
       if (uploadedFiles.length > 0) {
         fileIds = uploadedFiles.map(file => file.id).join(',');
       }
-      
+
       // First, set review needed to yes with revision reason and file IDs
       await setSCTReviewYes({
         sct_id: currentSctId,
         revision_reason: values.reason,
         file_ids: fileIds
       }).unwrap();
-      
+
+      // Update SCT revision with revision type and status
+      await updateSCTRevision({
+        sct_id: currentSctId,
+        data: {
+          revision_type: values.revisionType,
+          is_revision_completed: false, // Revision is sent back, not completed yet
+          draft_note: values.reason
+        }
+      }).unwrap();
+
       // Then, send to drafting with notes
       await sendToDrafting({
         fab_id: parseInt(fabId.replace('FAB-', '')),
@@ -163,7 +184,7 @@ export const RevisionModal = ({
           notes: values.reason
         }
       }).unwrap();
-      
+
       toast.custom(
         () => (
           <Alert variant="success" icon="success">
@@ -253,7 +274,7 @@ export const RevisionModal = ({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 pt-5">
             {/* Remove Sales Person field since we're displaying it above from FAB data */}
-            
+
             {/* Revision Reason */}
             <FormField
               control={form.control}
@@ -272,7 +293,32 @@ export const RevisionModal = ({
                 </FormItem>
               )}
             />
-
+            {/* Revision Type */}
+            <div className="max-w-[500px]">
+              <FormField
+                control={form.control}
+                name="revisionType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Revision type</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select revision type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="cad">CAD</SelectItem>
+                        <SelectItem value="client">Client</SelectItem>
+                        <SelectItem value="sales">Sales</SelectItem>
+                        <SelectItem value="template">Template</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             {/* File Upload */}
             <div className="space-y-2">
               <FormLabel>Upload file</FormLabel>
@@ -327,9 +373,9 @@ export const RevisionModal = ({
                 className="bg-green-600 hover:bg-green-700 text-white"
                 disabled={isSubmitting || !form.formState.isValid}
               >
-                {isSubmitting ? "Submitting..." : 
-                 !form.formState.isValid ? "Enter revision reason" :
-                 "Submit revision"}
+                {isSubmitting ? "Submitting..." :
+                  !form.formState.isValid ? "Enter revision reason" :
+                    "Submit revision"}
               </Button>
             </div>
           </form>

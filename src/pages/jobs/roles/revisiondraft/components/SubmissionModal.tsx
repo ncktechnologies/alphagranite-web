@@ -30,7 +30,6 @@ import { Drafting } from '@/store/api/job';
 import { useNavigate } from "react-router";
 
 const revisionSchema = z.object({
-  revisionType: z.string().min(1, "Select revision type"),
   complete: z.boolean().optional(), // Make this optional
 });
 
@@ -153,7 +152,7 @@ export const RevisionForm = ({
             )}
             
             {/* Revision Type */}
-            <div className="max-w-[500px]">
+            {/* <div className="max-w-[500px]">
               <FormField
                 control={form.control}
                 name="revisionType"
@@ -177,7 +176,7 @@ export const RevisionForm = ({
                   </FormItem>
                 )}
               />
-            </div>
+            </div> */}
             {/* Upload Revision */}
             <div className="space-y-2 max-w-[500px]">
               <FormLabel>Upload revision</FormLabel>
@@ -214,7 +213,7 @@ export const RevisionForm = ({
               )}
 
               {uploadedFiles.length > 0 && (
-                <ul className="pt-2 space-y-1 text-sm text-muted-foreground">
+                <ul className="pt-2 space-y-1 text-sm text-muted-foreground mb-3">
                   {uploadedFiles.map((file, i) => (
                     <li key={i}>• {file.name}</li>
                   ))}

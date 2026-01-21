@@ -116,7 +116,7 @@ const ReviewDetailsPage = () => {
             
             // Prepare update data
             const updateData: any = {
-                revision_type: submissionData.revisionType || 'general',
+                revision_type: submissionData.revisionType || '',
                 revision_notes: revisionNote.replace('[REVISION REQUEST] ', '') || ''
             };
             

@@ -1307,8 +1307,8 @@ export const jobApi = createApi({
             // Update SCT revision
             updateSCTRevision: build.mutation<any, { sct_id: number; data: SalesCTRevisionUpdate }>({
                 query: ({ sct_id, data }) => ({
-                    url: `/sales-ct/${sct_id}/revision-update`,
-                    method: "post",
+                    url: `/sales-ct/${sct_id}/revision`,
+                    method: "put",
                     data
                 }),
                 invalidatesTags: ["Fab"],
