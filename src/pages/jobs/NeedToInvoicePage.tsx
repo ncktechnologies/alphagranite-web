@@ -195,6 +195,20 @@ export const NeedToInvoicePage = () => {
         enableSorting: true,
         size: 150,
       },
+      {
+        id: 'account_name',
+        accessorFn: (row) => row.account_name,
+        header: ({ column }) => (
+          <DataGridColumnHeader title="ACCOUNT" column={column} />
+        ),
+        cell: ({ row }) => (
+          <span className="text-sm text-text">
+            {row.original.account_name || 'N/A'}
+          </span>
+        ),
+        enableSorting: true,
+        size: 150,
+      },
     //   {
     //     id: 'need_to_invoice',
     //     accessorFn: (row) => row.need_to_invoice,
