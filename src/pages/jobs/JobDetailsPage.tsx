@@ -565,6 +565,7 @@ export function JobDetailsPage() {
               setDeleteConfirmationOpen(false);
               setFileToDelete(null);
             }}
+            className="w-[124px]"
           >
             Cancel
           </Button>
@@ -572,6 +573,8 @@ export function JobDetailsPage() {
             variant="destructive"
             onClick={handleDeleteConfirm}
             disabled={isDeleting}
+            className="w-[140px]"
+
           >
             {isDeleting ? 'Deleting...' : 'Delete'}
           </Button>
