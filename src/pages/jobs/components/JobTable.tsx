@@ -1260,7 +1260,8 @@ export const JobTable = ({
                 const fabId = parseInt(row.original.fab_id);
                 return (
                     <div className="flex justify-center">
-                        <Switch
+                        <Switch 
+                        className="data-[state=checked]:bg-red-600"
                             checked={row.original.status_id === 0} // status_id: 0 = on hold (true), 1 = not on hold (false)
                             onCheckedChange={async (checked) => {
                                 // Store original value for rollback in case of error
@@ -1395,7 +1396,7 @@ export const JobTable = ({
                                 <SelectContent>
                                     <SelectItem value="all">All Fab Types</SelectItem>
                                     {fabTypes.map((type) => (
-                                        <SelectItem key={type} value={type}>
+                                        <SelectItem key={type} value={type} className='uppercase'>
                                             {type}
                                         </SelectItem>
                                     ))}

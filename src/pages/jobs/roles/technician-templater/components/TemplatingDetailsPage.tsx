@@ -183,7 +183,25 @@ export function TemplatingDetailsPage() {
     <>
       <Container className='lg:mx-0 max-w-full'>
         <Toolbar className=''>
-          <ToolbarHeading title={`FAB ID: ${fab?.id || id}`} description="Update templating activity" />
+          <div className="flex items-center justify-between w-full">
+            <div>
+              <ToolbarHeading 
+                title={`FAB ID: ${fab?.id || id}`} 
+                description="Update templating activity" 
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{
+                0: 'bg-red-100 text-red-800',
+                1: 'bg-green-100 text-green-800'
+              }[fab?.status_id] || 'bg-gray-100 text-gray-800'}`}>
+                {{
+                  0: 'ON HOLD',
+                  1: 'ACTIVE'
+                }[fab?.status_id] || 'LOADING'}
+              </span>
+            </div>
+          </div>
         </Toolbar>
       </Container>
       

@@ -114,7 +114,25 @@ const CutListDetailsPage = () => {
         <>
             <Container className='lg:mx-0'>
                 <Toolbar className=' '>
-                    <ToolbarHeading title={`FAB ID: ${fabData?.id || 'Loading...'}`} description="Review drafting activity and schedule cut list" />
+                    <div className="flex items-center justify-between w-full">
+                        <div>
+                            <ToolbarHeading 
+                                title={`FAB ID: ${fabData?.id || 'Loading...'}`} 
+                                description="Review drafting activity and schedule cut list" 
+                            />
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{
+                                0: 'bg-red-100 text-red-800',
+                                1: 'bg-green-100 text-green-800'
+                            }[fabData?.status_id] || 'bg-gray-100 text-gray-800'}`}>
+                                {{
+                                    0: 'ON HOLD',
+                                    1: 'ACTIVE'
+                                }[fabData?.status_id] || 'LOADING'}
+                            </span>
+                        </div>
+                    </div>
                     <ToolbarActions>
                         <BackButton fallbackUrl="/job/cut-list" />
                     </ToolbarActions>

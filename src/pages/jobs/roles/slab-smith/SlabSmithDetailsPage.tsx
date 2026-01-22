@@ -314,7 +314,18 @@ export function SlabSmithDetailsPage() {
         <div className="pt-6">
           <div className="flex justify-between items-start">
             <div className="text-black">
-              <p className="font-bold text-base">FAB-{fabData?.id || 'N/A'}</p>
+              <div className="flex items-center gap-3">
+                <p className="font-bold text-base">FAB-{fabData?.id || 'N/A'}</p>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{
+                  0: 'bg-red-100 text-red-800',
+                  1: 'bg-green-100 text-green-800'
+                }[fabData?.status_id] || 'bg-gray-100 text-gray-800'}`}>
+                  {{
+                    0: 'ON HOLD',
+                    1: 'ACTIVE'
+                  }[fabData?.status_id] || 'LOADING'}
+                </span>
+              </div>
               <p className="text-sm">{fabData?.job_details?.name || 'N/A'}</p>
             </div>
           </div>

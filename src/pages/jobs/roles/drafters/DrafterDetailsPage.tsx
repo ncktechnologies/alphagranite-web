@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
-import { useGetFabByIdQuery, useGetDraftingByFabIdQuery, useManageDraftingSessionMutation, useGetCurrentDraftingSessionQuery } from '@/store/api/job';
+import { useGetFabByIdQuery, useGetDraftingByFabIdQuery, useManageDraftingSessionMutation, useGetCurrentDraftingSessionQuery, useToggleFabOnHoldMutation, useCreateFabNoteMutation } from '@/store/api/job';
 import { TimeTrackingComponent } from './components/TimeTrackingComponent';
 import { UploadDocuments } from './components/fileUploads';
 import { FileViewer } from './components/FileViewer';
@@ -29,6 +29,17 @@ const getAllFabNotes = (fabNotes: any[]) => {
   return fabNotes || [];
 };
 
+// Helper function to get FAB status display
+const getFabStatusInfo = (statusId: number | undefined) => {
+  if (statusId === 0) {
+    return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
+  } else if (statusId === 1) {
+    return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
+  } else {
+    return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
+  }
+};
+
 export function DrafterDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const fabId = id ? Number(id) : 0;
@@ -45,6 +56,8 @@ export function DrafterDetailsPage() {
   const { data: sessionData, isLoading: isSessionLoading, refetch: refetchSession } = useGetCurrentDraftingSessionQuery(fabId, { skip: !fabId });
   
   const [manageDraftingSession] = useManageDraftingSessionMutation();
+  const [toggleFabOnHold] = useToggleFabOnHoldMutation();
+  const [createFabNote] = useCreateFabNoteMutation();
 
   // Use draft_data from FAB response for displaying existing files
   const draftData = fabData?.draft_data;
@@ -179,6 +192,12 @@ export function DrafterDetailsPage() {
 
   // Time tracking handlers
   const handleStart = async (startDate: Date, data?: { note?: string; sqft_drafted?: string }) => {
+    // Check if drafting exists before starting
+    if (!draftingData?.id) {
+      toast.error('Cannot start drafting session - no drafting assignment found');
+      return;
+    }
+    
     try {
       await createOrStartSession('start', startDate, data?.note, data?.sqft_drafted);
     } catch (error) {
@@ -210,11 +229,32 @@ export function DrafterDetailsPage() {
     }
   };
 
-  const handleOnHold = async (data?: { note?: string; sqft_drafted?: string }) => {
+  const handleOnHold = async (data?: { note?: string }) => {
     try {
-      await updateSession('on_hold', new Date(), data?.note, data?.sqft_drafted);
+      // If there's an active session, pause it first
+      if (isDrafting) {
+        await updateSession('pause', new Date(), 'Pausing session before placing on hold');
+      }
+      
+      // Toggle the FAB hold status
+      const currentHoldStatus = fabData?.status_id === 0; // 0 = on hold
+      await toggleFabOnHold({ fab_id: fabId, on_hold: !currentHoldStatus }).unwrap();
+      
+      // Create FAB note with drafting stage
+      if (data?.note) {
+        await createFabNote({ 
+          fab_id: fabId, 
+          note: data.note, 
+          stage: 'drafting' 
+        }).unwrap();
+      }
+      
+      toast.success(`FAB ${!currentHoldStatus ? 'placed on hold' : 'released from hold'} successfully`);
+      await refetchFab();
+      await refetchSession();
     } catch (error) {
-      // Error handled in updateSession
+      console.error('Failed to handle on hold:', error);
+      toast.error('Failed to update hold status');
     }
   };
 
@@ -380,7 +420,17 @@ export function DrafterDetailsPage() {
     <>
       <Container className='lg:mx-0'>
         <div className='py-4'>
-          <h2 className='text-lg font-semibold'>FAB ID: {fabData?.id || 'Loading...'}</h2>
+          <div className='flex items-center gap-3'>
+            <h2 className='text-lg font-semibold'>FAB ID: {fabData?.id || 'Loading...'}</h2>
+            {(() => {
+              const statusInfo = getFabStatusInfo(fabData?.status_id);
+              return (
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
+                  {statusInfo.text}
+                </span>
+              );
+            })()}
+          </div>
           <p className='text-sm text-muted-foreground'>Update drafting activity</p>
         </div>
       </Container>
@@ -403,8 +453,34 @@ export function DrafterDetailsPage() {
             <>
               <Card className='my-4'>
                 <CardHeader className='flex flex-col items-start py-4'>
-                  <CardTitle>Drafting activity</CardTitle>
-                  <p className="text-sm text-[#4B5563]">Update your drafting activity here</p>
+                  <div className="flex items-center justify-between w-full">
+                    <div>
+                      <CardTitle>Drafting activity</CardTitle>
+                      <p className="text-sm text-[#4B5563]">Update your drafting activity here</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{
+                        'idle': 'bg-gray-100 text-gray-800',
+                        'drafting': 'bg-green-100 text-green-800',
+                        'paused': 'bg-yellow-100 text-yellow-800',
+                        'on_hold': 'bg-orange-100 text-orange-800',
+                        'ended': 'bg-blue-100 text-blue-800'
+                      }[sessionStatus] || 'bg-gray-100 text-gray-800'}`}>
+                        {{
+                          'idle': 'Ready to Start',
+                          'drafting': 'Drafting Active',
+                          'paused': 'Paused',
+                          'on_hold': 'On Hold',
+                          'ended': 'Completed'
+                        }[sessionStatus] || 'Unknown'}
+                      </span>
+                      {fabData?.status_id === 0 && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                          FAB ON HOLD
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </CardHeader>
               </Card>
 
@@ -463,24 +539,8 @@ export function DrafterDetailsPage() {
                     </div>
                   )}
 
-                  <Separator className="my-3" />
 
-                  {/* Only show upload if timer has started or there are uploaded files */}
-                  {/* {shouldShowUploadSection && (
-                    <UploadDocuments
-                      onFileClick={handleFileClick}
-                      onFilesChange={handleFilesChange}
-                      simulateUpload={false}
-                      disabled={hasEnded || isOnHold}
-                    />
-                  )} */}
-
-                  {/* Show message when timer hasn't started yet */}
-                  {!shouldShowFilesSection && !isDrafting && sessionStatus === 'idle' && (
-                    <div className="text-center py-4 text-muted-foreground">
-                      Start the timer to enable file uploads
-                    </div>
-                  )}
+                  
                 </CardContent>
               </Card>
             </>
@@ -496,9 +556,6 @@ export function DrafterDetailsPage() {
             }}
             drafting={draftingData}
             uploadedFiles={filesForSubmission}
-            draftStart={draftStart}
-            draftEnd={draftEnd}
-            totalTime={totalTime}
             fabId={fabId}
             userId={currentEmployeeId}
             fabData={fabData}

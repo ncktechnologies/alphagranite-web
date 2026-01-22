@@ -508,7 +508,7 @@ const NewFabIdForm = () => {
                                       {filteredFabTypes.map((type: string) => (
                                         <div
                                           key={type}
-                                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
+                                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm uppercase"
                                           onClick={() => {
                                             field.onChange(type);
                                             setFabTypeSearch('');
