@@ -65,7 +65,7 @@ export function Documents({
             type: file.file_type || 'application/octet-stream',
             url: file.file_url || '/images/app/upload-file.svg',
             stage: getFileStage(file.name, { isDrafting: true }),
-            uploadedBy: 'Drafter',
+            uploadedBy: '',
             uploadedAt: file.created_at ? new Date(file.created_at) : new Date()
           }));
           allFiles.push(...actualFiles);
@@ -84,7 +84,7 @@ export function Documents({
             type: 'application/pdf',
             url: '/images/app/upload-file.svg',
             stage: WORKFLOW_STAGES.drafting,
-            uploadedBy: 'Drafter',
+            uploadedBy: '',
             uploadedAt: new Date()
           }));
           allFiles.push(...mockFiles);

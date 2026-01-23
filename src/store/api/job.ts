@@ -1372,11 +1372,14 @@ export const jobApi = createApi({
             }),
 
             // Set SCT review yes (for creating revision)
-            setSCTReviewYes: build.mutation<any, { sct_id: number; revision_reason: string; file_ids?: string }>({
-                query: ({ sct_id, revision_reason, file_ids }) => {
+            setSCTReviewYes: build.mutation<any, { sct_id: number; revision_reason: string; file_ids?: string, revision_type?: string }>({
+                query: ({ sct_id, revision_reason, file_ids, revision_type }) => {
                     let url = `/sales-ct/${sct_id}/review-yes?revision_reason=${encodeURIComponent(revision_reason)}`;
                     if (file_ids) {
                         url += `&file_ids=${encodeURIComponent(file_ids)}`;
+                    }
+                    if (revision_type) {
+                        url += `&revision_type=${encodeURIComponent(revision_type)}`;
                     }
                     return {
                         url,

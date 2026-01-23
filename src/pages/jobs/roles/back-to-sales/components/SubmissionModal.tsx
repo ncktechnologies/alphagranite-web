@@ -197,18 +197,19 @@ export const RevisionModal = ({
       await setSCTReviewYes({
         sct_id: currentSctId,
         revision_reason: values.reason,
+        revision_type: values.revisionType,
         file_ids: fileIds
       }).unwrap();
 
       // Update SCT revision with revision type and status
-      await updateSCTRevision({
-        sct_id: currentSctId,
-        data: {
-          revision_type: values.revisionType,
-          is_revision_completed: false, // Revision is sent back, not completed yet
-          draft_note: values.reason
-        }
-      }).unwrap();
+      // await updateSCTRevision({
+      //   sct_id: currentSctId,
+      //   data: {
+      //     revision_type: values.revisionType,
+      //     is_revision_completed: false, // Revision is sent back, not completed yet
+      //     draft_note: values.reason
+      //   }
+      // }).unwrap();
 
       // Then, send to drafting with notes
       await sendToDrafting({

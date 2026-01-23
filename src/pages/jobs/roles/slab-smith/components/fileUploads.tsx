@@ -224,7 +224,7 @@ export function UploadDocuments({
               )}
             >
               <div className="flex items-start justify-between mb-3">
-                <div className="flex-col items-center gap-2">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
                   <div className={cn(
                     'size-8 shrink-0 relative flex items-center justify-center rounded',
                     fileItem.status === 'uploading' ? 'text-primary' : 'text-muted-foreground/80'
@@ -259,7 +259,9 @@ export function UploadDocuments({
                         </div>
                       </div>
                     ) : (
-                      getFileIcon(fileItem.file)
+                      <div className="flex items-center justify-center">
+                        {getFileIcon(fileItem.file)}
+                      </div>
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
