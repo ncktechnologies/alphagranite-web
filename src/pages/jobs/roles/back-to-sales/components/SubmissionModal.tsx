@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, Plus, Check } from "lucide-react";
+import { Upload, Plus, Check, X } from "lucide-react";
 import { Alert, AlertIcon, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
@@ -82,11 +82,13 @@ export const RevisionModal = ({
 }: RevisionModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFileMeta[]>([]);
+  const [uploadInstances, setUploadInstances] = useState<number[]>([1]); // Track upload instances
+  const [pendingFiles, setPendingFiles] = useState<{[key: number]: File[]}>({}); // Track pending files by instance ID
+  const [uploadedFileInstances, setUploadedFileInstances] = useState<{[key: number]: UploadedFileMeta}>({}); // Track uploaded files by instance ID
   const [uploadImage] = useUploadImageMutation();
   const [setSCTReviewYes] = useSetSCTReviewYesMutation();
   const [sendToDrafting] = useSendToDraftingMutation();
   const [updateSCTRevision] = useUpdateSCTRevisionMutation();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const navigate = useNavigate();
 
   // Remove employee API call since we're getting sales person from FAB data
@@ -107,39 +109,36 @@ export const RevisionModal = ({
     mode: "onChange", // Validate on change
   });
 
-  const uploadSelectedFiles = async (fileList: FileList) => {
+  const handleFileSelection = (fileList: FileList, instanceId: number) => {
     const files = Array.from(fileList);
-    const uploaded: UploadedFileMeta[] = [];
-
-    for (const file of files) {
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await uploadImage(formData).unwrap();
-      uploaded.push({
-        id: response.id.toString(),
-        name: file.name,
-        size: file.size,
-        filename: response.filename,
-        url: response.url,
-        type: file.type,
-      });
-    }
-
-    setUploadedFiles((prev) => [...prev, ...uploaded]);
-    form.setValue("files", [...(form.getValues("files") ?? []), ...uploaded]);
+    
+    // Store files locally without uploading
+    setPendingFiles(prev => ({
+      ...prev,
+      [instanceId]: files
+    }));
+    
+    // Create temporary file metadata for display
+    const tempFiles: UploadedFileMeta[] = files.map(file => ({
+      id: `temp_${Date.now()}_${Math.random()}`,
+      name: file.name,
+      size: file.size,
+      type: file.type,
+    }));
+    
+    // Mark this instance as having selected files
+    setUploadedFileInstances(prev => ({
+      ...prev,
+      [instanceId]: tempFiles[0] // Show first file in the instance
+    }));
+    
+    toast.success(`${files.length} file(s) selected`);
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>, instanceId: number) => {
     if (!e.target.files?.length) return;
-    try {
-      await uploadSelectedFiles(e.target.files);
-      toast.success("Files uploaded successfully");
-    } catch (error) {
-      console.error("Failed to upload files", error);
-      toast.error("Failed to upload files. Please try again.");
-    } finally {
-      e.target.value = "";
-    }
+    handleFileSelection(e.target.files, instanceId);
+    e.target.value = ""; // Reset input
   };
 
   const handleSubmit = async (values: RevisionData) => {
@@ -154,10 +153,44 @@ export const RevisionModal = ({
         return;
       }
 
-      // Collect file IDs if any files were uploaded
+      // Upload pending files and collect file IDs
       let fileIds: string | undefined;
-      if (uploadedFiles.length > 0) {
-        fileIds = uploadedFiles.map(file => file.id).join(',');
+      const allUploadedFiles: UploadedFileMeta[] = [];
+      
+      // Upload all pending files
+      for (const [instanceId, files] of Object.entries(pendingFiles)) {
+        for (const file of files) {
+          const formData = new FormData();
+          formData.append("file", file);
+          const response = await uploadImage(formData).unwrap();
+          
+          // Handle the response structure - check if it's wrapped or direct
+          const fileData = response.data ? response.data : response;
+          
+          const uploadedFile: UploadedFileMeta = {
+            id: fileData.id.toString(),
+            name: file.name,
+            size: file.size,
+            filename: fileData.name || fileData.filename,
+            url: fileData.url,
+            type: file.type,
+          };
+          
+          allUploadedFiles.push(uploadedFile);
+        }
+      }
+      
+      if (allUploadedFiles.length > 0) {
+        fileIds = allUploadedFiles.map(file => file.id).join(',');
+        setUploadedFiles(allUploadedFiles);
+      }
+      
+      // Also include any existing file IDs from props if available
+      const existingFileIds = form.getValues("files")?.map((file: any) => file.id).join(',') || '';
+      if (existingFileIds && fileIds) {
+        fileIds = `${existingFileIds},${fileIds}`;
+      } else if (existingFileIds && !fileIds) {
+        fileIds = existingFileIds;
       }
 
       // First, set review needed to yes with revision reason and file IDs
@@ -321,44 +354,97 @@ export const RevisionModal = ({
             </div>
             {/* File Upload */}
             <div className="space-y-2">
-              <FormLabel>Upload file</FormLabel>
-              <div className="flex items-center gap-6">
-                <label className="flex-1 cursor-pointer">
-                  <div className="flex items-center justify-start h-12 border border-dashed rounded-md">
-                    <div className="flex items-center gap-2 text-sm uderline text-primary px-3">
-                      <img src='/images/app/upload.svg' className="w-[27px] h-[21px]" />
-                      Upload file
+              <FormLabel>Upload files</FormLabel>
+              {uploadInstances.map((instanceId) => (
+                <div key={instanceId} className="mb-3">
+                  {uploadedFileInstances[instanceId] ? (
+                    // Show selected file
+                    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md border">
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-center w-10 h-10 bg-blue-100 rounded">
+                          <img src='/images/app/upload.svg' className="w-5 h-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-800 truncate max-w-[200px]">
+                            {uploadedFileInstances[instanceId].name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {(uploadedFileInstances[instanceId].size / 1024 / 1024).toFixed(2)} MB
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          // Remove selected file
+                          setUploadedFileInstances(prev => {
+                            const newInstances = { ...prev };
+                            delete newInstances[instanceId];
+                            return newInstances;
+                          });
+                          setPendingFiles(prev => {
+                            const newPending = { ...prev };
+                            delete newPending[instanceId];
+                            return newPending;
+                          });
+                        }}
+                      >
+                        <X className="w-4 h-4 text-red-500" />
+                      </Button>
                     </div>
-                    <input
-                      type="file"
-                      multiple
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      ref={fileInputRef}
-                    />
-                  </div>
-                </label>
-
-                <Button
-                  type="button"
-                  variant="dashed"
-                  className="flex flex-1 items-center gap-2 h-12"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Plus className="w-4 h-4" />
-                  Add
-                </Button>
-              </div>
+                  ) : (
+                    // Show upload input
+                    <label className="flex-1 cursor-pointer">
+                      <div className="flex items-center justify-start h-12 border border-dashed rounded-md hover:border-primary/50 transition-colors">
+                        <div className="flex items-center gap-2 text-sm underline text-primary px-3">
+                          <img src='/images/app/upload.svg' className="w-[27px] h-[21px]" />
+                          Select files
+                        </div>
+                        <input
+                          type="file"
+                          multiple
+                          onChange={(e) => handleFileInputChange(e, instanceId)}
+                          className="hidden"
+                        />
+                      </div>
+                    </label>
+                  )}
+                </div>
+              ))}
+              
+              <Button
+                type="button"
+                variant="dashed"
+                className="flex items-center gap-2 h-12 w-full"
+                onClick={() => setUploadInstances(prev => [...prev, Math.max(...prev) + 1])}
+              >
+                <Plus className="w-4 h-4" />
+                Add another upload
+              </Button>
 
               {isSubmitting && (
                 <p className="text-xs text-muted-foreground pt-1">Submitting revision...</p>
               )}
 
+              {/* Display uploaded files */}
               {uploadedFiles.length > 0 && (
-                <div className="space-y-1 pt-2 text-sm text-muted-foreground">
-                  {uploadedFiles.map((file, idx) => (
-                    <div key={idx}>• {file.name}</div>
-                  ))}
+                <div className="pt-2">
+                  <p className="text-sm font-medium text-gray-700 mb-2">Uploaded files:</p>
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {uploadedFiles.map((file) => (
+                      <div key={file.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm text-gray-600">•</span>
+                          <span className="text-sm text-gray-800 truncate">{file.name}</span>
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

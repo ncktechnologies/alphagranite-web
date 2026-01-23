@@ -152,6 +152,9 @@ export interface UploadedFile {
   size: number;
   type: string;
   url?: string;
+  stage?: any; // FileLabel from file-labeling utils
+  uploadedAt?: Date;
+  uploadedBy?: string;
 }
 
 export interface FileViewerProps {
@@ -159,7 +162,11 @@ export interface FileViewerProps {
   inline?: boolean;
   isOpen?: boolean;
   onClose?: () => void;
-  file: UploadedFile;
+  file: UploadedFile & {
+    stage?: any; // FileLabel from file-labeling utils
+    uploadedAt?: Date;
+    uploadedBy?: string;
+  };
   
 }
 

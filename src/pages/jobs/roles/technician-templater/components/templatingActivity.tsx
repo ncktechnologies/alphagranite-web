@@ -21,9 +21,9 @@ const formSchema = z.object({
   status: z.enum(["completed", "not_completed"]),
   start_date: z.string().min(1, "Start date is required"),
   duration: z.string().optional().refine(
-  (val) => !val || /^\d+$/.test(val),
-  { message: "Duration must be in days (numbers only)" }
-),
+    (val) => !val || /^\d+$/.test(val),
+    { message: "Duration must be in days (numbers only)" }
+  ),
   notes: z.string().optional(),
   square_ft: z.string().optional(),
 });
@@ -127,10 +127,10 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
     { skip: !fabId }
   );
 
-  const form = useForm({
+  const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      status: "",
+      status: "not_completed",
       start_date: "",
       duration: "",
       notes: "",
@@ -159,11 +159,12 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
       console.log("Populating form with templating data:", templatingData.data);
 
       // Prepare values for the form
-      const formValues: Partial<z.infer<typeof formSchema>> & { status: "not_completed" } = {
-        status: "",
-        start_date: templatingData.data.schedule_start_date
+      const formValues: Partial<z.infer<typeof formSchema>> = {
+        status: "not_completed",
+        start_date: templatingData.data.actual_start_date || templatingData.data.schedule_start_date
           ? (() => {
-            const date = new Date(templatingData.data.schedule_start_date);
+            const dateSource = templatingData.data.actual_start_date || templatingData.data.schedule_start_date;
+            const date = new Date(dateSource);
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
@@ -176,9 +177,10 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
       };
 
       console.log("Resetting form with values:", formValues);
-      form.reset(formValues);
+      // Use reset with { keepDefaultValues: false } to prevent infinite loop
+      form.reset(formValues, { keepDefaultValues: false });
     }
-  }, [templatingData, form]);
+  }, [templatingData]); // Remove 'form' from dependencies to prevent loop
 
   if (isTemplatingLoading) {
     return <div>Loading...</div>;
@@ -247,26 +249,14 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
           <div className="grid grid-cols-2 gap-6">
             <div>
               <FormLabel>Scheduled date</FormLabel>
-              <div className="flex items-center gap-2">
-                <Input
-                  value={templatingData?.data?.schedule_start_date
-                    ? format(new Date(templatingData.data.schedule_start_date), "dd MMMM, yyyy")
-                    : "Not scheduled"}
-                  disabled
-                />
-              </div>
+              <Input
+                value={templatingData?.data?.schedule_start_date
+                  ? format(new Date(templatingData.data.schedule_start_date), "dd MMMM, yyyy")
+                  : "Not scheduled"}
+                disabled
+              />
             </div>
 
-            <div>
-              <FormLabel>Schedule time (Current time)</FormLabel>
-              <div className="flex items-center gap-2">
-                <Input value={format(new Date(), "hh:mm a")} disabled />
-              </div>
-            </div>
-          </div>
-
-          {/* Dynamic Inputs */}
-          <div className="grid grid-cols-2 gap-6">
             <FormField
               control={form.control}
               name="start_date"
@@ -291,29 +281,13 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
                       }}
                       placeholder="Select start date"
                       minDate={new Date()}
-
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            {/* <FormField
-              control={form.control}
-              name="duration"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Duration (End now)</FormLabel>
-                  <FormControl>
-                    <Input placeholder="00:00" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            /> */}
           </div>
-
           <div>
             <FormField
               control={form.control}

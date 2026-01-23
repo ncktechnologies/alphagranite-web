@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { X, Download, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { FileViewerProps } from '@/pages/jobs/components/job';
 import { Card } from '@/components/ui/card';
+import { getFileStage, getStageBadge } from '@/utils/file-labeling';
 
 
 export const FileViewer = ({
@@ -197,7 +198,40 @@ export const FileViewer = ({
                 )}
               </div>
             </Card>
-            <p className="text-sm text-center mt-2 font-medium text-text-foreground">{file.name}</p>
+            {/* File Name and Stage Badge */}
+            <div className="text-center mt-2">
+              <p className="text-sm font-medium text-text-foreground mb-1">{file.name}</p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {/* Stage Badge */}
+                {(() => {
+                  const stage = file.stage || getFileStage(file.name, { isDrafting: true });
+                  const badge = getStageBadge(stage);
+                  return (
+                    <span className={badge.className}>
+                      {badge.label}
+                    </span>
+                  );
+                })()}
+                
+                {/* File Size */}
+                {file.size && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-gray-700 bg-gray-100">
+                    {formatFileSize(file.size)}
+                  </span>
+                )}
+                
+                {/* Uploaded Info */}
+                {(file.uploadedBy || file.uploadedAt) && (
+                  <div className="text-xs text-gray-500 mt-1">
+                    {file.uploadedBy && <span>Uploaded by: {file.uploadedBy}</span>}
+                    {file.uploadedBy && file.uploadedAt && <span> • </span>}
+                    {file.uploadedAt && (
+                      <span>Uploaded: {new Date(file.uploadedAt).toLocaleDateString()}</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Bottom Controls */}
             <div className="">

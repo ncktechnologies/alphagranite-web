@@ -80,19 +80,36 @@ export interface Fab {
     updated_at?: string;
     updated_by?: number;
     on_hold?: boolean;
+    // Completed date fields
+    draft_completed_date?: string;
+    template_completed_date?: string;
+    predraft_completed_date?: string;
+    sales_ct_completed_date?: string;
+    sct_completed_date?: string;
+    slabsmith_completed_date?: string;
+    final_programming_completed_date?: string;
+    revision_completed_date?: string;
+    // Status completion flags
+    draft_completed?: boolean;
+    cad_review_complete?: boolean;
+    template_review_complete?: boolean;
+    template_received?: boolean;
+    sct_completed?: boolean;
+    final_programming_complete?: boolean;
     // Templating schedule fields
     templating_schedule_start_date?: string;
     templating_schedule_due_date?: string;
     technician_name?: string;
     drafter_name?: string;
     drafter_id?: number;
-    draft_completed?: boolean;
+    drafter_assigned_at?: string;
+    drafter_assigned_by?: number;
+    drafter_assigned_by_name?: string;
     // Final programming fields
     final_programmer_id?: number;
     final_programmer_name?: string;
     programming_time_minutes?: number;
     clock_time?: string;
-    final_programming_complete?: boolean;
     // Job details
     job_details?: JobDetails;
     // Draft data nested in FAB response
@@ -102,10 +119,43 @@ export interface Fab {
     // Account details
     account_id?: number;
     account_name?: string;
+    account_number?: string;
+    account_contact_person?: string;
+    account_email?: string;
+    account_phone?: string;
     sales_person_name?: string;
-    template_received?: boolean;
     revenue?: number;
-    fab_notes?: Array<{ id: number; note: string; created_by_name?: string; created_at?: string; stage?: string }>;
+    gp?: number;
+    cost_of_stone?: number;
+    cost_of_stone_id?: number;
+    // Shop scheduling
+    shop_date_schedule?: string;
+    installation_date?: string;
+    confirmed_date?: string;
+    // Production metrics
+    cnc_linft?: number;
+    wj_linft?: number;
+    wj_time_minutes?: number;
+    edging_linft?: number;
+    miter_linft?: number;
+    // Notes
+    templating_notes?: string[];
+    fab_notes?: Array<{ 
+        id: number; 
+        note: string; 
+        created_by_name?: string; 
+        created_at?: string; 
+        stage?: string;
+        updated_at?: string;
+        updated_by?: number;
+        updated_by_name?: string;
+    }>;
+    // Completion tracking
+    is_complete?: boolean;
+    stage_data?: any;
+    next_stage?: string;
+    revised?: boolean;
+    fp_not_needed?: boolean;
 }
 
 export interface FabCreate {
@@ -463,6 +513,13 @@ export interface SalesCTRevisionUpdate {
     is_revision_completed?: boolean;
     draft_note?: string;
     revision_type?: string;
+}
+
+export interface SalesCTApprove {
+    sct_completed: boolean;
+    revenue?: number;
+    slab_smith_used?: boolean;
+    notes?: string;
 }
 
 // Slabsmith Types
@@ -1120,7 +1177,7 @@ export const jobApi = createApi({
             // Bulk assign drafting to multiple FABs
             bulkAssignDrafting: build.mutation<any, { drafter_id: number; items: BulkDraftingAssignment[] }>({
                 query: (data) => ({
-                    url: "/drafting",
+                    url: "/drafting/bulk-assign",
                     method: "post",
                     data
                 }),
@@ -1339,6 +1396,16 @@ export const jobApi = createApi({
                 invalidatesTags: ["Fab"],
             }),
 
+            // Approve and send to slab smith
+            approveAndSendToSlabSmith: build.mutation<any, { fab_id: number; data: SalesCTApprove }>({
+                query: ({ fab_id, data }) => ({
+                    url: `/sales-ct/${fab_id}/approve`,
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
             // Revision endpoints
             // Create revision
             createRevision: build.mutation<RevisionResponse, RevisionCreate>({
@@ -1405,6 +1472,54 @@ export const jobApi = createApi({
                     url: `/final-programming/${fab_id}/complete`,
                     method: "POST",
                     data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Predraft endpoints
+            // Create predraft review
+            createPredraftReview: build.mutation<any, { fab_id: number; notes?: string }>({
+                query: ({ fab_id, notes }) => ({
+                    url: `/pre-draft-review`,
+                    method: "POST",
+                    data: {
+                        fab_id,
+                        ...(notes && { notes })
+                    }
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Get predraft review by FAB ID
+            getPredraftReviewByFabId: build.query<any, number>({
+                query: (fab_id) => ({
+                    url: `/pre-draft-review/fab/${fab_id}`,
+                    method: "GET"
+                }),
+                providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
+            }),
+
+            // Complete predraft review
+            completePredraftReview: build.mutation<any, { review_id: number; is_completed?: boolean; notes?: string }>({
+                query: ({ review_id, is_completed = true, notes }) => ({
+                    url: `/pre-draft-review/${review_id}/complete`,
+                    method: "POST",
+                    params: {
+                        is_completed,
+                        ...(notes && { notes })
+                    }
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Set predraft to redraft
+            setPredraftToRedraft: build.mutation<any, { review_id: number; redraft_notes: string }>({
+                query: ({ review_id, redraft_notes }) => ({
+                    url: `/pre-draft-review/${review_id}/set-redraft`,
+                    method: "POST",
+                    params: {
+                        redraft_notes
+                    }
                 }),
                 invalidatesTags: ["Fab"],
             }),
@@ -1647,6 +1762,7 @@ export const {
     useUpdateSCTRevisionMutation,
     useSetSCTReviewYesMutation, // Add the new hook
     useSendToDraftingMutation,
+    useApproveAndSendToSlabSmithMutation,
     // Revision hooks
     useCreateRevisionMutation,
     useUpdateRevisionMutation,
@@ -1687,4 +1803,9 @@ export const {
     useToggleNeedToInvoiceMutation,
     // Toggle FAB On Hold hook
     useToggleFabOnHoldMutation,
+    // Predraft hooks
+    useCreatePredraftReviewMutation,
+    useGetPredraftReviewByFabIdQuery,
+    useCompletePredraftReviewMutation,
+    useSetPredraftToRedraftMutation,
 } = jobApi;

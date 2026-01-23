@@ -256,7 +256,7 @@ const DateTimePicker = ({
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full ">
       {label && <Label className="flex w-full items-center gap-1 mb-2.5">{label}</Label>}
 
       {mode === "date" ? (
@@ -265,7 +265,7 @@ const DateTimePicker = ({
             <Button
               type="button"
               variant="outline"
-              className={cn("w-full justify-start text-left font-normal", !dateValue && "text-muted-foreground")}
+              className={cn("w-full justify-start text-left font-normal h-[48px]", !dateValue && "text-muted-foreground")}
               disabled={disabled}
             >
               <CalendarDays className="mr-2 h-4 w-4" />

@@ -122,14 +122,14 @@ const CutListDetailsPage = () => {
                             />
                         </div>
                         <div className="flex items-center gap-2">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{
+                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${fabData?.status_id !== undefined ? {
                                 0: 'bg-red-100 text-red-800',
                                 1: 'bg-green-100 text-green-800'
-                            }[fabData?.status_id] || 'bg-gray-100 text-gray-800'}`}>
-                                {{
+                            }[fabData.status_id as 0 | 1] : 'bg-gray-100 text-gray-800'}`}>
+                                {fabData?.status_id !== undefined ? {
                                     0: 'ON HOLD',
                                     1: 'ACTIVE'
-                                }[fabData?.status_id] || 'LOADING'}
+                                }[fabData.status_id as 0 | 1] : 'LOADING'}
                             </span>
                         </div>
                     </div>

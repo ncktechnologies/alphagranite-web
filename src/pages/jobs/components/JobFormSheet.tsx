@@ -38,13 +38,25 @@ import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // =======================
-// Schema
+// Schema with proper transformation
 // =======================
 const jobSchema = z.object({
   name: z.string().min(1, "Job name is required"),
   job_number: z.string().min(1, "Job number is required"),
-  project_value: z.string().optional(),
-  sq_ft: z.string().optional(),
+  project_value: z.preprocess(
+    (val) => {
+      if (val === null || val === undefined || val === "") return "";
+      return String(val);
+    },
+    z.string().optional()
+  ),
+  sq_ft: z.preprocess(
+    (val) => {
+      if (val === null || val === undefined || val === "") return "";
+      return String(val);
+    },
+    z.string().optional()
+  ),
   account_id: z.string().optional(),
   description: z.string().optional(),
   sales_person_id: z.string().optional(),
@@ -137,30 +149,37 @@ const JobFormSheet = ({
     },
   });
 
+  // =======================
+  // Reset form with proper type conversion
+  // =======================
   useEffect(() => {
-    if (isSheetOpen && job) {
-      form.reset({
-        name: job.name || "",
-        job_number: job.job_number || "",
-        project_value: job.project_value || "",
-        sq_ft: (job as any).sq_ft || "",
-        account_id: job.account_id ? String(job.account_id) : "",
-        description: (job as any).description || "",
-        sales_person_id: (job as any).sales_person_id
-          ? String((job as any).sales_person_id)
-          : "",
-      });
-    } else if (isSheetOpen && mode === 'create') {
-      // Explicitly reset to empty values for new job creation
-      form.reset({
-        name: "",
-        job_number: "",
-        project_value: "",
-        sq_ft: "",
-        account_id: "",
-        description: "",
-        sales_person_id: "",
-      });
+    if (isSheetOpen) {
+      if (job) {
+        // Convert all values to strings for the form
+        const formData = {
+          name: job.name || "",
+          job_number: job.job_number || "",
+          project_value: job.project_value != null ? String(job.project_value) : "",
+          sq_ft: (job as any).sq_ft != null ? String((job as any).sq_ft) : "",
+          account_id: job.account_id ? String(job.account_id) : "",
+          description: (job as any).description || "",
+          sales_person_id: (job as any).sales_person_id
+            ? String((job as any).sales_person_id)
+            : "",
+        };
+        form.reset(formData);
+      } else if (mode === 'create') {
+        // Reset to empty values for new job creation
+        form.reset({
+          name: "",
+          job_number: "",
+          project_value: "",
+          sq_ft: "",
+          account_id: "",
+          description: "",
+          sales_person_id: "",
+        });
+      }
     }
   }, [job, isSheetOpen, mode, form]);
 
@@ -196,13 +215,22 @@ const JobFormSheet = ({
       const payload: any = {
         name: values.name,
         job_number: values.job_number,
-        project_value: values.project_value || undefined,
-        sq_ft: values.sq_ft || undefined,
+        // Convert empty strings to undefined for the backend
+        project_value: values.project_value?.trim() || undefined,
+        sq_ft: values.sq_ft?.trim() || undefined,
         account_id: values.account_id
           ? parseInt(values.account_id)
           : undefined,
         description: values.description || undefined,
       };
+
+      // If backend expects numbers, convert them (uncomment if needed)
+      // if (payload.project_value) {
+      //   payload.project_value = Number(payload.project_value);
+      // }
+      // if (payload.sq_ft) {
+      //   payload.sq_ft = Number(payload.sq_ft);
+      // }
 
       if (!isEditMode && values.sales_person_id) {
         payload.sales_person_id = parseInt(values.sales_person_id);
@@ -225,7 +253,6 @@ const JobFormSheet = ({
     }
   }
 
-
   return (
     <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
       <SheetTrigger asChild>{trigger}</SheetTrigger>
@@ -243,7 +270,6 @@ const JobFormSheet = ({
             </SheetHeader>
 
             <SheetBody className="flex-1 overflow-y-auto">
-              {/* Removed ScrollArea to fix tab focus issue - using native overflow instead */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Job Name */}
                   <FormField
@@ -283,8 +309,13 @@ const JobFormSheet = ({
                       <FormItem>
                         <FormLabel>Project Value</FormLabel>
                         <FormControl>
-                          <Input {...field} disabled={isViewMode} />
+                          <Input 
+                            {...field} 
+                            disabled={isViewMode}
+                            value={field.value || ""}
+                          />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -297,11 +328,18 @@ const JobFormSheet = ({
                       <FormItem>
                         <FormLabel>Square Footage</FormLabel>
                         <FormControl>
-                          <Input {...field} disabled={isViewMode} placeholder="Enter square footage" />
+                          <Input 
+                            {...field} 
+                            disabled={isViewMode} 
+                            placeholder="Enter square footage"
+                            value={field.value || ""}
+                          />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
+
                   {/* Sales Person */}
                   <FormField
                     control={form.control}
@@ -356,6 +394,7 @@ const JobFormSheet = ({
                       </FormItem>
                     )}
                   />
+
                   {/* Account (FAB-style) */}
                   <FormField
                     control={form.control}
@@ -464,8 +503,6 @@ const JobFormSheet = ({
                       </FormItem>
                     )}
                   />
-                  {/* Sales Person Field - Create mode only */}
-                  
 
                   {/* Notes */}
                   <FormField
@@ -497,7 +534,10 @@ const JobFormSheet = ({
               </Button>
 
               {!isViewMode && (
-                <Button type="submit" disabled={isSubmitting}>
+                <Button 
+                  type="submit" 
+                  disabled={isSubmitting || !form.formState.isValid}
+                >
                   {isSubmitting ? (
                     <>
                       <LoaderCircleIcon className="h-4 w-4 animate-spin mr-2" />

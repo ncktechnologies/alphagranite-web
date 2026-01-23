@@ -98,6 +98,15 @@ export const SubmissionModal = ({
     }
   });
 
+  // Watch the work percentage value
+  const workPercentage = form.watch('workPercentage');
+  
+  // Check if work is 100% complete
+  const isWorkComplete = workPercentage === '100';
+  
+  // Disable CAD review if work is not 100% complete
+  const isCadReviewDisabled = !isWorkComplete;
+
   // End the session and get session data
   const endDraftingSession = async () => {
     if (!fabId) {
@@ -338,9 +347,10 @@ export const SubmissionModal = ({
               <Checkbox
                 checked={isConfirmed}
                 onCheckedChange={(v) => setIsConfirmed(Boolean(v))}
+                disabled={isCadReviewDisabled}
               />
-              <label className="font-semibold text-[16px]">
-                CAD review complete
+              <label className={`font-semibold text-[16px] ${isCadReviewDisabled ? 'text-gray-400' : ''}`}>
+                CAD review complete {isCadReviewDisabled && '(100% work completion required)'}
               </label>
             </div>
 
@@ -350,8 +360,12 @@ export const SubmissionModal = ({
               </Button>
 
               <Can action="update" on="Drafting">
-                <Button type="submit" disabled={!isConfirmed || isSubmitting} className="bg-green-600 hover:bg-green-700">
-                  {isSubmitting ? 'Submitting...' : 'Submit draft'}
+                <Button 
+                  type="submit" 
+                  disabled={!isConfirmed || isCadReviewDisabled || isSubmitting} 
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {isSubmitting ? 'Submitting...' : isCadReviewDisabled ? '100% Work Required' : 'Submit draft'}
                 </Button>
               </Can>
             </div>

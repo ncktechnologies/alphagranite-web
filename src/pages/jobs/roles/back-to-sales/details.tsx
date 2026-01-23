@@ -10,6 +10,8 @@ import { FileViewer } from '../drafters/components';
 import { Documents } from '@/pages/shop/components/files';
 import { RevisionModal } from './components/SubmissionModal';
 import { MarkAsCompleteModal } from './components/MarkAsCompleteModal';
+import { ApproveAndSendToSlabSmithModal } from './components/ApproveAndSendToSlabSmithModal';
+import { useApproveAndSendToSlabSmithMutation } from '@/store/api/job';
 import { TimeDisplay } from './components/DisplayTime';
 import { useSCTService } from './components/SCTService';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -41,6 +43,7 @@ const DraftReviewDetailsPage = () => {
     type ViewMode = 'activity' | 'file';
     const [showSubmissionModal, setShowSubmissionModal] = useState(false);
     const [showMarkAsCompleteModal, setShowMarkAsCompleteModal] = useState(false);
+    const [showApproveSlabSmithModal, setShowApproveSlabSmithModal] = useState(false);
     const [viewMode, setViewMode] = useState<ViewMode>('activity');
     const [activeFile, setActiveFile] = useState<any | null>(null);
     
@@ -127,6 +130,32 @@ const DraftReviewDetailsPage = () => {
         }
     }, [fabId, handleUpdateSCTReview, navigate]);
 
+    // Handle approve and send to slab smith
+    const [approveAndSendToSlabSmith] = useApproveAndSendToSlabSmithMutation();
+    
+    const handleApproveAndSendToSlabSmith = useCallback(async (data: { revenue: number; slabSmithUsed: boolean; notes: string }) => {
+        if (!fabId) return;
+        
+        try {
+            await approveAndSendToSlabSmith({
+                fab_id: fabId,
+                data: {
+                    sct_completed: true,
+                    revenue: data.revenue,
+                    slab_smith_used: data.slabSmithUsed,
+                    notes: data.notes
+                }
+            }).unwrap();
+            
+            toast.success("FAB approved and sent to Slab Smith successfully");
+            setShowApproveSlabSmithModal(false);
+            navigate('/job/draft-review');
+        } catch (error) {
+            console.error('Failed to approve and send to slab smith:', error);
+            toast.error("Failed to approve and send FAB to Slab Smith");
+        }
+    }, [fabId, approveAndSendToSlabSmith, navigate]);
+
     // Show loading while FAB is loading
     if (isFabLoading) {
         return <LoadingSpinner />;
@@ -146,6 +175,9 @@ const DraftReviewDetailsPage = () => {
 
     // Use draft_data from FAB response
     const draftData = (fabData as any)?.draft_data;
+
+    // Check slab smith conditions
+    const showApproveSlabSmithButton = fabData?.slab_smith_ag_needed === true && fabData?.slabsmith_completed_date === null;
 
     // Create sidebar sections
     const sidebarSections = [
@@ -256,11 +288,22 @@ const DraftReviewDetailsPage = () => {
                                         </p>
                                     </CardHeading>
                                     <CardToolbar>
-                                        <Can action="update" on="SCT">
-                                            <Button onClick={() => setShowMarkAsCompleteModal(true)}>
-                                                Mark as Complete
-                                            </Button>
-                                        </Can>
+                                        {showApproveSlabSmithButton ? (
+                                            <Can action="update" on="SCT">
+                                                <Button 
+                                                    onClick={() => setShowApproveSlabSmithModal(true)}
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                                                >
+                                                    Approve and Send to Slab Smith
+                                                </Button>
+                                            </Can>
+                                        ) : (
+                                            <Can action="update" on="SCT">
+                                                <Button onClick={() => setShowMarkAsCompleteModal(true)}>
+                                                    Mark as Complete
+                                                </Button>
+                                            </Can>
+                                        )}
                                         <Can action="update" on="SCT">
                                             <Button 
                                                 variant="outline" 
@@ -315,6 +358,16 @@ const DraftReviewDetailsPage = () => {
                     onClose={() => setShowMarkAsCompleteModal(false)}
                     onSubmit={handleMarkAsComplete}
                 />
+                
+                {/* Approve and Send to Slab Smith Modal */}
+                {showApproveSlabSmithButton && (
+                    <ApproveAndSendToSlabSmithModal
+                        open={showApproveSlabSmithModal}
+                        onClose={() => setShowApproveSlabSmithModal(false)}
+                        onSubmit={handleApproveAndSendToSlabSmith}
+                        fabId={`FAB-${fabData.id}`}
+                    />
+                )}
             </div>
         </>
     );

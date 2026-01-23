@@ -20,6 +20,7 @@ interface TimeTrackingComponentProps {
   draftStart?: Date | null; // Add server session data
   draftEnd?: Date | null;
   sessionData?: any; // Add full session data for initialization
+  isFabOnHold?: boolean; // Add FAB hold status
 
   onStart: (startDate: Date) => void | Promise<void>; // Allow async handler
   onPause: (data?: { note?: string; sqft_drafted?: string }) => void | Promise<void>; // Add sqft parameter
@@ -40,6 +41,7 @@ export const TimeTrackingComponent = ({
   draftStart,
   draftEnd,
   sessionData,
+  isFabOnHold = false,
   onStart,
   onPause,
   onResume,
@@ -374,18 +376,20 @@ export const TimeTrackingComponent = ({
                   Resume
                 </Button>
               )}
-              <Button
-                onClick={handleOnHold}
-                variant="inverse"
-                className="text-[#FF8C00] border border-[#FF8C00]"
-                // Remove file requirement for on hold
-                onMouseEnter={() => {
-                  // Remove the file upload warning on mouse enter for on hold
-                }}
-              >
-                <Square className="w-4 h-4 mr-2" />
-                On Hold
-              </Button>
+              {!isFabOnHold && (
+                <Button
+                  onClick={handleOnHold}
+                  variant="inverse"
+                  className="text-[#FF8C00] border border-[#FF8C00]"
+                  // Remove file requirement for on hold
+                  onMouseEnter={() => {
+                    // Remove the file upload warning on mouse enter for on hold
+                  }}
+                >
+                  <Square className="w-4 h-4 mr-2" />
+                  On Hold
+                </Button>
+              )}
             </>
           ) : null}
         </div>

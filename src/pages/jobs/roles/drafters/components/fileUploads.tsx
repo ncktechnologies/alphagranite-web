@@ -29,6 +29,7 @@ import { toAbsoluteUrl } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Link } from 'react-router';
+import { getFileStage, getStageBadge } from '@/utils/file-labeling';
 
 interface FileUploadItem extends FileWithPreview {
   progress: number;
@@ -44,6 +45,7 @@ interface UploadBoxProps {
   onFileClick?: (file: FileMetadata) => void;
   simulateUpload?: boolean;
   disabled?: boolean;
+  enhancedFiles?: any[]; // Enhanced file metadata with stage info
 }
 
 export function UploadDocuments({
@@ -53,6 +55,7 @@ export function UploadDocuments({
   onFileClick,
   simulateUpload = true,
   disabled = false,
+  enhancedFiles = [],
 }: UploadBoxProps) {
   const [uploadFiles, setUploadFiles] = useState<FileUploadItem[]>([]);
   const [uploadBoxes, setUploadBoxes] = useState([{ id: 1 }]);
@@ -151,12 +154,18 @@ export function UploadDocuments({
 
   const handleViewFile = (fileItem: FileUploadItem) => {
     if (fileItem.status === 'completed' && onFileClick) {
+      // Look for enhanced file data
+      const enhancedFile = enhancedFiles?.find((ef: any) => ef.name === fileItem.file.name);
+      
       const fileForViewer: FileMetadata = {
         id: fileItem.id,
         name: fileItem.file.name,
         size: fileItem.file.size,
         type: fileItem.file.type,
         url: fileItem.preview || (fileItem.file instanceof File ? URL.createObjectURL(fileItem.file) : fileItem.file.url),
+        stage: enhancedFile?.stage,
+        uploadedBy: enhancedFile?.uploadedBy,
+        uploadedAt: enhancedFile?.uploadedAt
       };
       onFileClick(fileForViewer);
     }
@@ -246,9 +255,32 @@ export function UploadDocuments({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[14px] text-black font-bold truncate">{fileItem.file.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                       {formatBytes(fileItem.file.size)}
-                    </p>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <p className="text-xs text-muted-foreground">
+                         {formatBytes(fileItem.file.size)}
+                      </p>
+                      {(() => {
+                        // Look for enhanced file data
+                        const enhancedFile = enhancedFiles?.find((ef: any) => ef.name === fileItem.file.name);
+                        const stage = enhancedFile?.stage || getFileStage(fileItem.file.name, { isDrafting: true });
+                        const badge = getStageBadge(stage);
+                        return (
+                          <span className={badge.className}>
+                            {badge.label}
+                          </span>
+                        );
+                      })()}
+                      
+                      {/* Additional file metadata if available */}
+                      {(() => {
+                        const enhancedFile = enhancedFiles?.find((ef: any) => ef.name === fileItem.file.name);
+                        return enhancedFile?.uploadedBy ? (
+                          <span className="text-xs text-gray-500">
+                            by {enhancedFile.uploadedBy}
+                          </span>
+                        ) : null;
+                      })()}
+                    </div>
                   </div>
                 </div>
 

@@ -25,7 +25,10 @@ import {
     useCompleteTemplatingMutation,
     useMarkTemplatingReceivedMutation,
     useGetTemplatingByFabIdQuery,
-    useGetFabByIdQuery
+    useGetFabByIdQuery,
+    useCreatePredraftReviewMutation,
+    useGetPredraftReviewByFabIdQuery,
+    useCompletePredraftReviewMutation
 } from "@/store/api/job";
 import { useGetSalesPersonsQuery } from "@/store/api";
 import { Can } from '@/components/permission';
@@ -61,9 +64,12 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
     const [updateFab] = useUpdateFabMutation();
     const [completeTemplating] = useCompleteTemplatingMutation();
     const [markTemplatingReceived] = useMarkTemplatingReceivedMutation();
+    const [createPredraftReview] = useCreatePredraftReviewMutation();
+    const [completePredraftReview] = useCompletePredraftReviewMutation();
 
     const { data: templatingData } = useGetTemplatingByFabIdQuery(fabId || 0, { skip: !fabId });
     const { data: fabData } = useGetFabByIdQuery(fabId || 0, { skip: !fabId });
+    const { data: predraftData } = useGetPredraftReviewByFabIdQuery(fabId || 0, { skip: !fabId });
 
     const form = useForm<ReviewChecklistData>({
         resolver: zodResolver(reviewChecklistSchema),
@@ -139,17 +145,28 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                     data: updateData
                 }).unwrap();
 
-                // If template review is marked as successful, call completeTemplating endpoint
-                if (values.templatereview) {
-                    // Get the templating_id from templatingData
-                    const templatingId = templatingData?.data?.id;
-                    if (templatingId) {
-                        await completeTemplating({
-                            templating_id: templatingId,
+                // If template review is marked as successful, follow predraft review flow
+                if (values.templatereview && fabId) {
+                    // First get existing predraft review or create new one
+                    let reviewId = predraftData?.data?.id;
+                    
+                    // If no predraft review exists, create one
+                    if (!reviewId) {
+                        const createResponse = await createPredraftReview({
+                            fab_id: fabId,
+                            notes: values.fab_notes || undefined
+                        }).unwrap();
+                        reviewId = createResponse?.data?.id || createResponse?.id;
+                    }
+                    
+                    // Complete the predraft review using the review ID
+                    if (reviewId) {
+                        await completePredraftReview({
+                            review_id: reviewId,
+                            is_completed: true,
+                            notes: values.fab_notes || undefined
                         }).unwrap();
                     }
-
-
                 }
             }
 
@@ -162,9 +179,6 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
             setIsSubmitting(false);
         }
     };
-
-    // Find the drafters department
-
 
     return (
         <>

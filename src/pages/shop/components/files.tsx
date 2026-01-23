@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Drafting } from '@/store/api/job';
 import { Can } from '@/components/permission';
+import { getFileStage, getStageBadge, WORKFLOW_STAGES } from '@/utils/file-labeling';
 
 interface FileMetadata {
   id: string;
@@ -19,6 +20,9 @@ interface FileMetadata {
   size: number;
   type: string;
   url: string;
+  stage?: any; // FileLabel from file-labeling utils
+  uploadedBy?: string;
+  uploadedAt?: Date;
 }
 
 interface UploadBoxProps {
@@ -27,6 +31,7 @@ interface UploadBoxProps {
   onDeleteFile?: (fileId: string) => void;
   draftingId?: number;
   uploadedFileMetas?: any[];
+  currentStage?: string; // Current workflow stage for context
 }
 
 // Helper function to compare if two objects have the same files data
@@ -43,7 +48,7 @@ export function Documents({
   draftingData, 
   onDeleteFile, 
   draftingId, 
-  uploadedFileMetas = [] 
+  uploadedFileMetas = []
 }: UploadBoxProps) {
   // Use useMemo to compute files instead of useState/useEffect
   const files = useMemo(() => {
@@ -59,6 +64,9 @@ export function Documents({
             size: parseInt(file.file_size) || 0,
             type: file.file_type || 'application/octet-stream',
             url: file.file_url || '/images/app/upload-file.svg',
+            stage: getFileStage(file.name, { isDrafting: true }),
+            uploadedBy: 'Drafter',
+            uploadedAt: file.created_at ? new Date(file.created_at) : new Date()
           }));
           allFiles.push(...actualFiles);
         } catch (error) {
@@ -75,6 +83,9 @@ export function Documents({
             size: 1024000 + index * 512000,
             type: 'application/pdf',
             url: '/images/app/upload-file.svg',
+            stage: WORKFLOW_STAGES.drafting,
+            uploadedBy: 'Drafter',
+            uploadedAt: new Date()
           }));
           allFiles.push(...mockFiles);
         } catch (error) {
@@ -91,6 +102,9 @@ export function Documents({
         size: meta.size || 0,
         type: meta.type || 'application/octet-stream',
         url: meta.url || (meta.file ? URL.createObjectURL(meta.file) : '/images/app/upload-file.svg'),
+        stage: meta.stage || getFileStage(meta.name, { isDrafting: true }),
+        uploadedBy: meta.uploadedBy || 'Current User',
+        uploadedAt: meta.uploadedAt || new Date()
       }));
       allFiles.push(...newFiles);
     }
@@ -140,7 +154,27 @@ export function Documents({
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[14px] text-black font-bold truncate">{file.name}</p>
-                    <p className="text-xs text-muted-foreground">{formatBytes(file.size)}</p>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <p className="text-xs text-muted-foreground">
+                        {formatBytes(file.size)}
+                      </p>
+                      {(() => {
+                        const stage = file.stage || getFileStage(file.name, { isDrafting: true });
+                        const badge = getStageBadge(stage);
+                        return (
+                          <span className={badge.className}>
+                            {badge.label}
+                          </span>
+                        );
+                      })()}
+                                             
+                      {/* Additional file metadata if available */}
+                      {file.uploadedBy && (
+                        <span className="text-xs text-gray-500">
+                          by {file.uploadedBy}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 

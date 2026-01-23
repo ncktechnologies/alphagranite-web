@@ -95,7 +95,7 @@ const ReviewDetailsPage = () => {
         let revisionId;
 
         // Check revisionsData structure - it might be { data: [...] } or directly an array
-        const revisionsArray = revisionsData?.data || revisionsData || [];
+        const revisionsArray = Array.isArray(revisionsData) ? revisionsData : (revisionsData as any)?.data || [];
         console.log('Fetched revisions:', revisionsArray);
         console.log('Type:', typeof revisionsArray);
         console.log('Is array?', Array.isArray(revisionsArray));

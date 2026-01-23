@@ -8,7 +8,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { useUpdateSlabSmithMutation, useAddFilesToSlabSmithMutation, useCreateSlabSmithMutation, useCreateFabNoteMutation } from "@/store/api/job";
+import { useUpdateSlabSmithMutation, useAddFilesToSlabSmithMutation, useCreateSlabSmithMutation, useCreateFabNoteMutation, useMarkSlabSmithCompletedMutation } from "@/store/api/job";
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 
@@ -49,6 +49,7 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
   const [addFilesToSlabSmith] = useAddFilesToSlabSmithMutation();
   const [createSlabSmith] = useCreateSlabSmithMutation(); // Add createSlabSmith mutation
   const [createFabNote] = useCreateFabNoteMutation();
+  const [markSlabSmithCompleted] = useMarkSlabSmithCompletedMutation();
 
   const form = useForm<SubmissionData>({
     resolver: zodResolver(submissionSchema),
@@ -70,7 +71,7 @@ const handleFinalSubmit = async (values: SubmissionData) => {
       const createResponse = await createSlabSmith({
         fab_id: fabId,
         slab_smith_type: 'standard',
-        drafter_id: userId,
+        drafter_id: fabData.drafter_id,
         start_date: fabData?.templating_schedule_start_date || new Date().toISOString().substring(0, 19),
         end_date: new Date().toISOString().substring(0, 19),
         total_sqft_completed: String(fabData?.total_sqft || values.totalSqFt || "0")
@@ -102,7 +103,7 @@ const handleFinalSubmit = async (values: SubmissionData) => {
         await createFabNote({
           fab_id: fabId,
           note: values.draftNotes.trim(),
-          stage: "slab_smith"
+          stage: "slab_smith_request"
         }).unwrap();
       } catch (noteError) {
         console.error("Error creating fab note:", noteError);
@@ -152,13 +153,20 @@ const handleFinalSubmit = async (values: SubmissionData) => {
       total_hours_completed: calculateTotalHours(draftStart || null, draftEnd || null), // Fix type issue
       notes: values.draftNotes || null,
       mentions: values.mentions || null,
-      is_completed: true,
       status_id: 1
     };
 
     console.log('Updating slab smith with payload:', payload);
     await updateSlabSmith({ slabsmith_id: currentSlabSmithId, data: payload }).unwrap();
     console.log('Slab smith update successful');
+    
+    // Call the complete endpoint
+    console.log('Marking slab smith as completed');
+    await markSlabSmithCompleted({ 
+      slabsmith_id: currentSlabSmithId,
+      updated_by: userId
+    }).unwrap();
+    console.log('Slab smith marked as completed');
 
     toast.success('Slab smith work submitted successfully');
     onClose(true);

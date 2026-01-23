@@ -1,5 +1,5 @@
 // DrafterDetailsPageRefactor.tsx - FIXED VERSION
-import { useCallback, useState, useEffect } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { Container } from '@/components/common/container';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +18,8 @@ import { UploadedFileMeta } from '@/types/uploads';
 import { X } from 'lucide-react';
 import { Can } from '@/components/permission';
 import { useTabClosingWarning } from '@/hooks';
+import { BackButton } from '@/components/common/BackButton';
+import { getFileStage, getStageBadge, EnhancedFileMetadata } from '@/utils/file-labeling';
 
 // Helper function to format timestamp without 'Z'
 const formatTimestamp = (date: Date) => {
@@ -76,6 +78,9 @@ export function DrafterDetailsPage() {
   const [activeFile, setActiveFile] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+  
+  // Track processed file names to prevent duplicates
+  const processedFileNamesRef = useRef<Set<string>>(new Set());
 
   // Initialize session state from server data
   useEffect(() => {
@@ -192,8 +197,16 @@ export function DrafterDetailsPage() {
 
   // Time tracking handlers
   const handleStart = async (startDate: Date, data?: { note?: string; sqft_drafted?: string }) => {
-    // Check if drafting exists before starting
-    if (!draftingData?.id) {
+    // Check if drafting exists before starting - check both drafting query and FAB data
+    const hasDraftingAssignment = draftingData?.id || fabData?.draft_data?.id;
+    
+    console.log('Drafting assignment check:', { 
+      draftingDataId: draftingData?.id, 
+      fabDraftDataId: fabData?.draft_data?.id,
+      hasAssignment: !!hasDraftingAssignment 
+    });
+    
+    if (!hasDraftingAssignment) {
       toast.error('Cannot start drafting session - no drafting assignment found');
       return;
     }
@@ -261,11 +274,29 @@ export function DrafterDetailsPage() {
   // Show files section if there are existing files OR if user has uploaded files
   const shouldShowFilesSection = (draftData && (draftData.files?.length ?? 0) > 0) || uploadedFileMetas.length > 0;
   
+  // Prepare enhanced file metadata for display
+  const enhancedUploadedFiles = uploadedFileMetas.map(meta => {
+    const file = pendingFiles.find(f => f.name === meta.name);
+    const stage = getFileStage(meta.name, { 
+      currentStage: 'drafting',
+      isDrafting: true 
+    });
+    
+    return {
+      ...meta,
+      size: file?.size || meta.size || 0,
+      type: file?.type || meta.type || '',
+      stage: stage,
+      uploadedAt: new Date(),
+      uploadedBy: currentUser?.name || 'Current User'
+    };
+  });
+  
   // Show upload section when timer is running, paused, OR when files have been uploaded (to maintain visibility after ending)
   const shouldShowUploadSection = (isDrafting || isPaused) || uploadedFileMetas.length > 0;
 
   // Handle files change - accumulate unique files only
-  const handleFilesChange = useCallback(async (files: FileWithPreview[]) => {
+  const handleFilesChange = useCallback((files: FileWithPreview[]) => {
     if (!files || files.length === 0) {
       return;
     }
@@ -283,18 +314,35 @@ export function DrafterDetailsPage() {
     // Extract the File objects
     const fileObjects = validFiles.map(f => f.file as File);
 
-    // Filter out duplicates by file name
+    // Use ref to track globally processed files across all calls
+    const processedNames = processedFileNamesRef.current;
+    
+    // Filter out already processed files
     const uniqueFileObjects = fileObjects.filter(
-      newFile => !pendingFiles.some(existingFile => existingFile.name === newFile.name)
+      newFile => !processedNames.has(newFile.name)
     );
 
     if (uniqueFileObjects.length === 0) {
-      console.log('All selected files are already uploaded');
+      console.log('All selected files have already been processed');
       return;
     }
 
+    console.log('Processing unique files:', uniqueFileObjects.map(f => f.name));
+
+    // Mark these files as processed
+    uniqueFileObjects.forEach(file => processedNames.add(file.name));
+
     // ACCUMULATE only unique pending files
-    setPendingFiles(prev => [...prev, ...uniqueFileObjects]);
+    setPendingFiles(prev => {
+      // Double-check against current pending files
+      const currentNames = new Set(prev.map(file => file.name));
+      const trulyUniqueFiles = uniqueFileObjects.filter(file => !currentNames.has(file.name));
+      
+      if (trulyUniqueFiles.length === 0) return prev;
+      
+      console.log('Actually adding files:', trulyUniqueFiles.map(f => f.name));
+      return [...prev, ...trulyUniqueFiles];
+    });
 
     // Create file metas for display and accumulate them (only for unique files)
     const newFileMetas: UploadedFileMeta[] = uniqueFileObjects.map((file, index) => ({
@@ -308,13 +356,20 @@ export function DrafterDetailsPage() {
 
     console.log('Added unique pending files:', uniqueFileObjects.length);
 
-  }, [pendingFiles]);
+  }, []); // Remove pendingFiles dependency to prevent recreation
 
   // File upload now handled only in submission modal
 
   const handleFileClick = (file: any) => {
-    // For now, just log the file click - file viewing is handled in submission modal
-    console.log('File clicked:', file);
+    // Enhance file with stage information before viewing
+    const enhancedFile = {
+      ...file,
+      stage: getFileStage(file.name, { isDrafting: true })
+    };
+    
+    setActiveFile(enhancedFile);
+    setViewMode('file');
+    console.log('File clicked:', enhancedFile);
   };
 
 
@@ -341,6 +396,9 @@ export function DrafterDetailsPage() {
       setDraftStart(null);
       setDraftEnd(null);
       setSessionStatus('idle');
+      
+      // Clear processed file names to allow re-uploading same files in future
+      processedFileNamesRef.current.clear();
 
       navigate('/job/draft');
     } catch (err) {
@@ -405,14 +463,23 @@ export function DrafterDetailsPage() {
     }
   ];
 
-  // Prepare files for SubmissionModal
-  const filesForSubmission = uploadedFileMetas.map(meta => {
+  // Prepare enhanced files with stage information for SubmissionModal
+  const filesForSubmission: EnhancedFileMetadata[] = uploadedFileMetas.map(meta => {
     const file = pendingFiles.find(f => f.name === meta.name);
+    const stage = getFileStage(meta.name, { 
+      currentStage: 'drafting',
+      isDrafting: true 
+    });
+    
     return {
       id: meta.id,
       name: meta.name,
+      size: file?.size || meta.size || 0,
+      type: file?.type || meta.type || '',
       url: meta.url,
-      file: file || undefined
+      stage: stage,
+      uploadedAt: new Date(),
+      uploadedBy: currentUser?.name || 'Current User'
     };
   });
 
@@ -433,6 +500,7 @@ export function DrafterDetailsPage() {
           </div>
           <p className='text-sm text-muted-foreground'>Update drafting activity</p>
         </div>
+       
       </Container>
 
       <div className=" border-t grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
@@ -494,6 +562,7 @@ export function DrafterDetailsPage() {
                     draftStart={draftStart}
                     draftEnd={draftEnd}
                     sessionData={sessionData}
+                    isFabOnHold={fabData?.status_id === 0}
                     onStart={handleStart}
                     onPause={handlePause}
                     onResume={handleResume}
@@ -513,7 +582,8 @@ export function DrafterDetailsPage() {
                       onFileClick={handleFileClick}
                       onFilesChange={handleFilesChange}
                       simulateUpload={false}
-                      disabled={hasEnded || isOnHold}
+                      disabled={hasEnded || isOnHold || isPaused}
+                      enhancedFiles={enhancedUploadedFiles}
                     />
                   )}
 
@@ -526,7 +596,8 @@ export function DrafterDetailsPage() {
 
                   {/* Submit Button - show after on hold OR after ending normally */}
                   {viewMode === 'activity'  && (
-                    <div className="flex justify-end">
+                    <div className="flex justify-end gap-3">
+                      <BackButton fallbackUrl="/job/draft" label='Cancel' />
                       <Can action="create" on="Drafting">
                         <Button
                           onClick={handleOpenSubmissionModal}
