@@ -1177,7 +1177,7 @@ export const jobApi = createApi({
             // Bulk assign drafting to multiple FABs
             bulkAssignDrafting: build.mutation<any, { drafter_id: number; items: BulkDraftingAssignment[] }>({
                 query: (data) => ({
-                    url: "/drafting/bulk-assign",
+                    url: "/drafting",
                     method: "post",
                     data
                 }),
