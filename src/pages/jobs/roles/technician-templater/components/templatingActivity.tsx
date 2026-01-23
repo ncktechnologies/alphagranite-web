@@ -130,7 +130,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      status: "not_completed",
+      status: "",
       start_date: "",
       duration: "",
       notes: "",
@@ -160,7 +160,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
 
       // Prepare values for the form
       const formValues: Partial<z.infer<typeof formSchema>> = {
-        status: "not_completed",
+        status: "",
         start_date: templatingData.data.actual_start_date || templatingData.data.schedule_start_date
           ? (() => {
             const dateSource = templatingData.data.actual_start_date || templatingData.data.schedule_start_date;
