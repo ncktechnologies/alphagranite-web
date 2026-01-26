@@ -37,7 +37,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useGetJobsQuery, useDeleteJobMutation, Job, useGetAccountsQuery } from '@/store/api/job';
+import { useGetJobsQuery, useDeleteJobMutation, Job, useGetAccountsQuery, ToggleInvoiceRequest } from '@/store/api/job';
 import { toast } from 'sonner';
 import { Can } from '@/components/permission';
 import JobFormSheet from './components/JobFormSheet';
@@ -269,7 +269,8 @@ export const JobsSection = () => {
               checked={row.original.need_to_invoice}
               onCheckedChange={async (checked) => {
                 try {
-                  await toggleNeedToInvoice(row.original.id).unwrap();
+                  // Send the toggle request with an empty note since this is just a toggle
+                  await toggleNeedToInvoice({ job_id: row.original.id }).unwrap();
                   toast.success(`Invoice requirement ${checked ? 'enabled' : 'disabled'} successfully`);
                   refetch();
                 } catch (error) {

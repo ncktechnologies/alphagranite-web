@@ -308,6 +308,17 @@ export interface JobListParams {
     schedule_start_date?: string;
     schedule_due_date?: string;
     need_to_invoice?: boolean;
+    is_invoiced?: boolean;
+}
+
+export interface ToggleInvoiceRequest {
+    job_id: number;
+    note?: string;
+}
+
+export interface MarkInvoicedRequest {
+    job_id: number;
+    invoiced_at?: string;
 }
 
 // Add this interface for jobs by account
@@ -703,6 +714,7 @@ export const jobApi = createApi({
                             ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
                             ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
                             ...(queryParams.need_to_invoice !== undefined && { need_to_invoice: queryParams.need_to_invoice }),
+                            ...(queryParams.is_invoiced !== undefined && { is_invoiced: queryParams.is_invoiced }),
                         }
                     };
                 },
@@ -725,6 +737,7 @@ export const jobApi = createApi({
                             ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
                             ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
                             ...(queryParams.need_to_invoice !== undefined && { need_to_invoice: queryParams.need_to_invoice }),
+                            ...(queryParams.is_invoiced !== undefined && { is_invoiced: queryParams.is_invoiced }),
                         }
                     };
                 },
@@ -1694,10 +1707,11 @@ export const jobApi = createApi({
             }),
             
             // Toggle Need To Invoice endpoint
-            toggleNeedToInvoice: build.mutation<Job, number>({
-                query: (job_id) => ({
+            toggleNeedToInvoice: build.mutation<Job, ToggleInvoiceRequest>({
+                query: ({ job_id, note }) => ({
                     url: `/jobs/${job_id}/toggle-invoice`,
                     method: "PATCH",
+                    data: { note }
                 }),
                 invalidatesTags: ["Job"],
             }),
@@ -1710,6 +1724,16 @@ export const jobApi = createApi({
                     params: { on_hold }
                 }),
                 invalidatesTags: ["Fab"],
+            }),
+            
+            // Mark Job Invoiced endpoint
+            markJobInvoiced: build.mutation<Job, MarkInvoicedRequest>({
+                query: ({ job_id, invoiced_at }) => ({
+                    url: `/jobs/${job_id}/mark-invoiced`,
+                    method: "PATCH",
+                    data: { invoiced_at }
+                }),
+                invalidatesTags: ["Job"],
             }),
         };
     },
@@ -1806,6 +1830,8 @@ export const {
     useToggleNeedToInvoiceMutation,
     // Toggle FAB On Hold hook
     useToggleFabOnHoldMutation,
+    // Mark Job Invoiced hook
+    useMarkJobInvoicedMutation,
     // Predraft hooks
     useCreatePredraftReviewMutation,
     useGetPredraftReviewByFabIdQuery,
