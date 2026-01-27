@@ -443,7 +443,7 @@ export const TimeTrackingComponent = ({
             <DialogHeader>
               <DialogTitle>Resume Drafting Session</DialogTitle>
             </DialogHeader>
-            <div className="py-4">
+            {/* <div className="py-4">
               <label htmlFor="resume-sqft" className="block text-sm font-medium mb-2">
                 Total Square Feet Drafted (Including Previous Sessions)
               </label>
@@ -464,7 +464,7 @@ export const TimeTrackingComponent = ({
                 placeholder="Add notes about why you're resuming..."
                 rows={4}
               />
-            </div>
+            </div> */}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={cancelResume}>
                 Cancel

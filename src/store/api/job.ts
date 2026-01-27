@@ -1715,6 +1715,15 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Job"],
             }),
+             addJobNotes: build.mutation<Job, ToggleInvoiceRequest>({
+                query: ({ job_id, note }) => ({
+                    url: `/jobs/${job_id}/notes`,
+                    method: "POST",
+                    data: { note }
+                }),
+                invalidatesTags: ["Job"],
+            }),
+            
             
             // Toggle FAB On Hold endpoint
             toggleFabOnHold: build.mutation<Fab, { fab_id: number; on_hold: boolean }>({
@@ -1828,6 +1837,7 @@ export const {
     useGetAdminDashboardQuery,
     // Toggle Need To Invoice hook
     useToggleNeedToInvoiceMutation,
+    useAddJobNotesMutation,
     // Toggle FAB On Hold hook
     useToggleFabOnHoldMutation,
     // Mark Job Invoiced hook

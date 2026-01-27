@@ -38,7 +38,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useGetJobsQuery, useGetJobByIdQuery, Job, JobListParams, ToggleInvoiceRequest } from '@/store/api/job';
+import { useGetJobsQuery, useGetJobByIdQuery, Job, JobListParams, ToggleInvoiceRequest, useAddJobNotesMutation } from '@/store/api/job';
 import { toast } from 'sonner';
 import { Can } from '@/components/permission';
 import JobFormSheet from './components/JobFormSheet';
@@ -110,6 +110,7 @@ export const NeedToInvoicePage = () => {
 
   const [toggleNeedToInvoice] = useToggleNeedToInvoiceMutation();
   const [markJobInvoiced] = useMarkJobInvoicedMutation();
+  const [addJobNotes] = useAddJobNotesMutation();
 
   // Transform API data to match table structure
   const jobs = useMemo(() => {
@@ -167,7 +168,7 @@ export const NeedToInvoicePage = () => {
         note: note || undefined
       };
       
-      await toggleNeedToInvoice(payload).unwrap();
+      await addJobNotes(payload).unwrap();
       toast.success(`Invoice requirement ${job.need_to_invoice ? 'disabled' : 'enabled'} successfully`);
       refetch();
       setIsNoteModalOpen(false);
@@ -503,7 +504,7 @@ export const NeedToInvoicePage = () => {
                 onClick={() => currentJobForNote && handleToggleInvoiceWithNote(currentJobForNote, noteText)}
                 disabled={!currentJobForNote}
               >
-                Save Note & Toggle
+                Save Note
               </Button>
             </div>
           </div>

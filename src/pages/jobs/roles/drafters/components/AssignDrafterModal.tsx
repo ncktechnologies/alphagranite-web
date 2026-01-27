@@ -141,7 +141,7 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
             </div>
           </div>
           
-          <div>
+          {/* <div>
             <h3 className="font-semibold mb-3">Selected FABs ({selectedFabIds.length})</h3>
             <div className="border rounded-md max-h-60 overflow-y-auto">
               {selectedFabIds.map((fabId) => (
@@ -163,7 +163,7 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
         </div>
         
         <div className="flex justify-end space-x-3 pt-4 border-t">
