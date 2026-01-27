@@ -202,7 +202,7 @@ const FinalProgrammingPage = () => {
                 <JobTable
                     jobs={jobsData}
                     path='final-programming'
-                    isLoading={isLoading || isFetching}
+                    isLoading={isLoading }
                     // useBackendPagination={true}
                     // totalRecords={data?.total || 0}
                     // tableState={tableState}

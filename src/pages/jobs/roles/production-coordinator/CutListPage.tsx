@@ -243,7 +243,7 @@ const CutListPage = () => {
                     fabTypes={fabTypes}
                     salesPersons={salesPersons}
                     path="/job/cut-list"
-                    isLoading={isFabsLoading || isFetching}
+                    isLoading={isFabsLoading }
                     pagination={pagination}
                     setPagination={setPagination}
                     searchQuery={searchQuery}

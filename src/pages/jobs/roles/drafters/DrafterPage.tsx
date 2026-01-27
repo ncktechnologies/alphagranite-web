@@ -200,7 +200,7 @@ const DrafterPage = () => {
             <JobTable
                 jobs={jobsData}
                 path='draft'
-                isLoading={isLoading || isFetching}
+                isLoading={isLoading }
                 // onRowClick={handleRowClick}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}

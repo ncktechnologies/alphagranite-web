@@ -223,7 +223,7 @@ export function PredraftPage() {
             <JobTable
                 jobs={jobsData}
                 path='predraft'
-                isLoading={isLoading || isFetching}
+                isLoading={isLoading }
                 // onRowClick={handleRowClick}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}

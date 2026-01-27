@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -19,7 +19,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { InputWrapper } from "@/components/ui/input";
-import { Upload, Plus } from "lucide-react";
+import { Upload, Plus, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAddFilesToDraftingMutation } from '@/store/api/job';
@@ -28,54 +28,55 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Drafting } from '@/store/api/job';
 import { useNavigate } from "react-router";
+import { TimeTrackingComponent } from './TimeTrackingComponent'; // Add this import
 
 const revisionSchema = z.object({
-  complete: z.boolean().optional(), // Make this optional
+  complete: z.boolean(),
 });
 
 type RevisionData = z.infer<typeof revisionSchema>;
 
-export const RevisionForm = ({
-  onSubmit,
-  onClose,
-  revisionReason: propRevisionReason,
-  draftingData,
+// Local File Upload Component for Revisions
+const RevisionFileUpload = ({ 
+  draftingId, 
+  onUploadSuccess,
+  onFileRemove,
+  existingFiles = [],
+  disabled = false
 }: {
-  onSubmit: (data: RevisionData & { files?: UploadedFileMeta[]; complete: boolean }) => void; // Specify complete as always boolean
-  onClose: () => void;
-  revisionReason?: string;
-  draftingData?: Drafting; // Drafting data for file uploads
+  draftingId?: number;
+  onUploadSuccess: (files: UploadedFileMeta[]) => void;
+  onFileRemove: (fileId: string) => void;
+  existingFiles?: UploadedFileMeta[];
+  disabled?: boolean;
 }) => {
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
+  const [addFilesToDrafting] = useAddFilesToDraftingMutation();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const revisionReason = propRevisionReason;
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFileMeta[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [addFilesToDrafting, { isLoading: isUploadingFiles }] = useAddFilesToDraftingMutation();
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const navigate = useNavigate();
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const newFiles = Array.from(e.target.files);
+      setPendingFiles(prev => [...prev, ...newFiles]);
+    }
+  };
 
-  const form = useForm<RevisionData>({
-    resolver: zodResolver(revisionSchema),
-    mode: 'onChange',
-    defaultValues: {
-      revisionType: "",
-    },
-  });
+  const removePendingFile = (index: number) => {
+    setPendingFiles(prev => prev.filter((_, i) => i !== index));
+  };
 
-  const uploadSelectedFiles = async (fileList: FileList) => {
-    const files = Array.from(fileList);
-    const uploaded: UploadedFileMeta[] = [];
-
-    // Check if we have drafting data
-    if (!draftingData?.id) {
-      toast.error("Drafting data not available");
+  const uploadFiles = async () => {
+    if (!draftingId || pendingFiles.length === 0) {
+      toast.error("Drafting ID is required or no files to upload");
       return;
     }
 
+    setIsUploading(true);
     try {
       const response = await addFilesToDrafting({
-        drafting_id: draftingData.id,
-        files: files
+        drafting_id: draftingId,
+        files: pendingFiles
       }).unwrap();
 
       console.log('File upload response:', response);
@@ -91,35 +92,183 @@ export const RevisionForm = ({
           type: fileData.type,
         }));
         
-        setUploadedFiles((prev) => [...prev, ...newUploadedFiles]);
-        toast.success("Files uploaded successfully");
+        onUploadSuccess(newUploadedFiles);
+        setPendingFiles([]);
       }
     } catch (error) {
       console.error("Failed to upload files:", error);
       toast.error("Failed to upload files");
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files?.length) return;
-    try {
-      await uploadSelectedFiles(e.target.files);
-    } finally {
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+  const handleUploadClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-4">
+        <input
+          type="file"
+          multiple
+          onChange={handleFileChange}
+          ref={fileInputRef}
+          className="hidden"
+          disabled={disabled}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleUploadClick}
+          disabled={disabled}
+          className="flex items-center gap-2"
+        >
+          <Upload className="w-4 h-4" />
+          Select Files
+        </Button>
+        {pendingFiles.length > 0 && (
+          <Button
+            type="button"
+            onClick={uploadFiles}
+            disabled={isUploading || !draftingId}
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
+            {isUploading ? 'Uploading...' : `Upload ${pendingFiles.length} file(s)`}
+          </Button>
+        )}
+      </div>
+
+      {/* Pending files list */}
+      {pendingFiles.length > 0 && (
+        <div className="border rounded-lg p-3">
+          <h4 className="font-medium mb-2">Pending Uploads ({pendingFiles.length})</h4>
+          <ul className="space-y-2">
+            {pendingFiles.map((file, index) => (
+              <li key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                <span className="text-sm truncate max-w-xs">{file.name}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => removePendingFile(index)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Existing files list */}
+      {existingFiles.length > 0 && (
+        <div className="border rounded-lg p-3">
+          <h4 className="font-medium mb-2">Uploaded Files ({existingFiles.length})</h4>
+          <ul className="space-y-2">
+            {existingFiles.map((file) => (
+              <li key={file.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
+                <span className="text-sm truncate max-w-xs">{file.name}</span>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onFileRemove(file.id)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const RevisionForm = ({
+  onSubmit,
+  onClose,
+  revisionReason: propRevisionReason,
+  draftingData,
+  isRevision = false, // Add revision flag
+  originalDraftingId, // Add original drafting ID
+  totalTime = 0, // Add time tracking props
+  isDrafting = false,
+  isPaused = false,
+  hasEnded = false,
+  onTimeUpdate,
+  onStart,
+  onPause,
+  onResume,
+  onEnd,
+}: {
+  onSubmit: (data: RevisionData & { files?: UploadedFileMeta[]; complete: boolean }) => void;
+  onClose: () => void;
+  revisionReason?: string;
+  draftingData?: Drafting;
+  isRevision?: boolean; // Revision flag
+  originalDraftingId?: number; // Original drafting ID
+  // Time tracking props
+  totalTime?: number;
+  isDrafting?: boolean;
+  isPaused?: boolean;
+  hasEnded?: boolean;
+  onTimeUpdate?: (time: number) => void;
+  onStart?: (startDate: Date, is_revision?: boolean, original_drafting_id?: number) => void | Promise<void>;
+  onPause?: (data?: { note?: string }) => void | Promise<void>;
+  onResume?: (data?: { note?: string }) => void | Promise<void>;
+  onEnd?: (endDate: Date) => void | Promise<void>;
+}) => {
+
+  const revisionReason = propRevisionReason;
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFileMeta[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRevisionComplete, setIsRevisionComplete] = useState(false);
+  const [addFilesToDrafting, { isLoading: isUploadingFiles }] = useAddFilesToDraftingMutation();
+  const navigate = useNavigate();
+
+  const form = useForm<RevisionData>({
+    resolver: zodResolver(revisionSchema),
+    mode: 'onChange',
+    defaultValues: {
+      complete: false,
+    },
+  });
+
+  // Watch the complete field to update state
+  const completeValue = form.watch('complete');
+
+  useEffect(() => {
+    setIsRevisionComplete(completeValue);
+  }, [completeValue]);
+
+  // Function to handle file uploads using the local component
+  const handleFileUploadSuccess = (newFiles: UploadedFileMeta[]) => {
+    setUploadedFiles(prev => [...prev, ...newFiles]);
+    toast.success(`${newFiles.length} file(s) uploaded successfully`);
+  };
+
+  const handleFileRemove = (fileId: string) => {
+    setUploadedFiles(prev => prev.filter(file => file.id !== fileId));
   };
 
   const handleFormSubmit = async (values: RevisionData) => {
-  
     setIsSubmitting(true);
     
     try {
+      // If the revision is complete, end the session first
+      if (values.complete && onEnd) {
+        await onEnd(new Date()); // End the current session
+      }
+      
       const submissionData = {
         ...values,
-        // Convert undefined complete to false for submission
-        complete: values.complete || false,
         files: uploadedFiles
       };
       
@@ -143,6 +292,27 @@ export const RevisionForm = ({
             <CardTitle>Revision</CardTitle>
           </CardHeader>
           <CardContent className="p-4">
+            {/* Time Tracking Component - Add this section */}
+            {isRevision && (
+              <div className="mb-6">
+                <TimeTrackingComponent
+                  isDrafting={isDrafting || false}
+                  isPaused={isPaused || false}
+                  totalTime={totalTime}
+                  isRevision={true}
+                  originalDraftingId={originalDraftingId}
+                  onStart={onStart || (() => {})}
+                  onPause={onPause || (() => {})}
+                  onResume={onResume || (() => {})}
+                  onEnd={onEnd || (() => {})}
+                  onTimeUpdate={onTimeUpdate || (() => {})}
+                  hasEnded={hasEnded || false}
+                  pendingFilesCount={0}
+                  uploadedFilesCount={uploadedFiles.length}
+                />
+              </div>
+            )}
+
             {/* Display revision reason */}
             {revisionReason && (
               <div className="mb-4 p-3 bg-gray-50 rounded-md">
@@ -151,74 +321,16 @@ export const RevisionForm = ({
               </div>
             )}
             
-            {/* Revision Type */}
-            {/* <div className="max-w-[500px]">
-              <FormField
-                control={form.control}
-                name="revisionType"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Revision type</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select revision type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="cad">CAD</SelectItem>
-                        <SelectItem value="client">Client</SelectItem>
-                        <SelectItem value="sales">Sales</SelectItem>
-                        <SelectItem value="template">Template</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            {/* File Upload Section - Using local RevisionFileUpload component */}
+            <div className="mb-6">
+              <FormLabel className="block mb-2 font-medium">Upload revision files</FormLabel>
+              <RevisionFileUpload
+                draftingId={draftingData?.id} // Pass the drafting ID to link files
+                onUploadSuccess={handleFileUploadSuccess}
+                onFileRemove={handleFileRemove}
+                existingFiles={uploadedFiles}
+                disabled={!draftingData?.id} // Disable if no drafting ID
               />
-            </div> */}
-            {/* Upload Revision */}
-            <div className="space-y-2 max-w-[500px]">
-              <FormLabel>Upload revision</FormLabel>
-              <div className="flex items-center gap-6">
-                <label className="flex-1 cursor-pointer">
-                  <InputWrapper className="flex items-center justify-start h-12 border-dashed">
-                    <div className="flex items-center gap-2 text-sm uderline text-primary">
-                      <img src='/images/app/upload.svg' className="w-[27px] h-[21px]" />
-                      Upload file
-                    </div>
-                    <input
-                      type="file"
-                      multiple
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      ref={fileInputRef}
-                    />
-                  </InputWrapper>
-                </label>
-
-                <Button
-                  type="button"
-                  variant="dashed"
-                  className="flex flex-1 items-center gap-2 h-12"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Plus className="w-4 h-4" />
-                  Add
-                </Button>
-              </div>
-
-              {isUploadingFiles && (
-                <p className="text-xs text-muted-foreground pt-1">Uploading files...</p>
-              )}
-
-              {uploadedFiles.length > 0 && (
-                <ul className="pt-2 space-y-1 text-sm text-muted-foreground mb-3">
-                  {uploadedFiles.map((file, i) => (
-                    <li key={i}>• {file.name}</li>
-                  ))}
-                </ul>
-              )}
             </div>
 
             <FormField
@@ -234,17 +346,25 @@ export const RevisionForm = ({
                       <Checkbox 
                         checked={field.value} 
                         onCheckedChange={field.onChange}
+                        disabled={uploadedFiles.length === 0} // Disable until files are uploaded
                       />
                       <span 
-                        className="font-medium text-sm cursor-pointer"
+                        className={`font-medium text-sm cursor-pointer ${uploadedFiles.length === 0 ? 'text-gray-400' : 'text-gray-700'}`}
                         onClick={(e) => {
-                          e.preventDefault();
-                          field.onChange(!field.value);
+                          if (uploadedFiles.length > 0) {
+                            e.preventDefault();
+                            field.onChange(!field.value);
+                          }
                         }}
                       >
                         Revision complete
                       </span>
                     </div>
+                    {uploadedFiles.length === 0 && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Upload files before marking as complete
+                      </p>
+                    )}
                   </div>
                 </FormItem>
               )}
@@ -265,7 +385,7 @@ export const RevisionForm = ({
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting || !form.formState.isValid}
+                disabled={isSubmitting || !form.formState.isValid || uploadedFiles.length === 0}
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
                 {isSubmitting ? "Submitting..." : "Submit revision"}

@@ -271,7 +271,7 @@ export function TemplatingPage() {
                         jobs={jobsData}
                         path="templating"
                         showScheduleFilter={true}
-                        isLoading={isLoading || isFetching}
+                        isLoading={isLoading }
                         useBackendPagination={true}
                         totalRecords={data?.total || 0}
                         tableState={tableState}

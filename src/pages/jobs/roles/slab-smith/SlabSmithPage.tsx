@@ -219,7 +219,7 @@ const SlabSmithPage = () => {
                 <JobTable
                     jobs={jobsData}
                     path='slab-smith'
-                    isLoading={isLoading || isFetching}
+                    isLoading={isLoading }
                     // onRowClick={handleRowClick}
                     useBackendPagination={true}
                     totalRecords={data?.total || 0}

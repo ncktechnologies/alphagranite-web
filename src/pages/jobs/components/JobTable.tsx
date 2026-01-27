@@ -114,6 +114,9 @@ export const JobTable = ({
     const [localDateRange, setLocalDateRange] = useState<DateRange | undefined>(undefined);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
+    const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
+    const [optimisticUpdates, setOptimisticUpdates] = useState<Record<string, any>>({});
+    const [suppressParentRefresh, setSuppressParentRefresh] = useState(false);
     const navigate = useNavigate();
     
     const [toggleFabOnHold] = useToggleFabOnHoldMutation();
@@ -1252,36 +1255,91 @@ export const JobTable = ({
          {
             id: "on_hold",
             accessorKey: "status_id",
-            accessorFn: (row: IJob) => row.status_id === 0, // 0 = on hold (true), 1 = not on hold (false)
+            accessorFn: (row: IJob) => {
+                // Check for optimistic update first, then fall back to actual data
+                const fabId = row.fab_id;
+                if (optimisticUpdates[fabId] !== undefined) {
+                    return optimisticUpdates[fabId] === 0;
+                }
+                return row.status_id === 0;
+            },
             header: ({ column }) => (
                 <DataGridColumnHeader title="ON HOLD" column={column} />
             ),
             cell: ({ row }) => {
                 const fabId = parseInt(row.original.fab_id);
+                const isLoading = loadingStates[fabId] || false;
+                // Get the display value considering optimistic updates
+                const isChecked = optimisticUpdates[row.original.fab_id] !== undefined 
+                    ? optimisticUpdates[row.original.fab_id] === 0
+                    : row.original.status_id === 0;
+                
                 return (
-                    <div className="flex justify-center">
+                    <div className="flex justify-center items-center">
                         <Switch 
-                        className="data-[state=checked]:bg-red-600"
-                            checked={row.original.status_id === 0} // status_id: 0 = on hold (true), 1 = not on hold (false)
+                            className={`data-[state=checked]:bg-red-600 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            checked={isChecked}
+                            disabled={isLoading}
                             onCheckedChange={async (checked) => {
-                                // Store original value for rollback in case of error
-                                const originalStatusId = row.original.status_id;
+                                if (isLoading) return;
+                                
+                                const newStatusId = checked ? 0 : 1;
+                                const fabIdStr = row.original.fab_id;
+                                
+                                // Apply optimistic update immediately
+                                setOptimisticUpdates(prev => ({
+                                    ...prev,
+                                    [fabIdStr]: newStatusId
+                                }));
+                                
+                                // Set loading state
+                                setLoadingStates(prev => ({ ...prev, [fabId]: true }));
+                                
+                                // Signal to parent that we're handling the update
+                                setSuppressParentRefresh(true);
                                 
                                 try {
-                                    // Optimistic update
-                                    row.original.status_id = checked ? 0 : 1;
+                                    await toggleFabOnHold({ 
+                                        fab_id: fabId, 
+                                        on_hold: checked 
+                                    }).unwrap();
                                     
-                                    await toggleFabOnHold({ fab_id: fabId, on_hold: checked }).unwrap();
+                                    // Keep optimistic update for 2 seconds to prevent immediate refresh
+                                    setTimeout(() => {
+                                        setSuppressParentRefresh(false);
+                                        // Clear optimistic update after parent has had chance to refresh
+                                        setOptimisticUpdates(prev => {
+                                            const newState = { ...prev };
+                                            delete newState[fabIdStr];
+                                            return newState;
+                                        });
+                                    }, 2000);
                                     
-                                    // Update successful, new state is already applied
                                 } catch (error) {
                                     console.error('Failed to toggle on hold status:', error);
-                                    // Rollback to original value if API call fails
-                                    row.original.status_id = originalStatusId;
+                                    // Rollback optimistic update on error immediately
+                                    setOptimisticUpdates(prev => {
+                                        const newState = { ...prev };
+                                        delete newState[fabIdStr];
+                                        return newState;
+                                    });
+                                    setSuppressParentRefresh(false);
+                                } finally {
+                                    // Always clear loading state
+                                    setLoadingStates(prev => {
+                                        const newState = { ...prev };
+                                        delete newState[fabId];
+                                        return newState;
+                                    });
                                 }
                             }}
                             aria-label="Toggle on hold"
                         />
+                        {isLoading && (
+                            <div className="ml-2">
+                                <div className="h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
+                            </div>
+                        )}
                     </div>
                 );
             },
