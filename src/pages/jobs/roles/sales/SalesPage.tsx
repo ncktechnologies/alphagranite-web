@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'react-router';
 import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
@@ -16,6 +16,8 @@ import { useIsSuperAdmin } from '@/hooks/use-permission';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Can } from '@/components/permission';
+import { useTableState } from '@/hooks';
+import { useGetSalesPersonsQuery } from '@/store/api';
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
@@ -68,60 +70,135 @@ const transformFabToJob = (fab: Fab): IJob => {
 export function SalesPage() {
     const location = useLocation();
     const isNewFabForm = location.pathname.includes('/new-fab-id');
-    // Get current stage filter based on user role
-    const { currentStageFilter, isSuperAdmin } = useJobStageFilter();
-    const user = useSelector((state: RootState) => state.user?.user);
-    const isUserSuperAdmin = useIsSuperAdmin();
+    const { data: salesPersonsData } = useGetSalesPersonsQuery();
 
-    // Fetch fabs with role-based filtering
-    // Super admin: currentStageFilter is undefined, so gets ALL fabs
-    // Sales role: currentStageFilter is 'sales', so gets only sales fabs
-    const { data: fabs, isLoading, error, isError } = useGetFabsQuery({
-        // current_stage: currentStageFilter,
-        limit: 100,
+    // Extract sales persons
+    const salesPersons = useMemo(() => {
+        if (!salesPersonsData) {
+            return [];
+        }
+
+        // Handle both possible response formats
+        let rawData: any[] = [];
+        if (Array.isArray(salesPersonsData)) {
+            rawData = salesPersonsData;
+        } else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData) {
+            rawData = (salesPersonsData as any).data || [];
+        }
+
+        // Extract names from sales person objects
+        const extractName = (item: { name: string } | string) => {
+            if (typeof item === 'string') {
+                return item;
+            }
+            if (typeof item === 'object' && item !== null) {
+                return item.name || String(item);
+            }
+            return String(item);
+        };
+
+        return rawData.map(extractName);
+    }, [salesPersonsData]);
+    const tableState = useTableState({
+        tableId: 'sct-table',
+        defaultPagination: { pageIndex: 0, pageSize: 25 },
+        defaultDateFilter: 'all',
+        persistState: true,
     });
+    const skip = tableState.pagination.pageIndex * tableState.pagination.pageSize;
+    const queryParams = useMemo(() => {
+        const params: any = {
+            skip,
+            limit: tableState.pagination.pageSize,
+            // current_stage: /'sales_ct', // Changed to SCT stage
+        };
+
+        if (tableState.searchQuery) {
+            params.search = tableState.searchQuery;
+        }
+
+        if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') {
+            params.fab_type = tableState.fabTypeFilter;
+        }
+
+        // // Add sales person filter using name
+        // if (tableState.salesPersonFilter && tableState.salesPersonFilter !== 'all') {
+        //     if (tableState.salesPersonFilter === 'no_sales_person') {
+        //         params.sales_person_name = '';
+        //     } else {
+        //         params.sales_person_name = tableState.salesPersonFilter;
+        //     }
+        // }
+
+        if (tableState.dateFilter && tableState.dateFilter !== 'all') {
+            // For custom date range, use schedule_start_date and schedule_due_date
+            if (tableState.dateFilter === 'custom') {
+                if (tableState.dateRange?.from) {
+                    params.draft_completed_start = tableState.dateRange.from.toISOString().split('T')[0];
+                }
+                if (tableState.dateRange?.to) {
+                    params.draft_completed_end = tableState.dateRange.to.toISOString().split('T')[0];
+                }
+                // Don't send date_filter when using custom range
+            } else {
+                // For other filters (today, this_week, etc.), use date_filter
+                params.date_filter = tableState.dateFilter;
+            }
+        }
+
+        return params;
+    }, [
+        skip,
+        tableState.pagination.pageSize,
+        tableState.searchQuery,
+        tableState.fabTypeFilter,
+        tableState.salesPersonFilter,
+        tableState.dateFilter,
+        tableState.dateRange,
+    ]);
+    const { data, isLoading, error, isError } = useGetFabsQuery(queryParams);
 
     if (isNewFabForm) {
         return <NewFabIdForm />;
     }
 
-     if (isLoading) {
-            return (
-                <div className="">
-                    <Container>
-                        <Toolbar className=' '>
-                            <ToolbarHeading title="FAB ID'S" description="" />
-                        </Toolbar>
-                        <div className="space-y-4 mt-4">
-                            <Skeleton className="h-16 w-full" />
-                            <Skeleton className="h-16 w-full" />
-                            <Skeleton className="h-16 w-full" />
-                        </div>
-                    </Container>
-                </div>
-            );
-        }
-    
-        if (isError) {
-            return (
-                <div className="">
-                    <Container>
-                        <Toolbar className=' '>
-                            <ToolbarHeading title="FAB ID'S" description="" />
-                        </Toolbar>
-                        <Alert variant="destructive" className="mt-4">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Error</AlertTitle>
-                            <AlertDescription>
-                                {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : "Failed to load FAB data"}
-                            </AlertDescription>
-                        </Alert>
-                    </Container>
-                </div>
-            );
-        }
+    if (isLoading) {
+        return (
+            <div className="">
+                <Container>
+                    <Toolbar className=' '>
+                        <ToolbarHeading title="FAB ID'S" description="" />
+                    </Toolbar>
+                    <div className="space-y-4 mt-4">
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                    </div>
+                </Container>
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="">
+                <Container>
+                    <Toolbar className=' '>
+                        <ToolbarHeading title="FAB ID'S" description="" />
+                    </Toolbar>
+                    <Alert variant="destructive" className="mt-4">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>
+                            {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : "Failed to load FAB data"}
+                        </AlertDescription>
+                    </Alert>
+                </Container>
+            </div>
+        );
+    }
     // Transform Fab data to IJob format
-    const transformedJobs: IJob[] = fabs ? fabs.data?.map(transformFabToJob) : [];
+    const jobsData: IJob[] = data ? data.data?.map(transformFabToJob) : [];
 
     return (
         <div className="">
@@ -147,7 +224,20 @@ export function SalesPage() {
                         </Can>
                     </ToolbarActions>
                 </Toolbar>
-                <JobTable jobs={transformedJobs} path='sales'  />
+                {/* <JobTable jobs={transformedJobs} path='sales' /> */}
+                <JobTable
+                    jobs={jobsData}
+                    path='draft-review'
+                    isLoading={isLoading}
+                    // onRowClick={handleRowClick}
+                    useBackendPagination={true}
+                    totalRecords={data?.total || 0}
+                    tableState={tableState}
+                    showSalesPersonFilter={true}
+                    showScheduleFilter={false} // Remove separate schedule filter
+                    salesPersons={salesPersons}
+                    visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'slabsmith_used', 'sct_notes', 'sct_completed', 'sales_person_name', 'draft_revision_notes', 'on_hold']}
+                />
             </Container>
         </div>
     );
