@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState, useMemo } from "react";
+import { ReactNode, useEffect, useState, useMemo, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -11,7 +11,6 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,7 +23,7 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { LoaderCircleIcon, Plus, Search } from "lucide-react";
+import { LoaderCircleIcon, Plus, Search, ArrowLeft } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import type { Job } from "@/store/api/job";
 import {
@@ -64,14 +63,6 @@ const jobSchema = z.object({
 
 type JobFormType = z.infer<typeof jobSchema>;
 
-interface JobFormData {
-  name: string;
-  job_number: string;
-  project_value: string;
-  sq_ft: string;
-  account_id?: number;
-}
-
 interface JobFormSheetProps {
   trigger: ReactNode;
   job?: Job;
@@ -110,8 +101,57 @@ const JobFormSheet = ({
   // Account UI state
   // =======================
   const [accountSearch, setAccountSearch] = useState("");
-  const [showAddAccount, setShowAddAccount] = useState(false);
-  const [newAccount, setNewAccount] = useState("");
+  const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
+  
+  // Separate state for create account form
+  const [showCreateAccountForm, setShowCreateAccountForm] = useState(false);
+  const [newAccountName, setNewAccountName] = useState("");
+  const [newAccountData, setNewAccountData] = useState({
+    account_number: "",
+    contact_person: "",
+    email: "",
+    phone: "",
+  });
+  
+  // Store account data to persist across popover closes
+  const persistAccountDataRef = useRef({
+    search: "",
+    showCreateForm: false,
+    newAccountName: "",
+    accountData: {
+      account_number: "",
+      contact_person: "",
+      email: "",
+      phone: "",
+    }
+  });
+
+  // Restore persisted data when popover opens
+  useEffect(() => {
+    if (accountPopoverOpen) {
+      setAccountSearch(persistAccountDataRef.current.search);
+      if (persistAccountDataRef.current.showCreateForm) {
+        setShowCreateAccountForm(true);
+        setNewAccountName(persistAccountDataRef.current.newAccountName);
+        setNewAccountData(persistAccountDataRef.current.accountData);
+      }
+    } else {
+      // Clear search when popover closes
+      setAccountSearch("");
+      setShowCreateAccountForm(false);
+    }
+  }, [accountPopoverOpen]);
+
+  // Save data when popover closes
+  const handleAccountPopoverClose = () => {
+    persistAccountDataRef.current = {
+      search: accountSearch,
+      showCreateForm: showCreateAccountForm,
+      newAccountName: newAccountName,
+      accountData: newAccountData
+    };
+    setAccountPopoverOpen(false);
+  };
 
   const filteredAccounts = useMemo(() => {
     if (!accountsData) return [];
@@ -154,6 +194,19 @@ const JobFormSheet = ({
   // =======================
   useEffect(() => {
     if (isSheetOpen) {
+      // Clear persisted data when sheet opens
+      persistAccountDataRef.current = {
+        search: "",
+        showCreateForm: false,
+        newAccountName: "",
+        accountData: {
+          account_number: "",
+          contact_person: "",
+          email: "",
+          phone: "",
+        }
+      };
+      
       if (job) {
         // Convert all values to strings for the form
         const formData = {
@@ -169,7 +222,6 @@ const JobFormSheet = ({
         };
         form.reset(formData);
       } else if (mode === 'create') {
-        // Reset to empty values for new job creation
         form.reset({
           name: "",
           job_number: "",
@@ -187,25 +239,84 @@ const JobFormSheet = ({
   // Handlers
   // =======================
   const handleAddAccount = async () => {
-    if (!newAccount.trim()) return;
+    if (!newAccountName.trim()) {
+      toast.error("Account name is required");
+      return;
+    }
 
     try {
       const created = await createAccount({
-        name: newAccount.trim(),
+        name: newAccountName.trim(),
+        account_number: newAccountData.account_number,
+        contact_person: newAccountData.contact_person,
+        email: newAccountData.email,
+        phone: newAccountData.phone,
       }).unwrap();
 
       if (created?.id) {
         form.setValue("account_id", String(created.id));
+        // Close popover when account is created
+        setAccountPopoverOpen(false);
       }
 
-      setNewAccount("");
-      setAccountSearch("");
-      setShowAddAccount(false);
+      // Reset form
+      setNewAccountName("");
+      setNewAccountData({
+        account_number: "",
+        contact_person: "",
+        email: "",
+        phone: "",
+      });
+      setShowCreateAccountForm(false);
+      
+      // Update persisted data
+      persistAccountDataRef.current = {
+        ...persistAccountDataRef.current,
+        showCreateForm: false,
+        newAccountName: "",
+        accountData: {
+          account_number: "",
+          contact_person: "",
+          email: "",
+          phone: "",
+        }
+      };
 
       toast.success("Account created successfully");
     } catch (err: any) {
       toast.error(err?.data?.message || "Failed to create account");
     }
+  };
+
+  // Handle account selection
+  const handleAccountSelect = (accountId: string) => {
+    form.setValue("account_id", accountId);
+    setAccountPopoverOpen(false); // Close popover when account is selected
+  };
+
+  // Reset create account form
+  const resetCreateAccountForm = () => {
+    setShowCreateAccountForm(false);
+    setNewAccountName("");
+    setNewAccountData({
+      account_number: "",
+      contact_person: "",
+      email: "",
+      phone: "",
+    });
+    
+    // Update persisted data
+    persistAccountDataRef.current = {
+      ...persistAccountDataRef.current,
+      showCreateForm: false,
+      newAccountName: "",
+      accountData: {
+        account_number: "",
+        contact_person: "",
+        email: "",
+        phone: "",
+      }
+    };
   };
 
   async function onSubmit(values: JobFormType) {
@@ -215,7 +326,6 @@ const JobFormSheet = ({
       const payload: any = {
         name: values.name,
         job_number: values.job_number,
-        // Convert empty strings to undefined for the backend
         project_value: values.project_value?.trim() || undefined,
         sq_ft: values.sq_ft?.trim() || undefined,
         account_id: values.account_id
@@ -223,14 +333,6 @@ const JobFormSheet = ({
           : undefined,
         description: values.description || undefined,
       };
-
-      // If backend expects numbers, convert them (uncomment if needed)
-      // if (payload.project_value) {
-      //   payload.project_value = Number(payload.project_value);
-      // }
-      // if (payload.sq_ft) {
-      //   payload.sq_ft = Number(payload.sq_ft);
-      // }
 
       if (!isEditMode && values.sales_person_id) {
         payload.sales_person_id = parseInt(values.sales_person_id);
@@ -395,20 +497,24 @@ const JobFormSheet = ({
                     )}
                   />
 
-                  {/* Account (FAB-style) */}
+                  {/* Account Selector */}
                   <FormField
                     control={form.control}
                     name="account_id"
                     render={({ field }) => (
                       <FormItem className="md:col-span-2">
                         <FormLabel>Account</FormLabel>
-                        <Popover>
+                        <Popover 
+                          open={accountPopoverOpen} 
+                          onOpenChange={setAccountPopoverOpen}
+                        >
                           <PopoverTrigger asChild>
                             <FormControl>
                               <Button
                                 variant="outline"
                                 className="w-full h-10 px-3 justify-between font-normal"
                                 disabled={isViewMode || accountsLoading}
+                                type="button"
                               >
                                 {accountsLoading
                                   ? "Loading..."
@@ -423,81 +529,153 @@ const JobFormSheet = ({
                             </FormControl>
                           </PopoverTrigger>
 
-                          <PopoverContent className="w-[--radix-popover-trigger-width] p-2">
-                            <div className="flex justify-between mb-2">
-                              <span className="text-sm font-medium">
-                                Accounts
-                              </span>
-
-                              {!isViewMode && (
-                                <Popover
-                                  open={showAddAccount}
-                                  onOpenChange={setShowAddAccount}
-                                >
-                                  <PopoverTrigger asChild>
+                          <PopoverContent 
+                            className="w-[--radix-popover-trigger-width] p-2"
+                            align="start"
+                            onInteractOutside={handleAccountPopoverClose}
+                            onEscapeKeyDown={handleAccountPopoverClose}
+                          >
+                            {/* Show either create account form or account list */}
+                            {showCreateAccountForm ? (
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={resetCreateAccountForm}
+                                    className="h-6 w-6 p-0"
+                                  >
+                                    <ArrowLeft className="h-4 w-4" />
+                                  </Button>
+                                  <Label className="text-sm font-medium">Create New Account</Label>
+                                </div>
+                                
+                                <div className="space-y-2">
+                                  <div>
+                                    <Label className="text-xs">Account Name *</Label>
+                                    <Input
+                                      value={newAccountName}
+                                      onChange={(e) => {
+                                        setNewAccountName(e.target.value);
+                                        // Update persisted data
+                                        persistAccountDataRef.current.newAccountName = e.target.value;
+                                      }}
+                                      placeholder="Enter account name"
+                                      required
+                                    />
+                                  </div>
+                                  
+                                  <div>
+                                    <Label className="text-xs">Account Number</Label>
+                                    <Input
+                                      value={newAccountData.account_number}
+                                      onChange={(e) => {
+                                        setNewAccountData(prev => ({...prev, account_number: e.target.value}));
+                                        persistAccountDataRef.current.accountData.account_number = e.target.value;
+                                      }}
+                                      placeholder="Optional"
+                                    />
+                                  </div>
+                                  
+                                  <div>
+                                    <Label className="text-xs">Contact Person</Label>
+                                    <Input
+                                      value={newAccountData.contact_person}
+                                      onChange={(e) => {
+                                        setNewAccountData(prev => ({...prev, contact_person: e.target.value}));
+                                        persistAccountDataRef.current.accountData.contact_person = e.target.value;
+                                      }}
+                                      placeholder="Optional"
+                                    />
+                                  </div>
+                                  
+                                  <div>
+                                    <Label className="text-xs">Email</Label>
+                                    <Input
+                                      type="email"
+                                      value={newAccountData.email}
+                                      onChange={(e) => {
+                                        setNewAccountData(prev => ({...prev, email: e.target.value}));
+                                        persistAccountDataRef.current.accountData.email = e.target.value;
+                                      }}
+                                      placeholder="Optional"
+                                    />
+                                  </div>
+                                  
+                                  <div>
+                                    <Label className="text-xs">Phone</Label>
+                                    <Input
+                                      value={newAccountData.phone}
+                                      onChange={(e) => {
+                                        setNewAccountData(prev => ({...prev, phone: e.target.value}));
+                                        persistAccountDataRef.current.accountData.phone = e.target.value;
+                                      }}
+                                      placeholder="Optional"
+                                    />
+                                  </div>
+                                  
+                                  <div className="flex justify-end gap-2 pt-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      type="button"
+                                      onClick={resetCreateAccountForm}
+                                    >
+                                      Cancel
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      type="button"
+                                      onClick={handleAddAccount}
+                                    >
+                                      Create Account
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-medium">Accounts</span>
+                                  {!isViewMode && (
                                     <Button
                                       size="sm"
                                       variant="ghost"
+                                      type="button"
+                                      onClick={() => {
+                                        setShowCreateAccountForm(true);
+                                        persistAccountDataRef.current.showCreateForm = true;
+                                      }}
                                     >
                                       <Plus className="w-3 h-3 mr-1" />
                                       Add
                                     </Button>
-                                  </PopoverTrigger>
-
-                                  <PopoverContent className="w-72">
-                                    <div className="space-y-3">
-                                      <Label>Account Name</Label>
-                                      <Input
-                                        value={newAccount}
-                                        onChange={(e) =>
-                                          setNewAccount(e.target.value)
-                                        }
-                                      />
-                                      <div className="flex justify-end gap-2">
-                                        <Button
-                                          variant="outline"
-                                          size="sm"
-                                          onClick={() =>
-                                            setShowAddAccount(false)
-                                          }
-                                        >
-                                          Cancel
-                                        </Button>
-                                        <Button
-                                          size="sm"
-                                          onClick={handleAddAccount}
-                                        >
-                                          Add
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </PopoverContent>
-                                </Popover>
-                              )}
-                            </div>
-
-                            <Input
-                              placeholder="Search account..."
-                              value={accountSearch}
-                              onChange={(e) =>
-                                setAccountSearch(e.target.value)
-                              }
-                              className="mb-2"
-                            />
-
-                            <div className="max-h-48 overflow-y-auto">
-                              {filteredAccounts.map((account) => (
-                                <div
-                                  key={account.id}
-                                  className="px-3 py-2 text-sm hover:bg-muted rounded cursor-pointer"
-                                  onClick={() =>
-                                    field.onChange(String(account.id))
-                                  }
-                                >
-                                  {account.name}
+                                  )}
                                 </div>
-                              ))}
-                            </div>
+
+                                <Input
+                                  placeholder="Search account..."
+                                  value={accountSearch}
+                                  onChange={(e) => {
+                                    setAccountSearch(e.target.value);
+                                    persistAccountDataRef.current.search = e.target.value;
+                                  }}
+                                  autoFocus
+                                />
+
+                                <div className="max-h-48 overflow-y-auto">
+                                  {filteredAccounts.map((account) => (
+                                    <div
+                                      key={account.id}
+                                      className="px-3 py-2 text-sm hover:bg-muted rounded cursor-pointer"
+                                      onClick={() => handleAccountSelect(String(account.id))}
+                                    >
+                                      {account.name}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                           </PopoverContent>
                         </Popover>
                       </FormItem>
@@ -516,8 +694,10 @@ const JobFormSheet = ({
                             {...field}
                             rows={3}
                             disabled={isViewMode}
+                            placeholder="Add notes about this job..."
                           />
                         </FormControl>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -528,7 +708,21 @@ const JobFormSheet = ({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setIsSheetOpen(false)}
+                onClick={() => {
+                  setIsSheetOpen(false);
+                  // Reset persisted data when sheet closes completely
+                  persistAccountDataRef.current = {
+                    search: "",
+                    showCreateForm: false,
+                    newAccountName: "",
+                    accountData: {
+                      account_number: "",
+                      contact_person: "",
+                      email: "",
+                      phone: "",
+                    }
+                  };
+                }}
               >
                 {isViewMode ? "Close" : "Cancel"}
               </Button>

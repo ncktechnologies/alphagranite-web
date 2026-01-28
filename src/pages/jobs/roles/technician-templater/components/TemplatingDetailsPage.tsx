@@ -34,10 +34,11 @@ export function TemplatingDetailsPage() {
         { label: "FAB ID", value: `FAB-${fab.id}` },
         { label: "Job Name", value: fab.job_details?.name || `Job ${fab.job_id}` },
         { label: "Job Number", value: fab.job_details?.job_number || String(fab.job_id) },
+        
         { label: "Area", value: String(fab.input_area) },
         { label: "Material", value: `${fab.stone_type_name || 'N/A'} - ${fab.stone_thickness_value || 'N/A'}` },
         { label: 'Total square ft', value: String(fab.total_sqft) },
-        { label: "Scheduled Date", value: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',},
+        { label: "Scheduled Date", value: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-', },
         { label: "Assigned to", value: String(fab.technician_name) },
       ],
     },
@@ -185,9 +186,9 @@ export function TemplatingDetailsPage() {
         <Toolbar className=''>
           <div className="flex items-center justify-between w-full">
             <div>
-              <ToolbarHeading 
-                title={`FAB ID: ${fab?.id || id}`} 
-                description="Update templating activity" 
+              <ToolbarHeading
+                title={`FAB ID: ${fab?.id || id}`}
+                description="Update templating activity"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -204,12 +205,15 @@ export function TemplatingDetailsPage() {
           </div>
         </Toolbar>
       </Container>
-      
+
       {/* Changed to use flex on large screens with consistent spacing */}
       <div className="border-t flex flex-col lg:flex-row gap-3 xl:gap-4 items-start max-w-full">
         {/* Sidebar - fixed width */}
         <div className="w-full lg:w-[250px] xl:w-[286px] ultra:w-[500px] lg:flex-shrink-0">
-          <GraySidebar sections={sidebarSections as any} />
+          <GraySidebar
+            sections={sidebarSections as any}
+            jobId={fab?.job_id}  // Add this prop
+          />
           <div className="bg-text w-full py-4 px-6 shadow-sm mt-3">
             <h3 className="font-semibold text-white text-lg mb-5">Progress Timeline</h3>
             <div className="flex items-center space-x-2">
@@ -217,15 +221,15 @@ export function TemplatingDetailsPage() {
               <p className="text-base text-white">Scheduled date</p>
             </div>
             <p className="text-xs text-white ml-4 mt-1">
-              {fab?.templating_schedule_start_date 
+              {fab?.templating_schedule_start_date
                 ? new Date(fab.templating_schedule_start_date).toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true
-                  })
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: 'numeric',
+                  minute: '2-digit',
+                  hour12: true
+                })
                 : 'Not scheduled'}
             </p>
           </div>

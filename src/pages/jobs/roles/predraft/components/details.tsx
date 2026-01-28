@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ReviewChecklistForm } from './ReviewChecklist';
 import { Badge } from '@/components/ui/badge';
 import GraySidebar from '@/pages/jobs/components/job-details.tsx/GraySidebar';
-import { useParams } from 'react-router';
+import { Link, useParams } from 'react-router';
 import { useGetFabByIdQuery } from '@/store/api/job';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -108,8 +108,28 @@ export function PreDraftDetailsPage() {
         { label: 'FAB ID', value: `FAB-${fab.id}` },
         { label: 'FAB Type', value: fab.fab_type },
         { label: 'Account', value: (fab as any).account_name || `Account ${(fab as any).account_id || 'N/A'}` },
-        { label: 'Job name', value: (fab as any).job_details?.name || `Job ${fab.job_id}` },
-        { label: 'Job #', value: (fab as any).job_details?.job_number || String(fab.job_id) },
+       {
+    label: 'Job name',
+    value: (
+      <Link
+        to={`/job/details/${fab.job_id}`}
+        className="text-primary underline hover:no-underline"
+      >
+        {(fab as any).job_details?.name || `Job ${fab.job_id}`}
+      </Link>
+    )
+  },
+  {
+    label: 'Job #',
+    value: (
+      <Link
+        to={`/job/details/${fab.job_id}`}
+        className="text-primary underline hover:no-underline"
+      >
+        {(fab as any).job_details?.job_number || String(fab.job_id)}
+      </Link>
+    )
+  },
         { label: 'Area (s)', value: fab.input_area },
         { label: 'Stone type', value: fab.stone_type_name || 'N/A' },
         { label: 'Stone colour', value: fab.stone_color_name || 'N/A' },
@@ -168,7 +188,7 @@ export function PreDraftDetailsPage() {
                             </p>
                         </div>
                         <div className='text-text-foreground'>
-                            Status:
+                            Template Status:
                             <Badge className='text-[#0BC33F] bg-[#0BC33F]/20 rounded-[50px] h-[30px] font-medium text-[14px] ml-2 px-2'>
                                 compeleted
                             </Badge>
@@ -192,7 +212,9 @@ export function PreDraftDetailsPage() {
                         </CardContent>
                     </Card>
                     <div className="w-full lg:w-[250px] XL:W-[300PX] 2xl:w-[400px]  lg:flex-shrink-0">
+                        
                         <GraySidebar sections={sidebarSections as any} className='bg-transparent border-none pl-0' />
+                    
                     </div>
                 </div>
 

@@ -23,7 +23,7 @@ import { getFileStage, getStageBadge, EnhancedFileMetadata } from '@/utils/file-
 
 // Helper function to format timestamp without 'Z'
 const formatTimestamp = (date: Date) => {
-  return date.toISOString().slice(0, -1);
+  return date.toISOString();
 };
 
 // Helper function to get all fab notes (unfiltered)
@@ -53,10 +53,10 @@ export function DrafterDetailsPage() {
   // Load fab & drafting data
   const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, { skip: !fabId });
   const { data: draftingData, isLoading: isDraftingLoading, refetch: refetchDrafting } = useGetDraftingByFabIdQuery(fabId, { skip: !fabId });
-  
+
   // Get current session state
   const { data: sessionData, isLoading: isSessionLoading, refetch: refetchSession } = useGetCurrentDraftingSessionQuery(fabId, { skip: !fabId });
-  
+
   const [manageDraftingSession] = useManageDraftingSessionMutation();
   const [toggleFabOnHold] = useToggleFabOnHoldMutation();
   const [createFabNote] = useCreateFabNoteMutation();
@@ -68,7 +68,7 @@ export function DrafterDetailsPage() {
   const [totalTime, setTotalTime] = useState<number>(0);
   const [draftStart, setDraftStart] = useState<Date | null>(null);
   const [draftEnd, setDraftEnd] = useState<Date | null>(null);
-  
+
   // Session status derived from sessionData
   const [sessionStatus, setSessionStatus] = useState<'idle' | 'drafting' | 'paused' | 'on_hold' | 'ended'>('idle');
 
@@ -78,7 +78,7 @@ export function DrafterDetailsPage() {
   const [activeFile, setActiveFile] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
-  
+
   // Track processed file names to prevent duplicates
   const processedFileNamesRef = useRef<Set<string>>(new Set());
 
@@ -160,7 +160,7 @@ export function DrafterDetailsPage() {
       setSessionStatus('drafting');
       setDraftStart(startDate);
       setDraftEnd(null);
-      
+
       await refetchSession();
       toast.success(`Session ${action === 'start' ? 'started' : 'resumed'} successfully`);
     } catch (error) {
@@ -185,7 +185,7 @@ export function DrafterDetailsPage() {
 
       setSessionStatus(action === 'end' ? 'ended' : action === 'on_hold' ? 'on_hold' : 'paused');
       setDraftEnd(timestamp);
-      
+
       await refetchSession();
       toast.success(`Session ${action}ed successfully`);
     } catch (error) {
@@ -199,18 +199,18 @@ export function DrafterDetailsPage() {
   const handleStart = async (startDate: Date, data?: { note?: string; sqft_drafted?: string }) => {
     // Check if drafting exists before starting - check both drafting query and FAB data
     const hasDraftingAssignment = draftingData?.id || fabData?.draft_data?.id;
-    
-    console.log('Drafting assignment check:', { 
-      draftingDataId: draftingData?.id, 
+
+    console.log('Drafting assignment check:', {
+      draftingDataId: draftingData?.id,
       fabDraftDataId: fabData?.draft_data?.id,
-      hasAssignment: !!hasDraftingAssignment 
+      hasAssignment: !!hasDraftingAssignment
     });
-    
+
     if (!hasDraftingAssignment) {
       toast.error('Cannot start drafting session - no drafting assignment found');
       return;
     }
-    
+
     try {
       await createOrStartSession('start', startDate, data?.note, data?.sqft_drafted);
     } catch (error) {
@@ -248,20 +248,20 @@ export function DrafterDetailsPage() {
       if (isDrafting) {
         await updateSession('pause', new Date(), 'Pausing session before placing on hold');
       }
-      
+
       // Toggle the FAB hold status
       const currentHoldStatus = fabData?.status_id === 0; // 0 = on hold
       await toggleFabOnHold({ fab_id: fabId, on_hold: !currentHoldStatus }).unwrap();
-      
+
       // Create FAB note with drafting stage
       if (data?.note) {
-        await createFabNote({ 
-          fab_id: fabId, 
-          note: data.note, 
-          stage: 'drafting' 
+        await createFabNote({
+          fab_id: fabId,
+          note: data.note,
+          stage: 'drafting'
         }).unwrap();
       }
-      
+
       toast.success(`FAB ${!currentHoldStatus ? 'placed on hold' : 'released from hold'} successfully`);
       await refetchFab();
       await refetchSession();
@@ -273,15 +273,15 @@ export function DrafterDetailsPage() {
 
   // Show files section if there are existing files OR if user has uploaded files
   const shouldShowFilesSection = (draftData && (draftData.files?.length ?? 0) > 0) || uploadedFileMetas.length > 0;
-  
+
   // Prepare enhanced file metadata for display
   const enhancedUploadedFiles = uploadedFileMetas.map(meta => {
     const file = pendingFiles.find(f => f.name === meta.name);
-    const stage = getFileStage(meta.name, { 
+    const stage = getFileStage(meta.name, {
       currentStage: 'drafting',
-      isDrafting: true 
+      isDrafting: true
     });
-    
+
     return {
       ...meta,
       size: file?.size || meta.size || 0,
@@ -291,7 +291,7 @@ export function DrafterDetailsPage() {
       uploadedBy: currentUser?.name || 'Current User'
     };
   });
-  
+
   // Show upload section when timer is running, paused, OR when files have been uploaded (to maintain visibility after ending)
   const shouldShowUploadSection = (isDrafting || isPaused) || uploadedFileMetas.length > 0;
 
@@ -316,7 +316,7 @@ export function DrafterDetailsPage() {
 
     // Use ref to track globally processed files across all calls
     const processedNames = processedFileNamesRef.current;
-    
+
     // Filter out already processed files
     const uniqueFileObjects = fileObjects.filter(
       newFile => !processedNames.has(newFile.name)
@@ -337,9 +337,9 @@ export function DrafterDetailsPage() {
       // Double-check against current pending files
       const currentNames = new Set(prev.map(file => file.name));
       const trulyUniqueFiles = uniqueFileObjects.filter(file => !currentNames.has(file.name));
-      
+
       if (trulyUniqueFiles.length === 0) return prev;
-      
+
       console.log('Actually adding files:', trulyUniqueFiles.map(f => f.name));
       return [...prev, ...trulyUniqueFiles];
     });
@@ -366,7 +366,7 @@ export function DrafterDetailsPage() {
       ...file,
       stage: getFileStage(file.name, { isDrafting: true })
     };
-    
+
     setActiveFile(enhancedFile);
     setViewMode('file');
     console.log('File clicked:', enhancedFile);
@@ -396,7 +396,7 @@ export function DrafterDetailsPage() {
       setDraftStart(null);
       setDraftEnd(null);
       setSessionStatus('idle');
-      
+
       // Clear processed file names to allow re-uploading same files in future
       processedFileNamesRef.current.clear();
 
@@ -414,10 +414,12 @@ export function DrafterDetailsPage() {
       title: "Job Details",
       type: "details",
       items: [
+        { label: "Job Name", value: fabData?.job_details?.name || `Job ${fabData?.job_id}` },
+        { label: "Job Number", value: fabData?.job_details?.job_number || String(fabData?.job_id) },
         { label: "Area", value: fabData?.input_area || "Loading..." },
         { label: "Material", value: `${fabData?.stone_type_name || ''} ${fabData?.stone_color_name || ''} - ${fabData?.stone_thickness_value || ''}` },
         { label: "FAB Type", value: fabData?.fab_type || "Loading..." },
-        { label: "Assigned to", value: draftingData?.drafter_name || (currentEmployeeId ? "You (Self-assigned)" : "Loading...") },
+        { label: "Assigned to", value: draftingData?.drafter_name || 'Unassigned' },
       ],
     },
     {
@@ -466,11 +468,11 @@ export function DrafterDetailsPage() {
   // Prepare enhanced files with stage information for SubmissionModal
   const filesForSubmission: EnhancedFileMetadata[] = uploadedFileMetas.map(meta => {
     const file = pendingFiles.find(f => f.name === meta.name);
-    const stage = getFileStage(meta.name, { 
+    const stage = getFileStage(meta.name, {
       currentStage: 'drafting',
-      isDrafting: true 
+      isDrafting: true
     });
-    
+
     return {
       id: meta.id,
       name: meta.name,
@@ -500,12 +502,15 @@ export function DrafterDetailsPage() {
           </div>
           <p className='text-sm text-muted-foreground'>Update drafting activity</p>
         </div>
-       
+
       </Container>
 
       <div className=" border-t grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
         <div className="lg:col-span-3 w-full lg:w-[200px]  2xl:w-[286px]  ultra:w-[500px]" >
-          <GraySidebar sections={sidebarSections as any} />
+          <GraySidebar
+            sections={sidebarSections as any}
+            jobId={fabData?.job_id}  // Add this prop
+          />
         </div>
         <Container className="lg:col-span-9 px-0 mx-0">
           {viewMode === 'file' && activeFile ? (
@@ -595,7 +600,7 @@ export function DrafterDetailsPage() {
                   )}
 
                   {/* Submit Button - show after on hold OR after ending normally */}
-                  {viewMode === 'activity'  && (
+                  {viewMode === 'activity' && (
                     <div className="flex justify-end gap-3">
                       <BackButton fallbackUrl="/job/draft" label='Cancel' />
                       <Can action="create" on="Drafting">
@@ -611,7 +616,7 @@ export function DrafterDetailsPage() {
                   )}
 
 
-                  
+
                 </CardContent>
               </Card>
             </>

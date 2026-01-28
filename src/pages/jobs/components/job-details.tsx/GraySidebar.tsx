@@ -1,10 +1,16 @@
 import React from 'react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
+import { Link } from 'react-router-dom'
 
 interface SidebarSection {
     title?: string
     type?: 'details' | 'notes' | 'custom'
-    items?: { label: string; value: React.ReactNode }[]
+    items?: { 
+        label: string; 
+        value: React.ReactNode;
+        link?: string;
+        isLink?: boolean;
+    }[]
     notes?: {
         id: number
         avatar: string
@@ -20,32 +26,80 @@ interface SidebarSection {
 interface GraySidebarProps {
     sections: SidebarSection[]
     className?: string
+    // Optional: Pass jobId if available to auto-generate links
+    jobId?: number | string
 }
 
-export default function GraySidebar({ sections, className = '' }: GraySidebarProps) {
+export default function GraySidebar({ sections, className = '', jobId }: GraySidebarProps) {
+    
+    // Helper function to check if an item should be a link
+    const shouldBeLink = (label: string, item: any) => {
+        // If item explicitly specifies isLink, use that
+        if (item.isLink !== undefined) return item.isLink
+        
+        // Auto-detect based on label if jobId is available
+        if (jobId && (label.toLowerCase().includes('job name') || 
+                      label.toLowerCase().includes('job number') ||
+                      label.toLowerCase().includes('job id'))) {
+            return true
+        }
+        
+        return false
+    }
+    
+    // Helper function to get link URL
+    const getLinkUrl = (label: string, item: any) => {
+        // If item explicitly provides link, use that
+        if (item.link) return item.link
+        
+        // Auto-generate link based on jobId
+        if (jobId) {
+            return `/job/details/${jobId}`
+        }
+        
+        return '#'
+    }
+
     return (
         <aside
-            className={` w-full border-r p-6 overflow-y-auto bg-[#FAFAFA] lg:h-screen  ${className}`}
+            className={`w-full border-r p-6 overflow-y-auto bg-[#FAFAFA] lg:h-screen ${className}`}
         >
             {sections.map((section, sectionIndex) => (
                 <section key={sectionIndex} className={`mt-3 mb-8 ${section.className || ''}`}>
                     {/* Section Title */}
-                    <h3 className="font-semibold text-text my-5 text-base leading-[24px] ">{section.title}</h3>
+                    <h3 className="font-semibold text-text my-5 text-base leading-[24px]">{section.title}</h3>
 
                     {/* Details Section */}
                     {section.type === 'details' && section.items && (
-
                         <div className="space-y-5 text-sm">
                             {section.sectionTitle && (
-                                <h4 className="font-semibold text-[#111827] my-5 text-xl leading-[24px] ">{section.sectionTitle}</h4>
-
+                                <h4 className="font-semibold text-[#111827] my-5 text-xl leading-[24px]">{section.sectionTitle}</h4>
                             )}
-                            {section.items.map((item, index) => (
-                                <div key={index}>
-                                    <span className="font-medium text-text-foreground text-sm leading-[24px]">{item.label}:</span>
-                                    <p className="text-text text-bold text-base leading-[24px]">{item.value}</p>
-                                </div>
-                            ))}
+                            {section.items.map((item, index) => {
+                                const isLink = shouldBeLink(item.label, item)
+                                
+                                return (
+                                    <div key={index}>
+                                        <span className="font-medium text-text-foreground text-sm leading-[24px]">
+                                            {item.label}:
+                                        </span>
+                                        {isLink ? (
+                                            <p className="text-text text-bold text-base leading-[24px]">
+                                                <Link 
+                                                    to={getLinkUrl(item.label, item)}
+                                                    className="text-blue-600 hover:text-blue-800 hover:underline"
+                                                >
+                                                    {item.value}
+                                                </Link>
+                                            </p>
+                                        ) : (
+                                            <p className="text-text text-bold text-base leading-[24px]">
+                                                {item.value}
+                                            </p>
+                                        )}
+                                    </div>
+                                )
+                            })}
                         </div>
                     )}
 
@@ -53,8 +107,7 @@ export default function GraySidebar({ sections, className = '' }: GraySidebarPro
                     {section.type === 'notes' && section.notes && (
                         <div className="space-y-4">
                             {section.sectionTitle && (
-                                <h4 className="font-semibold text-text my-5 text-base leading-[24px] ">{section.sectionTitle}</h4>
-
+                                <h4 className="font-semibold text-text my-5 text-base leading-[24px]">{section.sectionTitle}</h4>
                             )}
                             {section.notes.map((note) => (
                                 <div key={note.id} className="flex gap-3">
@@ -86,7 +139,6 @@ export default function GraySidebar({ sections, className = '' }: GraySidebarPro
                     {section.type === 'custom' && (
                         <div className="text-sm text-gray-700">{section.finalNote}</div>
                     )}
-
                 </section>
             ))}
         </aside>

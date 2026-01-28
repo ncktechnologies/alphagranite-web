@@ -968,7 +968,7 @@ export const jobApi = createApi({
                         method: "get",
                         params: {
                             skip: queryParams.skip || 0,
-                            limit: queryParams.limit || 100,
+                            limit: queryParams.limit || 1000,
                             ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
                             ...(queryParams.search && { search: queryParams.search }),
                         }

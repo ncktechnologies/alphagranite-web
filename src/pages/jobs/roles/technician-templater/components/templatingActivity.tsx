@@ -18,7 +18,7 @@ import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Can } from '@/components/permission';
 
 const formSchema = z.object({
-  status: z.enum(["completed", "not_completed"]),
+  is_completed: z.boolean(["completed", "not_completed"]).nullable(),
   start_date: z.string().min(1, "Start date is required"),
   duration: z.string().optional().refine(
     (val) => !val || /^\d+$/.test(val),
@@ -72,7 +72,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
       }
 
       // Only submit if status is completed
-      if (values.status === "completed") {
+      if (values.is_completed === true) {
         const response = await completeTemplating({
           templating_id: templatingId,
           actual_sqft: values.square_ft || "",
@@ -104,6 +104,9 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
         if (values.square_ft) {
           updateData.total_sqft = values.square_ft;
         }
+         if (values.is_completed !== null) {
+          updateData.is_completed = values.is_completed;
+        }
 
         const response = await updateTemplating(updateData).unwrap();
 
@@ -130,7 +133,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      status: "",
+      is_completed: null,
       start_date: "",
       duration: "",
       notes: "",
@@ -139,7 +142,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
   });
 
   // Watch form values for debugging
-  const statusValue = form.watch("status");
+  const statusValue = form.watch("is_completed");
   const squareFtValue = form.watch("square_ft");
 
   // useEffect(() => {
@@ -160,7 +163,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
 
       // Prepare values for the form
       const formValues: Partial<z.infer<typeof formSchema>> = {
-        status: "",
+        is_completed: templatingData.data.is_completed || null,
         start_date: templatingData.data.actual_start_date || templatingData.data.schedule_start_date
           ? (() => {
             const dateSource = templatingData.data.actual_start_date || templatingData.data.schedule_start_date;
@@ -196,7 +199,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
           {/* Status */}
           <FormField
             control={form.control}
-            name="status"
+            name="is_completed"
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="block mb-2 font-medium">
@@ -206,11 +209,11 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
                   <div className="flex items-center gap-2">
                     <Checkbox
                       id="completed"
-                      checked={field.value === "completed"}
+                      checked={field.value === true}
                       onCheckedChange={(checked) => {
                         console.log("Checkbox completed changed:", checked);
                         if (checked) {
-                          field.onChange("completed");
+                          field.onChange(true);
                         }
                       }}
                     />
@@ -225,11 +228,11 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
                   <div className="flex items-center gap-2">
                     <Checkbox
                       id="not-completed"
-                      checked={field.value === "not_completed"}
+                      checked={field.value === false}
                       onCheckedChange={(checked) => {
                         console.log("Checkbox not_completed changed:", checked);
                         if (checked) {
-                          field.onChange("not_completed");
+                          field.onChange(false);
                         }
                       }}
                     />
@@ -257,6 +260,16 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
               />
             </div>
 
+            <FormField
+              control={form.control}
+              name="duration"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Duration</FormLabel>
+                  <Input placeholder="146" {...field} />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="start_date"

@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
-import { 
-  useGetFabByIdQuery, 
+import {
+  useGetFabByIdQuery,
   useGetFinalProgrammingSessionStatusQuery,
   useDeleteFileFromFinalProgrammingMutation,
   useUpdateFabMutation,
@@ -45,7 +45,7 @@ export function FinalProgrammingDetailsPage() {
   // Load fab and final programming session status
   const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, { skip: !fabId });
   const { data: fpSessionData, isLoading: isFPLoading, refetch: refetchFPSession } = useGetFinalProgrammingSessionStatusQuery(fabId, { skip: !fabId });
-  
+
   // Mutations
   const [deleteFileFromFinalProgramming] = useDeleteFileFromFinalProgrammingMutation();
   const [updateFab] = useUpdateFabMutation();
@@ -83,7 +83,7 @@ export function FinalProgrammingDetailsPage() {
             started_by: currentEmployeeId
           }
         }).unwrap();
-        
+
         // Refresh session status after creating session
         await refetchFPSession();
         toast.success('Final programming session started');
@@ -198,6 +198,8 @@ export function FinalProgrammingDetailsPage() {
       title: "Job Details",
       type: "details",
       items: [
+        { label: "Job Name", value: fabData?.job_details?.name || `Job ${fabData?.job_id}` },
+        { label: "Job Number", value: fabData?.job_details?.job_number || String(fabData?.job_id) },
         { label: "Stone Type", value: fabData?.stone_type_name || 'N/A' },
         { label: "Stone Color", value: fabData?.stone_color_name || 'N/A' },
         { label: "Stone Thickness", value: fabData?.stone_thickness_value || 'N/A' },
@@ -284,9 +286,12 @@ export function FinalProgrammingDetailsPage() {
   return (
     <div className="border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0 items-start lg:flex-shrink-0">
       <div className="lg:col-span-3 w-full lg:w-[250px] xl:w-[300px] ultra:w-[400px]">
-        <GraySidebar sections={sidebarSections as any} className='' />
+        <GraySidebar
+          sections={sidebarSections as any}
+          jobId={fabData?.job_id}  // Add this prop
+        />
       </div>
-      
+
       <Container className="lg:col-span-9">
         <div className="pt-6">
           <div className="flex justify-between items-start">

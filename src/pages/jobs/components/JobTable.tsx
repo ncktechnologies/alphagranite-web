@@ -487,19 +487,7 @@ export const JobTable = ({
         }
     };
 
-    // Function to get row background color based on fab_type
-    const getRowBackgroundColor = (fabType: string) => {
-        switch (fabType?.toLowerCase()) {
-            case 'standard':
-                return 'bg-green-50 hover:bg-green-100';
-            case 'cust redo':
-                return 'bg-yellow-50 hover:bg-yellow-100';
-            case 'fast track':
-                return 'bg-red-50 hover:bg-red-100';
-            default:
-                return '';
-        }
-    };
+   
 
     // Function to generate fab info string
     const generateFabInfo = (job: IJob) => {
@@ -510,20 +498,6 @@ export const JobTable = ({
         parts.push(job.acct_name);
     }
     
-    // Add job details
-    // if (job.job_name) {
-    //     parts.push(job.job_name);
-    // }
-    
-    // // Add job number
-    // if (job.job_no) {
-    //     parts.push(job.job_no);
-    // }
-    
-    // Add pieces count
-    // if (job.no_of_pieces) {
-    //     parts.push(`${job.no_of_pieces} pieces`);
-    // }
     
     // Add square footage
     if (job.total_sq_ft) {

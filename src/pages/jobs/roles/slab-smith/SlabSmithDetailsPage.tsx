@@ -275,7 +275,7 @@ export function SlabSmithDetailsPage() {
         };
       })
     }
-   
+
   ];
 
   if (viewMode === 'file' && activeFile) {
@@ -307,7 +307,10 @@ export function SlabSmithDetailsPage() {
   return (
     <div className=" border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0  items-start lg:flex-shrink-0">
       <div className="lg:col-span-3 w-full lg:w-[250px] xl:w-[300px] ultra:w-[400px]" >
-        <GraySidebar sections={sidebarSections as any} className='' />
+        <GraySidebar
+          sections={sidebarSections as any}
+          jobId={fabData?.job_id}  // Add this prop
+        />
       </div>
 
       <Container className="lg:col-span-9">
