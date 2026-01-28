@@ -140,11 +140,11 @@ export interface Fab {
     miter_linft?: number;
     // Notes
     templating_notes?: string[];
-    fab_notes?: Array<{ 
-        id: number; 
-        note: string; 
-        created_by_name?: string; 
-        created_at?: string; 
+    fab_notes?: Array<{
+        id: number;
+        note: string;
+        created_by_name?: string;
+        created_at?: string;
         stage?: string;
         updated_at?: string;
         updated_by?: number;
@@ -331,6 +331,7 @@ export interface JobsByAccountParams {
     schedule_start_date?: string;
     schedule_due_date?: string;
     need_to_invoice?: boolean;
+    is_invoiced?: boolean;
 }
 
 export interface FabListParams {
@@ -342,11 +343,22 @@ export interface FabListParams {
     templater_id?: number;
     status_id?: number;
     current_stage?: string;
+    next_stage?: string;
     search?: string;
     schedule_start_date?: string;
     schedule_due_date?: string;
     date_filter?: string; // Add date filter for backend filtering
     schedule_status?: 'scheduled' | 'unscheduled' | 'all'; // Add schedule status filter
+    shop_date_start?: string | null;
+    shop_date_end?: string | null;
+    template_completed_start?: string | null;
+    template_completed_end?: string | null;
+    predraft_completed_start?: string | null;
+    predraft_completed_end?: string | null;
+    draft_completed_start?: string | null;
+    draft_completed_end?: string | null;
+    sct_completed_start?: string | null;
+    sct_completed_end?: string | null;
 }
 
 export interface TemplatingSchedule {
@@ -790,18 +802,38 @@ export const jobApi = createApi({
                         params: {
                             skip: queryParams.skip || 0,
                             limit: queryParams.limit || 100,
+                            // Existing filters
                             ...(queryParams.job_id !== undefined && { job_id: queryParams.job_id }),
                             ...(queryParams.fab_type && { fab_type: queryParams.fab_type }),
                             ...(queryParams.sales_person_id !== undefined && { sales_person_id: queryParams.sales_person_id }),
+                            ...(queryParams.templater_id !== undefined && { templater_id: queryParams.templater_id }),
                             ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
                             ...(queryParams.current_stage && { current_stage: queryParams.current_stage }),
+                            // New stage filter
+                            ...(queryParams.next_stage && { next_stage: queryParams.next_stage }),
+                            // Search filter
                             ...(queryParams.search && { search: queryParams.search }),
+                            // Schedule date filters
                             ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
                             ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
-                            ...(queryParams.date_filter && { date_filter: queryParams.date_filter }),
                             ...(queryParams.schedule_status && { schedule_status: queryParams.schedule_status }),
-                            // Add templater_id filter
-                            ...(queryParams.templater_id !== undefined && { templater_id: queryParams.templater_id }),
+                            // Date filter (predefined periods)
+                            ...(queryParams.date_filter && { date_filter: queryParams.date_filter }),
+                            // Shop date range filters
+                            ...(queryParams.shop_date_start && { shop_date_start: queryParams.shop_date_start }),
+                            ...(queryParams.shop_date_end && { shop_date_end: queryParams.shop_date_end }),
+                            // Template completion date range filters
+                            ...(queryParams.template_completed_start && { template_completed_start: queryParams.template_completed_start }),
+                            ...(queryParams.template_completed_end && { template_completed_end: queryParams.template_completed_end }),
+                            // Predraft completion date range filters
+                            ...(queryParams.predraft_completed_start && { predraft_completed_start: queryParams.predraft_completed_start }),
+                            ...(queryParams.predraft_completed_end && { predraft_completed_end: queryParams.predraft_completed_end }),
+                            // Draft completion date range filters
+                            ...(queryParams.draft_completed_start && { draft_completed_start: queryParams.draft_completed_start }),
+                            ...(queryParams.draft_completed_end && { draft_completed_end: queryParams.draft_completed_end }),
+                            // SCT completion date range filters
+                            ...(queryParams.sct_completed_start && { sct_completed_start: queryParams.sct_completed_start }),
+                            ...(queryParams.sct_completed_end && { sct_completed_end: queryParams.sct_completed_end }),
                         }
                     };
                 },
@@ -1186,7 +1218,7 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Fab"],
             }),
-            
+
             // Bulk assign drafting to multiple FABs
             bulkAssignDrafting: build.mutation<any, { drafter_id: number; items: BulkDraftingAssignment[] }>({
                 query: (data) => ({
@@ -1705,7 +1737,7 @@ export const jobApi = createApi({
                 transformResponse: (response: any) => response.data || response,
                 providesTags: ["Job"],
             }),
-            
+
             // Toggle Need To Invoice endpoint
             toggleNeedToInvoice: build.mutation<Job, ToggleInvoiceRequest>({
                 query: ({ job_id, note }) => ({
@@ -1715,7 +1747,7 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Job"],
             }),
-             addJobNotes: build.mutation<Job, ToggleInvoiceRequest>({
+            addJobNotes: build.mutation<Job, ToggleInvoiceRequest>({
                 query: ({ job_id, note }) => ({
                     url: `/jobs/${job_id}/notes`,
                     method: "POST",
@@ -1723,8 +1755,8 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Job"],
             }),
-            
-            
+
+
             // Toggle FAB On Hold endpoint
             toggleFabOnHold: build.mutation<Fab, { fab_id: number; on_hold: boolean }>({
                 query: ({ fab_id, on_hold }) => ({
@@ -1734,7 +1766,7 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Fab"],
             }),
-            
+
             // Mark Job Invoiced endpoint
             markJobInvoiced: build.mutation<Job, MarkInvoicedRequest>({
                 query: ({ job_id, invoiced_at }) => ({

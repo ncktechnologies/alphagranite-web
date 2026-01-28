@@ -132,8 +132,8 @@ const CutListPage = () => {
 
         // Add custom date range
         if (dateFilter === 'custom' && dateRange?.from && dateRange?.to) {
-            params.schedule_start_date = dateRange.from.toISOString();
-            params.schedule_due_date = dateRange.to.toISOString();
+            params.shop_date_start = dateRange.from.toISOString();
+            params.shop_date_end = dateRange.to.toISOString();
         }
 
         return params;

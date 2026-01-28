@@ -138,10 +138,10 @@ export function PredraftPage() {
             // For custom date range, use schedule_start_date and schedule_due_date
             if (tableState.dateFilter === 'custom') {
                 if (tableState.dateRange?.from) {
-                    params.schedule_start_date = tableState.dateRange.from.toISOString().split('T')[0];
+                    params.template_completed_start = tableState.dateRange.from.toISOString().split('T')[0];
                 }
                 if (tableState.dateRange?.to) {
-                    params.schedule_due_date = tableState.dateRange.to.toISOString().split('T')[0];
+                    params.template_completed_end = tableState.dateRange.to.toISOString().split('T')[0];
                 }
                 // Don't send date_filter when using custom range
             } else {
