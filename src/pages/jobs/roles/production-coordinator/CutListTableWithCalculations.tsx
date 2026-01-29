@@ -64,6 +64,9 @@ export interface CalculatedCutListData {
     sales_person?: string;
     shop_date_schedule: string;
     status_id?: number; // Add status_id field
+    fab_notes?: Array<{ id: number; note: string; created_by_name?: string; created_at?: string; stage?: string }>; // Array of notes for this FAB
+    notes?: Array<{ id: number; note: string; created_by_name?: string; created_at?: string; stage?: string }>; // Alternative notes array name
+
 }
 
 // Update the calculateCutListData function to work with Fab
@@ -159,7 +162,7 @@ export const CutListTableWithCalculations = ({
     onAddNote
 }: CutListTableWithCalculationsProps) => {
     const [toggleFabOnHold] = useToggleFabOnHoldMutation();
-    
+
     // Use passed pagination state or default to local state
     const [localPagination, setLocalPagination] = useState<PaginationState>({
         pageIndex: 0,
@@ -380,7 +383,7 @@ export const CutListTableWithCalculations = ({
             ),
             cell: ({ row }) => <span className="text-sm">{row.original.fab_id}</span>,
         },
-       
+
         {
             id: "job_name",
             accessorKey: "job_name",
@@ -580,6 +583,34 @@ export const CutListTableWithCalculations = ({
                 </span>
             ),
         },
+        // Cutting Notes Column
+        {
+            id: 'fab_notes',
+            accessorKey: "fab_notes",
+            header: ({ column }) => (
+                <DataGridColumnHeader title="Cut List Notes" column={column} />
+            ),
+            cell: ({ row }) => {
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes :
+                    Array.isArray(row.original.notes) ? row.original.notes : [];
+                const cuttingNotes = fabNotes.filter(note => note.stage === 'cut_list');
+
+                if (cuttingNotes.length === 0) {
+                    return <span className="text-xs text-gray-500 italic">No notes</span>;
+                }
+
+                const latestNote = cuttingNotes[0];
+                return (
+                    <div className="text-xs max-w-xs" title={latestNote.note}>
+                        <div className="font-medium text-orange-700 truncate">C:</div>
+                        <div className="truncate">{latestNote.note}</div>
+                        <div className="text-gray-500 text-xs">by {latestNote.created_by_name || 'Unknown'}</div>
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 180,
+        },
         {
             id: "on_hold",
             accessorKey: "status_id",
@@ -598,34 +629,34 @@ export const CutListTableWithCalculations = ({
                 const fabId = parseInt(row.original.fab_id);
                 const isLoading = loadingStates[fabId] || false;
                 // Get the display value considering optimistic updates
-                const isChecked = optimisticUpdates[row.original.fab_id] !== undefined 
+                const isChecked = optimisticUpdates[row.original.fab_id] !== undefined
                     ? optimisticUpdates[row.original.fab_id] === 0
                     : row.original.status_id === 0;
-                
+
                 return (
                     <div className="flex justify-center items-center">
-                        <Switch 
+                        <Switch
                             className={`data-[state=checked]:bg-red-600 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             checked={isChecked}
                             disabled={isLoading}
                             onCheckedChange={async (checked) => {
                                 if (isLoading) return;
-                                
+
                                 const newStatusId = checked ? 0 : 1;
                                 const fabIdStr = row.original.fab_id;
-                                
+
                                 // Apply optimistic update immediately
                                 setOptimisticUpdates(prev => ({
                                     ...prev,
                                     [fabIdStr]: newStatusId
                                 }));
-                                
+
                                 // Set loading state
                                 setLoadingStates(prev => ({ ...prev, [fabId]: true }));
-                                
+
                                 try {
                                     await toggleFabOnHold({ fab_id: fabId, on_hold: checked }).unwrap();
-                                    
+
                                     // Keep optimistic update for 2 seconds to prevent immediate refresh
                                     setTimeout(() => {
                                         setOptimisticUpdates(prev => {
@@ -634,7 +665,7 @@ export const CutListTableWithCalculations = ({
                                             return newState;
                                         });
                                     }, 2000);
-                                    
+
                                 } catch (error) {
                                     console.error('Failed to toggle on hold status:', error);
                                     // Rollback optimistic update on error immediately
@@ -671,7 +702,7 @@ export const CutListTableWithCalculations = ({
             header: '',
             cell: ({ row }) => (
                 <div className="flex items-center gap-2">
-                    <ActionsCell 
+                    <ActionsCell
                         row={row as any}
                         onView={() => handleView(row.original.fab_id)}
                         onAddNote={handleAddNote}
@@ -716,194 +747,194 @@ export const CutListTableWithCalculations = ({
     return (
         <>
             <DataGrid
-            table={table}
-            recordCount={filteredData.length}
-            isLoading={isLoading}
-            groupByDate={true}
-            dateKey="shop_date_schedule"
-            tableLayout={{
-                columnsPinnable: true,
-                columnsMovable: true,
-                columnsVisibility: true,
-                cellBorder: true,
-            }}
-            onRowClick={(row) => handleRowClickInternal(row as CalculatedCutListData)}
-        >
-            <Card>
-                <CardHeader className="py-3.5 border-b">
-                    <CardHeading>
-                        <div className="flex items-center gap-2.5 flex-wrap">
-                            {/* Search Input */}
-                            <div className="relative">
-                                <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
-                                <Input
-                                    placeholder="Search Cut Lists..."
-                                    value={effectiveSearchQuery}
-                                    onChange={(e) => setEffectiveSearchQuery(e.target.value)}
-                                    className="ps-9 w-[230px] h-[34px]"
-                                />
-                                {effectiveSearchQuery && (
-                                    <Button
-                                        mode="icon"
-                                        variant="ghost"
-                                        className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                                        onClick={() => setEffectiveSearchQuery('')}
-                                    >
-                                        <X />
-                                    </Button>
-                                )}
-                            </div>
+                table={table}
+                recordCount={filteredData.length}
+                isLoading={isLoading}
+                groupByDate={true}
+                dateKey="shop_date_schedule"
+                tableLayout={{
+                    columnsPinnable: true,
+                    columnsMovable: true,
+                    columnsVisibility: true,
+                    cellBorder: true,
+                }}
+                onRowClick={(row) => handleRowClickInternal(row as CalculatedCutListData)}
+            >
+                <Card>
+                    <CardHeader className="py-3.5 border-b">
+                        <CardHeading>
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                                {/* Search Input */}
+                                <div className="relative">
+                                    <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                                    <Input
+                                        placeholder="Search Cut Lists..."
+                                        value={effectiveSearchQuery}
+                                        onChange={(e) => setEffectiveSearchQuery(e.target.value)}
+                                        className="ps-9 w-[230px] h-[34px]"
+                                    />
+                                    {effectiveSearchQuery && (
+                                        <Button
+                                            mode="icon"
+                                            variant="ghost"
+                                            className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                                            onClick={() => setEffectiveSearchQuery('')}
+                                        >
+                                            <X />
+                                        </Button>
+                                    )}
+                                </div>
 
-                            {/* Fab Type Filter */}
-                            <Select value={effectiveFabTypeFilter} onValueChange={setEffectiveFabTypeFilter}>
-                                <SelectTrigger className="w-[150px] h-[34px]">
-                                    <SelectValue placeholder="Fab Type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Fab Types</SelectItem>
-                                    {uniqueFabTypes.map((type) => (
-                                        <SelectItem key={type} value={type}>
-                                            {type}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
-                            {/* Date Filter */}
-                            <div className="flex items-center gap-2">
-                                <Select value={effectiveDateFilter} onValueChange={(value) => {
-                                    setEffectiveDateFilter(value);
-                                    if (value === 'custom') {
-                                        setIsDatePickerOpen(false);
-                                    }
-                                }}>
-                                    <SelectTrigger className="w-[170px] h-[34px]">
-                                        <SelectValue placeholder="Install Date" />
+                                {/* Fab Type Filter */}
+                                <Select value={effectiveFabTypeFilter} onValueChange={setEffectiveFabTypeFilter}>
+                                    <SelectTrigger className="w-[150px] h-[34px]">
+                                        <SelectValue placeholder="Fab Type" />
                                     </SelectTrigger>
-                                    <SelectContent className="w-48">
-                                        <SelectItem value="all">All</SelectItem>
-                                        <SelectItem value="today">Today</SelectItem>
-                                        <SelectItem value="this_week">This Week</SelectItem>
-                                        <SelectItem value="last_week">Last Week</SelectItem>
-                                        <SelectItem value="this_month">This Month</SelectItem>
-                                        <SelectItem value="last_month">Last Month</SelectItem>
-                                        <SelectItem value="next_week">Next Week</SelectItem>
-                                        <SelectItem value="next_month">Next Month</SelectItem>
-                                        <SelectItem value="unscheduled">Unscheduled</SelectItem>
-                                        <SelectItem value="scheduled">Scheduled</SelectItem>
-                                        <SelectItem value="custom">Custom</SelectItem>
-                                    </SelectContent>
-                                </Select>
-
-                                {/* Custom Date Range Picker */}
-                                {effectiveDateFilter === 'custom' && (
-                                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" size="sm" className="h-[34px]">
-                                                <CalendarDays className="h-4 w-4 mr-2" />
-                                                {effectiveDateRange?.from ? (
-                                                    effectiveDateRange.to ? (
-                                                        <>
-                                                            {format(effectiveDateRange.from, 'MMM dd')} - {format(effectiveDateRange.to, 'MMM dd, yyyy')}
-                                                        </>
-                                                    ) : (
-                                                        format(effectiveDateRange.from, 'MMM dd, yyyy')
-                                                    )
-                                                ) : (
-                                                    <span>Pick dates</span>
-                                                )}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                initialFocus
-                                                mode="range"
-                                                defaultMonth={tempDateRange?.from || new Date()}
-                                                selected={tempDateRange}
-                                                onSelect={setTempDateRange}
-                                                numberOfMonths={2}
-                                            />
-                                            <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setTempDateRange(undefined);
-                                                        setEffectiveDateRange(undefined);
-                                                    }}
-                                                >
-                                                    Reset
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setEffectiveDateRange(tempDateRange);
-                                                        setIsDatePickerOpen(false);
-                                                    }}
-                                                >
-                                                    Apply
-                                                </Button>
-                                            </div>
-                                        </PopoverContent>
-                                    </Popover>
-                                )}
-                            </div>
-
-                            {/* Sales Person Filter */}
-                            <Select value={effectiveSalesPersonFilter} onValueChange={setEffectiveSalesPersonFilter}>
-                                <SelectTrigger className="w-[180px] h-[34px]">
-                                    <SelectValue placeholder="Sales Person" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Sales Persons</SelectItem>
-                                    <SelectItem value="no_sales_person">No Sales Person</SelectItem>
-                                    {uniqueSalesPersons.map((person) => (
-                                        <SelectItem key={person || 'N/A'} value={person || ''}>
-                                            {person || 'N/A'}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
-                            {/* Stage filter - only visible to super admins */}
-                            {isSuperAdmin && (
-                                <Select onValueChange={handleStageFilterChange}>
-                                    <SelectTrigger className="w-[170px] h-[34px]">
-                                        <SelectValue placeholder="Go to stage" />
-                                    </SelectTrigger>
-                                    <SelectContent className="w-48">
-                                        <SelectItem value="all">All Stages</SelectItem>
-                                        {Object.values(JOB_STAGES).map((stage) => (
-                                            <SelectItem key={stage.stage} value={stage.stage}>
-                                                {stage.title}
+                                    <SelectContent>
+                                        <SelectItem value="all">All Fab Types</SelectItem>
+                                        {uniqueFabTypes.map((type) => (
+                                            <SelectItem key={type} value={type}>
+                                                {type}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                            )}
-                        </div>
-                    </CardHeading>
 
-                    <CardToolbar>
-                        <Button variant="outline" onClick={() => exportTableToCSV(table, "CutList")}>
-                            Export CSV
-                        </Button>
-                    </CardToolbar>
-                </CardHeader>
+                                {/* Date Filter */}
+                                <div className="flex items-center gap-2">
+                                    <Select value={effectiveDateFilter} onValueChange={(value) => {
+                                        setEffectiveDateFilter(value);
+                                        if (value === 'custom') {
+                                            setIsDatePickerOpen(false);
+                                        }
+                                    }}>
+                                        <SelectTrigger className="w-[170px] h-[34px]">
+                                            <SelectValue placeholder="Install Date" />
+                                        </SelectTrigger>
+                                        <SelectContent className="w-48">
+                                            <SelectItem value="all">All</SelectItem>
+                                            <SelectItem value="today">Today</SelectItem>
+                                            <SelectItem value="this_week">This Week</SelectItem>
+                                            <SelectItem value="last_week">Last Week</SelectItem>
+                                            <SelectItem value="this_month">This Month</SelectItem>
+                                            <SelectItem value="last_month">Last Month</SelectItem>
+                                            <SelectItem value="next_week">Next Week</SelectItem>
+                                            <SelectItem value="next_month">Next Month</SelectItem>
+                                            <SelectItem value="unscheduled">Unscheduled</SelectItem>
+                                            <SelectItem value="scheduled">Scheduled</SelectItem>
+                                            <SelectItem value="custom">Custom</SelectItem>
+                                        </SelectContent>
+                                    </Select>
 
-                <CardTable>
-                    <ScrollArea>
-                        <DataGridTable />
-                        <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
-                </CardTable>
+                                    {/* Custom Date Range Picker */}
+                                    {effectiveDateFilter === 'custom' && (
+                                        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" size="sm" className="h-[34px]">
+                                                    <CalendarDays className="h-4 w-4 mr-2" />
+                                                    {effectiveDateRange?.from ? (
+                                                        effectiveDateRange.to ? (
+                                                            <>
+                                                                {format(effectiveDateRange.from, 'MMM dd')} - {format(effectiveDateRange.to, 'MMM dd, yyyy')}
+                                                            </>
+                                                        ) : (
+                                                            format(effectiveDateRange.from, 'MMM dd, yyyy')
+                                                        )
+                                                    ) : (
+                                                        <span>Pick dates</span>
+                                                    )}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    initialFocus
+                                                    mode="range"
+                                                    defaultMonth={tempDateRange?.from || new Date()}
+                                                    selected={tempDateRange}
+                                                    onSelect={setTempDateRange}
+                                                    numberOfMonths={2}
+                                                />
+                                                <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            setTempDateRange(undefined);
+                                                            setEffectiveDateRange(undefined);
+                                                        }}
+                                                    >
+                                                        Reset
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            setEffectiveDateRange(tempDateRange);
+                                                            setIsDatePickerOpen(false);
+                                                        }}
+                                                    >
+                                                        Apply
+                                                    </Button>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                    )}
+                                </div>
 
-                <CardFooter>
-                    <DataGridPagination />
-                </CardFooter>
-            </Card>
+                                {/* Sales Person Filter */}
+                                <Select value={effectiveSalesPersonFilter} onValueChange={setEffectiveSalesPersonFilter}>
+                                    <SelectTrigger className="w-[180px] h-[34px]">
+                                        <SelectValue placeholder="Sales Person" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Sales Persons</SelectItem>
+                                        <SelectItem value="no_sales_person">No Sales Person</SelectItem>
+                                        {uniqueSalesPersons.map((person) => (
+                                            <SelectItem key={person || 'N/A'} value={person || ''}>
+                                                {person || 'N/A'}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+
+                                {/* Stage filter - only visible to super admins */}
+                                {isSuperAdmin && (
+                                    <Select onValueChange={handleStageFilterChange}>
+                                        <SelectTrigger className="w-[170px] h-[34px]">
+                                            <SelectValue placeholder="Go to stage" />
+                                        </SelectTrigger>
+                                        <SelectContent className="w-48">
+                                            <SelectItem value="all">All Stages</SelectItem>
+                                            {Object.values(JOB_STAGES).map((stage) => (
+                                                <SelectItem key={stage.stage} value={stage.stage}>
+                                                    {stage.title}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            </div>
+                        </CardHeading>
+
+                        <CardToolbar>
+                            <Button variant="outline" onClick={() => exportTableToCSV(table, "CutList")}>
+                                Export CSV
+                            </Button>
+                        </CardToolbar>
+                    </CardHeader>
+
+                    <CardTable>
+                        <ScrollArea>
+                            <DataGridTable />
+                            <ScrollBar orientation="horizontal" />
+                        </ScrollArea>
+                    </CardTable>
+
+                    <CardFooter>
+                        <DataGridPagination />
+                    </CardFooter>
+                </Card>
             </DataGrid>
-            
+
             <NotesModal
                 isOpen={isNotesModalOpen}
                 onClose={handleCloseNotesModal}

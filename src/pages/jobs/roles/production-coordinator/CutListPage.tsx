@@ -7,6 +7,8 @@ import { useGetFabsQuery, useGetFabTypesQuery } from '@/store/api/job';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { Fab } from '@/store/api/job';
 import { DateRange } from 'react-day-picker';
+import { useCreateFabNoteMutation } from '@/store/api/job';
+
 
 const CutListPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -15,6 +17,7 @@ const CutListPage = () => {
     const [salesPersonFilter, setSalesPersonFilter] = useState('all');
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 25 });
+    const [createFabNote, { isLoading: isSubmittingNote }] = useCreateFabNoteMutation();
 
     // Fetch all fab types and sales persons for filter dropdowns
     const { data: fabTypesData } = useGetFabTypesQuery();
@@ -203,7 +206,20 @@ const CutListPage = () => {
             totalCostOfStone
         };
     }, [fabsData]);
-
+ const handleNoteSubmit = async ( fabId: number, note: string) => {
+    try {
+      await createFabNote({
+        fab_id: fabId,
+        note,
+        stage:"cut_list"
+      }).unwrap();
+      
+      // Optionally refresh data or update UI as needed
+    } catch (error) {
+      console.error('Error creating note:', error);
+      throw error; // Re-throw to be caught by the modal
+    }
+  };
     return (
         <>
             <Container className="lg:mx-0">
@@ -257,6 +273,7 @@ const CutListPage = () => {
                     setSalesPersonFilter={setSalesPersonFilter}
                     dateRange={dateRange}
                     setDateRange={setDateRange}
+                    onAddNote={handleNoteSubmit }
                 />
             </Container>
         </>

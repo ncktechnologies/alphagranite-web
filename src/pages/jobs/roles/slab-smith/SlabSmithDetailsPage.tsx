@@ -26,6 +26,7 @@ import { useSelector } from 'react-redux';
 import { FileWithPreview } from '@/hooks/use-file-upload';
 import { UploadedFileMeta } from '@/types/uploads';
 import { X } from 'lucide-react';
+import { Can } from '@/components/permission';
 
 export function SlabSmithDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -55,6 +56,41 @@ export function SlabSmithDetailsPage() {
   // start/end timestamps captured from child component
   const [draftStart, setDraftStart] = useState<Date | null>(null);
   const [draftEnd, setDraftEnd] = useState<Date | null>(null);
+
+  // Sync state with session data
+  React.useEffect(() => {
+    if (ssSessionData?.data) {
+      const session = ssSessionData.data;
+
+      // Set status flags
+      if (session.status === 'active') {
+        setIsDrafting(true);
+        setIsPaused(false);
+        setHasEnded(false);
+      } else if (session.status === 'paused') {
+        setIsDrafting(true);
+        setIsPaused(true);
+        setHasEnded(false);
+      } else if (session.status === 'ended') {
+        setIsDrafting(false);
+        setIsPaused(false);
+        setHasEnded(true);
+      }
+
+      // Restore timestamps
+      if (session.current_session_start_time) {
+        setDraftStart(new Date(session.current_session_start_time));
+      }
+      if (session.last_action_time && session.status === 'ended') {
+        setDraftEnd(new Date(session.last_action_time));
+      }
+
+      // Restore total time if available
+      if (typeof session.duration_seconds === 'number') {
+        setTotalTime(session.duration_seconds);
+      }
+    }
+  }, [ssSessionData]);
 
   // Simplified file state - track files that need to be uploaded
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
@@ -469,35 +505,44 @@ export function SlabSmithDetailsPage() {
               pendingFilesCount={pendingFiles.length} // Pass file counts
               uploadedFilesCount={uploadedFileMetas.length}
             />
+
+            <Separator className="my-3" />
+
+            <UploadDocuments
+              onFilesChange={handleFilesChange}
+              onFileClick={handleFileClick}
+              slabSmithId={slabSmithData?.id}
+            />
           </CardContent>
+          {/* Submit Button inside Card */}
+          <div className="flex justify-end p-6 pt-0">
+            <Can action="create" on="Slab Smith">
+              <Button
+                onClick={handleOpenSubmissionModal}
+                disabled={!canOpenSubmit}
+                className="bg-green-600 hover:bg-green-700"
+                size="lg"
+              >
+                Submit Slab Smith Work
+              </Button>
+            </Can>
+          </div>
         </Card>
 
-        <Separator className="my-6" />
-
-        <UploadDocuments
-          onFilesChange={handleFilesChange}
-          onFileClick={handleFileClick}
-          slabSmithId={slabSmithData?.id}
-        />
-
-        <Separator className="my-6" />
-
-        <div className="flex justify-end mb-10">
-          <Button
-            onClick={handleOpenSubmissionModal}
-            disabled={!canOpenSubmit}
-            className="bg-green-600 hover:bg-green-700"
-            size="lg"
-          >
-            Submit Slab Smith Work
-          </Button>
-        </div>
+        {/* Removed external UploadDocuments and Separators - they should ideally be inside the card or organized similarly to FinalProgramming if exact UI parity is desired, but for now moving Submit button is key for flow.
+           Actually, checking FinalProgrammingDetailsPage again, UploadDocuments IS inside the CardContent.
+           Let's move UploadDocuments inside CardContent too.
+        */}
 
         <SubmissionModal
           open={showSubmissionModal}
           onClose={(success?: boolean) => {
             setShowSubmissionModal(false);
             if (success) {
+              // End the session upon successful submission
+              // Use current date as end time
+              handleEnd(new Date());
+              // Navigate after a brief delay or immediately (usually safely immediately if state is handled)
               onSubmitModal({});
             }
           }}
