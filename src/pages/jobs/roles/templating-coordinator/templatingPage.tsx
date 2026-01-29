@@ -11,6 +11,7 @@ import { useGetFabsQuery, Fab } from '@/store/api/job';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
 import { useMemo, useState } from 'react';
+import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
@@ -44,7 +45,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         // Optional fields with default values
         acct_name: fab.account_name || '',
         template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '',
-        template_received: fab.template_received  ? 'Yes' : 'No',
+        template_received: fab.template_received ? 'Yes' : 'No',
         templater: fab.technician_name || '-',
         // no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
         total_sq_ft: String(fab.total_sqft || "-"),
@@ -62,19 +63,19 @@ const transformFabToJob = (fab: Fab): IJob => {
         no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
         job_id: fab.job_id,
         on_hold: fab.on_hold,
-         status_id: fab.status_id,
+        status_id: fab.status_id,
     };
 };
 
 export function TemplatingPage() {
     const navigate = useNavigate();
-    
+
     // Fetch templaters data for filter dropdown
     const { data: templatersData } = useGetSalesPersonsQuery();
-    
+
     // Separate state for templater filter
     const [templaterFilter, setTemplaterFilter] = useState<string>('all');
-    
+
     // Create map of templater names to IDs
     const templaterIdMap = useMemo(() => {
         if (!templatersData) {
@@ -154,10 +155,11 @@ export function TemplatingPage() {
             // For custom date range, use schedule_start_date and schedule_due_date
             if (tableState.dateFilter === 'custom') {
                 if (tableState.dateRange?.from) {
-                    params.schedule_start_date = tableState.dateRange.from.toISOString().split('T')[0];
+                    // Use local date string (YYYY-MM-DD)
+                    params.schedule_start_date = format(tableState.dateRange.from, 'yyyy-MM-dd');
                 }
                 if (tableState.dateRange?.to) {
-                    params.schedule_due_date = tableState.dateRange.to.toISOString().split('T')[0];
+                    params.schedule_due_date = format(tableState.dateRange.to, 'yyyy-MM-dd');
                 }
                 // Don't send date_filter when using custom range
             } else {
@@ -186,12 +188,12 @@ export function TemplatingPage() {
     const handleRowClick = (fabId: string) => {
         // Check if the job has a template technician assigned to determine the path
         const job = data?.data?.find(fab => fab.id.toString() === fabId);
-        const hasTemplateTechnician = job?.technician_name && 
-            job.technician_name !== '-' && 
+        const hasTemplateTechnician = job?.technician_name &&
+            job.technician_name !== '-' &&
             job.technician_name.trim() !== '';
 
-        navigate(hasTemplateTechnician ? 
-            `/job/templating-details/${fabId}` : 
+        navigate(hasTemplateTechnician ?
+            `/job/templating-details/${fabId}` :
             `/job/templating/${fabId}`
         );
     };
@@ -267,11 +269,11 @@ export function TemplatingPage() {
                 </TabsList>
 
                 <TabsContent value="all" className="mt-4">
-                    <JobTable 
+                    <JobTable
                         jobs={jobsData}
                         path="templating"
                         showScheduleFilter={true}
-                        isLoading={isLoading }
+                        isLoading={isLoading}
                         useBackendPagination={true}
                         totalRecords={data?.total || 0}
                         tableState={tableState}
@@ -280,7 +282,7 @@ export function TemplatingPage() {
                         templaterFilter={templaterFilter}
                         setTemplaterFilter={setTemplaterFilter}
 
-                        visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'templating_notes',  'templater', 'on_hold']}
+                        visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'templating_notes', 'templater', 'on_hold']}
                         getPath={(job) => {
                             // Check if THIS SPECIFIC job has a template technician assigned
                             const hasTemplateTechnician = job.templater &&

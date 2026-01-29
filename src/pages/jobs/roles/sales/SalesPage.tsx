@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react';
+import { format } from 'date-fns';
 import { Link, useLocation } from 'react-router';
 import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
@@ -134,10 +135,11 @@ export function SalesPage() {
             // For custom date range, use schedule_start_date and schedule_due_date
             if (tableState.dateFilter === 'custom') {
                 if (tableState.dateRange?.from) {
-                    params.draft_completed_start = tableState.dateRange.from.toISOString().split('T')[0];
+                    // Use local date string (YYYY-MM-DD)
+                    params.draft_completed_start = format(tableState.dateRange.from, 'yyyy-MM-dd');
                 }
                 if (tableState.dateRange?.to) {
-                    params.draft_completed_end = tableState.dateRange.to.toISOString().split('T')[0];
+                    params.draft_completed_end = format(tableState.dateRange.to, 'yyyy-MM-dd');
                 }
                 // Don't send date_filter when using custom range
             } else {

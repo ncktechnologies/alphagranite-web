@@ -10,6 +10,7 @@ import { useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { format } from 'date-fns';
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
@@ -59,7 +60,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         fab_notes: fab.fab_notes || [],
         job_id: fab.job_id,
         on_hold: fab.on_hold,
-         status_id: fab.status_id,
+        status_id: fab.status_id,
     };
 };
 
@@ -138,10 +139,11 @@ const SlabSmithPage = () => {
             // For custom date range, use schedule_start_date and schedule_due_date
             if (tableState.dateFilter === 'custom') {
                 if (tableState.dateRange?.from) {
-                    params.schedule_start_date = tableState.dateRange.from.toISOString().split('T')[0];
+                    // Use local date string (YYYY-MM-DD) to prevent timezone shifts
+                    params.schedule_start_date = format(tableState.dateRange.from, 'yyyy-MM-dd');
                 }
                 if (tableState.dateRange?.to) {
-                    params.schedule_due_date = tableState.dateRange.to.toISOString().split('T')[0];
+                    params.schedule_due_date = format(tableState.dateRange.to, 'yyyy-MM-dd');
                 }
                 // Don't send date_filter when using custom range
             } else {
@@ -219,7 +221,7 @@ const SlabSmithPage = () => {
                 <JobTable
                     jobs={jobsData}
                     path='slab-smith'
-                    isLoading={isLoading }
+                    isLoading={isLoading}
                     // onRowClick={handleRowClick}
                     useBackendPagination={true}
                     totalRecords={data?.total || 0}

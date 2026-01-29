@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -102,8 +103,8 @@ export function AssignTechnicianModal({
         const response = await scheduleTemplating({
           fab_id: Number(id),
           technician_id: Number(values.technician),
-          schedule_start_date: values.date ? new Date(values.date).toISOString().split('T')[0] : "",
-          schedule_due_date: values.date ? new Date(new Date(values.date).getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] : "", // 7 days after start
+          schedule_start_date: values.date ? format(new Date(values.date), 'yyyy-MM-dd') : "",
+          schedule_due_date: values.date ? format(new Date(new Date(values.date).getTime() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd') : "", // 7 days after start
           total_sqft: "0", // This would be updated with actual value
           revenue: values.revenue ? parseFloat(values.revenue) : undefined,
           notes: [values.notes || ""],
@@ -221,7 +222,7 @@ export function AssignTechnicianModal({
                       value={field.value ? new Date(field.value) : undefined}
                       onChange={(date) => {
                         if (!date) return field.onChange("");
-                        const formatted = date.toISOString().split('T')[0]; // YYYY-MM-DD format
+                        const formatted = format(date, 'yyyy-MM-dd'); // YYYY-MM-DD format
                         field.onChange(formatted);
                       }}
 

@@ -1366,6 +1366,25 @@ export const jobApi = createApi({
                 invalidatesTags: ["Fab"],
             }),
 
+            // Manage slab smith session (start, pause, resume, end)
+            manageSlabSmithSession: build.mutation<any, { fab_id: number; data: any }>({
+                query: ({ fab_id, data }) => ({
+                    url: `/slabsmith/${fab_id}/session`,
+                    method: "POST",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Get slab smith session status
+            getSlabSmithSessionStatus: build.query<any, number>({
+                query: (fab_id) => ({
+                    url: `/slabsmith/${fab_id}/session-status`,
+                    method: "GET"
+                }),
+                providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
+            }),
+
             // Update the endpoint for getting stages with statistics
             getStages: build.query<StageStats[], void>({
                 query: () => ({
@@ -1842,6 +1861,8 @@ export const {
     useCreateSlabSmithMutation,
     useUpdateSlabSmithMutation,
     useMarkSlabSmithCompletedMutation,
+    useManageSlabSmithSessionMutation, // Export new hook
+    useGetSlabSmithSessionStatusQuery, // Export new hook
     // Cut List Schedule hook
     useUpdateCutListScheduleMutation,
     useGetCutListDetailsQuery,

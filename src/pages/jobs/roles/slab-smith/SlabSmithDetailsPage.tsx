@@ -12,7 +12,11 @@ import {
   useGetDraftingByFabIdQuery,
   useGetSlabSmithByFabIdQuery,
   useCreateSlabSmithMutation,
-  useAddFilesToSlabSmithMutation
+  useAddFilesToSlabSmithMutation,
+  useManageSlabSmithSessionMutation, // Import new mutation
+  useGetSlabSmithSessionStatusQuery, // Import new query
+  useToggleFabOnHoldMutation,
+  useCreateFabNoteMutation
 } from '@/store/api/job';
 import { TimeTrackingComponent } from './components/TimeTrackingComponent';
 import { UploadDocuments } from './components/fileUploads';
@@ -35,8 +39,12 @@ export function SlabSmithDetailsPage() {
   const { data: fabData, isLoading: isFabLoading } = useGetFabByIdQuery(fabId, { skip: !fabId });
   const { data: draftingData, isLoading: isDraftingLoading, refetch: refetchDrafting } = useGetDraftingByFabIdQuery(fabId, { skip: !fabId });
   const { data: slabSmithData, isLoading: isSlabSmithLoading } = useGetSlabSmithByFabIdQuery(fabId, { skip: !fabId });
+  const { data: ssSessionData, isLoading: isSSLoading, refetch: refetchSSSession } = useGetSlabSmithSessionStatusQuery(fabId, { skip: !fabId }); // Session status
   const [createSlabSmith] = useCreateSlabSmithMutation();
   const [addFilesToSlabSmith] = useAddFilesToSlabSmithMutation();
+  const [manageSlabSmithSession] = useManageSlabSmithSessionMutation(); // Session mutation
+  const [toggleFabOnHold] = useToggleFabOnHoldMutation();
+  const [createFabNote] = useCreateFabNoteMutation();
 
   // local UI state
   const [isDrafting, setIsDrafting] = useState(false);
@@ -171,27 +179,133 @@ export function SlabSmithDetailsPage() {
   };
 
   // Time tracking handlers
-  const handleStart = (startDate: Date) => {
+  const handleStart = useCallback(async (startDate: Date) => {
+    if (fabId) {
+      try {
+        // Ensure SlabSmith record exists first? 
+        // Usually manageSession might handle it or we expect it to exist.
+        // But let's just call manageSession with action 'start'.
+        await manageSlabSmithSession({
+          fab_id: fabId,
+          data: {
+            action: 'start',
+            started_by: currentEmployeeId,
+            timestamp: startDate.toISOString(),
+          }
+        }).unwrap();
+
+        await refetchSSSession();
+        toast.success('Slabsmith session started');
+      } catch (error) {
+        console.error('Failed to start session:', error);
+        toast.error('Failed to start session');
+        return;
+      }
+    }
+
     setIsDrafting(true);
     setIsPaused(false);
     setHasEnded(false);
     setDraftStart(startDate);
-  };
+  }, [fabId, currentEmployeeId, manageSlabSmithSession, refetchSSSession]);
 
-  const handlePause = () => {
-    setIsPaused(true);
-  };
+  const handlePause = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
+    try {
+      await manageSlabSmithSession({
+        fab_id: fabId,
+        data: {
+          action: 'pause',
+          note: data?.note,
+          sqft_completed: data?.sqft_drafted, // Map drafted to completed
+          timestamp: new Date().toISOString(),
+        }
+      }).unwrap();
+      setIsPaused(true);
+      await refetchSSSession();
+      toast.success('Session paused');
+    } catch (error) {
+      console.error('Failed to pause:', error);
+      toast.error('Failed to pause');
+    }
+  }, [fabId, manageSlabSmithSession, refetchSSSession]);
 
-  const handleResume = () => {
-    setIsPaused(false);
-  };
+  const handleResume = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
+    try {
+      await manageSlabSmithSession({
+        fab_id: fabId,
+        data: {
+          action: 'resume',
+          note: data?.note,
+          sqft_completed: data?.sqft_drafted,
+          timestamp: new Date().toISOString(),
+        }
+      }).unwrap();
+      setIsPaused(false);
+      await refetchSSSession();
+      toast.success('Session resumed');
+    } catch (error) {
+      console.error('Failed to resume:', error);
+      toast.error('Failed to resume');
+    }
+  }, [fabId, manageSlabSmithSession, refetchSSSession]);
 
-  const handleEnd = (endDate: Date) => {
-    setIsDrafting(false);
-    setIsPaused(false);
-    setHasEnded(true);
-    setDraftEnd(endDate);
-  };
+  const handleOnHold = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
+    try {
+      await toggleFabOnHold({ fab_id: fabId, on_hold: true }).unwrap();
+
+      if (data?.note) {
+        // Stage: 'slab_smith_request' or ?? 
+        // Looking at sidebar mapping: slab_smith_request is Red.
+        // But this is the Slabsmith role working. 
+        // I'll use 'slab_smith' or 'general'? 
+        // Let's use 'slab_smith'.
+        await createFabNote({
+          fab_id: fabId,
+          note: data.note,
+          stage: 'slab_smith'
+        }).unwrap();
+      }
+
+      await manageSlabSmithSession({
+        fab_id: fabId,
+        data: {
+          action: 'pause',
+          note: data?.note ? `[On Hold] ${data.note}` : '[On Hold]',
+          sqft_completed: data?.sqft_drafted,
+          timestamp: new Date().toISOString(),
+        }
+      }).unwrap();
+
+      setIsPaused(true);
+      await refetchSSSession();
+      toast.success('Job placed on hold');
+    } catch (error) {
+      console.error('Failed to hold:', error);
+      toast.error('Failed to place on hold');
+    }
+  }, [fabId, toggleFabOnHold, createFabNote, manageSlabSmithSession, refetchSSSession]);
+
+  const handleEnd = useCallback(async (endDate: Date) => {
+    try {
+      await manageSlabSmithSession({
+        fab_id: fabId,
+        data: {
+          action: 'end',
+          timestamp: endDate.toISOString(),
+        }
+      }).unwrap();
+
+      setIsDrafting(false);
+      setIsPaused(false);
+      setHasEnded(true);
+      setDraftEnd(endDate);
+      await refetchSSSession();
+      toast.success('Session ended');
+    } catch (error) {
+      console.error('Failed to end:', error);
+      toast.error('Failed to end session');
+    }
+  }, [fabId, manageSlabSmithSession, refetchSSSession]);
 
   const canOpenSubmit = !isDrafting && totalTime > 0 && (pendingFiles.length > 0 || uploadedFileMetas.length > 0);
 
@@ -347,8 +461,13 @@ export function SlabSmithDetailsPage() {
               onPause={handlePause}
               onResume={handleResume}
               onEnd={handleEnd}
+              onOnHold={handleOnHold} // Pass handler
               onTimeUpdate={setTotalTime}
               hasEnded={hasEnded}
+              sessionData={ssSessionData} // Pass session data
+              isFabOnHold={fabData?.on_hold} // Pass on hold status
+              pendingFilesCount={pendingFiles.length} // Pass file counts
+              uploadedFilesCount={uploadedFileMetas.length}
             />
           </CardContent>
         </Card>

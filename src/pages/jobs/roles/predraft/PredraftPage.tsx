@@ -6,6 +6,7 @@ import { useGetFabsQuery, Fab } from '@/store/api/job';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
 import { useMemo } from 'react';
+import { format } from 'date-fns';
 import { useNavigate } from 'react-router';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -59,7 +60,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         fab_notes: fab.fab_notes || [],
         job_id: fab.job_id,
         on_hold: fab.on_hold,
-         status_id: fab.status_id,
+        status_id: fab.status_id,
     };
 };
 
@@ -138,10 +139,11 @@ export function PredraftPage() {
             // For custom date range, use schedule_start_date and schedule_due_date
             if (tableState.dateFilter === 'custom') {
                 if (tableState.dateRange?.from) {
-                    params.template_completed_start = tableState.dateRange.from.toISOString().split('T')[0];
+                    // Use local date string (YYYY-MM-DD)
+                    params.template_completed_start = format(tableState.dateRange.from, 'yyyy-MM-dd');
                 }
                 if (tableState.dateRange?.to) {
-                    params.template_completed_end = tableState.dateRange.to.toISOString().split('T')[0];
+                    params.template_completed_end = format(tableState.dateRange.to, 'yyyy-MM-dd');
                 }
                 // Don't send date_filter when using custom range
             } else {
@@ -223,7 +225,7 @@ export function PredraftPage() {
             <JobTable
                 jobs={jobsData}
                 path='predraft'
-                isLoading={isLoading }
+                isLoading={isLoading}
                 // onRowClick={handleRowClick}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}

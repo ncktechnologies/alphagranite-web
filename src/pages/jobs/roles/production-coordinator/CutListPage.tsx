@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { format } from 'date-fns';
 import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { CutListTableWithCalculations } from './CutListTableWithCalculations';
@@ -132,8 +133,8 @@ const CutListPage = () => {
 
         // Add custom date range
         if (dateFilter === 'custom' && dateRange?.from && dateRange?.to) {
-            params.shop_date_start = dateRange.from.toISOString();
-            params.shop_date_end = dateRange.to.toISOString();
+            params.shop_date_start = format(dateRange.from, 'yyyy-MM-dd');
+            params.shop_date_end = format(dateRange.to, 'yyyy-MM-dd');
         }
 
         return params;
@@ -145,11 +146,11 @@ const CutListPage = () => {
     // Extract data and totals from response
     const { fabs, stageTotals, totalRevenue, totalCostOfStone } = useMemo(() => {
         if (!fabsData) {
-            return { 
-                fabs: [], 
-                stageTotals: null, 
-                totalRevenue: 0, 
-                totalCostOfStone: 0 
+            return {
+                fabs: [],
+                stageTotals: null,
+                totalRevenue: 0,
+                totalCostOfStone: 0
             };
         }
 
@@ -161,7 +162,7 @@ const CutListPage = () => {
             rawData = fabsData;
         } else if (typeof fabsData === 'object' && 'data' in fabsData) {
             const responseData = fabsData.data;
-            
+
             if (Array.isArray(responseData)) {
                 rawData = responseData;
             } else if (typeof responseData === 'object') {
@@ -224,10 +225,10 @@ const CutListPage = () => {
                     TCNC: LIN FT: {stageTotals?.cnc_linft || 0}
                 </div>
                 <div className='pl-5 text-[#4B5675] text-[14px]'>
-                   Milter: LIN FT: {stageTotals?.miter_linft || 0}
+                    Milter: LIN FT: {stageTotals?.miter_linft || 0}
                 </div>
                 <div className='pl-5 text-[#4B5675] text-[14px]'>
-                   No. of Pieces: {stageTotals?.no_of_pieces || 0}
+                    No. of Pieces: {stageTotals?.no_of_pieces || 0}
                 </div>
                 <div className='pl-5 text-[#4B5675] text-[14px]'>
                     Revenue: ${totalRevenue.toLocaleString()}
@@ -243,7 +244,7 @@ const CutListPage = () => {
                     fabTypes={fabTypes}
                     salesPersons={salesPersons}
                     path="/job/cut-list"
-                    isLoading={isFabsLoading }
+                    isLoading={isFabsLoading}
                     pagination={pagination}
                     setPagination={setPagination}
                     searchQuery={searchQuery}

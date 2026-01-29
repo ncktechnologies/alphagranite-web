@@ -12,7 +12,9 @@ import {
   useGetFinalProgrammingSessionStatusQuery,
   useDeleteFileFromFinalProgrammingMutation,
   useUpdateFabMutation,
-  useManageFinalProgrammingSessionMutation // Import the new mutation
+  useManageFinalProgrammingSessionMutation, // Import the new mutation
+  useToggleFabOnHoldMutation,
+  useCreateFabNoteMutation
 } from '@/store/api/job';
 import { TimeTrackingComponent } from './components/TimeTrackingComponent';
 import { UploadDocuments } from './components/fileUploads';
@@ -49,7 +51,9 @@ export function FinalProgrammingDetailsPage() {
   // Mutations
   const [deleteFileFromFinalProgramming] = useDeleteFileFromFinalProgrammingMutation();
   const [updateFab] = useUpdateFabMutation();
-  const [manageFinalProgrammingSession] = useManageFinalProgrammingSessionMutation(); // Add the new mutation
+  const [manageFinalProgrammingSession] = useManageFinalProgrammingSessionMutation();
+  const [toggleFabOnHold] = useToggleFabOnHoldMutation();
+  const [createFabNote] = useCreateFabNoteMutation();
 
   // Local UI state
   const [isDrafting, setIsDrafting] = useState(false);
@@ -61,12 +65,49 @@ export function FinalProgrammingDetailsPage() {
   const [draftStart, setDraftStart] = useState<Date | null>(null);
   const [draftEnd, setDraftEnd] = useState<Date | null>(null);
 
-  // Simplified file state - track files that need to be uploaded
+  // Simplistic file state - track files that need to be uploaded
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploadedFileMetas, setUploadedFileMetas] = useState<UploadedFileMeta[]>([]);
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
   const [activeFile, setActiveFile] = useState<any | null>(null);
+
+  // Sync state with session data
+  React.useEffect(() => {
+    if (fpSessionData?.data) {
+      const session = fpSessionData.data;
+
+      // Set status flags
+      if (session.status === 'active') {
+        setIsDrafting(true);
+        setIsPaused(false);
+        setHasEnded(false);
+      } else if (session.status === 'paused') {
+        setIsDrafting(true);
+        setIsPaused(true);
+        setHasEnded(false);
+      } else if (session.status === 'ended') {
+        setIsDrafting(false);
+        setIsPaused(false);
+        setHasEnded(true);
+      }
+
+      // Restore timestamps
+      if (session.current_session_start_time) {
+        setDraftStart(new Date(session.current_session_start_time));
+      }
+      if (session.last_action_time && session.status === 'ended') {
+        setDraftEnd(new Date(session.last_action_time));
+      }
+
+      // Restore total time if available
+      // If the timer is running/paused, TimeTrackingComponent will take over for live updates
+      // but we set this for initial display or paused state
+      if (typeof session.duration_seconds === 'number') {
+        setTotalTime(session.duration_seconds);
+      }
+    }
+  }, [fpSessionData]);
 
   // Show upload section when timer is running OR when files have been uploaded (to maintain visibility after ending)
   const shouldShowUploadSection = isDrafting || uploadedFileMetas.length > 0;
@@ -80,7 +121,8 @@ export function FinalProgrammingDetailsPage() {
           fab_id: fabId,
           data: {
             action: 'start',
-            started_by: currentEmployeeId
+            started_by: currentEmployeeId,
+            timestamp: startTime.toISOString(),
           }
         }).unwrap();
 
@@ -100,20 +142,104 @@ export function FinalProgrammingDetailsPage() {
     setDraftStart(startTime);
   }, [fabId, currentEmployeeId, manageFinalProgrammingSession, refetchFPSession]);
 
-  const handlePause = useCallback(() => {
-    setIsPaused(true);
-  }, []);
+  const handlePause = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
+    try {
+      await manageFinalProgrammingSession({
+        fab_id: fabId,
+        data: {
+          action: 'pause',
+          note: data?.note,
+          sqft_drafted: data?.sqft_drafted,
+          timestamp: new Date().toISOString(),
+        }
+      }).unwrap();
+      setIsPaused(true);
+      await refetchFPSession();
+      toast.success('Session paused');
+    } catch (error) {
+      console.error('Failed to pause:', error);
+      toast.error('Failed to pause');
+    }
+  }, [fabId, manageFinalProgrammingSession, refetchFPSession]);
 
-  const handleResume = useCallback(() => {
-    setIsPaused(false);
-  }, []);
+  const handleResume = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
+    try {
+      await manageFinalProgrammingSession({
+        fab_id: fabId,
+        data: {
+          action: 'resume',
+          note: data?.note,
+          sqft_drafted: data?.sqft_drafted,
+          timestamp: new Date().toISOString(),
+        }
+      }).unwrap();
+      setIsPaused(false);
+      await refetchFPSession();
+      toast.success('Session resumed');
+    } catch (error) {
+      console.error('Failed to resume:', error);
+      toast.error('Failed to resume');
+    }
+  }, [fabId, manageFinalProgrammingSession, refetchFPSession]);
 
-  const handleEnd = useCallback((endTime: Date) => {
-    setIsDrafting(false);
-    setIsPaused(false);
-    setHasEnded(true);
-    setDraftEnd(endTime);
-  }, []);
+  const handleEnd = useCallback(async (endDate: Date) => {
+    try {
+      await manageFinalProgrammingSession({
+        fab_id: fabId,
+        data: {
+          action: 'end',
+          timestamp: endDate.toISOString(),
+        }
+      }).unwrap();
+
+      setIsDrafting(false);
+      setIsPaused(false);
+      setHasEnded(true);
+      setDraftEnd(endDate);
+      await refetchFPSession();
+      toast.success('Session ended');
+    } catch (error) {
+      console.error('Failed to end session:', error);
+      toast.error('Failed to end session');
+    }
+  }, [fabId, manageFinalProgrammingSession, refetchFPSession]);
+
+  const handleOnHold = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
+    try {
+      await toggleFabOnHold({ fab_id: fabId, on_hold: true }).unwrap();
+
+      if (data?.note) {
+        await createFabNote({
+          fab_id: fabId,
+          note: data.note,
+          stage: 'final_programming'
+        }).unwrap();
+      }
+
+      // We should also likely pause the session if it's running
+      await manageFinalProgrammingSession({
+        fab_id: fabId,
+        data: {
+          action: 'pause', // Use pause to stop the timer on backend
+          note: data?.note ? `[On Hold] ${data.note}` : '[On Hold]',
+          sqft_drafted: data?.sqft_drafted,
+          timestamp: new Date().toISOString(),
+        }
+      }).unwrap();
+
+      setIsPaused(true); // Treat On Hold as Paused in UI for now, or reset?
+      // Actually usually OnHold might kick user out or reset state? 
+      // For now, mirroring Drafting which often just updates status.
+      // But here we keep it simple.
+
+      await refetchFPSession();
+      await refetchFab();
+      toast.success('Job placed on hold');
+    } catch (error) {
+      console.error('Failed to place on hold:', error);
+      toast.error('Failed to place on hold');
+    }
+  }, [fabId, toggleFabOnHold, createFabNote, manageFinalProgrammingSession, refetchFPSession, refetchFab]);
 
   // Handle files change - accumulate unique files only
   const handleFilesChange = useCallback(async (files: FileWithPreview[]) => {
@@ -132,31 +258,41 @@ export function FinalProgrammingDetailsPage() {
     // Extract the File objects
     const fileObjects = validFiles.map(f => f.file as File);
 
-    // Filter out duplicates by file name
-    const uniqueFileObjects = fileObjects.filter(
-      newFile => !pendingFiles.some(existingFile => existingFile.name === newFile.name)
-    );
+    // Use functional update to ensure we check against the LATEST state
+    setPendingFiles(prev => {
+      // 1. Filter against pending files
+      const uniqueNewFiles = fileObjects.filter(
+        newFile => !prev.some(existingFile => existingFile.name === newFile.name)
+      );
 
-    if (uniqueFileObjects.length === 0) {
-      console.log('All selected files are already uploaded');
-      return;
-    }
+      if (uniqueNewFiles.length === 0) {
+        console.log('All selected files are already uploaded');
+        return prev;
+      }
 
-    // ACCUMULATE only unique pending files
-    setPendingFiles(prev => [...prev, ...uniqueFileObjects]);
+      console.log('Added unique pending files:', uniqueNewFiles.length);
 
-    // Create file metas for display and accumulate them (only for unique files)
-    const newFileMetas: UploadedFileMeta[] = uniqueFileObjects.map((file, index) => ({
-      id: `pending-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`, // Unique ID
-      name: file.name,
-      size: file.size,
-      type: file.type,
-    }));
+      // 2. Also update metas here to ensure sync, AND filter against existing metas to be double safe
+      setUploadedFileMetas(prevMetas => {
+        const trulyUniqueNewFiles = uniqueNewFiles.filter(
+          f => !prevMetas.some(existing => existing.name === f.name)
+        );
 
-    setUploadedFileMetas(prev => [...prev, ...newFileMetas]);
+        if (trulyUniqueNewFiles.length === 0) return prevMetas;
 
-    console.log('Added unique pending files:', uniqueFileObjects.length);
-  }, [pendingFiles]);
+        const newFileMetas: UploadedFileMeta[] = trulyUniqueNewFiles.map((file, index) => ({
+          id: `pending-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`,
+          name: file.name,
+          size: file.size,
+          type: file.type,
+        }));
+        return [...prevMetas, ...newFileMetas];
+      });
+
+      return [...prev, ...uniqueNewFiles];
+    });
+
+  }, []); // Empty dependency array - no stale closures!
 
   // Handle file clicks for viewing
   const handleFileClick = (file: any) => {
@@ -166,14 +302,28 @@ export function FinalProgrammingDetailsPage() {
 
   // Handle file deletion
   const handleDeleteFile = async (fileId: string) => {
-    if (!fpSessionData?.id) {
-      toast.error('Final programming session not available');
+    // Check if it's a pending file (string ID starting with pending or just match by index logic if needed, 
+    // but here we used generated IDs for metas).
+    // If it's a pending file, remove from local state.
+    if (fileId.toString().startsWith('pending-')) {
+      setUploadedFileMetas(prev => prev.filter(f => f.id !== fileId));
+      // We also need to remove from pendingFiles. This is tricky since pendingFiles are File objects without IDs.
+      // We might need to match by name.
+      const metaToRemove = uploadedFileMetas.find(f => f.id === fileId);
+      if (metaToRemove) {
+        setPendingFiles(prev => prev.filter(f => f.name !== metaToRemove.name));
+      }
+      return;
+    }
+
+    if (!fpSessionData?.data?.id) {
+      // toast.error('Final programming session not available');
       return;
     }
 
     try {
       await deleteFileFromFinalProgramming({
-        fp_id: fpSessionData.id,
+        fp_id: fpSessionData.data.id,
         file_id: fileId
       }).unwrap();
 
@@ -329,10 +479,13 @@ export function FinalProgrammingDetailsPage() {
               onPause={handlePause}
               onResume={handleResume}
               onEnd={handleEnd}
+              onOnHold={handleOnHold} // Pass the handler
               onTimeUpdate={setTotalTime}
               hasEnded={hasEnded}
               pendingFilesCount={pendingFiles.length}
               uploadedFilesCount={uploadedFileMetas.length}
+              sessionData={fpSessionData} // Pass session data for initialization
+              isFabOnHold={fabData?.on_hold} // Pass on hold status
             />
 
             <Separator className="my-3" />
@@ -344,7 +497,7 @@ export function FinalProgrammingDetailsPage() {
                 onFilesChange={handleFilesChange}
                 simulateUpload={false}
                 fpId={fpSessionData?.id}
-                disabled={hasEnded}
+                disabled={hasEnded || isPaused} // Disable when ended OR paused
               />
             )}
             {/* Show message when timer hasn't started yet */}
@@ -356,12 +509,18 @@ export function FinalProgrammingDetailsPage() {
 
             {/* Submit Button with permission check */}
             <div className="flex justify-end mt-6">
-              <Can action="update" on="Final Programming">
+              <Can action="create" on="Final Programming">
                 <Button
                   onClick={handleOpenSubmissionModal}
                   className="bg-green-600 hover:bg-green-700"
                   size="lg"
-                  disabled={isDrafting || totalTime === 0 || (pendingFiles.length === 0 && uploadedFileMetas.length === 0)}
+                  // Enable if session has started (drafting or paused) AND files are uploaded
+                  // AND not ended
+                  disabled={
+                    (!isDrafting && !isPaused) || // Not started
+
+                    (pendingFiles.length === 0 && uploadedFileMetas.length === 0)
+                  }
                 >
                   Submit Final Programming
                 </Button>
@@ -375,6 +534,8 @@ export function FinalProgrammingDetailsPage() {
           onClose={(success?: boolean) => {
             setShowSubmissionModal(false);
             if (success) {
+              // End the session upon successful submission
+              handleEnd(new Date());
               navigate('/job/final-programming');
             }
           }}

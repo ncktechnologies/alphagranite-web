@@ -6,6 +6,7 @@ import { useGetFabsQuery, Fab } from '@/store/api/job';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
 import { useMemo } from 'react';
+import { format } from 'date-fns';
 import { useNavigate } from 'react-router';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -13,45 +14,45 @@ import { AlertCircle } from 'lucide-react';
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
-  if (!dateString) return '-';
-  
-  try {
-    const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = date.toLocaleString('en-US', { month: 'short' });
-    const year = date.getFullYear();
-    return `${day} ${month}, ${year}`;
-  } catch (error) {
-    return '-';
-  }
+    if (!dateString) return '-';
+
+    try {
+        const date = new Date(dateString);
+        const day = date.getDate().toString().padStart(2, '0');
+        const month = date.toLocaleString('en-US', { month: 'short' });
+        const year = date.getFullYear();
+        return `${day} ${month}, ${year}`;
+    } catch (error) {
+        return '-';
+    }
 };
 
 // Transform Fab data to match IJob interface
 const transformFabToJob = (fab: Fab): IJob => {
-  return {
-    id: fab.id,
-    fab_type: fab.fab_type,
-    fab_id: String(fab.id),
-    job_name: `${fab.job_details?.name || ''}`,
-    job_no: String(fab.job_details?.job_number || ''),
-    date: fab.draft_completed_date|| '',
-    current_stage: fab.current_stage,
-    sales_person_name: fab.sales_person_name || '',
-    // Optional fields with default values
-    acct_name: '',
-    no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
-    total_sq_ft: String(fab.total_sqft || "-"),
-    revenue: fab.job_details?.project_value || "-",
-    gp: "-",
-    sct_completed: (fab as any).sales_ct_data?.is_completed ? 'Yes' : 'No',
-    slabsmith_used: fab.slab_smith_used ? 'Yes' : 'No',
-    draft_revision_notes: '', // Will be populated from fab_notes
-    template_received: '',
-    revised: (fab as any).sales_ct_data?.is_revision_needed ? 'Yes' : 'No',
-    // sct_completed: '',
-    // template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
-    // templater: fab.technician_name || '-',
-         // Add material specification fields
+    return {
+        id: fab.id,
+        fab_type: fab.fab_type,
+        fab_id: String(fab.id),
+        job_name: `${fab.job_details?.name || ''}`,
+        job_no: String(fab.job_details?.job_number || ''),
+        date: fab.draft_completed_date || '',
+        current_stage: fab.current_stage,
+        sales_person_name: fab.sales_person_name || '',
+        // Optional fields with default values
+        acct_name: '',
+        no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
+        total_sq_ft: String(fab.total_sqft || "-"),
+        revenue: fab.job_details?.project_value || "-",
+        gp: "-",
+        sct_completed: (fab as any).sales_ct_data?.is_completed ? 'Yes' : 'No',
+        slabsmith_used: fab.slab_smith_used ? 'Yes' : 'No',
+        draft_revision_notes: '', // Will be populated from fab_notes
+        template_received: '',
+        revised: (fab as any).sales_ct_data?.is_revision_needed ? 'Yes' : 'No',
+        // sct_completed: '',
+        // template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
+        // templater: fab.technician_name || '-',
+        // Add material specification fields
         stone_type_name: fab.stone_type_name || '',
         stone_color_name: fab.stone_color_name || '',
         stone_thickness_value: fab.stone_thickness_value || '',
@@ -59,8 +60,8 @@ const transformFabToJob = (fab: Fab): IJob => {
         fab_notes: fab.fab_notes || [],
         job_id: fab.job_id,
         on_hold: fab.on_hold,
-         status_id: fab.status_id,
-  };
+        status_id: fab.status_id,
+    };
 };
 
 export function AfterDraftSalesPage() {
@@ -137,10 +138,11 @@ export function AfterDraftSalesPage() {
             // For custom date range, use schedule_start_date and schedule_due_date
             if (tableState.dateFilter === 'custom') {
                 if (tableState.dateRange?.from) {
-                    params.draft_completed_start = tableState.dateRange.from.toISOString().split('T')[0];
+                    // Use local date string (YYYY-MM-DD)
+                    params.draft_completed_start = format(tableState.dateRange.from, 'yyyy-MM-dd');
                 }
                 if (tableState.dateRange?.to) {
-                    params.draft_completed_end = tableState.dateRange.to.toISOString().split('T')[0];
+                    params.draft_completed_end = format(tableState.dateRange.to, 'yyyy-MM-dd');
                 }
                 // Don't send date_filter when using custom range
             } else {
@@ -218,7 +220,7 @@ export function AfterDraftSalesPage() {
             <JobTable
                 jobs={jobsData}
                 path='draft-review'
-                isLoading={isLoading }
+                isLoading={isLoading}
                 // onRowClick={handleRowClick}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}
