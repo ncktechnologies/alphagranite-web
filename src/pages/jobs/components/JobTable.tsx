@@ -74,6 +74,8 @@ interface JobTableProps {
     // Additional button props
     showAssignDrafterButton?: boolean;
     onAssignDrafterClick?: () => void;
+    onRescheduleClick?: (job: IJob) => void;
+    onAssignClick?: (job: IJob) => void;
 }
 
 export const JobTable = ({
@@ -90,16 +92,18 @@ export const JobTable = ({
     showTemplaterFilter = false,
     templaters = [],
     templaterFilter = "all",
-    setTemplaterFilter = () => {},
+    setTemplaterFilter = () => { },
     useBackendPagination = false,
     totalRecords = 0,
     tableState,
     visibleColumns,
     enableMultiSelect = false,
     selectedRows = [],
-    setSelectedRows = () => {},
+    setSelectedRows = () => { },
     showAssignDrafterButton = false,
-    onAssignDrafterClick = () => {}
+    onAssignDrafterClick = () => { },
+    onRescheduleClick,
+    onAssignClick,
 }: JobTableProps) => {
     const [localSelectedRows, setLocalSelectedRows] = useState<string[]>([]);
     const [localPagination, setLocalPagination] = useState<PaginationState>({
@@ -118,7 +122,7 @@ export const JobTable = ({
     const [optimisticUpdates, setOptimisticUpdates] = useState<Record<string, any>>({});
     const [suppressParentRefresh, setSuppressParentRefresh] = useState(false);
     const navigate = useNavigate();
-    
+
     const [toggleFabOnHold] = useToggleFabOnHoldMutation();
 
     // Use backend state if available, otherwise use local state
@@ -135,7 +139,7 @@ export const JobTable = ({
     const salesPersonFilter = (tableState as any)?.salesPersonFilter || localSalesPersonFilter;
     const setSalesPersonFilter = (tableState as any)?.setSalesPersonFilter || localSalesPersonFilter;
     const dateRange = tableState?.dateRange || localDateRange;
-    
+
     // Helper function to safely render date range
     const renderDateRange = () => {
         if (dateRange && dateRange.from) {
@@ -149,15 +153,15 @@ export const JobTable = ({
         }
         return <span>Pick dates</span>;
     };
-    
+
     const setDateRange = tableState?.setDateRange || setLocalDateRange;
     const scheduleFilter = tableState?.scheduleFilter || 'all';
     const setScheduleFilter = tableState?.setScheduleFilter || (() => { }); // No-op fallback
-    
+
     // Use provided state if available, otherwise use local state
     const effectiveSelectedRows = selectedRows !== undefined ? selectedRows : localSelectedRows;
     const setEffectiveSelectedRows = setSelectedRows || setLocalSelectedRows;
-    
+
     // Function to get the correct path for a specific job
     const getViewPath = (job: IJob): string => {
         // If getPath function is provided, use it
@@ -281,39 +285,39 @@ export const JobTable = ({
         if (!useBackendPagination && dateFilter !== 'all' && dateFilter !== 'custom') {
             result = result.filter((job) => {
                 if (!job.date) return false;
-                
+
                 const jobDate = new Date(job.date);
                 const today = new Date();
-                
+
                 // Reset time part for accurate date comparison
                 const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-                
+
                 // Calculate week boundaries
                 const startOfWeek = new Date(todayDate);
                 startOfWeek.setDate(todayDate.getDate() - todayDate.getDay());
                 const endOfWeek = new Date(startOfWeek);
                 endOfWeek.setDate(startOfWeek.getDate() + 6);
-                
+
                 const startOfLastWeek = new Date(startOfWeek);
                 startOfLastWeek.setDate(startOfWeek.getDate() - 7);
                 const endOfLastWeek = new Date(startOfWeek);
                 endOfLastWeek.setDate(startOfWeek.getDate() - 1);
-                
+
                 const startOfNextWeek = new Date(endOfWeek);
                 startOfNextWeek.setDate(endOfWeek.getDate() + 1);
                 const endOfNextWeek = new Date(startOfNextWeek);
                 endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
-                
+
                 // Calculate month boundaries
                 const startOfMonth = new Date(todayDate.getFullYear(), todayDate.getMonth(), 1);
                 const endOfMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 0);
-                
+
                 const startOfLastMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() - 1, 1);
                 const endOfLastMonth = new Date(todayDate.getFullYear(), todayDate.getMonth(), 0);
-                
+
                 const startOfNextMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 1, 1);
                 const endOfNextMonth = new Date(todayDate.getFullYear(), todayDate.getMonth() + 2, 0);
-                
+
                 switch (dateFilter) {
                     case 'today':
                         return jobDate.toDateString() === todayDate.toDateString();
@@ -339,14 +343,14 @@ export const JobTable = ({
         if (!useBackendPagination && dateFilter === 'custom' && dateRange?.from) {
             result = result.filter((job) => {
                 if (!job.date) return false;
-                
+
                 const jobDate = new Date(job.date);
                 const startDate = new Date(dateRange.from);
                 const endDate = dateRange.to ? new Date(dateRange.to) : startDate;
-                
+
                 // Set end time to end of day
                 endDate.setHours(23, 59, 59, 999);
-                
+
                 return jobDate >= startDate && jobDate <= endDate;
             });
         }
@@ -487,59 +491,59 @@ export const JobTable = ({
         }
     };
 
-   
+
 
     // Function to generate fab info string
     const generateFabInfo = (job: IJob) => {
-    const parts = [];
-    
-    // Add account name if available
-    if (job.acct_name) {
-        parts.push(job.acct_name);
-    }
-    
-    
-    // Add square footage
-    if (job.total_sq_ft) {
-        parts.push(`${job.total_sq_ft} sq ft`);
-    }
+        const parts = [];
 
-    // Add material specifications if available
-    if (job.stone_type_name) {
-        parts.push(`Stone: ${job.stone_type_name}`);
-    }
-    
-    if (job.stone_color_name) {
-        parts.push(`Color: ${job.stone_color_name}`);
-    }
-    
-    if (job.stone_thickness_value) {
-        parts.push(`Thickness: ${job.stone_thickness_value}`);
-    }
-    
-    if (job.edge_name) {
-        parts.push(`Edge: ${job.edge_name}`);
-    }
-    
-    return parts.join(' - ');
-};
+        // Add account name if available
+        if (job.acct_name) {
+            parts.push(job.acct_name);
+        }
+
+
+        // Add square footage
+        if (job.total_sq_ft) {
+            parts.push(`${job.total_sq_ft} sq ft`);
+        }
+
+        // Add material specifications if available
+        if (job.stone_type_name) {
+            parts.push(`Stone: ${job.stone_type_name}`);
+        }
+
+        if (job.stone_color_name) {
+            parts.push(`Color: ${job.stone_color_name}`);
+        }
+
+        if (job.stone_thickness_value) {
+            parts.push(`Thickness: ${job.stone_thickness_value}`);
+        }
+
+        if (job.edge_name) {
+            parts.push(`Edge: ${job.edge_name}`);
+        }
+
+        return parts.join(' - ');
+    };
 
     const baseColumns = useMemo<ColumnDef<IJob>[]>(() => [
-       
+
         {
             accessorKey: 'id',
             accessorFn: (row: IJob) => row.id,
-            header: () => enableMultiSelect ? 
+            header: () => enableMultiSelect ?
                 <div className="w-full h-full flex items-center justify-center">
-                    <Checkbox 
+                    <Checkbox
                         checked={effectiveSelectedRows.length === filteredData.length && filteredData.length > 0}
                         onCheckedChange={toggleAllRowsSelection}
                         aria-label="Select all"
                     />
                 </div> : <></>,
-            cell: ({ row }) => enableMultiSelect ? 
+            cell: ({ row }) => enableMultiSelect ?
                 <div className="w-full h-full flex items-center justify-center">
-                    <Checkbox 
+                    <Checkbox
                         checked={effectiveSelectedRows.includes(row.original.fab_id)}
                         onCheckedChange={() => toggleRowSelection(row.original.fab_id)}
                         aria-label="Select row"
@@ -566,7 +570,7 @@ export const JobTable = ({
             enableHiding: true,
 
         },
-       
+
         {
             id: "fab_id",
             accessorKey: "fab_id",
@@ -609,7 +613,7 @@ export const JobTable = ({
                         {row.original.job_no}
                     </Link>
                 ) : (
-                    
+
                     <span className="text-xs">{row.original.job_no}</span>
                 )
             ),
@@ -653,7 +657,7 @@ export const JobTable = ({
             ),
             size: 100,
         },
-     
+
         {
             id: "template_schedule",
             accessorKey: "template_schedule",
@@ -699,6 +703,7 @@ export const JobTable = ({
             cell: ({ row }) => <span className="text-xs">{row.original.drafter}</span>,
             size: 130,
         },
+
         {
             id: "total_sq_ft",
             accessorKey: "total_sq_ft",
@@ -713,7 +718,7 @@ export const JobTable = ({
             ),
             size: 100,
         },
-            {
+        {
             id: "revisor",
             accessorKey: "revisor",
             accessorFn: (row: IJob) => row.revisor,
@@ -886,11 +891,11 @@ export const JobTable = ({
             cell: ({ row }) => {
                 const fabNotes = row.original.fab_notes || row.original.notes || [];
                 const templatingNotes = fabNotes.filter(note => note.stage === 'templating');
-                
+
                 if (templatingNotes.length === 0) {
                     return <span className="text-xs text-gray-500 italic">No notes</span>;
                 }
-                
+
                 const latestNote = templatingNotes[0];
                 return (
                     <div className="text-xs max-w-xs" title={latestNote.note}>
@@ -903,7 +908,7 @@ export const JobTable = ({
             enableSorting: false,
             size: 180,
         },
-        
+
         // Drafting Notes Column
         {
             id: 'drafting_notes',
@@ -911,14 +916,14 @@ export const JobTable = ({
                 <DataGridColumnHeader title="Drafting Notes" column={column} />
             ),
             cell: ({ row }) => {
-                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
-                               Array.isArray(row.original.notes) ? row.original.notes : [];
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes :
+                    Array.isArray(row.original.notes) ? row.original.notes : [];
                 const draftNotes = fabNotes.filter(note => note.stage === 'drafting');
-                
+
                 if (draftNotes.length === 0) {
                     return <span className="text-xs text-gray-500 italic">No notes</span>;
                 }
-                
+
                 const latestNote = draftNotes[0];
                 return (
                     <div className="text-xs max-w-xs" title={latestNote.note}>
@@ -931,7 +936,7 @@ export const JobTable = ({
             enableSorting: false,
             size: 180,
         },
-        
+
         // Final Programming Notes Column
         {
             id: 'final_programming_notes',
@@ -939,14 +944,14 @@ export const JobTable = ({
                 <DataGridColumnHeader title="Notes" column={column} />
             ),
             cell: ({ row }) => {
-                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
-                               Array.isArray(row.original.notes) ? row.original.notes : [];
-                const fpNotes = fabNotes.filter(note => note.stage === 'cut_list');
-                
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes :
+                    Array.isArray(row.original.notes) ? row.original.notes : [];
+                const fpNotes = fabNotes.filter(note => note.stage === 'final_programming');
+
                 if (fpNotes.length === 0) {
                     return <span className="text-xs text-gray-500 italic">No notes</span>;
                 }
-                
+
                 const latestNote = fpNotes[0];
                 return (
                     <div className="text-xs max-w-xs" title={latestNote.note}>
@@ -959,7 +964,7 @@ export const JobTable = ({
             enableSorting: false,
             size: 180,
         },
-        
+
         // Pre-Draft Notes Column
         {
             id: 'pre_draft_notes',
@@ -967,14 +972,14 @@ export const JobTable = ({
                 <DataGridColumnHeader title="Pre-Draft Notes" column={column} />
             ),
             cell: ({ row }) => {
-                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
-                               Array.isArray(row.original.notes) ? row.original.notes : [];
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes :
+                    Array.isArray(row.original.notes) ? row.original.notes : [];
                 const preDraftNotes = fabNotes.filter(note => note.stage === 'pre_draft_review');
-                
+
                 if (preDraftNotes.length === 0) {
                     return <span className="text-xs text-gray-500 italic">No notes</span>;
                 }
-                
+
                 const latestNote = preDraftNotes[0];
                 return (
                     <div className="text-xs max-w-xs" title={latestNote.note}>
@@ -987,22 +992,22 @@ export const JobTable = ({
             enableSorting: false,
             size: 180,
         },
-        
+
         // Cutting Notes Column
         {
             id: 'cutting_notes',
             header: ({ column }) => (
-                <DataGridColumnHeader title="Cutting Notes" column={column} />
+                <DataGridColumnHeader title="Cut List Notes" column={column} />
             ),
             cell: ({ row }) => {
-                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
-                               Array.isArray(row.original.notes) ? row.original.notes : [];
-                const cuttingNotes = fabNotes.filter(note => note.stage === 'cutting');
-                
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes :
+                    Array.isArray(row.original.notes) ? row.original.notes : [];
+                const cuttingNotes = fabNotes.filter(note => note.stage === 'cut_list');
+
                 if (cuttingNotes.length === 0) {
                     return <span className="text-xs text-gray-500 italic">No notes</span>;
                 }
-                
+
                 const latestNote = cuttingNotes[0];
                 return (
                     <div className="text-xs max-w-xs" title={latestNote.note}>
@@ -1015,7 +1020,7 @@ export const JobTable = ({
             enableSorting: false,
             size: 180,
         },
-        
+
         // Slab Smith Notes Column
         {
             id: 'slabsmith_notes',
@@ -1023,14 +1028,14 @@ export const JobTable = ({
                 <DataGridColumnHeader title="Slab Smith Notes" column={column} />
             ),
             cell: ({ row }) => {
-                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
-                               Array.isArray(row.original.notes) ? row.original.notes : [];
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes :
+                    Array.isArray(row.original.notes) ? row.original.notes : [];
                 const slabSmithNotes = fabNotes.filter(note => note.stage === 'slab_smith_request');
-                
+
                 if (slabSmithNotes.length === 0) {
                     return <span className="text-xs text-gray-500 italic">No notes</span>;
                 }
-                
+
                 const latestNote = slabSmithNotes[0];
                 return (
                     <div className="text-xs max-w-xs" title={latestNote.note}>
@@ -1043,7 +1048,7 @@ export const JobTable = ({
             enableSorting: false,
             size: 180,
         },
-        
+
         // SCT Notes Column
         {
             id: 'sct_notes',
@@ -1051,14 +1056,14 @@ export const JobTable = ({
                 <DataGridColumnHeader title="SCT Notes" column={column} />
             ),
             cell: ({ row }) => {
-                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
-                               Array.isArray(row.original.notes) ? row.original.notes : [];
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes :
+                    Array.isArray(row.original.notes) ? row.original.notes : [];
                 const sctNotes = fabNotes.filter(note => note.stage === 'sales_ct');
-                
+
                 if (sctNotes.length === 0) {
                     return <span className="text-xs text-gray-500 italic">No notes</span>;
                 }
-                
+
                 const latestNote = sctNotes[0];
                 return (
                     <div className="text-xs max-w-xs" title={latestNote.note}>
@@ -1071,7 +1076,7 @@ export const JobTable = ({
             enableSorting: false,
             size: 180,
         },
-        
+
         // Draft/Revision Notes Column
         {
             id: 'draft_revision_notes',
@@ -1079,20 +1084,20 @@ export const JobTable = ({
                 <DataGridColumnHeader title="Draft/Revision Notes" column={column} />
             ),
             cell: ({ row }) => {
-                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
-                               Array.isArray(row.original.notes) ? row.original.notes : [];
-                const draftRevisionNotes = fabNotes.filter(note => 
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes :
+                    Array.isArray(row.original.notes) ? row.original.notes : [];
+                const draftRevisionNotes = fabNotes.filter(note =>
                     note.stage === 'draft' || note.stage === 'revisions'
                 );
-                
+
                 if (draftRevisionNotes.length === 0) {
                     return <span className="text-xs text-gray-500 italic">No notes</span>;
                 }
-                
+
                 const latestNote = draftRevisionNotes[0];
                 const stagePrefix = latestNote.stage === 'draft' ? 'D:' : 'R:';
                 const textColor = latestNote.stage === 'draft' ? 'text-green-700' : 'text-purple-700';
-                
+
                 return (
                     <div className="text-xs max-w-xs" title={latestNote.note}>
                         <div className={`font-medium ${textColor} truncate`}>{stagePrefix}</div>
@@ -1104,7 +1109,7 @@ export const JobTable = ({
             enableSorting: false,
             size: 180,
         },
-        
+
         // Draft Notes Column
         {
             id: 'draft_notes',
@@ -1112,14 +1117,14 @@ export const JobTable = ({
                 <DataGridColumnHeader title="Draft Notes" column={column} />
             ),
             cell: ({ row }) => {
-                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
-                               Array.isArray(row.original.notes) ? row.original.notes : [];
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes :
+                    Array.isArray(row.original.notes) ? row.original.notes : [];
                 const draftNotes = fabNotes.filter(note => note.stage === 'drafting');
-                
+
                 if (draftNotes.length === 0) {
                     return <span className="text-xs text-gray-500 italic">No notes</span>;
                 }
-                
+
                 const latestNote = draftNotes[0];
                 return (
                     <div className="text-xs max-w-xs" title={latestNote.note}>
@@ -1132,7 +1137,7 @@ export const JobTable = ({
             enableSorting: false,
             size: 180,
         },
-        
+
         // Revision Notes Column
         {
             id: 'revision_notes',
@@ -1140,16 +1145,16 @@ export const JobTable = ({
                 <DataGridColumnHeader title="Revision Notes" column={column} />
             ),
             cell: ({ row }) => {
-                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes : 
-                               Array.isArray(row.original.notes) ? row.original.notes : [];
-                const revisionNotes = fabNotes.filter(note => 
+                const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes :
+                    Array.isArray(row.original.notes) ? row.original.notes : [];
+                const revisionNotes = fabNotes.filter(note =>
                     note.stage === 'revision' || note.stage === 'revisions'
                 );
-                
+
                 if (revisionNotes.length === 0) {
                     return <span className="text-xs text-gray-500 italic">No notes</span>;
                 }
-                
+
                 const latestNote = revisionNotes[0];
                 return (
                     <div className="text-xs max-w-xs" title={latestNote.note}>
@@ -1162,7 +1167,7 @@ export const JobTable = ({
             enableSorting: false,
             size: 180,
         },
-        
+
         // File Column
         {
             id: 'file',
@@ -1174,7 +1179,7 @@ export const JobTable = ({
             cell: ({ row }) => <span className="text-xs">{row.original.file || '-'}</span>,
             size: 120,
         },
-        
+
         // Notes Column
         {
             id: 'shop_date_scheduled',
@@ -1226,7 +1231,49 @@ export const JobTable = ({
             cell: ({ row }) => <span className="text-xs">{typeof row.original.notes === 'string' ? row.original.notes : '-'}</span>,
             size: 150,
         },
-         {
+        {
+            id: "reschedule",
+            accessorKey: "templating_completed", // Use templating_completed as accessor for logic
+            header: ({ column }) => (
+                <DataGridColumnHeader title="Templating Action" column={column} />
+            ),
+            cell: ({ row }) => {
+                // Check if templating_completed is explicitly false (meaning it was rejected/needs reschedule)
+                if (row.original.templating_completed === false && row.original.template_schedule !== "") {
+                    return (
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-7 px-2 text-xs"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                if (onRescheduleClick) {
+                                    onRescheduleClick(row.original);
+                                }
+                            }}
+                        >
+                            Reschedule
+                        </Button>
+                    );
+                }
+                else {
+                    if (row.original.template_schedule === "") {
+                        // Otherwise (no date), show Assign
+                        return (
+                            <Link
+                                to={`/job/templating-details/${row.original.fab_id}`}
+                                
+                            >
+                                Assign
+                            </Link>
+                        );
+                    }
+                }
+                return null;
+            },
+            size: 100,
+        },
+        {
             id: "on_hold",
             accessorKey: "status_id",
             accessorFn: (row: IJob) => {
@@ -1244,40 +1291,40 @@ export const JobTable = ({
                 const fabId = parseInt(row.original.fab_id);
                 const isLoading = loadingStates[fabId] || false;
                 // Get the display value considering optimistic updates
-                const isChecked = optimisticUpdates[row.original.fab_id] !== undefined 
+                const isChecked = optimisticUpdates[row.original.fab_id] !== undefined
                     ? optimisticUpdates[row.original.fab_id] === 0
                     : row.original.status_id === 0;
-                
+
                 return (
                     <div className="flex justify-center items-center">
-                        <Switch 
+                        <Switch
                             className={`data-[state=checked]:bg-red-600 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
                             checked={isChecked}
                             disabled={isLoading}
                             onCheckedChange={async (checked) => {
                                 if (isLoading) return;
-                                
+
                                 const newStatusId = checked ? 0 : 1;
                                 const fabIdStr = row.original.fab_id;
-                                
+
                                 // Apply optimistic update immediately
                                 setOptimisticUpdates(prev => ({
                                     ...prev,
                                     [fabIdStr]: newStatusId
                                 }));
-                                
+
                                 // Set loading state
                                 setLoadingStates(prev => ({ ...prev, [fabId]: true }));
-                                
+
                                 // Signal to parent that we're handling the update
                                 setSuppressParentRefresh(true);
-                                
+
                                 try {
-                                    await toggleFabOnHold({ 
-                                        fab_id: fabId, 
-                                        on_hold: checked 
+                                    await toggleFabOnHold({
+                                        fab_id: fabId,
+                                        on_hold: checked
                                     }).unwrap();
-                                    
+
                                     // Keep optimistic update for 2 seconds to prevent immediate refresh
                                     setTimeout(() => {
                                         setSuppressParentRefresh(false);
@@ -1288,7 +1335,7 @@ export const JobTable = ({
                                             return newState;
                                         });
                                     }, 2000);
-                                    
+
                                 } catch (error) {
                                     console.error('Failed to toggle on hold status:', error);
                                     // Rollback optimistic update on error immediately
@@ -1341,12 +1388,12 @@ export const JobTable = ({
             if ((column.id === 'id' && enableMultiSelect) || column.id === 'actions') {
                 return true;
             }
-            
+
             // If visibleColumns is specified, only show those columns (excluding id/actions which are handled separately)
             if (visibleColumns && visibleColumns.length > 0 && column.id) {
                 return visibleColumns.includes(column.id as string);
             }
-            
+
             // Otherwise, filter based on data availability
             const accessor = (column as any).accessorKey as string | undefined;
             if (accessor) {
@@ -1395,212 +1442,212 @@ export const JobTable = ({
                 }}
                 onRowClick={onRowClick ? (row) => handleRowClickInternal(row) : undefined}
             >
-            {/* Rest of your component remains the same... */}
-            <Card>
-                <CardHeader className="py-3.5 border-b">
-                    <CardHeading>
-                        <div className="flex items-center gap-2.5 flex-wrap">
-                            <div className="relative">
-                                <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
-                                <Input
-                                    placeholder="Search by job, Fab ID"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="ps-9 w-[230px] h-[34px]"
-                                />
-                                {searchQuery && (
-                                    <Button
-                                        mode="icon"
-                                        variant="ghost"
-                                        className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                                        onClick={() => setSearchQuery('')}
-                                    >
-                                        <X />
-                                    </Button>
-                                )}
-                            </div>
+                {/* Rest of your component remains the same... */}
+                <Card>
+                    <CardHeader className="py-3.5 border-b">
+                        <CardHeading>
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                                <div className="relative">
+                                    <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                                    <Input
+                                        placeholder="Search by job, Fab ID"
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="ps-9 w-[230px] h-[34px]"
+                                    />
+                                    {searchQuery && (
+                                        <Button
+                                            mode="icon"
+                                            variant="ghost"
+                                            className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                                            onClick={() => setSearchQuery('')}
+                                        >
+                                            <X />
+                                        </Button>
+                                    )}
+                                </div>
 
-                            {/* Fab Type Filter */}
-                            <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
-                                <SelectTrigger className="w-[150px] h-[34px]">
-                                    <SelectValue placeholder="Fab Type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Fab Types</SelectItem>
-                                    {fabTypes.map((type) => (
-                                        <SelectItem key={type} value={type} className='uppercase'>
-                                            {type}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
-                            {/* Enhanced Date Filter */}
-                            <div className="flex items-center gap-2">
-                                <Select value={dateFilter} onValueChange={(value) => {
-                                    setDateFilter(value);
-                                    if (value === 'custom') {
-                                        setIsDatePickerOpen(true);
-                                    }
-                                }}>
-                                    <SelectTrigger className="w-[170px] h-[34px]">
-                                        <SelectValue placeholder="Filter by date" />
-                                    </SelectTrigger>
-                                    <SelectContent className="w-48">
-                                        <SelectItem value="today">Today</SelectItem>
-                                        <SelectItem value="this_week">This Week</SelectItem>
-                                        <SelectItem value="last_week">Last Week</SelectItem>
-                                        <SelectItem value="this_month">This Month</SelectItem>
-                                        <SelectItem value="last_month">Last Month</SelectItem>
-                                        <SelectItem value="next_week">Next Week</SelectItem>
-                                        <SelectItem value="next_month">Next Month</SelectItem>
-                                        <SelectItem value="all">All</SelectItem>
-                                        <SelectItem value="custom">Custom</SelectItem>
-                                    </SelectContent>
-                                </Select>
-
-                                {/* Custom Date Range Picker - TIMEZONE AWARE */}
-                                {dateFilter === 'custom' && (
-                                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" size="sm" className="h-[34px]">
-                                                <CalendarDays className="h-4 w-4 mr-2" />
-                                               {renderDateRange()}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                initialFocus
-                                                mode="range"
-                                                // Use timezone-consistent month navigation
-                                                defaultMonth={tempDateRange?.from ? new Date(tempDateRange.from) : new Date()}
-                                                selected={tempDateRange}
-                                                onSelect={setTempDateRange}
-                                                numberOfMonths={2}
-                                            />
-                                            <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setTempDateRange(undefined);
-                                                        setDateRange(undefined);
-                                                    }}
-                                                >
-                                                    Reset
-                                                </Button>
-                                                <Button
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        setDateRange(tempDateRange);
-                                                        setIsDatePickerOpen(false);
-                                                    }}
-                                                >
-                                                    Apply
-                                                </Button>
-                                            </div>
-                                        </PopoverContent>
-                                    </Popover>
-                                )}
-                            </div>
-
-                            {/* Schedule Filter */}
-                            {showScheduleFilter && (
-                                <Select value={scheduleFilter} onValueChange={setScheduleFilter}>
+                                {/* Fab Type Filter */}
+                                <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
                                     <SelectTrigger className="w-[150px] h-[34px]">
-                                        <SelectValue placeholder="Schedule Status" />
+                                        <SelectValue placeholder="Fab Type" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">All</SelectItem>
-                                        <SelectItem value="scheduled">Scheduled</SelectItem>
-                                        <SelectItem value="unscheduled">Unscheduled</SelectItem>
+                                        <SelectItem value="all">All Fab Types</SelectItem>
+                                        {fabTypes.map((type) => (
+                                            <SelectItem key={type} value={type} className='uppercase'>
+                                                {type}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
-                            )}
 
-                            {/* Sales Person Filter */}
+                                {/* Enhanced Date Filter */}
+                                <div className="flex items-center gap-2">
+                                    <Select value={dateFilter} onValueChange={(value) => {
+                                        setDateFilter(value);
+                                        if (value === 'custom') {
+                                            setIsDatePickerOpen(true);
+                                        }
+                                    }}>
+                                        <SelectTrigger className="w-[170px] h-[34px]">
+                                            <SelectValue placeholder="Filter by date" />
+                                        </SelectTrigger>
+                                        <SelectContent className="w-48">
+                                            <SelectItem value="today">Today</SelectItem>
+                                            <SelectItem value="this_week">This Week</SelectItem>
+                                            <SelectItem value="last_week">Last Week</SelectItem>
+                                            <SelectItem value="this_month">This Month</SelectItem>
+                                            <SelectItem value="last_month">Last Month</SelectItem>
+                                            <SelectItem value="next_week">Next Week</SelectItem>
+                                            <SelectItem value="next_month">Next Month</SelectItem>
+                                            <SelectItem value="all">All</SelectItem>
+                                            <SelectItem value="custom">Custom</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
+                                    {/* Custom Date Range Picker - TIMEZONE AWARE */}
+                                    {dateFilter === 'custom' && (
+                                        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" size="sm" className="h-[34px]">
+                                                    <CalendarDays className="h-4 w-4 mr-2" />
+                                                    {renderDateRange()}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    initialFocus
+                                                    mode="range"
+                                                    // Use timezone-consistent month navigation
+                                                    defaultMonth={tempDateRange?.from ? new Date(tempDateRange.from) : new Date()}
+                                                    selected={tempDateRange}
+                                                    onSelect={setTempDateRange}
+                                                    numberOfMonths={2}
+                                                />
+                                                <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            setTempDateRange(undefined);
+                                                            setDateRange(undefined);
+                                                        }}
+                                                    >
+                                                        Reset
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() => {
+                                                            setDateRange(tempDateRange);
+                                                            setIsDatePickerOpen(false);
+                                                        }}
+                                                    >
+                                                        Apply
+                                                    </Button>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                    )}
+                                </div>
+
+                                {/* Schedule Filter */}
+                                {showScheduleFilter && (
+                                    <Select value={scheduleFilter} onValueChange={setScheduleFilter}>
+                                        <SelectTrigger className="w-[150px] h-[34px]">
+                                            <SelectValue placeholder="Schedule Status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All</SelectItem>
+                                            <SelectItem value="scheduled">Scheduled</SelectItem>
+                                            <SelectItem value="unscheduled">Unscheduled</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                )}
+
+                                {/* Sales Person Filter */}
 
 
-                            {/* Stage filter - only visible to super admins */}
-                            {isSuperAdmin && (
-                                <Select onValueChange={handleStageFilterChange}>
-                                    <SelectTrigger className="w-[170px] h-[34px]">
-                                        <SelectValue placeholder="Go to stage" />
+                                {/* Stage filter - only visible to super admins */}
+                                {isSuperAdmin && (
+                                    <Select onValueChange={handleStageFilterChange}>
+                                        <SelectTrigger className="w-[170px] h-[34px]">
+                                            <SelectValue placeholder="Go to stage" />
+                                        </SelectTrigger>
+                                        <SelectContent className="w-48">
+                                            <SelectItem value="all">All Stages</SelectItem>
+                                            {Object.values(JOB_STAGES).map((stage) => (
+                                                <SelectItem key={stage.stage} value={stage.stage}>
+                                                    {stage.title}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            </div>
+                        </CardHeading>
+
+                        <CardToolbar>
+                            {showSalesPersonFilter && uniqueSalesPersons && uniqueSalesPersons.length > 0 && (
+                                <Select value={salesPersonFilter} onValueChange={setSalesPersonFilter}>
+                                    <SelectTrigger className="w-[180px] h-[34px]">
+                                        <SelectValue placeholder={salesPersonFilterLabel} />
                                     </SelectTrigger>
-                                    <SelectContent className="w-48">
-                                        <SelectItem value="all">All Stages</SelectItem>
-                                        {Object.values(JOB_STAGES).map((stage) => (
-                                            <SelectItem key={stage.stage} value={stage.stage}>
-                                                {stage.title}
+                                    <SelectContent>
+                                        <SelectItem value="all">{salesPersonFilterLabel.includes("Templater") ? "All Templaters" : "All Sales Persons"}</SelectItem>
+                                        <SelectItem value="no_sales_person">{salesPersonFilterLabel.includes("Templater") ? "No Templater" : "No Sales Person"}</SelectItem>
+                                        {uniqueSalesPersons.map((person) => (
+                                            <SelectItem key={person || 'N/A'} value={person || ''}>
+                                                {person || 'N/A'}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             )}
-                        </div>
-                    </CardHeading>
 
-                    <CardToolbar>
-                        {showSalesPersonFilter && uniqueSalesPersons && uniqueSalesPersons.length > 0 && (
-                            <Select value={salesPersonFilter} onValueChange={setSalesPersonFilter}>
-                                <SelectTrigger className="w-[180px] h-[34px]">
-                                    <SelectValue placeholder={salesPersonFilterLabel} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">{salesPersonFilterLabel.includes("Templater") ? "All Templaters" : "All Sales Persons"}</SelectItem>
-                                    <SelectItem value="no_sales_person">{salesPersonFilterLabel.includes("Templater") ? "No Templater" : "No Sales Person"}</SelectItem>
-                                    {uniqueSalesPersons.map((person) => (
-                                        <SelectItem key={person || 'N/A'} value={person || ''}>
-                                            {person || 'N/A'}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        )}
-                        
-                        {showTemplaterFilter && templaters && templaters.length > 0 && (
-                            <Select value={templaterFilter} onValueChange={setTemplaterFilter}>
-                                <SelectTrigger className="w-[180px] h-[34px]">
-                                    <SelectValue placeholder="Filter by Templater" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Templaters</SelectItem>
-                                    <SelectItem value="no_templater">No Templater Assigned</SelectItem>
-                                    {templaters.map((templater) => (
-                                        <SelectItem key={templater} value={templater}>
-                                            {templater}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        )}
-                        {showAssignDrafterButton && (
-                            <Button 
-                                variant="outline" 
-                                onClick={onAssignDrafterClick}
-                                disabled={selectedRows.length === 0}
-                            >
-                                Assign Drafter ({selectedRows.length})
+                            {showTemplaterFilter && templaters && templaters.length > 0 && (
+                                <Select value={templaterFilter} onValueChange={setTemplaterFilter}>
+                                    <SelectTrigger className="w-[180px] h-[34px]">
+                                        <SelectValue placeholder="Filter by Templater" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Templaters</SelectItem>
+                                        <SelectItem value="no_templater">No Templater Assigned</SelectItem>
+                                        {templaters.map((templater) => (
+                                            <SelectItem key={templater} value={templater}>
+                                                {templater}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                            {showAssignDrafterButton && (
+                                <Button
+                                    variant="outline"
+                                    onClick={onAssignDrafterClick}
+                                    disabled={selectedRows.length === 0}
+                                >
+                                    Assign Drafter ({selectedRows.length})
+                                </Button>
+                            )}
+                            <Button variant="outline" onClick={() => exportTableToCSV(table, "FabId")}>
+                                Export CSV
                             </Button>
-                        )}
-                        <Button variant="outline" onClick={() => exportTableToCSV(table, "FabId")}>
-                            Export CSV
-                        </Button>
-                    </CardToolbar>
-                </CardHeader>
+                        </CardToolbar>
+                    </CardHeader>
 
-                <CardTable>
-                    <ScrollArea>
-                        <DataGridTable />
-                        <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
-                </CardTable>
+                    <CardTable>
+                        <ScrollArea>
+                            <DataGridTable />
+                            <ScrollBar orientation="horizontal" />
+                        </ScrollArea>
+                    </CardTable>
 
-                <CardFooter>
-                    <DataGridPagination />
-                </CardFooter>
-            </Card>
-        </DataGrid>
+                    <CardFooter>
+                        <DataGridPagination />
+                    </CardFooter>
+                </Card>
+            </DataGrid>
         </>
     );
 };

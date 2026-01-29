@@ -38,13 +38,13 @@ export interface IJob {
   notes_count?: number; // Number of notes for this FAB
   fab_notes?: Array<{ id: number; note: string; created_by_name?: string; created_at?: string; stage?: string }>; // Array of notes for this FAB
   notes?: Array<{ id: number; note: string; created_by_name?: string; created_at?: string; stage?: string }>; // Alternative notes array name
-  
+
   // ========== MATERIAL SPECIFICATION FIELDS ==========
   stone_type_name?: string;
   stone_color_name?: string;
   stone_thickness_value?: string;
   edge_name?: string;
-  
+
   // ========== ADDITIONAL FAB DETAILS ==========
   input_area?: string;
   account_id?: number;
@@ -67,14 +67,14 @@ export interface IJob {
     updated_by?: number;
     id: number;
   };
-  
+
   templating_notes?: string[];
   technician_name?: string;
   drafter_name?: string;
   drafter_assigned_by_name?: string;
   sales_ct_data?: any;
   is_complete?: boolean;
-  
+
   // ========== SCHEDULING & PROCESS FIELDS ==========
   installation_date?: string | null;
   confirmed_date?: string | null;
@@ -89,7 +89,7 @@ export interface IJob {
   cad_review_complete?: boolean;
   final_programming_complete?: boolean;
   slab_smith_used?: boolean;
-  
+
   // ========== MEASUREMENT FIELDS ==========
   wj_linft?: string | null;
   edging_linft?: string | null;
@@ -99,7 +99,7 @@ export interface IJob {
   final_programming_completed?: string;
   final_programmer?: string;
   shop_date_scheduled?: string;
-  
+
   // ========== ASSIGNMENT FIELDS ==========
   sales_person_id?: number;
   stone_type_id?: number;
@@ -109,7 +109,7 @@ export interface IJob {
   drafter_id?: number | null;
   drafter_assigned_by?: number | null;
   drafter_assigned_at?: string | null;
-  
+
   // ========== STATUS FLAGS ==========
   status_id?: number;
   next_stage?: string;
@@ -118,7 +118,9 @@ export interface IJob {
   // template_received?: boolean;
   // revised?: boolean;
   draft_data?: any;
-  
+  templating_completed?: boolean | null; // Added for rescheduling check
+  templating_id?: number; // Added for rescheduling check
+
   // ========== AUDIT FIELDS ==========
   created_at?: string;
   updated_at?: string;
@@ -167,32 +169,32 @@ export interface FileViewerProps {
     uploadedAt?: Date;
     uploadedBy?: string;
   };
-  
+
 }
 
 
- export const jobDetails: JobDetails = {
-    fabId: '44567',
-    customer: 'Johnson Kitchen & Bath',
-    jobNumber: '99999',
-    area: '2847 Sq Ft',
-    fabType: 'Standard',
-    slabSmithUsed: false
-  };
+export const jobDetails: JobDetails = {
+  fabId: '44567',
+  customer: 'Johnson Kitchen & Bath',
+  jobNumber: '99999',
+  area: '2847 Sq Ft',
+  fabType: 'Standard',
+  slabSmithUsed: false
+};
 
-  export const schedulingNotes: SchedulingNote[] = [
-    {
-      id: '1',
-      author: 'Sarah Chen',
-      avatar: 'S',
-      content: 'Lorem ipsum dolor sit amee magna aliqua. veniam, quis nostrud exercitation',
-      timestamp: '2 hours ago'
-    },
-    {
-      id: '2',
-      author: 'Mike Johnson',
-      avatar: 'M',
-      content: 'Lorem ipsum dolor sit amee magna aliqua. veniam, quis nostrud exercitation',
-      timestamp: '1 hour ago'
-    }
-  ];
+export const schedulingNotes: SchedulingNote[] = [
+  {
+    id: '1',
+    author: 'Sarah Chen',
+    avatar: 'S',
+    content: 'Lorem ipsum dolor sit amee magna aliqua. veniam, quis nostrud exercitation',
+    timestamp: '2 hours ago'
+  },
+  {
+    id: '2',
+    author: 'Mike Johnson',
+    avatar: 'M',
+    content: 'Lorem ipsum dolor sit amee magna aliqua. veniam, quis nostrud exercitation',
+    timestamp: '1 hour ago'
+  }
+];

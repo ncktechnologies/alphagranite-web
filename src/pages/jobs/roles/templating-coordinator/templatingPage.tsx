@@ -15,6 +15,8 @@ import { format } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { AssignTechnicianModal } from './components/AssignTech';
+import { RescheduleTechnicianModal } from './components/RescheduleTechnicianModal';
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
@@ -64,6 +66,9 @@ const transformFabToJob = (fab: Fab): IJob => {
         job_id: fab.job_id,
         on_hold: fab.on_hold,
         status_id: fab.status_id,
+        // Map stage_data fields for rescheduling logic
+        templating_completed: fab?.is_complete,
+        templating_id: fab.stage_data?.templating_id,
     };
 };
 
@@ -75,6 +80,21 @@ export function TemplatingPage() {
 
     // Separate state for templater filter
     const [templaterFilter, setTemplaterFilter] = useState<string>('all');
+
+    // State for modals
+    const [assignModalOpen, setAssignModalOpen] = useState(false);
+    const [rescheduleModalOpen, setRescheduleModalOpen] = useState(false);
+    const [selectedJob, setSelectedJob] = useState<IJob | null>(null);
+
+    const handleAssignClick = (job: IJob) => {
+        setSelectedJob(job);
+        setAssignModalOpen(true);
+    };
+
+    const handleRescheduleClick = (job: IJob) => {
+        setSelectedJob(job);
+        setRescheduleModalOpen(true);
+    };
 
     // Create map of templater names to IDs
     const templaterIdMap = useMemo(() => {
@@ -282,7 +302,7 @@ export function TemplatingPage() {
                         templaterFilter={templaterFilter}
                         setTemplaterFilter={setTemplaterFilter}
 
-                        visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'templating_notes', 'templater', 'on_hold']}
+                        visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'templating_notes', 'templater', 'on_hold', 'reschedule']}
                         getPath={(job) => {
                             // Check if THIS SPECIFIC job has a template technician assigned
                             const hasTemplateTechnician = job.templater &&
@@ -291,6 +311,37 @@ export function TemplatingPage() {
 
                             return hasTemplateTechnician ? 'templating-details' : 'templating';
                         }}
+                        onRescheduleClick={handleRescheduleClick}
+                        onAssignDrafterClick={() => { }} // Placeholder if needed, or update JobTable to separate onAssignTechnicianClick
+                        // Since JobTable likely needs a specific onAssignClick for the templating page:
+                        onAssignClick={handleAssignClick}
+                    />
+
+                    <AssignTechnicianModal
+                        open={assignModalOpen}
+                        onClose={() => {
+                            setAssignModalOpen(false);
+                            setSelectedJob(null);
+                        }}
+                        fabData={selectedJob ? {
+                            fabId: selectedJob.fab_id,
+                            jobName: selectedJob.job_name,
+                            revenue: selectedJob.revenue
+                        } : undefined}
+                    />
+
+                    <RescheduleTechnicianModal
+                        open={rescheduleModalOpen}
+                        onClose={() => {
+                            setRescheduleModalOpen(false);
+                            setSelectedJob(null);
+                        }}
+                        fabData={selectedJob ? {
+                            fabId: selectedJob.fab_id,
+                            jobName: selectedJob.job_name,
+                            revenue: selectedJob.revenue
+                        } : undefined}
+                        templatingId={selectedJob?.templating_id}
                     />
                 </TabsContent>
             </Tabs>
