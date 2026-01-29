@@ -64,6 +64,7 @@ export interface CalculatedCutListData {
     sales_person?: string;
     shop_date_schedule: string;
     status_id?: number; // Add status_id field
+    on_hold?: boolean; // Add on_hold field
     fab_notes?: Array<{ id: number; note: string; created_by_name?: string; created_at?: string; stage?: string }>; // Array of notes for this FAB
     notes?: Array<{ id: number; note: string; created_by_name?: string; created_at?: string; stage?: string }>; // Alternative notes array name
 
@@ -73,8 +74,6 @@ export interface CalculatedCutListData {
 export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
     // Access additional fields that exist in the backend response but not in the Fab interface
     const fabWithExtraFields = fab as any;
-
-
 
     // Calculate cost of stone based on actual project value
     const calculateCostOfStone = (): number => {
@@ -112,7 +111,9 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
         install_date: fabWithExtraFields.installation_date || '',
         shop_date_schedule: fabWithExtraFields.shop_date_schedule || "",
         sales_person: fabWithExtraFields.sales_person_name || '',
-        status_id: fabWithExtraFields.status_id || 1, // Default to 1 (not on hold)
+        status_id: fab.status_id !== undefined ? fab.status_id : 1, // Use fab.status_id directly
+        on_hold: fab.status_id === 0, // Derive on_hold from status_id (0 = on hold)
+        fab_notes: fab.fab_notes || [], // Pass through fab_notes from the Fab object
     };
 };
 
@@ -137,6 +138,7 @@ interface CutListTableWithCalculationsProps {
     dateRange?: DateRange | undefined;
     setDateRange?: (range: DateRange | undefined) => void;
     onAddNote?: (fabId: string, note: string) => void;
+    onToggleSuccess?: () => void; // Add callback for successful toggle
 }
 
 export const CutListTableWithCalculations = ({
@@ -159,7 +161,8 @@ export const CutListTableWithCalculations = ({
     setSalesPersonFilter,
     dateRange,
     setDateRange,
-    onAddNote
+    onAddNote,
+    onToggleSuccess
 }: CutListTableWithCalculationsProps) => {
     const [toggleFabOnHold] = useToggleFabOnHoldMutation();
 
@@ -618,8 +621,9 @@ export const CutListTableWithCalculations = ({
                 // Check for optimistic update first, then fall back to actual data
                 const fabId = row.fab_id;
                 if (optimisticUpdates[fabId] !== undefined) {
-                    return optimisticUpdates[fabId] === 0;
+                    return optimisticUpdates[fabId];
                 }
+                // status_id === 0 means on hold
                 return row.status_id === 0;
             },
             header: ({ column }) => (
@@ -630,8 +634,8 @@ export const CutListTableWithCalculations = ({
                 const isLoading = loadingStates[fabId] || false;
                 // Get the display value considering optimistic updates
                 const isChecked = optimisticUpdates[row.original.fab_id] !== undefined
-                    ? optimisticUpdates[row.original.fab_id] === 0
-                    : row.original.status_id === 0;
+                    ? optimisticUpdates[row.original.fab_id]
+                    : row.original.status_id === 0; // status_id === 0 means on hold
 
                 return (
                     <div className="flex justify-center items-center">
@@ -642,13 +646,12 @@ export const CutListTableWithCalculations = ({
                             onCheckedChange={async (checked) => {
                                 if (isLoading) return;
 
-                                const newStatusId = checked ? 0 : 1;
                                 const fabIdStr = row.original.fab_id;
 
                                 // Apply optimistic update immediately
                                 setOptimisticUpdates(prev => ({
                                     ...prev,
-                                    [fabIdStr]: newStatusId
+                                    [fabIdStr]: checked
                                 }));
 
                                 // Set loading state
@@ -657,14 +660,19 @@ export const CutListTableWithCalculations = ({
                                 try {
                                     await toggleFabOnHold({ fab_id: fabId, on_hold: checked }).unwrap();
 
-                                    // Keep optimistic update for 2 seconds to prevent immediate refresh
+                                    // Trigger refetch if callback provided
+                                    if (onToggleSuccess) {
+                                        onToggleSuccess();
+                                    }
+
+                                    // Clear optimistic update after a short delay
                                     setTimeout(() => {
                                         setOptimisticUpdates(prev => {
                                             const newState = { ...prev };
                                             delete newState[fabIdStr];
                                             return newState;
                                         });
-                                    }, 2000);
+                                    }, 500);
 
                                 } catch (error) {
                                     console.error('Failed to toggle on hold status:', error);

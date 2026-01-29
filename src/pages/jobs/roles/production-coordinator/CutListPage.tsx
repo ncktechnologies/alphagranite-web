@@ -206,20 +206,20 @@ const CutListPage = () => {
             totalCostOfStone
         };
     }, [fabsData]);
- const handleNoteSubmit = async ( fabId: number, note: string) => {
-    try {
-      await createFabNote({
-        fab_id: fabId,
-        note,
-        stage:"cut_list"
-      }).unwrap();
-      
-      // Optionally refresh data or update UI as needed
-    } catch (error) {
-      console.error('Error creating note:', error);
-      throw error; // Re-throw to be caught by the modal
-    }
-  };
+    const handleNoteSubmit = async (fabId: number, note: string) => {
+        try {
+            await createFabNote({
+                fab_id: fabId,
+                note,
+                stage: "cut_list"
+            }).unwrap();
+
+            // Optionally refresh data or update UI as needed
+        } catch (error) {
+            console.error('Error creating note:', error);
+            throw error; // Re-throw to be caught by the modal
+        }
+    };
     return (
         <>
             <Container className="lg:mx-0">
@@ -273,7 +273,8 @@ const CutListPage = () => {
                     setSalesPersonFilter={setSalesPersonFilter}
                     dateRange={dateRange}
                     setDateRange={setDateRange}
-                    onAddNote={handleNoteSubmit }
+                    onAddNote={handleNoteSubmit}
+                    onToggleSuccess={refetch} // Trigger refetch after successful toggle
                 />
             </Container>
         </>
