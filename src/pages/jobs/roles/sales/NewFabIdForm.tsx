@@ -235,56 +235,89 @@ const NewFabIdForm = () => {
   const jobNames = (!isEffectiveJobsError && Array.isArray(effectiveJobsData) ? effectiveJobsData : []).map((job: any) => job.name);
   const jobNumbers = (!isEffectiveJobsError && Array.isArray(effectiveJobsData) ? effectiveJobsData : []).map((job: any) => job.job_number);
 
-  // ========== AUTO-POPULATION LOGIC ==========
+ // ========== AUTO-POPULATION LOGIC ==========
+
+// Effect 1: Auto-populate job number, account, and sales person when job name is selected
+useEffect(() => {
+  if (jobNameValue && effectiveJobsData && Array.isArray(effectiveJobsData) && salesPersons.length > 0) {
+    const selectedJob = effectiveJobsData.find((job: any) => job.name === jobNameValue);
+    if (selectedJob) {
+      // Auto-populate job number
+      if (selectedJob.job_number !== jobNumberValue) {
+        form.setValue('jobNumber', selectedJob.job_number);
+      }
+      
+      // Auto-populate account name
+      if (selectedJob.account_name && selectedJob.account_name !== form.getValues('account')) {
+        form.setValue('account', selectedJob.account_name);
+      }
+      
+      // Auto-populate sales person using sales_person_id
+      if (selectedJob.sales_person_id) {
+        const salesPersonForJob = salesPersons.find((person: any) => 
+          person.id === selectedJob.sales_person_id
+        );
+        
+        if (salesPersonForJob && salesPersonForJob.name !== form.getValues('selectedSalesPerson')) {
+          form.setValue('selectedSalesPerson', salesPersonForJob.name);
+        }
+      }
+    }
+  }
+}, [jobNameValue, effectiveJobsData, form, jobNumberValue, salesPersons]);
+
+// Effect 2: Auto-populate job name, account, and sales person when job number is selected
+useEffect(() => {
+  if (jobNumberValue && effectiveJobsData && Array.isArray(effectiveJobsData) && salesPersons.length > 0) {
+    const selectedJob = effectiveJobsData.find((job: any) => job.job_number === jobNumberValue);
+    if (selectedJob) {
+      // Auto-populate job name
+      if (selectedJob.name !== jobNameValue) {
+        form.setValue('jobName', selectedJob.name);
+      }
+      
+      // Auto-populate account name
+      if (selectedJob.account_name && selectedJob.account_name !== form.getValues('account')) {
+        form.setValue('account', selectedJob.account_name);
+      }
+      
+      // Auto-populate sales person using sales_person_id
+      if (selectedJob.sales_person_id) {
+        const salesPersonForJob = salesPersons.find((person: any) => 
+          person.id === selectedJob.sales_person_id
+        );
+        
+        if (salesPersonForJob && salesPersonForJob.name !== form.getValues('selectedSalesPerson')) {
+          form.setValue('selectedSalesPerson', salesPersonForJob.name);
+        }
+      }
+    }
+  }
+}, [jobNumberValue, effectiveJobsData, form, jobNameValue, salesPersons]);
+
+// Effect 3: Clear job selections when account changes manually
+useEffect(() => {
+  // Only clear jobs if the account was changed by user (not by auto-population from job selection)
+  const currentAccount = form.getValues('account');
+  if (currentAccount && !accountValue.includes(currentAccount)) {
+    form.setValue('jobName', '');
+    form.setValue('jobNumber', '');
+    // Optionally clear sales person too if you want
+    // form.setValue('selectedSalesPerson', '');
+  }
+}, [accountValue, form]);
+
+// Reset job selections when account changes
+useEffect(() => {
+  // Store the current account value
+  const currentAccount = form.getValues('account');
   
-  // Effect 1: Auto-populate job number and sales person when job name is selected
-  useEffect(() => {
-    if (jobNameValue && effectiveJobsData && Array.isArray(effectiveJobsData) && salesPersons.length > 0) {
-      const selectedJob = effectiveJobsData.find((job: any) => job.name === jobNameValue);
-      if (selectedJob) {
-        // Auto-populate job number
-        if (selectedJob.job_number !== jobNumberValue) {
-          form.setValue('jobNumber', selectedJob.job_number);
-        }
-        
-        // Auto-populate sales person using sales_person_id
-        if (selectedJob.sales_person_id) {
-          const salesPersonForJob = salesPersons.find((person: any) => 
-            person.id === selectedJob.sales_person_id
-          );
-          
-          if (salesPersonForJob && salesPersonForJob.name !== form.getValues('selectedSalesPerson')) {
-            form.setValue('selectedSalesPerson', salesPersonForJob.name);
-          }
-        }
-      }
-    }
-  }, [jobNameValue, effectiveJobsData, form, jobNumberValue, salesPersons]);
-
-  // Effect 2: Auto-populate job name and sales person when job number is selected
-  useEffect(() => {
-    if (jobNumberValue && effectiveJobsData && Array.isArray(effectiveJobsData) && salesPersons.length > 0) {
-      const selectedJob = effectiveJobsData.find((job: any) => job.job_number === jobNumberValue);
-      if (selectedJob) {
-        // Auto-populate job name
-        if (selectedJob.name !== jobNameValue) {
-          form.setValue('jobName', selectedJob.name);
-        }
-        
-        // Auto-populate sales person using sales_person_id
-        if (selectedJob.sales_person_id) {
-          const salesPersonForJob = salesPersons.find((person: any) => 
-            person.id === selectedJob.sales_person_id
-          );
-          
-          if (salesPersonForJob && salesPersonForJob.name !== form.getValues('selectedSalesPerson')) {
-            form.setValue('selectedSalesPerson', salesPersonForJob.name);
-          }
-        }
-      }
-    }
-  }, [jobNumberValue, effectiveJobsData, form, jobNameValue, salesPersons]);
-
+  // When account changes, clear the job selections if they don't belong to the new account
+  if (accountValue && accountValue !== currentAccount) {
+    form.setValue('jobName', '');
+    form.setValue('jobNumber', '');
+  }
+}, [accountValue, form]);
   // Filter functions for search with error handling
   const filteredFabTypes = (!isFabTypesError && Array.isArray(fabTypesData) && fabTypesData?.map((type: any) => type.name) || []).filter((type: string) =>
     type.toLowerCase().includes(fabTypeSearch.toLowerCase())
