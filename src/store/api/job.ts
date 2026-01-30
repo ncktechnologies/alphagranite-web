@@ -1379,7 +1379,7 @@ export const jobApi = createApi({
             // Get slab smith session status
             getSlabSmithSessionStatus: build.query<any, number>({
                 query: (fab_id) => ({
-                    url: `/slabsmith/${fab_id}/session-status`,
+                    url: `/slabsmith/${fab_id}/session/status`,
                     method: "GET"
                 }),
                 providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
