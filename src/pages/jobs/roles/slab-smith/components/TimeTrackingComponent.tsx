@@ -169,7 +169,7 @@ export const TimeTrackingComponent = ({
       setShowPauseModal(false);
     } catch (error) {
       console.error('Failed to pause:', error);
-      toast.error('Failed to pause programming session');
+      toast.error('Failed to pause slabsmith session');
     }
   };
 
@@ -201,7 +201,7 @@ export const TimeTrackingComponent = ({
       setShowResumeModal(false);
     } catch (error) {
       console.error('Failed to resume:', error);
-      toast.error('Failed to resume programming session');
+      toast.error('Failed to resume slabsmith session');
     }
   };
 
@@ -243,7 +243,7 @@ export const TimeTrackingComponent = ({
       setShowOnHoldModal(false);
     } catch (error) {
       console.error('Failed to put on hold:', error);
-      toast.error('Failed to put programming session on hold');
+      toast.error('Failed to put slabsmith session on hold');
     }
   };
 
@@ -369,7 +369,7 @@ export const TimeTrackingComponent = ({
             <Can action="update" on="Slab Smith">
               <Button onClick={handleStart} disabled={isStarting}>
                 <Play className="w-4 h-4 mr-2" />
-                {isStarting ? 'Starting...' : 'Start programming'}
+                {isStarting ? 'Starting...' : 'Start slabsmith session'}
               </Button>
             </Can>
           ) : isDrafting && !hasEnded ? (
@@ -411,7 +411,7 @@ export const TimeTrackingComponent = ({
         <Dialog open={showPauseModal} onOpenChange={setShowPauseModal}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Pause Programming Session</DialogTitle>
+              <DialogTitle>Pause Slabsmith Session</DialogTitle>
             </DialogHeader>
             <div className="py-4">
               <label htmlFor="pause-sqft" className="block text-sm font-medium mb-2">
@@ -450,7 +450,7 @@ export const TimeTrackingComponent = ({
         <Dialog open={showResumeModal} onOpenChange={setShowResumeModal}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Resume Programming Session</DialogTitle>
+              <DialogTitle>Resume Slabsmith Session</DialogTitle>
             </DialogHeader>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={cancelResume}>
@@ -467,7 +467,7 @@ export const TimeTrackingComponent = ({
         <Dialog open={showOnHoldModal} onOpenChange={setShowOnHoldModal}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Put Programming Session On Hold</DialogTitle>
+              <DialogTitle>Put Slabsmith Session On Hold</DialogTitle>
             </DialogHeader>
             <div className="py-4">
               <label htmlFor="onhold-sqft" className="block text-sm font-medium mb-2">

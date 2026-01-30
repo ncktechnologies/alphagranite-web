@@ -343,7 +343,7 @@ export function SlabSmithDetailsPage() {
     }
   }, [fabId, manageSlabSmithSession, refetchSSSession]);
 
-  const canOpenSubmit = !isDrafting && totalTime > 0 && (pendingFiles.length > 0 || uploadedFileMetas.length > 0);
+  const canOpenSubmit = (isDrafting || hasEnded) && (pendingFiles.length > 0 || uploadedFileMetas.length > 0);
 
   // Modified to handle file upload before showing modal
   const handleOpenSubmissionModal = async () => {
@@ -406,6 +406,7 @@ export function SlabSmithDetailsPage() {
           drafting: { label: 'Drafting', color: 'text-green-700' },
           sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
           slab_smith_request: { label: 'Slab Smith Request', color: 'text-red-700' },
+          slab_smith: { label: 'Slabsmith', color: 'text-red-700' },
           cut_list: { label: 'Final Programming', color: 'text-purple-700' },
           cutting: { label: 'Cutting', color: 'text-orange-700' },
           revisions: { label: 'Revisions', color: 'text-purple-700' },

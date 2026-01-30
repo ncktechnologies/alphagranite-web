@@ -253,7 +253,7 @@ const calculateTotalHours = (start: Date | null, end: Date | null) => {
                 htmlFor="confirm-completion"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                I confirm that the slab smith work is completed
+                slab smith completed
               </label>
             </div>
 
