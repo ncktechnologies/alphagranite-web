@@ -137,13 +137,14 @@ export function PreDraftDetailsPage() {
         { label: 'Edge', value: fab.edge_name || 'N/A' },
         { label: 'Total square ft', value: String(fab.total_sqft) },
     ] : [];
+    
 
     const sidebarSections = [
-        // {
-        //     title: "Job Information",
-        //     type: "details",
-        //     items: jobInfo,
-        // },
+        {
+            title: "Template Information",
+            type: "details",
+            items: jobInfo,
+        },
         {
             title: "FAB Notes",
             type: "notes",
