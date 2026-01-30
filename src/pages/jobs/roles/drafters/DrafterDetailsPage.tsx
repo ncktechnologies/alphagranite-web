@@ -12,6 +12,7 @@ import { TimeTrackingComponent } from './components/TimeTrackingComponent';
 import { UploadDocuments } from './components/fileUploads';
 import { FileViewer } from './components/FileViewer';
 import { SubmissionModal } from './components/SubmissionModal';
+import { SessionHistory } from './components/SessionHistory';
 import { useSelector } from 'react-redux';
 import { FileWithPreview } from '@/hooks/use-file-upload';
 import { UploadedFileMeta } from '@/types/uploads';
@@ -170,7 +171,7 @@ export function DrafterDetailsPage() {
     }
   };
 
-  const updateSession = async (action: 'pause' | 'on_hold' | 'end', timestamp: Date, note?: string, sqftDrafted?: string) => {
+  const updateSession = async (action: 'pause' | 'on_hold' | 'end', timestamp: Date, note?: string, sqftDrafted?: string, workPercentage?: string) => {
     try {
       await manageDraftingSession({
         fab_id: fabId,
@@ -179,7 +180,8 @@ export function DrafterDetailsPage() {
           drafter_id: currentEmployeeId,
           timestamp: formatTimestamp(timestamp),
           note: note,
-          sqft_drafted: sqftDrafted
+          sqft_drafted: sqftDrafted,
+          work_percentage_done: workPercentage
         }
       }).unwrap();
 
@@ -218,9 +220,9 @@ export function DrafterDetailsPage() {
     }
   };
 
-  const handlePause = async (data?: { note?: string; sqft_drafted?: string }) => {
+  const handlePause = async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     try {
-      await updateSession('pause', new Date(), data?.note, data?.sqft_drafted);
+      await updateSession('pause', new Date(), data?.note, data?.sqft_drafted, data?.work_percentage_done);
     } catch (error) {
       // Error handled in updateSession
     }
@@ -619,6 +621,7 @@ export function DrafterDetailsPage() {
 
                 </CardContent>
               </Card>
+              <SessionHistory fabId={fabId} />
             </>
           )}
         </Container>

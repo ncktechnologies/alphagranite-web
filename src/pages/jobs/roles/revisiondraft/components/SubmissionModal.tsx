@@ -37,8 +37,8 @@ const revisionSchema = z.object({
 type RevisionData = z.infer<typeof revisionSchema>;
 
 // Local File Upload Component for Revisions
-const RevisionFileUpload = ({ 
-  draftingId, 
+const RevisionFileUpload = ({
+  draftingId,
   onUploadSuccess,
   onFileRemove,
   existingFiles = [],
@@ -52,11 +52,13 @@ const RevisionFileUpload = ({
 }) => {
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
+  const [lastUploadSuccess, setLastUploadSuccess] = useState(false);
   const [addFilesToDrafting] = useAddFilesToDraftingMutation();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
+      setLastUploadSuccess(false); // Reset success state on new selection
       const newFiles = Array.from(e.target.files);
       setPendingFiles(prev => [...prev, ...newFiles]);
     }
@@ -81,19 +83,30 @@ const RevisionFileUpload = ({
 
       console.log('File upload response:', response);
 
-      // Process the response to get uploaded file metadata
-      if (response?.data && Array.isArray(response.data)) {
-        const newUploadedFiles = response.data.map((fileData: any) => ({
+      // Handle the response based on your API structure
+      const filesArray = response.data?.files || [];
+
+      if (filesArray.length > 0) {
+        const newUploadedFiles = filesArray.map((fileData: any) => ({
           id: fileData.id.toString(),
-          name: fileData.name,
+          name: fileData.filename,
           size: fileData.size,
           filename: fileData.filename,
-          url: fileData.url,
-          type: fileData.type,
+          url: fileData.file_url,
+          type: fileData.mime_type,
         }));
-        
+
+        setPendingFiles([]); // Clear pending files immediately
+        setLastUploadSuccess(true);
         onUploadSuccess(newUploadedFiles);
-        setPendingFiles([]);
+
+        // Clear the file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+
+        // Reset success state after 3 seconds
+        setTimeout(() => setLastUploadSuccess(false), 3000);
       }
     } catch (error) {
       console.error("Failed to upload files:", error);
@@ -134,10 +147,10 @@ const RevisionFileUpload = ({
           <Button
             type="button"
             onClick={uploadFiles}
-            disabled={isUploading || !draftingId}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            disabled={isUploading || !draftingId || lastUploadSuccess}
+            className={`${lastUploadSuccess ? 'bg-blue-600' : 'bg-green-600 hover:bg-green-700'} text-white transition-colors`}
           >
-            {isUploading ? 'Uploading...' : `Upload ${pendingFiles.length} file(s)`}
+            {isUploading ? 'Uploading...' : lastUploadSuccess ? 'Files Uploaded' : `Upload ${pendingFiles.length} file(s)`}
           </Button>
         )}
       </div>
@@ -173,24 +186,14 @@ const RevisionFileUpload = ({
             {existingFiles.map((file) => (
               <li key={file.id} className="flex items-center justify-between bg-gray-50 p-2 rounded">
                 <span className="text-sm truncate max-w-xs">{file.name}</span>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onFileRemove(file.id)}
-                  className="text-red-500 hover:text-red-700"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
               </li>
             ))}
           </ul>
         </div>
       )}
-    </div>
+    </div >
   );
 };
-
 export const RevisionForm = ({
   onSubmit,
   onClose,
@@ -260,25 +263,23 @@ export const RevisionForm = ({
 
   const handleFormSubmit = async (values: RevisionData) => {
     setIsSubmitting(true);
-    
+
     try {
       // If the revision is complete, end the session first
       if (values.complete && onEnd) {
         await onEnd(new Date()); // End the current session
       }
-      
+
       const submissionData = {
         ...values,
         files: uploadedFiles
       };
-      
+
       console.log('Submitting data:', submissionData);
       await onSubmit(submissionData);
-      toast.success("Revision submitted successfully");
-      navigate("/job/revision"); // Refresh the page to reflect changes
     } catch (error) {
       console.error("Failed to submit revision:", error);
-     
+      // Error is already handled/toasted in onSubmit (details.tsx)
     } finally {
       setIsSubmitting(false);
     }
@@ -301,11 +302,11 @@ export const RevisionForm = ({
                   totalTime={totalTime}
                   isRevision={true}
                   originalDraftingId={originalDraftingId}
-                  onStart={onStart || (() => {})}
-                  onPause={onPause || (() => {})}
-                  onResume={onResume || (() => {})}
-                  onEnd={onEnd || (() => {})}
-                  onTimeUpdate={onTimeUpdate || (() => {})}
+                  onStart={onStart || (() => { })}
+                  onPause={onPause || (() => { })}
+                  onResume={onResume || (() => { })}
+                  onEnd={onEnd || (() => { })}
+                  onTimeUpdate={onTimeUpdate || (() => { })}
                   hasEnded={hasEnded || false}
                   pendingFilesCount={0}
                   uploadedFilesCount={uploadedFiles.length}
@@ -320,7 +321,7 @@ export const RevisionForm = ({
                 <p className="text-sm text-gray-600">{revisionReason}</p>
               </div>
             )}
-            
+
             {/* File Upload Section - Using local RevisionFileUpload component */}
             <div className="mb-6">
               <FormLabel className="block mb-2 font-medium">Upload revision files</FormLabel>
@@ -343,12 +344,12 @@ export const RevisionForm = ({
                   </FormLabel>
                   <div className="">
                     <div className="flex items-center gap-2">
-                      <Checkbox 
-                        checked={field.value} 
+                      <Checkbox
+                        checked={field.value}
                         onCheckedChange={field.onChange}
                         disabled={uploadedFiles.length === 0} // Disable until files are uploaded
                       />
-                      <span 
+                      <span
                         className={`font-medium text-sm cursor-pointer ${uploadedFiles.length === 0 ? 'text-gray-400' : 'text-gray-700'}`}
                         onClick={(e) => {
                           if (uploadedFiles.length > 0) {
@@ -371,9 +372,9 @@ export const RevisionForm = ({
             />
             {/* Buttons */}
             <div className="flex justify-end gap-3 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 className="w-[127px]"
                 onClick={() => {
                   form.reset();

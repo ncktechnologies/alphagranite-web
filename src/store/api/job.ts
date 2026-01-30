@@ -1676,6 +1676,15 @@ export const jobApi = createApi({
                 providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
             }),
 
+            // NEW: Get drafting session history
+            getDraftingSessionHistory: build.query<any, number>({
+                query: (fab_id) => ({
+                    url: `/drafting/${fab_id}/session-history`,
+                    method: "GET"
+                }),
+                providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
+            }),
+
             // Create FAB note
             createFabNote: build.mutation<any, { fab_id: number; note: string; stage?: string }>({
                 query: ({ fab_id, note, stage }) => ({
@@ -1688,15 +1697,6 @@ export const jobApi = createApi({
                     }
                 }),
                 invalidatesTags: ["Fab"],
-            }),
-
-            // NEW: Get drafting session history
-            getDraftingSessionHistory: build.query<any, number>({
-                query: (fab_id) => ({
-                    url: `/drafting/${fab_id}/session/history`,
-                    method: "GET"
-                }),
-                providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
             }),
 
             // Job Media endpoints

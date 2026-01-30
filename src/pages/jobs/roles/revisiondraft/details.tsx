@@ -60,12 +60,10 @@ const ReviewDetailsPage = () => {
     // SCT mutations - MUST be called unconditionally
     const [createRevision, { isLoading: isCreatingRevision }] = useCreateRevisionMutation();
     const [updateRevision] = useUpdateRevisionMutation();
-    console.log('Create revision hook:', { createRevision, isCreatingRevision });
 
     // Get revision reason from fab_notes
     const fabNotes = (fabData as any)?.fab_notes || [];
     const revisionNote = fabNotes.find((note: any) => note.stage === 'sales_ct')?.note || '';
-    console.log('Revision note:', revisionNote);
 
     const handleFileClick = (file: any) => {
         setActiveFile(file);
@@ -74,6 +72,49 @@ const ReviewDetailsPage = () => {
 
     const handleEditRole = () => {
         setViewMode('edit');
+    };
+
+    const handleStartRevision = async () => {
+        if (!id || !user || !revisionsData) return;
+
+        try {
+            const revisionsArray = Array.isArray(revisionsData) ? revisionsData : (revisionsData as any)?.data || [];
+            const existingRevisions = Array.isArray(revisionsArray) ? revisionsArray : [];
+
+            if (existingRevisions.length > 0) {
+                // Find the earliest revision (lowest ID)
+                const earliestRevision = existingRevisions.reduce((earliest: any, current: any) =>
+                    current.id < earliest.id ? current : earliest,
+                    existingRevisions[0]
+                );
+
+                // Only update if actual_start_date is not set
+                if (!earliestRevision.actual_start_date) {
+                    await updateRevision({
+                        revision_id: earliestRevision.id,
+                        data: { actual_start_date: new Date().toISOString() }
+                    }).unwrap();
+                    toast.success("Revision started");
+                }
+            } else {
+                // Create new revision with actual_start_date
+                const createData: any = {
+                    fab_id: Number(id),
+                    revision_type: 'general',
+                    requested_by: user.id || 1,
+                    revision_notes: revisionNote.replace('[REVISION REQUEST] ', '') || '',
+                    actual_start_date: new Date().toISOString()
+                };
+
+                await createRevision(createData).unwrap();
+                toast.success("New revision created and started");
+            }
+            // Move to edit mode after starting
+            setViewMode('edit');
+        } catch (error) {
+            console.error('Failed to start revision:', error);
+            toast.error("Failed to start revision");
+        }
     };
 
     const handleSubmitDraft = async (submissionData: any) => {
@@ -97,9 +138,6 @@ const ReviewDetailsPage = () => {
             // Check revisionsData structure - it might be { data: [...] } or directly an array
             const revisionsArray = Array.isArray(revisionsData) ? revisionsData : (revisionsData as any)?.data || [];
             console.log('Fetched revisions:', revisionsArray);
-            console.log('Type:', typeof revisionsArray);
-            console.log('Is array?', Array.isArray(revisionsArray));
-            console.log('Length:', revisionsArray.length);
 
             // Get the earliest revision if any exist
             const existingRevisions = Array.isArray(revisionsArray) ? revisionsArray : [];
@@ -107,12 +145,11 @@ const ReviewDetailsPage = () => {
 
             if (hasExistingRevisions) {
                 // Find the earliest revision (lowest ID)
-                const earliestRevision = existingRevisions.reduce((earliest, current) =>
+                const earliestRevision = existingRevisions.reduce((earliest: any, current: any) =>
                     current.id < earliest.id ? current : earliest,
                     existingRevisions[0]
                 );
 
-                console.log('UPDATING EXISTING REVISION ID:', earliestRevision.id);
 
                 // Prepare update data
                 const updateData: any = {
@@ -120,9 +157,10 @@ const ReviewDetailsPage = () => {
                     revision_notes: revisionNote.replace('[REVISION REQUEST] ', '') || ''
                 };
 
-                // Add completion status if needed
+                // Add completion status and actual_end_date if needed
                 if (submissionData.complete) {
                     updateData.is_completed = true;
+                    updateData.actual_end_date = new Date();
                 }
 
                 // Update the existing revision
@@ -149,16 +187,13 @@ const ReviewDetailsPage = () => {
                 // Set as completed if needed
                 if (submissionData.complete) {
                     createData.is_completed = true;
+                    createData.actual_end_date = new Date().toISOString();
                 }
 
                 const createResult = await createRevision(createData).unwrap();
                 revisionId = createResult.id;
                 console.log('Created new revision with ID:', revisionId);
             }
-
-            // Refresh the revisions data
-            // You might want to trigger a refetch here
-            // dispatch(api.endpoints.getRevisionsByFabId.initiate(Number(id), { forceRefetch: true }));
 
             toast.success("Revision submitted successfully");
             setShowSubmissionModal(false);
@@ -309,9 +344,19 @@ const ReviewDetailsPage = () => {
 
                                     <CardToolbar>
                                         <Can
-                                            action="update"
+                                            action="create"
                                             on="Revisions">
-                                            <Button onClick={handleEditRole}>Start Revision</Button>
+                                            <Button onClick={handleStartRevision}>
+                                                {(() => {
+                                                    const revisionsArray = Array.isArray(revisionsData) ? revisionsData : (revisionsData as any)?.data || [];
+                                                    const existingRevisions = Array.isArray(revisionsArray) ? revisionsArray : [];
+                                                    const latestRevision = existingRevisions.length > 0
+                                                        ? existingRevisions.reduce((earliest: any, current: any) => current.id < earliest.id ? current : earliest, existingRevisions[0])
+                                                        : null;
+
+                                                    return latestRevision?.actual_start_date ? "Continue Revision" : "Start Revision";
+                                                })()}
+                                            </Button>
                                         </Can>
                                     </CardToolbar>
                                 </CardHeader>
@@ -319,11 +364,21 @@ const ReviewDetailsPage = () => {
 
                             <Card>
                                 <CardHeader className='py-5 border-b'>
-                                    <TimeDisplay
+                                    {(() => {
+                                        const revisionsArray = Array.isArray(revisionsData) ? revisionsData : (revisionsData as any)?.data || [];
+                                        const existingRevisions = Array.isArray(revisionsArray) ? revisionsArray : [];
+                                        const latestRevision = existingRevisions.length > 0
+                                            ? existingRevisions.reduce((earliest: any, current: any) => current.id < earliest.id ? current : earliest, existingRevisions[0])
+                                            : null;
+
+                                        return (
+                                            <TimeDisplay
                                         startTime={draftData?.drafter_start_date ? new Date(draftData.drafter_start_date) : undefined}
                                         endTime={draftData?.drafter_end_date ? new Date(draftData.drafter_end_date) : undefined}
-                                        totalTime={draftData?.total_time_spent || 0}
-                                    />
+                                                totalTime={draftData?.total_time_spent || 0}
+                                            />
+                                        );
+                                    })()}
                                 </CardHeader>
                                 <CardContent className="">
                                     <h2 className='font-semibold text-sm py-3'>Uploaded files</h2>

@@ -12,6 +12,13 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface TimeTrackingComponentProps {
   isDrafting: boolean;
@@ -23,7 +30,7 @@ interface TimeTrackingComponentProps {
   isFabOnHold?: boolean; // Add FAB hold status
 
   onStart: (startDate: Date) => void | Promise<void>; // Allow async handler
-  onPause: (data?: { note?: string; sqft_drafted?: string }) => void | Promise<void>; // Add sqft parameter
+  onPause: (data?: { note?: string; sqft_drafted?: string; work_percentage?: string }) => void | Promise<void>; // Add work_percentage parameter
   onResume: (data?: { note?: string; sqft_drafted?: string }) => void | Promise<void>; // Add sqft parameter
   onEnd: (endDate: Date) => void;
   onOnHold?: (data?: { note?: string; sqft_drafted?: string }) => void | Promise<void>; // Add sqft parameter - optional
@@ -59,10 +66,11 @@ export const TimeTrackingComponent = ({
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
   const [isStarting, setIsStarting] = useState(false); // Track if starting process is in progress
-  
+
   // Pause/Resume/OnHold notes state
   const [pauseNote, setPauseNote] = useState<string>('');
   const [pauseSqFt, setPauseSqFt] = useState<string>(''); // New state for square footage during pause
+  const [pauseWorkPercentage, setPauseWorkPercentage] = useState<string>(''); // New state for work percentage
   const [resumeNote, setResumeNote] = useState<string>('');
   const [resumeSqFt, setResumeSqFt] = useState<string>(''); // New state for square footage during resume
   const [onHoldNote, setOnHoldNote] = useState<string>('');
@@ -150,13 +158,15 @@ export const TimeTrackingComponent = ({
     const now = new Date();
     setPausedTime(now);
     try {
-      // Pass both note and sqft_drafted to the parent
+      // Pass note, sqft_drafted, and work_percentage to the parent
       await onPause({
         note: pauseNote,
-        sqft_drafted: pauseSqFt
+        sqft_drafted: pauseSqFt,
+        work_percentage: pauseWorkPercentage
       });
       setPauseNote('');
       setPauseSqFt(''); // Reset sqft after pause
+      setPauseWorkPercentage(''); // Reset work percentage after pause
       setShowPauseModal(false);
     } catch (error) {
       console.error('Failed to pause:', error);
@@ -167,6 +177,7 @@ export const TimeTrackingComponent = ({
   const cancelPause = () => {
     setPauseNote('');
     setPauseSqFt('');
+    setPauseWorkPercentage('');
     setShowPauseModal(false);
   };
 
@@ -209,7 +220,7 @@ export const TimeTrackingComponent = ({
   const confirmOnHold = async () => {
     const now = new Date();
     setEndTime(now);
-    
+
     // If currently paused, add the final paused duration
     if (startTime && pausedTime) {
       const pausedDuration = Math.floor((now.getTime() - pausedTime.getTime()) / 1000);
@@ -248,7 +259,7 @@ export const TimeTrackingComponent = ({
   const handleEnd = () => {
     const now = new Date();
     setEndTime(now);
-    
+
     // If currently paused, add the final paused duration
     if (startTime && pausedTime) {
       const pausedDuration = Math.floor((now.getTime() - pausedTime.getTime()) / 1000);
@@ -303,7 +314,7 @@ export const TimeTrackingComponent = ({
         </div>
 
         <div className="flex items-center gap-10 flex-1">
-          
+
           {/* START TIME */}
           <div>
             <span className="text-sm text-text-foreground">Start time & Date:</span>
@@ -414,7 +425,29 @@ export const TimeTrackingComponent = ({
                 onChange={(e) => setPauseSqFt(e.target.value)}
                 placeholder="Enter square feet drafted"
               />
-              
+
+              <label htmlFor="pause-work-percentage" className="block text-sm font-medium mt-4 mb-2">
+                Work Percentage
+              </label>
+              <Select value={pauseWorkPercentage} onValueChange={setPauseWorkPercentage}>
+                <SelectTrigger id="pause-work-percentage">
+                  <SelectValue placeholder="Select work percentage" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">0%</SelectItem>
+                  <SelectItem value="10">10%</SelectItem>
+                  <SelectItem value="20">20%</SelectItem>
+                  <SelectItem value="30">30%</SelectItem>
+                  <SelectItem value="40">40%</SelectItem>
+                  <SelectItem value="50">50%</SelectItem>
+                  <SelectItem value="60">60%</SelectItem>
+                  <SelectItem value="70">70%</SelectItem>
+                  <SelectItem value="80">80%</SelectItem>
+                  <SelectItem value="90">90%</SelectItem>
+                  <SelectItem value="100">100%</SelectItem>
+                </SelectContent>
+              </Select>
+
               <label htmlFor="pause-note" className="block text-sm font-medium mt-4 mb-2">
                 Notes (Optional)
               </label>
@@ -492,7 +525,7 @@ export const TimeTrackingComponent = ({
                 onChange={(e) => setOnHoldSqFt(e.target.value)}
                 placeholder="Enter total square feet drafted"
               />
-              
+
               <label htmlFor="onhold-note" className="block text-sm font-medium mt-4 mb-2">
                 Notes (Optional)
               </label>
