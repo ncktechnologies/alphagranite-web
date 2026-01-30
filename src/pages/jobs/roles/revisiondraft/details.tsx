@@ -92,7 +92,7 @@ const ReviewDetailsPage = () => {
                 if (!earliestRevision.actual_start_date) {
                     await updateRevision({
                         revision_id: earliestRevision.id,
-                        data: { actual_start_date: new Date().toISOString() }
+                        data: { actual_start_date: new Date().toISOString().split('.')[0]}
                     }).unwrap();
                     toast.success("Revision started");
                 }
@@ -103,7 +103,7 @@ const ReviewDetailsPage = () => {
                     revision_type: 'general',
                     requested_by: user.id || 1,
                     revision_notes: revisionNote.replace('[REVISION REQUEST] ', '') || '',
-                    actual_start_date: new Date().toISOString()
+                    actual_start_date: new Date().toISOString().split('.')[0]
                 };
 
                 await createRevision(createData).unwrap();
@@ -160,7 +160,7 @@ const ReviewDetailsPage = () => {
                 // Add completion status and actual_end_date if needed
                 if (submissionData.complete) {
                     updateData.is_completed = true;
-                    updateData.actual_end_date = new Date();
+                    updateData.actual_end_date = new Date().toISOString().split('.')[0];
                 }
 
                 // Update the existing revision
@@ -187,7 +187,7 @@ const ReviewDetailsPage = () => {
                 // Set as completed if needed
                 if (submissionData.complete) {
                     createData.is_completed = true;
-                    createData.actual_end_date = new Date().toISOString();
+                    createData.actual_end_date = new Date().toISOString().split('.')[0];
                 }
 
                 const createResult = await createRevision(createData).unwrap();
@@ -196,6 +196,8 @@ const ReviewDetailsPage = () => {
             }
 
             toast.success("Revision submitted successfully");
+            navigate('/job/revision');
+
             setShowSubmissionModal(false);
             setViewMode('activity');
 
