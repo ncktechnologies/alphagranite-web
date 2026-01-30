@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardHeading, CardTitle, CardToolbar } fr
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useGetJobByIdQuery, useGetFabsByJobQuery, useGetJobMediaQuery, useDeleteJobMediaMutation } from '@/store/api/job';
+import { useGetJobByIdQuery, useGetFabsByJobQuery, useGetJobMediaQuery, useDeleteJobMediaMutation, useGetJobNotesQuery } from '@/store/api/job';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft, Camera, Video, FileText, Plus, Download, Trash2, Play, X } from 'lucide-react';
@@ -32,6 +32,7 @@ export function JobDetailsPage() {
     { job_id: jobId },
     { skip: !jobId }
   );
+  const { data: jobNotes, isLoading: notesLoading } = useGetJobNotesQuery(jobId, { skip: !jobId });
   const [deleteJobMedia, { isLoading: isDeleting }] = useDeleteJobMediaMutation();
 
   // Create job info based on actual job data
@@ -45,6 +46,7 @@ export function JobDetailsPage() {
     { label: 'Priority', value: job.priority || 'N/A' },
     { label: 'Status', value: getStatusText(job.status_id) },
     { label: 'Created Date', value: new Date(job.created_at).toLocaleDateString() },
+    { label: 'Note', value: job.description || 'N/A' },
   ] : [];
 
   // Get status text based on status_id
@@ -163,12 +165,12 @@ export function JobDetailsPage() {
           >
             <X className="h-5 w-5" />
           </button>
-          
+
           {/* Header with file name */}
           <div className="px-6 py-4 bg-gray-50 border-b">
             <h3 className="font-semibold text-lg truncate text-gray-900">{selectedMedia.name}</h3>
           </div>
-          
+
           {/* Media content area */}
           <div className="flex items-center justify-center p-6 bg-gray-100 min-h-[400px] max-h-[calc(90vh-140px)]">
             {selectedMedia.type === 'photo' ? (
@@ -195,7 +197,7 @@ export function JobDetailsPage() {
               </div>
             )}
           </div>
-          
+
           {/* Footer with download button */}
           <div className="px-6 py-4 bg-gray-50 border-t flex justify-between items-center">
             <div className="text-sm text-gray-600">
@@ -246,6 +248,50 @@ export function JobDetailsPage() {
                   </div>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Accounting Notes Section */}
+          <Card className='my-4'>
+            <CardHeader>
+              <CardHeading className='flex flex-col items-start py-4'>
+                <CardTitle className='text-[#111827] leading-[32px] text-2xl font-bold'>Accounting note</CardTitle>
+                <p className="text-sm text-[#4B5563]">
+                  Accounting notes for this job
+                </p>
+              </CardHeading>
+            </CardHeader>
+            <CardContent>
+              {notesLoading ? (
+                <div className="space-y-4">
+                  {[1, 2].map((item) => (
+                    <div key={item} className="p-4 border rounded-lg bg-gray-50 flex flex-col gap-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-4 w-full" />
+                    </div>
+                  ))}
+                </div>
+              ) : jobNotes?.data?.notes && jobNotes.data.notes.length > 0 ? (
+                <div className="space-y-4">
+                  {jobNotes.data.notes.map((note: any) => (
+                    <div key={note.id} className="p-4 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <div className="flex justify-between items-start mb-2">
+                        <span className="font-semibold text-sm text-blue-600">
+                          {note.creator_name}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {new Date(note.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{note.note}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed">
+                  <p className="text-gray-500 text-sm">No accounting notes available</p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -399,7 +445,7 @@ export function JobDetailsPage() {
                             />
                           )}
                           {file.file_type === 'video' && (
-                            <div 
+                            <div
                               className="w-full h-full flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300"
                               onClick={() => setSelectedMedia({
                                 url: file.file_url,
@@ -411,7 +457,7 @@ export function JobDetailsPage() {
                             </div>
                           )}
                           {file.file_type === 'document' && (
-                            <div 
+                            <div
                               className="w-full h-full flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300"
                               onClick={() => setSelectedMedia({
                                 url: file.file_url,
@@ -434,8 +480,8 @@ export function JobDetailsPage() {
 
                         {/* File Info */}
                         <div className="p-3">
-                          <h4 
-                            className="font-medium text-sm truncate hover:text-blue-600 cursor-pointer" 
+                          <h4
+                            className="font-medium text-sm truncate hover:text-blue-600 cursor-pointer"
                             title={file.name}
                             onClick={() => setSelectedMedia({
                               url: file.file_url,

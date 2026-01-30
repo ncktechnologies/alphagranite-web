@@ -174,7 +174,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
             return `${year}-${month}-${day}`;
           })()
           : "",
-        duration: "",
+        duration: templatingData.data.duration || "",
         notes: "",
         square_ft: templatingData.data.total_sqft?.toString() || ''
       };

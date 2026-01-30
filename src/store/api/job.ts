@@ -321,6 +321,24 @@ export interface MarkInvoicedRequest {
     invoiced_at?: string;
 }
 
+export interface JobNote {
+    id: number;
+    job_id: number;
+    note: string;
+    creator_id: number;
+    creator_name: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface JobNotesResponse {
+    success: boolean;
+    message: string;
+    data: {
+        notes: JobNote[];
+    };
+}
+
 // Add this interface for jobs by account
 export interface JobsByAccountParams {
     skip?: number;
@@ -1775,6 +1793,14 @@ export const jobApi = createApi({
                 invalidatesTags: ["Job"],
             }),
 
+            getJobNotes: build.query<JobNotesResponse, number>({
+                query: (job_id) => ({
+                    url: `/jobs/${job_id}/notes`,
+                    method: "GET"
+                }),
+                providesTags: (_result, _error, job_id) => [{ type: "Job", id: job_id }],
+            }),
+
 
             // Toggle FAB On Hold endpoint
             toggleFabOnHold: build.mutation<Fab, { fab_id: number; on_hold: boolean }>({
@@ -1886,6 +1912,7 @@ export const {
     useUploadJobMediaMutation,
     useDownloadJobMediaQuery,
     useDeleteJobMediaMutation,
+    useGetJobNotesQuery,
     // Admin Dashboard hook
     useGetAdminDashboardQuery,
     // Toggle Need To Invoice hook
