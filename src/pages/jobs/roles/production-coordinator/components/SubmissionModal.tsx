@@ -144,7 +144,7 @@ export function SubmissionModal({
             fp_id: fpId,
             files: fileObjects
           }).unwrap();
-          toast.success('Files uploaded successfully');
+          // Success - files uploaded, will show final success message after completion
         } catch (fileError) {
           console.error('File upload failed:', fileError);
           toast.error('Failed to upload files');

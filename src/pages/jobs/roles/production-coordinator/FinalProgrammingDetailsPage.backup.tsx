@@ -10,9 +10,6 @@ import { toast } from 'sonner';
 import {
   useGetFabByIdQuery,
   useGetFinalProgrammingSessionStatusQuery,
-  useAddFilesToFinalProgrammingMutation,
-  useCompleteFinalProgrammingMutation,
-  useScheduleShopDateMutation
 } from '@/store/api/job';
 import { TimeTrackingComponent } from './components/TimeTrackingComponent';
 import { UploadDocuments } from './components/fileUploads';
@@ -34,11 +31,6 @@ export function FinalProgrammingDetailsPage() {
   // Load fab and final programming session status
   const { data: fabData, isLoading: isFabLoading } = useGetFabByIdQuery(fabId, { skip: !fabId });
   const { data: fpSessionData, isLoading: isFPLoading } = useGetFinalProgrammingSessionStatusQuery(fabId, { skip: !fabId });
-
-  // Mutations
-  const [addFilesToFinalProgramming] = useAddFilesToFinalProgrammingMutation();
-  const [completeFinalProgramming] = useCompleteFinalProgrammingMutation();
-  const [scheduleShopDate] = useScheduleShopDateMutation();
 
   // Local UI state
   const [isDrafting, setIsDrafting] = useState(false);
@@ -100,49 +92,6 @@ export function FinalProgrammingDetailsPage() {
       return;
     }
     setShowSubmissionModal(true);
-  };
-
-  // Handle submission
-  const onSubmitModal = async (values: any) => {
-    try {
-      // First, upload any pending files
-      if (pendingFiles.length > 0 && fpSessionData?.id) {
-        // Extract the actual File objects from FileWithPreview
-        const actualFiles = pendingFiles.map(file => {
-          // If it's already a File, return it directly
-          if (file instanceof File) {
-            return file;
-          }
-          // Otherwise, we might need to recreate it - but for now, let's assume it's a File
-          return file as unknown as File;
-        });
-
-        await addFilesToFinalProgramming({
-          fp_id: fpSessionData.id,
-          files: actualFiles
-        }).unwrap();
-
-        toast.success(`${pendingFiles.length} file(s) uploaded successfully`);
-        setPendingFiles([]);
-      }
-
-      // Then complete the final programming
-      await completeFinalProgramming({
-        fab_id: fabId,
-        data: {
-          final_programming_complete: true,
-          notes: values.draftNotes || null,
-          drafter_id: currentEmployeeId,
-          wj_time_minutes: values.wjTimeMinutes ? parseInt(values.wjTimeMinutes) : null
-        }
-      }).unwrap();
-
-      toast.success('Final programming completed successfully');
-      navigate('/job/final-programming');
-    } catch (error) {
-      console.error('Error completing final programming:', error);
-      toast.error('Failed to complete final programming');
-    }
   };
 
   // Check if we can open the submit modal
@@ -273,7 +222,8 @@ export function FinalProgrammingDetailsPage() {
           onClose={(success?: boolean) => {
             setShowSubmissionModal(false);
             if (success) {
-              onSubmitModal({});
+              // Modal already handled the submission, just navigate
+              navigate('/job/final-programming');
             }
           }}
           drafting={fpSessionData}
@@ -283,6 +233,7 @@ export function FinalProgrammingDetailsPage() {
           fabId={fabId}
           userId={currentEmployeeId}
           fabData={fabData}
+          totalTime={totalTime}
         />
       </Container>
     </div>

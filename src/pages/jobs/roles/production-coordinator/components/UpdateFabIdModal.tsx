@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useNavigate } from "react-router";
 import {
   Dialog,
   DialogContent,
@@ -80,6 +81,7 @@ export function UpdateFabIdModal({
     skip: !fabData?.id 
   });
   
+  const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [updateCutListSchedule] = useUpdateCutListScheduleMutation();
   const [updateCutList] = useUpdateCutListMutation();
@@ -143,6 +145,7 @@ export function UpdateFabIdModal({
 
         toast.success("Revision marked as complete!");
         onClose();
+        navigate('/job/cut-list');
         return;
       }
 
@@ -172,6 +175,7 @@ export function UpdateFabIdModal({
 
       toast.success("FAB scheduled successfully!");
       onClose();
+      navigate('/job/cut-list');
     } catch (error) {
       console.error("Error scheduling FAB:", error);
       toast.error("Failed to schedule FAB");
