@@ -339,7 +339,8 @@ export function TemplatingPage() {
                         fabData={selectedJob ? {
                             fabId: selectedJob.fab_id,
                             jobName: selectedJob.job_name,
-                            revenue: selectedJob.revenue
+                            revenue: selectedJob.revenue,
+                            total_sq_ft: selectedJob.total_sq_ft
                         } : undefined}
                         templatingId={selectedJob?.templating_id}
                     />

@@ -1534,6 +1534,16 @@ export const jobApi = createApi({
                 invalidatesTags: ["Fab"],
             }),
 
+            // Update Cut List - for revision_complete
+            updateCutList: build.mutation<any, { fab_id: number; data: any }>({
+                query: ({ fab_id, data }) => ({
+                    url: `/cut-list/${fab_id}/update`,
+                    method: "PATCH",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
             // Get Cut List Details
             getCutListDetails: build.query<any, number>({
                 query: (fab_id) => ({
@@ -1894,6 +1904,7 @@ export const {
     useGetSlabSmithSessionStatusQuery, // Export new hook
     // Cut List Schedule hook
     useUpdateCutListScheduleMutation,
+    useUpdateCutListMutation,
     useGetCutListDetailsQuery,
     // Final Programming hooks
     useScheduleShopDateMutation,

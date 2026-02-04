@@ -24,7 +24,7 @@ import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { LoaderCircle } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { useUpdateCutListScheduleMutation, useGetCutListDetailsQuery } from "@/store/api/job";
+import { useUpdateCutListScheduleMutation, useGetCutListDetailsQuery, useUpdateCutListMutation } from "@/store/api/job";
 
 // ------------------ ZOD SCHEMA ------------------ //
 const updateFabSchema = z.object({
@@ -82,6 +82,7 @@ export function UpdateFabIdModal({
   
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [updateCutListSchedule] = useUpdateCutListScheduleMutation();
+  const [updateCutList] = useUpdateCutListMutation();
 
   const form = useForm<UpdateFabData>({
     resolver: zodResolver(updateFabSchema),
@@ -133,7 +134,19 @@ export function UpdateFabIdModal({
     setIsSubmitting(true);
 
     try {
-      // Prepare data for API call
+      // If revision_complete is checked, call the update endpoint
+      if (values.revisionComplete) {
+        await updateCutList({
+          fab_id: fabData?.id,
+          data: { revision_complete: true }
+        }).unwrap();
+
+        toast.success("Revision marked as complete!");
+        onClose();
+        return;
+      }
+
+      // Otherwise, prepare data for schedule API call
       const requestData = {
         fab_id: fabData?.id,
         no_of_pieces: values.pieces ? parseInt(values.pieces) : undefined,
@@ -144,7 +157,6 @@ export function UpdateFabIdModal({
         miter_linft: values.miterLinFt ? parseFloat(values.miterLinFt) : undefined,
         shop_date_schedule: values.shopDate,
         installation_date: values.installationDate,
-        revision_complete: values.revisionComplete,
       };
 
       // Remove undefined values
@@ -152,7 +164,7 @@ export function UpdateFabIdModal({
         Object.entries(requestData).filter(([_, v]) => v !== undefined)
       );
 
-      // Call the API endpoint
+      // Call the schedule API endpoint
       await updateCutListSchedule({
         fab_id: fabData?.id,
         data: cleanedData

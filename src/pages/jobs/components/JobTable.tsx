@@ -493,39 +493,46 @@ export const JobTable = ({
 
 
 
-    // Function to generate fab info string
-    const generateFabInfo = (job: IJob) => {
-        const parts = [];
+    // Function to generate fab info with structured data
+    const generateFabInfo = (job: IJob): { jobInfo: string[]; materialInfo: string[] } => {
+        const jobInfo: string[] = [];
+        const materialInfo: string[] = [];
 
-        // Add account name if available
-        if (job.acct_name) {
-            parts.push(job.acct_name);
+        // Job-related information
+        if (job.acct_name || job.account_name) {
+            jobInfo.push(job.acct_name || job.account_name || '');
         }
 
+        if (job.job_name) {
+            jobInfo.push(job.job_name);
+        }
 
-        // Add square footage
+        if (job.input_area) {
+            jobInfo.push(`Area: ${job.input_area}`);
+        }
+
+        // Material & measurement details
         if (job.total_sq_ft) {
-            parts.push(`${job.total_sq_ft} sq ft`);
+            materialInfo.push(`${job.total_sq_ft} sq ft`);
         }
 
-        // Add material specifications if available
         if (job.stone_type_name) {
-            parts.push(`Stone: ${job.stone_type_name}`);
+            materialInfo.push(job.stone_type_name);
         }
 
         if (job.stone_color_name) {
-            parts.push(`Color: ${job.stone_color_name}`);
+            materialInfo.push(job.stone_color_name);
         }
 
         if (job.stone_thickness_value) {
-            parts.push(`Thickness: ${job.stone_thickness_value}`);
+            materialInfo.push(job.stone_thickness_value);
         }
 
         if (job.edge_name) {
-            parts.push(`Edge: ${job.edge_name}`);
+            materialInfo.push(job.edge_name);
         }
 
-        return parts.join(' - ');
+        return { jobInfo, materialInfo };
     };
 
     const baseColumns = useMemo<ColumnDef<IJob>[]>(() => [
@@ -912,12 +919,32 @@ export const JobTable = ({
             header: ({ column }) => (
                 <DataGridColumnHeader title="FAB INFO" column={column} />
             ),
-            cell: ({ row }) => (
-                <span className="text-xs break-words max-w-[300px]">
-                    {generateFabInfo(row.original)}
-                </span>
-            ),
-            size: 300,
+            cell: ({ row }) => {
+                const { jobInfo, materialInfo } = generateFabInfo(row.original);
+                return (
+                    <div className="flex gap-4 text-xs max-w-[400px]">
+                        {/* Job Info Side */}
+                        {jobInfo.length > 0 && (
+                            <div className="flex-1 min-w-0">
+                                {/* <div className="font-semibold text-gray-700 mb-1">Job Details:</div> */}
+                                {jobInfo.map((info, idx) => (
+                                    <div key={idx} className="truncate text-gray-600">{info}</div>
+                                ))}
+                            </div>
+                        )}
+                        {/* Material Info Side */}
+                        {materialInfo.length > 0 && (
+                            <div className="flex-1 min-w-0">
+                                {/* <div className="font-semibold text-gray-700 mb-1">Materials:</div> */}
+                                {materialInfo.map((info, idx) => (
+                                    <div key={idx} className="truncate text-gray-600">{info}</div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
+            },
+            size: 400,
         },
         // Templating Notes Column
         {
@@ -1298,7 +1325,7 @@ export const JobTable = ({
                         // Otherwise (no date), show Assign
                         return (
                             <Link
-                                to={`/job/templating-details/${row.original.fab_id}`}
+                                to={`/job/templating/${row.original.fab_id}`}
                                 
                             >
                                 Assign

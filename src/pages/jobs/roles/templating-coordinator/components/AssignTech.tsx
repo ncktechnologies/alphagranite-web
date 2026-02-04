@@ -31,6 +31,7 @@ import { useGetEmployeesQuery, useGetSalesPersonsQuery } from "@/store/api/emplo
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const assignTechnicianSchema = z.object({
   technician: z.string().min(1, "Please select a technician"),
@@ -105,7 +106,7 @@ export function AssignTechnicianModal({
           technician_id: Number(values.technician),
           schedule_start_date: values.date ? format(new Date(values.date), 'yyyy-MM-dd') : "",
           schedule_due_date: values.date ? format(new Date(new Date(values.date).getTime() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd') : "", // 7 days after start
-          total_sqft: "0", // This would be updated with actual value
+          total_sqft: String(fabData?.total_sqft ),
           revenue: values.revenue ? parseFloat(values.revenue) : undefined,
           notes: [values.notes || ""],
         }).unwrap();
@@ -207,6 +208,29 @@ export function AssignTechnicianModal({
           <p className="font-bold"> {fabData?.fabId || "FAB-2024-001"}</p>
           <p>{fabData?.jobName || "Conference Table - Quartz"}</p>
         </div>
+
+        {/* Display existing FAB notes */}
+        {fabData?.fab_notes && fabData.fab_notes.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold">FAB Notes</h3>
+            <ScrollArea className="h-32 w-full rounded-md border p-3">
+              <div className="space-y-3">
+                {fabData.fab_notes.map((note: any, index: number) => (
+                  <div key={note.id || index} className="text-sm border-b pb-2 last:border-b-0">
+                    <p className="text-muted-foreground">{note.note}</p>
+                    <div className="flex gap-2 mt-1 text-xs text-muted-foreground">
+                      {note.created_by_name && <span>By: {note.created_by_name}</span>}
+                      {note.stage && <span>• Stage: {note.stage}</span>}
+                      {note.created_at && (
+                        <span>• {format(new Date(note.created_at), 'MMM dd, yyyy HH:mm')}</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        )}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">

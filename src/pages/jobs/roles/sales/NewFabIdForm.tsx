@@ -83,6 +83,7 @@ const NewFabIdForm = () => {
   const [success, setSuccess] = useState<string | null>(null);
   const navigate = useNavigate();
   const firstFieldRef = useRef<HTMLButtonElement>(null);
+  const lastProcessedJobRef = useRef<{ name: string; number: string } | null>(null);
 
   // Focus first field when form opens
   useEffect(() => {
@@ -248,87 +249,78 @@ const NewFabIdForm = () => {
 
  // ========== AUTO-POPULATION LOGIC ==========
 
-// Effect 1: Auto-populate job number, account, and sales person when job name is selected
+// Combined effect: Auto-populate related fields when job name or job number changes
 useEffect(() => {
-  if (jobNameValue && effectiveJobsData && Array.isArray(effectiveJobsData) && salesPersons.length > 0) {
-    const selectedJob = effectiveJobsData.find((job: any) => job.name === jobNameValue);
-    if (selectedJob) {
-      // Auto-populate job number
-      if (selectedJob.job_number !== jobNumberValue) {
-        form.setValue('jobNumber', selectedJob.job_number);
-      }
+  if (!effectiveJobsData || !Array.isArray(effectiveJobsData) || salesPersons.length === 0) return;
+
+  // Skip if neither job field has a value
+  if (!jobNameValue && !jobNumberValue) {
+    lastProcessedJobRef.current = null;
+    return;
+  }
+
+  // Find selected job by name AND number to ensure we have the right job
+  const selectedJob = effectiveJobsData.find((job: any) => 
+    (jobNameValue && job.name === jobNameValue) || 
+    (jobNumberValue && job.job_number === jobNumberValue)
+  );
+
+  if (selectedJob) {
+    // Check if all fields already match - if so, skip to prevent loops
+    const allFieldsMatch = 
+      selectedJob.name === jobNameValue &&
+      selectedJob.job_number === jobNumberValue &&
+      (!selectedJob.account_name || selectedJob.account_name === form.getValues('account'));
+
+    // Also check if sales person matches
+    let salesPersonMatches = true;
+    if (selectedJob.sales_person_id) {
+      const salesPersonForJob = salesPersons.find((person: any) => 
+        person.id === selectedJob.sales_person_id
+      );
+      salesPersonMatches = salesPersonForJob?.name === form.getValues('selectedSalesPerson');
+    }
+
+    // Skip only if everything is already in sync
+    if (allFieldsMatch && salesPersonMatches) return;
+
+    // Use a batch update approach to prevent multiple re-renders
+    const updates: { field: any; value: any }[] = [];
+
+    // Auto-populate job number if not matching
+    if (selectedJob.job_number && selectedJob.job_number !== jobNumberValue) {
+      updates.push({ field: 'jobNumber', value: selectedJob.job_number });
+    }
+
+    // Auto-populate job name if not matching
+    if (selectedJob.name && selectedJob.name !== jobNameValue) {
+      updates.push({ field: 'jobName', value: selectedJob.name });
+    }
+
+    // Auto-populate account name
+    if (selectedJob.account_name && selectedJob.account_name !== form.getValues('account')) {
+      updates.push({ field: 'account', value: selectedJob.account_name });
+    }
+
+    // Auto-populate sales person using sales_person_id
+    if (selectedJob.sales_person_id) {
+      const salesPersonForJob = salesPersons.find((person: any) => 
+        person.id === selectedJob.sales_person_id
+      );
       
-      // Auto-populate account name
-      if (selectedJob.account_name && selectedJob.account_name !== form.getValues('account')) {
-        form.setValue('account', selectedJob.account_name);
-      }
-      
-      // Auto-populate sales person using sales_person_id
-      if (selectedJob.sales_person_id) {
-        const salesPersonForJob = salesPersons.find((person: any) => 
-          person.id === selectedJob.sales_person_id
-        );
-        
-        if (salesPersonForJob && salesPersonForJob.name !== form.getValues('selectedSalesPerson')) {
-          form.setValue('selectedSalesPerson', salesPersonForJob.name);
-        }
+      if (salesPersonForJob && salesPersonForJob.name !== form.getValues('selectedSalesPerson')) {
+        updates.push({ field: 'selectedSalesPerson', value: salesPersonForJob.name });
       }
     }
-  }
-}, [jobNameValue, effectiveJobsData, form, jobNumberValue, salesPersons]);
 
-// Effect 2: Auto-populate job name, account, and sales person when job number is selected
-useEffect(() => {
-  if (jobNumberValue && effectiveJobsData && Array.isArray(effectiveJobsData) && salesPersons.length > 0) {
-    const selectedJob = effectiveJobsData.find((job: any) => job.job_number === jobNumberValue);
-    if (selectedJob) {
-      // Auto-populate job name
-      if (selectedJob.name !== jobNameValue) {
-        form.setValue('jobName', selectedJob.name);
-      }
-      
-      // Auto-populate account name
-      if (selectedJob.account_name && selectedJob.account_name !== form.getValues('account')) {
-        form.setValue('account', selectedJob.account_name);
-      }
-      
-      // Auto-populate sales person using sales_person_id
-      if (selectedJob.sales_person_id) {
-        const salesPersonForJob = salesPersons.find((person: any) => 
-          person.id === selectedJob.sales_person_id
-        );
-        
-        if (salesPersonForJob && salesPersonForJob.name !== form.getValues('selectedSalesPerson')) {
-          form.setValue('selectedSalesPerson', salesPersonForJob.name);
-        }
-      }
+    // Apply all updates at once
+    if (updates.length > 0) {
+      updates.forEach(({ field, value }) => {
+        form.setValue(field, value, { shouldValidate: false });
+      });
     }
   }
-}, [jobNumberValue, effectiveJobsData, form, jobNameValue, salesPersons]);
-
-// Effect 3: Clear job selections when account changes manually
-useEffect(() => {
-  // Only clear jobs if the account was changed by user (not by auto-population from job selection)
-  const currentAccount = form.getValues('account');
-  if (currentAccount && !accountValue.includes(currentAccount)) {
-    form.setValue('jobName', '');
-    form.setValue('jobNumber', '');
-    // Optionally clear sales person too if you want
-    // form.setValue('selectedSalesPerson', '');
-  }
-}, [accountValue, form]);
-
-// Reset job selections when account changes
-useEffect(() => {
-  // Store the current account value
-  const currentAccount = form.getValues('account');
-  
-  // When account changes, clear the job selections if they don't belong to the new account
-  if (accountValue && accountValue !== currentAccount) {
-    form.setValue('jobName', '');
-    form.setValue('jobNumber', '');
-  }
-}, [accountValue, form]);
+}, [jobNameValue, jobNumberValue, effectiveJobsData, salesPersons, form]);
   // Filter functions for search with error handling
   const filteredFabTypes = (!isFabTypesError && Array.isArray(fabTypesData) && fabTypesData?.map((type: any) => type.name) || []).filter((type: string) =>
     type.toLowerCase().includes(fabTypeSearch.toLowerCase())
