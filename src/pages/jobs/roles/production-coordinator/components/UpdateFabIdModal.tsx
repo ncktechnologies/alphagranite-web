@@ -100,17 +100,18 @@ export function UpdateFabIdModal({
 
   // Reset form when cutListData changes
   useEffect(() => {
-    if (cutListData) {
+    if (cutListData?.data) {
+      const data = cutListData.data;
       form.reset({
-        pieces: cutListData.no_of_pieces?.toString() || "",
-        totalSqFt: cutListData.total_sqft?.toString() || "",
-        wjLinFt: cutListData.wj_linft?.toString() || "",
-        edgingLinFt: cutListData.edging_linft?.toString() || "",
-        cncLinFt: cutListData.cnc_linft?.toString() || "",
-        miterLinFt: cutListData.miter_linft?.toString() || "",
-        shopDate: cutListData.shop_date_schedule || "",
-        installationDate: cutListData.installation_date || "",
-        revisionComplete: cutListData.revision_complete || undefined,
+        pieces: data.no_of_pieces?.toString() || "",
+        totalSqFt: data.total_sqft?.toString() || "",
+        wjLinFt: data.wj_linft?.toString() || "",
+        edgingLinFt: data.edging_linft?.toString() || "",
+        cncLinFt: data.cnc_linft?.toString() || "",
+        miterLinFt: data.miter_linft?.toString() || "",
+        shopDate: data.shop_date_schedule || "",
+        installationDate: data.installation_date || "",
+        revisionComplete: data.revision_complete === true,
       });
     }
   }, [cutListData, form]);
@@ -181,7 +182,7 @@ export function UpdateFabIdModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader className="border-b">
           <DialogTitle>Update FAB ID</DialogTitle>
         </DialogHeader>
@@ -213,7 +214,7 @@ export function UpdateFabIdModal({
         <Separator />
 
         {/* ---------- SCROLLABLE FORM CONTAINER ---------- */}
-        <div className="overflow-y-auto flex-grow pr-2 -mr-2">
+        <div className="overflow-y-auto overflow-x-visible flex-grow pr-2 -mr-2">
           {/* ---------- FORM ---------- */}
           <Form {...form}>
             <form id="update-fab-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
@@ -353,7 +354,7 @@ export function UpdateFabIdModal({
                   name="revisionComplete"
                   render={({ field }) => (
                     <FormItem className="flex flex-col space-y-2">
-                      <FormLabel>Revision complete</FormLabel>
+                      <FormLabel>Confirmed</FormLabel>
                       <FormControl>
                         <Checkbox
                           checked={field.value || false}

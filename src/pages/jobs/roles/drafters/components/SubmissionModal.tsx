@@ -167,11 +167,8 @@ export const SubmissionModal = ({
       
       // Step 2: Upload files if any
       let fileIds: number[] = [];
-      const filesToUpload = uploadedFiles.filter(f => 
-        !f.id || 
-        typeof f.id === 'string' && f.id.includes('temp') || 
-        f.file instanceof File
-      );
+      // Upload files that are File objects (not yet uploaded to server)
+      const filesToUpload = uploadedFiles.filter(f => f.file instanceof File);
 
       if (filesToUpload.length > 0) {
         const fileObjects = filesToUpload.map(f => f.file as File);
@@ -179,7 +176,8 @@ export const SubmissionModal = ({
         try {
           const response = await addFilesToDrafting({
             drafting_id: draftingId,
-            files: fileObjects
+            files: fileObjects,
+            stage: 'drafting' // Add stage for drafting files
           }).unwrap();
 
           if (response && response.data && Array.isArray(response.data)) {

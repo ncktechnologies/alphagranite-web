@@ -78,7 +78,8 @@ const RevisionFileUpload = ({
     try {
       const response = await addFilesToDrafting({
         drafting_id: draftingId,
-        files: pendingFiles
+        files: pendingFiles,
+        stage: 'revision' // Add stage for revision files
       }).unwrap();
 
       console.log('File upload response:', response);

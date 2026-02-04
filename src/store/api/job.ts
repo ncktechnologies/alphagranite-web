@@ -1286,12 +1286,15 @@ export const jobApi = createApi({
             }),
 
             // Add files to drafting
-            addFilesToDrafting: build.mutation<any, { drafting_id: number; files: File[] }>({
-                query: ({ drafting_id, files }) => {
+            addFilesToDrafting: build.mutation<any, { drafting_id: number; files: File[]; stage?: string }>({
+                query: ({ drafting_id, files, stage }) => {
                     const formData = new FormData();
                     files.forEach((file) => {
                         formData.append('files', file); // Changed from 'file' to 'files'
                     });
+                    if (stage) {
+                        formData.append('stage', stage);
+                    }
                     return {
                         url: `/drafting/${drafting_id}/files`,
                         method: "post",

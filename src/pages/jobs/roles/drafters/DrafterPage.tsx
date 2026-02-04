@@ -194,6 +194,11 @@ const DrafterPage = () => {
         setShowAssignModal(false);
     };
 
+    const handleAssignSuccess = () => {
+        // Clear all selected rows after successful assignment
+        setSelectedRows([]);
+    };
+
     return (
         <Container>
             <Toolbar>
@@ -224,6 +229,7 @@ const DrafterPage = () => {
                 initialSqftValues={sqftPerFab}
                 initialStartDates={datePerFab.startDateMapping}
                 initialEndDates={datePerFab.endDateMapping}
+                onAssignSuccess={handleAssignSuccess}
             />
         </Container>
     );

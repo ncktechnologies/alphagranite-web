@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { CSSProperties, Fragment, ReactNode } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useDataGrid } from '@/components/ui/data-grid';
 import { Cell, Column, flexRender, Header, HeaderGroup, Row } from '@tanstack/react-table';
 import { cva } from 'class-variance-authority';
@@ -484,7 +485,7 @@ function DataGridTable<TData extends object>() {
       <DataGridTableBodyRowSkeleton key={`skeleton-${rowIndex}`}>
         {table.getVisibleFlatColumns().map((column) => (
           <DataGridTableBodyRowSkeletonCell column={column} key={`skeleton-cell-${column.id}`}>
-            {column.columnDef.meta?.skeleton}
+            {column.columnDef.meta?.skeleton || <Skeleton className="h-4 w-full" />}
           </DataGridTableBodyRowSkeletonCell>
         ))}
       </DataGridTableBodyRowSkeleton>

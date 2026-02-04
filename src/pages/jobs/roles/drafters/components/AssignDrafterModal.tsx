@@ -21,6 +21,7 @@ interface AssignDrafterModalProps {
   initialSqftValues?: {[key: string]: string};
   initialStartDates?: {[key: string]: string};
   initialEndDates?: {[key: string]: string};
+  onAssignSuccess?: () => void;
 }
 
 interface DraftingAssignmentData {
@@ -37,7 +38,8 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
   selectedFabIds,
   initialSqftValues,
   initialStartDates,
-  initialEndDates
+  initialEndDates,
+  onAssignSuccess
 }) => {
   const [drafterId, setDrafterId] = useState<string>('SELECT_DRAFTER');
   const [startDate, setStartDate] = useState<string>('');
@@ -101,6 +103,18 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
       await bulkAssignDrafting(requestData).unwrap();
       
       toast.success(`Successfully assigned drafter to ${selectedFabIds.length} FAB(s)`);
+      
+      // Reset form fields
+      setDrafterId('SELECT_DRAFTER');
+      setStartDate('');
+      setEndDate('');
+      setSqftPerFab({});
+      
+      // Call success callback to clear selections
+      if (onAssignSuccess) {
+        onAssignSuccess();
+      }
+      
       onClose();
     } catch (error) {
       console.error('Error assigning drafter:', error);

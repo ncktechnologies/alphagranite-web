@@ -533,22 +533,59 @@ export const JobTable = ({
         {
             accessorKey: 'id',
             accessorFn: (row: IJob) => row.id,
-            header: () => enableMultiSelect ?
-                <div className="w-full h-full flex items-center justify-center">
-                    <Checkbox
-                        checked={effectiveSelectedRows.length === filteredData.length && filteredData.length > 0}
-                        onCheckedChange={toggleAllRowsSelection}
-                        aria-label="Select all"
-                    />
-                </div> : <></>,
-            cell: ({ row }) => enableMultiSelect ?
-                <div className="w-full h-full flex items-center justify-center">
-                    <Checkbox
-                        checked={effectiveSelectedRows.includes(row.original.fab_id)}
-                        onCheckedChange={() => toggleRowSelection(row.original.fab_id)}
-                        aria-label="Select row"
-                    />
-                </div> : <></>,
+            header: () => {
+                if (!enableMultiSelect) {
+                    return <></>;
+                }
+                
+                // Filter out jobs that already have a drafter assigned
+                const selectableJobs = filteredData.filter(job => !job.drafter || job.drafter === '-');
+                
+                // Hide header checkbox if no jobs are selectable
+                if (selectableJobs.length === 0) {
+                    return <></>;
+                }
+                
+                return (
+                    <div className="w-full h-full flex items-center justify-center">
+                        <Checkbox
+                            checked={selectableJobs.every(job => effectiveSelectedRows.includes(job.fab_id)) && selectableJobs.length > 0}
+                            onCheckedChange={() => {
+                                const selectableFabIds = selectableJobs.map(job => job.fab_id);
+                                const allSelected = selectableFabIds.every(id => effectiveSelectedRows.includes(id));
+                                
+                                if (allSelected) {
+                                    // Deselect all selectable jobs
+                                    setSelectedRows(effectiveSelectedRows.filter(id => !selectableFabIds.includes(id)));
+                                } else {
+                                    // Select all selectable jobs
+                                    const newSelection = [...new Set([...effectiveSelectedRows, ...selectableFabIds])];
+                                    setSelectedRows(newSelection);
+                                }
+                            }}
+                            aria-label="Select all"
+                        />
+                    </div>
+                );
+            },
+            cell: ({ row }) => {
+                // Hide checkbox if drafter is already assigned
+                const hasDrafter = row.original.drafter && row.original.drafter !== '-';
+                
+                if (!enableMultiSelect || hasDrafter) {
+                    return <></>;
+                }
+                
+                return (
+                    <div className="w-full h-full flex items-center justify-center">
+                        <Checkbox
+                            checked={effectiveSelectedRows.includes(row.original.fab_id)}
+                            onCheckedChange={() => toggleRowSelection(row.original.fab_id)}
+                            aria-label="Select row"
+                        />
+                    </div>
+                );
+            },
             enableSorting: false,
             enableHiding: false,
             enableResizing: false,

@@ -483,7 +483,8 @@ export function DrafterDetailsPage() {
       url: meta.url,
       stage: stage,
       uploadedAt: new Date(),
-      uploadedBy: currentUser?.name || 'Current User'
+      uploadedBy: currentUser?.name || 'Current User',
+      file: file // Include the actual File object for submission
     };
   });
 

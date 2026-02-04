@@ -161,6 +161,8 @@ const NewFabIdForm = () => {
   // Main popover states
   const [fabTypePopoverOpen, setFabTypePopoverOpen] = useState(false);
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
+  const [jobNamePopoverOpen, setJobNamePopoverOpen] = useState(false);
+  const [jobNumberPopoverOpen, setJobNumberPopoverOpen] = useState(false);
   const [thicknessPopoverOpen, setThicknessPopoverOpen] = useState(false);
 
   // Nested popover states for adding new items
@@ -234,6 +236,15 @@ const NewFabIdForm = () => {
   // Filter jobs for job dropdowns - use account-specific jobs when available
   const jobNames = (!isEffectiveJobsError && Array.isArray(effectiveJobsData) ? effectiveJobsData : []).map((job: any) => job.name);
   const jobNumbers = (!isEffectiveJobsError && Array.isArray(effectiveJobsData) ? effectiveJobsData : []).map((job: any) => job.job_number);
+
+  // Filter jobs directly from effectiveJobsData to maintain job IDs for unique keys
+  const filteredJobs = (!isEffectiveJobsError && Array.isArray(effectiveJobsData) ? effectiveJobsData : []).filter((job: any) =>
+    job.name?.toLowerCase().includes(jobNameSearch.toLowerCase())
+  );
+
+  const filteredJobsByNumber = (!isEffectiveJobsError && Array.isArray(effectiveJobsData) ? effectiveJobsData : []).filter((job: any) =>
+    job.job_number?.toLowerCase().includes(jobNumberSearch.toLowerCase())
+  );
 
  // ========== AUTO-POPULATION LOGIC ==========
 
@@ -514,7 +525,7 @@ useEffect(() => {
                                       className="w-full justify-between h-[48px] px-4 text-sm border-input shadow-xs shadow-black/5"
                                       disabled={isLoadingFabTypes}
                                     >
-                                      <span className={!field.value ? "text-muted-foreground" : ""}>
+                                      <span className={!field.value ? "text-muted-foreground" : "uppercase"}>
                                         {isLoadingFabTypes ? 'Loading...' : (field.value || "Select type")}
                                       </span>
                                       <ChevronDown className="h-4 w-4 opacity-60" />
@@ -631,7 +642,7 @@ useEffect(() => {
                           )}
                         />
 
-                        {/* Job Name - Select Dropdown */}
+                        {/* Job Name - Searchable Popover */}
                         <FormField
                           control={form.control}
                           name="jobName"
@@ -639,125 +650,155 @@ useEffect(() => {
                             <FormItem>
                               <div className="flex items-start ">
                                 <FormLabel>Job Name</FormLabel>
-                                <Link to="/create-jobs">
-                                  <Button variant="ghost" className="text-primary -py-2 hover:bg-none text-xs !h-0 gap-0" size="xs" autoHeight={false}>
-                                    <Plus />
-                                    New Job
-                                  </Button>
-                                </Link>
                               </div>
-                              <Select
-                                onValueChange={(value) => {
-                                  field.onChange(value);
-                                  // Auto-populate job number and sales person will happen in useEffect
-                                }}
-                                value={field.value}
-                                disabled={isEffectiveJobsLoading || (selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0)}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder={
-                                      isEffectiveJobsLoading ? 'Loading...' :
-                                        (selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0) ? 'No jobs available' :
-                                          'Select job name'
-                                    } />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {isEffectiveJobsError ? (
-                                    <div className="px-3 py-2 text-sm text-red-500 text-center">
-                                      Failed to load jobs: Server error occurred
+                              <Popover open={jobNamePopoverOpen} onOpenChange={setJobNamePopoverOpen}>
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <Button
+                                      variant="outline"
+                                      className="w-full justify-between h-[48px] px-4 text-sm border-input shadow-xs shadow-black/5"
+                                      disabled={isEffectiveJobsLoading || (selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0)}
+                                    >
+                                      <span className={!field.value ? "text-muted-foreground" : ""}>
+                                        {isEffectiveJobsLoading ? 'Loading...' :
+                                          (selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0) ? 'No jobs available' :
+                                            (field.value || "Select job name")}
+                                      </span>
+                                      <ChevronDown className="h-4 w-4 opacity-60" />
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                  <div className="p-2">
+                                    <div className="relative mb-2">
+                                      <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
+                                      <Input
+                                        placeholder="Search job name"
+                                        className="pl-8"
+                                        value={jobNameSearch}
+                                        onChange={(e) => setJobNameSearch(e.target.value)}
+                                      />
                                     </div>
-                                  ) : isEffectiveJobsLoading ? (
-                                    <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                      Loading jobs...
-                                    </div>
-                                  ) : selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0 ? (
-                                    <div className="px-3 py-2 text-sm text-gray-500 text-center flex flex-col items-center gap-2">
-                                      <InfoIcon className="h-4 w-4 text-gray-400" />
-                                      <span>No jobs found for this account</span>
-                                      <Link to="/create-jobs">
-                                        <Button variant="outline" size="sm" className="mt-2">
-                                          <Plus className="w-3 h-3 mr-1" />
-                                          Create New Job
-                                        </Button>
-                                      </Link>
-                                    </div>
-                                  ) : effectiveJobsData && effectiveJobsData.length === 0 ? (
-                                    <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                      No jobs found
-                                    </div>
-                                  ) : (
-                                    jobNames.map((jobName: string) => (
-                                      <SelectItem key={jobName} value={jobName}>
-                                        {jobName}
-                                      </SelectItem>
-                                    ))
-                                  )}
-                                </SelectContent>
-                              </Select>
+                                    {isEffectiveJobsError ? (
+                                      <div className="px-3 py-2 text-sm text-red-500 text-center">
+                                        Failed to load jobs: Server error occurred
+                                      </div>
+                                    ) : selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0 ? (
+                                      <div className="px-3 py-2 text-sm text-gray-500 text-center flex flex-col items-center gap-2">
+                                        <InfoIcon className="h-4 w-4 text-gray-400" />
+                                        <span>No jobs found for this account</span>
+                                        <Link to="/create-jobs">
+                                          <Button variant="outline" size="sm" className="mt-2">
+                                            <Plus className="w-3 h-3 mr-1" />
+                                            Create New Job
+                                          </Button>
+                                        </Link>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-1 max-h-48 overflow-y-auto">
+                                        {filteredJobs.map((job: any) => (
+                                          <div
+                                            key={job.id}
+                                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
+                                            onClick={() => {
+                                              field.onChange(job.name);
+                                              setJobNameSearch('');
+                                              setJobNamePopoverOpen(false);
+                                            }}
+                                          >
+                                            {job.name}
+                                          </div>
+                                        ))}
+                                        {filteredJobs.length === 0 && !isEffectiveJobsError && (
+                                          <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                            {isEffectiveJobsLoading ? 'Loading jobs...' : 'No job names found'}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
 
-                        {/* Job Number - Select Dropdown */}
+                        {/* Job Number - Searchable Popover */}
                         <FormField
                           control={form.control}
                           name="jobNumber"
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Job Number</FormLabel>
-                              <Select
-                                onValueChange={(value) => {
-                                  field.onChange(value);
-                                  // Auto-populate job name and sales person will happen in useEffect
-                                }}
-                                value={field.value}
-                                disabled={isEffectiveJobsLoading || (selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0)}
-                              >
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder={
-                                      isEffectiveJobsLoading ? 'Loading...' :
-                                        (selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0) ? 'No jobs available' :
-                                          'Select job number'
-                                    } />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {isEffectiveJobsError ? (
-                                    <div className="px-3 py-2 text-sm text-red-500 text-center">
-                                      Failed to load jobs: Server error occurred
+                              <Popover open={jobNumberPopoverOpen} onOpenChange={setJobNumberPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <Button
+                                      variant="outline"
+                                      className="w-full justify-between h-[48px] px-4 text-sm border-input shadow-xs shadow-black/5"
+                                      disabled={isEffectiveJobsLoading || (selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0)}
+                                    >
+                                      <span className={!field.value ? "text-muted-foreground" : ""}>
+                                        {isEffectiveJobsLoading ? 'Loading...' :
+                                          (selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0) ? 'No jobs available' :
+                                            (field.value || "Select job number")}
+                                      </span>
+                                      <ChevronDown className="h-4 w-4 opacity-60" />
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                  <div className="p-2">
+                                    <div className="relative mb-2">
+                                      <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
+                                      <Input
+                                        placeholder="Search job number"
+                                        className="pl-8"
+                                        value={jobNumberSearch}
+                                        onChange={(e) => setJobNumberSearch(e.target.value)}
+                                      />
                                     </div>
-                                  ) : isEffectiveJobsLoading ? (
-                                    <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                      Loading jobs...
-                                    </div>
-                                  ) : selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0 ? (
-                                    <div className="px-3 py-2 text-sm text-gray-500 text-center flex flex-col items-center gap-2">
-                                      <InfoIcon className="h-4 w-4 text-gray-400" />
-                                      <span>No jobs found for this account</span>
-                                      <Link to="/create-jobs">
-                                        <Button variant="outline" size="sm" className="mt-2">
-                                          <Plus className="w-3 h-3 mr-1" />
-                                          Create New Job
-                                        </Button>
-                                      </Link>
-                                    </div>
-                                  ) : effectiveJobsData && effectiveJobsData.length === 0 ? (
-                                    <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                      No jobs found
-                                    </div>
-                                  ) : (
-                                    jobNumbers.map((jobNumber: string) => (
-                                      <SelectItem key={jobNumber} value={jobNumber}>
-                                        {jobNumber}
-                                      </SelectItem>
-                                    ))
-                                  )}
-                                </SelectContent>
-                              </Select>
+                                    {isEffectiveJobsError ? (
+                                      <div className="px-3 py-2 text-sm text-red-500 text-center">
+                                        Failed to load jobs: Server error occurred
+                                      </div>
+                                    ) : selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0 ? (
+                                      <div className="px-3 py-2 text-sm text-gray-500 text-center flex flex-col items-center gap-2">
+                                        <InfoIcon className="h-4 w-4 text-gray-400" />
+                                        <span>No jobs found for this account</span>
+                                        <Link to="/create-jobs">
+                                          <Button variant="outline" size="sm" className="mt-2">
+                                            <Plus className="w-3 h-3 mr-1" />
+                                            Create New Job
+                                          </Button>
+                                        </Link>
+                                      </div>
+                                    ) : (
+                                      <div className="space-y-1 max-h-48 overflow-y-auto">
+                                        {filteredJobsByNumber.map((job: any) => (
+                                          <div
+                                            key={job.id}
+                                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
+                                            onClick={() => {
+                                              field.onChange(job.job_number);
+                                              setJobNumberSearch('');
+                                              setJobNumberPopoverOpen(false);
+                                            }}
+                                          >
+                                            {job.job_number}
+                                          </div>
+                                        ))}
+                                        {filteredJobsByNumber.length === 0 && !isEffectiveJobsError && (
+                                          <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                            {isEffectiveJobsLoading ? 'Loading jobs...' : 'No job numbers found'}
+                                          </div>
+                                        )}
+                                      </div>
+                                    )}
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
                               <FormMessage />
                             </FormItem>
                           )}
