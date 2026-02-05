@@ -178,7 +178,7 @@ const NewFabIdForm = () => {
 
    const handlePopupClose = () => {
         setShowPopover(false);
-        // navigate('/');
+        navigate('/job');
     };
 
   const form = useForm<FabIdFormData>({
@@ -531,7 +531,7 @@ const NewFabIdForm = () => {
 
       // Navigate based on user's department/role instead of always going to templating
       // For sales role, navigate back to sales jobs page
-      navigate('/job');
+      // navigate('/job');
 
     } catch (err: any) {
       console.error('Submission error:', err);
