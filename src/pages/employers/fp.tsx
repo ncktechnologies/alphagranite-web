@@ -15,7 +15,7 @@ export function FinalProgrammingPage() {
     defaultPagination: { pageIndex: 0, pageSize: 10 },
     defaultDateFilter: 'all',
     defaultScheduleFilter: 'scheduled',
-    persistState: true,
+    persistState:false,
   });
 
   // Calculate skip value for pagination

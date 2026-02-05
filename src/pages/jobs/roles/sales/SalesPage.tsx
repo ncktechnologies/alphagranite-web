@@ -104,7 +104,7 @@ export function SalesPage() {
         tableId: 'sct-table',
         defaultPagination: { pageIndex: 0, pageSize: 25 },
         defaultDateFilter: 'all',
-        persistState: true,
+        persistState: false,
     });
     const skip = tableState.pagination.pageIndex * tableState.pagination.pageSize;
     const queryParams = useMemo(() => {

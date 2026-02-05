@@ -247,81 +247,143 @@ const NewFabIdForm = () => {
     job.job_number?.toLowerCase().includes(jobNumberSearch.toLowerCase())
   );
 
- // ========== AUTO-POPULATION LOGIC ==========
+  // ========== AUTO-POPULATION LOGIC ==========
 
-// Combined effect: Auto-populate related fields when job name or job number changes
-useEffect(() => {
-  if (!effectiveJobsData || !Array.isArray(effectiveJobsData) || salesPersons.length === 0) return;
+  useEffect(() => {
+    if (!effectiveJobsData || !Array.isArray(effectiveJobsData) || salesPersons.length === 0) return;
 
-  // Skip if neither job field has a value
-  if (!jobNameValue && !jobNumberValue) {
-    lastProcessedJobRef.current = null;
-    return;
-  }
-
-  // Find selected job by name AND number to ensure we have the right job
-  const selectedJob = effectiveJobsData.find((job: any) => 
-    (jobNameValue && job.name === jobNameValue) || 
-    (jobNumberValue && job.job_number === jobNumberValue)
-  );
-
-  if (selectedJob) {
-    // Check if all fields already match - if so, skip to prevent loops
-    const allFieldsMatch = 
-      selectedJob.name === jobNameValue &&
-      selectedJob.job_number === jobNumberValue &&
-      (!selectedJob.account_name || selectedJob.account_name === form.getValues('account'));
-
-    // Also check if sales person matches
-    let salesPersonMatches = true;
-    if (selectedJob.sales_person_id) {
-      const salesPersonForJob = salesPersons.find((person: any) => 
-        person.id === selectedJob.sales_person_id
-      );
-      salesPersonMatches = salesPersonForJob?.name === form.getValues('selectedSalesPerson');
+    // Skip if neither job field has a value
+    if (!jobNameValue && !jobNumberValue) {
+      lastProcessedJobRef.current = null;
+      return;
     }
 
-    // Skip only if everything is already in sync
-    if (allFieldsMatch && salesPersonMatches) return;
+    // Find selected job - we need to be careful about how we match
+    let selectedJob = null;
 
-    // Use a batch update approach to prevent multiple re-renders
-    const updates: { field: any; value: any }[] = [];
-
-    // Auto-populate job number if not matching
-    if (selectedJob.job_number && selectedJob.job_number !== jobNumberValue) {
-      updates.push({ field: 'jobNumber', value: selectedJob.job_number });
-    }
-
-    // Auto-populate job name if not matching
-    if (selectedJob.name && selectedJob.name !== jobNameValue) {
-      updates.push({ field: 'jobName', value: selectedJob.name });
-    }
-
-    // Auto-populate account name
-    if (selectedJob.account_name && selectedJob.account_name !== form.getValues('account')) {
-      updates.push({ field: 'account', value: selectedJob.account_name });
-    }
-
-    // Auto-populate sales person using sales_person_id
-    if (selectedJob.sales_person_id) {
-      const salesPersonForJob = salesPersons.find((person: any) => 
-        person.id === selectedJob.sales_person_id
-      );
-      
-      if (salesPersonForJob && salesPersonForJob.name !== form.getValues('selectedSalesPerson')) {
-        updates.push({ field: 'selectedSalesPerson', value: salesPersonForJob.name });
-      }
-    }
-
-    // Apply all updates at once
-    if (updates.length > 0) {
-      updates.forEach(({ field, value }) => {
-        form.setValue(field, value, { shouldValidate: false });
+    // FIRST: Try to find a job that matches BOTH current job name and number
+    // This handles the case where user selects a job that should have both fields populated
+    if (jobNameValue || jobNumberValue) {
+      selectedJob = effectiveJobsData.find((job: any) => {
+        // Check if job matches current selection criteria
+        const nameMatches = jobNameValue ? job.name === jobNameValue : true;
+        const numberMatches = jobNumberValue ? job.job_number === jobNumberValue : true;
+        return nameMatches && numberMatches;
       });
     }
-  }
-}, [jobNameValue, jobNumberValue, effectiveJobsData, salesPersons, form]);
-  // Filter functions for search with error handling
+
+    // SECOND: If no exact match, try to find by job name only
+    if (!selectedJob && jobNameValue) {
+      selectedJob = effectiveJobsData.find((job: any) => job.name === jobNameValue);
+    }
+
+    // THIRD: If still no match, try to find by job number only
+    if (!selectedJob && jobNumberValue) {
+      selectedJob = effectiveJobsData.find((job: any) => job.job_number === jobNumberValue);
+    }
+
+    if (selectedJob) {
+      // Check if this is the same job we just processed to prevent infinite loops
+      const isSameJob = lastProcessedJobRef.current?.name === selectedJob.name && 
+                       lastProcessedJobRef.current?.number === selectedJob.job_number;
+      
+      if (isSameJob) {
+        return;
+      }
+
+      const updates = [];
+
+      // Always sync both job name and number when a job is found
+      // This ensures they stay in sync
+      if (selectedJob.name && selectedJob.name !== jobNameValue) {
+        updates.push({ field: 'jobName', value: selectedJob.name });
+      }
+      
+      if (selectedJob.job_number && selectedJob.job_number !== jobNumberValue) {
+        updates.push({ field: 'jobNumber', value: selectedJob.job_number });
+      }
+
+      // Sync account if different
+      if (selectedJob.account_name && selectedJob.account_name !== form.getValues('account')) {
+        updates.push({ field: 'account', value: selectedJob.account_name });
+      }
+
+      // Sync sales person - this is critical!
+      if (selectedJob.sales_person_id) {
+        const salesPersonForJob = salesPersons.find((person: any) => 
+          person.id === selectedJob.sales_person_id
+        );
+        
+        if (salesPersonForJob) {
+          // Always set sales person when job has one, regardless of current value
+          updates.push({ 
+            field: 'selectedSalesPerson', 
+            value: salesPersonForJob.name 
+          });
+        }
+      }
+
+      // Apply all updates at once
+      if (updates.length > 0) {
+        updates.forEach(({ field, value }) => {
+          form.setValue(field, value, { 
+            shouldValidate: false,
+            shouldDirty: true 
+          });
+        });
+        
+        // Store reference to prevent reprocessing
+        lastProcessedJobRef.current = {
+          name: selectedJob.name,
+          number: selectedJob.job_number
+        };
+      }
+    } else {
+      // No matching job found - clear the reference
+      lastProcessedJobRef.current = null;
+      
+      // If we have one field populated but can't find the job, clear the other field
+      // This prevents stale data
+      if (jobNameValue && !jobNumberValue) {
+        form.setValue('jobNumber', '', { shouldValidate: false });
+      } else if (jobNumberValue && !jobNameValue) {
+        form.setValue('jobName', '', { shouldValidate: false });
+      }
+    }
+  }, [jobNameValue, jobNumberValue, effectiveJobsData, salesPersons, form]);
+
+  // Add this effect to handle account changes
+  useEffect(() => {
+    // When account changes, we should clear job selections if they don't belong to the new account
+    if (accountValue && lastProcessedJobRef.current) {
+      const currentAccount = accountsData?.find((account: any) => account.name === accountValue);
+      
+      if (currentAccount) {
+        // Check if the last processed job belongs to the current account
+        const jobForCurrentAccount = effectiveJobsData?.find((job: any) => 
+          (job.name === lastProcessedJobRef.current?.name || 
+           job.job_number === lastProcessedJobRef.current?.number) &&
+          job.account_id === currentAccount.id
+        );
+        
+        // If the job doesn't belong to the current account, clear it
+        if (!jobForCurrentAccount) {
+          form.setValue('jobName', '');
+          form.setValue('jobNumber', '');
+          lastProcessedJobRef.current = null;
+        }
+      }
+    }
+  }, [accountValue, accountsData, effectiveJobsData, form]);
+
+  // Add this cleanup effect
+  useEffect(() => {
+    return () => {
+      // Reset the reference when component unmounts or dependencies change
+      lastProcessedJobRef.current = null;
+    };
+  }, []);
+
   const filteredFabTypes = (!isFabTypesError && Array.isArray(fabTypesData) && fabTypesData?.map((type: any) => type.name) || []).filter((type: string) =>
     type.toLowerCase().includes(fabTypeSearch.toLowerCase())
   );
@@ -643,7 +705,14 @@ useEffect(() => {
                               <div className="flex items-start ">
                                 <FormLabel>Job Name</FormLabel>
                               </div>
-                              <Popover open={jobNamePopoverOpen} onOpenChange={setJobNamePopoverOpen}>
+                              <Popover
+                                open={jobNamePopoverOpen}
+                                onOpenChange={(open) => {
+                                  setJobNamePopoverOpen(open);
+                                  if (!open) setJobNameSearch(''); // Clear search when closing
+                                }}
+                                key={`jobName-${accountValue}`} // Reset component when account changes
+                              >
                                 <PopoverTrigger asChild>
                                   <FormControl>
                                     <Button
@@ -694,6 +763,8 @@ useEffect(() => {
                                             className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
                                             onClick={() => {
                                               field.onChange(job.name);
+                                              // Immediately set the job number as well
+                                              form.setValue('jobNumber', job.job_number, { shouldValidate: false });
                                               setJobNameSearch('');
                                               setJobNamePopoverOpen(false);
                                             }}
@@ -723,7 +794,14 @@ useEffect(() => {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Job Number</FormLabel>
-                              <Popover open={jobNumberPopoverOpen} onOpenChange={setJobNumberPopoverOpen}>
+                              <Popover
+                                open={jobNumberPopoverOpen}
+                                onOpenChange={(open) => {
+                                  setJobNumberPopoverOpen(open);
+                                  if (!open) setJobNumberSearch(''); // Clear search when closing
+                                }}
+                                key={`jobNumber-${accountValue}`} // Reset component when account changes
+                              >
                                 <PopoverTrigger asChild>
                                   <FormControl>
                                     <Button
@@ -774,6 +852,8 @@ useEffect(() => {
                                             className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
                                             onClick={() => {
                                               field.onChange(job.job_number);
+                                              // Immediately set the job name as well
+                                              form.setValue('jobName', job.name, { shouldValidate: false });
                                               setJobNumberSearch('');
                                               setJobNumberPopoverOpen(false);
                                             }}
@@ -1026,9 +1106,9 @@ useEffect(() => {
                             <FormItem>
                               <FormLabel>Revenue ($) *</FormLabel>
                               <FormControl>
-                                <Input 
-                                  placeholder="Enter revenue amount" 
-                                  {...field} 
+                                <Input
+                                  placeholder="Enter revenue amount"
+                                  {...field}
                                   type="number"
                                   step="0.01"
                                   min="0"
@@ -1047,9 +1127,9 @@ useEffect(() => {
                             <FormItem>
                               <FormLabel>Cost of Stone ($) *</FormLabel>
                               <FormControl>
-                                <Input 
-                                  placeholder="Enter cost of stone" 
-                                  {...field} 
+                                <Input
+                                  placeholder="Enter cost of stone"
+                                  {...field}
                                   type="number"
                                   step="0.01"
                                   min="0"
@@ -1229,7 +1309,7 @@ useEffect(() => {
                     <CardFooter className='flex justify-between items-center'>
                       <Link to="/job/sales" className="flex flex-nowrap items-center gap-2 text-sm text-primary underline">
                         <ArrowLeft className="w-4 h-4" />
-                        Back to jobs
+                        Back to Fabs
                       </Link>
                       {/* Action Buttons */}
                       <div className="flex items-center justify-end gap-3 ">

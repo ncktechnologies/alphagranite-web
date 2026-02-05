@@ -103,7 +103,7 @@ export function AfterDraftSalesPage() {
         tableId: 'sct-table',
         defaultPagination: { pageIndex: 0, pageSize: 25 },
         defaultDateFilter: 'all',
-        persistState: true,
+        persistState: false,
     });
 
     // Calculate skip value for pagination
