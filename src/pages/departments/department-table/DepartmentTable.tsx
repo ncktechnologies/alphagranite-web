@@ -168,7 +168,7 @@ const DepartmentTable = ({ employees }: employeeProps) => {
                 enableSorting: false,
                 size: 130,
             },
- {
+            {
                 id: 'role',
                 accessorFn: (row) => row.role,
                 header: ({ column }) => (
@@ -275,9 +275,12 @@ const DepartmentTable = ({ employees }: employeeProps) => {
                     </CardToolbar>
                 </CardHeader>
                 <CardTable>
-                    <ScrollArea>
+                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-300px)]">
                         <DataGridTable />
-                        <ScrollBar orientation="horizontal" />
+                        <ScrollBar
+                            orientation="horizontal"
+                            className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500"
+                        />
                     </ScrollArea>
                 </CardTable>
                 <CardFooter>

@@ -102,7 +102,7 @@ const dummyData: ShopData[] = [
 const salesPersons = ['Mike Rodriguez', 'Sarah Johnson', 'Bruno Pires', 'Maria Garcia']
 
 export default function ShopTabs() {
-   
+
     const [tab, setTab] = useState('cutting')
 
     const cutting = dummyData
@@ -145,10 +145,10 @@ export default function ShopTabs() {
 // ✅ Prevent full re-renders when switching tabs
 const MemoizedShopTableContent = React.memo(ShopTableContent)
 
-function ShopTableContent({ data}: { data: ShopData[] }) {
-     const navigate = useNavigate();
+function ShopTableContent({ data }: { data: ShopData[] }) {
+    const navigate = useNavigate();
 
-    const handleView = ( id: string) => {
+    const handleView = (id: string) => {
         navigate(`/shop/${id}`);
     };
 
@@ -167,24 +167,24 @@ function ShopTableContent({ data}: { data: ShopData[] }) {
     // ✅ useMemo to avoid re-filtering on every keystroke
     const filteredData = useMemo(() => {
         let result = data;
-        
+
         // Text search across multiple fields
         if (searchQuery) {
-            result = result.filter((item) => 
+            result = result.filter((item) =>
                 item.job_no?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 item.fab_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 item.fab_type?.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
-        
+
         // Date filter
         if (dateFilter !== 'all') {
             result = result.filter((item) => {
                 if (!item.date) return false;
-                
+
                 const itemDate = new Date(item.date);
                 const today = new Date();
-                
+
                 switch (dateFilter) {
                     case 'today':
                         return itemDate.toDateString() === today.toDateString();
@@ -209,142 +209,142 @@ function ShopTableContent({ data}: { data: ShopData[] }) {
                 }
             });
         }
-        
+
         return result;
     }, [searchQuery, dateFilter, dateRange, data]);
 
     // ✅ memoize columns once
     const columns = useMemo<ColumnDef<ShopData>[]>(
         () => [
-        {
-            accessorKey: 'id',
-            accessorFn: (row: ShopData) => row.id,
-            header: () => <DataGridTableRowSelectAll />,
-            cell: ({ row }) => <DataGridTableRowSelect row={row} />,
-            enableSorting: false,
-            enableHiding: false,
-            size: 48,
-        },
-        {
-            id: 'fab_type',
-            accessorFn: (row) => row.fab_type,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="FAB TYPE" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm text-text break-words max-w-[120px]">
-                    {row.original.fab_type}
-                </span>
-            ),
-            enableSorting: true,
-        },
-        {
-            id: 'fab_id',
-            accessorFn: (row) => row.fab_id,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="FAB ID" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm text-text">{row.original.fab_id}</span>
-            ),
-            enableSorting: true,
-        },
-        {
-            id: 'job_no',
-            accessorFn: (row) => row.job_no,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="JOB NO" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm text-text">{row.original.job_no}</span>
-            ),
-            enableSorting: true,
-        },
-        {
-            id: 'pieces',
-            accessorFn: (row) => row.pieces,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="NO. OF PIECES" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm text-text">{row.original.pieces}</span>
-            ),
-            enableSorting: true,
-        },
-        {
-            id: 'total_sq_ft',
-            accessorFn: (row) => row.total_sq_ft,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="TOTAL SQ FT" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm text-text max-w-[200px]">{row.original.total_sq_ft}</span>
-            ),
-            enableSorting: true,
-        },
-        {
-            id: 'wj_time',
-            accessorFn: (row) => row.wj_time,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="WJ TIME (MINUTES)" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm text-text max-w-[300px]">{row.original.wj_time}</span>
-            ),
-            enableSorting: true,
-        },
-        {
-            id: 'machine',
-            accessorFn: (row) => row.machine,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="MACHINE" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm text-text max-w-[200px]">{row.original.machine}</span>
-            ),
-            enableSorting: true,
-        },
-        {
-            id: 'confirmed',
-            accessorFn: (row) => row.confirmed,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="CONFIRMED" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm text-text max-w-[200px]">{row.original.confirmed}</span>
-            ),
-            enableSorting: true,
-        },
-        {
-            id: 'revenue',
-            accessorFn: (row) => row.revenue,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="REVENUE" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm text-text max-w-[200px]">{row.original.revenue}</span>
-            ),
-            enableSorting: true,
-        },
-        {
-            id: 'fp_complete',
-            accessorFn: (row) => row.fp_complete,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="FP COMPLETE" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm text-text break-words max-w-[200px]">{row.original.fp_complete}</span>
-            ),
-            enableSorting: true,
-        },
-        {
-            id: 'actions',
-            header: '',
-            cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(row.original.fab_id)} />,
-            enableSorting: false,
-            size: 60,
-        },
-    ], [])
+            {
+                accessorKey: 'id',
+                accessorFn: (row: ShopData) => row.id,
+                header: () => <DataGridTableRowSelectAll />,
+                cell: ({ row }) => <DataGridTableRowSelect row={row} />,
+                enableSorting: false,
+                enableHiding: false,
+                size: 48,
+            },
+            {
+                id: 'fab_type',
+                accessorFn: (row) => row.fab_type,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="FAB TYPE" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text break-words max-w-[120px]">
+                        {row.original.fab_type}
+                    </span>
+                ),
+                enableSorting: true,
+            },
+            {
+                id: 'fab_id',
+                accessorFn: (row) => row.fab_id,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="FAB ID" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text">{row.original.fab_id}</span>
+                ),
+                enableSorting: true,
+            },
+            {
+                id: 'job_no',
+                accessorFn: (row) => row.job_no,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="JOB NO" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text">{row.original.job_no}</span>
+                ),
+                enableSorting: true,
+            },
+            {
+                id: 'pieces',
+                accessorFn: (row) => row.pieces,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="NO. OF PIECES" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text">{row.original.pieces}</span>
+                ),
+                enableSorting: true,
+            },
+            {
+                id: 'total_sq_ft',
+                accessorFn: (row) => row.total_sq_ft,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="TOTAL SQ FT" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text max-w-[200px]">{row.original.total_sq_ft}</span>
+                ),
+                enableSorting: true,
+            },
+            {
+                id: 'wj_time',
+                accessorFn: (row) => row.wj_time,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="WJ TIME (MINUTES)" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text max-w-[300px]">{row.original.wj_time}</span>
+                ),
+                enableSorting: true,
+            },
+            {
+                id: 'machine',
+                accessorFn: (row) => row.machine,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="MACHINE" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text max-w-[200px]">{row.original.machine}</span>
+                ),
+                enableSorting: true,
+            },
+            {
+                id: 'confirmed',
+                accessorFn: (row) => row.confirmed,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="CONFIRMED" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text max-w-[200px]">{row.original.confirmed}</span>
+                ),
+                enableSorting: true,
+            },
+            {
+                id: 'revenue',
+                accessorFn: (row) => row.revenue,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="REVENUE" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text max-w-[200px]">{row.original.revenue}</span>
+                ),
+                enableSorting: true,
+            },
+            {
+                id: 'fp_complete',
+                accessorFn: (row) => row.fp_complete,
+                header: ({ column }) => (
+                    <DataGridColumnHeader title="FP COMPLETE" column={column} />
+                ),
+                cell: ({ row }) => (
+                    <span className="text-sm text-text break-words max-w-[200px]">{row.original.fp_complete}</span>
+                ),
+                enableSorting: true,
+            },
+            {
+                id: 'actions',
+                header: '',
+                cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(row.original.fab_id)} />,
+                enableSorting: false,
+                size: 60,
+            },
+        ], [])
 
     const table = useReactTable({
         columns,
@@ -415,8 +415,8 @@ function ShopTableContent({ data}: { data: ShopData[] }) {
 
                             <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                 <PopoverTrigger asChild>
-                                    <Button 
-                                        variant="outline" 
+                                    <Button
+                                        variant="outline"
                                         size="sm"
                                         className={`${dateFilter !== 'custom' ? 'hidden' : ''}`}
                                     >
@@ -433,8 +433,8 @@ function ShopTableContent({ data}: { data: ShopData[] }) {
                                         numberOfMonths={2}
                                     />
                                     <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
-                                        <Button 
-                                            variant="outline" 
+                                        <Button
+                                            variant="outline"
                                             size="sm"
                                             onClick={() => {
                                                 setTempDateRange(undefined);
@@ -444,7 +444,7 @@ function ShopTableContent({ data}: { data: ShopData[] }) {
                                         >
                                             Reset
                                         </Button>
-                                        <Button 
+                                        <Button
                                             size="sm"
                                             onClick={() => {
                                                 setDateRange(tempDateRange);
@@ -494,9 +494,12 @@ function ShopTableContent({ data}: { data: ShopData[] }) {
                 </CardHeader>
 
                 <CardTable>
-                    <ScrollArea>
+                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-300px)]">
                         <DataGridTable />
-                        <ScrollBar orientation="horizontal" />
+                        <ScrollBar
+                            orientation="horizontal"
+                            className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500"
+                        />
                     </ScrollArea>
                 </CardTable>
 

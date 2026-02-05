@@ -69,16 +69,16 @@ export const NeedToInvoicePage = () => {
     pageIndex: 0,
     pageSize: 25,
   });
-  
+
   const [sorting, setSorting] = useState<SortingState>([]);
   const [invoicedSorting, setInvoicedSorting] = useState<SortingState>([]);
-  
+
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const [invoicedRowSelection, setInvoicedRowSelection] = useState<RowSelectionState>({});
-  
+
   const [searchQuery, setSearchQuery] = useState('');
   const [invoicedSearchQuery, setInvoicedSearchQuery] = useState('');
-  
+
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [invoicedSelectedStatus, setInvoicedSelectedStatus] = useState<string>('all');
 
@@ -167,7 +167,7 @@ export const NeedToInvoicePage = () => {
         job_id: job.id,
         note: note || undefined
       };
-      
+
       await addJobNotes(payload).unwrap();
       toast.success(`Invoice requirement ${job.need_to_invoice ? 'disabled' : 'enabled'} successfully`);
       refetch();
@@ -193,7 +193,7 @@ export const NeedToInvoicePage = () => {
       const payload: ToggleInvoiceRequest = {
         job_id: job.id
       };
-      
+
       await toggleNeedToInvoice(payload).unwrap();
       toast.success(`Invoice requirement ${job.need_to_invoice ? 'disabled' : 'enabled'} successfully`);
       refetch();
@@ -463,7 +463,7 @@ export const NeedToInvoicePage = () => {
         onOpenChange={setIsSheetOpen}
         onSubmitSuccess={() => { refetch(); refetchInvoiced(); }}
       />
-      
+
       {/* Note Modal - Moved outside of table to prevent re-renders */}
       <Dialog open={isNoteModalOpen} onOpenChange={(open) => {
         if (!open) {
@@ -490,8 +490,8 @@ export const NeedToInvoicePage = () => {
               />
             </div>
             <div className="flex justify-end space-x-2">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
                   setIsNoteModalOpen(false);
                   setCurrentJobForNote(null);
@@ -500,7 +500,7 @@ export const NeedToInvoicePage = () => {
               >
                 Cancel
               </Button>
-              <Button 
+              <Button
                 onClick={() => currentJobForNote && handleToggleInvoiceWithNote(currentJobForNote, noteText)}
                 disabled={!currentJobForNote}
               >
@@ -572,9 +572,12 @@ export const NeedToInvoicePage = () => {
                   </CardHeading>
                 </CardHeader>
                 <CardTable>
-                  <ScrollArea>
+                  <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-300px)]">
                     <DataGridTable />
-                    <ScrollBar orientation="horizontal" />
+                    <ScrollBar
+                      orientation="horizontal"
+                      className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500"
+                    />
                   </ScrollArea>
                 </CardTable>
                 <CardFooter>

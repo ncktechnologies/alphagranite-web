@@ -404,12 +404,15 @@ const CuttingPlan = () => {
                     </CardToolbar>
                 </CardHeader>
 
-                <CardTable>
-                    <ScrollArea>
-                        <DataGridTable />
-                        <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
-                </CardTable>
+                 <CardTable>
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-300px)]">
+                            <DataGridTable />
+                            <ScrollBar 
+                                orientation="horizontal" 
+                                className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500"
+                            />
+                        </ScrollArea>
+                    </CardTable>
 
                 <CardFooter>
                     <DataGridPagination />

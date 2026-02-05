@@ -763,11 +763,11 @@ const CuttingPlan = () => {
                         <ScrollBar orientation="horizontal" />
                     </ScrollArea>
                 </CardTable>
-
                 <CardFooter>
                     <DataGridPagination />
                 </CardFooter>
             </Card>
+
         </DataGrid>
     );
 };

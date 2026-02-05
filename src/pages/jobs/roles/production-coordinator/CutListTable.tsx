@@ -34,12 +34,12 @@ import { DateRange } from 'react-day-picker';
 import { format } from 'date-fns';
 import { JOB_STAGES } from '@/hooks/use-job-stage'; // Add this import
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
 export interface CutList {
@@ -242,7 +242,7 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
             ),
             cell: ({ row }) => {
                 const fabType = row.original.fab_type;
-                
+
                 return (
                     <span className="text-xs font-medium px-2.5 py-0.5 rounded-full">
                         {fabType}
@@ -472,8 +472,8 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
             id: 'actions',
             header: '',
             cell: ({ row }) => (
-                <Button 
-                    variant="ghost" 
+                <Button
+                    variant="ghost"
                     className="h-8 w-8 p-0"
                     onClick={(e) => {
                         e.stopPropagation();
@@ -685,9 +685,12 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
                 </CardHeader>
 
                 <CardTable>
-                    <ScrollArea>
+                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-300px)]">
                         <DataGridTable />
-                        <ScrollBar orientation="horizontal" />
+                        <ScrollBar
+                            orientation="horizontal"
+                            className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500"
+                        />
                     </ScrollArea>
                 </CardTable>
 

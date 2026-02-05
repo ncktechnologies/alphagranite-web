@@ -304,7 +304,7 @@ export const JobsSection = () => {
                 Edit
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              
+
             </DropdownMenuContent>
           </DropdownMenu>
         ),
@@ -401,9 +401,12 @@ export const JobsSection = () => {
               </CardToolbar>
             </CardHeader>
             <CardTable>
-              <ScrollArea>
+              <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-300px)]">
                 <DataGridTable />
-                <ScrollBar orientation="horizontal" />
+                <ScrollBar
+                  orientation="horizontal"
+                  className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500"
+                />
               </ScrollArea>
             </CardTable>
             <CardFooter>
