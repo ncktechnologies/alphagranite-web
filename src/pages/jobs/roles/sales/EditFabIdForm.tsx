@@ -20,7 +20,7 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form';
-import { ArrowLeft, Plus, AlertCircle, Check, LoaderCircleIcon, Search, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Plus, AlertCircle, Check, LoaderCircleIcon, Search, ChevronDown, InfoIcon } from 'lucide-react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { RiInformationFill } from '@remixicon/react';
 import { toast } from 'sonner';
@@ -232,8 +232,8 @@ const EditFabIdForm = () => {
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
     const [hasInitialDataLoaded, setHasInitialDataLoaded] = useState(false);
-    const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null);
     const [isLoadingFormData, setIsLoadingFormData] = useState(false);
+    const lastProcessedJobRef = useRef<{ name: string; number: string } | null>(null);
 
     // API hooks for dropdown data
     const {
@@ -279,15 +279,6 @@ const EditFabIdForm = () => {
         isError: isFabError,
         error: fabError
     } = useGetFabByIdQuery(Number(id));
-
-    // Fetch jobs by account
-    const {
-        data: accountJobsData = [],
-        isLoading: isAccountJobsLoading,
-    } = useGetJobsByAccountQuery(
-        { account_id: selectedAccountId!, params: { limit: 1000 } },
-        { skip: !selectedAccountId }
-    );
 
     // Get sales persons
     const {
@@ -353,21 +344,24 @@ const EditFabIdForm = () => {
     // Watch for account changes
     const accountValue = form.watch('account');
 
-    // Update selected account ID when account changes
-    useEffect(() => {
-        if (accountValue && accountsData.length > 0) {
-            const account = accountsData.find((acc: any) => acc.name === accountValue);
-            if (account) {
-                setSelectedAccountId(account.id);
-            }
-        }
-    }, [accountValue, accountsData]);
+    // Get the selected account ID
+    const selectedAccount = accountsData?.find((account: any) => account.name === accountValue);
+    const selectedAccountId = selectedAccount?.id;
 
     // Watch for job name and number changes
     const jobNameValue = form.watch('jobName');
     const jobNumberValue = form.watch('jobNumber');
 
-    // Use account-specific jobs if account is selected, otherwise all jobs
+    // Fetch jobs filtered by selected account using the new endpoint
+    const {
+        data: accountJobsData = [],
+        isLoading: isAccountJobsLoading,
+    } = useGetJobsByAccountQuery(
+        { account_id: selectedAccountId!, params: { limit: 1000 } },
+        { skip: !selectedAccountId }
+    );
+
+    // Override the existing jobsData with account-specific jobs when an account is selected
     const effectiveJobsData = selectedAccountId ? accountJobsData : jobsData;
     const isEffectiveJobsLoading = selectedAccountId ? isAccountJobsLoading : isLoadingJobs;
 
@@ -406,50 +400,136 @@ const EditFabIdForm = () => {
     const jobNames = Array.isArray(effectiveJobsData) ? effectiveJobsData.map((job: any) => job.name) : [];
     const jobNumbers = Array.isArray(effectiveJobsData) ? effectiveJobsData.map((job: any) => job.job_number) : [];
 
-    // Auto-population effects - only run after initial data is loaded
-    useEffect(() => {
-        if (hasInitialDataLoaded && jobNameValue && effectiveJobsData.length > 0 && salesPersons.length > 0) {
-            const selectedJob = effectiveJobsData.find((job: any) => job.name === jobNameValue);
-            if (selectedJob) {
-                if (selectedJob.job_number !== jobNumberValue) {
-                    form.setValue('jobNumber', selectedJob.job_number);
-                }
-                
-                // Safely access sales_person_id - check if property exists
-                if (selectedJob && 'sales_person_id' in selectedJob && selectedJob.sales_person_id) {
-                    const salesPersonForJob = salesPersons.find((person: any) => 
-                        person.id === selectedJob.sales_person_id
-                    );
-                    
-                    if (salesPersonForJob && salesPersonForJob.name !== form.getValues('selectedSalesPerson')) {
-                        form.setValue('selectedSalesPerson', salesPersonForJob.name);
-                    }
-                }
-            }
-        }
-    }, [jobNameValue, effectiveJobsData, form, jobNumberValue, salesPersons, hasInitialDataLoaded]);
+    // ========== AUTO-POPULATION LOGIC ==========
 
     useEffect(() => {
-        if (hasInitialDataLoaded && jobNumberValue && effectiveJobsData.length > 0 && salesPersons.length > 0) {
-            const selectedJob = effectiveJobsData.find((job: any) => job.job_number === jobNumberValue);
-            if (selectedJob) {
-                if (selectedJob.name !== jobNameValue) {
-                    form.setValue('jobName', selectedJob.name);
-                }
+        if (!hasInitialDataLoaded || !effectiveJobsData || !Array.isArray(effectiveJobsData) || salesPersons.length === 0) return;
+
+        // Skip if neither job field has a value
+        if (!jobNameValue && !jobNumberValue) {
+            lastProcessedJobRef.current = null;
+            return;
+        }
+
+        // Find selected job - we need to be careful about how we match
+        let selectedJob = null;
+
+        // FIRST: Try to find a job that matches BOTH current job name and number
+        // This handles the case where user selects a job that should have both fields populated
+        if (jobNameValue || jobNumberValue) {
+            selectedJob = effectiveJobsData.find((job: any) => {
+                // Check if job matches current selection criteria
+                const nameMatches = jobNameValue ? job.name === jobNameValue : true;
+                const numberMatches = jobNumberValue ? job.job_number === jobNumberValue : true;
+                return nameMatches && numberMatches;
+            });
+        }
+
+        // SECOND: If no exact match, try to find by job name only
+        if (!selectedJob && jobNameValue) {
+            selectedJob = effectiveJobsData.find((job: any) => job.name === jobNameValue);
+        }
+
+        // THIRD: If still no match, try to find by job number only
+        if (!selectedJob && jobNumberValue) {
+            selectedJob = effectiveJobsData.find((job: any) => job.job_number === jobNumberValue);
+        }
+
+        if (selectedJob) {
+            // Check if this is the same job we just processed to prevent infinite loops
+            const isSameJob = lastProcessedJobRef.current?.name === selectedJob.name && 
+                             lastProcessedJobRef.current?.number === selectedJob.job_number;
+            
+            if (isSameJob) {
+                return;
+            }
+
+            const updates = [];
+
+            // Always sync both job name and number when a job is found
+            // This ensures they stay in sync
+            if (selectedJob.name && selectedJob.name !== jobNameValue) {
+                updates.push({ field: 'jobName', value: selectedJob.name });
+            }
+            
+            if (selectedJob.job_number && selectedJob.job_number !== jobNumberValue) {
+                updates.push({ field: 'jobNumber', value: selectedJob.job_number });
+            }
+
+            // Sync sales person - this is critical!
+            if (selectedJob.sales_person_id) {
+                const salesPersonForJob = salesPersons.find((person: any) => 
+                    person.id === selectedJob.sales_person_id
+                );
                 
-                // Safely access sales_person_id - check if property exists
-                if (selectedJob && 'sales_person_id' in selectedJob && selectedJob.sales_person_id) {
-                    const salesPersonForJob = salesPersons.find((person: any) => 
-                        person.id === selectedJob.sales_person_id
-                    );
-                    
-                    if (salesPersonForJob && salesPersonForJob.name !== form.getValues('selectedSalesPerson')) {
-                        form.setValue('selectedSalesPerson', salesPersonForJob.name);
-                    }
+                if (salesPersonForJob) {
+                    // Always set sales person when job has one, regardless of current value
+                    updates.push({ 
+                        field: 'selectedSalesPerson', 
+                        value: salesPersonForJob.name 
+                    });
                 }
             }
+
+            // Apply all updates at once
+            if (updates.length > 0) {
+                updates.forEach(({ field, value }) => {
+                    form.setValue(field, value, { 
+                        shouldValidate: false,
+                        shouldDirty: true 
+                    });
+                });
+                
+                // Store reference to prevent reprocessing
+                lastProcessedJobRef.current = {
+                    name: selectedJob.name,
+                    number: selectedJob.job_number
+                };
+            }
+        } else {
+            // No matching job found - clear the reference
+            lastProcessedJobRef.current = null;
+            
+            // If we have one field populated but can't find the job, clear the other field
+            // This prevents stale data
+            if (jobNameValue && !jobNumberValue) {
+                form.setValue('jobNumber', '', { shouldValidate: false });
+            } else if (jobNumberValue && !jobNameValue) {
+                form.setValue('jobName', '', { shouldValidate: false });
+            }
         }
-    }, [jobNumberValue, effectiveJobsData, form, jobNameValue, salesPersons, hasInitialDataLoaded]);
+    }, [jobNameValue, jobNumberValue, effectiveJobsData, salesPersons, form, hasInitialDataLoaded]);
+
+    // Add this effect to handle account changes
+    useEffect(() => {
+        if (!hasInitialDataLoaded || !accountValue || !lastProcessedJobRef.current) return;
+
+        const currentAccount = accountsData?.find((account: any) => account.name === accountValue);
+        
+        if (currentAccount) {
+            // Check if the last processed job belongs to the current account
+            const jobForCurrentAccount = effectiveJobsData?.find((job: any) => 
+                (job.name === lastProcessedJobRef.current?.name || 
+                 job.job_number === lastProcessedJobRef.current?.number) &&
+                job.account_id === currentAccount.id
+            );
+            
+            // If the job doesn't belong to the current account, clear it
+            if (!jobForCurrentAccount) {
+                form.setValue('jobName', '');
+                form.setValue('jobNumber', '');
+                lastProcessedJobRef.current = null;
+            }
+        }
+    }, [accountValue, accountsData, effectiveJobsData, form, hasInitialDataLoaded]);
+
+    // Add this cleanup effect
+    useEffect(() => {
+        return () => {
+            // Reset the reference when component unmounts or dependencies change
+            lastProcessedJobRef.current = null;
+        };
+    }, []);
 
     // Load form data from existing FAB
     useEffect(() => {
@@ -460,8 +540,6 @@ const EditFabIdForm = () => {
             if (existingFab && !isLoadingFab && !hasInitialDataLoaded && !hasAttemptedLoadRef.current) {
                 hasAttemptedLoadRef.current = true;
                 setIsLoadingFormData(true);
-                
-                console.log('Using timer approach to populate ALL form fields...');
                 
                 setTimeout(async () => {
                     try {
@@ -506,12 +584,12 @@ const EditFabIdForm = () => {
                         // Reset form with data
                         form.reset(formData);
                         
-                        // Set selected account ID
-                        if (formData.account && accountsData.length > 0) {
-                            const account = accountsData.find((acc: any) => acc.name === formData.account);
-                            if (account) {
-                                setSelectedAccountId(account.id);
-                            }
+                        // Set last processed job reference
+                        if (formData.jobName && formData.jobNumber) {
+                            lastProcessedJobRef.current = {
+                                name: formData.jobName,
+                                number: formData.jobNumber
+                            };
                         }
                         
                         setHasInitialDataLoaded(true);
@@ -570,6 +648,27 @@ const EditFabIdForm = () => {
                 console.error('Failed to add edge:', error);
                 toast.error('Failed to add edge');
             }
+        }
+    };
+
+    // Update job select handlers to set both fields
+    const handleJobNameChange = (value: string) => {
+        form.setValue('jobName', value);
+        
+        // Try to find the corresponding job number
+        const selectedJob = effectiveJobsData.find((job: any) => job.name === value);
+        if (selectedJob && selectedJob.job_number) {
+            form.setValue('jobNumber', selectedJob.job_number, { shouldValidate: false });
+        }
+    };
+
+    const handleJobNumberChange = (value: string) => {
+        form.setValue('jobNumber', value);
+        
+        // Try to find the corresponding job name
+        const selectedJob = effectiveJobsData.find((job: any) => job.job_number === value);
+        if (selectedJob && selectedJob.name) {
+            form.setValue('jobName', selectedJob.name, { shouldValidate: false });
         }
     };
 
@@ -925,7 +1024,10 @@ const EditFabIdForm = () => {
                                                     <FormItem>
                                                         <FormLabel>Job Name</FormLabel>
                                                         <Select
-                                                            onValueChange={field.onChange}
+                                                            onValueChange={(value) => {
+                                                                handleJobNameChange(value);
+                                                                field.onChange(value);
+                                                            }}
                                                             value={field.value}
                                                             disabled={isEffectiveJobsLoading}
                                                         >
@@ -944,7 +1046,7 @@ const EditFabIdForm = () => {
                                                                 ))}
                                                                 {jobNames.length === 0 && (
                                                                     <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                                                        No jobs found
+                                                                        {selectedAccountId ? 'No jobs found for this account' : 'No jobs found'}
                                                                     </div>
                                                                 )}
                                                             </SelectContent>
@@ -962,7 +1064,10 @@ const EditFabIdForm = () => {
                                                     <FormItem>
                                                         <FormLabel>Job Number</FormLabel>
                                                         <Select
-                                                            onValueChange={field.onChange}
+                                                            onValueChange={(value) => {
+                                                                handleJobNumberChange(value);
+                                                                field.onChange(value);
+                                                            }}
                                                             value={field.value}
                                                             disabled={isEffectiveJobsLoading}
                                                         >
@@ -981,7 +1086,7 @@ const EditFabIdForm = () => {
                                                                 ))}
                                                                 {jobNumbers.length === 0 && (
                                                                     <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                                                        No jobs found
+                                                                        {selectedAccountId ? 'No jobs found for this account' : 'No jobs found'}
                                                                     </div>
                                                                 )}
                                                             </SelectContent>
@@ -1319,7 +1424,7 @@ const EditFabIdForm = () => {
                                                 )}
                                             />
 
-                                            {/* Sales Person - FIXED: Use id as key to avoid duplicate error */}
+                                            {/* Sales Person */}
                                             <FormField
                                                 control={form.control}
                                                 name="selectedSalesPerson"
@@ -1341,7 +1446,7 @@ const EditFabIdForm = () => {
                                                             <SelectContent>
                                                                 {salesPersons.map((person: any) => (
                                                                     <SelectItem
-                                                                        key={person.id}  // Use ID as key to avoid duplicate error
+                                                                        key={person.id}
                                                                         value={person.name}
                                                                     >
                                                                         {person.name}
@@ -1481,7 +1586,7 @@ const EditFabIdForm = () => {
                                     <CardFooter className='flex justify-between items-center'>
                                         <Link to="/job/sales" className="flex flex-nowrap items-center gap-2 text-sm text-primary underline">
                                             <ArrowLeft className="w-4 h-4" />
-                                            Back to jobs
+                                           Back to Fabs
                                         </Link>
                                         <div className="flex items-center justify-end gap-3">
                                             <Link to="/job/sales">

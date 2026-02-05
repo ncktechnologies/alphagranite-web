@@ -3,13 +3,29 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ReviewChecklistForm } from './ReviewChecklist';
 import { useParams } from 'react-router';
 import { useGetFabByIdQuery } from '@/store/api/job';
+import { useGetEmployeeByIdQuery } from '@/store/api/employee';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import GraySidebar from '@/pages/jobs/components/job-details.tsx/GraySidebar';
 
+// Helper function to get all fab notes (unfiltered)
+const getAllFabNotes = (fabNotes: any[]) => {
+  return fabNotes || [];
+};
 export function FabIdDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { data: fab, isLoading, isError, error } = useGetFabByIdQuery(Number(id));
+  
+  // Get employee data for fab creator
+  const { data: fabCreator } = useGetEmployeeByIdQuery(fab?.created_by || 0, {
+    skip: !fab?.created_by
+  });
+  
+  // Get author name from fab creator
+  const fabAuthorName = fabCreator 
+    ? `${fabCreator.first_name || ''} ${fabCreator.last_name || ''}`.trim() || fabCreator.email || 'Unknown User'
+    : 'System';
 
   // Create job info based on actual FAB data
   const jobInfo = fab ? [
@@ -25,7 +41,43 @@ export function FabIdDetailsPage() {
     { label: 'Edge', value: fab.edge_name || 'N/A' },
     { label: 'Total square ft', value: String(fab.total_sqft) },
   ] : [];
+  const sidebarSections = [
+    // {
+    //     title: "Template Information",
+    //     type: "details",
+    //     items: jobInfo,
+    // },
+    {
+      title: "FAB Notes",
+      type: "notes",
+      notes: (fab?.notes || []).map((noteItem: any, index: number) => {
+        // Stage display mapping
+        const stageConfig: Record<string, { label: string; color: string }> = {
+          templating: { label: 'Templating', color: 'text-blue-700' },
+          pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
+          drafting: { label: 'Drafting', color: 'text-green-700' },
+          sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
+          slab_smith_request: { label: 'Slab Smith Request', color: 'text-red-700' },
+          cut_list: { label: 'Final Programming', color: 'text-purple-700' },
+          cutting: { label: 'Cutting', color: 'text-orange-700' },
+          revisions: { label: 'Revisions', color: 'text-purple-700' },
+          draft: { label: 'Draft', color: 'text-green-700' },
+          general: { label: 'General', color: 'text-gray-700' }
+        };
 
+        const stage = noteItem.stage || 'general';
+        const config = stageConfig[stage] || stageConfig.general;
+
+        return {
+          id: noteItem.id || index,
+          avatar: fabAuthorName.charAt(0).toUpperCase() || 'U',
+          content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${noteItem}`,
+          author: fabAuthorName,
+          timestamp: fab?.created_at ? new Date(fab.created_at).toLocaleDateString() : 'Unknown date'
+        };
+      })
+    }
+  ];
   if (isLoading) {
     return (
       <Container className=" border-t">
@@ -116,40 +168,31 @@ export function FabIdDetailsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         {/* LEFT: Job Info */}
-        {/* <Card className="lg:col-span-2 mt-6">
-              <CardHeader>
-                  <CardTitle>Job Information</CardTitle>
-              </CardHeader>
-              <CardContent >
-                  <div className="grid grid-cols-2 md:grid-cols-3 space-y-10">
-                      {jobInfo.map((item, index) => (
-                          <div key={index}>
-                              <p className="text-sm text-foreground font-normal uppercase tracking-wide">
-                                  {item.label}
-                              </p>
-                              <p className="font-semibold text-text text-base">{item.value}</p>
-                          </div>
-                      ))}
+        <div className=" lg:col-span-2 mt-6 pt-6">
+          <Card >
+            <CardHeader>
+              <CardTitle className='text-[#111827] leading-[32px] text-2xl font-bold'>Job Information</CardTitle>
+            </CardHeader>
+            <CardContent >
+              <div className="grid grid-cols-2 md:grid-cols-3 space-y-10">
+                {jobInfo.map((item, index) => (
+                  <div key={index}>
+                    <p className="text-sm text-text-foreground font-normal uppercase tracking-wide">
+                      {item.label}
+                    </p>
+                    <p className="font-semibold text-text text-base leading-[28px] ">{item.value}</p>
                   </div>
-              </CardContent>
-          </Card> */}
-        <Card className=" lg:col-span-2 mt-6 pt-6">
-          <CardHeader>
-            <CardTitle className='text-[#111827] leading-[32px] text-2xl font-bold'>Job Information</CardTitle>
-          </CardHeader>
-          <CardContent >
-            <div className="grid grid-cols-2 md:grid-cols-3 space-y-10">
-              {jobInfo.map((item, index) => (
-                <div key={index}>
-                  <p className="text-sm text-text-foreground font-normal uppercase tracking-wide">
-                    {item.label}
-                  </p>
-                  <p className="font-semibold text-text text-base leading-[28px] ">{item.value}</p>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+          <div className="w-full lg:w-[250px] XL:W-[300PX] 2xl:w-[400px]  lg:flex-shrink-0">
+
+            <GraySidebar sections={sidebarSections as any} className='bg-transparent border-none pl-0' />
+
+          </div>
+        </div>
+
 
         {/* RIGHT: Review checklist */}
         <div className='border-l'>

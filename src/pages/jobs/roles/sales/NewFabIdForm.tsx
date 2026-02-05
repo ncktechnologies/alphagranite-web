@@ -44,6 +44,7 @@ import {
 } from '@/store/api/job';
 import { useAuth } from '@/auth/context/auth-context';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
+import Popup from '@/components/ui/popup';
 
 // Update the Zod schema - remove jobName and jobNumber as required fields since they'll be selected
 // Added cost_of_stone field
@@ -81,10 +82,12 @@ const NewFabIdForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [fabId, setFabId] = useState<number | null>(null);
   const navigate = useNavigate();
   const firstFieldRef = useRef<HTMLButtonElement>(null);
   const lastProcessedJobRef = useRef<{ name: string; number: string } | null>(null);
 
+ 
   // Focus first field when form opens
   useEffect(() => {
     if (firstFieldRef.current) {
@@ -165,12 +168,18 @@ const NewFabIdForm = () => {
   const [jobNamePopoverOpen, setJobNamePopoverOpen] = useState(false);
   const [jobNumberPopoverOpen, setJobNumberPopoverOpen] = useState(false);
   const [thicknessPopoverOpen, setThicknessPopoverOpen] = useState(false);
+  const [showPopover, setShowPopover] = useState(false);
 
   // Nested popover states for adding new items
   const [showAddThickness, setShowAddThickness] = useState(false);
 
   // New item states
   const [newThickness, setNewThickness] = useState('');
+
+   const handlePopupClose = () => {
+        setShowPopover(false);
+        // navigate('/');
+    };
 
   const form = useForm<FabIdFormData>({
     resolver: zodResolver(fabIdFormSchema),
@@ -284,9 +293,9 @@ const NewFabIdForm = () => {
 
     if (selectedJob) {
       // Check if this is the same job we just processed to prevent infinite loops
-      const isSameJob = lastProcessedJobRef.current?.name === selectedJob.name && 
-                       lastProcessedJobRef.current?.number === selectedJob.job_number;
-      
+      const isSameJob = lastProcessedJobRef.current?.name === selectedJob.name &&
+        lastProcessedJobRef.current?.number === selectedJob.job_number;
+
       if (isSameJob) {
         return;
       }
@@ -298,7 +307,7 @@ const NewFabIdForm = () => {
       if (selectedJob.name && selectedJob.name !== jobNameValue) {
         updates.push({ field: 'jobName', value: selectedJob.name });
       }
-      
+
       if (selectedJob.job_number && selectedJob.job_number !== jobNumberValue) {
         updates.push({ field: 'jobNumber', value: selectedJob.job_number });
       }
@@ -310,15 +319,15 @@ const NewFabIdForm = () => {
 
       // Sync sales person - this is critical!
       if (selectedJob.sales_person_id) {
-        const salesPersonForJob = salesPersons.find((person: any) => 
+        const salesPersonForJob = salesPersons.find((person: any) =>
           person.id === selectedJob.sales_person_id
         );
-        
+
         if (salesPersonForJob) {
           // Always set sales person when job has one, regardless of current value
-          updates.push({ 
-            field: 'selectedSalesPerson', 
-            value: salesPersonForJob.name 
+          updates.push({
+            field: 'selectedSalesPerson',
+            value: salesPersonForJob.name
           });
         }
       }
@@ -326,12 +335,12 @@ const NewFabIdForm = () => {
       // Apply all updates at once
       if (updates.length > 0) {
         updates.forEach(({ field, value }) => {
-          form.setValue(field, value, { 
+          form.setValue(field, value, {
             shouldValidate: false,
-            shouldDirty: true 
+            shouldDirty: true
           });
         });
-        
+
         // Store reference to prevent reprocessing
         lastProcessedJobRef.current = {
           name: selectedJob.name,
@@ -341,7 +350,7 @@ const NewFabIdForm = () => {
     } else {
       // No matching job found - clear the reference
       lastProcessedJobRef.current = null;
-      
+
       // If we have one field populated but can't find the job, clear the other field
       // This prevents stale data
       if (jobNameValue && !jobNumberValue) {
@@ -357,15 +366,15 @@ const NewFabIdForm = () => {
     // When account changes, we should clear job selections if they don't belong to the new account
     if (accountValue && lastProcessedJobRef.current) {
       const currentAccount = accountsData?.find((account: any) => account.name === accountValue);
-      
+
       if (currentAccount) {
         // Check if the last processed job belongs to the current account
-        const jobForCurrentAccount = effectiveJobsData?.find((job: any) => 
-          (job.name === lastProcessedJobRef.current?.name || 
-           job.job_number === lastProcessedJobRef.current?.number) &&
+        const jobForCurrentAccount = effectiveJobsData?.find((job: any) =>
+          (job.name === lastProcessedJobRef.current?.name ||
+            job.job_number === lastProcessedJobRef.current?.number) &&
           job.account_id === currentAccount.id
         );
-        
+
         // If the job doesn't belong to the current account, clear it
         if (!jobForCurrentAccount) {
           form.setValue('jobName', '');
@@ -477,7 +486,7 @@ const NewFabIdForm = () => {
       }
 
       // Create fab using the existing job ID (no job creation)
-      await createFab({
+      const response = await createFab({
         job_id: selectedJob.id,
         fab_type: selectedFabType.name,
         sales_person_id: selectedSalesPerson.id, // Use the actual sales person ID
@@ -497,22 +506,27 @@ const NewFabIdForm = () => {
         sct_needed: !values.sctNotNeeded,
         final_programming_needed: !values.finalProgrammingNotNeeded,
       }).unwrap();
-
-      toast.custom(
-        () => (
-          <Alert variant="success" icon="success">
-            <AlertIcon>
-              <Check />
-            </AlertIcon>
-            <AlertTitle>
-              FAB ID submitted successfully!
-            </AlertTitle>
-          </Alert>
-        ),
-        {
-          position: 'top-right',
-        },
-      );
+      
+      // Get the created FAB ID from response
+      const newFabId = response.data?.id;
+      setFabId(newFabId);
+      console.log(newFabId);
+      setShowPopover(true);
+      // toast.custom(
+      //   () => (
+      //     <Alert variant="success" icon="success">
+      //       <AlertIcon>
+      //         <Check />
+      //       </AlertIcon>
+      //       <AlertTitle>
+      //         FAB ID submitted successfully!
+      //       </AlertTitle>
+      //     </Alert>
+      //   ),
+      //   {
+      //     position: 'top-right',
+      //   },
+      // );
       form.reset();
 
       // Navigate based on user's department/role instead of always going to templating
@@ -1335,6 +1349,29 @@ const NewFabIdForm = () => {
           </div>
         </div>
       </Container>
+      <Popup isOpen={showPopover}
+        title={`${fabId} created successfully `}
+        description={'Your fab ID has been created successfully' }
+
+      >
+
+        <div className="flex gap-x-3 items-center mt-4">
+          <Link to={`/job/sales/edit/${fabId}`}>
+          <Button
+            className="px-8"
+           
+          >
+            Edit Fab Details
+          </Button>
+          </Link>
+          <Button
+            className="px-8"
+            onClick={handlePopupClose}
+          >
+            Confirm
+          </Button>
+        </div>
+      </Popup>
     </div>
   );
 };
