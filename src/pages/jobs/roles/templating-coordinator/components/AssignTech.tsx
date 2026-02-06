@@ -42,6 +42,7 @@ const assignTechnicianSchema = z.object({
   revenue: z.string().optional()
     .refine((val) => val === "" || !isNaN(parseFloat(val)), { message: "Revenue must be a valid number" }),
   notes: z.string().optional(),
+  total_sqft: z.string().optional()
 });
 
 type AssignTechnicianData = z.infer<typeof assignTechnicianSchema>;
@@ -75,6 +76,10 @@ export function AssignTechnicianModal({
     if (fabData?.revenue && !form.getValues('revenue')) {
       form.setValue('revenue', String(fabData.revenue));
     }
+    if (fabData?.total_sqft && !form.getValues('total_sqft')) {
+      form.setValue('total_sqft', String(fabData.total_sqft));
+    }
+    console.log(fabData)
   }, [fabData, form]);
 
   const onSubmit = async (values: AssignTechnicianData) => {
@@ -106,6 +111,7 @@ export function AssignTechnicianModal({
           technician_id: Number(values.technician),
           schedule_start_date: values.date ? format(new Date(values.date), 'yyyy-MM-dd') : "",
           schedule_due_date: values.date ? format(new Date(new Date(values.date).getTime() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd') : "", // 7 days after start
+          total_sqft: values?.total_sqft ? String(values.total_sqft) : 0,
           revenue: values.revenue ? parseFloat(values.revenue) : undefined,
           notes: [values.notes || ""],
         }).unwrap();

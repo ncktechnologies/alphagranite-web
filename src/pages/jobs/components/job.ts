@@ -11,6 +11,7 @@ export interface IJob {
   templater?: string;
   no_of_pieces?: string;
   total_sq_ft?: string;
+  total_sqft?:string;
   revenue?: string;
   revised?: string;
   revisor?: string;

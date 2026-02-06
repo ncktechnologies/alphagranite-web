@@ -210,7 +210,7 @@ export function ReviewChecklistForm() {
                                 </Button>
                             </Can>
                         )}
-                        <BackButton className="w-full text-secondary font-bold py-6 text-base" fallbackUrl="/job/templating" label="Cancel"  />
+                        <BackButton className="w-full text-secondary font-bold py-6 text-base" fallbackUrl="/job/templating" label="Cancel" />
 
                         {/* <Button variant="outline" className="w-full text-secondary font-bold py-6 text-base">
                             <Undo2 />
@@ -233,7 +233,9 @@ export function ReviewChecklistForm() {
                     fabData={{
                         fabId: fab?.id ? `FAB-${fab.id}` : "FAB-ID",
                         jobName: fab?.fab_type || "Job Name",
-                        revenue: fab?.revenue
+                        revenue: fab?.revenue,
+                        total_sqft: fab?.total_sqft
+
                     }}
                 />
             )}

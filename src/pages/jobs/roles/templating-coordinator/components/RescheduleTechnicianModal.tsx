@@ -126,7 +126,7 @@ export function RescheduleTechnicianModal({
                 technician_id: Number(values.technician),
                 schedule_start_date: values.date ? format(new Date(values.date), 'yyyy-MM-dd') : "",
                 schedule_due_date: values.date ? format(new Date(new Date(values.date).getTime() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd') : "",
-                total_sqft: fabData?.total_sq_ft ? String(fabData.total_sq_ft) : "0",
+                total_sqft: fabData?.total_sqft ? String(fabData.total_sqft) : "0",
                 revenue: values.revenue ? parseFloat(values.revenue) : undefined,
                 notes: [values.notes || ""],
             }).unwrap();

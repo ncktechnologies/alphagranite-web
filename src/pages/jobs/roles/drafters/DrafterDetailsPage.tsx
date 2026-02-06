@@ -421,7 +421,7 @@ export function DrafterDetailsPage() {
         { label: "Area", value: fabData?.input_area || "Loading..." },
         { label: "Material", value: `${fabData?.stone_type_name || ''} ${fabData?.stone_color_name || ''} - ${fabData?.stone_thickness_value || ''}` },
         { label: "FAB Type", value: fabData?.fab_type || "Loading..." },
-        { label: "Assigned to", value: draftingData?.drafter_name || 'Unassigned' },
+        { label: "Assigned to", value: fabData?.draft_data?.drafter_name || 'Unassigned' },
       ],
     },
     {
