@@ -147,19 +147,19 @@ const Employees = () => {
 
     const columns = useMemo<ColumnDef<Employee>[]>(
         () => [
-            {
-                accessorKey: 'id',
-                accessorFn: (row) => row.id,
-                header: () => <DataGridTableRowSelectAll />,
-                cell: ({ row }) => <DataGridTableRowSelect row={row} />,
-                enableSorting: false,
-                enableHiding: false,
-                enableResizing: false,
-                size: 51,
-                meta: {
-                    cellClassName: '',
-                },
-            },
+            // {
+            //     accessorKey: 'id',
+            //     accessorFn: (row) => row.id,
+            //     header: () => <DataGridTableRowSelectAll />,
+            //     cell: ({ row }) => <DataGridTableRowSelect row={row} />,
+            //     enableSorting: false,
+            //     enableHiding: false,
+            //     enableResizing: false,
+            //     size: 51,
+            //     meta: {
+            //         cellClassName: '',
+            //     },
+            // },
             {
                 id: 'name',
                 accessorFn: (row) => row.name,

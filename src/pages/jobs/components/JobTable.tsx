@@ -1303,7 +1303,7 @@ export const JobTable = ({
             ),
             cell: ({ row }) => {
                 // Check if templating_completed is explicitly false (meaning it was rejected/needs reschedule)
-                if (row.original.templating_completed === false && row.original.template_schedule !== "") {
+                if (row.original.templating_completed === false && row.original.template_schedule !== "" && !row.original.rescheduled) {
                     return (
                         <Button
                             variant="destructive"
@@ -1320,19 +1320,28 @@ export const JobTable = ({
                         </Button>
                     );
                 }
-                else {
-                    if (row.original.template_schedule === "") {
-                        // Otherwise (no date), show Assign
-                        return (
-                            <Link
-                                to={`/job/templating/${row.original.fab_id}`}
-                                
-                            >
-                                Assign
-                            </Link>
-                        );
-                    }
+                else if (row.original.template_schedule === "") {
+                    // Otherwise (no date), show Assign
+                    return (
+                        <Link
+                            to={`/job/templating/${row.original.fab_id}`}
+                            
+                        >
+                            Assign
+                        </Link>
+                    );
                 }
+                else if (row.original.templating_completed === false && row.original.rescheduled) {
+                    // Otherwise (no date), show Assign
+                    return (
+                        <span
+                            
+                        >
+                            Rescheduled
+                        </span>
+                    );
+                }
+                
                 return null;
             },
             size: 100,

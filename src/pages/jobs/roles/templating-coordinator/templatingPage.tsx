@@ -69,6 +69,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         // Map stage_data fields for rescheduling logic
         templating_completed: fab?.is_complete,
         templating_id: fab.stage_data?.templating_id,
+        rescheduled: fab.stage_data?.rescheduled
     };
 };
 
@@ -259,7 +260,7 @@ export function TemplatingPage() {
         );
     }
 
-    console.log('Templating Data:', data); // Debug log
+    console.log('Templating Data:', selectedJob); // Debug log
 
     // Calculate total square footage from the current page data
     const totalSqFt = jobsData.reduce((total, job) => total + (Number(job.total_sq_ft) || 0), 0);
@@ -341,7 +342,7 @@ export function TemplatingPage() {
                             fabId: selectedJob.fab_id,
                             jobName: selectedJob.job_name,
                             revenue: selectedJob.revenue,
-                            total_sq_ft: selectedJob.total_sq_ft
+                            total_sqft: selectedJob.total_sq_ft
                         } : undefined}
                         templatingId={selectedJob?.templating_id}
                     />

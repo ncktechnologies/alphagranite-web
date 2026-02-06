@@ -11,7 +11,7 @@ export interface IJob {
   templater?: string;
   no_of_pieces?: string;
   total_sq_ft?: string;
-  total_sqft?:string;
+  total_sqft?: string;
   revenue?: string;
   revised?: string;
   revisor?: string;
@@ -121,7 +121,7 @@ export interface IJob {
   draft_data?: any;
   templating_completed?: boolean | null; // Added for rescheduling check
   templating_id?: number; // Added for rescheduling check
-
+  rescheduled?: boolean | null;
   // ========== AUDIT FIELDS ==========
   created_at?: string;
   updated_at?: string;

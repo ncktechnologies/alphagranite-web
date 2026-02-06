@@ -1,5 +1,5 @@
 // SubmissionModal.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -67,6 +67,7 @@ export const SubmissionModal = ({
   const { data: employeesData } = useGetSalesPersonsQuery();
   const salesPersons = Array.isArray(employeesData) ? employeesData : [];
 
+
   // Function to extract session timing data
   const extractSessionData = (sessionResponse: any) => {
     if (!sessionResponse?.data) return null;
@@ -93,10 +94,17 @@ export const SubmissionModal = ({
       totalSqFt: '',
       numberOfPieces: '',
       draftNotes: '',
-      mentions: fabData?.sales_person_id || fabData?.sales_person || fabData?.salesPersonId || fabData?.salesPerson || '', // Pre-populate with sales person from fab
+      mentions: '', // Sales person will be auto-populated by useEffect
       workPercentage: '',
     }
   });
+
+  // Auto-populate salesperson when fabData changes
+  useEffect(() => {
+    if (fabData?.sales_person_id) {
+      form.setValue('mentions', String(fabData.sales_person_id));
+    }
+  }, [fabData?.sales_person_id, form]);
 
   // Watch the work percentage value
   const workPercentage = form.watch('workPercentage');
@@ -297,7 +305,7 @@ export const SubmissionModal = ({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Notify sales</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || (fabData?.sales_person_id || fabData?.sales_person || fabData?.salesPersonId || fabData?.salesPerson || '')}>
+                  <Select onValueChange={field.onChange} value={field.value || (fabData?.sales_person_id ? String(fabData.sales_person_id) : '')}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select sales person" />

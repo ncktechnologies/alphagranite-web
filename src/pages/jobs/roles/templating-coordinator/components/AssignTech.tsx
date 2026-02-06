@@ -79,7 +79,6 @@ export function AssignTechnicianModal({
     if (fabData?.total_sqft && !form.getValues('total_sqft')) {
       form.setValue('total_sqft', String(fabData.total_sqft));
     }
-    console.log(fabData)
   }, [fabData, form]);
 
   const onSubmit = async (values: AssignTechnicianData) => {

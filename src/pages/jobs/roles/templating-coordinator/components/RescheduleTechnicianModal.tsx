@@ -41,6 +41,7 @@ const rescheduleTechnicianSchema = z.object({
     revenue: z.string().optional()
         .refine((val) => val === "" || !isNaN(parseFloat(val)), { message: "Revenue must be a valid number" }),
     notes: z.string().optional(),
+    total_sqft: z.string().optional(),
 });
 
 type RescheduleTechnicianData = z.infer<typeof rescheduleTechnicianSchema>;
@@ -57,7 +58,7 @@ export function RescheduleTechnicianModal({
         fabId: string | number;
         jobName: string;
         revenue?: string | number;
-        total_sq_ft?: string | number;
+        total_sqft?: string;
     };
     templatingId?: number;
 }) {
@@ -84,6 +85,10 @@ export function RescheduleTechnicianModal({
         if (fabData?.revenue && !form.getValues('revenue')) {
             form.setValue('revenue', String(fabData.revenue));
         }
+        if (fabData?.total_sqft && !form.getValues('total_sqft')) {
+            form.setValue('total_sqft', String(fabData.total_sqft));
+        }
+        console.log(fabData)
     }, [fabData, form]);
 
     const onSubmit = async (values: RescheduleTechnicianData) => {
@@ -126,7 +131,7 @@ export function RescheduleTechnicianModal({
                 technician_id: Number(values.technician),
                 schedule_start_date: values.date ? format(new Date(values.date), 'yyyy-MM-dd') : "",
                 schedule_due_date: values.date ? format(new Date(new Date(values.date).getTime() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd') : "",
-                total_sqft: fabData?.total_sqft ? String(fabData.total_sqft) : "0",
+                total_sqft: values?.total_sqft ? String(values.total_sqft) : 0,
                 revenue: values.revenue ? parseFloat(values.revenue) : undefined,
                 notes: [values.notes || ""],
             }).unwrap();
@@ -135,7 +140,7 @@ export function RescheduleTechnicianModal({
             if (response?.detail?.success !== false && (response?.detail?.message || response?.message)) {
                 successMessage = response?.detail?.message || response?.message || successMessage;
             }
-            
+
             toast.success(successMessage);
             onClose();
             navigate('/job/templating');
@@ -324,7 +329,7 @@ export function RescheduleTechnicianModal({
                                         Rescheduling...
                                     </span>
                                 ) : (
-                                    "Reschedule Technician"
+                                    "Reschedule "
                                 )}
                             </Button>
                         </DialogFooter>
