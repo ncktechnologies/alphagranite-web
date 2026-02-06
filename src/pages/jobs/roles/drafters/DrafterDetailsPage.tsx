@@ -145,7 +145,7 @@ export function DrafterDetailsPage() {
   });
 
   // Session management functions
-  const createOrStartSession = async (action: 'start' | 'resume', startDate: Date, note?: string, sqftDrafted?: string) => {
+  const createOrStartSession = async (action: 'start' | 'resume', startDate: Date, note?: string, sqftDrafted?: string, workPercentage?: string) => {
     try {
       await manageDraftingSession({
         fab_id: fabId,
@@ -154,7 +154,8 @@ export function DrafterDetailsPage() {
           drafter_id: currentEmployeeId,
           timestamp: formatTimestamp(startDate),
           note: note,
-          sqft_drafted: sqftDrafted
+          sqft_drafted: sqftDrafted,
+          work_percentage_done: workPercentage
         }
       }).unwrap();
 
@@ -198,7 +199,7 @@ export function DrafterDetailsPage() {
   };
 
   // Time tracking handlers
-  const handleStart = async (startDate: Date, data?: { note?: string; sqft_drafted?: string }) => {
+  const handleStart = async (startDate: Date, data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     // Check if drafting exists before starting - check both drafting query and FAB data
     const hasDraftingAssignment = draftingData?.id || fabData?.draft_data?.id;
 
@@ -214,7 +215,7 @@ export function DrafterDetailsPage() {
     }
 
     try {
-      await createOrStartSession('start', startDate, data?.note, data?.sqft_drafted);
+      await createOrStartSession('start', startDate, data?.note, data?.sqft_drafted, data?.work_percentage_done);
     } catch (error) {
       // Error handled in createOrStartSession
     }
@@ -228,17 +229,17 @@ export function DrafterDetailsPage() {
     }
   };
 
-  const handleResume = async (data?: { note?: string; sqft_drafted?: string }) => {
+  const handleResume = async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     try {
-      await createOrStartSession('resume', new Date(), data?.note, data?.sqft_drafted);
+      await createOrStartSession('resume', new Date(), data?.note, data?.sqft_drafted, data?.work_percentage_done);
     } catch (error) {
       // Error handled in createOrStartSession
     }
   };
 
-  const handleEnd = async (endDate: Date, data?: { note?: string; sqft_drafted?: string }) => {
+  const handleEnd = async (endDate: Date, data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     try {
-      await updateSession('end', endDate, data?.note, data?.sqft_drafted);
+      await updateSession('end', endDate, data?.note, data?.sqft_drafted, data?.work_percentage_done);
     } catch (error) {
       // Error handled in updateSession
     }

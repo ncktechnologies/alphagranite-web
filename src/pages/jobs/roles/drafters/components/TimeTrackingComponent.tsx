@@ -162,7 +162,7 @@ export const TimeTrackingComponent = ({
       await onPause({
         note: pauseNote,
         sqft_drafted: pauseSqFt,
-        work_percentage: pauseWorkPercentage
+        work_percentage_done: pauseWorkPercentage
       });
       setPauseNote('');
       setPauseSqFt(''); // Reset sqft after pause
