@@ -316,7 +316,11 @@ export interface ToggleInvoiceRequest {
     note?: string;
 }
 
-export interface MarkInvoicedRequest {
+export interface ChangeStage {
+    // job_id: number;
+    changed_stage?: string;
+}
+export interface MarkInvoicedRequest{
     job_id: number;
     invoiced_at?: string;
 }
@@ -936,6 +940,14 @@ export const jobApi = createApi({
             getFabsInFinalProgrammingPending: build.query<Fab[], void>({
                 query: () => ({
                     url: "/stages/final_programming/pending",
+                    method: "get"
+                }),
+                transformResponse: (response: any) => response.data || response,
+                providesTags: ["Fab"],
+            }),
+             getFabsInSlabSmithPending: build.query<Fab[], void>({
+                query: () => ({
+                    url: "/stages/slabsmith/pending",
                     method: "get"
                 }),
                 transformResponse: (response: any) => response.data || response,
@@ -1815,6 +1827,16 @@ export const jobApi = createApi({
             }),
 
 
+            // Update Fab Stage
+            updateFabStage: build.mutation<any, { fab_id: number; data: ChangeStage }>({
+                query: ({ fab_id, data }) => ({
+                    url: `/fabs/${fab_id}/stage`,
+                    method: "PATCH",
+                    data: data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
             // Toggle FAB On Hold endpoint
             toggleFabOnHold: build.mutation<Fab, { fab_id: number; on_hold: boolean }>({
                 query: ({ fab_id, on_hold }) => ({
@@ -1850,6 +1872,7 @@ export const {
     useGetFabsByJobQuery,
     useGetFabsByStageQuery,
     useGetFabsInFinalProgrammingPendingQuery,
+    useGetFabsInSlabSmithPendingQuery,
     useCreateFabMutation,
     useUpdateFabMutation,
     useDeleteFabMutation,
@@ -1941,4 +1964,6 @@ export const {
     useGetPredraftReviewByFabIdQuery,
     useCompletePredraftReviewMutation,
     useSetPredraftToRedraftMutation,
+    useUpdateFabStageMutation,
+    // useAddFilesToDraftingMutation,
 } = jobApi;

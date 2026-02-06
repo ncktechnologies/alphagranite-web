@@ -35,18 +35,18 @@ export const CurrentStageProvider = CurrentStageContext.Provider;
 //   return context;
 // };
 
-interface ActionsCellProps {
-  row: Row<IJob>;
-  onView?: () => void;
-}
+import { MoveStageModal } from './components/MoveStageModal';
+
+// ... (keep existing imports)
 
 function ActionsCell({ row, onView }: ActionsCellProps) {
   const bulletin = row.original;
   const isSuperAdmin = useIsSuperAdmin();
   // const { openCurrentStageView } = useCurrentStage();
-  
+
   // Add notes functionality
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
+  const [isMoveStageModalOpen, setIsMoveStageModalOpen] = useState(false);
   const [createFabNote, { isLoading: isSubmittingNote }] = useCreateFabNoteMutation();
 
   const handleViewDetails = () => {
@@ -56,11 +56,11 @@ function ActionsCell({ row, onView }: ActionsCellProps) {
   // const handleViewCurrentStage = () => {
   //   openCurrentStageView(bulletin.fab_id, bulletin.job_name || 'Unknown Job');
   // };
-  
+
   const handleAddNote = () => {
     setIsNotesModalOpen(true);
   };
-  
+
   const handleNoteSubmit = async (note: string, fabId: string, stage?: string) => {
     try {
       await createFabNote({
@@ -68,7 +68,7 @@ function ActionsCell({ row, onView }: ActionsCellProps) {
         note,
         stage
       }).unwrap();
-      
+
       // Optionally refresh data or update UI as needed
     } catch (error) {
       console.error('Error creating note:', error);
@@ -96,24 +96,38 @@ function ActionsCell({ row, onView }: ActionsCellProps) {
               <MessageSquare className="mr-2 h-4 w-4" />
               Add Note
             </DropdownMenuItem>
-            {/* {isSuperAdmin && (
+
+            {isSuperAdmin && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleViewCurrentStage}>
+                <DropdownMenuItem onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMoveStageModalOpen(true);
+                }}>
+                  <Eye className="mr-2 h-4 w-4" />
+                  Move Stage
+                </DropdownMenuItem>
+                {/* <DropdownMenuItem onClick={handleViewCurrentStage}>
                   <Eye className="mr-2 h-4 w-4" />
                   View Current Stage
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
               </>
-            )} */}
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      
-      <NotesModal 
+
+      <NotesModal
         isOpen={isNotesModalOpen}
         onClose={() => setIsNotesModalOpen(false)}
         fabId={bulletin.fab_id}
         onSubmit={handleNoteSubmit}
+      />
+
+      <MoveStageModal
+        open={isMoveStageModalOpen}
+        onClose={() => setIsMoveStageModalOpen(false)}
+        fabId={bulletin.id}
       />
     </>
   );

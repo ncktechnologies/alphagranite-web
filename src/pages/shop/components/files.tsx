@@ -79,7 +79,7 @@ export function Documents({
           const fileIdsArray = draftingData.file_ids.split(',').filter(id => id.trim() !== '');
           const mockFiles = fileIdsArray.map((id, index) => ({
             id: id.trim(),
-            name: `Drafting_File_${index + 1}.pdf`,
+            name: `${index + 1}.pdf`,
             size: 1024000 + index * 512000,
             type: 'application/pdf',
             url: '/images/app/upload-file.svg',

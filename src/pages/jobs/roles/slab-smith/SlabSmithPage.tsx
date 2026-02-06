@@ -3,8 +3,8 @@ import { useLocation, Link, useNavigate } from 'react-router';
 import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
 import { Container } from '@/components/common/container';
-import { useGetFabsQuery, Fab } from '@/store/api/job';
-import { useGetSalesPersonsQuery } from '@/store/api/employee';
+import { useGetFabsQuery, Fab, useGetFabsInSlabSmithPendingQuery} from '@/store/api/job';
+import { useGetSalesPersonsQuery} from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
 import { useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -165,14 +165,15 @@ const SlabSmithPage = () => {
     ]);
 
     // Fetch data with backend pagination and filtering
-    const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
+    // const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
+    const { data, isLoading, isFetching, isError, error } = useGetFabsInSlabSmithPendingQuery();
 
     const handleRowClick = (fabId: string) => {
         navigate(`/job/slab-smith/${fabId}`);
     };
 
     // Transform Fab data to IJob format
-    const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
+    const jobsData: IJob[] = data?.map(transformFabToJob) || [];
 
     if (isLoading && !data) {
         return (
@@ -210,7 +211,7 @@ const SlabSmithPage = () => {
         );
     }
 
-    console.log('Slab Smith Data:', data); // Debug log
+    console.log('Slab Smith Data:', jobsData); // Debug log
 
     return (
         <div className="">
@@ -223,8 +224,8 @@ const SlabSmithPage = () => {
                     path='slab-smith'
                     isLoading={isLoading}
                     // onRowClick={handleRowClick}
-                    useBackendPagination={true}
-                    totalRecords={data?.total || 0}
+                    // useBackendPagination={true}
+                    // totalRecords={data?.total || 0}
                     tableState={tableState}
                     showSalesPersonFilter={false}
                     showScheduleFilter={false} // Remove separate schedule filter

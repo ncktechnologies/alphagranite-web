@@ -254,7 +254,7 @@ export function UploadDocuments({
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[14px] text-black font-bold truncate">{fileItem.file.name}</p>
+                    <p className="text-[14px] text-black font-bold flex-1">{fileItem.file.name}</p>
                     <div className="flex flex-wrap items-center gap-2 mt-1">
                       <p className="text-xs text-muted-foreground">
                          {formatBytes(fileItem.file.size)}

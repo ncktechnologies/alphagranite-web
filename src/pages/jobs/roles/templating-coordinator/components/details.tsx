@@ -40,6 +40,8 @@ export function FabIdDetailsPage() {
     { label: 'Stone thickness', value: fab.stone_thickness_value || 'N/A' },
     { label: 'Edge', value: fab.edge_name || 'N/A' },
     { label: 'Total square ft', value: String(fab.total_sqft) },
+    { label: 'Job Notes', value: String(fab.job_details?.description || 'None') },
+
   ] : [];
   const sidebarSections = [
     // {

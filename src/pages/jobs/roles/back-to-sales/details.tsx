@@ -322,13 +322,13 @@ const DraftReviewDetailsPage = () => {
                             </Card>
 
                             <Card>
-                                <CardHeader className='py-5 border-b'>
+                                {/* <CardHeader className='py-5 border-b'>
                                     <TimeDisplay
                                         startTime={draftData?.drafter_start_date ? new Date(draftData.drafter_start_date) : undefined}
                                         endTime={draftData?.drafter_end_date ? new Date(draftData.drafter_end_date) : undefined}
                                         totalTime={draftData?.total_hours_drafted || 0}
                                     />
-                                </CardHeader>
+                                </CardHeader> */}
                                 <CardContent className="">
                                     <h2 className='font-semibold text-sm py-3'>Uploaded files</h2>
                                     <Documents
