@@ -155,6 +155,12 @@ export const TimeTrackingComponent = ({
   };
 
   const confirmPause = async () => {
+    // Validate that work percentage is selected
+    if (!pauseWorkPercentage) {
+      toast.error('Please select a work percentage before pausing');
+      return;
+    }
+
     const now = new Date();
     setPausedTime(now);
     try {
@@ -162,7 +168,7 @@ export const TimeTrackingComponent = ({
       await onPause({
         note: pauseNote,
         sqft_drafted: pauseSqFt,
-        work_percentage_done: pauseWorkPercentage
+        work_percentage: pauseWorkPercentage
       });
       setPauseNote('');
       setPauseSqFt(''); // Reset sqft after pause

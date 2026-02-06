@@ -419,9 +419,12 @@ export function DrafterDetailsPage() {
       items: [
         { label: "Job Name", value: fabData?.job_details?.name || `Job ${fabData?.job_id}` },
         { label: "Job Number", value: fabData?.job_details?.job_number || String(fabData?.job_id) },
+        // { label: "Job Description", value: fabData?.job_details?.name || "N/A" },
+        { label: "Account Name", value: fabData?.account_name || "N/A" },
         { label: "Area", value: fabData?.input_area || "Loading..." },
         { label: "Material", value: `${fabData?.stone_type_name || ''} ${fabData?.stone_color_name || ''} - ${fabData?.stone_thickness_value || ''}` },
         { label: "FAB Type", value: fabData?.fab_type || "Loading..." },
+        { label: "Sales Person", value: fabData?.sales_person_name || "N/A" },
         { label: "Assigned to", value: fabData?.draft_data?.drafter_name || 'Unassigned' },
       ],
     },
