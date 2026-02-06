@@ -275,19 +275,22 @@ export const TimeTrackingComponent = ({
   // ---------- UI FORMATTING ----------
   const formatTime = (date?: Date | null) => {
     if (!date) return '--';
-    return (
-      date.toLocaleDateString('en-GB', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-      }) +
-      ' | ' +
-      date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true,
-      })
-    );
+    
+    // Format date part consistently (day/month/year)
+    const datePart = date.toLocaleDateString('en-GB', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+    
+    // Format time part using consistent 24-hour format to avoid timezone confusion
+    const timePart = date.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+    
+    return `${datePart} | ${timePart}`;
   };
 
   const formatDuration = (seconds: number) => {

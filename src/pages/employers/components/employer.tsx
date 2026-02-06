@@ -360,7 +360,6 @@ const Employees = () => {
                                     <SelectContent className="w-32">
                                         <SelectItem value="all">All Status</SelectItem>
                                         <SelectItem value="1">Active</SelectItem>
-                                        <SelectItem value="2">Inactive</SelectItem>
                                         <SelectItem value="3">Deleted</SelectItem>
                                     </SelectContent>
                                 </Select>

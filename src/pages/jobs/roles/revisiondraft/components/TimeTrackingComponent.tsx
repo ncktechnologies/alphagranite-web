@@ -227,7 +227,7 @@ export const TimeTrackingComponent = ({
           <div className="flex-1 text-right">
             <div className="text-sm text-gray-500">Start Time</div>
             <div className="text-sm">
-              {(startTime || draftStart)?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {(startTime || draftStart)?.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}
             </div>
           </div>
         )}
@@ -235,7 +235,7 @@ export const TimeTrackingComponent = ({
           <div className="flex-1 text-right">
             <div className="text-sm text-gray-500">Paused At</div>
             <div className="text-sm">
-              {pausedTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              {pausedTime.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}
             </div>
           </div>
         )}
