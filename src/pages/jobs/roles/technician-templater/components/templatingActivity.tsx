@@ -18,8 +18,9 @@ import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Can } from '@/components/permission';
 
 const formSchema = z.object({
-  is_completed: z.boolean(["completed", "not_completed"]).nullable(),
+  is_completed: z.boolean().nullable(),
   start_date: z.string().min(1, "Start date is required"),
+  schedule_start_date: z.string().min(1, "Scheduled date is required"), // Added schedule_start_date
   duration: z.string().optional().refine(
     (val) => !val || /^\d+$/.test(val),
     { message: "Duration must be in days (numbers only)" }
@@ -44,8 +45,6 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
     setIsSubmitting(true);
 
     try {
-      // console.log("Form values:", values);
-
       const id = fabId;
       if (!id) {
         throw new Error("FAB ID is missing");
@@ -71,8 +70,47 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
         throw new Error("Templating record not found. Please schedule templating first.");
       }
 
+      // Prepare update data
+      const updateData: any = {
+        templating_id: templatingId
+      };
+
+      // Add notes if provided
+      if (values.notes) {
+        updateData.notes = [values.notes];
+      }
+
+      // Add actual start date if provided
+      if (values.start_date) {
+        updateData.actual_start_date = new Date(values.start_date).toISOString();
+      }
+
+      // Add scheduled start date if provided
+      if (values.schedule_start_date) {
+        updateData.schedule_start_date = new Date(values.schedule_start_date).toISOString();
+      }
+
+      // Add duration if provided
+      if (values.duration) {
+        updateData.duration = values.duration;
+      }
+
+      // Add square footage if provided
+      if (values.square_ft) {
+        updateData.total_sqft = values.square_ft;
+      }
+
+      // Add completion status if provided
+      if (values.is_completed !== null) {
+        updateData.is_completed = values.is_completed;
+      }
+
       // Only submit if status is completed
       if (values.is_completed === true) {
+        // First update the templating record with all data
+        await updateTemplating(updateData).unwrap();
+        
+        // Then complete templating
         const response = await completeTemplating({
           templating_id: templatingId,
           actual_sqft: values.square_ft || "",
@@ -82,32 +120,6 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
         toast.success(response?.message || "Templating completed successfully!");
       } else {
         // When not completed, update the templating record with all relevant data
-        const updateData: any = {
-          templating_id: templatingId
-        };
-
-        // Add notes if provided
-        if (values.notes) {
-          updateData.notes = [values.notes];
-        }
-
-        // Add actual start date and duration if provided
-        if (values.start_date) {
-          updateData.actual_start_date = new Date(values.start_date).toISOString();
-        }
-
-        if (values.duration) {
-          updateData.duration = values.duration;
-        }
-
-        // Add square footage if provided
-        if (values.square_ft) {
-          updateData.total_sqft = values.square_ft;
-        }
-         if (values.is_completed !== null) {
-          updateData.is_completed = values.is_completed;
-        }
-
         const response = await updateTemplating(updateData).unwrap();
 
         toast.success(response?.message || "Templating activity saved successfully!");
@@ -116,9 +128,8 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
       navigate('/job/templating');
     } catch (error: any) {
       console.error("Failed to complete templating:", error);
-      // Don't navigate if there's an error
       const errorMessage = error?.data?.message || error?.message || "Failed to complete templating. Please try again.";
-      // toast.error(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -135,39 +146,34 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
     defaultValues: {
       is_completed: null,
       start_date: "",
+      schedule_start_date: "", // Added default
       duration: "",
       notes: "",
       square_ft: ''
     },
   });
 
-  // Watch form values for debugging
+  // Watch form values
   const statusValue = form.watch("is_completed");
-  const squareFtValue = form.watch("square_ft");
-
-  // useEffect(() => {
-  //   console.log("Status value changed to:", statusValue);
-  // }, [statusValue]);
-
-  // useEffect(() => {
-  //   console.log("Square ft value changed to:", squareFtValue);
-  // }, [squareFtValue]);
 
   useEffect(() => {
-    // Debugging: Log the templating data
-    // console.log("Templating data:", templatingData);
-
     // Populate form with templating data when it's available
     if (templatingData?.data) {
-      console.log("Populating form with templating data:", templatingData.data);
-
       // Prepare values for the form
       const formValues: Partial<z.infer<typeof formSchema>> = {
         is_completed: templatingData.data.is_completed || null,
-        start_date: templatingData.data.actual_start_date || templatingData.data.schedule_start_date
+        start_date: templatingData.data.actual_start_date
           ? (() => {
-            const dateSource = templatingData.data.actual_start_date || templatingData.data.schedule_start_date;
-            const date = new Date(dateSource);
+            const date = new Date(templatingData.data.actual_start_date);
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+          })()
+          : "",
+        schedule_start_date: templatingData.data.schedule_start_date
+          ? (() => {
+            const date = new Date(templatingData.data.schedule_start_date);
             const year = date.getFullYear();
             const month = String(date.getMonth() + 1).padStart(2, '0');
             const day = String(date.getDate()).padStart(2, '0');
@@ -179,11 +185,10 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
         square_ft: templatingData.data.total_sqft?.toString() || ''
       };
 
-      console.log("Resetting form with values:", formValues);
       // Use reset with { keepDefaultValues: false } to prevent infinite loop
       form.reset(formValues, { keepDefaultValues: false });
     }
-  }, [templatingData]); // Remove 'form' from dependencies to prevent loop
+  }, [templatingData]);
 
   if (isTemplatingLoading) {
     return <div>Loading...</div>;
@@ -211,7 +216,6 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
                       id="completed"
                       checked={field.value === true}
                       onCheckedChange={(checked) => {
-                        console.log("Checkbox completed changed:", checked);
                         if (checked) {
                           field.onChange(true);
                         }
@@ -230,7 +234,6 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
                       id="not-completed"
                       checked={field.value === false}
                       onCheckedChange={(checked) => {
-                        console.log("Checkbox not_completed changed:", checked);
                         if (checked) {
                           field.onChange(false);
                         }
@@ -248,17 +251,37 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
             )}
           />
 
-          {/* Static Info */}
+          {/* Editable Info */}
           <div className="grid grid-cols-2 gap-6">
-            <div>
-              <FormLabel>Scheduled date</FormLabel>
-              <Input
-                value={templatingData?.data?.schedule_start_date
-                  ? format(new Date(templatingData.data.schedule_start_date), "dd MMMM, yyyy")
-                  : "Not scheduled"}
-                disabled
-              />
-            </div>
+            {/* Scheduled Date - Now Editable */}
+            <FormField
+              control={form.control}
+              name="schedule_start_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Scheduled date</FormLabel>
+                  <FormControl>
+                    <DateTimePicker
+                      mode="date"
+                      value={field.value ? new Date(field.value) : undefined}
+                      onChange={(date) => {
+                        if (date) {
+                          const year = date.getFullYear();
+                          const month = String(date.getMonth() + 1).padStart(2, '0');
+                          const day = String(date.getDate()).padStart(2, '0');
+                          const formatted = `${year}-${month}-${day}`;
+                          field.onChange(formatted);
+                        } else {
+                          field.onChange("");
+                        }
+                      }}
+                      placeholder="Select scheduled date"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             <FormField
               control={form.control}
@@ -270,6 +293,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
                 </FormItem>
               )}
             />
+            
             <FormField
               control={form.control}
               name="start_date"
@@ -282,7 +306,6 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
                       value={field.value ? new Date(field.value) : undefined}
                       onChange={(date) => {
                         if (date) {
-                          // Format date as YYYY-MM-DD while preserving local timezone
                           const year = date.getFullYear();
                           const month = String(date.getMonth() + 1).padStart(2, '0');
                           const day = String(date.getDate()).padStart(2, '0');
@@ -293,7 +316,6 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
                         }
                       }}
                       placeholder="Select start date"
-                      minDate={new Date()}
                     />
                   </FormControl>
                   <FormMessage />
@@ -301,6 +323,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
               )}
             />
           </div>
+          
           <div>
             <FormField
               control={form.control}
