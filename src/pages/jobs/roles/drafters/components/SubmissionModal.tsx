@@ -21,7 +21,10 @@ const formatTimestamp = (date: Date) => {
 };
 
 const submissionSchema = z.object({
-  totalSqFt: z.string().optional(),
+  totalSqFt: z
+  .string()
+  .min(1, 'Total Sq Ft is required')
+  .trim(),
   numberOfPieces: z.string().optional(),
   draftNotes: z.string().optional(),
   mentions: z.string().optional(),
@@ -105,15 +108,7 @@ export const SubmissionModal = ({
     }
   }, [fabData?.sales_person_id, form]);
 
-  // Watch the work percentage value
-  const workPercentage = form.watch('workPercentage');
-  
-  // Check if work is 100% complete
-  const isWorkComplete = workPercentage === '100';
-  
-  // Disable CAD review if work is not 100% complete
-  const isCadReviewDisabled = !isWorkComplete;
-
+ 
   // End the session and get session data
   const endDraftingSession = async () => {
     if (!fabId) {
@@ -184,25 +179,11 @@ export const SubmissionModal = ({
         no_of_piece_drafted: values.numberOfPieces || null,
         draft_note: values.draftNotes || null,
         mentions: values.mentions || null,
-        
-        // Work percentage - prioritize form input, fallback to session data
-        work_percentage_done: values.workPercentage 
-          ? parseInt(values.workPercentage as string) 
-          : sessionTimingData?.work_percentage_done || null,
-        
-        // Status flags
         is_completed: true,
         status_id: 1
       };
 
-      // If we have file IDs, update the file_ids field
-      if (fileIds.length > 0) {
-        const existingFileIds = drafting?.data?.file_ids 
-          ? drafting.data.file_ids.split(',').filter((id: string) => id.trim())
-          : [];
-        const allFileIds = [...existingFileIds, ...fileIds];
-        payload.file_ids = allFileIds.join(',');
-      }
+      
 
       console.log('Updating draft with payload:', payload);
       await updateDrafting({ 
@@ -246,7 +227,7 @@ export const SubmissionModal = ({
               )}
             />
 
-            <FormField
+            {/* <FormField
               control={form.control}
               name="numberOfPieces"
               render={({ field }) => (
@@ -258,7 +239,7 @@ export const SubmissionModal = ({
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
 
             <FormField
               control={form.control}
@@ -298,39 +279,16 @@ export const SubmissionModal = ({
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="workPercentage"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Work Completed (%)</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select percentage completed" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map((percent) => (
-                        <SelectItem key={percent} value={percent.toString()}>
-                          {percent}%
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          
 
             <div className="flex flex-row items-center space-x-3 mt-4">
               <Checkbox
                 checked={isConfirmed}
                 onCheckedChange={(v) => setIsConfirmed(Boolean(v))}
-                disabled={isCadReviewDisabled}
+                disabled={false}
               />
-              <label className={`font-semibold text-[16px] ${isCadReviewDisabled ? 'text-gray-400' : ''}`}>
-                CAD review complete {isCadReviewDisabled && '(100% work completion required)'}
+              <label className={`font-semibold text-[16px] ${isConfirmed ? 'text-green-600' : 'text-gray-600'}`}>
+                CAD Drafting Complete 
               </label>
             </div>
 
@@ -342,10 +300,10 @@ export const SubmissionModal = ({
               <Can action="update" on="Drafting">
                 <Button 
                   type="submit" 
-                  disabled={!isConfirmed || isCadReviewDisabled || isSubmitting} 
+                  disabled={!isConfirmed || isSubmitting}
                   className="bg-green-600 hover:bg-green-700"
                 >
-                  {isSubmitting ? 'Submitting...' : isCadReviewDisabled ? '100% Work Required' : 'Submit draft'}
+                  {isSubmitting ? 'Submitting...' : 'Submit draft'}
                 </Button>
               </Can>
             </div>

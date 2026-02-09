@@ -66,9 +66,6 @@ export function UploadDocuments({
   const [deleteFileFromDrafting] = useDeleteFileFromDraftingMutation();
   const [addFilesToDrafting] = useAddFilesToDraftingMutation();
 
-  // State for tracking if file is currently being selected
-  const [isSelectingFile, setIsSelectingFile] = useState(false);
-
   const [
     { isDragging, errors },
     {
@@ -87,8 +84,7 @@ export function UploadDocuments({
     accept,
     multiple: true,
     onFilesChange: (newFiles) => {
-      // Reset selection state and process files
-      setIsSelectingFile(false);
+      // Process files immediately
       const newUploadFiles: FileUploadItem[] = newFiles.map((file) => ({
         ...file,
         progress: 0,
@@ -248,7 +244,6 @@ export function UploadDocuments({
       <div>
         {/* Files Section - Upload boxes transform to uploaded files */}
         <div className="mb-6">
-          <h3 className="text-lg font-medium mb-3">Files</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Upload Boxes that transform to Uploaded Files */}
             {uploadBoxes.map((box, index) => {
@@ -261,7 +256,7 @@ export function UploadDocuments({
                 <div
                   key={box.id}
                   className={cn(
-                    'relative rounded-lg border px-3 py-5 min-w-fit text-center transition-colors',
+                    'relative rounded-lg border px-3 py-5 min-w-fit text-center transition-colors cursor-pointer',
                     isUploading 
                       ? 'border-primary bg-primary/5' 
                       : isError
@@ -269,24 +264,15 @@ export function UploadDocuments({
                       : 'border-muted-foreground/25 hover:border-muted-foreground/50',
                     disabled && 'opacity-50 cursor-not-allowed'
                   )}
-                  onDragEnter={disabled || isUploading || isSelectingFile ? undefined : handleDragEnter}
-                  onDragLeave={disabled || isUploading || isSelectingFile ? undefined : handleDragLeave}
-                  onDragOver={disabled || isUploading || isSelectingFile ? undefined : handleDragOver}
-                  onDrop={disabled || isUploading || isSelectingFile ? undefined : handleDrop}
-                  onClick={() => {
-                    if (!isSelectingFile && !isUploading && !isCompleted) {
-                      setIsSelectingFile(true);
-                      openFileDialog();
-                    }
-                  }}
+                  onDragEnter={disabled || isUploading ? undefined : handleDragEnter}
+                  onDragLeave={disabled || isUploading ? undefined : handleDragLeave}
+                  onDragOver={disabled || isUploading ? undefined : handleDragOver}
+                  onDrop={disabled || isUploading ? undefined : handleDrop}
                 >
                   <input
-                    {...getInputProps({
-                      onClick: (e: React.MouseEvent) => {
-                        e.stopPropagation();
-                      }
-                    })}
+                    {...getInputProps()}
                     className="sr-only"
+                    id={`file-input-${box.id}`}
                   />
 
                   {isUploading ? (
@@ -432,7 +418,6 @@ export function UploadDocuments({
         {/* Existing / Server Files Section */}
         {enhancedFiles && enhancedFiles.length > 0 && (
           <div className="mb-6">
-            <h3 className="text-lg font-medium mb-3">Existing Files ({enhancedFiles.length})</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {/* Existing / server files */}
               {enhancedFiles.map((enhancedFile: any) => (
