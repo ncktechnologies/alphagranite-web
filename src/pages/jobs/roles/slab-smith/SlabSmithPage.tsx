@@ -173,7 +173,7 @@ const SlabSmithPage = () => {
     };
 
     // Transform Fab data to IJob format
-    const jobsData: IJob[] = data?.map(transformFabToJob) || [];
+    const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
 
     if (isLoading && !data) {
         return (
