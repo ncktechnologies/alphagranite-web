@@ -8,7 +8,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { useUpdateDraftingMutation, useAddFilesToDraftingMutation, useManageDraftingSessionMutation } from '@/store/api/job';
+import { useUpdateDraftingMutation, useManageDraftingSessionMutation } from '@/store/api/job';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -61,7 +61,6 @@ export const SubmissionModal = ({
   const [sessionData, setSessionData] = useState<any>(null);
 
   const [updateDrafting] = useUpdateDraftingMutation();
-  const [addFilesToDrafting] = useAddFilesToDraftingMutation();
   const [manageDraftingSession] = useManageDraftingSessionMutation();
 
   const { data: employeesData } = useGetSalesPersonsQuery();
@@ -173,32 +172,7 @@ export const SubmissionModal = ({
       // Extract session timing data
       const sessionTimingData = extractSessionData(sessionResponse);
       
-      // Step 2: Upload files if any
-      let fileIds: number[] = [];
-      // Upload files that are File objects (not yet uploaded to server)
-      const filesToUpload = uploadedFiles.filter(f => f.file instanceof File);
-
-      if (filesToUpload.length > 0) {
-        const fileObjects = filesToUpload.map(f => f.file as File);
-        
-        try {
-          const response = await addFilesToDrafting({
-            drafting_id: draftingId,
-            files: fileObjects,
-            stage: 'drafting' // Add stage for drafting files
-          }).unwrap();
-
-          if (response && response.data && Array.isArray(response.data)) {
-            fileIds = response.data.map((file: any) => file.id);
-          }
-        } catch (fileError) {
-          console.error('File upload failed:', fileError);
-          toast.error('Failed to upload files');
-          throw fileError;
-        }
-      }
-
-      // Step 3: Update drafting with form data AND session timing data
+      // Step 2: Update drafting with form data AND session timing data
       const payload: any = {
         // Session timing data from ended session
         drafter_start_date: sessionTimingData?.drafter_start_date || null,

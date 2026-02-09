@@ -1,5 +1,5 @@
-// DrafterDetailsPageRefactor.tsx - FIXED VERSION
-import { useCallback, useState, useEffect, useRef } from 'react';
+// DrafterDetailsPageRefactor.tsx - FIXED DOUBLE SUBMIT VERSION
+import { useCallback, useState, useEffect, useRef, useMemo } from 'react';
 import { Container } from '@/components/common/container';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,20 +7,26 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
-import { useGetFabByIdQuery, useGetDraftingByFabIdQuery, useManageDraftingSessionMutation, useGetCurrentDraftingSessionQuery, useToggleFabOnHoldMutation, useCreateFabNoteMutation } from '@/store/api/job';
+import { 
+  useGetFabByIdQuery, 
+  useGetDraftingByFabIdQuery, 
+  useManageDraftingSessionMutation, 
+  useGetCurrentDraftingSessionQuery, 
+  useToggleFabOnHoldMutation, 
+  useCreateFabNoteMutation,
+  useDeleteFileFromDraftingMutation
+} from '@/store/api/job';
 import { TimeTrackingComponent } from './components/TimeTrackingComponent';
 import { UploadDocuments } from './components/fileUploads';
 import { FileViewer } from './components/FileViewer';
 import { SubmissionModal } from './components/SubmissionModal';
 import { SessionHistory } from './components/SessionHistory';
 import { useSelector } from 'react-redux';
-import { FileWithPreview } from '@/hooks/use-file-upload';
-import { UploadedFileMeta } from '@/types/uploads';
-import { X } from 'lucide-react';
+import { X, Eye, Trash2, Download } from 'lucide-react';
 import { Can } from '@/components/permission';
 import { useTabClosingWarning } from '@/hooks';
 import { BackButton } from '@/components/common/BackButton';
-import { getFileStage, getStageBadge, EnhancedFileMetadata } from '@/utils/file-labeling';
+import { getFileStage, EnhancedFileMetadata } from '@/utils/file-labeling';
 
 // Helper function to format timestamp without 'Z'
 const formatTimestamp = (date: Date) => {
@@ -43,6 +49,16 @@ const getFabStatusInfo = (statusId: number | undefined) => {
   }
 };
 
+// Helper function for formatting bytes
+const formatBytes = (bytes: number, decimals = 2) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+};
+
 export function DrafterDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const fabId = id ? Number(id) : 0;
@@ -61,6 +77,7 @@ export function DrafterDetailsPage() {
   const [manageDraftingSession] = useManageDraftingSessionMutation();
   const [toggleFabOnHold] = useToggleFabOnHoldMutation();
   const [createFabNote] = useCreateFabNoteMutation();
+  const [deleteDraftingFile] = useDeleteFileFromDraftingMutation();
 
   // Use draft_data from FAB response for displaying existing files
   const draftData = fabData?.draft_data;
@@ -74,14 +91,9 @@ export function DrafterDetailsPage() {
   const [sessionStatus, setSessionStatus] = useState<'idle' | 'drafting' | 'paused' | 'on_hold' | 'ended'>('idle');
 
   // File state
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
-  const [uploadedFileMetas, setUploadedFileMetas] = useState<UploadedFileMeta[]>([]);
   const [activeFile, setActiveFile] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
-
-  // Track processed file names to prevent duplicates
-  const processedFileNamesRef = useRef<Set<string>>(new Set());
 
   // Initialize session state from server data
   useEffect(() => {
@@ -114,6 +126,14 @@ export function DrafterDetailsPage() {
     }
   }, [sessionData, isSessionLoading]);
 
+  // Debug: Log server files
+  useEffect(() => {
+    if (draftData?.files) {
+      console.log('Existing files from server:', draftData.files);
+      console.log('Number of files:', draftData.files.length);
+    }
+  }, [draftData]);
+
   // Helper functions to check session state
   const isDrafting = sessionStatus === 'drafting';
   const isPaused = sessionStatus === 'paused';
@@ -143,6 +163,30 @@ export function DrafterDetailsPage() {
       }
     }
   });
+
+  // Extract existing files from draft_data
+  const existingFilesFromServer = draftData?.files || [];
+
+  // All files for display - only from server (UploadDocuments handles new uploads internally)
+  const allFilesForDisplay = useMemo(() => {
+    const files = existingFilesFromServer.map((file: any) => ({
+      id: file.id,
+      name: file.name || file.file_name,
+      size: parseInt(file.file_size) || file.size || 0,
+      type: file.file_type || file.type || '',
+      url: file.file_url || file.url,
+      file_url: file.file_url || file.url,
+      stage: getFileStage(file.name || file.file_name, {
+        currentStage: 'drafting',
+        isDrafting: true
+      }),
+      uploadedAt: file.created_at ? new Date(file.created_at) : new Date(),
+      uploadedBy: file.uploaded_by || currentUser?.name || 'Unknown',
+      fromServer: true
+    }));
+
+    return files;
+  }, [existingFilesFromServer, currentUser]);
 
   // Session management functions
   const createOrStartSession = async (action: 'start' | 'resume', startDate: Date, note?: string, sqftDrafted?: string, workPercentage?: string) => {
@@ -203,12 +247,6 @@ export function DrafterDetailsPage() {
     // Check if drafting exists before starting - check both drafting query and FAB data
     const hasDraftingAssignment = draftingData?.id || fabData?.draft_data?.id;
 
-    console.log('Drafting assignment check:', {
-      draftingDataId: draftingData?.id,
-      fabDraftDataId: fabData?.draft_data?.id,
-      hasAssignment: !!hasDraftingAssignment
-    });
-
     if (!hasDraftingAssignment) {
       toast.error('Cannot start drafting session - no drafting assignment found');
       return;
@@ -240,6 +278,7 @@ export function DrafterDetailsPage() {
   const handleEnd = async (endDate: Date, data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     try {
       await updateSession('end', endDate, data?.note, data?.sqft_drafted, data?.work_percentage_done);
+      
     } catch (error) {
       // Error handled in updateSession
     }
@@ -274,111 +313,55 @@ export function DrafterDetailsPage() {
     }
   };
 
-  // Show files section if there are existing files OR if user has uploaded files
-  const shouldShowFilesSection = (draftData && (draftData.files?.length ?? 0) > 0) || uploadedFileMetas.length > 0;
-
-  // Prepare enhanced file metadata for display
-  const enhancedUploadedFiles = uploadedFileMetas.map(meta => {
-    const file = pendingFiles.find(f => f.name === meta.name);
-    const stage = getFileStage(meta.name, {
-      currentStage: 'drafting',
-      isDrafting: true
-    });
-
-    return {
-      ...meta,
-      size: file?.size || meta.size || 0,
-      type: file?.type || meta.type || '',
-      stage: stage,
-      uploadedAt: new Date(),
-      uploadedBy: currentUser?.name || 'Current User'
-    };
-  });
-
-  // Show upload section when timer is running, paused, OR when files have been uploaded (to maintain visibility after ending)
-  const shouldShowUploadSection = (isDrafting || isPaused) || uploadedFileMetas.length > 0;
-
-  // Handle files change - accumulate unique files only
-  const handleFilesChange = useCallback((files: FileWithPreview[]) => {
-    if (!files || files.length === 0) {
-      return;
-    }
-
-    console.log('New files selected:', files);
-
-    // Filter to only actual File objects
-    const validFiles = files.filter((fileItem) => fileItem.file instanceof File);
-
-    if (validFiles.length === 0) {
-      console.log('No valid files to process');
-      return;
-    }
-
-    // Extract the File objects
-    const fileObjects = validFiles.map(f => f.file as File);
-
-    // Use ref to track globally processed files across all calls
-    const processedNames = processedFileNamesRef.current;
-
-    // Filter out already processed files
-    const uniqueFileObjects = fileObjects.filter(
-      newFile => !processedNames.has(newFile.name)
-    );
-
-    if (uniqueFileObjects.length === 0) {
-      console.log('All selected files have already been processed');
-      return;
-    }
-
-    console.log('Processing unique files:', uniqueFileObjects.map(f => f.name));
-
-    // Mark these files as processed
-    uniqueFileObjects.forEach(file => processedNames.add(file.name));
-
-    // ACCUMULATE only unique pending files
-    setPendingFiles(prev => {
-      // Double-check against current pending files
-      const currentNames = new Set(prev.map(file => file.name));
-      const trulyUniqueFiles = uniqueFileObjects.filter(file => !currentNames.has(file.name));
-
-      if (trulyUniqueFiles.length === 0) return prev;
-
-      console.log('Actually adding files:', trulyUniqueFiles.map(f => f.name));
-      return [...prev, ...trulyUniqueFiles];
-    });
-
-    // Create file metas for display and accumulate them (only for unique files)
-    const newFileMetas: UploadedFileMeta[] = uniqueFileObjects.map((file, index) => ({
-      id: `pending-${Date.now()}-${index}-${Math.random().toString(36).substr(2, 9)}`, // Unique ID
-      name: file.name,
-      size: file.size,
-      type: file.type,
-    }));
-
-    setUploadedFileMetas(prev => [...prev, ...newFileMetas]);
-
-    console.log('Added unique pending files:', uniqueFileObjects.length);
-
-  }, []); // Remove pendingFiles dependency to prevent recreation
-
-  // File upload now handled only in submission modal
-
+  // File handling functions
   const handleFileClick = (file: any) => {
-    // Enhance file with stage information before viewing
+    // Ensure we have all necessary properties for the file viewer
     const enhancedFile = {
       ...file,
-      stage: getFileStage(file.name, { isDrafting: true })
+      stage: getFileStage(file.name, { isDrafting: true }),
+      url: file.file_url || file.url || file.fileUrl,
+      name: file.name || file.file_name,
+      type: file.file_type || file.type || '',
+      size: parseInt(file.file_size) || file.size || 0,
+      formattedSize: formatBytes(parseInt(file.file_size) || file.size || 0),
+      uploadedAt: file.created_at ? new Date(file.created_at) : new Date(),
+      uploadedBy: file.uploaded_by || currentUser?.name || 'Unknown'
     };
-
+    
     setActiveFile(enhancedFile);
     setViewMode('file');
-    console.log('File clicked:', enhancedFile);
   };
 
+  const handleDeleteFile = async (fileId: number) => {
+    if (!window.confirm('Are you sure you want to delete this file?')) {
+      return;
+    }
 
+    const draftingId = draftingData?.id || fabData?.draft_data?.id;
+    if (!draftingId) {
+      // toast.error('Cannot delete file - no drafting assignment found');
+      return;
+    }
 
-  // Determine if submission is allowed (after on hold OR after ending normally)
-  const canOpenSubmit = totalTime > 0 && (pendingFiles.length > 0 || uploadedFileMetas.length > 0);
+    try {
+      await deleteDraftingFile({ drafting_id: draftingId, file_id: String(fileId) }).unwrap();
+      
+      // Refresh data - UploadDocuments will update automatically
+      await refetchDrafting();
+      await refetchFab();
+      
+      toast.success('File deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete file:', error);
+      // toast.error('Failed to delete file');
+    }
+  };
+
+  // Show upload section when timer is running, paused, OR when files have been uploaded (to maintain visibility after ending)
+  const shouldShowUploadSection = (isDrafting || isPaused) || allFilesForDisplay.length > 0;
+
+  // Determine if submission is allowed
+  const canOpenSubmit = totalTime > 0 && allFilesForDisplay.length > 0;
 
   // Open submission modal directly (file upload happens in modal)
   const handleOpenSubmissionModal = async () => {
@@ -387,22 +370,16 @@ export function DrafterDetailsPage() {
 
   const onSubmitModal = async () => {
     try {
-      // Files are already uploaded in the submission modal
       await refetchDrafting();
-      await refetchFab(); // Also refetch FAB data to get updated draft_data
+      await refetchFab();
 
       setShowSubmissionModal(false);
       // Clear all local state after successful submission
-      setPendingFiles([]);
-      setUploadedFileMetas([]);
       setTotalTime(0);
       setDraftStart(null);
       setDraftEnd(null);
       setSessionStatus('idle');
-
-      // Clear processed file names to allow re-uploading same files in future
-      processedFileNamesRef.current.clear();
-
+      
       navigate('/job/draft');
     } catch (err) {
       console.error(err);
@@ -419,7 +396,6 @@ export function DrafterDetailsPage() {
       items: [
         { label: "Job Name", value: fabData?.job_details?.name || `Job ${fabData?.job_id}` },
         { label: "Job Number", value: fabData?.job_details?.job_number || String(fabData?.job_id) },
-        // { label: "Job Description", value: fabData?.job_details?.name || "N/A" },
         { label: "Account Name", value: fabData?.account_name || "N/A" },
         { label: "Area", value: fabData?.input_area || "Loading..." },
         { label: "Material", value: `${fabData?.stone_type_name || ''} ${fabData?.stone_color_name || ''} - ${fabData?.stone_thickness_value || ''}` },
@@ -443,7 +419,6 @@ export function DrafterDetailsPage() {
       title: "FAB Notes",
       type: "notes",
       notes: getAllFabNotes(fabData?.fab_notes || []).map(note => {
-        // Stage display mapping
         const stageConfig: Record<string, { label: string; color: string }> = {
           templating: { label: 'Templating', color: 'text-blue-700' },
           pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
@@ -471,26 +446,18 @@ export function DrafterDetailsPage() {
     }
   ];
 
-  // Prepare enhanced files with stage information for SubmissionModal
-  const filesForSubmission: EnhancedFileMetadata[] = uploadedFileMetas.map(meta => {
-    const file = pendingFiles.find(f => f.name === meta.name);
-    const stage = getFileStage(meta.name, {
-      currentStage: 'drafting',
-      isDrafting: true
-    });
-
-    return {
-      id: meta.id,
-      name: meta.name,
-      size: file?.size || meta.size || 0,
-      type: file?.type || meta.type || '',
-      url: meta.url,
-      stage: stage,
-      uploadedAt: new Date(),
-      uploadedBy: currentUser?.name || 'Current User',
-      file: file // Include the actual File object for submission
-    };
-  });
+  // Prepare enhanced file metadata for SubmissionModal
+  const filesForSubmission: EnhancedFileMetadata[] = allFilesForDisplay.map(file => ({
+    id: file.id!,
+    name: file.name,
+    size: file.size,
+    type: file.type,
+    url: file.url || file.file_url,
+    stage: file.stage,
+    uploadedAt: file.uploadedAt,
+    uploadedBy: file.uploadedBy,
+    file: null
+  }));
 
   return (
     <>
@@ -509,20 +476,25 @@ export function DrafterDetailsPage() {
           </div>
           <p className='text-sm text-muted-foreground'>Update drafting activity</p>
         </div>
-
       </Container>
 
       <div className=" border-t grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
         <div className="lg:col-span-3 w-full lg:w-[200px]  2xl:w-[286px]  ultra:w-[500px]" >
           <GraySidebar
             sections={sidebarSections as any}
-            jobId={fabData?.job_id}  // Add this prop
+            jobId={fabData?.job_id}
           />
         </div>
         <Container className="lg:col-span-9 px-0 mx-0">
           {viewMode === 'file' && activeFile ? (
             <div>
-              <div className="flex justify-end">
+              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-t-lg">
+                <div>
+                  <h3 className="font-semibold">{activeFile.name}</h3>
+                  <p className="text-sm text-gray-500">
+                    {formatBytes(activeFile.size)} • {activeFile.stage?.label || activeFile.stage}
+                  </p>
+                </div>
                 <Button variant="inverse" size="sm" onClick={() => { setViewMode('activity'); setActiveFile(null); }}>
                   <X className="w-6 h-6" />
                 </Button>
@@ -564,7 +536,6 @@ export function DrafterDetailsPage() {
                 </CardHeader>
               </Card>
 
-
               <Card>
                 <CardContent>
                   <TimeTrackingComponent
@@ -582,33 +553,35 @@ export function DrafterDetailsPage() {
                     onOnHold={handleOnHold}
                     onTimeUpdate={setTotalTime}
                     hasEnded={hasEnded}
-                    pendingFilesCount={pendingFiles.length}
-                    uploadedFilesCount={uploadedFileMetas.length}
+                    uploadedFilesCount={allFilesForDisplay.length}
                   />
 
-                  <Separator className="my-3" />
+                  <Separator className="my-6" />
 
-                  {/* Only show upload if timer has started or there are uploaded files */}
-                  {shouldShowUploadSection && (
-                    <UploadDocuments
-                      onFileClick={handleFileClick}
-                      onFilesChange={handleFilesChange}
-                      simulateUpload={false}
-                      disabled={hasEnded || isOnHold || isPaused}
-                      enhancedFiles={enhancedUploadedFiles}
-                    />
-                  )}
+                  {/* File Upload Section - Using Final Programming style UI */}
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-4">Files</h3>
+                    
+                    {shouldShowUploadSection ? (
+                      <UploadDocuments
+                        onFileClick={handleFileClick}
+                        disabled={hasEnded || isOnHold || isPaused}
+                        enhancedFiles={allFilesForDisplay}
+                        draftingId={draftingData?.id || fabData?.draft_data?.id}
+                      />
+                    ) : (
+                      <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                        <p className="text-gray-500">Start the timer to enable file uploads</p>
+                        <p className="text-sm text-gray-400 mt-2">
+                          Files will appear here once uploaded
+                        </p>
+                      </div>
+                    )}
+                  </div>
 
-                  {/* Show message when timer hasn't started yet */}
-                  {!shouldShowFilesSection && !isDrafting && sessionStatus === 'idle' && (
-                    <div className="text-center py-4 text-muted-foreground">
-                      Start the timer to enable file uploads
-                    </div>
-                  )}
-
-                  {/* Submit Button - show after on hold OR after ending normally */}
+                  {/* Submit Button */}
                   {viewMode === 'activity' && (
-                    <div className="flex justify-end gap-3">
+                    <div className="flex justify-end gap-3 mt-6">
                       <BackButton fallbackUrl="/job/draft" label='Cancel' />
                       <Can action="create" on="Drafting">
                         <Button
@@ -622,10 +595,9 @@ export function DrafterDetailsPage() {
                     </div>
                   )}
 
-
-
                 </CardContent>
               </Card>
+              
               <SessionHistory fabId={fabId} />
             </>
           )}
