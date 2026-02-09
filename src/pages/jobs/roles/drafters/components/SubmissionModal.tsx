@@ -207,7 +207,12 @@ export const SubmissionModal = ({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="border-b">
-            <DialogTitle className="text-[15px] font-semibold py-2">Submit Draft</DialogTitle>
+            <DialogTitle className="text-[15px] font-semibold py-2">
+              Submit Draft
+              <span className="ml-3 text-sm font-normal text-gray-500">
+                FAB ID: {fabId}
+              </span>
+            </DialogTitle>
           </div>
         </DialogHeader>
 
