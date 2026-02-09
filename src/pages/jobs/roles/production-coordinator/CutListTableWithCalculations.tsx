@@ -67,6 +67,13 @@ export interface CalculatedCutListData {
     on_hold?: boolean; // Add on_hold field
     fab_notes?: Array<{ id: number; note: string; created_by_name?: string; created_at?: string; stage?: string }>; // Array of notes for this FAB
     notes?: Array<{ id: number; note: string; created_by_name?: string; created_at?: string; stage?: string }>; // Alternative notes array name
+    // Fab Info fields
+    acct_name?: string;
+    input_area?: string;
+    stone_type_name?: string;
+    stone_color_name?: string;
+    stone_thickness_value?: string;
+    edge_name?: string;
 
 }
 
@@ -114,6 +121,14 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
         status_id: fab.status_id !== undefined ? fab.status_id : 1, // Use fab.status_id directly
         on_hold: fab.status_id === 0, // Derive on_hold from status_id (0 = on hold)
         fab_notes: fab.fab_notes || [], // Pass through fab_notes from the Fab object
+
+        // Fab Info mapping
+        acct_name: fab.account_name || fab.job_details?.account_id?.toString() || '', // Fallback mostly for types
+        input_area: fab.input_area,
+        stone_type_name: fab.stone_type_name,
+        stone_color_name: fab.stone_color_name,
+        stone_thickness_value: fab.stone_thickness_value,
+        edge_name: fab.edge_name,
     };
 };
 
@@ -356,6 +371,48 @@ export const CutListTableWithCalculations = ({
         setSelectedFabId('');
     };
 
+    // Function to generate fab info with structured data
+    const generateFabInfo = (list: CalculatedCutListData): { jobInfo: string[]; materialInfo: string[] } => {
+        const jobInfo: string[] = [];
+        const materialInfo: string[] = [];
+
+        // Job-related information
+        if (list.acct_name) {
+            jobInfo.push(list.acct_name);
+        }
+
+        if (list.job_name) {
+            jobInfo.push(list.job_name);
+        }
+
+        if (list.input_area) {
+            jobInfo.push(`Area: ${list.input_area}`);
+        }
+
+        // Material & measurement details
+        if (list.total_sq_ft) {
+            materialInfo.push(`${list.total_sq_ft} sq ft`);
+        }
+
+        if (list.stone_type_name) {
+            materialInfo.push(list.stone_type_name);
+        }
+
+        if (list.stone_color_name) {
+            materialInfo.push(list.stone_color_name);
+        }
+
+        if (list.stone_thickness_value) {
+            materialInfo.push(list.stone_thickness_value);
+        }
+
+        if (list.edge_name) {
+            materialInfo.push(list.edge_name);
+        }
+
+        return { jobInfo, materialInfo };
+    };
+
     const baseColumns = useMemo<ColumnDef<CalculatedCutListData>[]>(() => [
         // {
         //     accessorKey: 'id',
@@ -585,6 +642,36 @@ export const CutListTableWithCalculations = ({
                     {row.original.sales_person || 'N/A'}
                 </span>
             ),
+        },
+        {
+            id: "fab_info",
+            header: ({ column }) => (
+                <DataGridColumnHeader title="FAB INFO" column={column} />
+            ),
+            cell: ({ row }) => {
+                const { jobInfo, materialInfo } = generateFabInfo(row.original);
+                return (
+                    <div className="flex gap-4 text-xs max-w-[400px]">
+                        {/* Job Info Side */}
+                        {jobInfo.length > 0 && (
+                            <div className="flex-1 min-w-0">
+                                {jobInfo.map((info, idx) => (
+                                    <div key={idx} className="truncate text-gray-600">{info}</div>
+                                ))}
+                            </div>
+                        )}
+                        {/* Material Info Side */}
+                        {materialInfo.length > 0 && (
+                            <div className="flex-1 min-w-0">
+                                {materialInfo.map((info, idx) => (
+                                    <div key={idx} className="truncate text-gray-600">{info}</div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
+            },
+            size: 300,
         },
         // Cutting Notes Column
         {

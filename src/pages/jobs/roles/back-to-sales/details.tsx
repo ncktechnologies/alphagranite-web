@@ -12,7 +12,7 @@ import { RevisionModal } from './components/SubmissionModal';
 import { MarkAsCompleteModal } from './components/MarkAsCompleteModal';
 import { ApproveAndSendToSlabSmithModal } from './components/ApproveAndSendToSlabSmithModal';
 import { useApproveAndSendToSlabSmithMutation } from '@/store/api/job';
-import { TimeDisplay } from './components/DisplayTime';
+import { SCTTimer } from './components/SCTTimer';
 import { useSCTService } from './components/SCTService';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useGetFabByIdQuery } from '@/store/api/job';
@@ -322,13 +322,17 @@ const DraftReviewDetailsPage = () => {
                             </Card>
 
                             <Card>
-                                {/* <CardHeader className='py-5 border-b'>
-                                    <TimeDisplay
+                                <CardHeader className='py-5 border-b'>
+                                    {/* <TimeDisplay
                                         startTime={draftData?.drafter_start_date ? new Date(draftData.drafter_start_date) : undefined}
                                         endTime={draftData?.drafter_end_date ? new Date(draftData.drafter_end_date) : undefined}
                                         totalTime={draftData?.total_hours_drafted || 0}
+                                    /> */}
+                                    <SCTTimer
+                                        startTime={draftData?.drafter_end_date || null}
+                                        endTime={fabData?.sct_completed_date || null}
                                     />
-                                </CardHeader> */}
+                                </CardHeader>
                                 <CardContent className="">
                                     <h2 className='font-semibold text-sm py-3'>Uploaded files</h2>
                                     <Documents
