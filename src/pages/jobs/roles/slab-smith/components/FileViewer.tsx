@@ -42,11 +42,53 @@ export const FileViewer = ({
     setRotation(prev => (prev + 90) % 360);
   };
 
-  const handleDownload = () => {
-    if (file.url) {
+  const handleDownload = async () => {
+    if (!file.url) return;
+    
+    try {
+      // Determine the best filename to use
+      let fileName = file.name;
+      
+      // If name is empty, try to extract from URL
+      if (!fileName || fileName.startsWith('File_')) {
+        const urlParts = file.url.split('/');
+        const urlFileName = urlParts[urlParts.length - 1].split('?')[0];
+        
+        // If URL gives a UUID-like string without extension, use File_id
+        if (urlFileName.match(/^[0-9a-f-]{36}$/i) || !urlFileName.includes('.')) {
+          fileName = fileName || 'downloaded-file';
+        } else {
+          fileName = urlFileName;
+        }
+      }
+      
+      // Ensure file has extension based on type
+      const hasExtension = /\.[a-zA-Z0-9]+$/.test(fileName);
+      if (!hasExtension && file.type) {
+        const extension = file.type.split('/')[1];
+        if (extension) {
+          fileName = `${fileName}.${extension}`;
+        }
+      }
+      
+      // Fetch the file as a blob to avoid CORS issues with download attribute
+      const response = await fetch(file.url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error('Download failed:', error);
+      // Fallback to simple download
       const link = document.createElement('a');
       link.href = file.url;
-      link.download = file.name;
+      link.download = file.name || 'downloaded-file';
       link.click();
     }
   };

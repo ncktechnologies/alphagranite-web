@@ -60,13 +60,13 @@ export function Documents({
         try {
           const actualFiles = draftingData.files.map((file: any) => ({
             id: String(file.id),
-            name: file.name || `File_${file.id}`,
-            size: parseInt(file.file_size) || 0,
-            type: file.file_type || 'application/octet-stream',
-            url: file.file_url || '/images/app/upload-file.svg',
-            stage: getFileStage(file.name, { isDrafting: true }),
+            name: file.filename || file.name || `File_${file.id}`,
+            size: parseInt(file.file_size) || parseInt(file.size) || 0,
+            type: file.file_type || file.mime_type || 'application/octet-stream',
+            url: file.file_url || file.url || '/images/app/upload-file.svg',
+            stage: getFileStage(file.filename || file.name, { isDrafting: true }),
             uploadedBy: '',
-            uploadedAt: file.created_at ? new Date(file.created_at) : new Date()
+            uploadedAt: file.created_at || file.uploaded_at ? new Date(file.created_at || file.uploaded_at) : new Date()
           }));
           allFiles.push(...actualFiles);
         } catch (error) {

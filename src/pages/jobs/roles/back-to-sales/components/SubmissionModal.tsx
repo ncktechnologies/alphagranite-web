@@ -18,7 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
-import { Upload, Plus, Check, X } from "lucide-react";
+import { Upload, Plus, Check, X, Eye, Download } from "lucide-react";
 import { Alert, AlertIcon, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { useNavigate } from "react-router";
@@ -30,8 +30,6 @@ import {
   useSendToDraftingMutation,
   useUpdateSCTRevisionMutation
 } from "@/store/api/job";
-// Remove the employee API import since we'll get sales person from FAB data
-// import { useGetEmployeesQuery } from "@/store/api/employee";
 import {
   Select,
   SelectTrigger,
@@ -41,7 +39,6 @@ import {
 } from "@/components/ui/select";
 
 const revisionSchema = z.object({
-  // Remove salesPerson from schema since we'll use FAB data
   revisionType: z.string().min(1, "Select revision type"),
   reason: z.string().min(1, "Revision reason is required"),
   files: z.array(z.any()).optional(),
@@ -57,11 +54,8 @@ interface RevisionModalProps {
   fabType: string;
   totalSqFt: number;
   pieces: number;
-  // Remove salesPerson prop since we'll get it from FAB data
-  // salesPerson: string;
   onSubmit: (data: RevisionData) => void;
-  sctId?: number; // Add SCT ID for revision update
-  // Add fabSalesPerson prop to receive sales person from FAB data
+  sctId?: number;
   fabSalesPerson?: string;
 }
 
@@ -73,52 +67,39 @@ export const RevisionModal = ({
   fabType,
   totalSqFt,
   pieces,
-  // Remove salesPerson destructuring
-  // salesPerson,
   onSubmit,
   sctId,
-  // Add fabSalesPerson destructuring
   fabSalesPerson,
 }: RevisionModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFileMeta[]>([]);
-  const [uploadInstances, setUploadInstances] = useState<number[]>([1]); // Track upload instances
-  const [pendingFiles, setPendingFiles] = useState<{[key: number]: File[]}>({}); // Track pending files by instance ID
-  const [uploadedFileInstances, setUploadedFileInstances] = useState<{[key: number]: UploadedFileMeta}>({}); // Track uploaded files by instance ID
+  const [uploadInstances, setUploadInstances] = useState<number[]>([1]);
+  const [pendingFiles, setPendingFiles] = useState<{[key: number]: File[]}>({});
+  const [uploadedFileInstances, setUploadedFileInstances] = useState<{[key: number]: UploadedFileMeta}>({});
   const [uploadImage] = useUploadImageMutation();
   const [setSCTReviewYes] = useSetSCTReviewYesMutation();
   const [sendToDrafting] = useSendToDraftingMutation();
   const [updateSCTRevision] = useUpdateSCTRevisionMutation();
   const navigate = useNavigate();
 
-  // Remove employee API call since we're getting sales person from FAB data
-  // const { data: employeesData, isLoading: isEmployeesLoading } = useGetEmployeesQuery({
-  //   department_id: 1, // Assuming sales department ID is 1, adjust as needed
-  //   role_id: 2, // Assuming sales role ID is 2, adjust as needed
-  // });
-
   const form = useForm<RevisionData>({
     resolver: zodResolver(revisionSchema),
     defaultValues: {
-      // Remove salesPerson from default values
-      // salesPerson,
       revisionType: "",
       reason: "",
       files: [],
     },
-    mode: "onChange", // Validate on change
+    mode: "onChange",
   });
 
   const handleFileSelection = (fileList: FileList, instanceId: number) => {
     const files = Array.from(fileList);
     
-    // Store files locally without uploading
     setPendingFiles(prev => ({
       ...prev,
       [instanceId]: files
     }));
     
-    // Create temporary file metadata for display
     const tempFiles: UploadedFileMeta[] = files.map(file => ({
       id: `temp_${Date.now()}_${Math.random()}`,
       name: file.name,
@@ -126,10 +107,9 @@ export const RevisionModal = ({
       type: file.type,
     }));
     
-    // Mark this instance as having selected files
     setUploadedFileInstances(prev => ({
       ...prev,
-      [instanceId]: tempFiles[0] // Show first file in the instance
+      [instanceId]: tempFiles[0]
     }));
     
     toast.success(`${files.length} file(s) selected`);
@@ -138,16 +118,31 @@ export const RevisionModal = ({
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>, instanceId: number) => {
     if (!e.target.files?.length) return;
     handleFileSelection(e.target.files, instanceId);
-    e.target.value = ""; // Reset input
+    e.target.value = "";
+  };
+
+  // Function to handle file viewing/downloading
+  const handleViewFile = (file?: UploadedFileMeta, pendingFile?: File) => {
+    if (pendingFile) {
+      // For pending files (not uploaded yet)
+      const fileUrl = URL.createObjectURL(pendingFile);
+      window.open(fileUrl, '_blank');
+      
+      // Clean up the blob URL after 1 minute to prevent memory leaks
+      setTimeout(() => URL.revokeObjectURL(fileUrl), 60000);
+    } else if (file?.url) {
+      // For uploaded files (on server)
+      window.open(file.url, '_blank');
+    } else {
+      toast.error("File not available for viewing");
+    }
   };
 
   const handleSubmit = async (values: RevisionData) => {
     setIsSubmitting(true);
     try {
-
       const currentSctId = sctId;
 
-      // Make sure we have a valid SCT ID before proceeding
       if (!currentSctId) {
         toast.error("No Sales Check Task available. Please refresh the page and try again.");
         return;
@@ -164,7 +159,6 @@ export const RevisionModal = ({
           formData.append("file", file);
           const response = await uploadImage(formData).unwrap();
           
-          // Handle the response structure - check if it's wrapped or direct
           const fileData = response.data ? response.data : response;
           
           const uploadedFile: UploadedFileMeta = {
@@ -185,7 +179,7 @@ export const RevisionModal = ({
         setUploadedFiles(allUploadedFiles);
       }
       
-      // Also include any existing file IDs from props if available
+      // Include existing file IDs if available
       const existingFileIds = form.getValues("files")?.map((file: any) => file.id).join(',') || '';
       if (existingFileIds && fileIds) {
         fileIds = `${existingFileIds},${fileIds}`;
@@ -200,16 +194,6 @@ export const RevisionModal = ({
         revision_type: values.revisionType,
         file_ids: fileIds
       }).unwrap();
-
-      // Update SCT revision with revision type and status
-      // await updateSCTRevision({
-      //   sct_id: currentSctId,
-      //   data: {
-      //     revision_type: values.revisionType,
-      //     is_revision_completed: false, // Revision is sent back, not completed yet
-      //     draft_note: values.reason
-      //   }
-      // }).unwrap();
 
       // Then, send to drafting with notes
       await sendToDrafting({
@@ -246,22 +230,10 @@ export const RevisionModal = ({
     }
   };
 
-  // Debugging: Log form state changes
-  // useEffect(() => {
-  //   console.log("Form state:", {
-  //     isValid: form.formState.isValid,
-  //     errors: form.formState.errors,
-  //     isDirty: form.formState.isDirty,
-  //     sctId: sctId,
-  //     reasonValue: form.getValues("reason"),
-  //     reasonLength: form.getValues("reason")?.length || 0
-  //   });
-  // }, [form.formState, sctId, form.watch("reason")]);
-
   // Trigger validation when SCT ID becomes available
   useEffect(() => {
     if (sctId) {
-      form.trigger(); // Manually trigger validation when SCT ID is available
+      form.trigger();
     }
   }, [sctId, form]);
 
@@ -296,7 +268,6 @@ export const RevisionModal = ({
             <p className="text-text-foreground">Total Sq Ft</p>
             <p className="font-semibold leading-[28px] text-base text-text">{totalSqFt}</p>
           </div>
-          {/* Display sales person from FAB data */}
           <div>
             <p className="text-text-foreground">Sales person</p>
             <p className="font-semibold leading-[28px] text-base text-text">
@@ -307,8 +278,6 @@ export const RevisionModal = ({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 pt-5">
-            {/* Remove Sales Person field since we're displaying it above from FAB data */}
-
             {/* Revision Reason */}
             <FormField
               control={form.control}
@@ -327,6 +296,7 @@ export const RevisionModal = ({
                 </FormItem>
               )}
             />
+            
             {/* Revision Type */}
             <div className="max-w-[500px]">
               <FormField
@@ -353,6 +323,7 @@ export const RevisionModal = ({
                 )}
               />
             </div>
+            
             {/* File Upload */}
             <div className="space-y-2">
               <FormLabel>Upload files</FormLabel>
@@ -374,26 +345,44 @@ export const RevisionModal = ({
                           </p>
                         </div>
                       </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          // Remove selected file
-                          setUploadedFileInstances(prev => {
-                            const newInstances = { ...prev };
-                            delete newInstances[instanceId];
-                            return newInstances;
-                          });
-                          setPendingFiles(prev => {
-                            const newPending = { ...prev };
-                            delete newPending[instanceId];
-                            return newPending;
-                          });
-                        }}
-                      >
-                        <X className="w-4 h-4 text-red-500" />
-                      </Button>
+                      <div className="flex items-center gap-1">
+                        {/* View Button */}
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const pendingFile = pendingFiles[instanceId]?.[0];
+                            if (pendingFile) {
+                              handleViewFile(undefined, pendingFile);
+                            }
+                          }}
+                          title="View file"
+                        >
+                          <Eye className="w-4 h-4 text-blue-500" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            // Remove selected file
+                            setUploadedFileInstances(prev => {
+                              const newInstances = { ...prev };
+                              delete newInstances[instanceId];
+                              return newInstances;
+                            });
+                            setPendingFiles(prev => {
+                              const newPending = { ...prev };
+                              delete newPending[instanceId];
+                              return newPending;
+                            });
+                          }}
+                          title="Remove file"
+                        >
+                          <X className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
                     </div>
                   ) : (
                     // Show upload input
@@ -440,9 +429,22 @@ export const RevisionModal = ({
                           <span className="text-sm text-gray-600">•</span>
                           <span className="text-sm text-gray-800 truncate">{file.name}</span>
                         </div>
-                        <span className="text-xs text-gray-500">
-                          {(file.size / 1024 / 1024).toFixed(2)} MB
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-500">
+                            {(file.size / 1024 / 1024).toFixed(2)} MB
+                          </span>
+                          {file.url && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleViewFile(file)}
+                              title="View file"
+                            >
+                              <Eye className="w-4 h-4 text-blue-500" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>

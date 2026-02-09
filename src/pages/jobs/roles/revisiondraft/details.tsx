@@ -16,6 +16,7 @@ import {
     useGetRevisionsByFabIdQuery, // Add this import
     useCreateRevisionMutation,
     useUpdateRevisionMutation,
+    useGetSalesCTByFabIdQuery, // Add SCT query import
 } from '@/store/api/job';
 import { toast } from 'sonner';
 import { useSelector } from 'react-redux';
@@ -51,6 +52,12 @@ const ReviewDetailsPage = () => {
     // Fetch FAB data
     const { data: fabData, isLoading: isFabLoading, isError: isFabError } = useGetFabByIdQuery(Number(id), { skip: !id });
 
+    // Fetch SCT data by FAB ID - this should contain sales_ct_data
+    const { data: sctData, isLoading: isSctLoading } = useGetSalesCTByFabIdQuery(Number(id), { skip: !id });
+
+    // Check if the main fabData has sales_ct_data embedded
+    const salesCTData = (fabData as any)?.sales_ct_data || sctData;
+
     // Fetch revisions by FAB ID
     const { data: revisionsData, isLoading: isRevisionsLoading } = useGetRevisionsByFabIdQuery(Number(id), { skip: !id });
 
@@ -61,9 +68,28 @@ const ReviewDetailsPage = () => {
     const [createRevision, { isLoading: isCreatingRevision }] = useCreateRevisionMutation();
     const [updateRevision] = useUpdateRevisionMutation();
 
-    // Get revision reason from fab_notes
+    // Get revision reason from fab_notes or SCT data
     const fabNotes = (fabData as any)?.fab_notes || [];
     const revisionNote = fabNotes.find((note: any) => note.stage === 'sales_ct')?.note || '';
+    
+    // Get revision type from the revision note or default to general
+    const revisionType = revisionNote.toLowerCase().includes('cad') ? 'cad' : 
+                  revisionNote.toLowerCase().includes('client') ? 'client' : 
+                  revisionNote.toLowerCase().includes('sales') ? 'sales' : 
+                  revisionNote.toLowerCase().includes('template') ? 'template' : 'general';
+    
+    // Separate files into SCT-related and draft-related
+    const allFiles = draftData?.files || [];
+    
+    // Get SCT-specific files from salesCTData if available
+    const sctSpecificFiles = salesCTData?.files || [];
+    
+    // If sales_ct_data has files, those are the SCT files
+    const sctFiles = sctSpecificFiles.length > 0 ? sctSpecificFiles : [];
+    // The remaining files are draft files
+    const draftFiles = allFiles.filter((file: any) => 
+        !sctSpecificFiles.some((sctFile: any) => sctFile.id === file.id)
+    );
 
     const handleFileClick = (file: any) => {
         setActiveFile(file);
@@ -270,7 +296,7 @@ const ReviewDetailsPage = () => {
     ];
 
     // Handle loading and error states AFTER all hooks are declared
-    if (isFabLoading || isRevisionsLoading) {
+    if (isFabLoading || isRevisionsLoading || isSctLoading) {
         return <div>Loading...</div>;
     }
 
@@ -339,9 +365,14 @@ const ReviewDetailsPage = () => {
                                 <CardHeader >
                                     <CardHeading className='flex flex-col items-start py-4'>
                                         <CardTitle className='text-[#FF8D28] leading-[32px]'>Revision reason</CardTitle>
-                                        <p className="text-sm text-[#4B5563]">
-                                            {revisionNote.replace('[REVISION REQUEST] ', '') || 'No revision reason provided'}
-                                        </p>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <p className="text-sm text-[#4B5563]">
+                                                {revisionNote.replace('[REVISION REQUEST] ', '') || 'No revision reason provided'}
+                                            </p>
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                {revisionType.toUpperCase()}
+                                            </span>
+                                        </div>
                                     </CardHeading>
 
                                     <CardToolbar>
@@ -383,10 +414,33 @@ const ReviewDetailsPage = () => {
                                     })()}
                                 </CardHeader>
                                 <CardContent className="">
-                                    <h2 className='font-semibold text-sm py-3'>Uploaded files</h2>
+                                    {/* Display SCT files first */}
+                                    {sctFiles && sctFiles.length > 0 && (
+                                        <>
+                                            <h2 className='font-semibold text-sm py-3'>SCT Files</h2>
+                                            <Documents
+                                                onFileClick={handleFileClick}
+                                                draftingData={{
+                                                    id: salesCTData.id,
+                                                    fab_id: salesCTData.fab_id,
+                                                    drafter_id: draftData.drafter_id,
+                                                    status_id: draftData.status_id,
+                                                    created_at: salesCTData.created_at,
+                                                    files: sctFiles
+                                                    
+                                                    // revision_type
+                                                }}
+                                            />
+                                        </>
+                                    )}
+                                    
+                                    <h2 className='font-semibold text-sm py-3'>Drafting Files</h2>
                                     <Documents
                                         onFileClick={handleFileClick}
-                                        draftingData={draftData}
+                                        draftingData={{
+                                            ...draftData,
+                                            files: draftFiles
+                                        }}
                                     />
                                 </CardContent>
                             </Card>
