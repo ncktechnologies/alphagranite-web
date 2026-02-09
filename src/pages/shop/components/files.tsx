@@ -48,7 +48,8 @@ export function Documents({
   draftingData, 
   onDeleteFile, 
   draftingId, 
-  uploadedFileMetas = []
+  uploadedFileMetas = [],
+  currentStage
 }: UploadBoxProps) {
   // Use useMemo to compute files instead of useState/useEffect
   const files = useMemo(() => {
@@ -64,7 +65,10 @@ export function Documents({
             size: parseInt(file.file_size) || parseInt(file.size) || 0,
             type: file.file_type || file.mime_type || 'application/octet-stream',
             url: file.file_url || file.url || '/images/app/upload-file.svg',
-            stage: getFileStage(file.filename || file.name, { isDrafting: true }),
+            stage: getFileStage(file.filename || file.name, { 
+              isDrafting: true, 
+              currentStage: currentStage 
+            }),
             uploadedBy: '',
             uploadedAt: file.created_at || file.uploaded_at ? new Date(file.created_at || file.uploaded_at) : new Date()
           }));
@@ -83,7 +87,7 @@ export function Documents({
             size: 1024000 + index * 512000,
             type: 'application/pdf',
             url: '/images/app/upload-file.svg',
-            stage: WORKFLOW_STAGES.drafting,
+            stage: currentStage ? WORKFLOW_STAGES[currentStage] : WORKFLOW_STAGES.drafting,
             uploadedBy: '',
             uploadedAt: new Date()
           }));
@@ -110,7 +114,7 @@ export function Documents({
     }
     
     return allFiles;
-  }, [draftingData, uploadedFileMetas]); // Only recompute when these change
+  }, [draftingData, uploadedFileMetas, currentStage]); // Only recompute when these change
 
   const getFileIcon = useCallback((file: FileMetadata) => {
     const { type } = file;

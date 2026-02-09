@@ -66,6 +66,12 @@ export const WORKFLOW_STAGES: Record<string, FileLabel> = {
     color: 'text-yellow-700',
     bgColor: 'bg-yellow-100'
   },
+  'sct_uploads': {
+    stage: 'sct_uploads',
+    label: 'SCT Uploads',
+    color: 'text-yellow-700',
+    bgColor: 'bg-yellow-100'
+  },
   
   // Slab Smith stages
   'slab_smith': {

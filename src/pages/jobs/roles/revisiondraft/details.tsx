@@ -73,10 +73,10 @@ const ReviewDetailsPage = () => {
     const revisionNote = fabNotes.find((note: any) => note.stage === 'sales_ct')?.note || '';
     
     // Get revision type from the revision note or default to general
-    const revisionType = revisionNote.toLowerCase().includes('cad') ? 'cad' : 
-                  revisionNote.toLowerCase().includes('client') ? 'client' : 
-                  revisionNote.toLowerCase().includes('sales') ? 'sales' : 
-                  revisionNote.toLowerCase().includes('template') ? 'template' : 'general';
+    const revisionType = salesCTData?.revision_type?.toLowerCase().includes('cad') ? 'cad' : 
+                  salesCTData?.revision_type?.toLowerCase().includes('client') ? 'client' : 
+                  salesCTData?.revision_type?.toLowerCase().includes('sales') ? 'sales' : 
+                  salesCTData?.revision_type?.toLowerCase().includes('template') ? 'template' : 'general';
     
     // Separate files into SCT-related and draft-related
     const allFiles = draftData?.files || [];
@@ -126,7 +126,7 @@ const ReviewDetailsPage = () => {
                 // Create new revision with actual_start_date
                 const createData: any = {
                     fab_id: Number(id),
-                    revision_type: 'general',
+                    revision_type: salesCTData?.revision_type || 'general',
                     requested_by: user.id || 1,
                     revision_notes: revisionNote.replace('[REVISION REQUEST] ', '') || '',
                     actual_start_date: new Date().toISOString().split('.')[0]
@@ -179,7 +179,7 @@ const ReviewDetailsPage = () => {
 
                 // Prepare update data
                 const updateData: any = {
-                    revision_type: submissionData.revisionType || '',
+                    revision_type: salesCTData?.revision_type || '',
                     revision_notes: revisionNote.replace('[REVISION REQUEST] ', '') || ''
                 };
 
@@ -205,7 +205,7 @@ const ReviewDetailsPage = () => {
                 // Prepare creation data
                 const createData: any = {
                     fab_id: Number(id),
-                    revision_type: submissionData.revisionType || 'general',
+                    revision_type: salesCTData?.revision_type || 'general',
                     requested_by: user.id || 1,
                     revision_notes: revisionNote.replace('[REVISION REQUEST] ', '') || ''
                 };
@@ -408,7 +408,7 @@ const ReviewDetailsPage = () => {
                                             <TimeDisplay
                                         startTime={draftData?.drafter_start_date ? new Date(draftData.drafter_start_date) : undefined}
                                         endTime={draftData?.drafter_end_date ? new Date(draftData.drafter_end_date) : undefined}
-                                                totalTime={draftData?.total_time_spent || 0}
+                                                totalTime={fabData?.drafting_session?.total_time_spent || 0}
                                             />
                                         );
                                     })()}
@@ -430,6 +430,7 @@ const ReviewDetailsPage = () => {
                                                     
                                                     // revision_type
                                                 }}
+                                                 currentStage="sct_uploads"
                                             />
                                         </>
                                     )}
