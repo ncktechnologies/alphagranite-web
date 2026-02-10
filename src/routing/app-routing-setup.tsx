@@ -50,6 +50,7 @@ import { JobDashboardPage } from '@/pages/jobs';
 import { JobDetailsPage } from '@/pages/jobs/JobDetailsPage';
 import { NeedToInvoicePage } from '@/pages/jobs/NeedToInvoicePage';
 import { StoreDashboardPage } from '@/pages/shop';
+import { RevisionDetailsPage } from '@/pages/jobs/roles/revisiondraft/Revisiondetails';
 
 export function AppRoutingSetup() {
   return (
@@ -236,7 +237,7 @@ export function AppRoutingSetup() {
             path="/job/revision/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <ReviewDetailsPage/>
+                <RevisionDetailsPage/>
               // </ProtectedRoute>
             }
           />

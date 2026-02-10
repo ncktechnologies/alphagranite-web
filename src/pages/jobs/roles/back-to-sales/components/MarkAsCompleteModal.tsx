@@ -25,8 +25,9 @@ import { Can } from '@/components/permission';
 
 const markAsCompleteSchema = z.object({
   revenue: z.string().min(1, "Revenue is required"),
-  slabSmithUsed: z.boolean(),
   notes: z.string().optional(),
+  slabSmithApproved: z.boolean().default(false),
+  blockDrawingApproved: z.boolean().default(false),
   sctCompleted: z.boolean().default(false),
 });
 
@@ -36,10 +37,14 @@ export const MarkAsCompleteModal = ({
   open,
   onClose,
   onSubmit,
+  slabSmithNeeded = false,
+  isSlabSmithActivityComplete = false,
 }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (data: MarkAsCompleteData) => void;
+  slabSmithNeeded?: boolean;
+  isSlabSmithActivityComplete?: boolean;
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -47,8 +52,9 @@ export const MarkAsCompleteModal = ({
     resolver: zodResolver(markAsCompleteSchema),
     defaultValues: {
       revenue: "",
-      slabSmithUsed: false,
       notes: "",
+      slabSmithApproved: false,
+      blockDrawingApproved: false,
       sctCompleted: false,
     },
   });
@@ -67,6 +73,8 @@ export const MarkAsCompleteModal = ({
     }
   };
 
+  const isSubmitDisabled = slabSmithNeeded && !isSlabSmithActivityComplete;
+
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
@@ -82,8 +90,8 @@ export const MarkAsCompleteModal = ({
                 <FormItem>
                   <FormLabel>Revenue ($)</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Enter revenue amount" 
+                    <Input
+                      placeholder="Enter revenue amount"
                       {...field}
                       type="number"
                       step="0.01"
@@ -94,10 +102,48 @@ export const MarkAsCompleteModal = ({
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
-              name="slabSmithUsed"
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter any additional notes (optional)"
+                      {...field}
+                      className="resize-none"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {slabSmithNeeded && (
+              <FormField
+                control={form.control}
+                name="slabSmithApproved"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>SlabSmith Approved</FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <FormField
+              control={form.control}
+              name="blockDrawingApproved"
               render={({ field }) => (
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                   <FormControl>
@@ -107,30 +153,12 @@ export const MarkAsCompleteModal = ({
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel>Slab Smith Used</FormLabel>
+                    <FormLabel>Block Drawing Approved</FormLabel>
                   </div>
                 </FormItem>
               )}
             />
-            
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notes</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Enter any additional notes (optional)" 
-                      {...field}
-                      className="resize-none"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
+
             <FormField
               control={form.control}
               name="sctCompleted"
@@ -143,12 +171,12 @@ export const MarkAsCompleteModal = ({
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel>Mark as Completed</FormLabel>
+                    <FormLabel>SCT Complete</FormLabel>
                   </div>
                 </FormItem>
               )}
             />
-            
+
             <div className="flex justify-end gap-3 pt-4">
               <Button
                 type="button"
@@ -161,12 +189,13 @@ export const MarkAsCompleteModal = ({
                 Cancel
               </Button>
               {/* <Can action="update" on="Sct"> */}
-                <Button
-                  type="submit"
-                  disabled={isSubmitting || !form.formState.isValid}
-                >
-                  {isSubmitting ? "Submitting..." : "Submit"}
-                </Button>
+              <Button
+                type="submit"
+                disabled={isSubmitting || !form.formState.isValid || isSubmitDisabled}
+                title={isSubmitDisabled ? "SlabSmith activity must be complete first" : ""}
+              >
+                {isSubmitting ? "Submitting..." : "Approve and Send to Cut List"}
+              </Button>
               {/* </Can> */}
             </div>
           </form>

@@ -13,12 +13,20 @@ import { RevisionForm } from './components/SubmissionModal';
 import { TimeDisplay } from './components/DisplayTime';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import {
     useGetFabByIdQuery,
     useGetRevisionsByFabIdQuery, // Add this import
     useCreateRevisionMutation,
     useUpdateRevisionMutation,
     useManageDraftingSessionMutation, // Add session management mutation
+    useGetSalesCTByFabIdQuery, // Add SCT query import
 } from '@/store/api/job';
+import { Documents } from '@/pages/shop/components/files';
 import { toast } from 'sonner';
 import { useSelector } from 'react-redux';
 import { Can } from '@/components/permission';
@@ -35,7 +43,7 @@ const getAllFabNotes = (fabNotes: any[]) => {
     return fabNotes || [];
 };
 
-const ReviewDetailsPage = () => {
+const RevisionDetailsPage = () => {
     type ViewMode = 'activity' | 'file' | 'edit';
     const [showSubmissionModal, setShowSubmissionModal] = useState(false);
     const [isDrafting, setIsDrafting] = useState(false);
@@ -59,11 +67,29 @@ const ReviewDetailsPage = () => {
     // Fetch FAB data
     const { data: fabData, isLoading: isFabLoading, isError: isFabError } = useGetFabByIdQuery(Number(id), { skip: !id });
 
-    // Fetch revisions by FAB ID
     const { data: revisionsData, isLoading: isRevisionsLoading } = useGetRevisionsByFabIdQuery(Number(id), { skip: !id });
+
+    // Fetch SCT data by FAB ID - this should contain sales_ct_data
+    const { data: sctData, isLoading: isSctLoading } = useGetSalesCTByFabIdQuery(Number(id), { skip: !id });
+
+    // Check if the main fabData has sales_ct_data embedded
+    const salesCTData = (fabData as any)?.sales_ct_data || sctData;
 
     // Use draft_data from FAB response
     const draftData = (fabData as any)?.draft_data;
+
+    // Separate files into SCT-related and draft-related
+    const allFiles = draftData?.files || [];
+
+    // Get SCT-specific files from salesCTData if available
+    const sctSpecificFiles = salesCTData?.files || [];
+
+    // If sales_ct_data has files, those are the SCT files
+    const sctFiles = sctSpecificFiles.length > 0 ? sctSpecificFiles : [];
+    // The remaining files are draft files
+    const draftFiles = allFiles.filter((file: any) =>
+        !sctSpecificFiles.some((sctFile: any) => sctFile.id === file.id)
+    );
 
     // SCT mutations - MUST be called unconditionally
     const [createRevision, { isLoading: isCreatingRevision }] = useCreateRevisionMutation();
@@ -82,7 +108,7 @@ const ReviewDetailsPage = () => {
     };
 
     // Session management functions with is_revision flag
-    const createOrStartSession = async (action: 'start' | 'resume', startDate: Date, note?: string, sqftDrafted?: string, parentSessionId?: string) => {
+    const createOrStartSession = async (action: 'start' | 'resume', startDate: Date, note?: string, sqftDrafted?: string) => {
         try {
             const fabId = Number(id);
             const userId = user?.id || user?.employee_id;
@@ -96,7 +122,6 @@ const ReviewDetailsPage = () => {
                     note: note,
                     sqft_drafted: sqftDrafted,
                     is_revision: true, // Mark as revision session
-                    parent_session_id: parentSessionId, // Link to original session
                 }
             }).unwrap();
 
@@ -149,16 +174,8 @@ const ReviewDetailsPage = () => {
 
     // Time tracking handlers for revisions
     const handleStart = async (startDate: Date, data?: { note?: string; sqft_drafted?: string }) => {
-        // Get parent session ID from original drafting data
-        const parentSessionId = draftData?.session_id;
-
-        if (!parentSessionId) {
-            toast.error('Cannot start revision session - no original session found');
-            return;
-        }
-
         try {
-            await createOrStartSession('start', startDate, data?.note, data?.sqft_drafted, parentSessionId);
+            await createOrStartSession('start', startDate, data?.note, data?.sqft_drafted);
         } catch (error) {
             // Error handled in createOrStartSession
         }
@@ -183,6 +200,7 @@ const ReviewDetailsPage = () => {
     const handleEnd = async (endDate: Date, data?: { note?: string; sqft_drafted?: string }) => {
         try {
             await updateSession('end', endDate, data?.note, data?.sqft_drafted);
+            setShowSubmissionModal(true); // Open submission modal
         } catch (error) {
             // Error handled in updateSession
         }
@@ -393,15 +411,7 @@ const ReviewDetailsPage = () => {
                     />
                 </div>
                 <Container className="lg:col-span-9">
-                    {/* Always render the RevisionForm but conditionally show/hide it */}
-                    <div className={viewMode === 'edit' ? 'block' : 'hidden'}>
-                        <RevisionForm
-                            onSubmit={handleSubmitDraft}
-                            onClose={() => setViewMode('activity')}
-                            revisionReason={revisionNote.replace('[REVISION REQUEST] ', '')}
-                            draftingData={draftData}
-                        />
-                    </div>
+                    {/* Always render the RevisionForm but conditionally show/hide it - REMOVED INLINE FORM */}
 
                     {viewMode === 'file' && activeFile ? (
                         <div className="">
@@ -437,11 +447,9 @@ const ReviewDetailsPage = () => {
                                     </CardHeading>
 
                                     <CardToolbar>
-                                        <Can
-                                            action="update"
-                                            on="Revisions">
-                                            <Button onClick={handleEditRole}>Start Revision</Button>
-                                        </Can>
+                                        <Button onClick={() => setViewMode(viewMode === 'file' ? 'activity' : 'file')}>
+                                            {viewMode === 'file' ? 'Hide Files' : 'View Files'}
+                                        </Button>
                                     </CardToolbar>
                                 </CardHeader>
                             </Card>
@@ -478,14 +486,63 @@ const ReviewDetailsPage = () => {
                                         onFileClick={handleFileClick}
                                         draftingData={draftData}
                                     /> */}
+
+                                    {viewMode === 'file' && (
+                                        <div className="mt-6 border-t pt-4">
+                                            <h3 className="text-lg font-semibold mb-4">Project Files</h3>
+
+                                            {/* Display SCT files first */}
+                                            {sctFiles && sctFiles.length > 0 && (
+                                                <>
+                                                    <h2 className='font-semibold text-sm py-3 text-blue-600'>SCT Files</h2>
+                                                    <Documents
+                                                        onFileClick={handleFileClick}
+                                                        draftingData={{
+                                                            id: salesCTData?.id,
+                                                            fab_id: salesCTData?.fab_id,
+                                                            drafter_id: draftData?.drafter_id,
+                                                            status_id: draftData?.status_id,
+                                                            created_at: salesCTData?.created_at,
+                                                            files: sctFiles
+                                                        }}
+                                                        currentStage="sct_uploads"
+                                                    />
+                                                </>
+                                            )}
+
+                                            <h2 className='font-semibold text-sm py-3 text-green-600'>Drafting Files</h2>
+                                            <Documents
+                                                onFileClick={handleFileClick}
+                                                draftingData={{
+                                                    ...draftData,
+                                                    files: draftFiles
+                                                }}
+                                            />
+                                        </div>
+                                    )}
                                 </CardContent>
                             </Card>
                         </>
                     )}
                 </Container>
             </div>
+            {/* Submission Modal */}
+            <Dialog open={showSubmissionModal} onOpenChange={setShowSubmissionModal}>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Submit Revision</DialogTitle>
+                    </DialogHeader>
+                    <RevisionForm
+                        onSubmit={handleSubmitDraft}
+                        onClose={() => setShowSubmissionModal(false)}
+                        revisionReason={revisionNote.replace('[REVISION REQUEST] ', '')}
+                        draftingData={draftData}
+                        isRevision={true} // Identify as revision
+                    />
+                </DialogContent>
+            </Dialog>
         </>
     );
 };
 
-export { ReviewDetailsPage };
+export { RevisionDetailsPage };
