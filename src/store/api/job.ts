@@ -1704,7 +1704,7 @@ export const jobApi = createApi({
             // Get drafting session status
             getDraftingSessionStatus: build.query<any, number>({
                 query: (fab_id) => ({
-                    url: `/drafting/${fab_id}/session-status`,
+                    url: `/drafting/${fab_id}/session`,
                     method: "GET"
                 }),
                 providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],

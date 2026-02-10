@@ -25,6 +25,7 @@ import {
     useUpdateRevisionMutation,
     useManageDraftingSessionMutation, // Add session management mutation
     useGetSalesCTByFabIdQuery, // Add SCT query import
+    useGetDraftingSessionStatusQuery, // Add session status query
 } from '@/store/api/job';
 import { Documents } from '@/pages/shop/components/files';
 import { toast } from 'sonner';
@@ -96,6 +97,53 @@ const RevisionDetailsPage = () => {
     const [updateRevision] = useUpdateRevisionMutation();
     const [manageDraftingSession] = useManageDraftingSessionMutation();
     console.log('Create revision hook:', { createRevision, isCreatingRevision });
+
+    // Fetch session status
+    const { data: sessionStatusData, isLoading: isSessionLoading } = useGetDraftingSessionStatusQuery(Number(id), {
+        skip: !id,
+        pollingInterval: 5000 // Poll every 5 seconds to keep session state updated
+    });
+
+    // Initialize session state from backend data
+    useEffect(() => {
+        if (sessionStatusData && !isSessionLoading) {
+            const session = sessionStatusData.data || sessionStatusData;
+            console.log('Session data from backend:', session);
+
+            if (session) {
+                setSessionData(session);
+
+                // Set session status based on backend data
+                if (session.status === 'ended' || session.drafter_end_date) {
+                    setSessionStatus('ended');
+                    setHasEnded(true);
+                    setIsDrafting(false);
+                    setIsPaused(false);
+                } else if (session.status === 'paused' || session.paused_times?.length > 0) {
+                    setSessionStatus('paused');
+                    setIsDrafting(false);
+                    setIsPaused(true);
+                } else if (session.status === 'drafting' || session.drafter_start_date) {
+                    setSessionStatus('drafting');
+                    setIsDrafting(true);
+                    setIsPaused(false);
+                }
+
+                // Set start/end dates
+                if (session.drafter_start_date) {
+                    setDraftStart(new Date(session.drafter_start_date));
+                }
+                if (session.drafter_end_date) {
+                    setDraftEnd(new Date(session.drafter_end_date));
+                }
+
+                // Calculate total time if available
+                if (session.total_hours_drafted) {
+                    setTotalTime(session.total_hours_drafted * 3600); // Convert hours to seconds
+                }
+            }
+        }
+    }, [sessionStatusData, isSessionLoading]);
 
     // Get revision reason from fab_notes
     const fabNotes = (fabData as any)?.fab_notes || [];
