@@ -17,7 +17,6 @@ import { PreDraftDetailsPage } from '@/pages/jobs/roles/predraft/components/deta
 import { PredraftPage } from '@/pages/jobs/roles/predraft/PredraftPage';
 // import { PreDraftReviewPage } from '@/pages/jobs/roles/predraft/PreDraftReviewPage';
 import { DraftRevisionPage } from '@/pages/jobs/roles/revisiondraft/BackSalesPage';
-import { ReviewDetailsPage } from '@/pages/jobs/roles/revisiondraft/details';
 import { SalesPage } from '@/pages/jobs/roles/sales/SalesPage';
 import { SalesDetailsPage } from '@/pages/jobs/roles/sales/Details';
 import { TechnicianDetailsPage } from '@/pages/jobs/roles/technician-templater/components/details';

@@ -515,14 +515,14 @@ export function UploadDocuments({
                       <span className="text-xs text-muted-foreground">
                         {formatBytes(enhancedFile.size || 0)}
                       </span>
-                      {(() => {
+                      {/* {(() => {
                         const badge = getStageBadge(enhancedFile.stage);
                         return (
                           <span className={badge.className}>
                             {badge.label}
                           </span>
                         );
-                      })()}
+                      })()} */}
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
                       {enhancedFile.uploadedBy && <span>by {enhancedFile.uploadedBy}</span>}

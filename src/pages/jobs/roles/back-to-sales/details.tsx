@@ -112,42 +112,8 @@ const DraftReviewDetailsPage = () => {
         // Handle submission logic
     }, []);
 
-    // Handle marking as complete
-    const handleMarkAsComplete = useCallback(async (data: any) => {
-        if (!fabId) return;
 
-        try {
-            await handleUpdateSCTReview({
-                sct_completed: data.sctCompleted,
-                revenue: parseFloat(data.revenue) || 0,
-                slab_smith_used: isSlabSmithActivityComplete, // Auto-set based on completion status
-                notes: data.notes || "",
-                slab_smith_approved: data.slabSmithApproved,
-                block_drawing_approved: data.blockDrawingApproved
-            }).unwrap();
-
-            toast.success("FAB marked as complete successfully");
-            setShowMarkAsCompleteModal(false);
-            navigate('/job/draft-review');
-        } catch (error) {
-            console.error('Failed to mark as complete:', error);
-            toast.error("Failed to mark FAB as complete");
-        }
-    }, [fabId, handleUpdateSCTReview, navigate]);
-
-    // Handle approve and send to slab smith - REMOVED per user request
-
-    // Show loading while FAB is loading
-    if (isFabLoading) {
-        return <LoadingSpinner />;
-    }
-
-    if (isFabError || !fabData) {
-        return <div className="text-red-500 p-4">Error loading FAB data</div>;
-    }
-
-    // Get current user's name
-    const currentUserName = user
+     const currentUserName = user
         ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || 'Unknown User'
         : 'Unknown User';
 
@@ -164,7 +130,41 @@ const DraftReviewDetailsPage = () => {
     const slabSmithNeeded = fabData?.slab_smith_ag_needed || fabData?.slab_smith_cust_needed;
     const isSlabSmithActivityComplete = !!fabData?.slabsmith_completed_date;
 
-    // Create sidebar sections
+    // Handle marking as complete
+    const handleMarkAsComplete = useCallback(async (data: any) => {
+        if (!fabId) return;
+
+        try {
+            await handleUpdateSCTReview({
+                sct_completed: data.sctCompleted,
+                revenue: parseFloat(data.revenue) || 0,
+                slab_smith_used: isSlabSmithActivityComplete, // Auto-set based on completion status
+                notes: data.notes || "",
+                slab_smith_approved: data.slabSmithApproved,
+                block_drawing_approved: data.blockDrawingApproved
+            });
+
+            // toast.success("FAB marked as complete successfully");
+            setShowMarkAsCompleteModal(false);
+            navigate('/job/draft-review');
+        } catch (error) {
+            console.error('Failed to mark as complete:', error);
+            // toast.error("Failed to mark FAB as complete");
+        }
+    }, [fabId, handleUpdateSCTReview, navigate]);
+
+    // Handle approve and send to slab smith - REMOVED per user request
+
+    // Show loading while FAB is loading
+    if (isFabLoading) {
+        return <LoadingSpinner />;
+    }
+
+    if (isFabError || !fabData) {
+        return <div className="text-red-500 p-4">Error loading FAB data</div>;
+    }
+
+ 
     const sidebarSections = [
         {
             title: "Job Details",
