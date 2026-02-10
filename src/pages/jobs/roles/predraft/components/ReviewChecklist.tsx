@@ -28,8 +28,10 @@ import {
     useGetFabByIdQuery,
     useCreatePredraftReviewMutation,
     useGetPredraftReviewByFabIdQuery,
-    useCompletePredraftReviewMutation
+    useCompletePredraftReviewMutation,
+    useCreateFabNoteMutation
 } from "@/store/api/job";
+
 import { useGetSalesPersonsQuery } from "@/store/api";
 import { Can } from '@/components/permission';
 
@@ -66,6 +68,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
     const [markTemplatingReceived] = useMarkTemplatingReceivedMutation();
     const [createPredraftReview] = useCreatePredraftReviewMutation();
     const [completePredraftReview] = useCompletePredraftReviewMutation();
+    const [createFabNote] = useCreateFabNoteMutation();
 
     const { data: templatingData } = useGetTemplatingByFabIdQuery(fabId || 0, { skip: !fabId });
     const { data: fabData } = useGetFabByIdQuery(fabId || 0, { skip: !fabId });
@@ -117,6 +120,18 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
         setIsSubmitting(true);
 
         try {
+            if (values.fab_notes && values.fab_notes.trim() && fabId) {
+                try {
+                    await createFabNote({
+                        fab_id: fabId,
+                        note: values.fab_notes.trim(),
+                        stage: "pre_draft_review"
+                    }).unwrap();
+                } catch (noteError) {
+                    console.error("Error creating fab note:", noteError);
+                    // Don't prevent submission if note creation fails
+                }
+            }
             // Update the fab with the selected drafter (if any) and square footage
             if (fabId) {
                 const updateData: any = {};
@@ -135,9 +150,9 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                 }
 
                 // Include notes if provided
-                if (values.fab_notes) {
-                    updateData.fab_notes = [values.fab_notes]; // Wrap in array as API expects notes as array
-                }
+                // if (values.fab_notes) {
+                //     updateData.fab_notes = [values.fab_notes]; // Wrap in array as API expects notes as array
+                // }
 
                 // First update the FAB
                 await updateFab({
@@ -149,7 +164,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                 if (values.templatereview && fabId) {
                     // First get existing predraft review or create new one
                     let reviewId = predraftData?.data?.id;
-                    
+
                     // If no predraft review exists, create one
                     if (!reviewId) {
                         const createResponse = await createPredraftReview({
@@ -158,7 +173,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                         }).unwrap();
                         reviewId = createResponse?.data?.id || createResponse?.id;
                     }
-                    
+
                     // Complete the predraft review using the review ID
                     if (reviewId) {
                         await completePredraftReview({

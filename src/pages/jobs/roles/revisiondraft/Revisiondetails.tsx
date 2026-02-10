@@ -92,6 +92,13 @@ const RevisionDetailsPage = () => {
         !sctSpecificFiles.some((sctFile: any) => sctFile.id === file.id)
     );
 
+    // Get revision type from the revision note or default to general
+    const revisionType = salesCTData?.revision_type?.toLowerCase().includes('cad') ? 'cad' :
+        salesCTData?.revision_type?.toLowerCase().includes('client') ? 'client' :
+            salesCTData?.revision_type?.toLowerCase().includes('sales') ? 'sales' :
+                salesCTData?.revision_type?.toLowerCase().includes('template') ? 'template' : 'general';
+
+
     // SCT mutations - MUST be called unconditionally
     const [createRevision, { isLoading: isCreatingRevision }] = useCreateRevisionMutation();
     const [updateRevision] = useUpdateRevisionMutation();
@@ -311,7 +318,7 @@ const RevisionDetailsPage = () => {
 
                 // Prepare update data
                 const updateData: any = {
-                    revision_type: submissionData.revisionType || '',
+                    revision_type: salesCTData?.revision_type || '',
                     revision_notes: revisionNote.replace('[REVISION REQUEST] ', '') || ''
                 };
 
@@ -336,7 +343,7 @@ const RevisionDetailsPage = () => {
                 // Prepare creation data
                 const createData: any = {
                     fab_id: Number(id),
-                    revision_type: submissionData.revisionType || 'general',
+                    revision_type: salesCTData?.revision_type || 'general',
                     requested_by: user.id || 1,
                     revision_notes: revisionNote.replace('[REVISION REQUEST] ', '') || ''
                 };
@@ -489,9 +496,17 @@ const RevisionDetailsPage = () => {
                                 <CardHeader >
                                     <CardHeading className='flex flex-col items-start py-4'>
                                         <CardTitle className='text-[#FF8D28] leading-[32px]'>Revision reason</CardTitle>
-                                        <p className="text-sm text-[#4B5563]">
-                                            {revisionNote.replace('[REVISION REQUEST] ', '') || 'No revision reason provided'}
-                                        </p>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            <p className="text-sm text-[#4B5563]">
+                                                {revisionNote.replace('[REVISION REQUEST] ', '') || 'No revision reason provided'}
+                                            </p>
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                {revisionType.toUpperCase()}
+                                            </span>
+                                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                Revision Count #{salesCTData?.current_revision_count || 0}
+                                            </span>
+                                        </div>
                                     </CardHeading>
 
                                     <CardToolbar>

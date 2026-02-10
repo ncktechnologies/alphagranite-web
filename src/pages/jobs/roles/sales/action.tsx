@@ -10,10 +10,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useState, useContext, createContext } from 'react';
+import { useState, useContext, createContext, lazy, Suspense } from 'react';
 import { IJob } from '../../components/job';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
-import { NotesModal } from '@/components/common/NotesModal';
+// import { NotesModal } from '@/components/common/NotesModal';
 import { useCreateFabNoteMutation } from '@/store/api/job';
 
 // Create a context to manage the current stage view state at a higher level
@@ -35,16 +35,22 @@ export const CurrentStageProvider = CurrentStageContext.Provider;
 //   return context;
 // };
 
-import { MoveStageModal } from './components/MoveStageModal';
+// import { MoveStageModal } from './components/MoveStageModal';
+
+const LazyNotesModal = lazy(() => import('@/components/common/NotesModal').then(module => ({ default: module.NotesModal })));
+const LazyMoveStageModal = lazy(() => import('./components/MoveStageModal').then(module => ({ default: module.MoveStageModal })));
 
 // ... (keep existing imports)
+
+interface ActionsCellProps {
+  row: Row<IJob>;
+  onView?: () => void;
+}
 
 function ActionsCell({ row, onView }: ActionsCellProps) {
   const bulletin = row.original;
   const isSuperAdmin = useIsSuperAdmin();
-  // const { openCurrentStageView } = useCurrentStage();
 
-  // Add notes functionality
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const [isMoveStageModalOpen, setIsMoveStageModalOpen] = useState(false);
   const [createFabNote, { isLoading: isSubmittingNote }] = useCreateFabNoteMutation();
@@ -52,10 +58,6 @@ function ActionsCell({ row, onView }: ActionsCellProps) {
   const handleViewDetails = () => {
     if (onView) onView();
   };
-
-  // const handleViewCurrentStage = () => {
-  //   openCurrentStageView(bulletin.fab_id, bulletin.job_name || 'Unknown Job');
-  // };
 
   const handleAddNote = () => {
     setIsNotesModalOpen(true);
@@ -68,11 +70,9 @@ function ActionsCell({ row, onView }: ActionsCellProps) {
         note,
         stage
       }).unwrap();
-
-      // Optionally refresh data or update UI as needed
     } catch (error) {
       console.error('Error creating note:', error);
-      throw error; // Re-throw to be caught by the modal
+      throw error;
     }
   };
 
@@ -107,28 +107,32 @@ function ActionsCell({ row, onView }: ActionsCellProps) {
                   <Eye className="mr-2 h-4 w-4" />
                   Move Stage
                 </DropdownMenuItem>
-                {/* <DropdownMenuItem onClick={handleViewCurrentStage}>
-                  <Eye className="mr-2 h-4 w-4" />
-                  View Current Stage
-                </DropdownMenuItem> */}
               </>
             )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      <NotesModal
-        isOpen={isNotesModalOpen}
-        onClose={() => setIsNotesModalOpen(false)}
-        fabId={bulletin.fab_id}
-        onSubmit={handleNoteSubmit}
-      />
+      {isNotesModalOpen && (
+        <Suspense fallback={null}>
+          <LazyNotesModal
+            isOpen={isNotesModalOpen}
+            onClose={() => setIsNotesModalOpen(false)}
+            fabId={bulletin.fab_id}
+            onSubmit={handleNoteSubmit}
+          />
+        </Suspense>
+      )}
 
-      <MoveStageModal
-        open={isMoveStageModalOpen}
-        onClose={() => setIsMoveStageModalOpen(false)}
-        fabId={bulletin.id}
-      />
+      {isMoveStageModalOpen && (
+        <Suspense fallback={null}>
+          <LazyMoveStageModal
+            open={isMoveStageModalOpen}
+            onClose={() => setIsMoveStageModalOpen(false)}
+            fabId={bulletin.id}
+          />
+        </Suspense>
+      )}
     </>
   );
 }
