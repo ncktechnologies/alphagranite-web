@@ -1322,7 +1322,7 @@ export const jobApi = createApi({
             // Delete file from drafting
             deleteFileFromDrafting: build.mutation<any, { drafting_id: number; file_id: string }>({
                 query: ({ drafting_id, file_id }) => ({
-                    url: `/drafting/${drafting_id}/files/${file_id}`,
+                    url: `/drafting/${drafting_id}/file/${file_id}`,
                     method: "delete"
                 }),
                 invalidatesTags: ["Drafting"],

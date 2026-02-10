@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import {
   formatBytes,
   useFileUpload,
@@ -12,25 +12,17 @@ import { useAddFilesToDraftingMutation, useDeleteFileFromDraftingMutation } from
 import { toast } from 'sonner';
 import {
   Check,
-  CloudUpload,
-  Download,
   FileArchiveIcon,
   FileSpreadsheetIcon,
   FileTextIcon,
   HeadphonesIcon,
   ImageIcon,
   Plus,
-  RefreshCwIcon,
-  Trash2,
   TriangleAlert,
-  Upload,
   VideoIcon,
   X,
-  Eye,
 } from 'lucide-react';
-import { toAbsoluteUrl } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
-import { Link } from 'react-router';
 import { getFileStage, getStageBadge } from '@/utils/file-labeling';
 
 interface FileUploadItem extends FileWithPreview {
@@ -47,30 +39,32 @@ interface UploadBoxProps {
   onFileClick?: (file: FileMetadata) => void;
   simulateUpload?: boolean;
   disabled?: boolean;
-  enhancedFiles?: any[]; // Enhanced file metadata with stage info
-  draftingId?: number; // For file deletion
+  enhancedFiles?: any[];
+  draftingId?: number;
+  refetchFiles?: () => void;
 }
 
 export function UploadDocuments({
   maxSize = 50 * 1024 * 1024,
   accept = '*',
-  onFilesChange,
   onFileClick,
-  simulateUpload = true,
   disabled = false,
   enhancedFiles = [],
   draftingId,
+  refetchFiles,
 }: UploadBoxProps) {
   const [uploadFiles, setUploadFiles] = useState<FileUploadItem[]>([]);
   const [uploadBoxes, setUploadBoxes] = useState([{ id: 1 }]);
   const [deleteFileFromDrafting] = useDeleteFileFromDraftingMutation();
-  const [addFilesToDrafting] = useAddFilesToDraftingMutation();
+  const [addFilesToDrafting, { isLoading: isUploading }] = useAddFilesToDraftingMutation();
+  
+  // Track files that are being processed to prevent duplicates
+  const processingFilesRef = useRef<Set<string>>(new Set());
 
   const [
     { isDragging, errors },
     {
       removeFile,
-      clearFiles,
       handleDragEnter,
       handleDragLeave,
       handleDragOver,
@@ -83,41 +77,147 @@ export function UploadDocuments({
     maxSize,
     accept,
     multiple: true,
-    onFilesChange: (newFiles) => {
-      // Process files immediately
-      const newUploadFiles: FileUploadItem[] = newFiles.map((file) => ({
-        ...file,
-        progress: 0,
-        status: 'uploading' as const,
-      }));
-      setUploadFiles(newUploadFiles);
-      onFilesChange?.(newFiles);
-    },
+    // Don't use onFilesChange here - handle files directly
+    onFilesChange: undefined,
   });
 
-  // Trigger real upload when files are added
-  useEffect(() => {
-    // Find files that are just added and start uploading
-    uploadFiles.forEach((file) => {
-      if (file.status === 'uploading' && file.progress === 0) {
-        // Start real upload
-        handleRealUpload(file);
-      }
+  // Create a custom handler for file selection
+  const handleFileSelection = useCallback((newFiles: FileWithPreview[]) => {
+    // Filter out files already being processed
+    const uniqueFiles = newFiles.filter(file => !processingFilesRef.current.has(file.id));
+    
+    if (uniqueFiles.length === 0) return;
+    
+    // Mark files as being processed
+    uniqueFiles.forEach(file => processingFilesRef.current.add(file.id));
+    
+    // Create upload items
+    const newUploadFiles: FileUploadItem[] = uniqueFiles.map((file) => ({
+      ...file,
+      progress: 0,
+      status: 'uploading' as const,
+    }));
+    
+    // Add to upload files
+    setUploadFiles(prev => [...prev, ...newUploadFiles]);
+    
+    // Start uploading each file
+    newUploadFiles.forEach(fileItem => {
+      handleRealUpload(fileItem);
     });
-  }, [uploadFiles]);
+  }, []);
 
-  // Remove completed files immediately (they appear in existing files from server)
-  useEffect(() => {
-    const completedFiles = uploadFiles.filter(file => file.status === 'completed');
-    if (completedFiles.length > 0) {
-      // Remove completed files immediately so they don't show in upload section
-      setUploadFiles(prev => prev.filter(file => file.status !== 'completed'));
+  // Handle drop directly to avoid duplicate events
+  const handleCustomDrop = useCallback(async (e: React.DragEvent<HTMLElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!e.dataTransfer?.files?.length || disabled) return;
+    
+    const files = Array.from(e.dataTransfer.files);
+    const fileWithPreview: FileWithPreview[] = files.map(file => ({
+      file,
+      id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
+      preview: URL.createObjectURL(file),
+    }));
+    
+    handleFileSelection(fileWithPreview);
+  }, [disabled, handleFileSelection]);
+
+  // Handle input change directly
+  const handleCustomFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.length || disabled) return;
+    
+    const files = Array.from(e.target.files);
+    const fileWithPreview: FileWithPreview[] = files.map(file => ({
+      file,
+      id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
+      preview: URL.createObjectURL(file),
+    }));
+    
+    handleFileSelection(fileWithPreview);
+    
+    // Reset input
+    e.target.value = '';
+  }, [disabled, handleFileSelection]);
+
+  // Real file upload function
+  const handleRealUpload = async (fileItem: FileUploadItem) => {
+    if (!draftingId) {
+      toast.error('Drafting session not found');
+      setUploadFiles(prev => 
+        prev.map(f => 
+          f.id === fileItem.id 
+            ? { ...f, status: 'error' as const, error: 'Drafting session not found' } 
+            : f
+        )
+      );
+      processingFilesRef.current.delete(fileItem.id);
+      return;
     }
-  }, [uploadFiles]);
+
+    try {
+      // Update progress
+      setUploadFiles(prev => 
+        prev.map(f => 
+          f.id === fileItem.id 
+            ? { ...f, progress: 30 } 
+            : f
+        )
+      );
+
+      // Upload file
+      const response = await addFilesToDrafting({
+        drafting_id: draftingId,
+        files: [fileItem.file as File],
+      }).unwrap();
+
+      if (response.success || response.data) {
+        // Mark as completed
+        setUploadFiles(prev => 
+          prev.map(f => 
+            f.id === fileItem.id 
+              ? { ...f, progress: 100, status: 'completed' as const } 
+              : f
+          )
+        );
+        
+        // Clean up and refetch after delay
+        setTimeout(() => {
+          setUploadFiles(prev => prev.filter(f => f.id !== fileItem.id));
+          processingFilesRef.current.delete(fileItem.id);
+          
+          if (refetchFiles) {
+            refetchFiles();
+          }
+        }, 1500);
+        
+        toast.success('File uploaded successfully');
+      }
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      
+      setUploadFiles(prev => 
+        prev.map(f => 
+          f.id === fileItem.id 
+            ? { 
+                ...f, 
+                status: 'error' as const, 
+                error: error?.data?.message || 'Upload failed' 
+              } 
+            : f
+        )
+      );
+      
+      processingFilesRef.current.delete(fileItem.id);
+      toast.error(error?.data?.message || 'Failed to upload file');
+    }
+  };
 
   const removeUploadFile = (fileId: string) => {
     setUploadFiles((prev) => prev.filter((file) => file.id !== fileId));
     removeFile(fileId);
+    processingFilesRef.current.delete(fileId);
   };
 
   const addUploadBox = () => {
@@ -128,56 +228,6 @@ export function UploadDocuments({
   const removeUploadBox = (id: number) => {
     if (uploadBoxes.length > 1) {
       setUploadBoxes(prev => prev.filter(box => box.id !== id));
-    }
-  };
-
-  // Real file upload function
-  const handleRealUpload = async (fileItem: FileUploadItem) => {
-    if (!draftingId) {
-      toast.error('Drafting session not found');
-      return;
-    }
-
-    try {
-      // Call the real API - API expects File[]
-      const filesToUpload: File[] = fileItem.file instanceof File 
-        ? [fileItem.file] 
-        : [fileItem.file as unknown as File];
-      
-      const response = await addFilesToDrafting({
-        drafting_id: draftingId,
-        files: filesToUpload,
-      }).unwrap();
-
-      // File uploaded successfully
-      if (response.success) {
-        toast.success('File uploaded successfully');
-        
-        // Update file status to completed
-        setUploadFiles(prev => 
-          prev.map(f => 
-            f.id === fileItem.id 
-              ? { ...f, progress: 100, status: 'completed' as const } 
-              : f
-          )
-        );
-
-        // Trigger callback if provided
-        onFilesChange?.(uploadFiles.filter(f => f.id === fileItem.id) as unknown as FileWithPreview[]);
-      }
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      
-      // Update file status to error
-      setUploadFiles(prev => 
-        prev.map(f => 
-          f.id === fileItem.id 
-            ? { ...f, status: 'error' as const, error: error?.data?.message || 'Upload failed' } 
-            : f
-        )
-      );
-      
-      toast.error(error?.data?.message || 'Failed to upload file');
     }
   };
 
@@ -192,21 +242,16 @@ export function UploadDocuments({
         drafting_id: draftingId,
         file_id: fileId
       }).unwrap();
-      
+
       toast.success('File deleted successfully');
+      
+      if (refetchFiles) {
+        refetchFiles();
+      }
     } catch (error) {
       console.error('Error deleting file:', error);
       toast.error('Failed to delete file');
     }
-  };
-
-  // State for file viewer modal
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const [currentFile, setCurrentFile] = useState<FileUploadItem | null>(null);
-
-  const handleViewFile = (file: FileUploadItem) => {
-    setCurrentFile(file);
-    setViewerOpen(true);
   };
 
   const getFileIcon = (file: File | FileMetadata) => {
@@ -219,33 +264,28 @@ export function UploadDocuments({
     if (type.includes('word') || type.includes('doc')) return <FileTextIcon className="size-4" />;
     if (type.includes('excel') || type.includes('sheet')) return <FileSpreadsheetIcon className="size-4" />;
     if (type.includes('zip') || type.includes('rar')) return <FileArchiveIcon className="size-4" />;
-    if (type.includes('json')) return <FileTextIcon className="size-4" />;
-    if (type.includes('text')) return <FileTextIcon className="size-4" />;
     
     return <FileTextIcon className="size-4" />;
   };
 
-  const getStageBadge = (stage: any) => {
-    if (!stage) {
-      return {
-        label: 'Draft',
-        className: 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800'
-      };
-    }
-    
-    return {
-      label: stage.label || stage,
-      className: `inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${stage.bgColor || 'bg-gray-100'} ${stage.color || 'text-gray-800'}`
+  // Clean up preview URLs on unmount
+  useEffect(() => {
+    return () => {
+      uploadFiles.forEach(file => {
+        if (file.preview && file.file instanceof File) {
+          URL.revokeObjectURL(file.preview);
+        }
+      });
     };
-  };
+  }, [uploadFiles]);
 
   return (
     <div className='border-none'>
       <div>
-        {/* Files Section - Upload boxes transform to uploaded files */}
+        {/* Files Section */}
         <div className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Upload Boxes that transform to Uploaded Files */}
+            {/* Upload Boxes */}
             {uploadBoxes.map((box, index) => {
               const fileForThisBox = uploadFiles[index];
               const isUploading = fileForThisBox?.status === 'uploading';
@@ -256,7 +296,7 @@ export function UploadDocuments({
                 <div
                   key={box.id}
                   className={cn(
-                    'relative rounded-lg border px-3 py-5 min-w-fit text-center transition-colors cursor-pointer',
+                    'relative rounded-lg border px-3 py-5 min-w-fit text-center transition-colors',
                     isUploading 
                       ? 'border-primary bg-primary/5' 
                       : isError
@@ -264,19 +304,23 @@ export function UploadDocuments({
                       : 'border-muted-foreground/25 hover:border-muted-foreground/50',
                     disabled && 'opacity-50 cursor-not-allowed'
                   )}
-                  onDragEnter={disabled || isUploading ? undefined : handleDragEnter}
-                  onDragLeave={disabled || isUploading ? undefined : handleDragLeave}
-                  onDragOver={disabled || isUploading ? undefined : handleDragOver}
-                  onDrop={disabled || isUploading ? undefined : handleDrop}
+                  onDragEnter={disabled ? undefined : handleDragEnter}
+                  onDragLeave={disabled ? undefined : handleDragLeave}
+                  onDragOver={disabled ? undefined : handleDragOver}
+                  onDrop={disabled ? undefined : handleCustomDrop}
                 >
+                  {/* Custom file input for this box */}
                   <input
-                    {...getInputProps()}
+                    type="file"
+                    multiple
+                    accept={accept}
                     className="sr-only"
                     id={`file-input-${box.id}`}
+                    onChange={handleCustomFileChange}
+                    disabled={disabled}
                   />
 
                   {isUploading ? (
-                    // Uploading State - Show Progress
                     <div className="flex flex-col items-center gap-3">
                       <div className="relative">
                         <svg className="size-12 -rotate-90" viewBox="0 0 32 32">
@@ -317,7 +361,6 @@ export function UploadDocuments({
                       </div>
                     </div>
                   ) : isCompleted ? (
-                    // Completed State - Show as Uploaded File Card
                     <div className="flex flex-col items-center gap-3">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
                         <Check className="size-6 text-green-600" />
@@ -325,10 +368,10 @@ export function UploadDocuments({
                       <div className="space-y-1 w-full">
                         <p className="text-sm font-medium truncate">{fileForThisBox?.file.name}</p>
                         <p className="text-xs text-muted-foreground">{formatBytes(fileForThisBox?.file.size || 0)}</p>
+                        <p className="text-xs text-green-600">Uploaded successfully!</p>
                       </div>
                     </div>
                   ) : isError ? (
-                    // Error State
                     <div className="flex flex-col items-center gap-3">
                       <div className="flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
                         <X className="size-6 text-destructive" />
@@ -342,24 +385,34 @@ export function UploadDocuments({
                         variant="outline"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setUploadFiles(prev => 
-                            prev.map(f => 
-                              f.id === fileForThisBox.id 
-                                ? { ...f, progress: 0, status: 'uploading' as const, error: undefined } 
+                          setUploadFiles(prev =>
+                            prev.map(f =>
+                              f.id === fileForThisBox.id
+                                ? { ...f, progress: 0, status: 'uploading' as const, error: undefined }
                                 : f
                             )
                           );
+                          // Retry upload
+                          if (draftingId) {
+                            handleRealUpload(fileForThisBox);
+                          }
                         }}
                       >
                         Retry
                       </Button>
                     </div>
                   ) : (
-                    // Empty Upload Box State
-                    <div className="flex flex-col items-center gap-3">
+                    <div 
+                      className="flex flex-col items-center gap-3 cursor-pointer"
+                      onClick={() => {
+                        if (!disabled) {
+                          document.getElementById(`file-input-${box.id}`)?.click();
+                        }
+                      }}
+                    >
                       <div
                         className={cn(
-                          'flex h-12 w-12 items-center justify-center rounded-full bg-muted transition-colors group-hover:bg-muted-foreground/10',
+                          'flex h-12 w-12 items-center justify-center rounded-full bg-muted transition-colors',
                           isDragging ? 'border-primary bg-primary/10' : 'border-muted-foreground/25',
                         )}
                       >
@@ -367,16 +420,11 @@ export function UploadDocuments({
                       </div>
 
                       <div className="space-y-1">
-                        <p className="text-sm text-text font-semibold ">
+                        <p className="text-sm text-text font-semibold">
                           Drop files here or click to{' '}
-                          <button
-                            type="button"
-                            className="cursor-pointer text-primary underline-offset-4 hover:underline"
-                            onClick={openFileDialog}
-                            disabled={disabled}
-                          >
+                          <span className="text-primary underline-offset-4 hover:underline">
                             browse files
-                          </button>
+                          </span>
                         </p>
                         <p className="text-sm font-semibold text-center text-primary underline pt-3">
                           upload file
@@ -408,7 +456,7 @@ export function UploadDocuments({
               variant="outline"
               className="h-auto min-h-[120px] w-[209px] border-dashed flex flex-col items-center gap-2"
               onClick={addUploadBox}
-              disabled={disabled}
+              disabled={disabled || isUploading}
             >
               <Plus className="size-6 text-muted-foreground" />
             </Button>
@@ -419,24 +467,20 @@ export function UploadDocuments({
         {enhancedFiles && enhancedFiles.length > 0 && (
           <div className="mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {/* Existing / server files */}
               {enhancedFiles.map((enhancedFile: any) => (
                 <div
                   key={enhancedFile.id}
                   className="relative rounded-lg border border-muted-foreground/25 p-4 transition-colors hover:border-muted-foreground/50 cursor-pointer"
                   onClick={() => {
-                    const mockFileItem: FileUploadItem = {
-                      id: enhancedFile.id,
-                      file: {
+                    if (onFileClick) {
+                      onFileClick({
+                        id: enhancedFile.id,
                         name: enhancedFile.name,
                         size: enhancedFile.size || 0,
                         type: enhancedFile.type || '',
-                      } as File,
-                      status: 'completed',
-                      progress: 100,
-                      preview: enhancedFile.url,
-                    };
-                    handleViewFile(mockFileItem);
+                        url: enhancedFile.url || enhancedFile.file_url,
+                      });
+                    }
                   }}
                 >
                   <div className="flex items-start justify-between mb-3">
@@ -489,6 +533,18 @@ export function UploadDocuments({
                       size="sm"
                       className="text-sm font-semibold text-center text-primary underline w-full mt-2"
                       disabled={disabled}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onFileClick) {
+                          onFileClick({
+                            id: enhancedFile.id,
+                            name: enhancedFile.name,
+                            size: enhancedFile.size || 0,
+                            type: enhancedFile.type || '',
+                            url: enhancedFile.url || enhancedFile.file_url,
+                          });
+                        }
+                      }}
                     >
                       View File
                     </Button>

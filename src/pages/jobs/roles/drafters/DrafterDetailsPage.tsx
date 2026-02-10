@@ -7,12 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
-import { 
-  useGetFabByIdQuery, 
-  useGetDraftingByFabIdQuery, 
-  useManageDraftingSessionMutation, 
-  useGetCurrentDraftingSessionQuery, 
-  useToggleFabOnHoldMutation, 
+import {
+  useGetFabByIdQuery,
+  useGetDraftingByFabIdQuery,
+  useManageDraftingSessionMutation,
+  useGetCurrentDraftingSessionQuery,
+  useToggleFabOnHoldMutation,
   useCreateFabNoteMutation,
   useDeleteFileFromDraftingMutation
 } from '@/store/api/job';
@@ -68,11 +68,20 @@ export function DrafterDetailsPage() {
   const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
 
   // Load fab & drafting data
-  const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, { skip: !fabId });
-  const { data: draftingData, isLoading: isDraftingLoading, refetch: refetchDrafting } = useGetDraftingByFabIdQuery(fabId, { skip: !fabId });
+  const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, { 
+    skip: !fabId,
+    refetchOnMountOrArgChange: true,
+  });
+  const { data: draftingData, isLoading: isDraftingLoading, refetch: refetchDrafting } = useGetDraftingByFabIdQuery(fabId, { 
+    skip: !fabId,
+    refetchOnMountOrArgChange: true,
+  });
 
   // Get current session state
-  const { data: sessionData, isLoading: isSessionLoading, refetch: refetchSession } = useGetCurrentDraftingSessionQuery(fabId, { skip: !fabId });
+  const { data: sessionData, isLoading: isSessionLoading, refetch: refetchSession } = useGetCurrentDraftingSessionQuery(fabId, { 
+    skip: !fabId,
+    refetchOnMountOrArgChange: true,
+  });
 
   const [manageDraftingSession] = useManageDraftingSessionMutation();
   const [toggleFabOnHold] = useToggleFabOnHoldMutation();
@@ -278,7 +287,6 @@ export function DrafterDetailsPage() {
   const handleEnd = async (endDate: Date, data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     try {
       await updateSession('end', endDate, data?.note, data?.sqft_drafted, data?.work_percentage_done);
-      
     } catch (error) {
       // Error handled in updateSession
     }
@@ -327,7 +335,7 @@ export function DrafterDetailsPage() {
       uploadedAt: file.created_at ? new Date(file.created_at) : new Date(),
       uploadedBy: file.uploaded_by || currentUser?.name || 'Unknown'
     };
-    
+
     setActiveFile(enhancedFile);
     setViewMode('file');
   };
@@ -339,23 +347,36 @@ export function DrafterDetailsPage() {
 
     const draftingId = draftingData?.id || fabData?.draft_data?.id;
     if (!draftingId) {
-      // toast.error('Cannot delete file - no drafting assignment found');
       return;
     }
 
     try {
-      await deleteDraftingFile({ drafting_id: draftingId, file_id: String(fileId) }).unwrap();
-      
-      // Refresh data - UploadDocuments will update automatically
-      await refetchDrafting();
-      await refetchFab();
+      await deleteDraftingFile({ 
+        drafting_id: draftingId, 
+        file_id: String(fileId) 
+      }).unwrap();
+
+      // Refresh data
+      await refetchAllFiles();
       
       toast.success('File deleted successfully');
     } catch (error) {
       console.error('Failed to delete file:', error);
-      // toast.error('Failed to delete file');
     }
   };
+
+  // Combined refetch function
+  const refetchAllFiles = useCallback(async () => {
+    try {
+      await Promise.all([
+        refetchFab(),
+        refetchDrafting(),
+        refetchSession()
+      ]);
+    } catch (error) {
+      console.error('Failed to refetch files:', error);
+    }
+  }, [refetchFab, refetchDrafting, refetchSession]);
 
   // Show upload section when timer is running, paused, OR when files have been uploaded (to maintain visibility after ending)
   const shouldShowUploadSection = (isDrafting || isPaused) || allFilesForDisplay.length > 0;
@@ -370,8 +391,7 @@ export function DrafterDetailsPage() {
 
   const onSubmitModal = async () => {
     try {
-      await refetchDrafting();
-      await refetchFab();
+      await refetchAllFiles();
 
       setShowSubmissionModal(false);
       // Clear all local state after successful submission
@@ -379,7 +399,7 @@ export function DrafterDetailsPage() {
       setDraftStart(null);
       setDraftEnd(null);
       setSessionStatus('idle');
-      
+
       navigate('/job/draft');
     } catch (err) {
       console.error(err);
@@ -561,13 +581,14 @@ export function DrafterDetailsPage() {
                   {/* File Upload Section - Using Final Programming style UI */}
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold mb-4">Files</h3>
-                    
+
                     {shouldShowUploadSection ? (
                       <UploadDocuments
                         onFileClick={handleFileClick}
                         disabled={hasEnded || isOnHold || isPaused}
                         enhancedFiles={allFilesForDisplay}
                         draftingId={draftingData?.id || fabData?.draft_data?.id}
+                        refetchFiles={refetchAllFiles}
                       />
                     ) : (
                       <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
@@ -597,7 +618,7 @@ export function DrafterDetailsPage() {
 
                 </CardContent>
               </Card>
-              
+
               <SessionHistory fabId={fabId} />
             </>
           )}
