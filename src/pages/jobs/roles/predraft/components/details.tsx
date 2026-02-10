@@ -132,7 +132,7 @@ export function PreDraftDetailsPage() {
   },
         { label: 'Area (s)', value: fab.input_area },
         { label: 'Stone type', value: fab.stone_type_name || 'N/A' },
-        { label: 'Stone colour', value: fab.stone_color_name || 'N/A' },
+        { label: 'Stone color', value: fab.stone_color_name || 'N/A' },
         { label: 'Stone thickness', value: fab.stone_thickness_value || 'N/A' },
         { label: 'Edge', value: fab.edge_name || 'N/A' },
         { label: 'Total square ft', value: String(fab.total_sqft) },

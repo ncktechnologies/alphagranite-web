@@ -141,7 +141,7 @@ export function ReviewChecklistForm() {
                             { name: "customerInfo", label: "Customer information verified" },
                             { name: "materialSpecs", label: "Material specifications confirmed" },
                             { name: "stoneType", label: "Stone type confirmed" },
-                            { name: "stoneColour", label: "Stone type colour confirmed" },
+                            { name: "stoneColor", label: "Stone type color confirmed" },
                             { name: "fabType", label: "FAB type confirmed" },
                         ].map(({ name, label }) => (
                             <FormField

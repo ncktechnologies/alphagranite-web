@@ -43,7 +43,7 @@ const ShopDetailsPage = () => {
         { label: 'Job #', value: 'Fabrication' },
         { label: 'Area (s)', value: '2847 Oak Street, Denver, CO' },
         { label: 'Stone type', value: 'Marble tiles' },
-        { label: 'Stone colour', value: 'Grey' },
+        { label: 'Stone color', value: 'Grey' },
         { label: 'Stone thickness', value: '20cm' },
         { label: 'Edge', value: 'Flat edge' },
         { label: 'Total square ft', value: '234 square ft' },

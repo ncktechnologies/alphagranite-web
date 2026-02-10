@@ -389,7 +389,7 @@ export function SlabSmithDetailsPage() {
         { label: "Job #", value: fabData?.job_details?.job_number || "N/A" },
         { label: "Area (s)", value: fabData?.input_area || "N/A" },
         { label: "Stone type", value: fabData?.stone_type_name || "N/A" },
-        { label: "Stone colour", value: fabData?.stone_color_name || "N/A" },
+        { label: "Stone color", value: fabData?.stone_color_name || "N/A" },
         { label: "Stone thickness", value: fabData?.stone_thickness_value || "N/A" },
         { label: "Edge", value: fabData?.edge_name || "N/A" },
         { label: "Total square ft", value: fabData?.total_sqft || "N/A" },
@@ -470,14 +470,11 @@ export function SlabSmithDetailsPage() {
             <div className="text-black">
               <div className="flex items-center gap-3">
                 <p className="font-bold text-base">FAB-{fabData?.id || 'N/A'}</p>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{
-                  0: 'bg-red-100 text-red-800',
-                  1: 'bg-green-100 text-green-800'
-                }[fabData?.status_id] || 'bg-gray-100 text-gray-800'}`}>
-                  {{
-                    0: 'ON HOLD',
-                    1: 'ACTIVE'
-                  }[fabData?.status_id] || 'LOADING'}
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  SLAB SMITH
+                </span>
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${fabData?.status_id === 0 ? 'bg-red-100 text-red-800' : fabData?.status_id === 1 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+                  {fabData?.status_id === 0 ? 'ON HOLD' : fabData?.status_id === 1 ? 'ACTIVE' : 'LOADING'}
                 </span>
               </div>
               <p className="text-sm">{fabData?.job_details?.name || 'N/A'}</p>
