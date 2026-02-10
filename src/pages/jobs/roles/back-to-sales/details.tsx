@@ -124,7 +124,7 @@ const DraftReviewDetailsPage = () => {
                 notes: data.notes || "",
                 slab_smith_approved: data.slabSmithApproved,
                 block_drawing_approved: data.blockDrawingApproved
-            });
+            }).unwrap();
 
             toast.success("FAB marked as complete successfully");
             setShowMarkAsCompleteModal(false);
