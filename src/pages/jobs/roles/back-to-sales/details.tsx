@@ -127,7 +127,7 @@ const DraftReviewDetailsPage = () => {
     const showApproveSlabSmithButton = fabData?.slab_smith_ag_needed === true && fabData?.slabsmith_completed_date === null;
 
     // Check if SlabSmith is needed and if it's complete
-    const slabSmithNeeded = fabData?.slab_smith_ag_needed || fabData?.slab_smith_cust_needed;
+    const slabSmithNeeded = fabData?.slab_smith_ag_needed;
     const isSlabSmithActivityComplete = !!fabData?.slabsmith_completed_date;
 
     // Handle marking as complete
