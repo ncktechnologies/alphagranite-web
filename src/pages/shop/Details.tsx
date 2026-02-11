@@ -69,7 +69,7 @@ const ShopDetailsPage = () => {
             type: "details",
             items: [
                
-                { label: "Slab smith used?", value: "No" },
+                { label: "SlabSmith used?", value: "No" },
             ],
         },
         {

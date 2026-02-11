@@ -1089,7 +1089,7 @@ export const JobTable = ({
         {
             id: 'slabsmith_notes',
             header: ({ column }) => (
-                <DataGridColumnHeader title="Slab Smith Notes" column={column} />
+                <DataGridColumnHeader title="SlabSmith Notes" column={column} />
             ),
             cell: ({ row }) => {
                 const fabNotes = Array.isArray(row.original.fab_notes) ? row.original.fab_notes :

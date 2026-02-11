@@ -78,7 +78,7 @@ export const JOB_STAGES = {
     SLAB_SMITH: {
         stage: 'slab_smith',
         route: '/job/slab-smith',
-        title: 'Slab Smith',
+        title: 'SlabSmith',
     },
     SHOP: {
         stage: 'shop',

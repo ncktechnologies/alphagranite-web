@@ -150,7 +150,7 @@ export const ApproveAndSendToSlabSmithModal = ({
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel>
-                      Slab Smith Used
+                      SlabSmith Used
                     </FormLabel>
                   </div>
                 </FormItem>

@@ -76,7 +76,7 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
         // Response is already transformed to the data object
         currentSlabSmithId = createResponse.id;
         console.log('Created slab smith with ID:', currentSlabSmithId);
-        toast.success("Slab smith entry created successfully");
+        toast.success("SlabSmith entry created successfully");
       } catch (createError) {
         console.error('Failed to create slab smith:', createError);
         toast.error('Failed to create slab smith entry');

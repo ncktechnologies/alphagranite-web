@@ -76,13 +76,13 @@ export const WORKFLOW_STAGES: Record<string, FileLabel> = {
   // Slab Smith stages
   'slab_smith': {
     stage: 'slab_smith',
-    label: 'Slab Smith',
+    label: 'SlabSmith',
     color: 'text-red-700',
     bgColor: 'bg-red-100'
   },
   'slab_smith_request': {
     stage: 'slab_smith_request',
-    label: 'Slab Smith Request',
+    label: 'SlabSmith Request',
     color: 'text-red-700',
     bgColor: 'bg-red-100'
   },

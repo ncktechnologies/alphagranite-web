@@ -180,7 +180,7 @@ const SlabSmithPage = () => {
             <div className="">
                 <Container>
                     <Toolbar className=' '>
-                        <ToolbarHeading title="Slab Smith" description="" />
+                        <ToolbarHeading title="SlabSmith" description="" />
                     </Toolbar>
                     <div className="space-y-4 mt-4">
                         <Skeleton className="h-16 w-full" />
@@ -197,7 +197,7 @@ const SlabSmithPage = () => {
             <div className="">
                 <Container>
                     <Toolbar className=' '>
-                        <ToolbarHeading title="Slab Smith" description="" />
+                        <ToolbarHeading title="SlabSmith" description="" />
                     </Toolbar>
                     <Alert variant="destructive" className="mt-4">
                         <AlertCircle className="h-4 w-4" />
@@ -217,7 +217,7 @@ const SlabSmithPage = () => {
         <div className="">
             <Container>
                 <Toolbar className=' '>
-                    <ToolbarHeading title="Slab Smith" description="View and manage slab smith requests" />
+                    <ToolbarHeading title="SlabSmith" description="View and manage slab smith requests" />
                 </Toolbar>
                 <JobTable
                     jobs={jobsData}
@@ -226,6 +226,7 @@ const SlabSmithPage = () => {
                     // onRowClick={handleRowClick}
                     // useBackendPagination={true}
                     // totalRecords={data?.total || 0}
+                    useBackendPagination={true}
                     tableState={tableState}
                     showSalesPersonFilter={false}
                     showScheduleFilter={false} // Remove separate schedule filter

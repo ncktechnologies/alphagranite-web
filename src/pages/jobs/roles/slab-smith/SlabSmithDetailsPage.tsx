@@ -471,7 +471,7 @@ export function SlabSmithDetailsPage() {
               <div className="flex items-center gap-3">
                 <p className="font-bold text-base">FAB-{fabData?.id || 'N/A'}</p>
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  SLAB SMITH
+                  SLABSMITH
                 </span>
                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${fabData?.status_id === 0 ? 'bg-red-100 text-red-800' : fabData?.status_id === 1 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
                   {fabData?.status_id === 0 ? 'ON HOLD' : fabData?.status_id === 1 ? 'ACTIVE' : 'LOADING'}
@@ -521,7 +521,7 @@ export function SlabSmithDetailsPage() {
                 className="bg-green-600 hover:bg-green-700"
                 size="lg"
               >
-                Submit Slab Smith Work
+                Submit SlabSmith Work
               </Button>
             </Can>
           </div>
