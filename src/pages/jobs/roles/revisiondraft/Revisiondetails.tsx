@@ -42,8 +42,9 @@ import { RevisionForm } from './components';
 
 // Helper function to format timestamp without 'Z'
 const formatTimestamp = (date: Date) => {
-  return date.toISOString();
+  return date.toISOString().replace('Z', '');
 };
+
 
 // Helper function to get all fab notes (unfiltered)
 const getAllFabNotes = (fabNotes: any[]) => {
@@ -118,7 +119,9 @@ const getRevisionInfo = (fabData: any, sctData: any) => {
     note.note?.includes('revision')
   );
 
-  if (revisionNote?.note) {
+  if (salesCTData?.revision_reason) {
+    revisionReason = salesCTData.revision_reason;
+  } else if (revisionNote?.note) {
     revisionReason = revisionNote.note.replace('[REVISION REQUEST] ', '');
   } else if (salesCTData?.note) {
     revisionReason = salesCTData.note;

@@ -18,12 +18,12 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { z } from "zod";
 import { Drafting } from '@/store/api/job';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from "@/components/ui/select";
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { Can } from '@/components/permission';
@@ -61,7 +61,7 @@ export const RevisionForm = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
-  
+
   const { data: employeesData } = useGetSalesPersonsQuery();
   const salesPersons = Array.isArray(employeesData) ? employeesData : [];
 
@@ -85,7 +85,11 @@ export const RevisionForm = ({
       return;
     }
 
-    if (!isConfirmed) {
+    // if (!isConfirmed) {
+    //   toast.error("Please confirm the revision is completed by checking the box");
+    //   return;
+    // }
+    if (!values.complete) {
       toast.error("Please confirm the revision is completed by checking the box");
       return;
     }
@@ -107,95 +111,87 @@ export const RevisionForm = ({
   return (
     <Form {...form}>
       <form className="p-4 space-y-6" onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-        
-            {revisionReason && (
-              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
-                <h3 className="font-medium text-sm mb-1 text-yellow-800">Revision Reason:</h3>
-                <p className="text-sm text-yellow-700">{revisionReason}</p>
-              </div>
-            )}
 
-            {/* Files Summary */}
-            {uploadedFilesCount > 0 && (
-              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
-                <h3 className="font-medium text-sm mb-1 text-red-800">No Files Uploaded</h3>
-                <p className="text-sm text-red-700">
-                  Please upload files in the main activity view before submitting
-                </p>
-              </div>
-            )}
+        {revisionReason && (
+          <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+            <h3 className="font-medium text-sm mb-1 text-yellow-800">Revision Reason:</h3>
+            <p className="text-sm text-yellow-700">{revisionReason}</p>
+          </div>
+        )}
 
-            {/* Revision Notes */}
-            <FormField
-              control={form.control}
-              name="notes"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Revision Notes</FormLabel>
-                  <FormControl>
-                    <Textarea 
-                      placeholder="Add any notes about this revision..." 
-                      {...field} 
-                      className="min-h-[80px]"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+       
 
-            {/* Square Footage Drafted */}
-            <FormField
-              control={form.control}
-              name="sqftDrafted"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Square Footage Drafted (Optional)</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="Enter square footage drafted" 
-                      {...field} 
-                      type="number"
-                      min="0"
-                      step="0.01"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        {/* Revision Notes */}
+        <FormField
+          control={form.control}
+          name="notes"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Revision Notes</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Add any notes about this revision..."
+                  {...field}
+                  className="min-h-[80px]"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            {/* Notify Sales */}
-            <FormField
-              control={form.control}
-              name="mentions"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Notify Sales Person</FormLabel>
-                  <Select 
-                    onValueChange={field.onChange} 
-                    value={field.value || ''}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select sales person to notify" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {salesPersons.map((person: any) => (
-                        <SelectItem key={person.id} value={String(person.id)}>
-                          {person.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        {/* Square Footage Drafted */}
+        <FormField
+          control={form.control}
+          name="sqftDrafted"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Square Footage Drafted (Optional)</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Enter square footage drafted"
+                  {...field}
+                  type="number"
+                  min="0"
+                  step="0.01"
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            {/* Confirmation Checkbox */}
-            <div className="flex flex-row items-center space-x-3 mt-4 p-3 border rounded-md">
+        {/* Notify Sales */}
+        <FormField
+          control={form.control}
+          name="mentions"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Notify Sales Person</FormLabel>
+              <Select
+                onValueChange={field.onChange}
+                value={field.value || ''}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select sales person to notify" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {salesPersons.map((person: any) => (
+                    <SelectItem key={person.id} value={String(person.id)}>
+                      {person.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Confirmation Checkbox */}
+        {/* <div className="flex flex-row items-center space-x-3 mt-4 p-3 border rounded-md">
               <Checkbox
                 checked={isConfirmed}
                 onCheckedChange={(v) => setIsConfirmed(Boolean(v))}
@@ -219,26 +215,51 @@ export const RevisionForm = ({
               >
                 Revision Complete 
               </label>
-            </div>
+            </div> */}
+        <FormField
+          control={form.control}
+          name="complete"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center space-x-3 mt-4 p-3 border rounded-md">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                  disabled={uploadedFilesCount === 0}
+                />
+              </FormControl>
+              <label
+                htmlFor="revision-complete"
+                className="font-semibold text-[16px] leading-none"
+              >
+                Revision Complete
+              </label>
+              <FormMessage />
+            </FormItem>
+          )}
 
-            {/* Buttons */}
-            <div className="flex justify-end gap-3 pt-4 border-t">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting || !isConfirmed || uploadedFilesCount === 0}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
-              >
-                {isSubmitting ? "Submitting..." : "Submit Revision"}
-              </Button>
-            </div>
-          
+        />
+
+
+        {/* Buttons */}
+        <div className="flex justify-end gap-3 pt-4 border-t">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onClose}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            // disabled={isSubmitting || !isConfirmed || uploadedFilesCount === 0}
+            disabled={isSubmitting || !completeValue || uploadedFilesCount === 0}
+            className="bg-purple-600 hover:bg-purple-700 text-white"
+          >
+            {isSubmitting ? "Submitting..." : "Submit Revision"}
+          </Button>
+        </div>
+
       </form>
     </Form>
   );
