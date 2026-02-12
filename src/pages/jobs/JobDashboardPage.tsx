@@ -238,7 +238,7 @@ export function JobDashboardPage() {
   return (
     <Container className="grid gap-5 lg:gap-7.5">
       <Toolbar className=' '>
-        <ToolbarHeading title="FAB ID'S" description="View & track all Alpha granite FAB ID'S" />
+        <ToolbarHeading title="View All FABs" description="View & track all Alpha granite FAB ID'S" />
         <ToolbarActions>
           <Can action="create" on="FAB IDs">
             <Link to="/jobs/sales/new-fab-id">

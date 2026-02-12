@@ -45,7 +45,11 @@ const transformFabToJob = (fab: Fab): IJob => {
         revenue: fab.job_details?.project_value || "-",
         gp: "-",
         sct_completed: (fab as any).sales_ct_data?.is_completed ? 'Yes' : 'No',
-        slabsmith_used: fab.slab_smith_used ? 'Yes' : 'No',
+        slabsmith_used: (fab as any).slab_smith_used ? 'Yes' : 'No',
+        // Add slab smith status fields for the column
+        slabsmith_ag_needed: fab.slab_smith_ag_needed,
+        slabsmith_completed_date: fab.slabsmith_completed_date,
+
         draft_revision_notes: '', // Will be populated from fab_notes
         template_received: '',
         revised: (fab as any).sales_ct_data?.is_revision_needed ? 'Yes' : 'No',
@@ -228,7 +232,7 @@ export function AfterDraftSalesPage() {
                 showSalesPersonFilter={true}
                 showScheduleFilter={false} // Remove separate schedule filter
                 salesPersons={salesPersons}
-                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'slabsmith_used', 'sct_notes', 'sct_completed', 'revenue', 'sales_person_name', 'draft_revision_notes', 'revised', 'on_hold']}
+                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'slabsmith_used', 'slabsmith_status', 'sct_notes', 'sct_completed', 'revenue', 'sales_person_name', 'draft_revision_notes', 'revised', 'on_hold']}
             />
         </Container>
     );

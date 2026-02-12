@@ -32,6 +32,7 @@ interface UploadBoxProps {
   draftingId?: number;
   uploadedFileMetas?: any[];
   currentStage?: string; // Current workflow stage for context
+  slabsmithData?: any; // SlabSmith data containing files
 }
 
 // Helper function to compare if two objects have the same files data
@@ -49,7 +50,8 @@ export function Documents({
   onDeleteFile, 
   draftingId, 
   uploadedFileMetas = [],
-  currentStage
+  currentStage,
+  slabsmithData
 }: UploadBoxProps) {
   // Use useMemo to compute files instead of useState/useEffect
   const files = useMemo(() => {
@@ -113,8 +115,32 @@ export function Documents({
       allFiles.push(...newFiles);
     }
     
+    // Extract files from slabsmithData
+    if (slabsmithData) {
+      if (slabsmithData.files && Array.isArray(slabsmithData.files) && slabsmithData.files.length > 0) {
+        try {
+          const slabSmithFiles = slabsmithData.files.map((file: any) => ({
+            id: String(file.id),
+            name: file.name || `SlabSmith_File_${file.id}`,
+            size: parseInt(file.file_size) || 0,
+            type: file.file_type || 'application/octet-stream',
+            url: file.file_url || '/images/app/upload-file.svg',
+            stage: getFileStage(file.name, { 
+              isDrafting: false,
+              currentStage: 'slab_smith'
+            }),
+            uploadedBy: 'Slab Smith',
+            uploadedAt: file.created_at ? new Date(file.created_at) : new Date()
+          }));
+          allFiles.push(...slabSmithFiles);
+        } catch (error) {
+          console.error('Error processing SlabSmith files array:', error);
+        }
+      }
+    }
+    
     return allFiles;
-  }, [draftingData, uploadedFileMetas, currentStage]); // Only recompute when these change
+  }, [draftingData, uploadedFileMetas, currentStage, slabsmithData]); // Only recompute when these change
 
   const getFileIcon = useCallback((file: FileMetadata) => {
     const { type } = file;
@@ -173,11 +199,11 @@ export function Documents({
                       })()}
                                              
                       {/* Additional file metadata if available */}
-                      {file.uploadedBy && (
+                      {/* {file.uploadedBy && (
                         <span className="text-xs text-gray-500">
                           by {file.uploadedBy}
                         </span>
-                      )}
+                      )} */}
                     </div>
                   </div>
                 </div>

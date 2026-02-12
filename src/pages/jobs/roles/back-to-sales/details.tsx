@@ -317,6 +317,7 @@ const DraftReviewDetailsPage = () => {
                                     <Documents
                                         onFileClick={handleFileClick}
                                         draftingData={draftData}
+                                        slabsmithData={fabData?.slabsmith_data}
                                     />
                                 </CardContent>
                             </Card>

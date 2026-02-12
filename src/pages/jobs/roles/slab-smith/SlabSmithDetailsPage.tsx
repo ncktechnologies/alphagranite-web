@@ -483,7 +483,17 @@ export function SlabSmithDetailsPage() {
         </div>
 
         <Separator className="my-6" />
+        <Card className='my-4'>
+          <CardHeader className='flex flex-col items-start py-4'>
+            <div className="flex items-center justify-between w-full">
+              <div>
+                <CardTitle>SlabSmith activity</CardTitle>
+                <p className="text-sm text-[#4B5563]">Update your SlabSmith activity here</p>
+              </div>
 
+            </div>
+          </CardHeader>
+        </Card>
         <Card>
 
           <CardContent>

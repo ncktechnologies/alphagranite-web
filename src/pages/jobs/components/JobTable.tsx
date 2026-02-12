@@ -887,6 +887,46 @@ export const JobTable = ({
             size: 120,
         },
         {
+            id: "slabsmith_status",
+            accessorKey: "slabsmith_status",
+            accessorFn: (row: IJob) => {
+                // Try to access slabsmith_ag_needed and slabsmith_completed_date from various sources
+                const slabsmithAgNeeded = (row as any).slabsmith_ag_needed ?? (row as any)._rawFabData?.slabsmith_ag_needed;
+                const slabsmithCompletedDate = (row as any).slabsmith_completed_date ?? (row as any)._rawFabData?.slabsmith_completed_date;
+                
+                if (slabsmithAgNeeded === false) {
+                    return 'Not Needed';
+                } else if (slabsmithAgNeeded === true) {
+                    return slabsmithCompletedDate ? 'Completed' : 'Not Completed';
+                }
+                return 'Unknown';
+            },
+            header: ({ column }) => (
+                <DataGridColumnHeader className='uppercase' title="SlabSmith Status" column={column} />
+            ),
+            cell: ({ row }) => {
+                // Try to access slabsmith_ag_needed and slabsmith_completed_date from various sources
+                const slabsmithAgNeeded = (row.original as any).slabsmith_ag_needed ?? (row.original as any)._rawFabData?.slabsmith_ag_needed;
+                const slabsmithCompletedDate = (row.original as any).slabsmith_completed_date ?? (row.original as any)._rawFabData?.slabsmith_completed_date;
+                
+                let displayText = 'Unknown';
+                let className = 'text-sm break-words max-w-[160px]';
+                
+                if (slabsmithAgNeeded === false) {
+                    displayText = 'Not Needed';
+                    className = 'text-sm break-words max-w-[160px] text-gray-500';
+                } else if (slabsmithAgNeeded === true) {
+                    displayText = slabsmithCompletedDate ? 'Completed' : 'Not Completed';
+                    className = slabsmithCompletedDate 
+                        ? 'text-sm break-words max-w-[160px] text-green-600 font-medium' 
+                        : 'text-sm break-words max-w-[160px] text-red-600 font-medium';
+                }
+                
+                return <span className={className}>{displayText}</span>;
+            },
+            size: 140,
+        },
+        {
             id: "draft_completed",
             accessorKey: "draft_completed",
             accessorFn: (row: IJob) => row.draft_completed,

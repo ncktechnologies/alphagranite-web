@@ -129,6 +129,11 @@ export interface IJob {
   updated_by?: number;
   created_by_name?: string;
   updated_by_name?: string;
+  // Internal field for passing raw fab data to columns
+  _rawFabData?: any;
+  // Slab smith status fields
+  slabsmith_ag_needed?: boolean;
+  slabsmith_completed_date?: string;
 }
 
 
