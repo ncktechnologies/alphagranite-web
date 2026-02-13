@@ -76,7 +76,7 @@ const formatBytes = (bytes: number, decimals = 2) => {
 const getRevisionInfo = (fabData: any, sctData: any) => {
   // First, try to get sales_ct_data from fabData
   const salesCTData = fabData?.sales_ct_data || sctData;
-  
+
   if (!salesCTData) {
     return {
       revisionType: 'general',
@@ -90,7 +90,7 @@ const getRevisionInfo = (fabData: any, sctData: any) => {
   // Get revision type from sales CT data
   let revisionType = 'general';
   const revisionTypeFromSCT = salesCTData?.revision_type;
-  
+
   if (revisionTypeFromSCT) {
     if (revisionTypeFromSCT.toLowerCase().includes('cad')) {
       revisionType = 'cad';
@@ -111,10 +111,10 @@ const getRevisionInfo = (fabData: any, sctData: any) => {
   // Get revision reason - look in fab notes first, then sct notes
   let revisionReason = 'No revision reason provided';
   const fabNotes = fabData?.fab_notes || [];
-  
+
   // Look for revision note in fab notes
-  const revisionNote = fabNotes.find((note: any) => 
-    note.stage === 'sales_ct' || 
+  const revisionNote = fabNotes.find((note: any) =>
+    note.stage === 'sales_ct' ||
     note.note?.includes('[REVISION REQUEST]') ||
     note.note?.includes('revision')
   );
@@ -147,12 +147,12 @@ export function RevisionDetailsPage() {
   const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
 
   // Load fab & drafting data
-  const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, { 
+  const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, {
     skip: !fabId,
     refetchOnMountOrArgChange: true,
   });
-  
-  const { data: draftingData, isLoading: isDraftingLoading, refetch: refetchDrafting } = useGetDraftingByFabIdQuery(fabId, { 
+
+  const { data: draftingData, isLoading: isDraftingLoading, refetch: refetchDrafting } = useGetDraftingByFabIdQuery(fabId, {
     skip: !fabId,
     refetchOnMountOrArgChange: true,
   });
@@ -170,7 +170,7 @@ export function RevisionDetailsPage() {
   });
 
   // Get current session state
-  const { data: sessionData, isLoading: isSessionLoading, refetch: refetchSession } = useGetCurrentDraftingSessionQuery(fabId, { 
+  const { data: sessionData, isLoading: isSessionLoading, refetch: refetchSession } = useGetCurrentDraftingSessionQuery(fabId, {
     skip: !fabId,
     refetchOnMountOrArgChange: true,
   });
@@ -186,7 +186,7 @@ export function RevisionDetailsPage() {
   const draftData = fabData?.draft_data;
 
   // Get revision info - FIXED: Now properly using sales CT data
-  const revisionInfo = useMemo(() => 
+  const revisionInfo = useMemo(() =>
     getRevisionInfo(fabData, sctData),
     [fabData, sctData]
   );
@@ -322,7 +322,13 @@ export function RevisionDetailsPage() {
       throw error;
     }
   };
-
+  const actionPastTense: Record<string, string> = {
+    start: "started",
+    resume: "resumed",
+    pause: "paused",
+    on_hold: "placed on hold",
+    end: "ended",
+  };
   const updateSession = async (action: 'pause' | 'on_hold' | 'end', timestamp: Date, note?: string, sqftDrafted?: string, workPercentage?: string) => {
     try {
       await manageDraftingSession({
@@ -342,7 +348,8 @@ export function RevisionDetailsPage() {
       setDraftEnd(timestamp);
 
       await refetchSession();
-      toast.success(`Revision session ${action}ed successfully`);
+      toast.success(`Session ${actionPastTense[action]} successfully`);
+
     } catch (error: any) {
       console.error(`Failed to ${action} session:`, error);
       toast.error(error?.data?.message || `Failed to ${action} session`);
@@ -448,9 +455,9 @@ export function RevisionDetailsPage() {
     }
 
     try {
-      await deleteDraftingFile({ 
-        drafting_id: draftingId, 
-        file_id: String(fileId) 
+      await deleteDraftingFile({
+        drafting_id: draftingId,
+        file_id: String(fileId)
       }).unwrap();
 
       await refetchAllFiles();
@@ -566,7 +573,7 @@ export function RevisionDetailsPage() {
 
       toast.success("Revision submitted successfully");
       setShowSubmissionModal(false);
-      
+
       // Refresh data
       await refetchAllFiles();
 
@@ -605,13 +612,12 @@ export function RevisionDetailsPage() {
         <div className="p-4 bg-yellow-50 border-l-4 border-yellow-500 mb-4">
           <h4 className="font-semibold text-yellow-800 mb-2">Revision Details</h4>
           <div className="flex items-center gap-2 mb-3">
-            <span className={`px-2 py-1 rounded text-xs font-medium ${
-              revisionInfo.revisionType === 'cad' ? 'bg-blue-100 text-blue-800' :
+            <span className={`px-2 py-1 rounded text-xs font-medium ${revisionInfo.revisionType === 'cad' ? 'bg-blue-100 text-blue-800' :
               revisionInfo.revisionType === 'client' ? 'bg-green-100 text-green-800' :
-              revisionInfo.revisionType === 'sales' ? 'bg-yellow-100 text-yellow-800' :
-              revisionInfo.revisionType === 'template' ? 'bg-orange-100 text-orange-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
+                revisionInfo.revisionType === 'sales' ? 'bg-yellow-100 text-yellow-800' :
+                  revisionInfo.revisionType === 'template' ? 'bg-orange-100 text-orange-800' :
+                    'bg-gray-100 text-gray-800'
+              }`}>
               {revisionInfo.revisionType.toUpperCase()}
             </span>
             <span className="px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800">
@@ -708,19 +714,18 @@ export function RevisionDetailsPage() {
                       <p className="text-sm text-[#4B5563]">Update your revision activity here</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        sessionStatus === 'idle' ? 'bg-gray-100 text-gray-800' :
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${sessionStatus === 'idle' ? 'bg-gray-100 text-gray-800' :
                         sessionStatus === 'drafting' ? 'bg-green-100 text-green-800' :
-                        sessionStatus === 'paused' ? 'bg-yellow-100 text-yellow-800' :
-                        sessionStatus === 'on_hold' ? 'bg-orange-100 text-orange-800' :
-                        sessionStatus === 'ended' ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+                          sessionStatus === 'paused' ? 'bg-yellow-100 text-yellow-800' :
+                            sessionStatus === 'on_hold' ? 'bg-orange-100 text-orange-800' :
+                              sessionStatus === 'ended' ? 'bg-blue-100 text-blue-800' :
+                                'bg-gray-100 text-gray-800'
+                        }`}>
                         {sessionStatus === 'idle' ? 'Ready to Start' :
-                         sessionStatus === 'drafting' ? 'Revision Active' :
-                         sessionStatus === 'paused' ? 'Paused' :
-                         sessionStatus === 'on_hold' ? 'On Hold' :
-                         sessionStatus === 'ended' ? 'Completed' : 'Unknown'}
+                          sessionStatus === 'drafting' ? 'Revision Active' :
+                            sessionStatus === 'paused' ? 'Paused' :
+                              sessionStatus === 'on_hold' ? 'On Hold' :
+                                sessionStatus === 'ended' ? 'Completed' : 'Unknown'}
                       </span>
                       {fabData?.status_id === 0 && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
@@ -819,7 +824,7 @@ export function RevisionDetailsPage() {
               </DialogTitle>
             </div>
           </DialogHeader>
-          
+
           <RevisionForm
             onSubmit={handleSubmitRevision}
             onClose={() => setShowSubmissionModal(false)}

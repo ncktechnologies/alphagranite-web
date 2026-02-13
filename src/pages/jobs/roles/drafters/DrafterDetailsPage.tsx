@@ -225,6 +225,16 @@ export function DrafterDetailsPage() {
     }
   };
 
+  const actionPastTense: Record<string, string> = {
+  start: "started",
+  resume: "resumed",
+  pause: "paused",
+  on_hold: "placed on hold",
+  end: "ended",
+};
+
+
+
   const updateSession = async (action: 'pause' | 'on_hold' | 'end', timestamp: Date, note?: string, sqftDrafted?: string, workPercentage?: string) => {
     try {
       await manageDraftingSession({
@@ -243,7 +253,7 @@ export function DrafterDetailsPage() {
       setDraftEnd(timestamp);
 
       await refetchSession();
-      toast.success(`Session ${action}ed successfully`);
+      toast.success(`Session ${actionPastTense[action]} successfully`);
     } catch (error) {
       console.error(`Failed to ${action} session:`, error);
       toast.error(`Failed to ${action} session`);

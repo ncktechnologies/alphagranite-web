@@ -200,7 +200,7 @@ export function FinalProgrammingDetailsPage() {
       toast.success('Session ended');
     } catch (error) {
       console.error('Failed to end session:', error);
-      toast.error('Failed to end session');
+      // toast.error('Failed to end session');
     }
   }, [fabId, manageFinalProgrammingSession, refetchFPSession]);
 
