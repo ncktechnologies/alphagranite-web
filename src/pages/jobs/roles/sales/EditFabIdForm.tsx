@@ -877,7 +877,7 @@ const EditFabIdForm = () => {
                                                                         className="w-full justify-between h-[48px] px-4 text-sm border-input shadow-xs shadow-black/5"
                                                                         disabled={isLoadingFabTypes}
                                                                     >
-                                                                        <span className={!field.value ? "text-muted-foreground" : ""}>
+                                                                        <span className={!field.value ? "text-muted-foreground" : "uppercase"}>
                                                                             {isLoadingFabTypes ? 'Loading...' : (field.value || "Select type")}
                                                                         </span>
                                                                         <ChevronDown className="h-4 w-4 opacity-60" />

@@ -110,7 +110,7 @@ export const RevisionForm = ({
 
   return (
     <Form {...form}>
-      <form className="p-4 space-y-6" onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+      <form className="p-4 space-y-6" onSubmit={form.handleSubmit(handleFormSubmit)}>
 
         {revisionReason && (
           <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">

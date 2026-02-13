@@ -169,7 +169,7 @@ export function SalesPage() {
             <div className="">
                 <Container>
                     <Toolbar className=' '>
-                        <ToolbarHeading title="FAB ID'S" description="" />
+                        <ToolbarHeading title="All Fabs" description="" />
                     </Toolbar>
                     <div className="space-y-4 mt-4">
                         <Skeleton className="h-16 w-full" />
@@ -186,7 +186,7 @@ export function SalesPage() {
             <div className="">
                 <Container>
                     <Toolbar className=' '>
-                        <ToolbarHeading title="FAB ID'S" description="" />
+                        <ToolbarHeading title="All Fabs" description="" />
                     </Toolbar>
                     <Alert variant="destructive" className="mt-4">
                         <AlertCircle className="h-4 w-4" />
@@ -206,7 +206,7 @@ export function SalesPage() {
         <div className="">
             <Container>
                 <Toolbar className=' '>
-                    <ToolbarHeading title="FAB ID'S" description="View & track all Alpha granite FAB ID'S" />
+                    <ToolbarHeading title="All Fabs" description="View & track all Alpha granite FAB ID'S" />
                     <ToolbarActions>
                         <Can action="update" on="FAB IDs">
                             <Link to="/jobs/sales/new-fab-id">
@@ -229,7 +229,7 @@ export function SalesPage() {
                 {/* <JobTable jobs={transformedJobs} path='sales' /> */}
                 <JobTable
                     jobs={jobsData}
-                    path='draft-review'
+                    path='sales'
                     isLoading={isLoading}
                     // onRowClick={handleRowClick}
                     useBackendPagination={true}

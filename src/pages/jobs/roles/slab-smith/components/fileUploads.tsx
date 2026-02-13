@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { toast } from 'sonner';
 import {
   formatBytes,
   useFileUpload,
@@ -44,6 +45,8 @@ interface UploadDocumentsProps {
   onFileClick?: (file: FileMetadata) => void;
   slabSmithId?: number;
   simulateUpload?: boolean;
+  disabled?: boolean;
+  refetchFiles?: () => void; // Add refetch function
 }
 
 export function UploadDocuments({
@@ -53,10 +56,15 @@ export function UploadDocuments({
   onFileClick,
   slabSmithId,
   simulateUpload = true,
+  disabled = false,
+  refetchFiles,
 }: UploadDocumentsProps) {
   const [uploadFiles, setUploadFiles] = useState<FileUploadItem[]>([]);
   const [uploadBoxes, setUploadBoxes] = useState([{ id: 1 }]);
-  const [addFilesToSlabSmith] = useAddFilesToSlabSmithMutation();
+  const [addFilesToSlabSmith, { isLoading: isUploading }] = useAddFilesToSlabSmithMutation();
+  
+  // Track files that are being processed to prevent duplicates
+  const processingFilesRef = useRef<Set<string>>(new Set());
 
   const [
     { isDragging, errors },
@@ -75,41 +83,189 @@ export function UploadDocuments({
     maxSize,
     accept,
     multiple: true,
-    onFilesChange: async (newFiles) => {
-      const newUploadFiles = newFiles.map((file) => {
-        const existingFile = uploadFiles.find((existing) => existing.id === file.id);
-        if (existingFile) {
-          return {
-            ...existingFile,
-            ...file,
-          };
-        } else {
-          return {
-            ...file,
-            progress: 0,
-            status: 'uploading' as const,
-          };
-        }
-      });
-      setUploadFiles(newUploadFiles);
-      
-      // If we have a slabSmithId, upload the files to the API
-      if (slabSmithId && newFiles.length > 0) {
-        try {
-          const fileObjects = newFiles.map(f => f.file as File);
-          await addFilesToSlabSmith({
-            slabsmith_id: slabSmithId,
-            files: fileObjects
-          }).unwrap();
-          console.log('Files uploaded to slab smith successfully');
-        } catch (error) {
-          console.error('Failed to upload files to slab smith:', error);
-        }
-      }
-      
-      onFilesChange?.(newFiles);
-    },
+    // Don't use onFilesChange here - handle files directly
+    onFilesChange: undefined,
   });
+
+  // Real file upload function
+  const handleRealUpload = async (fileItem: FileUploadItem) => {
+    console.log('Starting real upload for file:', fileItem.file.name);
+    console.log('SlabSmith ID available:', slabSmithId);
+    
+    if (!slabSmithId) {
+      console.log('No SlabSmith ID - setting error state');
+      setUploadFiles(prev => 
+        prev.map(f => 
+          f.id === fileItem.id 
+            ? { ...f, status: 'error' as const, error: 'SlabSmith session not found' } 
+            : f
+        )
+      );
+      processingFilesRef.current.delete(fileItem.id);
+      return;
+    }
+
+    try {
+      console.log('Updating progress to 30%');
+      // Update progress
+      setUploadFiles(prev => 
+        prev.map(f => 
+          f.id === fileItem.id 
+            ? { ...f, progress: 30 } 
+            : f
+        )
+      );
+
+      console.log('Calling addFilesToSlabSmith API');
+      // Upload file
+      const response = await addFilesToSlabSmith({
+        slabsmith_id: slabSmithId,
+        files: [fileItem.file as File],
+      }).unwrap();
+      
+      console.log('Upload successful, response:', response);
+
+      // Mark as completed
+      setUploadFiles(prev => 
+        prev.map(f => 
+          f.id === fileItem.id 
+            ? { ...f, progress: 100, status: 'completed' as const } 
+            : f
+        )
+      );
+      
+      // Clean up and refetch after delay
+      setTimeout(() => {
+        setUploadFiles(prev => {
+          const filtered = prev.filter(f => f.id !== fileItem.id);
+          console.log('Removed completed file, remaining:', filtered.length);
+          return filtered;
+        });
+        processingFilesRef.current.delete(fileItem.id);
+        console.log('Processing files after cleanup:', processingFilesRef.current.size);
+        
+        if (refetchFiles) {
+          console.log('Calling refetchFiles');
+          refetchFiles();
+        }
+      }, 1500);
+      
+      toast.success('File uploaded successfully');
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      
+      setUploadFiles(prev => 
+        prev.map(f => 
+          f.id === fileItem.id 
+            ? { ...f, status: 'error' as const, error: error?.data?.message || 'Upload failed' } 
+            : f
+        )
+      );
+      processingFilesRef.current.delete(fileItem.id);
+    }
+  };
+
+  // Create a custom handler for file selection
+  const handleFileSelection = (newFiles: FileWithPreview[]) => {
+    console.log('=== HANDLE FILE SELECTION CALLED ===');
+    console.log('Received files:', newFiles.length);
+    console.log('File IDs:', newFiles.map(f => f.id));
+    console.log('Current uploadFiles state length:', uploadFiles.length);
+    console.log('Current processing files:', processingFilesRef.current.size);
+    
+    // Filter out files already being processed
+    const uniqueFiles = newFiles.filter(file => !processingFilesRef.current.has(file.id));
+    console.log('Unique files to process:', uniqueFiles.length);
+    
+    if (uniqueFiles.length === 0) {
+      console.log('❌ No unique files to process');
+      return;
+    }
+    
+    // Mark files as being processed
+    uniqueFiles.forEach(file => processingFilesRef.current.add(file.id));
+    console.log('✅ Added to processing set, now has:', processingFilesRef.current.size, 'files');
+    
+    // Create upload items
+    const newUploadFiles: FileUploadItem[] = uniqueFiles.map((file) => ({
+      ...file,
+      progress: 0,
+      status: 'uploading' as const,
+    }));
+    
+    console.log('Creating upload items:', newUploadFiles.length);
+    
+    // Add to upload files
+    setUploadFiles(prev => {
+      const updated = [...prev, ...newUploadFiles];
+      console.log('✅ Upload files state updated');
+      console.log('Previous length:', prev.length);
+      console.log('New items added:', newUploadFiles.length);
+      console.log('Total now:', updated.length);
+      return updated;
+    });
+    
+    // Start uploading each file
+    newUploadFiles.forEach(fileItem => {
+      handleRealUpload(fileItem);
+    });
+    
+  };
+
+  // Handle drop directly to avoid duplicate events
+  const handleCustomDrop = useCallback(async (e: React.DragEvent<HTMLElement>) => {
+    console.log('Drop event triggered');
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!e.dataTransfer?.files?.length || disabled) {
+      console.log('No files in drop or component disabled');
+      return;
+    }
+    
+    const files = Array.from(e.dataTransfer.files);
+    console.log('Dropped files:', files.map(f => f.name));
+    
+    const fileWithPreview: FileWithPreview[] = files.map(file => ({
+      file,
+      id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
+      preview: URL.createObjectURL(file),
+    }));
+    
+    handleFileSelection(fileWithPreview);
+  }, [disabled, handleFileSelection]);
+  const handleCustomFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log('=== FILE INPUT CHANGE STARTED ===');
+    console.log('Files selected:', e.target.files?.length);
+    console.log('Files details:', e.target.files ? Array.from(e.target.files).map(f => ({
+      name: f.name,
+      size: f.size,
+      type: f.type
+    })) : 'No files');
+    
+    if (!e.target.files?.length) {
+      return;
+    }
+    
+    if (disabled) {
+      return;
+    }
+    
+    const files = Array.from(e.target.files);
+    
+    const fileWithPreview: FileWithPreview[] = files.map(file => ({
+      file,
+      id: `${file.name}-${file.size}-${Date.now()}-${Math.random()}`,
+      preview: URL.createObjectURL(file),
+    }));
+    
+    console.log('Generated file previews:', fileWithPreview.map(f => f.id));
+    handleFileSelection(fileWithPreview);
+    
+    // Reset input
+    e.target.value = '';
+    console.log('=== FILE INPUT CHANGE ENDED ===');
+  }, [disabled, handleFileSelection]);
 
   // Simulate upload progress
   useEffect(() => {
@@ -210,6 +366,18 @@ export function UploadDocuments({
         <CardTitle>Upload Documents</CardTitle>
       </CardHeader>
       <CardContent className="">
+        {/* <div className="mb-4">
+          {uploadFiles.length > 0 && (
+            <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+              <p className="text-xs font-medium text-yellow-800">Current Upload Files:</p>
+              {uploadFiles.map((file, index) => (
+                <p key={index} className="text-xs text-yellow-700 ml-2">
+                  • {file.file.name} - {file.status} ({file.progress}%)
+                </p>
+              ))}
+            </div>
+          )}
+        </div> */}
         {/* Upload Boxes Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Uploaded Files */}
@@ -327,10 +495,18 @@ export function UploadDocuments({
               onDragEnter={handleDragEnter}
               onDragLeave={handleDragLeave}
               onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              onClick={openFileDialog}
+              onDrop={handleCustomDrop}
+              onClick={() => {
+                console.log('🔍 UPLOAD BOX CLICKED');
+                openFileDialog();
+              }}
             >
-              <input {...getInputProps()} className="sr-only" />
+              <input 
+                {...getInputProps()} 
+                onChange={handleCustomFileChange}
+                disabled={disabled || isUploading}
+                className="sr-only" 
+              />
 
               <div className="flex flex-col items-center gap-3">
                 <div

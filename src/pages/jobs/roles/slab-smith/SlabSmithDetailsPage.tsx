@@ -1,5 +1,5 @@
-// DrafterDetailsPageRefactor.tsx - FIXED VERSION
-import React, { useCallback, useState } from 'react';
+// SlabSmithDetailsPage.tsx - FULLY REFACTORED WITH UNIFIED FILE VIEWER
+import React, { useCallback, useState, useEffect } from 'react';
 import { Container } from '@/components/common/container';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,20 +13,32 @@ import {
   useGetSlabSmithByFabIdQuery,
   useCreateSlabSmithMutation,
   useAddFilesToSlabSmithMutation,
-  useManageSlabSmithSessionMutation, // Import new mutation
-  useGetSlabSmithSessionStatusQuery, // Import new query
+  useManageSlabSmithSessionMutation,
+  useGetSlabSmithSessionStatusQuery,
   useToggleFabOnHoldMutation,
-  useCreateFabNoteMutation
+  useCreateFabNoteMutation,
 } from '@/store/api/job';
 import { TimeTrackingComponent } from './components/TimeTrackingComponent';
 import { UploadDocuments } from './components/fileUploads';
 import { FileViewer } from './components/FileViewer';
+import { Documents } from '@/pages/shop/components/files';
 import { SubmissionModal } from './components/SubmissionModal';
 import { useSelector } from 'react-redux';
 import { FileWithPreview } from '@/hooks/use-file-upload';
 import { UploadedFileMeta } from '@/types/uploads';
 import { X } from 'lucide-react';
 import { Can } from '@/components/permission';
+import { getFileStage } from '@/utils/file-labeling';      // <-- IMPORT for stage detection
+
+
+const formatBytes = (bytes: number, decimals = 2) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+};
 
 export function SlabSmithDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -36,119 +48,121 @@ export function SlabSmithDetailsPage() {
   const currentUser = useSelector((s: any) => s.user.user);
   const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
 
-  // load fab & drafting (we assume drafting already exists)
-  const { data: fabData, isLoading: isFabLoading } = useGetFabByIdQuery(fabId, { skip: !fabId });
+  // Queries
+  const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, { skip: !fabId });
   const { data: draftingData, isLoading: isDraftingLoading, refetch: refetchDrafting } = useGetDraftingByFabIdQuery(fabId, { skip: !fabId });
-  const { data: slabSmithData, isLoading: isSlabSmithLoading } = useGetSlabSmithByFabIdQuery(fabId, { skip: !fabId });
-  const { data: ssSessionData, isLoading: isSSLoading, refetch: refetchSSSession } = useGetSlabSmithSessionStatusQuery(fabId, { skip: !fabId }); // Session status
+  const { data: slabSmithData, isLoading: isSlabSmithLoading, refetch: refetchSlabSmith } = useGetSlabSmithByFabIdQuery(fabId, { skip: !fabId });
+  const { data: ssSessionData, isLoading: isSSLoading, refetch: refetchSSSession } = useGetSlabSmithSessionStatusQuery(fabId, { skip: !fabId });
+  
+  // Mutations
   const [createSlabSmith] = useCreateSlabSmithMutation();
   const [addFilesToSlabSmith] = useAddFilesToSlabSmithMutation();
-  const [manageSlabSmithSession] = useManageSlabSmithSessionMutation(); // Session mutation
+  const [manageSlabSmithSession] = useManageSlabSmithSessionMutation();
   const [toggleFabOnHold] = useToggleFabOnHoldMutation();
   const [createFabNote] = useCreateFabNoteMutation();
 
-  // local UI state
+  // -----------------------------------------------------------------
+  // Timer / Session State
+  // -----------------------------------------------------------------
   const [isDrafting, setIsDrafting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [hasEnded, setHasEnded] = useState(false);
   const [totalTime, setTotalTime] = useState<number>(0);
-
-  // start/end timestamps captured from child component
   const [draftStart, setDraftStart] = useState<Date | null>(null);
   const [draftEnd, setDraftEnd] = useState<Date | null>(null);
 
-  // Sync state with session data
-  React.useEffect(() => {
+  // Sync with session API
+  useEffect(() => {
     if (ssSessionData?.data) {
       const session = ssSessionData.data;
-
-      // Set status flags
       if (session.status === 'active') {
-        setIsDrafting(true);
-        setIsPaused(false);
-        setHasEnded(false);
+        setIsDrafting(true); setIsPaused(false); setHasEnded(false);
       } else if (session.status === 'paused') {
-        setIsDrafting(true);
-        setIsPaused(true);
-        setHasEnded(false);
+        setIsDrafting(true); setIsPaused(true); setHasEnded(false);
       } else if (session.status === 'ended') {
-        setIsDrafting(false);
-        setIsPaused(false);
-        setHasEnded(true);
+        setIsDrafting(false); setIsPaused(false); setHasEnded(true);
       }
-
-      // Restore timestamps
-      if (session.current_session_start_time) {
-        setDraftStart(new Date(session.current_session_start_time));
-      }
-      if (session.last_action_time && session.status === 'ended') {
-        setDraftEnd(new Date(session.last_action_time));
-      }
-
-      // Restore total time if available
-      if (typeof session.duration_seconds === 'number') {
-        setTotalTime(session.duration_seconds);
-      }
+      if (session.current_session_start_time) setDraftStart(new Date(session.current_session_start_time));
+      if (session.last_action_time && session.status === 'ended') setDraftEnd(new Date(session.last_action_time));
+      if (typeof session.duration_seconds === 'number') setTotalTime(session.duration_seconds);
     }
   }, [ssSessionData]);
 
-  // Simplified file state - track files that need to be uploaded
+  // -----------------------------------------------------------------
+  // FILE STATE – pending local files + uploaded server files
+  // -----------------------------------------------------------------
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploadedFileMetas, setUploadedFileMetas] = useState<UploadedFileMeta[]>([]);
-  const [activeFile, setActiveFile] = useState<any | null>(null);
-  const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
   const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
 
+  // VIEW STATE – unified file viewer
+  const [activeFile, setActiveFile] = useState<any | null>(null);
+  const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
+
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
-  const getAllFabNotes = (fabNotes: any[]) => {
-    return fabNotes || [];
+
+  // -----------------------------------------------------------------
+  // Helper: Normalise any file object for FileViewer
+  // -----------------------------------------------------------------
+  const enhanceFileForViewer = (file: any) => ({
+    ...file,
+    id: file.id,
+    name: file.name || file.file_name,
+    size: parseInt(file.file_size) || file.size || 0,
+    type: file.file_type || file.type || '',
+    url: file.file_url || file.url,
+    file_url: file.file_url || file.url,
+    stage: getFileStage(file.name || file.file_name, {
+      currentStage: 'slab_smith',   // adjust to your exact stage name
+      isDrafting: true,
+    }),
+    formattedSize: formatBytes(parseInt(file.file_size) || file.size || 0),
+    uploadedAt: file.created_at ? new Date(file.created_at) : new Date(),
+    uploadedBy: file.uploaded_by || currentUser?.name || 'Unknown',
+  });
+
+  // -----------------------------------------------------------------
+  // File click handler – used by UploadDocuments AND Documents
+  // -----------------------------------------------------------------
+  const handleFileClick = (file: any) => {
+    const enhanced = enhanceFileForViewer(file);
+    setActiveFile(enhanced);
+    setViewMode('file');
   };
-  // Fixed handleFilesChange - REPLACES files instead of accumulating
+
+  // -----------------------------------------------------------------
+  // Local file selection (from UploadDocuments)
+  // -----------------------------------------------------------------
   const handleFilesChange = useCallback(async (files: FileWithPreview[]) => {
     if (!files || files.length === 0) {
       setPendingFiles([]);
       return;
     }
 
-    console.log('New files selected:', files);
-
-    // Filter to only actual File objects
     const validFiles = files.filter((fileItem) => fileItem.file instanceof File);
-
     if (validFiles.length === 0) {
-      console.log('No valid files to process');
       setPendingFiles([]);
       return;
     }
 
-    // Extract the File objects
     const fileObjects = validFiles.map(f => f.file as File);
-
-    // REPLACE the pending files (don't accumulate)
     setPendingFiles(fileObjects);
 
-    // Create file metas for display
     const newFileMetas: UploadedFileMeta[] = fileObjects.map((file, index) => ({
-      id: `pending-${Date.now()}-${index}`, // Temporary ID
+      id: `pending-${Date.now()}-${index}`,
       name: file.name,
       size: file.size,
       type: file.type,
     }));
-
     setUploadedFileMetas(newFileMetas);
+  }, []);
 
-    console.log('Set pending files:', fileObjects.length);
-    console.log('File names:', fileObjects.map(f => f.name));
-
-  }, []); // Removed dependencies since we're replacing, not accumulating
-
-  // Upload files when needed (like when opening submission modal)
+  // -----------------------------------------------------------------
+  // Upload pending files to server
+  // -----------------------------------------------------------------
   const uploadPendingFiles = useCallback(async () => {
-    if (pendingFiles.length === 0) {
-      return [];
-    }
+    if (pendingFiles.length === 0) return [];
 
-    // Ensure slab smith entry exists
     let slabSmithId = slabSmithData?.id;
     if (!slabSmithId) {
       try {
@@ -156,9 +170,11 @@ export function SlabSmithDetailsPage() {
           fab_id: fabId,
           slab_smith_type: 'standard',
           drafter_id: currentEmployeeId,
-          start_date: new Date().toISOString().substring(0, 19)
+          start_date: new Date().toISOString().substring(0, 19),
+          total_sqft_completed: String(fabData?.total_sqft || '0'),
         }).unwrap();
         slabSmithId = result.id;
+        await refetchSlabSmith();
       } catch (error) {
         console.error('Failed to create slab smith entry:', error);
         toast.error('Failed to initialize slab smith work');
@@ -166,40 +182,29 @@ export function SlabSmithDetailsPage() {
       }
     }
 
-    if (!slabSmithId) {
-      throw new Error('No slab smith ID available');
-    }
+    if (!slabSmithId) throw new Error('No slab smith ID available');
 
     try {
       setIsUploadingDocuments(true);
-      console.log('Uploading pending files:', pendingFiles);
-
       const response = await addFilesToSlabSmith({
         slabsmith_id: slabSmithId,
-        files: pendingFiles
+        files: pendingFiles,
       }).unwrap();
-
-      console.log('File upload response:', response);
 
       let uploadedIds: number[] = [];
       if (response && Array.isArray(response)) {
         uploadedIds = response.map((file: any) => file.id);
-
-        // Update file metas with real IDs
         const updatedMetas = response.map((fileData: any, index: number) => ({
           id: fileData.id,
           name: fileData.name || pendingFiles[index].name,
           size: fileData.size || pendingFiles[index].size,
           type: fileData.type || pendingFiles[index].type,
         }));
-
         setUploadedFileMetas(updatedMetas);
       }
 
-      // Clear pending files after successful upload
       setPendingFiles([]);
       return uploadedIds;
-
     } catch (error) {
       console.error('Failed to upload files:', error);
       toast.error('Failed to upload files');
@@ -207,27 +212,35 @@ export function SlabSmithDetailsPage() {
     } finally {
       setIsUploadingDocuments(false);
     }
-  }, [pendingFiles, slabSmithData, fabId, currentEmployeeId, createSlabSmith, addFilesToSlabSmith]);
+  }, [pendingFiles, slabSmithData, fabId, currentEmployeeId, createSlabSmith, addFilesToSlabSmith, refetchSlabSmith, fabData?.total_sqft]);
 
-  const handleFileClick = (file: any) => {
-    setActiveFile(file);
-    setViewMode('file');
-  };
-
-  // Time tracking handlers
+  // -----------------------------------------------------------------
+  // Timer Handlers
+  // -----------------------------------------------------------------
   const handleStart = useCallback(async (startDate: Date) => {
     if (fabId) {
       try {
-        // Ensure SlabSmith record exists first? 
-        // Usually manageSession might handle it or we expect it to exist.
-        // But let's just call manageSession with action 'start'.
+        let currentSlabSmithId = slabSmithData?.id;
+        if (!currentSlabSmithId) {
+          const createResponse = await createSlabSmith({
+            fab_id: fabId,
+            slab_smith_type: 'standard',
+            drafter_id: currentEmployeeId,
+            start_date: startDate.toISOString().substring(0, 19),
+            total_sqft_completed: String(fabData?.total_sqft || '0'),
+          }).unwrap();
+          currentSlabSmithId = createResponse.id;
+          toast.success('SlabSmith entry created successfully');
+          await refetchSlabSmith();
+        }
+
         await manageSlabSmithSession({
           fab_id: fabId,
           data: {
             action: 'start',
             started_by: currentEmployeeId,
             timestamp: startDate.toISOString(),
-          }
+          },
         }).unwrap();
 
         await refetchSSSession();
@@ -243,7 +256,7 @@ export function SlabSmithDetailsPage() {
     setIsPaused(false);
     setHasEnded(false);
     setDraftStart(startDate);
-  }, [fabId, currentEmployeeId, manageSlabSmithSession, refetchSSSession]);
+  }, [fabId, currentEmployeeId, manageSlabSmithSession, refetchSSSession, slabSmithData?.id, createSlabSmith, refetchSlabSmith, fabData?.total_sqft]);
 
   const handlePause = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
     try {
@@ -252,9 +265,9 @@ export function SlabSmithDetailsPage() {
         data: {
           action: 'pause',
           note: data?.note,
-          sqft_completed: data?.sqft_drafted, // Map drafted to completed
+          sqft_completed: data?.sqft_drafted,
           timestamp: new Date().toISOString(),
-        }
+        },
       }).unwrap();
       setIsPaused(true);
       await refetchSSSession();
@@ -274,7 +287,7 @@ export function SlabSmithDetailsPage() {
           note: data?.note,
           sqft_completed: data?.sqft_drafted,
           timestamp: new Date().toISOString(),
-        }
+        },
       }).unwrap();
       setIsPaused(false);
       await refetchSSSession();
@@ -288,20 +301,13 @@ export function SlabSmithDetailsPage() {
   const handleOnHold = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
     try {
       await toggleFabOnHold({ fab_id: fabId, on_hold: true }).unwrap();
-
       if (data?.note) {
-        // Stage: 'slab_smith_request' or ?? 
-        // Looking at sidebar mapping: slab_smith_request is Red.
-        // But this is the Slabsmith role working. 
-        // I'll use 'slab_smith' or 'general'? 
-        // Let's use 'slab_smith'.
         await createFabNote({
           fab_id: fabId,
           note: data.note,
-          stage: 'slab_smith'
+          stage: 'slab_smith',
         }).unwrap();
       }
-
       await manageSlabSmithSession({
         fab_id: fabId,
         data: {
@@ -309,9 +315,8 @@ export function SlabSmithDetailsPage() {
           note: data?.note ? `[On Hold] ${data.note}` : '[On Hold]',
           sqft_completed: data?.sqft_drafted,
           timestamp: new Date().toISOString(),
-        }
+        },
       }).unwrap();
-
       setIsPaused(true);
       await refetchSSSession();
       toast.success('Job placed on hold');
@@ -328,9 +333,8 @@ export function SlabSmithDetailsPage() {
         data: {
           action: 'end',
           timestamp: endDate.toISOString(),
-        }
+        },
       }).unwrap();
-
       setIsDrafting(false);
       setIsPaused(false);
       setHasEnded(true);
@@ -343,19 +347,19 @@ export function SlabSmithDetailsPage() {
     }
   }, [fabId, manageSlabSmithSession, refetchSSSession]);
 
+  // -----------------------------------------------------------------
+  // Submission flow
+  // -----------------------------------------------------------------
   const canOpenSubmit = (isDrafting || hasEnded) && (pendingFiles.length > 0 || uploadedFileMetas.length > 0);
 
-  // Modified to handle file upload before showing modal
   const handleOpenSubmissionModal = async () => {
     try {
-      // Upload any pending files first
       if (pendingFiles.length > 0) {
         await uploadPendingFiles();
       }
       setShowSubmissionModal(true);
     } catch (error) {
       console.error('Failed to prepare files for submission:', error);
-      // Don't open modal if file upload fails
     }
   };
 
@@ -375,31 +379,35 @@ export function SlabSmithDetailsPage() {
     }
   };
 
+  // -----------------------------------------------------------------
+  // Sidebar data
+  // -----------------------------------------------------------------
+  const getAllFabNotes = (fabNotes: any[]) => fabNotes || [];
+
   if (isFabLoading || isDraftingLoading || isSlabSmithLoading) return <div>Loading...</div>;
 
   const sidebarSections = [
     {
-      title: "Job Details",
-      type: "details",
+      title: 'Job Details',
+      type: 'details',
       items: [
-        { label: "FAB ID", value: fabData?.id ? `FAB-${fabData.id}` : "N/A" },
-        { label: "FAB Type", value: fabData?.fab_type || "N/A" },
-        { label: "Account ID", value: fabData?.job_details?.account_id?.toString() || "N/A" },
-        { label: "Job name", value: fabData?.job_details?.name || "N/A" },
-        { label: "Job #", value: fabData?.job_details?.job_number || "N/A" },
-        { label: "Area (s)", value: fabData?.input_area || "N/A" },
-        { label: "Stone type", value: fabData?.stone_type_name || "N/A" },
-        { label: "Stone color", value: fabData?.stone_color_name || "N/A" },
-        { label: "Stone thickness", value: fabData?.stone_thickness_value || "N/A" },
-        { label: "Edge", value: fabData?.edge_name || "N/A" },
-        { label: "Total square ft", value: fabData?.total_sqft || "N/A" },
+        { label: 'FAB ID', value: fabData?.id ? `FAB-${fabData.id}` : 'N/A' },
+        { label: 'FAB Type', value: fabData?.fab_type || 'N/A' },
+        { label: 'Account ID', value: fabData?.job_details?.account_id?.toString() || 'N/A' },
+        { label: 'Job name', value: fabData?.job_details?.name || 'N/A' },
+        { label: 'Job #', value: fabData?.job_details?.job_number || 'N/A' },
+        { label: 'Area (s)', value: fabData?.input_area || 'N/A' },
+        { label: 'Stone type', value: fabData?.stone_type_name || 'N/A' },
+        { label: 'Stone color', value: fabData?.stone_color_name || 'N/A' },
+        { label: 'Stone thickness', value: fabData?.stone_thickness_value || 'N/A' },
+        { label: 'Edge', value: fabData?.edge_name || 'N/A' },
+        { label: 'Total square ft', value: fabData?.total_sqft || 'N/A' },
       ],
     },
     {
-      title: "FAB Notes",
-      type: "notes",
-      notes: getAllFabNotes(fabData?.fab_notes || []).map(note => {
-        // Stage display mapping
+      title: 'FAB Notes',
+      type: 'notes',
+      notes: getAllFabNotes(fabData?.fab_notes || []).map((note) => {
         const stageConfig: Record<string, { label: string; color: string }> = {
           templating: { label: 'Templating', color: 'text-blue-700' },
           pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
@@ -411,7 +419,7 @@ export function SlabSmithDetailsPage() {
           cutting: { label: 'Cutting', color: 'text-orange-700' },
           revisions: { label: 'Revisions', color: 'text-purple-700' },
           draft: { label: 'Draft', color: 'text-green-700' },
-          general: { label: 'General', color: 'text-gray-700' }
+          general: { label: 'General', color: 'text-gray-700' },
         };
 
         const stage = note.stage || 'general';
@@ -422,140 +430,167 @@ export function SlabSmithDetailsPage() {
           avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
           content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${note.note}`,
           author: note.created_by_name || 'Unknown',
-          timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+          timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
         };
-      })
-    }
-
+      }),
+    },
   ];
 
-  if (viewMode === 'file' && activeFile) {
-    return (
-      <Container className="lg:mx-0">
-        <div className="flex justify-end mb-4">
-          <Button
-            variant="inverse"
-            size="sm"
-            onClick={() => {
-              setViewMode('activity');
-              setActiveFile(null);
-            }}
-          >
-            <X className="w-6 h-6" />
-          </Button>
-        </div>
-        <FileViewer
-          file={activeFile}
-          onClose={() => {
-            setViewMode('activity');
-            setActiveFile(null);
-          }}
-        />
-      </Container>
-    );
-  }
-
+  // -----------------------------------------------------------------
+  // RENDER – MAIN LAYOUT (sidebar always visible)
+  // -----------------------------------------------------------------
   return (
-    <div className=" border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0  items-start lg:flex-shrink-0">
-      <div className="lg:col-span-3 w-full lg:w-[250px] xl:w-[300px] ultra:w-[400px]" >
-        <GraySidebar
-          sections={sidebarSections as any}
-          jobId={fabData?.job_id}  // Add this prop
-        />
+    <div className="border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0 items-start lg:flex-shrink-0">
+      {/* Sidebar – always present */}
+      <div className="lg:col-span-3 w-full lg:w-[250px] xl:w-[300px] ultra:w-[400px]">
+        <GraySidebar sections={sidebarSections as any} jobId={fabData?.job_id} />
       </div>
 
+      {/* Main content – toggles between file viewer and activity UI */}
       <Container className="lg:col-span-9">
-        <div className="pt-6">
-          <div className="flex justify-between items-start">
-            <div className="text-black">
-              <div className="flex items-center gap-3">
-                <p className="font-bold text-base">FAB-{fabData?.id || 'N/A'}</p>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  SLABSMITH
-                </span>
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${fabData?.status_id === 0 ? 'bg-red-100 text-red-800' : fabData?.status_id === 1 ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                  {fabData?.status_id === 0 ? 'ON HOLD' : fabData?.status_id === 1 ? 'ACTIVE' : 'LOADING'}
-                </span>
-              </div>
-              <p className="text-sm">{fabData?.job_details?.name || 'N/A'}</p>
-            </div>
-          </div>
-        </div>
-
-        <Separator className="my-6" />
-        <Card className='my-4'>
-          <CardHeader className='flex flex-col items-start py-4'>
-            <div className="flex items-center justify-between w-full">
+        {viewMode === 'file' && activeFile ? (
+          // -------------------- FILE VIEWER MODE (sidebar stays visible) --------------------
+          <div>
+            <div className="flex justify-between items-center p-4 bg-gray-50 rounded-t-lg">
               <div>
-                <CardTitle>SlabSmith activity</CardTitle>
-                <p className="text-sm text-[#4B5563]">Update your SlabSmith activity here</p>
+                <h3 className="font-semibold">{activeFile.name}</h3>
+                <p className="text-sm text-gray-500">
+                  {activeFile.formattedSize} • {activeFile.stage?.label || activeFile.stage}
+                </p>
               </div>
-
-            </div>
-          </CardHeader>
-        </Card>
-        <Card>
-
-          <CardContent>
-            <TimeTrackingComponent
-              isDrafting={isDrafting}
-              isPaused={isPaused}
-              totalTime={totalTime}
-              onStart={handleStart}
-              onPause={handlePause}
-              onResume={handleResume}
-              onEnd={handleEnd}
-              onOnHold={handleOnHold} // Pass handler
-              onTimeUpdate={setTotalTime}
-              hasEnded={hasEnded}
-              sessionData={ssSessionData} // Pass session data
-              isFabOnHold={fabData?.on_hold} // Pass on hold status
-              pendingFilesCount={pendingFiles.length} // Pass file counts
-              uploadedFilesCount={uploadedFileMetas.length}
-            />
-
-            <Separator className="my-3" />
-
-            <UploadDocuments
-              onFilesChange={handleFilesChange}
-              onFileClick={handleFileClick}
-              slabSmithId={slabSmithData?.id}
-            />
-          </CardContent>
-          {/* Submit Button inside Card */}
-          <div className="flex justify-end p-6 pt-0">
-            <Can action="create" on="Slab Smith">
               <Button
-                onClick={handleOpenSubmissionModal}
-                disabled={!canOpenSubmit}
-                className="bg-green-600 hover:bg-green-700"
-                size="lg"
+                variant="inverse"
+                size="sm"
+                onClick={() => {
+                  setViewMode('activity');
+                  setActiveFile(null);
+                }}
               >
-                Submit SlabSmith Work
+                <X className="w-6 h-6" />
               </Button>
-            </Can>
+            </div>
+            <FileViewer
+              file={activeFile}
+              onClose={() => {
+                setActiveFile(null);
+                setViewMode('activity');
+              }}
+            />
           </div>
-        </Card>
+        ) : (
+          // -------------------- ACTIVITY MODE (timer, uploads, etc.) --------------------
+          <>
+            <div className="pt-6">
+              <div className="flex justify-between items-start">
+                <div className="text-black">
+                  <div className="flex items-center gap-3">
+                    <p className="font-bold text-base">FAB-{fabData?.id || 'N/A'}</p>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      SLABSMITH
+                    </span>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        fabData?.status_id === 0
+                          ? 'bg-red-100 text-red-800'
+                          : fabData?.status_id === 1
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      {fabData?.status_id === 0 ? 'ON HOLD' : fabData?.status_id === 1 ? 'ACTIVE' : 'LOADING'}
+                    </span>
+                  </div>
+                  <p className="text-sm">{fabData?.job_details?.name || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
 
-        {/* Removed external UploadDocuments and Separators - they should ideally be inside the card or organized similarly to FinalProgramming if exact UI parity is desired, but for now moving Submit button is key for flow.
-           Actually, checking FinalProgrammingDetailsPage again, UploadDocuments IS inside the CardContent.
-           Let's move UploadDocuments inside CardContent too.
-        */}
+            <Separator className="my-6" />
 
+            <Card className="my-4">
+              <CardHeader className="flex flex-col items-start py-4">
+                <div className="flex items-center justify-between w-full">
+                  <div>
+                    <CardTitle>SlabSmith activity</CardTitle>
+                    <p className="text-sm text-[#4B5563]">Update your SlabSmith activity here</p>
+                  </div>
+                </div>
+              </CardHeader>
+            </Card>
+
+            <Card>
+              <CardContent>
+                <TimeTrackingComponent
+                  isDrafting={isDrafting}
+                  isPaused={isPaused}
+                  totalTime={totalTime}
+                  onStart={handleStart}
+                  onPause={handlePause}
+                  onResume={handleResume}
+                  onEnd={handleEnd}
+                  onOnHold={handleOnHold}
+                  onTimeUpdate={setTotalTime}
+                  hasEnded={hasEnded}
+                  sessionData={ssSessionData}
+                  isFabOnHold={fabData?.on_hold}
+                  pendingFilesCount={pendingFiles.length}
+                  uploadedFilesCount={uploadedFileMetas.length}
+                />
+
+                <Separator className="my-3" />
+
+                {/* UploadDocuments – now uses the unified file click handler */}
+                <UploadDocuments
+                  onFilesChange={handleFilesChange}
+                  onFileClick={handleFileClick}          // <-- fixed: uses enhanced handler
+                  slabSmithId={slabSmithData?.id}
+                  refetchFiles={refetchFab}
+                />
+
+                {/* Server‑uploaded files – now also uses the same file click handler */}
+                {(fabData as any)?.slabsmith_data?.files &&
+                  (fabData as any).slabsmith_data.files.length > 0 && (
+                    <div className="mt-6 pt-4 border-t border-gray-200">
+                      <h3 className="text-lg font-semibold mb-4 text-gray-900">Uploaded Files</h3>
+                      <Documents
+                        slabsmithData={(fabData as any)?.slabsmith_data}
+                        onFileClick={handleFileClick}    // <-- fixed: now opens in same viewer
+                      />
+                    </div>
+                  )}
+              </CardContent>
+
+              <div className="flex justify-end p-6 pt-0">
+                <Can action="create" on="Slab Smith">
+                  <Button
+                    onClick={handleOpenSubmissionModal}
+                    disabled={!canOpenSubmit}
+                    className="bg-green-600 hover:bg-green-700"
+                    size="lg"
+                  >
+                    Submit SlabSmith Work
+                  </Button>
+                </Can>
+              </div>
+            </Card>
+          </>
+        )}
+
+        {/* Submission Modal – always outside the conditional block */}
         <SubmissionModal
           open={showSubmissionModal}
           onClose={(success?: boolean) => {
             setShowSubmissionModal(false);
             if (success) {
-              // End the session upon successful submission
-              // Use current date as end time
               handleEnd(new Date());
-              // Navigate after a brief delay or immediately (usually safely immediately if state is handled)
               onSubmitModal({});
             }
           }}
           drafting={slabSmithData}
-          uploadedFiles={uploadedFileMetas.map(meta => ({ ...meta, file: pendingFiles.find(f => f.name === meta.name) }))}
+          uploadedFiles={uploadedFileMetas.map((meta) => ({
+            ...meta,
+            file: pendingFiles.find((f) => f.name === meta.name),
+          }))}
           draftStart={draftStart}
           draftEnd={draftEnd}
           fabId={fabId}
@@ -567,3 +602,5 @@ export function SlabSmithDetailsPage() {
     </div>
   );
 }
+
+export default SlabSmithDetailsPage;
