@@ -367,7 +367,7 @@ const JobFormSheet = ({
           >
             <SheetHeader className="mb-3 border-b pb-3">
               <SheetTitle>
-                {isViewMode ? "View job" : isEditMode ? "Edit job" : "Add new job"}
+                {isViewMode ? "View job" : isEditMode ? "Edit job" : "Add New Job"}
               </SheetTitle>
             </SheetHeader>
 

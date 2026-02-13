@@ -34,12 +34,18 @@ export function TemplatingDetailsPage() {
         { label: "FAB ID", value: `FAB-${fab.id}` },
         { label: "Job Name", value: fab.job_details?.name || `Job ${fab.job_id}` },
         { label: "Job Number", value: fab.job_details?.job_number || String(fab.job_id) },
-        
         { label: "Area", value: String(fab.input_area) },
         { label: "Material", value: `${fab.stone_type_name || 'N/A'} - ${fab.stone_thickness_value || 'N/A'}` },
         { label: 'Total square ft', value: String(fab.total_sqft) },
         { label: "Scheduled Date", value: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-', },
         { label: "Assigned to", value: String(fab.technician_name) },
+        { label: 'Stone type', value: fab.stone_type_name || 'N/A' },
+        { label: 'Stone color', value: fab.stone_color_name || 'N/A' },
+        { label: 'Stone thickness', value: fab.stone_thickness_value || 'N/A' },
+        { label: 'Edge', value: fab.edge_name || 'N/A' },
+        { label: 'Sales person', value: fab.sales_person_name || 'N/A' },
+        { label: 'Account Name', value: fab.account_name || 'N/A' },
+
       ],
     },
     // Option 1: Show ALL fab notes (current)

@@ -320,7 +320,7 @@ export interface ChangeStage {
     // job_id: number;
     changed_stage?: string;
 }
-export interface MarkInvoicedRequest{
+export interface MarkInvoicedRequest {
     job_id: number;
     invoiced_at?: string;
 }
@@ -945,11 +945,50 @@ export const jobApi = createApi({
                 transformResponse: (response: any) => response.data || response,
                 providesTags: ["Fab"],
             }),
-             getFabsInSlabSmithPending: build.query<Fab[], void>({
-                query: () => ({
-                    url: "/stages/slabsmith/pending",
-                    method: "get"
-                }),
+            getFabsInSlabSmithPending: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
+                query: (params) => {
+                    const queryParams = params || {};
+                    return {
+                        url: "/stages/slabsmith/pending",
+                        method: "get",
+                        params: {
+                            skip: queryParams.skip || 0,
+                            limit: queryParams.limit || 100,
+                            // Existing filters
+                            ...(queryParams.job_id !== undefined && { job_id: queryParams.job_id }),
+                            ...(queryParams.fab_type && { fab_type: queryParams.fab_type }),
+                            ...(queryParams.sales_person_id !== undefined && { sales_person_id: queryParams.sales_person_id }),
+                            ...(queryParams.templater_id !== undefined && { templater_id: queryParams.templater_id }),
+                            ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
+                            ...(queryParams.current_stage && { current_stage: queryParams.current_stage }),
+                            // New stage filter
+                            ...(queryParams.next_stage && { next_stage: queryParams.next_stage }),
+                            // Search filter
+                            ...(queryParams.search && { search: queryParams.search }),
+                            // Schedule date filters
+                            ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
+                            ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
+                            ...(queryParams.schedule_status && { schedule_status: queryParams.schedule_status }),
+                            // Date filter (predefined periods)
+                            ...(queryParams.date_filter && { date_filter: queryParams.date_filter }),
+                            // Shop date range filters
+                            ...(queryParams.shop_date_start && { shop_date_start: queryParams.shop_date_start }),
+                            ...(queryParams.shop_date_end && { shop_date_end: queryParams.shop_date_end }),
+                            // Template completion date range filters
+                            ...(queryParams.template_completed_start && { template_completed_start: queryParams.template_completed_start }),
+                            ...(queryParams.template_completed_end && { template_completed_end: queryParams.template_completed_end }),
+                            // Predraft completion date range filters
+                            ...(queryParams.predraft_completed_start && { predraft_completed_start: queryParams.predraft_completed_start }),
+                            ...(queryParams.predraft_completed_end && { predraft_completed_end: queryParams.predraft_completed_end }),
+                            // Draft completion date range filters
+                            ...(queryParams.draft_completed_start && { draft_completed_start: queryParams.draft_completed_start }),
+                            ...(queryParams.draft_completed_end && { draft_completed_end: queryParams.draft_completed_end }),
+                            // SCT completion date range filters
+                            ...(queryParams.sct_completed_start && { sct_completed_start: queryParams.sct_completed_start }),
+                            ...(queryParams.sct_completed_end && { sct_completed_end: queryParams.sct_completed_end }),
+                        }
+                    };
+                },
                 transformResponse: (response: any) => response.data || response,
                 providesTags: ["Fab"],
             }),

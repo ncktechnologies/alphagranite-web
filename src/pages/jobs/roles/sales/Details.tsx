@@ -116,12 +116,12 @@ export function SalesDetailsPage() {
             Review fabrication details
           </p>
         </div>
-        <Can action="update" on="fab">
+        {/* <Can action="update" on="fab">
           <Button onClick={handleEdit} className="flex items-center gap-2">
             <Pencil className="h-4 w-4" />
             Edit
           </Button>
-        </Can>
+        </Can> */}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">

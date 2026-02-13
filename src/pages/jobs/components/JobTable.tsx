@@ -933,11 +933,23 @@ export const JobTable = ({
             header: ({ column }) => (
                 <DataGridColumnHeader title="DRAFT Status" column={column} />
             ),
-            cell: ({ row }) => (
-                <span className="text-sm break-words max-w-[160px]">
+            cell: ({ row }) => {
+                const draftCompleted = row.original.draft_completed;
+                if (draftCompleted === 'drafting') {
+                    return <span className="text-sm break-words max-w-[160px] text-green-600 font-medium">Drafting</span>;
+                } else if (draftCompleted === 'paused') {
+                    return <span className="text-sm break-words max-w-[160px] text-red-600 font-medium">Paused</span>;
+                } else {
+                    return <span className="text-sm break-words max-w-[160px] text-gray-500">Not Started</span>;
+                }
+                return (
+                 <span className="text-sm break-words max-w-[160px] capitalize">
                     {row.original.draft_completed}
                 </span>
-            ),
+                )
+            }
+               
+            ,
             size: 130,
         },
         {

@@ -166,7 +166,7 @@ const SlabSmithPage = () => {
 
     // Fetch data with backend pagination and filtering
     // const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
-    const { data, isLoading, isFetching, isError, error } = useGetFabsInSlabSmithPendingQuery();
+    const { data, isLoading, isFetching, isError, error } = useGetFabsInSlabSmithPendingQuery(queryParams);
 
     const handleRowClick = (fabId: string) => {
         navigate(`/job/slab-smith/${fabId}`);

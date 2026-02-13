@@ -82,7 +82,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
 
       // Add actual start date if provided
       if (values.start_date) {
-        updateData.actual_start_date = new Date(values.start_date).toISOString();
+        updateData.actual_end_date = new Date(values.start_date).toISOString();
       }
 
       // Add scheduled start date if provided
@@ -162,8 +162,8 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
       // Prepare values for the form
       const formValues: Partial<z.infer<typeof formSchema>> = {
         is_completed: templatingData.data.is_completed || null,
-        start_date: templatingData.data.actual_start_date
-          ? templatingData.data.actual_start_date.split('T')[0]
+        start_date: templatingData.data.end_date
+          ? templatingData.data.end_date.split('T')[0]
           : "",
         schedule_start_date: templatingData.data.schedule_start_date
           ? templatingData.data.schedule_start_date.split('T')[0]
@@ -285,7 +285,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
               name="start_date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Start date</FormLabel>
+                  <FormLabel>Completed date</FormLabel>
                   <FormControl>
                     <DateTimePicker
                       mode="date"
@@ -305,7 +305,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
                           field.onChange("");
                         }
                       }}
-                      placeholder="Select start date"
+                      placeholder="Select complete date"
                     />
                   </FormControl>
                   <FormMessage />

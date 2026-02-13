@@ -1,7 +1,7 @@
 import { Container } from '@/components/common/container';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ReviewChecklistForm } from './ReviewChecklist';
-import { useParams } from 'react-router';
+import { Link, useParams } from 'react-router';
 import { useGetFabByIdQuery } from '@/store/api/job';
 import { useGetEmployeeByIdQuery } from '@/store/api/employee';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -30,17 +30,19 @@ export function FabIdDetailsPage() {
   // Create job info based on actual FAB data
   const jobInfo = fab ? [
     { label: 'FAB ID', value: String(fab.id) },
-    { label: 'FAB Type', value: fab.fab_type },
+    { label: 'FAB Type', value: <span className="uppercase">{fab.fab_type}</span> },
     { label: 'Account', value: fab.account_name}, // Placeholder
     { label: 'Job name', value: fab.job_details?.name }, // Placeholder
-    { label: 'Job #', value: String(fab.job_details?.job_number) },
+    { label: 'Job #', value: <Link to={`/job/details/${fab.job_details?.id}`} className="text-primary hover:underline">{fab.job_details?.job_number}</Link> },
     { label: 'Area (s)', value: fab.input_area }, // Placeholder
     { label: 'Stone type', value: fab.stone_type_name || 'N/A' },
     { label: 'Stone color', value: fab.stone_color_name || 'N/A' },
     { label: 'Stone thickness', value: fab.stone_thickness_value || 'N/A' },
     { label: 'Edge', value: fab.edge_name || 'N/A' },
     { label: 'Total square ft', value: String(fab.total_sqft) },
+    {label: 'Sales person', value: fab.sales_person_name || 'N/A'},
     { label: 'Job Notes', value: String(fab.job_details?.description || 'None') },
+
 
   ] : [];
   const sidebarSections = [
