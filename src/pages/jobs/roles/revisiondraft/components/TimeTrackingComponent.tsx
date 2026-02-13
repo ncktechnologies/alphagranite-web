@@ -426,7 +426,7 @@ export const TimeTrackingComponent = ({
                 <SelectTrigger id="pause-work-percentage">
                   <SelectValue placeholder="Select work percentage" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[200px] overflow-y-auto">
                   <SelectItem value="0">0%</SelectItem>
                   <SelectItem value="10">10%</SelectItem>
                   <SelectItem value="20">20%</SelectItem>
