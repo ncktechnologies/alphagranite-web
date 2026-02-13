@@ -19,6 +19,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Can } from '@/components/permission';
 import { useTableState } from '@/hooks';
 import { useGetSalesPersonsQuery } from '@/store/api';
+import { JobSalesTable } from './components/Table';
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
@@ -227,7 +228,7 @@ export function SalesPage() {
                     </ToolbarActions>
                 </Toolbar>
                 {/* <JobTable jobs={transformedJobs} path='sales' /> */}
-                <JobTable
+                <JobSalesTable
                     jobs={jobsData}
                     path='sales'
                     isLoading={isLoading}

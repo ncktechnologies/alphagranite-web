@@ -34,6 +34,21 @@ interface TimeTrackingComponentProps {
   uploadedFilesCount?: number;
 }
 
+// ---------------------------------------------------------------------
+// Helper: parse server timestamp as UTC (no timezone = assume UTC)
+// ---------------------------------------------------------------------
+const parseUTCDate = (dateStr: string | undefined): Date | undefined => {
+  if (!dateStr) return undefined;
+  // Expected format: "YYYY-MM-DDTHH:MM:SS.ssssss" (without Z)
+  const [datePart, timePart] = dateStr.split('T');
+  if (!datePart || !timePart) return undefined;
+  const [y, m, d] = datePart.split('-').map(Number);
+  const [h, min, s] = timePart.split(':').map(Number);
+  // Ignore fractional seconds (just take the integer part)
+  const seconds = Math.floor(s);
+  return new Date(Date.UTC(y, m - 1, d, h, min, seconds));
+};
+
 export const TimeTrackingComponent = ({
   isDrafting,
   isPaused,
@@ -55,57 +70,58 @@ export const TimeTrackingComponent = ({
 
   const [startTime, setStartTime] = useState<Date | null>(null);
   const [pausedTime, setPausedTime] = useState<Date | null>(null);
-  const [totalPausedTime, setTotalPausedTime] = useState<number>(0); // Track total paused time in seconds
+  const [totalPausedTime, setTotalPausedTime] = useState<number>(0);
   const [endTime, setEndTime] = useState<Date | null>(null);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
-  const [isStarting, setIsStarting] = useState(false); // Track if starting process is in progress
+  const [isStarting, setIsStarting] = useState(false);
 
   // Pause/Resume/OnHold notes state
   const [pauseNote, setPauseNote] = useState<string>('');
-  const [pauseSqFt, setPauseSqFt] = useState<string>(''); // New state for square footage during pause
+  const [pauseSqFt, setPauseSqFt] = useState<string>('');
   const [resumeNote, setResumeNote] = useState<string>('');
-  const [resumeSqFt, setResumeSqFt] = useState<string>(''); // New state for square footage during resume
+  const [resumeSqFt, setResumeSqFt] = useState<string>('');
   const [onHoldNote, setOnHoldNote] = useState<string>('');
-  const [onHoldSqFt, setOnHoldSqFt] = useState<string>(''); // New state for square footage during on hold
+  const [onHoldSqFt, setOnHoldSqFt] = useState<string>('');
   const [showPauseModal, setShowPauseModal] = useState(false);
   const [showResumeModal, setShowResumeModal] = useState(false);
   const [showOnHoldModal, setShowOnHoldModal] = useState(false);
 
-  // Initialize component state from server session data
+  // -----------------------------------------------------------------
+  // 1. Sync with server timestamps (single source of truth)
+  // -----------------------------------------------------------------
   useEffect(() => {
     if (sessionData?.data) {
       const session = sessionData.data;
 
-      // Set start time from server data
+      // Start time – try various possible field names
       if (session.start_time) {
-        setStartTime(new Date(session.start_time));
+        setStartTime(parseUTCDate(session.start_time) || null);
       } else if (session.current_session_start_time) {
-        setStartTime(new Date(session.current_session_start_time));
+        setStartTime(parseUTCDate(session.current_session_start_time) || null);
       } else if (draftStart) {
         setStartTime(draftStart);
       }
 
-      // Set end time if session is ended
+      // End time if session ended
       if (session.status === 'ended') {
         if (session.end_time) {
-          setEndTime(new Date(session.end_time));
+          setEndTime(parseUTCDate(session.end_time) || null);
         } else if (session.last_action_time) {
-          setEndTime(new Date(session.last_action_time));
+          setEndTime(parseUTCDate(session.last_action_time) || null);
         }
       } else if (draftEnd) {
         setEndTime(draftEnd);
       }
 
-      // Set paused time if session is paused
+      // Paused time if session is paused
       if (session.status === 'paused') {
         if (session.paused_at) {
-          setPausedTime(new Date(session.paused_at));
+          setPausedTime(parseUTCDate(session.paused_at) || null);
         } else if (session.current_pause_start_time) {
-          setPausedTime(new Date(session.current_pause_start_time));
+          setPausedTime(parseUTCDate(session.current_pause_start_time) || null);
         }
       }
     } else if (draftStart) {
-      // Fallback to prop data
       setStartTime(draftStart);
       if (draftEnd) {
         setEndTime(draftEnd);
@@ -113,27 +129,26 @@ export const TimeTrackingComponent = ({
     }
   }, [sessionData, draftStart, draftEnd]);
 
-  // Tick every second
+  // -----------------------------------------------------------------
+  // 2. Update current time every second
+  // -----------------------------------------------------------------
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
-
     return () => clearInterval(interval);
   }, []);
 
-  // Update elapsed time
+  // -----------------------------------------------------------------
+  // 3. Compute elapsed time and notify parent
+  // -----------------------------------------------------------------
   useEffect(() => {
     if (isDrafting && !isPaused && startTime && !hasEnded) {
-      let elapsed = 0;
-      if (startTime) {
-        elapsed = Math.floor((currentTime.getTime() - startTime.getTime()) / 1000);
-        // Subtract total paused time
-        elapsed = Math.max(0, elapsed - totalPausedTime);
-      }
-      onTimeUpdate(elapsed);
+      const elapsed = Math.floor((currentTime.getTime() - startTime.getTime()) / 1000);
+      const adjusted = Math.max(0, elapsed - totalPausedTime);
+      onTimeUpdate(adjusted);
     }
-  }, [currentTime, isDrafting, isPaused, startTime, onTimeUpdate, hasEnded, totalPausedTime]);
+  }, [currentTime, isDrafting, isPaused, startTime, totalPausedTime, hasEnded, onTimeUpdate]);
 
   // ---------- HANDLERS ----------
   const handleStart = async () => {
@@ -141,10 +156,9 @@ export const TimeTrackingComponent = ({
     const now = new Date();
     setStartTime(now);
     setPausedTime(null);
-    setTotalPausedTime(0); // Reset paused time when starting fresh
+    setTotalPausedTime(0);
 
     try {
-      // Call the async handler
       await onStart(now);
     } finally {
       setIsStarting(false);
@@ -159,13 +173,12 @@ export const TimeTrackingComponent = ({
     const now = new Date();
     setPausedTime(now);
     try {
-      // Pass both note and sqft_drafted to the parent
       await onPause({
         note: pauseNote,
         sqft_drafted: pauseSqFt
       });
       setPauseNote('');
-      setPauseSqFt(''); // Reset sqft after pause
+      setPauseSqFt('');
       setShowPauseModal(false);
     } catch (error) {
       console.error('Failed to pause:', error);
@@ -185,19 +198,17 @@ export const TimeTrackingComponent = ({
 
   const confirmResume = async () => {
     if (startTime && pausedTime) {
-      // Calculate paused duration and add to total paused time
       const pausedDuration = Math.floor((new Date().getTime() - pausedTime.getTime()) / 1000);
       setTotalPausedTime(prev => prev + pausedDuration);
     }
     setPausedTime(null);
     try {
-      // Pass both note and sqft_drafted to the parent
       await onResume({
         note: resumeNote,
         sqft_drafted: resumeSqFt
       });
       setResumeNote('');
-      setResumeSqFt(''); // Reset sqft after resume
+      setResumeSqFt('');
       setShowResumeModal(false);
     } catch (error) {
       console.error('Failed to resume:', error);
@@ -219,27 +230,24 @@ export const TimeTrackingComponent = ({
     const now = new Date();
     setEndTime(now);
 
-    // If currently paused, add the final paused duration
     if (startTime && pausedTime) {
       const pausedDuration = Math.floor((now.getTime() - pausedTime.getTime()) / 1000);
       setTotalPausedTime(prev => prev + pausedDuration);
     }
 
-    // Show toast if no files have been uploaded, but don't prevent holding
     if ((pendingFilesCount + uploadedFilesCount) === 0) {
       toast.info('No files have been uploaded. Session will be placed on hold.');
     }
 
     try {
       if (onOnHold) {
-        // Pass both note and sqft_drafted to the parent
         await onOnHold({
           note: onHoldNote,
           sqft_drafted: onHoldSqFt
         });
       }
       setOnHoldNote('');
-      setOnHoldSqFt(''); // Reset sqft after on hold
+      setOnHoldSqFt('');
       setShowOnHoldModal(false);
     } catch (error) {
       console.error('Failed to put on hold:', error);
@@ -257,39 +265,31 @@ export const TimeTrackingComponent = ({
     const now = new Date();
     setEndTime(now);
 
-    // If currently paused, add the final paused duration
     if (startTime && pausedTime) {
       const pausedDuration = Math.floor((now.getTime() - pausedTime.getTime()) / 1000);
       setTotalPausedTime(prev => prev + pausedDuration);
     }
 
-    // Show toast if no files have been uploaded
     if ((pendingFilesCount + uploadedFilesCount) === 0) {
       toast.warning('No files have been uploaded. Please upload files before ending the session.');
     }
 
-    onEnd(now);     // 🔥 Emit timestamp upward
+    onEnd(now);
   };
-
 
   // ---------- UI FORMATTING ----------
   const formatTime = (date?: Date | null) => {
     if (!date) return '--';
-    
-    // Format date part consistently (day/month/year)
     const datePart = date.toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
     });
-    
-    // Format time part using consistent 24-hour format to avoid timezone confusion
     const timePart = date.toLocaleTimeString('en-GB', {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false,
     });
-    
     return `${datePart} | ${timePart}`;
   };
 
@@ -301,7 +301,6 @@ export const TimeTrackingComponent = ({
       .toString()
       .padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
-
 
   // ---------- RENDER ----------
   return (
@@ -401,16 +400,14 @@ export const TimeTrackingComponent = ({
                   On Hold
                 </Button>
               )}
-              {/* End button removed as it's now handled by the Submit action */}
             </>
           ) : null}
         </div>
 
       </div>
 
-      {/* Modals - Using inline JSX instead of functions to avoid scope issues */}
+      {/* Modals */}
       <>
-        {/* Pause Modal */}
         <Dialog open={showPauseModal} onOpenChange={setShowPauseModal}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
@@ -449,7 +446,6 @@ export const TimeTrackingComponent = ({
           </DialogContent>
         </Dialog>
 
-        {/* Resume Modal */}
         <Dialog open={showResumeModal} onOpenChange={setShowResumeModal}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
@@ -466,7 +462,6 @@ export const TimeTrackingComponent = ({
           </DialogContent>
         </Dialog>
 
-        {/* On Hold Modal */}
         <Dialog open={showOnHoldModal} onOpenChange={setShowOnHoldModal}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
@@ -505,6 +500,6 @@ export const TimeTrackingComponent = ({
           </DialogContent>
         </Dialog>
       </>
-    </div >
+    </div>
   );
 };

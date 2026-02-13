@@ -38,7 +38,7 @@ export const CurrentStageProvider = CurrentStageContext.Provider;
 // import { MoveStageModal } from './components/MoveStageModal';
 
 const LazyNotesModal = lazy(() => import('@/components/common/NotesModal').then(module => ({ default: module.NotesModal })));
-const LazyMoveStageModal = lazy(() => import('./components/MoveStageModal').then(module => ({ default: module.MoveStageModal })));
+const LazyMoveStageModal = lazy(() => import('./MoveStageModal').then(module => ({ default: module.MoveStageModal })));
 
 // ... (keep existing imports)
 
@@ -97,7 +97,7 @@ function ActionsCell({ row, onView }: ActionsCellProps) {
               Add Note
             </DropdownMenuItem>
 
-            {/* {isSuperAdmin && (
+            {isSuperAdmin && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={(e) => {
@@ -108,7 +108,7 @@ function ActionsCell({ row, onView }: ActionsCellProps) {
                   Move Stage
                 </DropdownMenuItem>
               </>
-            )} */}
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

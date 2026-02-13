@@ -561,7 +561,7 @@ export function SlabSmithDetailsPage() {
               </CardContent>
 
               <div className="flex justify-end p-6 pt-0">
-                <Can action="create" on="Slab Smith">
+                {/* <Can action="create" on="Slab Smith"> */}
                   <Button
                     onClick={handleOpenSubmissionModal}
                     disabled={!canOpenSubmit}
@@ -570,7 +570,7 @@ export function SlabSmithDetailsPage() {
                   >
                     Submit SlabSmith Work
                   </Button>
-                </Can>
+                {/* </Can> */}
               </div>
             </Card>
           </>
