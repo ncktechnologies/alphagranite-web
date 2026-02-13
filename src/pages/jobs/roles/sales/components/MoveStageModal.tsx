@@ -27,11 +27,10 @@ export const MoveStageModal = ({ open, onClose, fabId }: MoveStageModalProps) =>
         { value: 'pre_draft_review', label: 'Pre-Draft Review' },
         { value: 'drafting', label: 'Drafting' },
         { value: 'sales_ct', label: 'Sales CT' },
-        { value: 'slab_smith_request', label: 'Slab Smith Request' },
-        { value: 'cut_list', label: 'Final Programming' },
-        { value: 'cutting', label: 'Cutting' },
-        { value: 'revisions', label: 'Revisions' },
-        { value: 'draft', label: 'Draft' },
+        // { value: 'slab_smith_request', label: 'Slab Smith Request' },
+        // { value: 'cut_list', label: 'Final Programming' },
+        { value: 'cut_list', label: 'Cutting' },
+        { value: 'revision', label: 'Revisions' },
     ];
 
     const payload = {

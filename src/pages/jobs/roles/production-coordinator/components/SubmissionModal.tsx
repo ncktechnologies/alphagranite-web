@@ -171,7 +171,7 @@ export function SubmissionModal({
       onClose(true);
     } catch (err: any) {
       console.error('Failed to submit final programming:', err);
-      toast.error(err?.data?.message || 'Failed to submit final programming work');
+      // toast.error(err?.data?.message || 'Failed to submit final programming work');
       onClose(false);
     } finally {
       setIsSubmitting(false);
