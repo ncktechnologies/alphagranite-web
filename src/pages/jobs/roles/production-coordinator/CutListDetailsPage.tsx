@@ -175,7 +175,7 @@ const CutListDetailsPage = () => {
                             <Card className='my-4'>
                                 <CardHeader >
                                     <CardHeading className='flex flex-col items-start py-4'>
-                                        <CardTitle>Drafting activity</CardTitle>
+                                        <CardTitle>Cutlist activity</CardTitle>
                                         <p className="text-sm text-[#4B5563]">
                                             Review drafting work and schedule for cutting
                                         </p>

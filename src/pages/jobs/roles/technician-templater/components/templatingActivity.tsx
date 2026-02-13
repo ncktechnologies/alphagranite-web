@@ -109,7 +109,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
       if (values.is_completed === true) {
         // First update the templating record with all data
         await updateTemplating(updateData).unwrap();
-        
+
         // Then complete templating
         const response = await completeTemplating({
           templating_id: templatingId,
@@ -163,22 +163,10 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
       const formValues: Partial<z.infer<typeof formSchema>> = {
         is_completed: templatingData.data.is_completed || null,
         start_date: templatingData.data.actual_start_date
-          ? (() => {
-            const date = new Date(templatingData.data.actual_start_date);
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-          })()
+          ? templatingData.data.actual_start_date.split('T')[0]
           : "",
         schedule_start_date: templatingData.data.schedule_start_date
-          ? (() => {
-            const date = new Date(templatingData.data.schedule_start_date);
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-          })()
+          ? templatingData.data.schedule_start_date.split('T')[0]
           : "",
         duration: templatingData.data.duration || "",
         notes: "",
@@ -263,17 +251,15 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
                   <FormControl>
                     <DateTimePicker
                       mode="date"
-                      value={field.value ? new Date(field.value) : undefined}
+                      value={field.value ? (() => {
+                        // Parse YYYY-MM-DD string in local timezone
+                        const [y, m, d] = field.value.split('-').map(Number);
+                        return new Date(y, m - 1, d);
+                      })() : undefined}
                       onChange={(date) => {
-                        if (date) {
-                          const year = date.getFullYear();
-                          const month = String(date.getMonth() + 1).padStart(2, '0');
-                          const day = String(date.getDate()).padStart(2, '0');
-                          const formatted = `${year}-${month}-${day}`;
-                          field.onChange(formatted);
-                        } else {
-                          field.onChange("");
-                        }
+                        if (!date) return field.onChange("");
+                        const formatted = date.toISOString().split('T')[0];
+                        field.onChange(formatted);
                       }}
                       placeholder="Select scheduled date"
                     />
@@ -293,7 +279,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
                 </FormItem>
               )}
             />
-            
+
             <FormField
               control={form.control}
               name="start_date"
@@ -303,7 +289,11 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
                   <FormControl>
                     <DateTimePicker
                       mode="date"
-                      value={field.value ? new Date(field.value) : undefined}
+                      value={field.value ? (() => {
+                        // Parse YYYY-MM-DD string in local timezone
+                        const [y, m, d] = field.value.split('-').map(Number);
+                        return new Date(y, m - 1, d);
+                      })() : undefined}
                       onChange={(date) => {
                         if (date) {
                           const year = date.getFullYear();
@@ -323,7 +313,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
               )}
             />
           </div>
-          
+
           <div>
             <FormField
               control={form.control}

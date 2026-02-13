@@ -24,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { LoaderCircle, Check } from "lucide-react";
 import { toast } from "sonner";
-import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { DateTimePicker, formatDateToString } from "@/components/ui/date-time-picker";
 import { useScheduleTemplatingMutation, useCreateFabNoteMutation } from "@/store/api/job";
 import { useNavigate, useParams } from "react-router";
 import { useGetEmployeesQuery, useGetSalesPersonsQuery } from "@/store/api/employee";
@@ -87,10 +87,6 @@ export function AssignTechnicianModal({
     try {
       // Update the templating schedule with technician information
       if (id) {
-        // const selectedEmployee = employeesData?.data.find(
-        //   (emp: any) => `${emp.id}` === values.technician
-        // );
-
         // Create fab note if notes exist
         if (values.notes && values.notes.trim()) {
           try {
@@ -108,8 +104,21 @@ export function AssignTechnicianModal({
         const response = await scheduleTemplating({
           fab_id: Number(id),
           technician_id: Number(values.technician),
-          schedule_start_date: values.date ? format(new Date(values.date), 'yyyy-MM-dd') : "",
-          schedule_due_date: values.date ? format(new Date(new Date(values.date).getTime() + 7 * 24 * 60 * 60 * 1000), 'yyyy-MM-dd') : "", // 7 days after start
+          schedule_start_date: values.date || "",
+          // ✅ FIXED: Calculate due date in local timezone, not UTC
+          schedule_due_date: values.date 
+            ? (() => {
+                // Parse the YYYY-MM-DD string directly (local timezone)
+                const [y, m, d] = values.date.split('-').map(Number);
+                // Create a date in local timezone and add 7 days
+                const startDate = new Date(y, m - 1, d); // month is 0-indexed
+                const dueDate = new Date(startDate);
+                dueDate.setDate(dueDate.getDate() + 7);
+                
+                // Format back to YYYY-MM-DD in local timezone
+                return formatDateToString(dueDate);
+              })()
+            : "",
           total_sqft: values?.total_sqft ? String(values.total_sqft) : 0,
           revenue: values.revenue ? parseFloat(values.revenue) : undefined,
           notes: [values.notes || ""],
@@ -247,13 +256,17 @@ export function AssignTechnicianModal({
                   <FormControl>
                     <DateTimePicker
                       mode="date"
-                      value={field.value ? new Date(field.value) : undefined}
+                      value={field.value ? (() => {
+                        // Parse YYYY-MM-DD string in local timezone
+                        const [y, m, d] = field.value.split('-').map(Number);
+                        return new Date(y, m - 1, d);
+                      })() : undefined}
                       onChange={(date) => {
                         if (!date) return field.onChange("");
-                        const formatted = format(date, 'yyyy-MM-dd'); // YYYY-MM-DD format
+                        // ✅ FIXED: Use formatDateToString to properly format in local timezone
+                        const formatted = formatDateToString(date);
                         field.onChange(formatted);
                       }}
-
                       placeholder="Schedule date"
                       minDate={new Date()}
                     />

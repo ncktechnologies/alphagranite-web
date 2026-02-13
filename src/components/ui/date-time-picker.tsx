@@ -187,6 +187,14 @@ function EnhancedCalendar({ mode, selected, onSelect, disabled, className }: Enh
   )
 }
 
+// Helper function to format date as YYYY-MM-DD in local timezone (not UTC)
+const formatDateToString = (date: Date): string => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
 const DateTimePicker = ({
   value,
   onChange,
@@ -229,11 +237,10 @@ const DateTimePicker = ({
 
   const handleDateSelect = (date: Date | undefined) => {
     if (date) {
-      // Create a new date object to avoid timezone issues
-      const selectedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-      setDateValue(selectedDate);
+      // Keep the date as-is without timezone conversion
+      setDateValue(date)
     } else {
-      setDateValue(date);
+      setDateValue(date)
     }
     // Reset time when date changes in datetime mode
     if (mode === "datetime" && !timeValue) {
@@ -381,4 +388,4 @@ const TimePicker = ({ value, onChange, label, placeholder = "Select time", disab
   )
 }
 
-export { DateTimePicker, TimePicker }
+export { DateTimePicker, TimePicker, formatDateToString }

@@ -44,11 +44,13 @@ export function FileViewer({ file, onClose }: FileViewerProps) {
 
   const handleDownload = async () => {
     if (!file.url) return;
+    console.log('fileName:', file);
     
     try {
       // Determine the best filename to use
       let fileName = file.name;
       
+      console.log('fileName:', fileName);
       // If name is empty, try to extract from URL
       if (!fileName || fileName.startsWith('File_')) {
         const urlParts = file.url.split('/');
@@ -58,7 +60,7 @@ export function FileViewer({ file, onClose }: FileViewerProps) {
         if (urlFileName.match(/^[0-9a-f-]{36}$/i) || !urlFileName.includes('.')) {
           fileName = fileName || 'downloaded-file';
         } else {
-          fileName = urlFileName;
+          fileName = fileName;
         }
       }
       
