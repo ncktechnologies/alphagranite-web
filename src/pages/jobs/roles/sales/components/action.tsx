@@ -11,10 +11,10 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useState, useContext, createContext, lazy, Suspense } from 'react';
-import { IJob } from '../../components/job';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
 // import { NotesModal } from '@/components/common/NotesModal';
 import { useCreateFabNoteMutation } from '@/store/api/job';
+import { IJob } from '@/pages/jobs/components/job';
 
 // Create a context to manage the current stage view state at a higher level
 interface CurrentStageContextType {

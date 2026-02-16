@@ -239,7 +239,7 @@ export function SalesPage() {
                     showSalesPersonFilter={true}
                     showScheduleFilter={false} // Remove separate schedule filter
                     salesPersons={salesPersons}
-                    visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'slabsmith_used', 'sct_notes', 'sct_completed', 'sales_person_name', 'draft_revision_notes', 'on_hold']}
+                    visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'slabsmith_used', 'sct_notes', 'sct_completed', 'sales_person_name', 'draft_revision_notes', 'on_hold', 'current_stage']}
                 />
             </Container>
         </div>

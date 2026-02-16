@@ -71,7 +71,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     order: 4,
     data: { icon: 'icon-6.svg', bgColor: 'bg-[#51BCF4]' }
   },
-  
+
   // SlabSmith (5)
   {
     id: 'SlabSmith Request',
@@ -120,7 +120,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     order: 8,
     data: { icon: 'hand-saw.svg', bgColor: 'bg-[#5DD40D]' }
   },
-  
+
   // Final Program (9)
   {
     id: 'Final Programming',
@@ -157,7 +157,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     order: 11,
     data: { icon: 'icon-1.svg', bgColor: 'bg-[#13D6C6]' }
   },
-  
+
   // FAB Widgets
   {
     id: 'newly-assigned-fab',
@@ -181,7 +181,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     gridSpan: { cols: 1 },
     order: 6,
   },
-  
+
   // Statistics and Charts
   {
     id: 'overall-statistics',
@@ -216,7 +216,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     gridSpan: { cols: 2 },
     order: 9,
   },
-  
+
   // Table Widgets
   {
     id: 'recent-jobs',
@@ -229,7 +229,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     gridSpan: { cols: 3 },
     order: 10,
   },
-  
+
   // Shop Widgets
   {
     id: 'shop-overview',
@@ -242,7 +242,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     gridSpan: { cols: 3 },
     order: 11,
   },
-  
+
   // Employee Widgets
   {
     id: 'employee-stats',
@@ -255,7 +255,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     gridSpan: { cols: 2 },
     order: 12,
   },
-  
+
   // Department Widgets
   {
     id: 'department-overview',
@@ -274,6 +274,20 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
  * Widget sections configuration
  * Groups widgets by category and defines layout
  */
+export const stageNameMap: Record<string, string> = {
+  'templating': 'Templating',
+  'pre_draft_review': 'Pre-draft Review',
+  'drafting': 'Drafting',
+  'sales_ct': 'SCT',
+  'slab_smith_request': 'SlabSmith Request',
+  'final_programming': 'Final Programming',
+  'cut_list': 'Cut List',
+  'resurface_scheduling': 'Resurface Scheduling',
+  'revision': 'Revisions',
+  'install_scheduling': 'Install Scheduling',
+  'install_completion': 'Install Completion',
+  'fab_created': 'FAB IDs'
+};
 export const WIDGET_SECTIONS = {
   stats: {
     title: 'Statistics Overview',

@@ -616,21 +616,21 @@ export const CutListTableWithCalculations = ({
             ),
             cell: ({ row }) => <span className="text-sm">{row.original.cip}</span>,
         },
-        {
-            id: "install_date",
-            accessorKey: "install_date",
-            header: ({ column }) => (
-                <DataGridColumnHeader title="INSTALL DATE" column={column} />
-            ),
-            cell: ({ row }) => (
-                <span className="text-sm">
-                    {row.original.install_date ?
-                        new Date(row.original.install_date).toLocaleDateString() :
-                        'Not Scheduled'
-                    }
-                </span>
-            ),
-        },
+        // {
+        //     id: "install_date",
+        //     accessorKey: "install_date",
+        //     header: ({ column }) => (
+        //         <DataGridColumnHeader title="INSTALL DATE" column={column} />
+        //     ),
+        //     cell: ({ row }) => (
+        //         <span className="text-sm">
+        //             {row.original.install_date ?
+        //                 new Date(row.original.install_date).toLocaleDateString() :
+        //                 'Not Scheduled'
+        //             }
+        //         </span>
+        //     ),
+        // },
         {
             id: "sales_person",
             accessorKey: "sales_person",

@@ -42,6 +42,7 @@ import { formatDateRange, formatForDisplay } from '@/utils/date-utils';
 import { useTableState } from '@/hooks/use-table-state';
 import { IJob } from '@/pages/jobs/components/job';
 import ActionsCell from './action';
+import { stageNameMap } from '@/config/dashboard-widgets.config';
 
 interface JobTableProps {
     jobs: IJob[];
@@ -985,6 +986,18 @@ export const JobSalesTable = ({
                 );
             },
             size: 400,
+        },
+        {
+            id: "current_stage",
+            accessorKey: "current_stage",
+            accessorFn: (row: IJob) => row.current_stage,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="CURRENT STAGE" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm">{row.original.current_stage ? (stageNameMap[row.original.current_stage] || row.original.current_stage) : ''}</span>
+            ),
+            size: 120,
         },
         // Templating Notes Column
         {

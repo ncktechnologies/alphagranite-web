@@ -158,8 +158,8 @@ export function UpdateFabIdModal({
         edging_linft: values.edgingLinFt ? parseFloat(values.edgingLinFt) : undefined,
         cnc_linft: values.cncLinFt ? parseFloat(values.cncLinFt) : undefined,
         miter_linft: values.miterLinFt ? parseFloat(values.miterLinFt) : undefined,
-        shop_date_schedule: values.shopDate,
-        installation_date: values.installationDate,
+        shop_date_schedule: values.shopDate || null,
+        installation_date: values.installationDate || null ,
       };
 
       // Remove undefined values
