@@ -47,18 +47,18 @@ const jobSchema = z.object({
       if (val === null || val === undefined || val === "") return "";
       return String(val);
     },
-    z.string().optional()
+    z.string().min(1, "Project value is required")
   ),
   sq_ft: z.preprocess(
     (val) => {
       if (val === null || val === undefined || val === "") return "";
       return String(val);
     },
-    z.string().optional()
+    z.string().min(1, "Square footage is required")
   ),
-  account_id: z.string().optional(),
+  account_id: z.string().min(1, "Account is required"),
   description: z.string().optional(),
-  sales_person_id: z.string().optional(),
+  sales_person_id: z.string().min(1, "Sales person is required"),
 });
 
 type JobFormType = z.infer<typeof jobSchema>;
@@ -410,7 +410,7 @@ const JobFormSheet = ({
                     name="project_value"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Project Value</FormLabel>
+                        <FormLabel>Project Value *</FormLabel>
                         <FormControl>
                           <Input 
                             {...field} 
@@ -429,7 +429,7 @@ const JobFormSheet = ({
                     name="sq_ft"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Square Footage</FormLabel>
+                        <FormLabel>Square Footage *</FormLabel>
                         <FormControl>
                           <Input 
                             {...field} 
@@ -449,7 +449,7 @@ const JobFormSheet = ({
                     name="sales_person_id"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Sales Person</FormLabel>
+                        <FormLabel>Sales Person *</FormLabel>
                         <Select
                           value={field.value}
                           onValueChange={field.onChange}
@@ -504,7 +504,7 @@ const JobFormSheet = ({
                     name="account_id"
                     render={({ field }) => (
                       <FormItem className="md:col-span-2">
-                        <FormLabel>Account</FormLabel>
+                        <FormLabel>Account *</FormLabel>
                         <Popover 
                           open={accountPopoverOpen} 
                           onOpenChange={setAccountPopoverOpen}

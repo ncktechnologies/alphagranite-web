@@ -8,10 +8,10 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { 
-  useCompleteFinalProgrammingMutation, 
-  useUpdateFabMutation, 
-  useCreateFabNoteMutation 
+import {
+  useCompleteFinalProgrammingMutation,
+  useUpdateFabMutation,
+  useCreateFabNoteMutation
 } from "@/store/api/job";
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -123,7 +123,7 @@ export function SubmissionModal({
       const fabUpdateData: any = {};
       if (values.totalSqft) fabUpdateData.total_sqft = parseFloat(values.totalSqft);
       if (values.noOfPieces) fabUpdateData.no_of_pieces = parseInt(values.noOfPieces);
-      
+
       if (Object.keys(fabUpdateData).length > 0) {
         await updateFab({
           id: fabId,
@@ -158,6 +158,9 @@ export function SubmissionModal({
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">Submit Final Programming</DialogTitle>
+          <span className="ml-3 text-sm font-normal text-gray-500">
+            FAB ID: {fabId}
+          </span>
         </DialogHeader>
 
         <Form {...form}>

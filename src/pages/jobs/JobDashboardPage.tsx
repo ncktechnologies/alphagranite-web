@@ -8,7 +8,7 @@ import { FinanceStats } from '@/pages/dashboards/demo1/light-sidebar/components/
 import { EarningsChart } from '@/pages/dashboards/demo1/light-sidebar/components/earnings-chart';
 import { Teams } from '@/pages/dashboards/demo1/light-sidebar/components/teams';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { InfoIcon, Plus } from 'lucide-react';
+import { Eye, InfoIcon, Plus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { toAbsoluteUrl } from '@/lib/helpers';
 import { useGetStagesQuery } from '@/store/api/job';
@@ -251,8 +251,8 @@ export function JobDashboardPage() {
           <Can action="create" on="Jobs">
             <Link to="/create-jobs">
               <Button className="">
-                <Plus />
-                New Job
+                <Eye />
+                View Jobs
               </Button>
             </Link>
           </Can>

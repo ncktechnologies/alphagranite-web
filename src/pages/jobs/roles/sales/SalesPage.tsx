@@ -220,8 +220,8 @@ export function SalesPage() {
                         <Can action="update" on="Jobs">
                             <Link to="/create-jobs">
                                 <Button className="">
-                                    <Plus />
-                                    New Job
+                                    <Eye />
+                                    View Jobs
                                 </Button>
                             </Link>
                         </Can>
