@@ -485,7 +485,7 @@ export function RevisionDetailsPage() {
   const shouldShowUploadSection = (isDrafting || isPaused) || allFilesForDisplay.length > 0;
 
   // Determine if submission is allowed
-  const canOpenSubmit = !isDrafting && totalTime > 0 && allFilesForDisplay.length > 0;
+  const canOpenSubmit = isDrafting && allFilesForDisplay.length > 0;
 
   // Handle revision submission
   const handleSubmitRevision = async (data: any) => {

@@ -355,7 +355,7 @@ export function SlabSmithDetailsPage() {
 
   // Determine if submission is allowed – session must be ended (not active/paused) and files must exist
   const hasFiles = ((fabData as any)?.slabsmith_data?.files?.length > 0);
-  const canOpenSubmit = hasEnded && hasFiles;
+  const canOpenSubmit = hasFiles;
 
   const handleOpenSubmissionModal = async () => {
     try {
@@ -595,7 +595,7 @@ export function SlabSmithDetailsPage() {
                 {(fabData as any)?.slabsmith_data?.files &&
                   (fabData as any).slabsmith_data.files.length > 0 && (
                     <div className="mt-6 pt-4 border-t border-gray-200">
-                      <h3 className="text-lg font-semibold mb-4 text-gray-900">Uploaded Files</h3>
+                      <h3 className="text-lg font-semibold mb-4 text-gray-900">Uploaded Files from Slabsmith</h3>
                       <Documents
                         slabsmithData={(fabData as any)?.slabsmith_data}
                         onFileClick={handleFileClick}
