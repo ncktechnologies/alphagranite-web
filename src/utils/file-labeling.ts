@@ -134,20 +134,20 @@ export const getFileStage = (
   }
   
   // Priority 2: File name pattern matching
-  const lowerFileName = fileName.toLowerCase();
+  const lowerFileName = fileName?.toLowerCase();
   
   // Revision files
-  if (lowerFileName.includes('revision') || lowerFileName.includes('rev') || context?.isRevision) {
+  if (lowerFileName?.includes('revision') || lowerFileName?.includes('rev') || context?.isRevision) {
     return WORKFLOW_STAGES.revision_uploads;
   }
   
   // Drafting files
-  if (lowerFileName.includes('draft') || context?.isDrafting) {
+  if (lowerFileName?.includes('draft') || context?.isDrafting) {
     return WORKFLOW_STAGES.drafting_uploads;
   }
   
   // Templating files
-  if (lowerFileName.includes('template') || lowerFileName.includes('templating')) {
+  if (lowerFileName?.includes('template') || lowerFileName?.includes('templating')) {
     return WORKFLOW_STAGES.templating_uploads;
   }
   

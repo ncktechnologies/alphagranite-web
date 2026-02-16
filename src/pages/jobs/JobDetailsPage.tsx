@@ -15,6 +15,31 @@ import { BackButton } from '@/components/common/BackButton';
 import { Badge } from '@/components/ui/badge';
 import { JobMediaUpload } from './components/JobMediaUpload';
 import Popup from '@/components/ui/popup';
+import { formatBytes } from '@/hooks/use-file-upload';
+import { FileViewer } from './roles/drafters/components'; // adjust import to your file
+import { getFileStage } from '@/utils/file-labeling';
+
+// Helper to guess MIME type from file name
+const getMimeTypeFromName = (fileName: string): string => {
+  const ext = fileName.split('.').pop()?.toLowerCase();
+  const mimeMap: Record<string, string> = {
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    png: 'image/png',
+    gif: 'image/gif',
+    webp: 'image/webp',
+    svg: 'image/svg+xml',
+    mp4: 'video/mp4',
+    mov: 'video/quicktime',
+    avi: 'video/x-msvideo',
+    pdf: 'application/pdf',
+    doc: 'application/msword',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    xls: 'application/vnd.ms-excel',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  };
+  return mimeMap[ext || ''] || 'application/octet-stream';
+};
 
 export function JobDetailsPage() {
   const { job_id } = useParams<{ job_id: string }>();
@@ -22,9 +47,9 @@ export function JobDetailsPage() {
   const jobId = job_id ? parseInt(job_id) : 0;
 
   const [showUploadDialog, setShowUploadDialog] = useState(false);
-  const [selectedMedia, setSelectedMedia] = useState<{ url: string; type: string; name: string } | null>(null);
   const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
   const [fileToDelete, setFileToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [activeFile, setActiveFile] = useState<any | null>(null); // null = no file viewer
 
   const { data: job, isLoading, isError, error } = useGetJobByIdQuery(jobId, { skip: !jobId });
   const { data: fabs, isLoading: fabsLoading } = useGetFabsByJobQuery(jobId, { skip: !jobId });
@@ -35,7 +60,6 @@ export function JobDetailsPage() {
   const { data: jobNotes, isLoading: notesLoading } = useGetJobNotesQuery(jobId, { skip: !jobId });
   const [deleteJobMedia, { isLoading: isDeleting }] = useDeleteJobMediaMutation();
 
-  // Create job info based on actual job data
   const jobInfo = job ? [
     { label: 'Job Number', value: job.job_number },
     { label: 'Job Name', value: job.name },
@@ -49,7 +73,6 @@ export function JobDetailsPage() {
     { label: 'Note', value: job.description || 'N/A' },
   ] : [];
 
-  // Get status text based on status_id
   function getStatusText(statusId: number): string {
     switch (statusId) {
       case 1: return 'Active';
@@ -66,11 +89,10 @@ export function JobDetailsPage() {
 
   const handleDeleteConfirm = async () => {
     if (!fileToDelete || !jobId) return;
-
     try {
       await deleteJobMedia({ job_id: jobId, file_id: fileToDelete.id }).unwrap();
       toast.success('File deleted successfully');
-      refetchMedia(); // Refresh the media list
+      refetchMedia();
     } catch (error) {
       toast.error('Failed to delete file');
       console.error('Delete media error:', error);
@@ -80,6 +102,33 @@ export function JobDetailsPage() {
     }
   };
 
+  // ✅ Enhanced file click handler – maps generic types to real MIME types
+  const handleFileClick = (file: any) => {
+    // Determine the correct MIME type
+    let mimeType = file.mime_type || file.file_type || file.type || '';
+    
+    // If the type is generic ('photo', 'video', 'document'), map it using the file extension
+    if (!mimeType || ['photo', 'video', 'document'].includes(mimeType)) {
+      mimeType = getMimeTypeFromName(file.name || file.file_name);
+    }
+
+    const enhancedFile = {
+      ...file,
+      stage: getFileStage(file.name || file.file_name, { isDrafting: false }),
+      url: file.file_url || file.url || file.fileUrl,
+      name: file.name || file.file_name,
+      type: mimeType,                           // ✅ now a proper MIME type
+      size: parseInt(file.file_size) || file.size || 0,
+      formattedSize: formatBytes(parseInt(file.file_size) || file.size || 0),
+      uploadedAt: file.created_at ? new Date(file.created_at) : new Date(),
+      uploadedBy: file.uploaded_by || 'Unknown'
+    };
+
+    console.log('Enhanced file:', enhancedFile); // for debugging
+    setActiveFile(enhancedFile);
+  };
+
+  // Loading state
   if (isLoading) {
     return (
       <Container className="border-t">
@@ -90,7 +139,6 @@ export function JobDetailsPage() {
           </div>
           <Skeleton className="h-10 w-24" />
         </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           <Card className="lg:col-span-2 mt-6 pt-6">
             <CardHeader>
@@ -107,7 +155,6 @@ export function JobDetailsPage() {
               </div>
             </CardContent>
           </Card>
-
           <div className='border-l'>
             <Card className='border-none py-6'>
               <CardHeader className='border-b pb-4 flex-col items-start'>
@@ -128,18 +175,16 @@ export function JobDetailsPage() {
     );
   }
 
+  // Error state
   if (isError) {
     return (
       <Container className="border-t">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold">Job Details: Error</h1>
-            <p className="text-sm text-muted-foreground">
-              Unable to load job information
-            </p>
+            <p className="text-sm text-muted-foreground">Unable to load job information</p>
           </div>
         </div>
-
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
@@ -151,86 +196,32 @@ export function JobDetailsPage() {
     );
   }
 
-  // Media viewer modal component
-  const MediaViewer = () => {
-    if (!selectedMedia) return null;
-
+  // 🚀 Full‑screen file viewer (when activeFile is set)
+  if (activeFile) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-        <div className="relative w-full max-w-7xl max-h-[90vh] bg-white rounded-lg overflow-hidden shadow-2xl">
-          {/* Close button */}
-          <button
-            onClick={() => setSelectedMedia(null)}
-            className="absolute top-4 right-4 z-10 p-2 bg-white/90 hover:bg-white text-gray-800 rounded-full shadow-lg transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-
-          {/* Header with file name */}
-          <div className="px-6 py-4 bg-gray-50 border-b">
-            <h3 className="font-semibold text-lg truncate text-gray-900">{selectedMedia.name}</h3>
-          </div>
-
-          {/* Media content area */}
-          <div className="flex items-center justify-center p-6 bg-gray-100 min-h-[400px] max-h-[calc(90vh-140px)]">
-            {selectedMedia.type === 'photo' ? (
-              <div className="w-full h-full flex items-center justify-center">
-                <img
-                  src={selectedMedia.url}
-                  alt={selectedMedia.name}
-                  className="max-w-full max-h-full object-contain rounded-lg shadow-lg"
-                />
-              </div>
-            ) : selectedMedia.type === 'video' ? (
-              <div className="w-full max-w-4xl">
-                <video
-                  src={selectedMedia.url}
-                  controls
-                  controlsList="nodownload"
-                  className="w-full h-auto max-h-[70vh] rounded-lg"
-                />
-              </div>
-            ) : (
-              <div className="text-center p-8">
-                <FileText className="h-20 w-20 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-600 text-lg">Preview not available for this file type</p>
-              </div>
-            )}
-          </div>
-
-          {/* Footer with download button */}
-          <div className="px-6 py-4 bg-gray-50 border-t flex justify-between items-center">
-            <div className="text-sm text-gray-600">
-              {selectedMedia.type === 'photo' ? 'Image' : selectedMedia.type === 'video' ? 'Video' : 'Document'}
-            </div>
-            <a
-              href={selectedMedia.url}
-              download
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors flex items-center gap-2"
-            >
-              <Download className="h-4 w-4" />
-              Download
-            </a>
-          </div>
-        </div>
+      <div className="fixed inset-0 z-50 bg-white overflow-auto">
+        <FileViewer file={activeFile} onClose={() => setActiveFile(null)} />
       </div>
     );
-  };
+  }
 
+  // Normal page view
   return (
     <>
       <Container className='lg:mx-0'>
         <Toolbar className=' '>
-          <ToolbarHeading title={`Job ${job?.job_number || 'Loading...'}: ${job?.name || ''}`} description="View job details, FABs, and media files" />
+          <ToolbarHeading
+            title={`Job ${job?.job_number || 'Loading...'}: ${job?.name || ''}`}
+            description="View job details, FABs, and media files"
+          />
           <ToolbarActions>
             <BackButton fallbackUrl="/create-jobs" />
           </ToolbarActions>
         </Toolbar>
       </Container>
-      {selectedMedia && <MediaViewer />}
 
       <div className="border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0 items-start lg:flex-shrink-0">
-        {/* LEFT: Job Info */}
+        {/* LEFT COLUMN */}
         <Container className="lg:col-span-8">
           {/* Job Information Card */}
           <Card className='my-4'>
@@ -251,14 +242,12 @@ export function JobDetailsPage() {
             </CardContent>
           </Card>
 
-          {/* Accounting Notes Section */}
+          {/* Accounting Notes Card */}
           <Card className='my-4'>
             <CardHeader>
               <CardHeading className='flex flex-col items-start py-4'>
                 <CardTitle className='text-[#111827] leading-[32px] text-2xl font-bold'>Accounting note</CardTitle>
-                <p className="text-sm text-[#4B5563]">
-                  Accounting notes for this job
-                </p>
+                <p className="text-sm text-[#4B5563]">Accounting notes for this job</p>
               </CardHeading>
             </CardHeader>
             <CardContent>
@@ -276,9 +265,7 @@ export function JobDetailsPage() {
                   {jobNotes.data.notes.map((note: any) => (
                     <div key={note.id} className="p-4 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
                       <div className="flex justify-between items-start mb-2">
-                        <span className="font-semibold text-sm text-blue-600">
-                          {note.creator_name}
-                        </span>
+                        <span className="font-semibold text-sm text-blue-600">{note.creator_name}</span>
                         <span className="text-xs text-gray-500">
                           {new Date(note.created_at).toLocaleString()}
                         </span>
@@ -295,14 +282,12 @@ export function JobDetailsPage() {
             </CardContent>
           </Card>
 
-          {/* FABs Section */}
+          {/* FABs Card */}
           <Card className='my-4'>
             <CardHeader>
               <CardHeading className='flex flex-col items-start py-4'>
                 <CardTitle>FABs ({fabs?.length || 0})</CardTitle>
-                <p className="text-sm text-[#4B5563]">
-                  Fabrication items associated with this job
-                </p>
+                <p className="text-sm text-[#4B5563]">Fabrication items associated with this job</p>
               </CardHeading>
             </CardHeader>
             <CardContent>
@@ -332,7 +317,9 @@ export function JobDetailsPage() {
                             {fab.total_sqft} sq ft • {fab.stone_type_name || 'N/A'} • {fab.stone_color_name || 'N/A'}
                           </p>
                           <div className="flex items-center space-x-2 mt-1">
-                            <Badge variant={fab.status_id === 1 ? 'default' : fab.status_id === 2 ? 'secondary' : 'outline'}>
+                            <Badge
+                              variant={fab.status_id === 1 ? 'default' : fab.status_id === 2 ? 'secondary' : 'outline'}
+                            >
                               {getFabStatusText(fab.status_id)}
                             </Badge>
                           </div>
@@ -359,9 +346,7 @@ export function JobDetailsPage() {
             <CardHeader>
               <CardHeading className='flex flex-col items-start py-4'>
                 <CardTitle>Media Files</CardTitle>
-                <p className="text-sm text-[#4B5563]">
-                  Photos and videos associated with this job
-                </p>
+                <p className="text-sm text-[#4B5563]">Photos and videos associated with this job</p>
               </CardHeading>
               <CardToolbar>
                 <Can action="create" on="jobs">
@@ -401,7 +386,7 @@ export function JobDetailsPage() {
                 </div>
               ) : mediaFiles && mediaFiles.length > 0 ? (
                 <div className="space-y-4">
-                  {/* Media Stats */}
+                  {/* Stats */}
                   <div className="flex justify-center space-x-8 mb-6">
                     <div className="text-center">
                       <Camera className="h-8 w-8 text-blue-500 mx-auto mb-2" />
@@ -426,32 +411,24 @@ export function JobDetailsPage() {
                     </div>
                   </div>
 
-                  {/* Media Files Grid */}
+                  {/* Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {mediaFiles.map((file) => (
                       <div key={file.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                        {/* Media Preview */}
+                        {/* Preview */}
                         <div className="aspect-video bg-gray-100 relative cursor-pointer">
                           {file.file_type === 'photo' && (
                             <img
                               src={file.file_url}
                               alt={file.name}
                               className="w-full h-full object-cover hover:scale-105 transition-transform duration-200"
-                              onClick={() => setSelectedMedia({
-                                url: file.file_url,
-                                type: file.file_type,
-                                name: file.name
-                              })}
+                              onClick={() => handleFileClick(file)}
                             />
                           )}
                           {file.file_type === 'video' && (
                             <div
                               className="w-full h-full flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300"
-                              onClick={() => setSelectedMedia({
-                                url: file.file_url,
-                                type: file.file_type,
-                                name: file.name
-                              })}
+                              onClick={() => handleFileClick(file)}
                             >
                               <Play className="h-12 w-12 text-gray-500" />
                             </div>
@@ -459,59 +436,38 @@ export function JobDetailsPage() {
                           {file.file_type === 'document' && (
                             <div
                               className="w-full h-full flex items-center justify-center bg-gray-200 cursor-pointer hover:bg-gray-300"
-                              onClick={() => setSelectedMedia({
-                                url: file.file_url,
-                                type: file.file_type,
-                                name: file.name
-                              })}
+                              onClick={() => handleFileClick(file)}
                             >
                               <FileText className="h-12 w-12 text-gray-500" />
                             </div>
                           )}
-
-                          {/* File Type Badge */}
-                          <Badge
-                            variant="secondary"
-                            className="absolute top-2 left-2 text-xs capitalize"
-                          >
+                          <Badge variant="secondary" className="absolute top-2 left-2 text-xs capitalize">
                             {file.file_type}
                           </Badge>
                         </div>
 
-                        {/* File Info */}
+                        {/* Info */}
                         <div className="p-3">
                           <h4
                             className="font-medium text-sm truncate hover:text-blue-600 cursor-pointer"
                             title={file.name}
-                            onClick={() => setSelectedMedia({
-                              url: file.file_url,
-                              type: file.file_type,
-                              name: file.name
-                            })}
+                            onClick={() => handleFileClick(file)}
                           >
                             {file.name}
                           </h4>
                           <p className="text-xs text-gray-500 mt-1">
                             {(parseInt(file.file_size) / 1024 / 1024).toFixed(2)} MB
                           </p>
-                          <p className="text-xs text-gray-500">
-                            Uploaded by {file.uploader_name}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {new Date(file.created_at).toLocaleDateString()}
-                          </p>
+                          <p className="text-xs text-gray-500">Uploaded by {file.uploader_name}</p>
+                          <p className="text-xs text-gray-500">{new Date(file.created_at).toLocaleDateString()}</p>
 
-                          {/* Action Buttons */}
+                          {/* Actions */}
                           <div className="flex gap-2 mt-3">
                             <Button
                               variant="outline"
                               size="sm"
                               className="flex-1 text-xs"
-                              onClick={() => setSelectedMedia({
-                                url: file.file_url,
-                                type: file.file_type,
-                                name: file.name
-                              })}
+                              onClick={() => handleFileClick(file)}
                             >
                               <Download className="h-3 w-3 mr-1" />
                               View
@@ -523,10 +479,7 @@ export function JobDetailsPage() {
                                 className="text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleDeleteClick({
-                                    id: file.id,
-                                    name: file.name
-                                  });
+                                  handleDeleteClick({ id: file.id, name: file.name });
                                 }}
                               >
                                 <Trash2 className="h-3 w-3" />
@@ -556,10 +509,7 @@ export function JobDetailsPage() {
                   </div>
                   <p className="text-gray-500">No media files uploaded yet</p>
                   <Can action="create" on="jobs">
-                    <Button
-                      className="mt-4"
-                      onClick={() => setShowUploadDialog(true)}
-                    >
+                    <Button className="mt-4" onClick={() => setShowUploadDialog(true)}>
                       <Plus className="h-4 w-4 mr-2" />
                       Upload First File
                     </Button>
@@ -570,15 +520,13 @@ export function JobDetailsPage() {
           </Card>
         </Container>
 
-        {/* RIGHT: Actions Sidebar */}
+        {/* RIGHT COLUMN */}
         <div className="lg:col-span-4 w-full lg:w-[300px] xl:w-[350px] ultra:w-[400px]">
           <div className='border-l'>
             <Card className='border-none py-6'>
               <CardHeader className='border-b pb-4 flex-col items-start'>
                 <CardTitle className='font-semibold text-text'>Actions</CardTitle>
-                <p className="text-sm text-text-foreground">
-                  Available actions for this job
-                </p>
+                <p className="text-sm text-text-foreground">Available actions for this job</p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -593,7 +541,7 @@ export function JobDetailsPage() {
         </div>
       </div>
 
-      {/* Delete Confirmation Popup */}
+      {/* Delete confirmation popup */}
       <Popup
         isOpen={deleteConfirmationOpen}
         onClose={() => {
@@ -620,7 +568,6 @@ export function JobDetailsPage() {
             onClick={handleDeleteConfirm}
             disabled={isDeleting}
             className="w-[140px]"
-
           >
             {isDeleting ? 'Deleting...' : 'Delete'}
           </Button>
@@ -630,7 +577,6 @@ export function JobDetailsPage() {
   );
 }
 
-// Helper function to get FAB status text
 function getFabStatusText(statusId: number): string {
   switch (statusId) {
     case 1: return 'Active';

@@ -350,13 +350,11 @@ export function SlabSmithDetailsPage() {
   // -----------------------------------------------------------------
   // Submission flow
   // -----------------------------------------------------------------
-  const canOpenSubmit = (isDrafting || hasEnded) && (pendingFiles.length > 0 || uploadedFileMetas.length > 0);
+  const canOpenSubmit = (!isDrafting) && ((fabData as any).slabsmith_data.files.length > 0);
 
   const handleOpenSubmissionModal = async () => {
     try {
-      if (pendingFiles.length > 0) {
-        await uploadPendingFiles();
-      }
+     
       setShowSubmissionModal(true);
     } catch (error) {
       console.error('Failed to prepare files for submission:', error);

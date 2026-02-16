@@ -27,6 +27,7 @@ import { Can } from '@/components/permission';
 import { useTabClosingWarning } from '@/hooks';
 import { BackButton } from '@/components/common/BackButton';
 import { getFileStage, EnhancedFileMetadata } from '@/utils/file-labeling';
+import { formatBytes } from '@/hooks/use-file-upload';
 
 // Helper function to format timestamp without 'Z'
 const formatTimestamp = (date: Date) => {
@@ -49,15 +50,6 @@ const getFabStatusInfo = (statusId: number | undefined) => {
   }
 };
 
-// Helper function for formatting bytes
-const formatBytes = (bytes: number, decimals = 2) => {
-  if (bytes === 0) return '0 Bytes';
-  const k = 1024;
-  const dm = decimals < 0 ? 0 : decimals;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-};
 
 export function DrafterDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -336,7 +328,7 @@ export function DrafterDetailsPage() {
     // Ensure we have all necessary properties for the file viewer
     const enhancedFile = {
       ...file,
-      stage: getFileStage(file.name, { isDrafting: true }),
+      // stage: getFileStage(file.name, { isDrafting: true }),
       url: file.file_url || file.url || file.fileUrl,
       name: file.name || file.file_name,
       type: file.file_type || file.type || '',
@@ -392,7 +384,7 @@ export function DrafterDetailsPage() {
   const shouldShowUploadSection = (isDrafting || isPaused) || allFilesForDisplay.length > 0;
 
   // Determine if submission is allowed
-  const canOpenSubmit = totalTime > 0 && allFilesForDisplay.length > 0;
+  const canOpenSubmit = isDrafting && totalTime > 0 && allFilesForDisplay.length > 0;
 
   // Open submission modal directly (file upload happens in modal)
   const handleOpenSubmissionModal = async () => {

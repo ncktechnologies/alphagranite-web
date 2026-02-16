@@ -332,6 +332,7 @@ const JobFormSheet = ({
           ? parseInt(values.account_id)
           : undefined,
         description: values.description || undefined,
+        sales_person_id: values.sales_person_id
       };
 
       if (!isEditMode && values.sales_person_id) {
@@ -339,7 +340,7 @@ const JobFormSheet = ({
       }
 
       if (isEditMode && job) {
-        payload.status_id = 3;
+        payload.status_id = job.status_id; // Include status_id in update payload to prevent it from being reset
         await updateJob({ id: job.id, data: payload }).unwrap();
         toast.success("Job updated successfully");
       } else {

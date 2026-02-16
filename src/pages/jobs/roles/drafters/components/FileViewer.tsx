@@ -1,22 +1,18 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { X, Download, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
-import { FileViewerProps } from '@/pages/jobs/components/job';
 import { Card } from '@/components/ui/card';
+import { X, Download, ZoomIn, ZoomOut } from 'lucide-react';
+import { FileViewerProps } from '@/pages/jobs/components/job';
 import { getFileStage, getStageBadge } from '@/utils/file-labeling';
-
 
 export const FileViewer = ({
   inline = false,
-  isOpen = true,
   onClose,
   file,
 }: FileViewerProps) => {
   const [zoom, setZoom] = useState(100);
   const [rotation, setRotation] = useState(0);
+  const [imageError, setImageError] = useState(false);
 
   const formatFileSize = (bytes: number) => {
     if (bytes === 0) return '0 Bytes';
@@ -26,326 +22,112 @@ export const FileViewer = ({
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  const handleZoomIn = () => {
-    setZoom(prev => Math.min(prev + 25, 300));
-  };
-
-  const handleZoomOut = () => {
-    setZoom(prev => Math.max(prev - 25, 25));
-  };
-
-  const handleResetZoom = () => {
-    setZoom(100);
-    setRotation(0);
-  };
-
-  const handleRotate = () => {
-    setRotation(prev => (prev + 90) % 360);
-  };
+  const handleZoomIn = () => setZoom(prev => Math.min(prev + 25, 300));
+  const handleZoomOut = () => setZoom(prev => Math.max(prev - 25, 25));
+  const handleResetZoom = () => { setZoom(100); setRotation(0); };
+  const handleRotate = () => setRotation(prev => (prev + 90) % 360);
 
   const handleDownload = async () => {
     if (!file.url) return;
-    
     try {
-      // Determine the best filename to use
-      let fileName = file.name;
-      
-      // If name is empty, try to extract from URL
-      if (!fileName || fileName.startsWith('File_')) {
-        const urlParts = file.url.split('/');
-        const urlFileName = urlParts[urlParts.length - 1].split('?')[0];
-        
-        // If URL gives a UUID-like string without extension, use File_id
-        if (urlFileName.match(/^[0-9a-f-]{36}$/i) || !urlFileName.includes('.')) {
-          fileName = fileName || 'downloaded-file';
-        } else {
-          fileName = urlFileName;
-        }
-      }
-      
-      // Ensure file has extension based on type
-      const hasExtension = /\.[a-zA-Z0-9]+$/.test(fileName);
-      if (!hasExtension && file.type) {
-        const extension = file.type.split('/')[1];
-        if (extension) {
-          fileName = `${fileName}.${extension}`;
-        }
-      }
-      
-      // Fetch the file as a blob to avoid CORS issues with download attribute
       const response = await fetch(file.url);
       const blob = await response.blob();
       const blobUrl = URL.createObjectURL(blob);
-      
       const link = document.createElement('a');
       link.href = blobUrl;
-      link.download = fileName;
+      link.download = file.name;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(blobUrl);
     } catch (error) {
       console.error('Download failed:', error);
-      // Fallback to simple download
-      const link = document.createElement('a');
-      link.href = file.url;
-      link.download = file.name || 'downloaded-file';
-      link.click();
+      window.open(file.url, '_blank');
     }
   };
 
-  const ShellStart =
-    ({ children }: { children: React.ReactNode }) => (
-      <div className="">
-        <div className="p-6 pb-0 border-b">
-          {children}
-        </div>
-      </div>
-    )
+  // Log for debugging
+  console.log('FileViewer received:', { name: file.name, type: file.type, url: file.url });
 
-
-  const ShellBodyStart = inline
-    ? ({ children }: { children: React.ReactNode }) => <>{children}</>
-    : ({ children }: { children: React.ReactNode }) => <>{children}</>;
-
-  const CloseButton = () => (
-    <Button variant="ghost" size="sm" onClick={onClose}>
-      <X className="w-4 h-4" />
-    </Button>
-  );
+  const stage = file.stage || getFileStage(file.name, { isDrafting: true });
+  const badge = getStageBadge(stage);
 
   return (
-    <ShellStart>
-      <div className="flex items-center justify-between">
-        {/* <div>
-              <div className="text-xl font-bold">FAB ID: {jobDetails.fabId}</div>
-              <p className="text-sm text-gray-600 mt-1">Update drafting activity</p>
-            </div> */}
-        {/* {onClose && <CloseButton />} */}
-      </div>
-      <ShellBodyStart>
-        <div className="flex h-[calc(95vh-120px)]">
-          {/* Left Sidebar - Job Details & Notes */}
-
-
-          {/* Main Content - File Viewer */}
-          <div className="flex-1 flex flex-col">
-            {/* File Display Area */}
-            <Card className="flex-1  flex items-center justify-center overflow-hidden relative max-w-[702px] mx-auto">
-              <div
-                className="max-w-full max-h-full transition-transform duration-200"
-                style={{
-                  transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
-                  transformOrigin: 'center center'
-                }}
-              >
-                {/* File Preview */}
-                {file.type.startsWith('image/') ? (
-                  <img
-                    src={file.url}
-                    alt={file.name}
-                    className="max-w-full max-h-full object-contain"
-                  />
-                ) : file.type === 'application/pdf' ? (
-                  <div className="bg-white p-8 rounded-lg shadow-lg">
-                    <div className="text-center text-gray-500">
-                      <p className="text-lg font-medium">PDF Preview</p>
-                      <p className="text-sm">{file.name}</p>
-                      <p className="text-xs mt-2">{formatFileSize(file.size)}</p>
-                    </div>
-                  </div>
-                ) : file.type.includes('dwg') || file.type.includes('cad') ? (
-                  // Mock DWG/CAD file display - showing a technical drawing
-                  <div className="bg-white p-8 rounded-lg shadow-lg border">
-                    <div className="w-full h-full min-h-[400px] relative">
-                      {/* Mock technical drawing */}
-                      <svg
-                        viewBox="0 0 800 600"
-                        className="w-full h-full"
-                        style={{ background: '#f8f9fa' }}
-                      >
-                        {/* Kitchen Island Drawing */}
-                        <rect
-                          x="100"
-                          y="100"
-                          width="600"
-                          height="400"
-                          fill="none"
-                          stroke="#000"
-                          strokeWidth="2"
-                        />
-
-                        {/* Dimensions */}
-                        <text x="50" y="120" fontSize="12" fill="#666">150 mm</text>
-                        <text x="50" y="520" fontSize="12" fill="#666">452 mm</text>
-                        <text x="450" y="520" fontSize="12" fill="#666">1.5m</text>
-                        <text x="450" y="80" fontSize="12" fill="#666">1.4m</text>
-
-                        {/* Inner details */}
-                        <rect
-                          x="200"
-                          y="200"
-                          width="400"
-                          height="200"
-                          fill="none"
-                          stroke="#000"
-                          strokeWidth="1"
-                        />
-
-                        {/* Cabinet outlines */}
-                        <rect
-                          x="220"
-                          y="220"
-                          width="80"
-                          height="160"
-                          fill="none"
-                          stroke="#333"
-                          strokeWidth="1"
-                        />
-
-                        <rect
-                          x="320"
-                          y="220"
-                          width="80"
-                          height="160"
-                          fill="none"
-                          stroke="#333"
-                          strokeWidth="1"
-                        />
-
-                        <rect
-                          x="420"
-                          y="220"
-                          width="80"
-                          height="160"
-                          fill="none"
-                          stroke="#333"
-                          strokeWidth="1"
-                        />
-
-                        {/* Counter lines */}
-                        <line x1="200" y1="200" x2="600" y2="200" stroke="#666" strokeWidth="1" strokeDasharray="5,5" />
-                        <line x1="200" y1="400" x2="600" y2="400" stroke="#666" strokeWidth="1" strokeDasharray="5,5" />
-                      </svg>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-white p-8 rounded-lg shadow-lg">
-                    <div className="text-center text-gray-500">
-                      <p className="text-lg font-medium">File Preview</p>
-                      <p className="text-sm">{file.name}</p>
-                      <p className="text-xs mt-2">{formatFileSize(file.size)}</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </Card>
-            {/* File Name and Stage Badge */}
-            <div className="text-center mt-2">
-              <p className="text-sm font-medium text-text-foreground mb-1">{file.name}</p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {/* Stage Badge */}
-                {(() => {
-                  const stage = file.stage || getFileStage(file.name, { isDrafting: true });
-                  const badge = getStageBadge(stage);
-                  return (
-                    <span className={badge.className}>
-                      {badge.label}
-                    </span>
-                  );
-                })()}
-                
-                {/* File Size */}
-                {file.size && (
-                  <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-gray-700 bg-gray-100">
-                    {formatFileSize(file.size)}
-                  </span>
-                )}
-                
-                {/* Uploaded Info */}
-                {(file.uploadedBy || file.uploadedAt) && (
-                  <div className="text-xs text-gray-500 mt-1">
-                    {file.uploadedBy && <span>Uploaded by: {file.uploadedBy}</span>}
-                    {file.uploadedBy && file.uploadedAt && <span> • </span>}
-                    {file.uploadedAt && (
-                      <span>Uploaded: {new Date(file.uploadedAt).toLocaleDateString()}</span>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Bottom Controls */}
-            <div className="">
-              <div className="flex items-center justify-end">
-                {/* File Info */}
-                {/* <div className="flex items-center gap-4">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{file.name}</p>
-                    <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
-                  </div>
-                </div> */}
-
-                {/* Controls */}
-                <Button
-                  onClick={handleDownload}
-                  variant="outline"
-                  size="sm"
-                  className='text-[#7A9705] font-semibold'
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Download
-                </Button>
-                <div className="flex items-center gap-2">
-                  {/* Zoom Controls */}
-                  <div className="flex items-center gap-1 border rounded-[50px] ">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleZoomOut}
-                      disabled={zoom <= 25}
-                    >
-                      <ZoomOut className="w-4 h-4" />
-                    </Button>
-                    <span className="px-2 py-1 text-sm font-medium min-w-[60px] text-center">
-                      {zoom}%
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleZoomIn}
-                      disabled={zoom >= 300}
-                    >
-                      <ZoomIn className="w-4 h-4" />
-                    </Button>
-                  </div>
-
-                  {/* Rotate Button */}
-                  {/* <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleRotate}
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                  </Button> */}
-
-                  {/* Reset Button */}
-                  {/* <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleResetZoom}
-                  >
-                    Reset
-                  </Button> */}
-
-                  {/* Download Button */}
-
-                </div>
-              </div>
-            </div>
+    <div className="fixed inset-0 z-50 bg-white flex flex-col">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 border-b bg-gray-50">
+        <div className="flex-1 min-w-0">
+          <h2 className="text-lg font-semibold truncate">{file.name}</h2>
+          <div className="flex items-center gap-2 mt-1">
+            <span className={badge.className}>{badge.label}</span>
+            <span className="text-sm text-gray-500">{formatFileSize(file.size)}</span>
           </div>
         </div>
-      </ShellBodyStart>
-    </ShellStart>
+        <Button variant="ghost" size="icon" onClick={onClose}>
+          <X className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Main content */}
+      <div className="flex-1 flex items-center justify-center p-4 overflow-auto">
+        <Card className="relative max-w-5xl max-h-full overflow-hidden">
+          <div
+            className="transition-transform duration-200"
+            style={{
+              transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
+              transformOrigin: 'center center',
+            }}
+          >
+            {file.type?.startsWith('image/') && !imageError ? (
+              <img
+                src={file.url}
+                alt={file.name}
+                className="max-w-full max-h-full object-contain"
+                onError={() => {
+                  console.error('Image failed to load:', file.url);
+                  setImageError(true);
+                }}
+              />
+            ) : file.type === 'application/pdf' ? (
+              <iframe
+                src={`${file.url}#toolbar=0`}
+                title={file.name}
+                className="w-full h-[80vh]"
+              />
+            ) : (
+              <div className="p-12 text-center text-gray-500">
+                <p className="text-lg">Preview not available</p>
+                <p className="text-sm mt-2">{file.name}</p>
+                <Button onClick={handleDownload} className="mt-4">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              </div>
+            )}
+          </div>
+        </Card>
+      </div>
+
+      {/* Controls */}
+      <div className="border-t p-4 flex justify-end gap-2">
+        <Button variant="outline" size="sm" onClick={handleZoomOut} disabled={zoom <= 25}>
+          <ZoomOut className="h-4 w-4" />
+        </Button>
+        <span className="px-3 py-1 text-sm font-medium">{zoom}%</span>
+        <Button variant="outline" size="sm" onClick={handleZoomIn} disabled={zoom >= 300}>
+          <ZoomIn className="h-4 w-4" />
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleRotate}>
+          Rotate
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleResetZoom}>
+          Reset
+        </Button>
+        <Button onClick={handleDownload} className="ml-2">
+          <Download className="h-4 w-4 mr-2" />
+          Download
+        </Button>
+      </div>
+    </div>
   );
 };
