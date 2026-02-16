@@ -350,11 +350,15 @@ export function SlabSmithDetailsPage() {
   // -----------------------------------------------------------------
   // Submission flow
   // -----------------------------------------------------------------
-  const canOpenSubmit = (!isDrafting) && ((fabData as any)?.slabsmith_data?.files.length > 0);
+  // Determine if upload section should be visible – show when timer is running/paused or files exist
+  const shouldShowUploadSection = (isDrafting || isPaused) || ((fabData as any)?.slabsmith_data?.files?.length > 0);
+
+  // Determine if submission is allowed – session must be ended (not active/paused) and files must exist
+  const hasFiles = ((fabData as any)?.slabsmith_data?.files?.length > 0);
+  const canOpenSubmit = hasEnded && hasFiles;
 
   const handleOpenSubmissionModal = async () => {
     try {
-     
       setShowSubmissionModal(true);
     } catch (error) {
       console.error('Failed to prepare files for submission:', error);
@@ -450,24 +454,52 @@ export function SlabSmithDetailsPage() {
         {viewMode === 'file' && activeFile ? (
           // -------------------- FILE VIEWER MODE (sidebar stays visible) --------------------
           <div>
-            <div className="flex justify-between items-center p-4 bg-gray-50 rounded-t-lg">
-              <div>
-                <h3 className="font-semibold">{activeFile.name}</h3>
-                <p className="text-sm text-gray-500">
-                  {activeFile.formattedSize} • {activeFile.stage?.label || activeFile.stage}
-                </p>
-              </div>
-              <Button
-                variant="inverse"
-                size="sm"
-                onClick={() => {
-                  setViewMode('activity');
-                  setActiveFile(null);
-                }}
-              >
-                <X className="w-6 h-6" />
-              </Button>
-            </div>
+            <Card className="my-4">
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <CardTitle className="text-xl mb-3">{activeFile.name}</CardTitle>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-1">File Size</p>
+                        <p className="text-sm text-gray-900">{activeFile.formattedSize}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-1">File Type</p>
+                        <p className="text-sm text-gray-900">{activeFile.type || 'Unknown'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-1">Stage</p>
+                        <span className={`inline-block px-2.5 py-1 rounded text-xs font-medium ${activeFile.stage?.color || 'text-gray-700'} bg-gray-100`}>
+                          {activeFile.stage?.label || activeFile.stage || 'Unknown'}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-xs font-medium text-gray-500 mb-1">Uploaded By</p>
+                        <p className="text-sm text-gray-900">{activeFile.uploadedBy}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <p className="text-xs font-medium text-gray-500 mb-1">Upload Date & Time</p>
+                        <p className="text-sm text-gray-900">
+                          {activeFile.uploadedAt?.toLocaleDateString()} at {activeFile.uploadedAt?.toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setViewMode('activity');
+                      setActiveFile(null);
+                    }}
+                    className="ml-4"
+                  >
+                    <X className="w-5 h-5" />
+                  </Button>
+                </div>
+              </CardHeader>
+            </Card>
             <FileViewer
               file={activeFile}
               onClose={() => {
@@ -538,13 +570,26 @@ export function SlabSmithDetailsPage() {
 
                 <Separator className="my-3" />
 
-                {/* UploadDocuments – now uses the unified file click handler */}
-                <UploadDocuments
-                  onFilesChange={handleFilesChange}
-                  onFileClick={handleFileClick}          // <-- fixed: uses enhanced handler
-                  slabSmithId={slabSmithData?.id}
-                  refetchFiles={refetchFab}
-                />
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold mb-4">Files</h3>
+
+                  {shouldShowUploadSection ? (
+                    <UploadDocuments
+                      onFilesChange={handleFilesChange}
+                      onFileClick={handleFileClick}
+                      slabSmithId={slabSmithData?.id}
+                      refetchFiles={refetchFab}
+                      disabled={!isDrafting && !isPaused}
+                    />
+                  ) : (
+                    <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                      <p className="text-gray-500">Start the timer to enable file uploads</p>
+                      <p className="text-sm text-gray-400 mt-2">
+                        Files will appear here once uploaded
+                      </p>
+                    </div>
+                  )}
+                </div>
 
                 {/* Server‑uploaded files – now also uses the same file click handler */}
                 {(fabData as any)?.slabsmith_data?.files &&
@@ -553,7 +598,7 @@ export function SlabSmithDetailsPage() {
                       <h3 className="text-lg font-semibold mb-4 text-gray-900">Uploaded Files</h3>
                       <Documents
                         slabsmithData={(fabData as any)?.slabsmith_data}
-                        onFileClick={handleFileClick}    // <-- fixed: now opens in same viewer
+                        onFileClick={handleFileClick}
                       />
                     </div>
                   )}

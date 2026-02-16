@@ -348,6 +348,7 @@ const DraftReviewDetailsPage = () => {
                     onSubmit={handleMarkAsComplete}
                     slabSmithNeeded={slabSmithNeeded}
                     isSlabSmithActivityComplete={isSlabSmithActivityComplete}
+                    fabId={fabData.id}
                 />
 
                 {/* Approve and Send to Slab Smith Modal - REMOVED */}

@@ -162,7 +162,7 @@ export function Documents({
   if (files.length === 0) {
     return (
       <div className="border-none">
-        <p className="text-muted-foreground text-sm py-4">No files uploaded by the drafter</p>
+        <p className="text-muted-foreground text-sm py-4">No files uploaded.</p>
       </div>
     );
   }
@@ -188,7 +188,7 @@ export function Documents({
                       <p className="text-xs text-muted-foreground">
                         {formatBytes(file.size)}
                       </p>
-                      {(() => {
+                      {/* {(() => {
                         const stage = file.stage || getFileStage(file.name, { isDrafting: true });
                         const badge = getStageBadge(stage);
                         return (
@@ -196,7 +196,7 @@ export function Documents({
                             {badge.label}
                           </span>
                         );
-                      })()}
+                      })()} */}
                                              
                       {/* Additional file metadata if available */}
                       {/* {file.uploadedBy && (

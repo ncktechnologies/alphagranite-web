@@ -42,6 +42,7 @@ interface UploadBoxProps {
   enhancedFiles?: any[];
   draftingId?: number;
   refetchFiles?: () => void;
+  stage?: string;
 }
 
 export function UploadDocuments({
@@ -51,6 +52,7 @@ export function UploadDocuments({
   disabled = false,
   enhancedFiles = [],
   draftingId,
+  stage,
   refetchFiles,
 }: UploadBoxProps) {
   const [uploadFiles, setUploadFiles] = useState<FileUploadItem[]>([]);
@@ -169,6 +171,7 @@ export function UploadDocuments({
       // Upload file
       const response = await addFilesToDrafting({
         drafting_id: draftingId,
+        stage: stage,
         files: [fileItem.file as File],
       }).unwrap();
 
@@ -515,14 +518,14 @@ export function UploadDocuments({
                       <span className="text-xs text-muted-foreground">
                         {formatBytes(enhancedFile.size || 0)}
                       </span>
-                      {/* {(() => {
+                      {(() => {
                         const badge = getStageBadge(enhancedFile.stage);
                         return (
                           <span className={badge.className}>
                             {badge.label}
                           </span>
                         );
-                      })()} */}
+                      })()}
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500">
                       {enhancedFile.uploadedBy && <span>by {enhancedFile.uploadedBy}</span>}

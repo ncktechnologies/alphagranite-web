@@ -1609,7 +1609,7 @@ export const JobSalesTable = ({
                                 </Select>
 
                                 {/* Enhanced Date Filter */}
-                                <div className="flex items-center gap-2">
+                                {/* <div className="flex items-center gap-2">
                                     <Select value={dateFilter} onValueChange={(value) => {
                                         setDateFilter(value);
                                         if (value === 'custom') {
@@ -1632,7 +1632,6 @@ export const JobSalesTable = ({
                                         </SelectContent>
                                     </Select>
 
-                                    {/* Custom Date Range Picker - TIMEZONE AWARE */}
                                     {dateFilter === 'custom' && (
                                         <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                             <PopoverTrigger asChild>
@@ -1675,7 +1674,7 @@ export const JobSalesTable = ({
                                             </PopoverContent>
                                         </Popover>
                                     )}
-                                </div>
+                                </div> */}
 
                                 {/* Schedule Filter */}
                                 {showScheduleFilter && (

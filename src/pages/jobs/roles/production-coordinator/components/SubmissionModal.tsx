@@ -8,12 +8,18 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { useAddFilesToFinalProgrammingMutation, useCompleteFinalProgrammingMutation, useUpdateFabMutation, useCreateFabNoteMutation } from "@/store/api/job";
+import { 
+  useCompleteFinalProgrammingMutation, 
+  useUpdateFabMutation, 
+  useCreateFabNoteMutation 
+} from "@/store/api/job";
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 
+// Schema with new fields
 const submissionSchema = z.object({
-  wjTimeMinutes: z.string().optional(),
+  totalSqft: z.string().optional(),
+  noOfPieces: z.string().optional(),
   draftNotes: z.string().optional(),
 });
 
@@ -23,17 +29,17 @@ interface UploadedFile {
   id: string | number;
   name: string;
   url?: string;
-  file?: File; // Add the actual File object
+  file?: File;
 }
 
 interface SubmissionModalProps {
   open: boolean;
   onClose: (success?: boolean) => void;
-  drafting: any; // the existing drafting response object (drafting.data must exist)
-  uploadedFiles: UploadedFile[]; // uploaded file meta (must contain .id and .file)
+  drafting: any;
+  uploadedFiles: UploadedFile[];
   draftStart: Date | null;
   draftEnd: Date | null;
-  totalTime?: number; // tracked total time in seconds
+  totalTime?: number;
   fabId: number;
   userId: number;
   fabData: any;
@@ -53,8 +59,6 @@ export function SubmissionModal({
 }: SubmissionModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
-
-  const [addFilesToFinalProgramming] = useAddFilesToFinalProgrammingMutation();
   const [completeFinalProgramming] = useCompleteFinalProgrammingMutation();
   const [updateFab] = useUpdateFabMutation();
   const [createFabNote] = useCreateFabNoteMutation();
@@ -62,46 +66,34 @@ export function SubmissionModal({
   const form = useForm<SubmissionData>({
     resolver: zodResolver(submissionSchema),
     defaultValues: {
-      wjTimeMinutes: "",
+      totalSqft: "",
+      noOfPieces: "",
       draftNotes: "",
     },
   });
 
-  // Calculate total hours from tracked time instead of date difference
   const calculateTotalHoursFromTrackedTime = (trackedSeconds: number): number => {
     const hours = trackedSeconds / 3600;
     return parseFloat(hours.toFixed(2));
   };
 
   const handleFinalSubmit = async (values: SubmissionData) => {
-    // Check if we have a final programming ID
     let fpId = drafting?.id ?? drafting?.data?.id;
-    
-    // If no final programming session exists, we may need to create one by updating the FAB
+
+    // Ensure final programming session exists
     if (!fpId) {
       try {
-        // Update FAB to ensure final programming is needed
         await updateFab({
           id: fabId,
-          data: {
-            final_programming_needed: true
-          }
+          data: { final_programming_needed: true }
         }).unwrap();
-        
-        // Try to get the session again (this might trigger creation on the backend)
         toast.info('Initializing final programming session...');
-        // Note: We won't wait for this as it's likely the backend creates it asynchronously
       } catch (updateError) {
         console.error('Failed to update FAB for final programming:', updateError);
         toast.error('Failed to initialize final programming session');
         return;
       }
-      
-      // Try to get the fpId again after a short delay
-      // In a real implementation, you might want to poll or have a better mechanism
       fpId = drafting?.id ?? drafting?.data?.id;
-      
-      // If still no fpId, we'll have to proceed without it and let the complete endpoint handle it
       if (!fpId) {
         toast.warning('Proceeding without session ID - files may not be saved');
       }
@@ -114,7 +106,7 @@ export function SubmissionModal({
 
     setIsSubmitting(true);
     try {
-      // Create fab note if notes exist
+      // 1. Create FAB note if notes exist
       if (values.draftNotes && values.draftNotes.trim()) {
         try {
           await createFabNote({
@@ -124,46 +116,30 @@ export function SubmissionModal({
           }).unwrap();
         } catch (noteError) {
           console.error("Error creating fab note:", noteError);
-          // Don't prevent submission if note creation fails
         }
       }
 
-      // Filter only files that haven't been uploaded yet (no ID or temporary ID)
-      const filesToUpload = uploadedFiles.filter(f => 
-        !f.id || // No ID at all
-        typeof f.id === 'string' && f.id.includes('temp') || // Temporary ID
-        f.file instanceof File // Has File object (not yet uploaded)
-      );
-
-      // Upload files if there are any to upload AND we have an fpId
-      if (filesToUpload.length > 0 && fpId) {
-        const fileObjects = filesToUpload.map(f => f.file as File);
-        
-        try {
-          await addFilesToFinalProgramming({
-            fp_id: fpId,
-            files: fileObjects
-          }).unwrap();
-          // Success - files uploaded, will show final success message after completion
-        } catch (fileError) {
-          console.error('File upload failed:', fileError);
-          toast.error('Failed to upload files');
-          throw fileError;
-        }
-      } else if (filesToUpload.length > 0 && !fpId) {
-        toast.warning('Cannot upload files - no session ID available');
+      // 2. Update FAB with total square feet and number of pieces
+      const fabUpdateData: any = {};
+      if (values.totalSqft) fabUpdateData.total_sqft = parseFloat(values.totalSqft);
+      if (values.noOfPieces) fabUpdateData.no_of_pieces = parseInt(values.noOfPieces);
+      
+      if (Object.keys(fabUpdateData).length > 0) {
+        await updateFab({
+          id: fabId,
+          data: fabUpdateData
+        }).unwrap();
       }
 
-      // Complete the final programming with data
+      // 3. Complete the final programming (mark as done)
       await completeFinalProgramming({
         fab_id: fabId,
         data: {
           final_programming_complete: true,
           notes: values.draftNotes || null,
           drafter_id: userId,
-          wj_time_minutes: values.wjTimeMinutes ? parseInt(values.wjTimeMinutes) : null,
-          // Use the tracked totalTime passed from parent component for accurate time calculation
           total_hours_final_programmed: calculateTotalHoursFromTrackedTime(totalTime)
+          // Note: total_sqft and no_of_pieces are NOT sent here – they go to updateFab
         }
       }).unwrap();
 
@@ -171,7 +147,6 @@ export function SubmissionModal({
       onClose(true);
     } catch (err: any) {
       console.error('Failed to submit final programming:', err);
-      // toast.error(err?.data?.message || 'Failed to submit final programming work');
       onClose(false);
     } finally {
       setIsSubmitting(false);
@@ -188,17 +163,19 @@ export function SubmissionModal({
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFinalSubmit)} className="space-y-6 py-4">
             <div className="space-y-4">
+              {/* Total Square Feet */}
               <FormField
                 control={form.control}
-                name="wjTimeMinutes"
+                name="totalSqft"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>WJ Time (Minutes)</FormLabel>
+                    <FormLabel>Total Square Feet</FormLabel>
                     <FormControl>
-                      <Input 
-                        placeholder="Enter waterjet time in minutes" 
-                        {...field} 
+                      <Input
+                        placeholder="Enter total square feet"
+                        {...field}
                         type="number"
+                        step="0.01"
                         className="w-full"
                       />
                     </FormControl>
@@ -207,6 +184,28 @@ export function SubmissionModal({
                 )}
               />
 
+              {/* Number of Pieces */}
+              <FormField
+                control={form.control}
+                name="noOfPieces"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Number of Pieces</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter number of pieces"
+                        {...field}
+                        type="number"
+                        step="1"
+                        className="w-full"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Notes */}
               <FormField
                 control={form.control}
                 name="draftNotes"
@@ -242,6 +241,7 @@ export function SubmissionModal({
                 </div>
               )}
 
+              {/* Confirmation checkbox */}
               <div className="flex items-start space-x-2 pt-2">
                 <Checkbox
                   id="confirm-completion"
@@ -253,11 +253,12 @@ export function SubmissionModal({
                   htmlFor="confirm-completion"
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
-                  I confirm that the final programming work is completed
+                  Final programming completed
                 </label>
               </div>
             </div>
 
+            {/* Action buttons */}
             <div className="flex justify-end space-x-3 pt-4">
               <Button
                 type="button"

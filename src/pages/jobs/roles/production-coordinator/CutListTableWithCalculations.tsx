@@ -74,6 +74,7 @@ export interface CalculatedCutListData {
     stone_color_name?: string;
     stone_thickness_value?: string;
     edge_name?: string;
+    final_programming_completed_date?: string; // Add final programming completed date field
 
 }
 
@@ -129,6 +130,7 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
         stone_color_name: fab.stone_color_name,
         stone_thickness_value: fab.stone_thickness_value,
         edge_name: fab.edge_name,
+        final_programming_completed_date: fabWithExtraFields.final_programming_completed_date || '', // Add final programming completed date if available
     };
 };
 
@@ -599,13 +601,16 @@ export const CutListTableWithCalculations = ({
             id: "fp_completed",
             accessorKey: "fp_completed",
             header: ({ column }) => (
-                <DataGridColumnHeader title="FP COMPLETED" column={column} />
+                <DataGridColumnHeader title="FP COMPLETED DATE" column={column} />
             ),
             cell: ({ row }) => (
-                <span className={`text-sm font-medium ${row.original.fp_completed === 'Yes' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                    {row.original.fp_completed}
+                 <span className="text-sm">
+                   {row.original.final_programming_completed_date ?
+                        new Date(row.original.final_programming_completed_date).toLocaleDateString() :
+                        'Not Completed'
+                    }
                 </span>
+               
             ),
         },
         {

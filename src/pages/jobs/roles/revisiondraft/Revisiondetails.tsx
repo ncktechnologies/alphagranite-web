@@ -772,6 +772,7 @@ export function RevisionDetailsPage() {
                         draftingId={draftingData?.id || fabData?.draft_data?.id}
                         refetchFiles={refetchAllFiles}
                         isRevision={true}
+                        stage="revision"
                       />
                     ) : (
                       <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">

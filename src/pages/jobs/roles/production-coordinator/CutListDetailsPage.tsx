@@ -195,18 +195,33 @@ const CutListDetailsPage = () => {
                             </Card>
 
                             <Card>
-                                <CardHeader className='py-5 border-b'>
+                                {/* <CardHeader className='py-5 border-b'>
                                     <TimeDisplay
                                         startTime={draftData?.drafter_start_date ? new Date(draftData.drafter_start_date) : undefined}
                                         endTime={draftData?.drafter_end_date ? new Date(draftData.drafter_end_date) : undefined}
                                         totalTime={draftData?.total_hours_drafted || 0}
                                     />
-                                </CardHeader>
+                                </CardHeader> */}
                                 <CardContent className="">
-                                    <h2 className='font-semibold text-sm py-3'>Uploaded files</h2>
-                                    <Documents
+                                    <h2 className='font-semibold text-sm py-3'>Uploaded files from final programming</h2>
+                                    {/* <Documents
                                         onFileClick={handleFileClick}
                                         draftingData={draftData}
+                                    /> */}
+
+                                    <Documents
+                                        draftingData={{
+                                            ...fabData?.draft_data,
+                                            files: fabData?.draft_data.files.filter((file: any) =>
+                                                file.stage === 'final_programming' ||
+                                                file.stage === 'cut_list' ||
+                                                (file.stage && file.stage.toLowerCase().includes('final_programming')) ||
+                                                (file.stage && file.stage.toLowerCase().includes('cut_list'))
+                                            ),
+                                            file_ids: ""
+
+                                        }}
+                                        onFileClick={handleFileClick}
                                     />
                                 </CardContent>
                             </Card>

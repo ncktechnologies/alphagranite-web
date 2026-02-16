@@ -39,12 +39,14 @@ export const MarkAsCompleteModal = ({
   onSubmit,
   slabSmithNeeded = false,
   isSlabSmithActivityComplete = false,
+  fabId,
 }: {
   open: boolean;
   onClose: () => void;
   onSubmit: (data: MarkAsCompleteData) => void;
   slabSmithNeeded?: boolean;
   isSlabSmithActivityComplete?: boolean;
+  fabId: number;
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -80,7 +82,9 @@ export const MarkAsCompleteModal = ({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Mark as Complete</DialogTitle>
-          {/* <span>Fab Id {form.watch("fabId")}</span> */}
+          <span className="ml-3 text-sm font-normal text-gray-500">
+            FAB ID: {fabId}
+          </span>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
