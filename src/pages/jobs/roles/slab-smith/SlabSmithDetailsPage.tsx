@@ -350,7 +350,7 @@ export function SlabSmithDetailsPage() {
   // -----------------------------------------------------------------
   // Submission flow
   // -----------------------------------------------------------------
-  const canOpenSubmit = (!isDrafting) && ((fabData as any).slabsmith_data.files.length > 0);
+  const canOpenSubmit = (!isDrafting) && ((fabData as any)?.slabsmith_data?.files.length > 0);
 
   const handleOpenSubmissionModal = async () => {
     try {
@@ -400,6 +400,7 @@ export function SlabSmithDetailsPage() {
         { label: 'Stone thickness', value: fabData?.stone_thickness_value || 'N/A' },
         { label: 'Edge', value: fabData?.edge_name || 'N/A' },
         { label: 'Total square ft', value: fabData?.total_sqft || 'N/A' },
+        { label: "SlabSmith Needed", value: fabData?.slab_smith_ag_needed ? 'Yes' : 'No' },
       ],
     },
     {

@@ -60,17 +60,17 @@ export function DrafterDetailsPage() {
   const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
 
   // Load fab & drafting data
-  const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, { 
+  const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, {
     skip: !fabId,
     refetchOnMountOrArgChange: true,
   });
-  const { data: draftingData, isLoading: isDraftingLoading, refetch: refetchDrafting } = useGetDraftingByFabIdQuery(fabId, { 
+  const { data: draftingData, isLoading: isDraftingLoading, refetch: refetchDrafting } = useGetDraftingByFabIdQuery(fabId, {
     skip: !fabId,
     refetchOnMountOrArgChange: true,
   });
 
   // Get current session state
-  const { data: sessionData, isLoading: isSessionLoading, refetch: refetchSession } = useGetCurrentDraftingSessionQuery(fabId, { 
+  const { data: sessionData, isLoading: isSessionLoading, refetch: refetchSession } = useGetCurrentDraftingSessionQuery(fabId, {
     skip: !fabId,
     refetchOnMountOrArgChange: true,
   });
@@ -218,12 +218,12 @@ export function DrafterDetailsPage() {
   };
 
   const actionPastTense: Record<string, string> = {
-  start: "started",
-  resume: "resumed",
-  pause: "paused",
-  on_hold: "placed on hold",
-  end: "ended",
-};
+    start: "started",
+    resume: "resumed",
+    pause: "paused",
+    on_hold: "placed on hold",
+    end: "ended",
+  };
 
 
 
@@ -353,14 +353,14 @@ export function DrafterDetailsPage() {
     }
 
     try {
-      await deleteDraftingFile({ 
-        drafting_id: draftingId, 
-        file_id: String(fileId) 
+      await deleteDraftingFile({
+        drafting_id: draftingId,
+        file_id: String(fileId)
       }).unwrap();
 
       // Refresh data
       await refetchAllFiles();
-      
+
       toast.success('File deleted successfully');
     } catch (error) {
       console.error('Failed to delete file:', error);
@@ -424,6 +424,8 @@ export function DrafterDetailsPage() {
         { label: "FAB Type", value: fabData?.fab_type || "Loading..." },
         { label: "Sales Person", value: fabData?.sales_person_name || "N/A" },
         { label: "Assigned to", value: fabData?.draft_data?.drafter_name || 'Unassigned' },
+        { label: "SlabSmith Needed", value: fabData?.slab_smith_ag_needed ? 'Yes' : 'No' },
+
       ],
     },
     {
