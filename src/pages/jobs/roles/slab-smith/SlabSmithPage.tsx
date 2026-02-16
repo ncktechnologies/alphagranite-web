@@ -47,7 +47,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         draft_completed: fab.draft_completed ? 'Yes' : 'No',
         slabsmith_completed: (fab as any).slab_smith_data?.is_completed ? 'Yes' : 'No',
         slabsmith_clock_complete: (fab as any).slab_smith_data?.end_date ? 'Yes' : 'No',
-        drafter: fab.drafter_name || '-',
+        drafter: fab.draft_data?.drafter_name || '-',
         template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
         template_received: '',
         templater: fab.technician_name || '-',
