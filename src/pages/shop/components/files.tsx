@@ -188,7 +188,7 @@ export function Documents({
                       <p className="text-xs text-muted-foreground">
                         {formatBytes(file.size)}
                       </p>
-                      {/* {(() => {
+                      {(() => {
                         const stage = file.stage || getFileStage(file.name, { isDrafting: true });
                         const badge = getStageBadge(stage);
                         return (
@@ -196,7 +196,7 @@ export function Documents({
                             {badge.label}
                           </span>
                         );
-                      })()} */}
+                      })()}
                                              
                       {/* Additional file metadata if available */}
                       {/* {file.uploadedBy && (

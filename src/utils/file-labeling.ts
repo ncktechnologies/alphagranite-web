@@ -126,6 +126,7 @@ export const getFileStage = (
     fileType?: string;
     isRevision?: boolean;
     isDrafting?: boolean;
+    isFinalProgramming?: boolean;
   }
 ): FileLabel => {
   // Priority 1: Context-based determination
@@ -142,13 +143,17 @@ export const getFileStage = (
   }
   
   // Drafting files
-  if (lowerFileName?.includes('draft') || context?.isDrafting) {
+  if (lowerFileName?.includes('drafting') || context?.isDrafting) {
     return WORKFLOW_STAGES.drafting_uploads;
   }
   
   // Templating files
   if (lowerFileName?.includes('template') || lowerFileName?.includes('templating')) {
     return WORKFLOW_STAGES.templating_uploads;
+  }
+  // Final Programming/Cut List files
+  if (lowerFileName?.includes('cutlist') || lowerFileName?.includes('cut_list') || lowerFileName?.includes('final_programming') || context?.isFinalProgramming) {
+    return WORKFLOW_STAGES.final_programming;
   }
   
   // Default to general

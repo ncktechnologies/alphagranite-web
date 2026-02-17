@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router';
 import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, Plus } from 'lucide-react';
+import { AlertCircle, Eye, Plus } from 'lucide-react';
 import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
 import { useGetFabsQuery } from '@/store/api/job';
@@ -220,7 +220,7 @@ export function SalesPage() {
                         <Can action="update" on="Jobs">
                             <Link to="/create-jobs">
                                 <Button className="">
-                                    <Eye />
+                                    <Eye/>
                                     View Jobs
                                 </Button>
                             </Link>

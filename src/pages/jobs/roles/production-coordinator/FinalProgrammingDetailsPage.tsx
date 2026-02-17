@@ -272,8 +272,15 @@ export function FinalProgrammingDetailsPage() {
   const shouldShowUploadSection = (isDrafting || isPaused) || ((fabData as any)?.draft_data?.files?.length > 0);
 
   // Determine if submission is allowed – session must be ended (not active/paused) and files must exist
-  const hasFiles = ((fabData as any)?.draft_data?.files?.length > 0);
-  const canOpenSubmit =  hasFiles;
+  const finalProgrammingFiles = fabData?.draft_data?.files?.filter((file: any) =>
+  file.stage === 'final_programming' ||
+  file.stage === 'cut_list' ||
+  (file.stage && file.stage.toLowerCase().includes('final_programming')) ||
+  (file.stage && file.stage.toLowerCase().includes('cut_list'))
+) || [];
+
+const hasFinalProgrammingFiles = finalProgrammingFiles.length > 0;
+const canOpenSubmit = hasFinalProgrammingFiles;
 
   const handleOpenSubmissionModal = async () => {
     try {
