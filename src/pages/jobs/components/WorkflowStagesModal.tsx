@@ -77,7 +77,7 @@ const getWorkflowStages = (): WorkflowStage[] => [
     status: 'pending',
     assignedTo: 'Salesperson',
     notes: 'Awaiting sales approval',
-    route: '/jobs/sales-check'
+    route: '/job/sales-check'
   },
   {
     id: '6',

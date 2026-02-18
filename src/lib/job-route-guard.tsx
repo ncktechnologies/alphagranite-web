@@ -18,7 +18,7 @@ export const JobRouteGuard = ({ children }: { children: React.ReactNode }) => {
 
     // Extract stage from current route
     const routeStages = {
-        '/job/sales': 'sales',
+        '/sales': 'sales',
         '/job/templating': 'templating_coordinator',
         '/job/templating-technician': 'templating_technician',
         '/job/predraft': 'predraft',

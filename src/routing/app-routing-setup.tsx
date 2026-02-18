@@ -63,7 +63,7 @@ export function AppRoutingSetup() {
           <Route path="/settings/notifications" element={<NotificationsSection />} />
           <Route path="/settings/permissions" element={<PermissionsSection />} />
           <Route path="/create-jobs" element={<JobsSection />} />
-          <Route path="/job/need-to-invoice" element={<NeedToInvoicePage />} />
+          <Route path="/need-to-invoice" element={<NeedToInvoicePage />} />
           
           {/* Job Dashboard Route */}
           <Route path="/job" element={<JobDashboardPage />} />
@@ -89,7 +89,7 @@ export function AppRoutingSetup() {
             element={<DepartmentDetailsPage />}
           />
           <Route
-            path="/job/sales"
+            path="/sales"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <SalesPage/>
@@ -97,7 +97,7 @@ export function AppRoutingSetup() {
             }
           />
           <Route
-            path="/job/sales/:id"
+            path="/sales/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <SalesDetailsPage/>
@@ -105,7 +105,7 @@ export function AppRoutingSetup() {
             }
           />
           <Route
-            path="/job/sales/edit/:id"
+            path="/sales/edit/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <EditFabIdForm/>
@@ -161,7 +161,7 @@ export function AppRoutingSetup() {
             }
           />
           <Route
-            path="/jobs/sales/new-fab-id"
+            path="/sales/new-fab-id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <NewFabIdForm/>

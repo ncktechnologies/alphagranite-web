@@ -176,7 +176,7 @@ export const JobSalesTable = ({
     // Updated handleView function that uses getViewPath
     const handleView = (job: IJob) => {
         const viewPath = getViewPath(job);
-        navigate(`/job/${viewPath}/${job.fab_id}`);
+        navigate(`/${viewPath}/${job.fab_id}`);
     };
 
     // Function to handle row click
@@ -1543,7 +1543,7 @@ export const JobSalesTable = ({
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         manualPagination: useBackendPagination,
-        manualSorting: true, // Enable manual sorting to respect pre-sorted data
+        // manualSorting: true, // Enable manual sorting to respect pre-sorted data
         meta: {
             getRowAttributes: (row: any) => ({
                 'data-fab-type': row.original.fab_type?.toLowerCase()

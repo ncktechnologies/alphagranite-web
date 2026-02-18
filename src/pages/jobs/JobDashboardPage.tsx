@@ -36,7 +36,7 @@ export function JobDashboardPage() {
    */
   const getRouteForWidget = (widgetId: string): string => {
     const routeMap: Record<string, string> = {
-      'FAB IDs': '/job/sales',
+      'FAB IDs': '/sales',
       'Templating': '/job/templating',
       'Pre-draft Review': '/job/predraft',
       'Drafting': '/job/draft',
@@ -241,7 +241,7 @@ export function JobDashboardPage() {
         <ToolbarHeading title="View All FABs" description="View & track all Alpha granite FAB ID'S" />
         <ToolbarActions>
           <Can action="create" on="FAB IDs">
-            <Link to="/jobs/sales/new-fab-id">
+            <Link to="/sales/new-fab-id">
               <Button className="">
                 <Plus/>
                 New FAB ID

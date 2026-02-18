@@ -1321,13 +1321,13 @@ const NewFabIdForm = () => {
                       />
                     </CardContent>
                     <CardFooter className='flex justify-between items-center'>
-                      <Link to="/job/sales" className="flex flex-nowrap items-center gap-2 text-sm text-primary underline">
+                      <Link to="/sales" className="flex flex-nowrap items-center gap-2 text-sm text-primary underline">
                         <ArrowLeft className="w-4 h-4" />
                         Back to Fabs
                       </Link>
                       {/* Action Buttons */}
                       <div className="flex items-center justify-end gap-3 ">
-                        <Link to="/job/sales">
+                        <Link to="/sales">
                           <Button variant="outline" type="button">Cancel</Button>
                         </Link>
                         <Button type="submit" disabled={isSubmitting}>
@@ -1356,7 +1356,7 @@ const NewFabIdForm = () => {
       >
 
         <div className="flex gap-x-3 items-center mt-4">
-          <Link to={`/job/sales/edit/${fabId}`}>
+          <Link to={`/sales/edit/${fabId}`}>
           <Button
             className="px-8"
            

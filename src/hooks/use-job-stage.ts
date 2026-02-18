@@ -42,7 +42,7 @@ import type { RootState } from '@/store';
 export const JOB_STAGES = {
     SALES: {
         stage: 'fab_created',
-        route: '/job/sales',
+        route: '/sales',
         title: 'Sales - New FAB IDs',
     },
     TEMPLATING_COORDINATOR: {

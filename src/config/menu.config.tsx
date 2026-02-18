@@ -87,8 +87,8 @@ export const MENU_SIDEBAR: MenuConfig = [
     children: [
           { title: 'View Job Widgets', path: '/job' },
           { title: 'Manage Jobs', path: '/create-jobs' },
-          { title: 'View All Fabs', path: '/job/sales' },
-          { title: 'Need to Invoice', path: '/job/need-to-invoice' },
+          { title: 'View All Fabs', path: '/sales' },
+          { title: 'Need to Invoice', path: '/need-to-invoice' },
         ],
   },
   {

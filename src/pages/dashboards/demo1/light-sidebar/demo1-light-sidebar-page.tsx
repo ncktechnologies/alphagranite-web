@@ -83,7 +83,7 @@ export function Demo1LightSidebarPage() {
             <ToolbarHeading title="Dashboard" description="" />
             <ToolbarActions>
               <Can action="create" on="FAB IDs">
-                <Link to="/jobs/sales/new-fab-id">
+                <Link to="/sales/new-fab-id">
                   <Button className="">
                     <Plus />
                     New FAB ID

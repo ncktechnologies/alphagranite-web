@@ -815,7 +815,6 @@ export const CutListTableWithCalculations = ({
     ], [path]);
 
 
-
     const [sorting, setSorting] = useState<SortingState>([]);
 
     const table = useReactTable({

@@ -326,7 +326,7 @@ export function JobDetailsPage() {
                         </div>
                       </div>
                       <div className="flex space-x-2">
-                        <Button variant="outline" size="sm" onClick={() => navigate(`/job/sales/${fab.id}`)}>
+                        <Button variant="outline" size="sm" onClick={() => navigate(`/sales/${fab.id}`)}>
                           View Details
                         </Button>
                       </div>

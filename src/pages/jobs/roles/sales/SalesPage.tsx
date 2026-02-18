@@ -210,7 +210,7 @@ export function SalesPage() {
                     <ToolbarHeading title="All Fabs" description="View & track all Alpha granite FAB ID'S" />
                     <ToolbarActions>
                         <Can action="update" on="FAB IDs">
-                            <Link to="/jobs/sales/new-fab-id">
+                            <Link to="/sales/new-fab-id">
                                 <Button className="">
                                     <Plus />
                                     New FAB ID
