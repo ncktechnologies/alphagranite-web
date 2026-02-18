@@ -506,7 +506,7 @@ export function UploadDocuments({
                         e.stopPropagation();
                         handleDeleteExistingFile(enhancedFile.id);
                       }}
-                      disabled={disabled}
+                      // disabled={disabled}
                     >
                       <X className="size-3" />
                     </Button>
