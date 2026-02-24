@@ -1,5 +1,5 @@
 import { Station } from "@/config/types";
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,6 +18,8 @@ import {
 import { Card } from '@/components/ui/card';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { UserAssignment } from "./AssignUser";
+import { useCreateWorkstationMutation, useUpdateWorkstationMutation, useGetPlanningSectionsQuery } from '@/store/api/workstation';
+import { toast } from 'sonner';
 
 interface StationFormProps {
     mode: 'new' | 'edit';
@@ -38,7 +40,7 @@ export interface StationFormData {
 
 const workstationSchema = z.object({
     workstationName: z.string().min(1, 'Workstation name is required'),
-    machine: z.string().min(1, 'Machine is required'),
+    // machine: z.string().min(1, 'Machine is required'),
     other: z.string().optional(),
     operators: z.array(z.string()).optional(),
 });
@@ -49,15 +51,43 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
+    const [createWorkstation] = useCreateWorkstationMutation();
+    const [updateWorkstation] = useUpdateWorkstationMutation();
+    const { data: planningSectionsData, isLoading: isPlanningSectionsLoading } = useGetPlanningSectionsQuery();
+    const planningSections = Array.isArray(planningSectionsData) ? planningSectionsData : (planningSectionsData && (planningSectionsData as any).data ? (planningSectionsData as any).data : []);
+    const [planningSectionId, setPlanningSectionId] = useState<number | undefined>(undefined);
+
     const form = useForm<WorkstationFormType>({
         resolver: zodResolver(workstationSchema),
         defaultValues: {
             workstationName: '',
-            machine: '',
             other: '',
             operators: [],
         },
     });
+
+    // Populate form when editing
+    useEffect(() => {
+        if (mode === 'edit' && role) {
+            form.reset({
+                workstationName: role.workstationName || '',
+                other: role.other || '',
+                operators: role.operators || [],
+            });
+            setSelectedUsers(role.operators ? role.operators.map(String) : []);
+            // Attempt to populate planning section if present on role
+            const ps = (role as any).planning_section_id ?? (role as any).planningSectionId ?? undefined;
+            setPlanningSectionId(ps !== undefined ? Number(ps) : undefined);
+        } else if (mode === 'new') {
+            form.reset({
+                workstationName: '',
+                other: '',
+                operators: [],
+            });
+            setSelectedUsers([]);
+            setPlanningSectionId(undefined);
+        }
+    }, [mode, role]);
 
     const handleUserToggle = (userId: string) => {
         setSelectedUsers((prev) =>
@@ -73,10 +103,31 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
 
     async function onSubmit(values: WorkstationFormType) {
         setIsSubmitting(true);
-        await new Promise((r) => setTimeout(r, 1000)); // simulate API call
-        console.log('Workstation data:', values);
-        setIsSubmitting(false);
-        onCancel(); // return after submit
+        try {
+            // Backend expects form-encoded data (multipart/form-data)
+            const formData = new FormData();
+            formData.append('planning_section_id', String(planningSectionId ?? ''));
+            formData.append('name', values.workstationName);
+            formData.append('status_id', String(1));
+            formData.append('assigned_operatives', selectedUsers.join(',') || '');
+            if (values.other) formData.append('machine_statuses', values.other);
+
+            if (mode === 'new') {
+                await createWorkstation(formData as any).unwrap();
+                toast.success('Workstation created');
+            } else if (mode === 'edit' && role) {
+                const id = Number(role.id);
+                await updateWorkstation({ id, data: formData as any }).unwrap();
+                toast.success('Workstation updated');
+            }
+
+            setIsSubmitting(false);
+            onCancel();
+        } catch (err) {
+            console.error('Failed to save workstation', err);
+            toast.error('Failed to save workstation');
+            setIsSubmitting(false);
+        }
     }
 
     return (
@@ -106,20 +157,24 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
                             )}
                         />
 
-                        <FormField
-                            control={form.control}
-                            name="machine"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Machine *</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="e.g., Saw 1" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        {/* Planning Section Select */}
+                        <FormItem>
+                            <FormLabel>Planning Section</FormLabel>
+                            <FormControl>
+                                <Select value={planningSectionId !== undefined ? String(planningSectionId) : undefined} onValueChange={(v) => setPlanningSectionId(v ? Number(v) : undefined)}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={isPlanningSectionsLoading ? 'Loading sections...' : 'Select planning section'} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {planningSections.map((ps: any) => (
+                                            <SelectItem key={ps.id} value={String(ps.id)}>{ps.plan_name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </FormControl>
+                        </FormItem>
 
+                       
                         <FormField
                             control={form.control}
                             name="other"

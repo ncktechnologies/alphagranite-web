@@ -50,6 +50,8 @@ import { JobDetailsPage } from '@/pages/jobs/JobDetailsPage';
 import { NeedToInvoicePage } from '@/pages/jobs/NeedToInvoicePage';
 import { StoreDashboardPage } from '@/pages/shop';
 import { RevisionDetailsPage } from '@/pages/jobs/roles/revisiondraft/Revisiondetails';
+import ShopPage from '@/pages/shop/ShopPage';
+import ShopCalendarPage from '@/pages/shop/calendarPage';
 
 export function AppRoutingSetup() {
   return (
@@ -296,7 +298,7 @@ export function AppRoutingSetup() {
             path="/shop"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <CuttingPlanPage/>
+                <ShopPage/>
               // </ProtectedRoute>
             }
           />
@@ -313,6 +315,14 @@ export function AppRoutingSetup() {
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <ShopDetailsPage/>
+              // </ProtectedRoute>
+            }
+          />
+           <Route
+            path="/shop/calendar"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <ShopCalendarPage/>
               // </ProtectedRoute>
             }
           />

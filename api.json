@@ -3269,6 +3269,18 @@
               "title": "Search"
             },
             "description": "Search by job name or job number"
+          },
+          {
+            "name": "include_notes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Include job notes in response",
+              "default": false,
+              "title": "Include Notes"
+            },
+            "description": "Include job notes in response"
           }
         ],
         "responses": {
@@ -3316,6 +3328,18 @@
               "type": "integer",
               "title": "Job Id"
             }
+          },
+          {
+            "name": "include_notes",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Include job notes in response",
+              "default": true,
+              "title": "Include Notes"
+            },
+            "description": "Include job notes in response"
           }
         ],
         "responses": {
@@ -3971,6 +3995,133 @@
         ]
       }
     },
+    "/api/v1/jobs/{job_id}/notes": {
+      "post": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Add Job Note",
+        "description": "Add a note to a job",
+        "operationId": "add_job_note_api_v1_jobs__job_id__notes_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JobNoteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Jobs"
+        ],
+        "summary": "Get Job Notes",
+        "description": "Get all notes for a job",
+        "operationId": "get_job_notes_api_v1_jobs__job_id__notes_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/accounts": {
       "post": {
         "tags": [
@@ -4042,20 +4193,6 @@
               "title": "Skip"
             },
             "description": "Number of records to skip"
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 1000,
-              "minimum": 1,
-              "description": "Number of records to return",
-              "default": 100,
-              "title": "Limit"
-            },
-            "description": "Number of records to return"
           },
           {
             "name": "status_id",
@@ -6817,6 +6954,64 @@
         ]
       }
     },
+    "/api/v1/fabs/{fab_id}/stage": {
+      "patch": {
+        "tags": [
+          "Fabs"
+        ],
+        "summary": "Update Fab Stage",
+        "description": "Update fab current_stage (admin-only handled in view)",
+        "operationId": "update_fab_stage_api_v1_fabs__fab_id__stage_patch",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FabStageUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_FabResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/fabs/{fab_id}/notes": {
       "get": {
         "tags": [
@@ -8413,6 +8608,116 @@
         ]
       }
     },
+    "/api/v1/slabsmith/{fab_id}/session": {
+      "post": {
+        "tags": [
+          "SlabSmith"
+        ],
+        "summary": "Manage Slabsmith Session",
+        "description": "SlabSmith: Manage slabsmith session (start, pause, resume, end)",
+        "operationId": "manage_slabsmith_session_api_v1_slabsmith__fab_id__session_post",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SlabSmithSessionUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Manage Slabsmith Session Api V1 Slabsmith  Fab Id  Session Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/slabsmith/{fab_id}/session-status": {
+      "get": {
+        "tags": [
+          "SlabSmith"
+        ],
+        "summary": "Get Slabsmith Session Status",
+        "description": "SlabSmith: Get current session status",
+        "operationId": "get_slabsmith_session_status_api_v1_slabsmith__fab_id__session_status_get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Slabsmith Session Status Api V1 Slabsmith  Fab Id  Session Status Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/slabsmith": {
       "post": {
         "tags": [
@@ -9052,6 +9357,113 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessResponse_SalesCTResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/stages/slabsmith/pending": {
+      "get": {
+        "tags": [
+          "SlabSmith & Sales CT"
+        ],
+        "summary": "Get Pending Slabsmith Fab Ids",
+        "description": "Get FABs where:\n- current_stage is sales_ct (SCT)\n- slab_smith_ag_needed is true\n- slabsmith_completed_date is null\nOptional search by FAB ID or Job Number.",
+        "operationId": "get_pending_slabsmith_fab_ids_api_v1_stages_slabsmith_pending_get",
+        "parameters": [
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "date_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date Filter"
+            }
+          },
+          {
+            "name": "fab_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Fab Type"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
                 }
               }
             }
@@ -12232,64 +12644,6 @@
         ]
       }
     },
-    "/api/v1/workstation": {
-      "post": {
-        "tags": [
-          "Workstations"
-        ],
-        "summary": "Create Workstation",
-        "operationId": "create_workstation_main",
-        "parameters": [
-          {
-            "name": "created_by",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 1,
-              "title": "Created By"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "$ref": "#/components/schemas/Body_create_workstation_main"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse_WorkStation_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      }
-    },
     "/api/v1/planning-section": {
       "post": {
         "tags": [
@@ -12413,64 +12767,19 @@
             "BearerAuth": []
           }
         ]
-      },
-      "delete": {
-        "tags": [
-          "Planning Sections"
-        ],
-        "summary": "Delete Planning Section",
-        "operationId": "delete_planning_section_api_v1_planning_section__section_id__delete",
-        "parameters": [
-          {
-            "name": "section_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Section Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
       }
     },
-    "/api/v1/planning-section/by-name/{plan_name}": {
+    "/api/v1/planning-section/by-name": {
       "get": {
         "tags": [
           "Planning Sections"
         ],
         "summary": "Get Planning Section By Name",
-        "operationId": "get_planning_section_by_name_api_v1_planning_section_by_name__plan_name__get",
+        "operationId": "get_planning_section_by_name_api_v1_planning_section_by_name_get",
         "parameters": [
           {
             "name": "plan_name",
-            "in": "path",
+            "in": "query",
             "required": true,
             "schema": {
               "type": "string",
@@ -12533,12 +12842,152 @@
         ]
       }
     },
+    "/api/v1/workstation": {
+      "post": {
+        "tags": [
+          "Workstations",
+          "Workstation"
+        ],
+        "summary": "Create Workstation",
+        "description": "Create a new workstation",
+        "operationId": "create_workstation_api_v1_workstation_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_create_workstation_api_v1_workstation_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Workstations",
+          "Workstation"
+        ],
+        "summary": "Get All Workstations",
+        "description": "Get all workstations with optional filters",
+        "operationId": "get_all_workstations_api_v1_workstation_get",
+        "parameters": [
+          {
+            "name": "status_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status Id"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/workstation/{ws_id}": {
       "put": {
         "tags": [
-          "Workstations"
+          "Workstations",
+          "Workstation"
         ],
         "summary": "Update Workstation",
+        "description": "Update a workstation",
         "operationId": "update_workstation_api_v1_workstation__ws_id__put",
         "parameters": [
           {
@@ -12549,20 +12998,9 @@
               "type": "integer",
               "title": "Ws Id"
             }
-          },
-          {
-            "name": "updated_by",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 1,
-              "title": "Updated By"
-            }
           }
         ],
         "requestBody": {
-          "required": true,
           "content": {
             "application/x-www-form-urlencoded": {
               "schema": {
@@ -12577,7 +13015,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse_WorkStation_"
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
                 }
               }
             }
@@ -12601,9 +13039,11 @@
       },
       "delete": {
         "tags": [
-          "Workstations"
+          "Workstations",
+          "Workstation"
         ],
         "summary": "Delete Workstation",
+        "description": "Delete a workstation",
         "operationId": "delete_workstation_api_v1_workstation__ws_id__delete",
         "parameters": [
           {
@@ -12622,7 +13062,54 @@
             "content": {
               "application/json": {
                 "schema": {
-
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Workstations",
+          "Workstation"
+        ],
+        "summary": "Get Workstation",
+        "description": "Get a specific workstation by ID",
+        "operationId": "get_workstation_api_v1_workstation__ws_id__get",
+        "parameters": [
+          {
+            "name": "ws_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Ws Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
                 }
               }
             }
@@ -12648,9 +13135,11 @@
     "/api/v1/workstation/by-name/{workstation_name}": {
       "get": {
         "tags": [
-          "Workstations"
+          "Workstations",
+          "Workstation"
         ],
         "summary": "Get Workstation By Name",
+        "description": "Get workstation by name",
         "operationId": "get_workstation_by_name_api_v1_workstation_by_name__workstation_name__get",
         "parameters": [
           {
@@ -12669,77 +13158,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse_WorkStation_"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ]
-      }
-    },
-    "/api/v1/workstation/active": {
-      "get": {
-        "tags": [
-          "Workstations"
-        ],
-        "summary": "Get Active Workstations",
-        "operationId": "get_active_workstations_api_v1_workstation_active_get",
-        "parameters": [
-          {
-            "name": "planning_section_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Planning Section Id"
-            }
-          },
-          {
-            "name": "search",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Search"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SuccessResponse_List_WorkStation__"
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
                 }
               }
             }
@@ -13083,7 +13502,7 @@
         "requestBody": {
           "required": true,
           "content": {
-            "multipart/form-data": {
+            "application/x-www-form-urlencoded": {
               "schema": {
                 "$ref": "#/components/schemas/Body_create_shop_planning_section_api_v1_shop_planning_section_post"
               }
@@ -13126,7 +13545,7 @@
         "operationId": "list_shop_planning_sections_api_v1_shop_planning_section_get",
         "parameters": [
           {
-            "name": "planning_section_id",
+            "name": "work_station_id",
             "in": "query",
             "required": false,
             "schema": {
@@ -13138,23 +13557,7 @@
                   "type": "null"
                 }
               ],
-              "title": "Planning Section Id"
-            }
-          },
-          {
-            "name": "workstation_id",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Workstation Id"
+              "title": "Work Station Id"
             }
           },
           {
@@ -13171,6 +13574,22 @@
                 }
               ],
               "title": "Operator Id"
+            }
+          },
+          {
+            "name": "status_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status Id"
             }
           }
         ],
@@ -13234,7 +13653,7 @@
         "requestBody": {
           "required": true,
           "content": {
-            "multipart/form-data": {
+            "application/x-www-form-urlencoded": {
               "schema": {
                 "$ref": "#/components/schemas/Body_update_shop_planning_section_api_v1_shop_planning_section__section_id__put"
               }
@@ -13704,6 +14123,641 @@
           }
         ]
       }
+    },
+    "/api/v1/shop/plans": {
+      "post": {
+        "tags": [
+          "Shop Cut Planning"
+        ],
+        "summary": "Create Shop Plans",
+        "description": "Create shop cut plans with multiple stages for a FAB",
+        "operationId": "create_shop_plans_api_v1_shop_plans_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShopCutPlanCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Create Shop Plans Api V1 Shop Plans Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "get": {
+        "tags": [
+          "Shop Cut Planning"
+        ],
+        "summary": "Get All Shop Plans",
+        "operationId": "get_all_shop_plans_api_v1_shop_plans_get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Fab Id"
+            }
+          },
+          {
+            "name": "search_fab_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search Fab Id"
+            }
+          },
+          {
+            "name": "fab_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Fab Type"
+            }
+          },
+          {
+            "name": "workstation_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Workstation Id"
+            }
+          },
+          {
+            "name": "planning_section_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Planning Section Id"
+            }
+          },
+          {
+            "name": "operator_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Operator Id"
+            }
+          },
+          {
+            "name": "status_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status Id"
+            }
+          },
+          {
+            "name": "cut_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cut Type"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get All Shop Plans Api V1 Shop Plans Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/shop/plans/fab/{fab_id}": {
+      "get": {
+        "tags": [
+          "Shop Cut Planning"
+        ],
+        "summary": "Get Shop Plans By Fab Id",
+        "description": "Get shop plans by FAB id (grouped by date, unscheduled first).",
+        "operationId": "get_shop_plans_by_fab_id_api_v1_shop_plans_fab__fab_id__get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Shop Plans By Fab Id Api V1 Shop Plans Fab  Fab Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/shop/plans/{plan_id}": {
+      "get": {
+        "tags": [
+          "Shop Cut Planning"
+        ],
+        "summary": "Get Shop Plan",
+        "description": "Get a specific shop cut plan by ID",
+        "operationId": "get_shop_plan_api_v1_shop_plans__plan_id__get",
+        "parameters": [
+          {
+            "name": "plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Plan Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Shop Plan Api V1 Shop Plans  Plan Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Shop Cut Planning"
+        ],
+        "summary": "Update Shop Plan",
+        "description": "Update a shop cut plan with stage details and metadata",
+        "operationId": "update_shop_plan_api_v1_shop_plans__plan_id__put",
+        "parameters": [
+          {
+            "name": "plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Plan Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShopCutPlanUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Update Shop Plan Api V1 Shop Plans  Plan Id  Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "Shop Cut Planning"
+        ],
+        "summary": "Delete Shop Plan",
+        "description": "Delete a shop cut plan",
+        "operationId": "delete_shop_plan_api_v1_shop_plans__plan_id__delete",
+        "parameters": [
+          {
+            "name": "plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Plan Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Delete Shop Plan Api V1 Shop Plans  Plan Id  Delete"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/shop/plans/{plan_id}/unschedule": {
+      "put": {
+        "tags": [
+          "Shop Cut Planning"
+        ],
+        "summary": "Unschedule Shop Plan",
+        "description": "Unschedule date from a shop plan",
+        "operationId": "unschedule_shop_plan_api_v1_shop_plans__plan_id__unschedule_put",
+        "parameters": [
+          {
+            "name": "plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Plan Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Unschedule Shop Plan Api V1 Shop Plans  Plan Id  Unschedule Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/shop/plans/{plan_id}/reschedule": {
+      "put": {
+        "tags": [
+          "Shop Cut Planning"
+        ],
+        "summary": "Reschedule Shop Plan",
+        "description": "Reschedule date for a shop plan",
+        "operationId": "reschedule_shop_plan_api_v1_shop_plans__plan_id__reschedule_put",
+        "parameters": [
+          {
+            "name": "plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Plan Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RescheduleShopPlanRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Reschedule Shop Plan Api V1 Shop Plans  Plan Id  Reschedule Put"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -14144,6 +15198,17 @@
             },
             "type": "array",
             "title": "Files"
+          },
+          "stage": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage"
           }
         },
         "type": "object",
@@ -14311,19 +15376,25 @@
             "title": "Plan Name"
           },
           "plan_description": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Plan Description"
           },
-          "status": {
-            "type": "string",
-            "title": "Status"
+          "status_id": {
+            "type": "integer",
+            "title": "Status Id",
+            "default": 1
           }
         },
         "type": "object",
         "required": [
-          "plan_name",
-          "plan_description",
-          "status"
+          "plan_name"
         ],
         "title": "Body_create_planning_section_api_v1_planning_section_post"
       },
@@ -14357,27 +15428,11 @@
       },
       "Body_create_shop_planning_section_api_v1_shop_planning_section_post": {
         "properties": {
-          "planning_section_id": {
+          "work_station_id": {
             "type": "integer",
-            "title": "Planning Section Id"
-          },
-          "workstation_ids": {
-            "type": "string",
-            "title": "Workstation Ids"
-          },
-          "total_sqft": {
-            "type": "number",
-            "title": "Total Sqft"
-          },
-          "machine_ids": {
-            "type": "string",
-            "title": "Machine Ids"
+            "title": "Work Station Id"
           },
           "operator_ids": {
-            "type": "string",
-            "title": "Operator Ids"
-          },
-          "note": {
             "anyOf": [
               {
                 "type": "string"
@@ -14386,114 +15441,94 @@
                 "type": "null"
               }
             ],
-            "title": "Note"
+            "title": "Operator Ids"
           },
-          "scheduled_hours": {
-            "type": "string",
-            "title": "Scheduled Hours"
-          },
-          "files": {
+          "machine": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "binary"
-                },
-                "type": "array"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Files"
+            "title": "Machine"
+          },
+          "scheduled_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Sqft"
+          },
+          "completed_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed Sqft"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "status_id": {
+            "type": "integer",
+            "title": "Status Id"
           }
         },
         "type": "object",
         "required": [
-          "planning_section_id",
-          "workstation_ids",
-          "total_sqft",
-          "machine_ids",
-          "operator_ids",
-          "scheduled_hours"
+          "work_station_id",
+          "status_id"
         ],
         "title": "Body_create_shop_planning_section_api_v1_shop_planning_section_post"
       },
-      "Body_create_workstation_job_extras": {
+      "Body_create_workstation_api_v1_workstation_post": {
         "properties": {
-          "planning_section_id": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "status_id": {
             "type": "integer",
-            "title": "Planning Section Id"
-          },
-          "workstation_name": {
-            "type": "string",
-            "title": "Workstation Name"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "assigned_operatives": {
-            "type": "string",
-            "title": "Assigned Operatives"
-          },
-          "machines": {
-            "type": "string",
-            "title": "Machines"
-          },
-          "machine_statuses": {
-            "type": "string",
-            "title": "Machine Statuses"
+            "title": "Status Id"
           }
         },
         "type": "object",
         "required": [
-          "planning_section_id",
-          "workstation_name",
-          "status",
-          "assigned_operatives",
-          "machines",
-          "machine_statuses"
+          "name",
+          "status_id"
         ],
-        "title": "Body_create_workstation_job_extras"
-      },
-      "Body_create_workstation_main": {
-        "properties": {
-          "planning_section_id": {
-            "type": "integer",
-            "title": "Planning Section Id"
-          },
-          "workstation_name": {
-            "type": "string",
-            "title": "Workstation Name"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "assigned_operatives": {
-            "type": "string",
-            "title": "Assigned Operatives"
-          },
-          "machines": {
-            "type": "string",
-            "title": "Machines"
-          },
-          "machine_statuses": {
-            "type": "string",
-            "title": "Machine Statuses"
-          }
-        },
-        "type": "object",
-        "required": [
-          "planning_section_id",
-          "workstation_name",
-          "status",
-          "assigned_operatives",
-          "machines",
-          "machine_statuses"
-        ],
-        "title": "Body_create_workstation_main"
+        "title": "Body_create_workstation_api_v1_workstation_post"
       },
       "Body_set_sct_review_no_api_v1_salesct__sct_id__review_no_post": {
         "properties": {
@@ -14816,19 +15851,25 @@
             "title": "Plan Name"
           },
           "plan_description": {
-            "type": "string",
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Plan Description"
           },
-          "status": {
-            "type": "string",
-            "title": "Status"
+          "status_id": {
+            "type": "integer",
+            "title": "Status Id"
           }
         },
         "type": "object",
         "required": [
           "plan_name",
-          "plan_description",
-          "status"
+          "status_id"
         ],
         "title": "Body_update_planning_section_api_v1_planning_section__section_id__put"
       },
@@ -14891,27 +15932,11 @@
       },
       "Body_update_shop_planning_section_api_v1_shop_planning_section__section_id__put": {
         "properties": {
-          "planning_section_id": {
+          "work_station_id": {
             "type": "integer",
-            "title": "Planning Section Id"
-          },
-          "workstation_ids": {
-            "type": "string",
-            "title": "Workstation Ids"
-          },
-          "total_sqft": {
-            "type": "number",
-            "title": "Total Sqft"
-          },
-          "machine_ids": {
-            "type": "string",
-            "title": "Machine Ids"
+            "title": "Work Station Id"
           },
           "operator_ids": {
-            "type": "string",
-            "title": "Operator Ids"
-          },
-          "note": {
             "anyOf": [
               {
                 "type": "string"
@@ -14920,75 +15945,103 @@
                 "type": "null"
               }
             ],
-            "title": "Note"
+            "title": "Operator Ids"
           },
-          "scheduled_hours": {
-            "type": "string",
-            "title": "Scheduled Hours"
-          },
-          "files": {
+          "machine": {
             "anyOf": [
               {
-                "items": {
-                  "type": "string",
-                  "format": "binary"
-                },
-                "type": "array"
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
-            "title": "Files"
+            "title": "Machine"
+          },
+          "scheduled_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Sqft"
+          },
+          "completed_sqft": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed Sqft"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "status_id": {
+            "type": "integer",
+            "title": "Status Id"
           }
         },
         "type": "object",
         "required": [
-          "planning_section_id",
-          "workstation_ids",
-          "total_sqft",
-          "machine_ids",
-          "operator_ids",
-          "scheduled_hours"
+          "work_station_id",
+          "status_id"
         ],
         "title": "Body_update_shop_planning_section_api_v1_shop_planning_section__section_id__put"
       },
       "Body_update_workstation_api_v1_workstation__ws_id__put": {
         "properties": {
-          "planning_section_id": {
-            "type": "integer",
-            "title": "Planning Section Id"
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
           },
-          "workstation_name": {
-            "type": "string",
-            "title": "Workstation Name"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "assigned_operatives": {
-            "type": "string",
-            "title": "Assigned Operatives"
-          },
-          "machines": {
-            "type": "string",
-            "title": "Machines"
-          },
-          "machine_statuses": {
-            "type": "string",
-            "title": "Machine Statuses"
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
           }
         },
         "type": "object",
-        "required": [
-          "planning_section_id",
-          "workstation_name",
-          "status",
-          "assigned_operatives",
-          "machines",
-          "machine_statuses"
-        ],
         "title": "Body_update_workstation_api_v1_workstation__ws_id__put"
       },
       "Body_upload_file_files_upload_post": {
@@ -15501,7 +16554,7 @@
               }
             ],
             "title": "Slab Smith Used",
-            "description": "Mark if slab smith was used"
+            "description": "Whether slab smith was used"
           },
           "fp_not_needed": {
             "anyOf": [
@@ -15513,7 +16566,7 @@
               }
             ],
             "title": "Fp Not Needed",
-            "description": "Mark if final programming not needed"
+            "description": "Whether final programming is not needed"
           },
           "shop_date_schedule": {
             "anyOf": [
@@ -15528,6 +16581,18 @@
             "title": "Shop Date Schedule",
             "description": "Scheduled shop date"
           },
+          "revision_complete": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Complete",
+            "description": "Whether revision is complete"
+          },
           "notes": {
             "anyOf": [
               {
@@ -15538,12 +16603,12 @@
               }
             ],
             "title": "Notes",
-            "description": "Cut list notes"
+            "description": "Additional notes"
           }
         },
         "type": "object",
         "title": "CutListUpdate",
-        "description": "Schema for updating cut list information"
+        "description": "Schema for updating cut list"
       },
       "DepartmentCreate": {
         "properties": {
@@ -15940,6 +17005,18 @@
               }
             ],
             "title": "Note"
+          },
+          "is_revision": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Revision",
+            "default": false
           }
         },
         "type": "object",
@@ -17202,6 +18279,18 @@
             "title": "Final Programming Complete",
             "default": false
           },
+          "final_programming_completed_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Programming Completed Date"
+          },
           "slab_smith_used": {
             "anyOf": [
               {
@@ -17527,6 +18616,19 @@
           "updated_by"
         ],
         "title": "FabResponse"
+      },
+      "FabStageUpdate": {
+        "properties": {
+          "current_stage": {
+            "type": "string",
+            "title": "Current Stage"
+          }
+        },
+        "type": "object",
+        "required": [
+          "current_stage"
+        ],
+        "title": "FabStageUpdate"
       },
       "FabTypeCreate": {
         "properties": {
@@ -18125,6 +19227,19 @@
             "type": "boolean",
             "title": "Final Programming Complete",
             "description": "Mark final programming as complete"
+          },
+          "final_programming_completed_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Final Programming Completed Date",
+            "description": "Date when final programming was completed"
           },
           "notes": {
             "anyOf": [
@@ -18932,6 +20047,30 @@
             "title": "Need To Invoice",
             "default": false
           },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority",
+            "description": "Job priority (e.g., 'Low', 'Medium', 'High')"
+          },
+          "invoice_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Note",
+            "description": "Note regarding invoicing"
+          },
           "sq_ft": {
             "anyOf": [
               {
@@ -18943,6 +20082,31 @@
             ],
             "title": "Sq Ft",
             "description": "Square footage"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Job description"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date",
+            "description": "Job due date"
           }
         },
         "type": "object",
@@ -18952,6 +20116,61 @@
           "account_id"
         ],
         "title": "JobCreate"
+      },
+      "JobNoteRequest": {
+        "properties": {
+          "note": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Note",
+            "description": "Note content"
+          }
+        },
+        "type": "object",
+        "required": [
+          "note"
+        ],
+        "title": "JobNoteRequest"
+      },
+      "JobNoteResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "note": {
+            "type": "string",
+            "title": "Note"
+          },
+          "created_by": {
+            "type": "integer",
+            "title": "Created By"
+          },
+          "creator_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Creator Name"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "note",
+          "created_by",
+          "created_at"
+        ],
+        "title": "JobNoteResponse"
       },
       "JobResponse": {
         "properties": {
@@ -19169,6 +20388,14 @@
               }
             ],
             "title": "Need To Invoice"
+          },
+          "notes": {
+            "items": {
+              "$ref": "#/components/schemas/JobNoteResponse"
+            },
+            "type": "array",
+            "title": "Notes",
+            "default": []
           }
         },
         "type": "object",
@@ -19266,6 +20493,30 @@
             ],
             "title": "Need To Invoice"
           },
+          "priority": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Priority",
+            "description": "Job priority (e.g., 'Low', 'Medium', 'High')"
+          },
+          "invoice_note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invoice Note",
+            "description": "Note regarding invoicing"
+          },
           "sq_ft": {
             "anyOf": [
               {
@@ -19276,6 +20527,31 @@
               }
             ],
             "title": "Sq Ft"
+          },
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description",
+            "description": "Job description"
+          },
+          "due_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Due Date",
+            "description": "Job due date"
           }
         },
         "type": "object",
@@ -19533,11 +20809,12 @@
             ],
             "title": "Id"
           },
-          "name": {
+          "plan_name": {
             "type": "string",
-            "title": "Name"
+            "maxLength": 255,
+            "title": "Plan Name"
           },
-          "description": {
+          "plan_description": {
             "anyOf": [
               {
                 "type": "string"
@@ -19546,31 +20823,20 @@
                 "type": "null"
               }
             ],
-            "title": "Description"
+            "title": "Plan Description"
           },
           "status_id": {
             "type": "integer",
             "title": "Status Id"
           },
-          "created_by": {
-            "type": "integer",
-            "title": "Created By"
-          },
-          "updated_by": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Updated By"
-          },
           "created_at": {
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "created_by": {
+            "type": "integer",
+            "title": "Created By"
           },
           "updated_at": {
             "anyOf": [
@@ -19583,14 +20849,24 @@
               }
             ],
             "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
           }
         },
         "type": "object",
         "required": [
-          "name",
+          "plan_name",
           "status_id",
-          "created_by",
-          "created_at"
+          "created_by"
         ],
         "title": "PlanningSection"
       },
@@ -19712,6 +20988,20 @@
           "refresh_token"
         ],
         "title": "RefreshTokenRequest"
+      },
+      "RescheduleShopPlanRequest": {
+        "properties": {
+          "scheduled_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Scheduled Start"
+          }
+        },
+        "type": "object",
+        "required": [
+          "scheduled_start"
+        ],
+        "title": "RescheduleShopPlanRequest"
       },
       "ResurfaceSchedulingCreate": {
         "properties": {
@@ -20804,6 +22094,28 @@
             ],
             "title": "Slab Smith Used"
           },
+          "slab_smith_approved": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slab Smith Approved"
+          },
+          "block_drawing_approved": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Block Drawing Approved"
+          },
           "notes": {
             "anyOf": [
               {
@@ -20876,6 +22188,128 @@
         ],
         "title": "SalesCTSendToDrafting",
         "description": "Schema for sending FAB back to drafting for revisions"
+      },
+      "ShopCutPlanCreate": {
+        "properties": {
+          "fab_id": {
+            "type": "integer",
+            "title": "Fab Id"
+          },
+          "total_estimated_hours": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "title": "Total Estimated Hours"
+          },
+          "color_theme": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color Theme"
+          },
+          "status_id": {
+            "type": "integer",
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Status Id",
+            "default": 1
+          },
+          "stages": {
+            "items": {
+              "$ref": "#/components/schemas/ShopCutPlanStageCreate"
+            },
+            "type": "array",
+            "title": "Stages"
+          }
+        },
+        "type": "object",
+        "required": [
+          "fab_id",
+          "total_estimated_hours",
+          "stages"
+        ],
+        "title": "ShopCutPlanCreate",
+        "description": "Schema for creating shop cut plans"
+      },
+      "ShopCutPlanStageCreate": {
+        "properties": {
+          "workstation_id": {
+            "type": "integer",
+            "title": "Workstation Id"
+          },
+          "planning_section_id": {
+            "type": "integer",
+            "title": "Planning Section Id"
+          },
+          "operator_ids": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Operator Ids"
+          },
+          "estimated_hours": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "title": "Estimated Hours"
+          },
+          "scheduled_start": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Start"
+          }
+        },
+        "type": "object",
+        "required": [
+          "workstation_id",
+          "planning_section_id",
+          "operator_ids",
+          "estimated_hours"
+        ],
+        "title": "ShopCutPlanStageCreate",
+        "description": "Schema for a stage in shop cut plan creation"
+      },
+      "ShopCutPlanUpdate": {
+        "properties": {
+          "color_theme": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color Theme"
+          },
+          "status_id": {
+            "type": "integer",
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Status Id",
+            "default": 1
+          },
+          "stage": {
+            "$ref": "#/components/schemas/ShopCutPlanStageCreate"
+          }
+        },
+        "type": "object",
+        "required": [
+          "stage"
+        ],
+        "title": "ShopCutPlanUpdate",
+        "description": "Schema for updating a shop cut plan (matches POST structure)"
       },
       "SlabSmithCreate": {
         "properties": {
@@ -21043,6 +22477,33 @@
           "updated_by"
         ],
         "title": "SlabSmithResponse"
+      },
+      "SlabSmithSessionUpdate": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "title": "Action",
+            "description": "Action: 'start', 'pause', 'resume', or 'end'"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes",
+            "description": "Session notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "SlabSmithSessionUpdate",
+        "description": "Schema for SlabSmith session actions (start, pause, resume, end)"
       },
       "SlabSmithUpdate": {
         "properties": {
@@ -22241,38 +23702,6 @@
         ],
         "title": "SuccessResponse[List[StoneTypeResponse]]"
       },
-      "SuccessResponse_List_WorkStation__": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success",
-            "default": true
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/WorkStation"
-                },
-                "type": "array"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Data"
-          }
-        },
-        "type": "object",
-        "required": [
-          "message"
-        ],
-        "title": "SuccessResponse[List[WorkStation]]"
-      },
       "SuccessResponse_List_dict__": {
         "properties": {
           "success": {
@@ -22692,34 +24121,6 @@
         ],
         "title": "SuccessResponse[WJSchedulingResponse]"
       },
-      "SuccessResponse_WorkStation_": {
-        "properties": {
-          "success": {
-            "type": "boolean",
-            "title": "Success",
-            "default": true
-          },
-          "message": {
-            "type": "string",
-            "title": "Message"
-          },
-          "data": {
-            "anyOf": [
-              {
-                "$ref": "#/components/schemas/WorkStation"
-              },
-              {
-                "type": "null"
-              }
-            ]
-          }
-        },
-        "type": "object",
-        "required": [
-          "message"
-        ],
-        "title": "SuccessResponse[WorkStation]"
-      },
       "SuccessResponse_dict_": {
         "properties": {
           "success": {
@@ -22910,6 +24311,19 @@
             "title": "Actual Start Date",
             "description": "Actual start date of work"
           },
+          "actual_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual End Date",
+            "description": "Actual end date of work"
+          },
           "duration": {
             "anyOf": [
               {
@@ -23012,13 +24426,25 @@
             "anyOf": [
               {
                 "type": "string",
-                "format": "date"
+                "format": "date-time"
               },
               {
                 "type": "null"
               }
             ],
             "title": "Actual Start Date"
+          },
+          "actual_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual End Date"
           },
           "duration": {
             "anyOf": [
@@ -23055,6 +24481,11 @@
               }
             ],
             "title": "Is Templating Schedule"
+          },
+          "rescheduled": {
+            "type": "boolean",
+            "title": "Rescheduled",
+            "default": false
           },
           "is_completed": {
             "anyOf": [
@@ -23337,13 +24768,25 @@
             "anyOf": [
               {
                 "type": "string",
-                "format": "date"
+                "format": "date-time"
               },
               {
                 "type": "null"
               }
             ],
             "title": "Actual Start Date"
+          },
+          "actual_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual End Date"
           },
           "duration": {
             "anyOf": [
@@ -23377,6 +24820,17 @@
               }
             ],
             "title": "Status Id"
+          },
+          "is_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Completed"
           }
         },
         "type": "object",
@@ -23740,6 +25194,13 @@
           "type": {
             "type": "string",
             "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
           }
         },
         "type": "object",
@@ -24332,86 +25793,6 @@
         },
         "type": "object",
         "title": "WJSchedulingUpdate"
-      },
-      "WorkStation": {
-        "properties": {
-          "id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Id"
-          },
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "description": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Description"
-          },
-          "status_id": {
-            "type": "integer",
-            "title": "Status Id"
-          },
-          "created_by": {
-            "type": "integer",
-            "title": "Created By"
-          },
-          "updated_by": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Updated By"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          },
-          "updated_at": {
-            "anyOf": [
-              {
-                "type": "string",
-                "format": "date-time"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Updated At"
-          },
-          "curremt_stage": {
-            "type": "string",
-            "title": "Curremt Stage",
-            "description": "equivalent to the table name of the process e.g templatings"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "status_id",
-          "created_by",
-          "created_at",
-          "curremt_stage"
-        ],
-        "title": "WorkStation"
       }
     },
     "securitySchemes": {
@@ -24431,5 +25812,32 @@
     {
       "BearerAuth": []
     }
-  ]
+  ],
+  "x-postman-variables": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.ag.easybusiness.ng"
+    },
+    {
+      "key": "bearerToken",
+      "value": ""
+    },
+    {
+      "key": "currentTimestamp",
+      "value": ""
+    },
+    {
+      "key": "timestamp",
+      "value": ""
+    },
+    {
+      "key": "username",
+      "value": ""
+    },
+    {
+      "key": "password",
+      "value": ""
+    }
+  ],
+  "x-postman-prerequest": "\npm.sendRequest({\n    url: '{{baseUrl}}/auth/login',\n    method: 'POST',\n    header: {\n        'Content-Type': 'application/json',\n        'Accept': 'application/json'\n    },\n    body: {\n        mode: 'raw',\n        raw: JSON.stringify({\n            username: '{{username}}',\n            password: '{{password}}'\n        })\n    }\n}, function (err, res) {\n    if (err) {\n        console.log(\"Request Error:\", err);\n        return;\n    }\n\n    console.log(\"Full Response:\", res);\n\n    try {\n        const jsonResponse = res.json();\n        console.log(\"Parsed Response:\", jsonResponse);\n\n        if (jsonResponse.success === true && jsonResponse.data && jsonResponse.data.access_token) {\n            const token = jsonResponse.data.access_token;\n            pm.environment.set('bearerToken', token);\n            console.log(\"Auth Token Set:\", token);\n        } else {\n            console.log(\"Unexpected Response Structure:\", jsonResponse);\n        }\n\n    } catch (parseError) {\n        console.log(\"JSON Parse Error:\", parseError);\n        console.log(\"Raw Response Body:\", res.text());\n    }\n});\n\n\n// Generate current ISO timestamp\nconst now = new Date().toISOString();\npm.collectionVariables.set(\"currentTimestamp\", now);\n\n// Generate timestamp without timezone (for your API)\nconst nowNoTz = new Date().toISOString().slice(0, -1);\npm.collectionVariables.set(\"timestamp\", nowNoTz);\n"
 }

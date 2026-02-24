@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Select, SelectTrigger, SelectContent, SelectItem, SelectValue } from '@/components/ui/select';
 import { Search, X } from 'lucide-react';
-import { availableUsers } from '@/config/menu.config';
+import { useGetEmployeesQuery } from '@/store/api/employee';
+import { AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 
 interface UserAssignmentProps {
@@ -19,9 +20,14 @@ export const UserAssignment = ({ selectedUsers, onUserToggle }: UserAssignmentPr
   const [searchInput, setSearchInput] = useState('');
   const [selectedToAdd, setSelectedToAdd] = useState<string | undefined>(undefined);
 
-  const filteredUsers = availableUsers.filter((user) =>
-    user.name.toLowerCase().includes(searchInput.toLowerCase()),
-  );
+  // Fetch real employees from API
+  const { data: employeesData, isLoading: isEmployeesLoading } = useGetEmployeesQuery();
+  const employees = (employeesData && (employeesData as any).data) ? (employeesData as any).data : (Array.isArray(employeesData) ? employeesData : []);
+
+  const filteredUsers = employees.filter((emp: any) => {
+    const name = `${emp.first_name || ''} ${emp.last_name || ''}`.trim();
+    return name.toLowerCase().includes(searchInput.toLowerCase()) || (emp.email || '').toLowerCase().includes(searchInput.toLowerCase());
+  });
 
   const handleAddUser = (userId: string) => {
     if (!selectedUsers.includes(userId)) {
@@ -58,26 +64,31 @@ export const UserAssignment = ({ selectedUsers, onUserToggle }: UserAssignmentPr
               <span className="text-sm text-text-foreground">No users assigned</span>
             ) : (
               selectedUsers.map((userId) => {
-                const user = availableUsers.find((u) => u.id === userId);
-                if (!user) return null;
+                const employee = employees.find((e: any) => String(e.id) === String(userId));
+                if (!employee) return null;
+                const fullName = `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.name || employee.username || employee.email;
 
                 return (
                   <div
-                    key={user.id}
+                    key={employee.id}
                     className="flex items-center gap-2 rounded-full bg-muted px-3 py-1 text-sm text-text"
                   >
-                    {/* <Avatar className="size-6">
-                      <AvatarFallback>
-                        {user.name
-                          .split(' ')
-                          .map((n) => n[0])
-                          .join('')
-                          .toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar> */}
-                    <span>{user.name}</span>
+                    <Avatar className="size-6">
+                      {employee.profile_image_url ? (
+                        <AvatarImage src={employee.profile_image_url} alt={fullName} />
+                      ) : (
+                        <AvatarFallback>
+                          {fullName
+                            .split(' ')
+                            .map((n: string) => n[0])
+                            .join('')
+                            .toUpperCase()}
+                        </AvatarFallback>
+                      )}
+                    </Avatar>
+                    <span>{fullName}</span>
                     <button
-                      onClick={() => onUserToggle(user.id)}
+                      onClick={() => onUserToggle(String(employee.id))}
                       className="text-text hover:text-destructive transition"
                     >
                       <X className="size-3" />
@@ -91,14 +102,17 @@ export const UserAssignment = ({ selectedUsers, onUserToggle }: UserAssignmentPr
           {/* Select to add new users */}
           <Select value={selectedToAdd} onValueChange={handleAddUser}>
             <SelectTrigger className="text-sm">
-              <SelectValue placeholder="Select users to add..." />
+              <SelectValue placeholder={isEmployeesLoading ? 'Loading employees...' : 'Select users to add...'} />
             </SelectTrigger>
             <SelectContent>
-              {filteredUsers.map((user) => (
-                <SelectItem key={user.id} value={user.id}>
-                  {user.name}
-                </SelectItem>
-              ))}
+              {filteredUsers.map((emp: any) => {
+                const fullName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.name || emp.username || emp.email;
+                return (
+                  <SelectItem key={emp.id} value={String(emp.id)}>
+                    {fullName}
+                  </SelectItem>
+                );
+              })}
             </SelectContent>
           </Select>
         </CardContent>

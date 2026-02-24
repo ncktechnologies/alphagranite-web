@@ -20,10 +20,7 @@ export const StationDetailsView = ({ role, onEdit, onDelete }: RoleDetailsViewPr
             <h4 className="text-secondary font-semibold text-sm pb-2.5">Workstation Name</h4>
             <h2 className="text-black leading-6 font-semibold ">{role.workstationName}</h2>
         </div>
-        <div>
-            <h4 className="text-secondary font-semibold text-sm pb-2.5">Machine</h4>
-            <h2 className="text-black leading-6 font-semibold ">{role.machine}</h2>
-        </div>
+       
         <div>
             <h4 className="text-secondary font-semibold text-sm pb-2.5">Assigned operator</h4>
             <h2 className="text-black leading-6 font-semibold ">{role.operators}</h2>

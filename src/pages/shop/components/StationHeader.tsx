@@ -43,17 +43,16 @@ export const StationHeader = ({ role, onEdit, OnDelete }: StationHeaderProps) =>
             <ToolbarHeading title={role.workstationName} description={role.description} />
           
             <ToolbarActions>
-                <Button variant="outline" size="sm" onClick={() => OnDelete(role)} className='text-secondary'>
+                {/* <Button variant="outline" size="sm" onClick={() => OnDelete(role)} className='text-secondary'>
                     <Trash2 />
-                </Button>
+                </Button> */}
                 <Button variant="outline" size="sm" onClick={() => onEdit(role)} className='text-secondary'>
                     <PenLine />
                     Edit
                 </Button>
-                <Button variant="outline" size="sm" className='text-secondary'>
+                {/* <Button variant="outline" size="sm" className='text-secondary'>
                     <PenLine />
                     Deactivate role
-                    {/* {isSwitchOn ? 'On' : 'Off'} */}
                     <Switch
                         id="simple-switch"
                         size="sm"
@@ -61,7 +60,7 @@ export const StationHeader = ({ role, onEdit, OnDelete }: StationHeaderProps) =>
                         checked={isSwitchOn}
                         onCheckedChange={handleSwitchToggle}
                     />
-                </Button>
+                </Button> */}
             </ToolbarActions>
 
         </Toolbar>
