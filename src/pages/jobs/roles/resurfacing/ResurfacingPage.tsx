@@ -212,7 +212,8 @@ export function ResurfacingPage() {
                 isLoading={isLoading}
                 tableState={tableState}
                 useBackendPagination={true}
-
+                visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'on_hold']}
+                path="resurfacing"
             />
         </Container>
     );

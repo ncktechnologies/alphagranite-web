@@ -1895,6 +1895,37 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Job"],
             }),
+
+            // Resurfacing Scheduling mutations
+            createResurfaceScheduling: build.mutation<any, { fab_id: number; scheduled_start_date?: string; scheduled_end_date?: string }>({  
+                query: ({ fab_id, scheduled_start_date, scheduled_end_date }) => ({
+                    url: `/api/v1/resurface-scheduling`,
+                    method: "POST",
+                    data: {
+                        fab_id,
+                        scheduled_start_date,
+                        scheduled_end_date
+                    }
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            updateResurfaceScheduling: build.mutation<any, { resurface_scheduling_id: number; data: { is_completed?: boolean; actual_start_date?: string; actual_end_date?: string } }>({  
+                query: ({ resurface_scheduling_id, data }) => ({
+                    url: `/api/v1/resurface-scheduling/${resurface_scheduling_id}`,
+                    method: "PUT",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            getResurfaceSchedulingByFabId: build.query<any, number>({
+                query: (fab_id) => ({
+                    url: `/api/v1/resurface-scheduling/fab/${fab_id}`,
+                    method: "GET"
+                }),
+                providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
+            }),
         };
     },
 });
@@ -1983,6 +2014,9 @@ export const {
     useGetCurrentDraftingSessionQuery,
     useGetDraftingSessionHistoryQuery,
     useCreateFabNoteMutation,
+    useCreateResurfaceSchedulingMutation,
+    useUpdateResurfaceSchedulingMutation,
+    useGetResurfaceSchedulingByFabIdQuery,
     // Job Media hooks
     useGetJobMediaQuery,
     useUploadJobMediaMutation,

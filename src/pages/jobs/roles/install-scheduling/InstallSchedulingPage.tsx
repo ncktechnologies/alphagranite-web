@@ -218,7 +218,7 @@ export function InstallSchedulingPage() {
                 showSalesPersonFilter={true}
                 showScheduleFilter={false} // Remove separate schedule filter
                 salesPersons={salesPersons}
-                visibleColumns={['template_needed', 'template_received', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'pre_draft_notes', 'review_completed', 'on_hold']}
+                visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'on_hold']}
             />
         </Container>
     );
