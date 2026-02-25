@@ -51,7 +51,12 @@ import { NeedToInvoicePage } from '@/pages/jobs/NeedToInvoicePage';
 import { StoreDashboardPage } from '@/pages/shop';
 import { RevisionDetailsPage } from '@/pages/jobs/roles/revisiondraft/Revisiondetails';
 import ShopPage from '@/pages/shop/ShopPage';
-import ShopCalendarPage from '@/pages/shop/calendarPage';
+import ShopCalendarPage from '@/pages/shop/components/shopCalendar';
+import { ResurfacingPage } from '@/pages/jobs/roles/resurfacing';
+import { InstallSchedulingPage } from '@/pages/jobs/roles/install-scheduling';
+import { InstallSchedulingDetailsPage } from '@/pages/jobs/roles/install-scheduling/components/details';
+import { ResurfacingDetailsPage } from '@/pages/jobs/roles/resurfacing/components/details';
+// import ShopCalendarPage from '@/pages/shop/calendarPage';
 
 export function AppRoutingSetup() {
   return (
@@ -293,7 +298,42 @@ export function AppRoutingSetup() {
               // </ProtectedRoute>
             }
           />
-          
+          <Route
+            path="/job/resurfacing"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <ResurfacingPage/>
+                
+              // </ProtectedRoute>
+            }
+          />
+           <Route
+            path="/job/resurfacing/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <ResurfacingDetailsPage/>
+                
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job/install-scheduling"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <InstallSchedulingPage/>
+                
+              // </ProtectedRoute>
+            }
+          />
+           <Route
+            path="/job/install-scheduling/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <InstallSchedulingDetailsPage/>
+                
+              // </ProtectedRoute>
+            }
+          />
           <Route
             path="/shop"
             element={

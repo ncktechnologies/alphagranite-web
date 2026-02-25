@@ -142,6 +142,52 @@ const ShopTable: React.FC<ShopTableProps> = ({ path = '/job/cut-list', isSuperAd
         }));
     }, [fabs]);
 
+    // If some rows only have fab_id but no fab_type, fetch details for those fabs
+    const [fabTypeMap, setFabTypeMap] = React.useState<Record<string, string>>({});
+    React.useEffect(() => {
+        const idsToFetch = Array.from(
+            new Set(
+                fabs
+                    .map((f: any) => f.id)
+                    .filter((id: any) => {
+                        const row = fabs.find((x: any) => x.id === id);
+                        return row && !row.fab_type && !fabTypeMap[String(id)];
+                    }),
+            ),
+        );
+
+        if (idsToFetch.length === 0) return;
+
+        let cancelled = false;
+
+        (async () => {
+            try {
+                await Promise.all(
+                    idsToFetch.map(async (id) => {
+                        try {
+                            const res = await fetch(`/api/v1/fabs/${id}`);
+                            if (!res.ok) return;
+                            const json = await res.json();
+                            const data = json?.data || json;
+                            const fabType = data?.fab_type || data?.fabType || '';
+                            if (!cancelled && fabType) {
+                                setFabTypeMap((prev) => ({ ...prev, [String(id)]: fabType }));
+                            }
+                        } catch (e) {
+                            // ignore individual failures
+                        }
+                    }),
+                );
+            } catch (err) {
+                // ignore
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [fabs, fabTypeMap]);
+
     const filteredData = useMemo(() => {
         let result = actualData as CutPlanningData[];
 
@@ -735,7 +781,11 @@ const ShopTable: React.FC<ShopTableProps> = ({ path = '/job/cut-list', isSuperAd
 
                                                     {/* Data Rows for this Date - Month column is EMPTY */}
                                                     {monthRows.map((row) => (
-                                                        <tr key={row.id} className="border-b border-border hover:bg-muted/50">
+                                                        <tr
+                                                            key={row.id}
+                                                            className="border-b border-border hover:bg-muted/50"
+                                                            data-fab-type={(row.original.fab_type || fabTypeMap[String(row.original.id)] || fabTypeMap[String(row.original.fab_id)] || 'unknown').toString().toLowerCase()}
+                                                        >
                                                             {row.getVisibleCells().map((cell) => {
                                                                 // If this is the month column, show empty cell
                                                                 if (cell.column.id === 'month') {

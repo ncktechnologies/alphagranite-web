@@ -1,76 +1,148 @@
-'use client';
-
 import React, { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Container } from '@/components/common/container';
+import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { format, addDays, startOfWeek, endOfWeek, isSameDay, parse } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Clock, X, Filter, Search } from 'lucide-react';
+import { format, addDays, startOfWeek, isSameDay, getMonth, getYear } from 'date-fns';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { useGetAllShopPlansQuery, useGetFabTypesQuery, useGetWorkstationsQuery, useGetEmployeesQuery } from '@/store/api';
 import CreateEventForm from './createEvent';
-import { useGetAllShopPlansQuery } from '@/store/api';
 
-interface ShopEvent {
-  id: string;
-  fab_id: string;
-  title: string;
-  startTime: string;
-  endTime: string;
-  date: string;
-  color: string;
-  description?: string;
-}
-
-
-
-const TIME_SLOTS = Array.from({ length: 20 }, (_, i) => {
-  const hour = 5 + i;
-  return `${hour}:00`;
-});
-
-// Helper function to get color based on workstation
-const getColorForWorkstation = (workstationId: number): string => {
-  const colors = [
-    'bg-blue-100 border-blue-400',
-    'bg-purple-100 border-purple-400',
-    'bg-yellow-100 border-yellow-400',
-    'bg-pink-100 border-pink-400',
-    'bg-green-100 border-green-400',
-    'bg-indigo-100 border-indigo-400',
-    'bg-red-100 border-red-400',
-    'bg-teal-100 border-teal-400',
-  ];
-  return colors[workstationId % colors.length];
-};
-
-export const ShopCalendar: React.FC = () => {
-  const [currentDate, setCurrentDate] = useState(new Date(2026, 1, 11)); // Feb 11, 2025
-  const [showEventForm, setShowEventForm] = useState(false);
+const ShopCalendarPage = () => {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   
-  // Fetch shop plans from API
-  const { data: shopPlansData, isLoading, isError, refetch } = useGetAllShopPlansQuery();
-  
-  // Transform API data to ShopEvent format
-  const events = useMemo<ShopEvent[]>(() => {
-    if (!shopPlansData?.data?.plans) return [];
-    console.log(shopPlansData.data.plans, "hhhhhh")
-    return shopPlansData.data.plans.map(plan => ({
-      id: plan.id.toString(),
-      fab_id: `FAB-${plan.fab_id}`,
-      title: `FAB-${plan.fab_id}`,
-      startTime: plan.scheduled_start_date ? 
-        format(new Date(plan.scheduled_start_date), 'H:mm') : '9:00',
-      endTime: plan.scheduled_start_date ? 
-        format(new Date(new Date(plan.scheduled_start_date).getTime() + (plan.estimated_hours * 60 * 60 * 1000)), 'H:mm') : '17:00',
-      date: plan.scheduled_start_date ? 
-        format(new Date(plan.scheduled_start_date), 'yyyy-MM-dd') : 
-        format(currentDate, 'yyyy-MM-dd'),
-      color: getColorForWorkstation(plan.workstation_id),
-      description: `${plan.estimated_hours} hrs`,
-    }));
-  }, [shopPlansData, currentDate]);
+  // Filter state
+  const [filters, setFilters] = useState({
+    fabType: '' as string,
+    workstation: '' as string,
+    operator: '' as string,
+    fabId: '' as string,
+  });
 
-  const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 }); // Tuesday
-  const weekDays = Array.from({ length: 5 }, (_, i) => addDays(weekStart, i + 1)); // Wed-Sun
+  // Fetch shop plans for current month
+  const { data: plansResponse, isLoading } = useGetAllShopPlansQuery({
+    month: getMonth(currentDate) + 1,
+    year: getYear(currentDate),
+    limit: 1000,
+  });
+
+  // Fetch FAB types
+  const { data: fabTypesData } = useGetFabTypesQuery();
+
+  // Fetch workstations
+  const { data: workstationsData } = useGetWorkstationsQuery();
+
+  // Fetch employees (for operators)
+  const { data: employeesData } = useGetEmployeesQuery();
+
+  // Get week start
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+
+  // Extract available filter options from API endpoints
+  const availableFilters = useMemo(() => {
+    // Extract fab types from API - returns array directly
+    let fabTypesArray: string[] = [];
+    if (Array.isArray(fabTypesData)) {
+      fabTypesArray = fabTypesData.map((ft: any) => ft.name || ft).sort();
+    } else if (fabTypesData?.data && Array.isArray(fabTypesData.data)) {
+      fabTypesArray = fabTypesData.data.map((ft: any) => ft.name || ft).sort();
+    }
+
+    // Extract workstations from API - returns paginated response
+    let workstationsArray: string[] = [];
+    if (workstationsData?.data && Array.isArray(workstationsData.data)) {
+      workstationsArray = workstationsData.data.map((ws: any) => ws.name || ws).sort();
+    } else if (Array.isArray(workstationsData)) {
+      workstationsArray = workstationsData.map((ws: any) =>ws.name || ws).sort();
+    }
+
+    // Extract employees (operators) from API - returns paginated response
+    let employeesArray: string[] = [];
+    if (employeesData?.data && Array.isArray(employeesData.data)) {
+      employeesArray = employeesData.data.map((emp: any) =>  emp).sort();
+    } else if (Array.isArray(employeesData)) {
+      employeesArray = employeesData.map((emp: any) =>  emp).sort();
+    }
+
+    return {
+      fabTypes: fabTypesArray,
+      workstations: workstationsArray,
+      operators: employeesArray,
+    };
+  }, [fabTypesData, workstationsData, employeesData]);
+
+  // Process plans data with filters applied
+  const eventsByDay = useMemo(() => {
+    const grouped: Record<string, any[]> = {};
+    
+    weekDays.forEach((day) => {
+      grouped[format(day, 'yyyy-MM-dd')] = [];
+    });
+
+    if (plansResponse?.data?.grouped_plans) {
+      plansResponse.data.grouped_plans.forEach((groupedPlan: any) => {
+        const dateKey = format(new Date(groupedPlan.date), 'yyyy-MM-dd');
+        if (grouped[dateKey]) {
+          let plans = groupedPlan.plans || [];
+          
+          // Apply filters
+          if (filters.fabId) {
+            plans = plans.filter((p: any) => String(p.fab_id).includes(filters.fabId));
+          }
+          if (filters.fabType) {
+            plans = plans.filter((p: any) => p.fab_type === filters.fabType);
+          }
+          if (filters.workstation) {
+            plans = plans.filter((p: any) => String(p.workstation_id) === filters.workstation);
+          }
+          if (filters.operator) {
+            plans = plans.filter((p: any) => String(p.operator_id) === filters.operator);
+          }
+          
+          grouped[dateKey] = plans;
+        }
+      });
+    } else if (plansResponse?.grouped_plans) {
+      plansResponse.grouped_plans.forEach((groupedPlan: any) => {
+        const dateKey = format(new Date(groupedPlan.date), 'yyyy-MM-dd');
+        if (grouped[dateKey]) {
+          let plans = groupedPlan.plans || [];
+          
+          if (filters.fabId) {
+            plans = plans.filter((p: any) => String(p.fab_id).includes(filters.fabId));
+          }
+          if (filters.fabType) {
+            plans = plans.filter((p: any) => p.fab_type === filters.fabType);
+          }
+          if (filters.workstation) {
+            plans = plans.filter((p: any) => String(p.workstation_id) === filters.workstation);
+          }
+          if (filters.operator) {
+            plans = plans.filter((p: any) => String(p.operator_id) === filters.operator);
+          }
+          
+          grouped[dateKey] = plans;
+        }
+      });
+    }
+    return grouped;
+  }, [plansResponse, weekDays, filters]);
 
   const handlePrevWeek = () => {
     setCurrentDate(addDays(currentDate, -7));
@@ -80,138 +152,285 @@ export const ShopCalendar: React.FC = () => {
     setCurrentDate(addDays(currentDate, 7));
   };
 
-  const getEventsForDay = (date: Date): ShopEvent[] => {
-    const dateStr = format(date, 'yyyy-MM-dd');
-    return events.filter((event) => event.date === dateStr);
-  };
-
-  const getEventsForTimeSlot = (date: Date, timeSlot: string): ShopEvent[] => {
-    return getEventsForDay(date).filter(
-      (event) =>
-        parseInt(event.startTime.split(':')[0]) === parseInt(timeSlot.split(':')[0])
-    );
-  };
-
-  const handleCreateEvent = () => {
-    // In a real implementation, this would create a new shop plan via API
-    console.log('Event created');
-    setShowEventForm(false);
-  };
-
-  const handleDateClick = (date: Date) => {
+  const handleCreateEvent = (date: Date, timeSlot?: string) => {
     setSelectedDate(date);
-    setShowEventForm(true);
+    setSelectedTimeSlot(timeSlot || null);
+    setShowCreateForm(true);
+  };
+
+  const timeSlots = Array.from({ length: 10 }, (_, i) => {
+    const hour = 7 + i;
+    return `${hour.toString().padStart(2, '0')}:00`;
+  });
+
+  // Map fab types to colors
+  const getFabTypeColor = (fabType: string) => {
+    const typeColorMap: Record<string, string> = {
+      'standard': 'bg-[#9eeb47] text-gray-900 border-[#9eeb47]',
+      'fab only': 'bg-[#5bd1d7] text-gray-900 border-[#5bd1d7]',
+      'cust redo': 'bg-[#f0bf4c] text-gray-900 border-[#f0bf4c]',
+      'resurface': 'bg-[#d094ea] text-gray-900 border-[#d094ea]',
+      'fast track': 'bg-[#f59794] text-gray-900 border-[#f59794]',
+      'ag redo': 'bg-[#f5cc94] text-gray-900 border-[#f5cc94]',
+    };
+    return typeColorMap[fabType?.toLowerCase()] || 'bg-gray-200 text-gray-900 border-gray-200';
+  };
+
+  // Calculate end time based on start time + estimated hours
+  const getEndTime = (startDateStr: string, estimatedHours: number) => {
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(startDate.getTime() + estimatedHours * 60 * 60 * 1000);
+    return format(endDate, 'HH:mm');
   };
 
   return (
-    <div className="w-full space-y-4">
-      {/* Loading and Error States */}
-      {isLoading && (
-        <div className="text-center py-8 text-gray-500">
-          Loading shop plans...
-        </div>
-      )}
-      
-      {isError && (
-        <div className="text-center py-8 text-red-500">
-          Error loading shop plans. 
-          <button 
-            onClick={() => refetch()} 
-            className="ml-2 text-blue-500 underline"
-          >
-            Retry
-          </button>
-        </div>
-      )}
-      
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={handlePrevWeek}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <h2 className="text-2xl font-bold min-w-[200px] text-center">
-            {format(weekStart, 'MMM yyyy')}
-          </h2>
-          <Button variant="outline" size="icon" onClick={handleNextWeek}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-        <Button onClick={() => setShowEventForm(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Create Plan
-        </Button>
-      </div>
-
-      {/* Calendar */}
-      {!isLoading && !isError && (
-        <div className="rounded-lg border bg-white overflow-hidden">
-        {/* Day headers */}
-        <div className="grid grid-cols-6 border-b bg-gray-50">
-          <div className="border-r p-3 text-sm font-medium text-gray-600 w-20">
-            TIME
-          </div>
-          {weekDays.map((date) => (
-            <div
-              key={date.toISOString()}
-              className="border-r p-3 text-center font-medium"
-            >
-              <div className="text-sm text-gray-600">
-                {format(date, 'EEE').toUpperCase()}
-              </div>
-              <div className="text-lg font-bold">{format(date, 'd')}</div>
+    <div>
+      <Container>
+        <Toolbar>
+          <ToolbarHeading
+            title="Shop Calendar"
+            description={`Week of ${format(weekStart, 'MMMM d, yyyy')} - ${format(addDays(weekStart, 6), 'MMMM d, yyyy')}`}
+          />
+          <ToolbarActions className="flex items-center gap-2 flex-wrap">
+            {/* Week Navigation */}
+            <div className="flex items-center gap-1 border-r pr-2">
+              <Button variant="outline" size="sm" onClick={handlePrevWeek} title="Previous week">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <CalendarIcon className="h-4 w-4 mr-2" />
+                    {format(currentDate, 'MMM d, yyyy')}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={currentDate}
+                    onSelect={(date) => {
+                      if (date) setCurrentDate(date);
+                    }}
+                    disabled={(date) =>
+                      date > new Date('2099-12-31') || date < new Date('2000-01-01')
+                    }
+                  />
+                </PopoverContent>
+              </Popover>
+              <Button variant="outline" size="sm" onClick={handleNextWeek} title="Next week">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
-          ))}
-        </div>
 
-        {/* Time slots and events */}
-        <div>
-          {TIME_SLOTS.map((timeSlot) => (
-            <div key={timeSlot} className="grid grid-cols-6 border-b">
-              {/* Time label */}
-              <div className="border-r p-3 text-sm font-medium text-gray-600 bg-gray-50 w-20">
-                {timeSlot}
-              </div>
-
-              {/* Day cells */}
-              {weekDays.map((date) => (
-                <div
-                  key={`${date.toISOString()}-${timeSlot}`}
-                  className="border-r p-2 min-h-[80px] relative bg-white hover:bg-gray-50 cursor-pointer transition"
-                  onClick={() => handleDateClick(date)}
+            {/* Search FAB ID */}
+            <div className="relative">
+              <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+              <Input
+                placeholder="Search FAB ID..."
+                value={filters.fabId}
+                onChange={(e) => setFilters({ ...filters, fabId: e.target.value })}
+                className="ps-9 w-[230px] h-[46px]"
+              />
+              {filters.fabId && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                  onClick={() => setFilters({ ...filters, fabId: '' })}
                 >
-                  {getEventsForTimeSlot(date, timeSlot).map((event) => (
+                  <X className="size-4" />
+                </Button>
+              )}
+            </div>
+
+            {/* FAB Type Dropdown */}
+            <Select value={filters.fabType || 'all'} onValueChange={(value) => setFilters({ ...filters, fabType: value === 'all' ? '' : value })}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All FAB Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All FAB Types</SelectItem>
+                {availableFilters.fabTypes.map((type) => (
+                  <SelectItem key={type} value={type}>
+                    {type}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Workstation Dropdown */}
+            <Select value={filters.workstation || 'all'} onValueChange={(value) => setFilters({ ...filters, workstation: value === 'all' ? '' : value })}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All Workstations" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Workstations</SelectItem>
+                {availableFilters.workstations.map((ws) => (
+                  <SelectItem key={ws} value={ws}>
+                     {ws}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Operator Dropdown */}
+            <Select value={filters.operator || 'all'} onValueChange={(value) => setFilters({ ...filters, operator: value === 'all' ? '' : value })}>
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="All Operators" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Operators</SelectItem>
+                {availableFilters.operators.map((op) => (
+                  <SelectItem key={op.id} value={op.id}>
+                     {op.first_name}  {op.last_name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Create Event Button */}
+            <Button onClick={() => handleCreateEvent(currentDate)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Schedule Plan
+            </Button>
+          </ToolbarActions>
+        </Toolbar>
+
+        <Card className="mt-6">
+          <CardHeader className="pb-3 border-b">
+                        <CardTitle className="text-lg font-semibold">
+                          {/* <CardTitle>Weekly Schedule</CardTitle> */}
+                          <p className="text-sm text-gray-600 mt-1">
+                            {format(weekStart, 'EEEE, MMMM d')} - {format(addDays(weekStart, 6), 'EEEE, MMMM d, yyyy')}
+                          </p>
+                        </CardTitle>
+                        <div className="text-right">
+                          <p className="text-sm font-medium text-gray-700">Total Scheduled Plans</p>
+                          <p className="text-2xl font-bold text-blue-600">
+                            {isLoading ? '-' : Object.values(eventsByDay).reduce((acc, events) => acc + events.length, 0)}
+                          </p>
+                        </div>
+                    </CardHeader>
+          <CardContent className="pt-4">
+            {isLoading && (
+              <div className="flex items-center justify-center py-12">
+                <p className="text-gray-500">Loading calendar events...</p>
+              </div>
+            )}
+            {!isLoading && (
+            <div className="overflow-x-auto">
+              <div className="min-w-max">
+                {/* Header with days */}
+                <div className="flex gap-2 mb-4">
+                  <div className="w-24 flex-shrink-0">
+                    <div className="text-xs font-semibold text-gray-500 uppercase">Time</div>
+                  </div>
+                  {weekDays.map((day) => (
                     <div
-                      key={event.id}
-                      className={`text-xs p-2 rounded border mb-1 ${event.color}`}
+                      key={format(day, 'yyyy-MM-dd')}
+                      className="flex-1 min-w-[200px] text-center"
                     >
-                      <div className="font-semibold text-gray-900">
-                        {event.title}
+                      <div className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                        {format(day, 'EEE')}
                       </div>
-                      <div className="text-gray-700">
-                        {event.startTime} - {event.endTime}
+                      <div
+                        className={`text-lg font-bold ${
+                          isSameDay(day, new Date())
+                            ? 'text-blue-600'
+                            : 'text-gray-900'
+                        }`}
+                      >
+                        {format(day, 'd')}
                       </div>
-                      {event.description && (
-                        <div className="text-gray-600">{event.description}</div>
-                      )}
                     </div>
                   ))}
                 </div>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-      )}
 
-      {/* Event form drawer */}
-      {showEventForm && (
-        <CreateEventForm
-          selectedDate={selectedDate}
-          onClose={() => setShowEventForm(false)}
-          onEventCreated={handleCreateEvent}
-        />
-      )}
+                {/* Time slots and events */}
+                <div className="border-t space-y-1">
+                  {timeSlots.map((time) => (
+                    <div key={time} className="flex gap-2 min-h-16">
+                      <div className="w-24 flex-shrink-0 text-xs font-medium text-gray-600 py-2">
+                        {time}
+                      </div>
+                      {weekDays.map((day) => {
+                        const dayEvents = eventsByDay[format(day, 'yyyy-MM-dd')] || [];
+                        const dayDate = format(day, 'yyyy-MM-dd');
+                        
+                        // Get events that span this time slot
+                        const eventsInTimeSlot = dayEvents.filter((event) => {
+                          if (!event.scheduled_start_date) return false;
+                          const eventStart = new Date(event.scheduled_start_date);
+                          const eventEnd = new Date(eventStart.getTime() + event.estimated_hours * 60 * 60 * 1000);
+                          const currentHour = parseInt(time.split(':')[0]);
+                          const slotStart = currentHour;
+                          const slotEnd = currentHour + 1;
+                          
+                          // Check if event overlaps with this time slot
+                          return eventStart.getHours() < slotEnd && eventEnd.getHours() >= slotStart;
+                        });
+
+                        return (
+                          <div
+                            key={dayDate + time}
+                            className="flex-1 min-w-[200px] border border-gray-200 rounded p-1 cursor-pointer hover:bg-gray-50 relative min-h-16"
+                            onClick={() => handleCreateEvent(day, time)}
+                          >
+                            {eventsInTimeSlot.length > 0 && (
+                              <div className="space-y-1">
+                                {eventsInTimeSlot.slice(0, 2).map((event) => {
+                                  const startTime = format(new Date(event.scheduled_start_date), 'HH:mm');
+                                  const endTime = getEndTime(event.scheduled_start_date, event.estimated_hours);
+                                  return (
+                                    <div
+                                      key={event.id}
+                                      className={`text-xs p-1.5 rounded border-l-4 ${getFabTypeColor(event.fab_type)}`}
+                                    >
+                                      <div className="font-semibold">FAB-{event.fab_id}</div>
+                                      <div className="text-xs font-medium">{event.fab_type}</div>
+                                      <div className="flex items-center gap-1 text-xs mt-1">
+                                        <Clock className="h-3 w-3" />
+                                        {startTime} - {endTime}
+                                      </div>
+                                      <div className="text-xs mt-1">
+                                        {event.estimated_hours}h
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                                {eventsInTimeSlot.length > 2 && (
+                                  <div className="text-xs text-gray-500 px-1">
+                                    +{eventsInTimeSlot.length - 2} more
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Create Event Form Sidebar */}
+        {showCreateForm && (
+          <CreateEventForm
+            onClose={() => setShowCreateForm(false)}
+            selectedDate={selectedDate}
+            selectedTimeSlot={selectedTimeSlot}
+            onEventCreated={() => {
+              setShowCreateForm(false);
+            }}
+          />
+        )}
+      </Container>
     </div>
   );
 };
+
+export default ShopCalendarPage;

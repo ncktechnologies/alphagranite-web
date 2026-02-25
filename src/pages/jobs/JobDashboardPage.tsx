@@ -44,10 +44,10 @@ export function JobDashboardPage() {
       'SlabSmith Request': '/job/slab-smith',
       'Final Programming': '/job/final-programming',
       'Cut List': '/job/cut-list',
-      'Resurface Scheduling': '/job/final-programming',
+      'Resurface Scheduling': '/job/resurfacing',
       'Revisions': '/job/revision',
       'Install Scheduling': '/job/install-scheduling',
-      'Install Completion': '/job/install-completion',
+      'Install Completion': '/job/install-scheduling',
     };
     return routeMap[widgetId] || '/job';
   };
