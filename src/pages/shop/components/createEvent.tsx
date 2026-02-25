@@ -37,7 +37,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
     fab_id: '',
     workstation_id: '',
     operator_id: '',
-    estimated_hours: '',
     notes: '',
     start_time: selectedTimeSlot || '09:00',
     end_time: '',
@@ -54,58 +53,84 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
   const { data: employeesData } = useGetEmployeesQuery();
   const employees = employeesData?.data || (Array.isArray(employeesData) ? employeesData : employeesData || []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (!formData.fab_id || !formData.operator_id) {
-      toast.error('Please fill in required fields');
+  // Validate required fields
+  if (!formData.fab_id) {
+    toast.error('FAB ID is required');
+    return;
+  }
+  if (!formData.operator_id) {
+    toast.error('Operator is required');
+    return;
+  }
+  if (!formData.workstation_id) {
+    toast.error('Workstation is required');
+    return;
+  }
+  if (!formData.start_time) {
+    toast.error('Start time is required');
+    return;
+  }
+  if (!formData.end_time) {
+    toast.error('End time is required');
+    return;
+  }
+
+  try {
+    const scheduledDate = selectedDate 
+      ? format(selectedDate, 'yyyy-MM-dd') 
+      : new Date().toISOString().split('T')[0];
+
+    const startTime = formData.start_time;
+    const endTime = formData.end_time;
+
+    // Construct full ISO datetime strings
+    const scheduledStart = `${scheduledDate}T${startTime}:00`;
+    const scheduledEnd = `${scheduledDate}T${endTime}:00`;
+
+    // Validate that end time is after start time
+    if (new Date(scheduledEnd) <= new Date(scheduledStart)) {
+      toast.error('End time must be after start time');
       return;
     }
 
-    try {
-      // Construct scheduled start date from selected date + start time
-      const scheduledDate = selectedDate ? format(selectedDate, 'yyyy-MM-dd') : new Date().toISOString().split('T')[0];
-      const startTime = formData.start_time || selectedTimeSlot || '09:00';
-      const endTime = formData.end_time || '';
-      const scheduledStartDate = `${scheduledDate}T${startTime}:00`;
+    // Calculate estimated hours from start and end times
+    const start = new Date(scheduledStart);
+    const end = new Date(scheduledEnd);
+    const diffMs = end.getTime() - start.getTime();
+    const estimatedHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
 
-      // derive estimated hours if both start and end are provided
-      let derivedHours = formData.estimated_hours ? Number(formData.estimated_hours) : 0;
-      if (startTime && endTime) {
-        const start = new Date(`${scheduledDate}T${startTime}:00`);
-        const end = new Date(`${scheduledDate}T${endTime}:00`);
-        const diffMs = end.getTime() - start.getTime();
-        if (diffMs > 0) {
-          derivedHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
-        }
-      }
+    // Build payload according to actual backend requirements
+    const planData = {
+      fab_id: Number(formData.fab_id),
+      estimated_hours: estimatedHours,          // ✅ correct top-level field name
+      notes: formData.notes || '',               // top-level string
+      status_id: 1,                               // optional default
+      stages: [
+        {
+          workstation_id: Number(formData.workstation_id),
+          planning_section_id: Number(formData.planning_section_id) || (planningSections[0]?.id ?? 0),
+          operator_ids: [Number(formData.operator_id)],
+          estimated_hours: estimatedHours,
+          scheduled_start: scheduledStart,
+          scheduled_end: scheduledEnd,            // keep if accepted; remove if not
+        },
+      ],
+    };
 
-      const planData = {
-        fab_id: Number(formData.fab_id),
-        total_estimated_hours: Number(derivedHours || formData.estimated_hours || 0),
-        stages: [
-          {
-            workstation_id: Number(formData.workstation_id) || undefined,
-            planning_section_id: Number((formData as any).planning_section_id) || (planningSections[0]?.id ?? 0),
-            operator_ids: [Number(formData.operator_id)],
-            estimated_hours: Number(derivedHours || formData.estimated_hours || 0),
-            notes: formData.notes ? [formData.notes] : [],
-            scheduled_start: scheduledStartDate,
-          },
-        ],
-      };
+    await createShopPlan(planData as any).unwrap();
 
-      await createShopPlan(planData).unwrap();
-      toast.success('Plan scheduled successfully');
-      onEventCreated?.();
-      onClose();
-    } catch (error: any) {
-      console.error('Error creating event:', error);
-      const errorMsg = error?.data?.detail?.message || 'Failed to create Plan';
-      toast.error(errorMsg);
-    }
-  };
-
+    toast.success('Plan scheduled successfully');
+    onEventCreated?.();
+    onClose();
+  } catch (error: any) {
+    console.error('Error creating event:', error);
+    const errorMsg = error?.data?.detail?.message || 'Failed to create Plan';
+    toast.error(errorMsg);
+  }
+};
   return (
     <div className="fixed inset-y-0 right-0 w-96 bg-white shadow-lg border-l z-50 flex flex-col">
       {/* Header */}
@@ -154,7 +179,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <Clock className="h-4 w-4 text-blue-600" />
-              <p className="text-sm font-medium text-gray-700">Scheduled Time</p>
+              <p className="text-sm font-medium text-gray-700">Scheduled Time *</p>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
@@ -164,6 +189,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                   value={formData.start_time}
                   onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                   className="mt-2"
+                  required
                 />
               </div>
               <div>
@@ -173,6 +199,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
                   value={formData.end_time}
                   onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
                   className="mt-2"
+                  required
                 />
               </div>
             </div>
@@ -187,7 +214,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
               Planning Section
             </Label>
             <Select
-              value={(formData as any).planning_section_id}
+              value={formData.planning_section_id}
               onValueChange={(value) => setFormData({ ...formData, planning_section_id: value })}
             >
               <SelectTrigger className="mt-2">
@@ -195,7 +222,9 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
               </SelectTrigger>
               <SelectContent>
                 {planningSections.map((ps: any) => (
-                  <SelectItem key={ps.id} value={String(ps.id)}>{ps.name || ps.plan_name || ps.title}</SelectItem>
+                  <SelectItem key={ps.id} value={String(ps.id)}>
+                    {ps.name || ps.plan_name || ps.title}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -204,7 +233,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
           {/* Workstation */}
           <div>
             <Label htmlFor="workstation_id" className="text-sm font-medium">
-              Workstation
+              Workstation *
             </Label>
             <Select
               value={formData.workstation_id}
@@ -217,7 +246,9 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
               </SelectTrigger>
               <SelectContent>
                 {workstations.map((ws: any) => (
-                  <SelectItem key={ws.id} value={String(ws.id)}>{ws.name || ws.workstation_name || `WS ${ws.id}`}</SelectItem>
+                  <SelectItem key={ws.id} value={String(ws.id)}>
+                    {ws.name || ws.workstation_name || `WS ${ws.id}`}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -239,30 +270,12 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
               </SelectTrigger>
               <SelectContent>
                 {employees.map((emp: any) => (
-                  <SelectItem key={emp.id} value={String(emp.id)}>{`${emp.first_name || emp.name || ''} ${emp.last_name || ''}`.trim() || emp.email}</SelectItem>
+                  <SelectItem key={emp.id} value={String(emp.id)}>
+                    {`${emp.first_name || emp.name || ''} ${emp.last_name || ''}`.trim() || emp.email}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          {/* Estimated Hours */}
-          <div>
-            <Label htmlFor="estimated_hours" className="text-sm font-medium">
-              Estimated Hours
-            </Label>
-            <Input
-              id="estimated_hours"
-              type="number"
-              step="0.25"
-              min="0"
-              placeholder="6"
-              value={formData.estimated_hours}
-              onChange={(e) =>
-                setFormData({ ...formData, estimated_hours: e.target.value })
-              }
-              className="mt-2"
-            />
-            <p className="text-xs text-muted-foreground mt-1">If start and end times are provided, estimated hours will be calculated automatically.</p>
           </div>
 
           {/* Description */}
