@@ -216,7 +216,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                                 )}
                             </div>
                         </Can>
-                        <Button variant="outline" type="button" className="w-full text-secondary font-bold py-6 text-base" onClick={() => navigate('/app/jobs/resurfacing')}>
+                        <Button variant="outline" type="button" className="w-full text-secondary font-bold py-6 text-base" onClick={() => navigate('/job/resurfacing')}>
                             Cancel
                         </Button>
                     </div>

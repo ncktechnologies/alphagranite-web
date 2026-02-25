@@ -388,6 +388,8 @@ const ShopCalendarPage = () => {
                                     >
                                       <div className="font-semibold">FAB-{event.fab_id}</div>
                                       <div className="text-xs font-medium">{event.fab_type}</div>
+                                      <div className="text-xs font-medium text-gray-700">{event.workstation_name}</div>
+                                      <div className="text-xs text-gray-600">{event.plan_name}</div>
                                       <div className="flex items-center gap-1 text-xs mt-1">
                                         <Clock className="h-3 w-3" />
                                         {startTime} - {endTime}
