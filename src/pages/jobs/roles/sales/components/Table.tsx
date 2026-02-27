@@ -545,15 +545,15 @@ export const JobSalesTable = ({
                 if (!enableMultiSelect) {
                     return <></>;
                 }
-                
+
                 // Filter out jobs that already have a drafter assigned
                 const selectableJobs = filteredData.filter(job => !job.drafter || job.drafter === '-');
-                
+
                 // Hide header checkbox if no jobs are selectable
                 if (selectableJobs.length === 0) {
                     return <></>;
                 }
-                
+
                 return (
                     <div className="w-full h-full flex items-center justify-center">
                         <Checkbox
@@ -561,7 +561,7 @@ export const JobSalesTable = ({
                             onCheckedChange={() => {
                                 const selectableFabIds = selectableJobs.map(job => job.fab_id);
                                 const allSelected = selectableFabIds.every(id => effectiveSelectedRows.includes(id));
-                                
+
                                 if (allSelected) {
                                     // Deselect all selectable jobs
                                     setSelectedRows(effectiveSelectedRows.filter(id => !selectableFabIds.includes(id)));
@@ -576,14 +576,15 @@ export const JobSalesTable = ({
                     </div>
                 );
             },
+
             cell: ({ row }) => {
                 // Hide checkbox if drafter is already assigned
                 const hasDrafter = row.original.drafter && row.original.drafter !== '-';
-                
+
                 if (!enableMultiSelect || hasDrafter) {
                     return <></>;
                 }
-                
+
                 return (
                     <div className="w-full h-full flex items-center justify-center">
                         <Checkbox
@@ -602,6 +603,18 @@ export const JobSalesTable = ({
                 cellClassName: 'flex items-center justify-start h-full min-h-[40px] align-center p-0',
                 headerClassName: '!px-2',
             },
+        },
+        {
+            id: 'actions',
+            header: '',
+            cell: ({ row }) => (
+                <ActionsCell
+                    row={row}
+                    onView={() => handleView(row.original)} // Pass the job object
+                />
+            ),
+            enableSorting: false,
+            size: 60,
         },
         {
             id: "fab_type",
@@ -894,7 +907,7 @@ export const JobSalesTable = ({
                 // Try to access slabsmith_ag_needed and slabsmith_completed_date from various sources
                 const slabsmithAgNeeded = (row as any).slabsmith_ag_needed ?? (row as any)._rawFabData?.slabsmith_ag_needed;
                 const slabsmithCompletedDate = (row as any).slabsmith_completed_date ?? (row as any)._rawFabData?.slabsmith_completed_date;
-                
+
                 if (slabsmithAgNeeded === false) {
                     return 'Not Needed';
                 } else if (slabsmithAgNeeded === true) {
@@ -909,20 +922,20 @@ export const JobSalesTable = ({
                 // Try to access slabsmith_ag_needed and slabsmith_completed_date from various sources
                 const slabsmithAgNeeded = (row.original as any).slabsmith_ag_needed ?? (row.original as any)._rawFabData?.slabsmith_ag_needed;
                 const slabsmithCompletedDate = (row.original as any).slabsmith_completed_date ?? (row.original as any)._rawFabData?.slabsmith_completed_date;
-                
+
                 let displayText = 'Unknown';
                 let className = 'text-sm break-words max-w-[160px]';
-                
+
                 if (slabsmithAgNeeded === false) {
                     displayText = 'Not Needed';
                     className = 'text-sm break-words max-w-[160px] text-gray-500';
                 } else if (slabsmithAgNeeded === true) {
                     displayText = slabsmithCompletedDate ? 'Completed' : 'Not Completed';
-                    className = slabsmithCompletedDate 
-                        ? 'text-sm break-words max-w-[160px] text-green-600 font-medium' 
+                    className = slabsmithCompletedDate
+                        ? 'text-sm break-words max-w-[160px] text-green-600 font-medium'
                         : 'text-sm break-words max-w-[160px] text-red-600 font-medium';
                 }
-                
+
                 return <span className={className}>{displayText}</span>;
             },
             size: 140,
@@ -1378,7 +1391,7 @@ export const JobSalesTable = ({
                     return (
                         <Link
                             to={`/job/templating/${row.original.fab_id}`}
-                            
+
                         >
                             Assign
                         </Link>
@@ -1388,13 +1401,13 @@ export const JobSalesTable = ({
                     // Otherwise (no date), show Assign
                     return (
                         <span
-                            
+
                         >
                             Rescheduled
                         </span>
                     );
                 }
-                
+
                 return null;
             },
             size: 100,
@@ -1493,18 +1506,7 @@ export const JobSalesTable = ({
             enableSorting: false,
             size: 80,
         },
-        {
-            id: 'actions',
-            header: '',
-            cell: ({ row }) => (
-                <ActionsCell
-                    row={row}
-                    onView={() => handleView(row.original)} // Pass the job object
-                />
-            ),
-            enableSorting: false,
-            size: 60,
-        },
+
     ], [getPath, path, dateRange, enableMultiSelect, effectiveSelectedRows, filteredData]); // Add dependencies for multi-select functionality
 
     // Filter columns based on data availability and visibleColumns prop
@@ -1764,8 +1766,8 @@ export const JobSalesTable = ({
                     <CardTable>
                         <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-300px)]">
                             <DataGridTable />
-                            <ScrollBar 
-                                orientation="horizontal" 
+                            <ScrollBar
+                                orientation="horizontal"
                                 className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500"
                             />
                         </ScrollArea>

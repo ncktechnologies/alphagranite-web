@@ -252,6 +252,7 @@ export const JobTable = ({
     // Column definitions (all data columns have enableSorting: true)
     const baseColumns = useMemo<ColumnDef<IJob>[]>(() => [
         // ID column (checkbox) – no sorting
+         
         {
             accessorKey: 'id',
             accessorFn: (row) => row.id,
@@ -294,6 +295,13 @@ export const JobTable = ({
             enableSorting: false,
             enableHiding: false,
             size: 48,
+        },
+        {
+            id: 'actions',
+            header: '',
+            cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(row.original)} />,
+            enableSorting: false,
+            size: 60,
         },
         // Fab Type
         {
@@ -698,13 +706,7 @@ export const JobTable = ({
             size: 80,
         },
         // Actions column
-        {
-            id: 'actions',
-            header: '',
-            cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(row.original)} />,
-            enableSorting: false,
-            size: 60,
-        },
+       
     ], [getPath, path, dateRange, enableMultiSelect, effectiveSelectedRows, filteredData, loadingStates, optimisticUpdates, onRescheduleClick]);
 
     // Helper to render notes (simplified)

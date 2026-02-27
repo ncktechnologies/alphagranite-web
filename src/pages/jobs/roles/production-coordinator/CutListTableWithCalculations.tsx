@@ -430,6 +430,21 @@ export const CutListTableWithCalculations = ({
         //     },
         // },
         {
+            id: 'actions',
+            header: '',
+            cell: ({ row }) => (
+                <div className="flex items-center gap-2">
+                    <ActionsCell
+                        row={row as any}
+                        onView={() => handleView(row.original.fab_id)}
+                        onAddNote={handleAddNote}
+                    />
+                </div>
+            ),
+            enableSorting: false,
+            size: 120,
+        },
+        {
             id: "fab_type",
             accessorKey: "fab_type",
             header: ({ column }) => (
@@ -797,21 +812,7 @@ export const CutListTableWithCalculations = ({
             enableSorting: false,
             size: 80,
         },
-        {
-            id: 'actions',
-            header: '',
-            cell: ({ row }) => (
-                <div className="flex items-center gap-2">
-                    <ActionsCell
-                        row={row as any}
-                        onView={() => handleView(row.original.fab_id)}
-                        onAddNote={handleAddNote}
-                    />
-                </div>
-            ),
-            enableSorting: false,
-            size: 120,
-        },
+        
     ], [path]);
 
 
@@ -857,7 +858,7 @@ export const CutListTableWithCalculations = ({
                     columnsVisibility: true,
                     cellBorder: true,
                 }}
-                onRowClick={(row) => handleRowClickInternal(row as CalculatedCutListData)}
+                // onRowClick={(row) => handleRowClickInternal(row as CalculatedCutListData)}
             >
                 <Card>
                     <CardHeader className="py-3.5 border-b">

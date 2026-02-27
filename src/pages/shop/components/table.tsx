@@ -783,7 +783,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ path = '/job/cut-list', isSuperAd
                                                     {monthRows.map((row) => (
                                                         <tr
                                                             key={row.id}
-                                                            className="border-b border-border hover:bg-muted/50"
+                                                            className="border-b border-border "
                                                             data-fab-type={(row.original.fab_type || fabTypeMap[String(row.original.id)] || fabTypeMap[String(row.original.fab_id)] || 'unknown').toString().toLowerCase()}
                                                         >
                                                             {row.getVisibleCells().map((cell) => {
