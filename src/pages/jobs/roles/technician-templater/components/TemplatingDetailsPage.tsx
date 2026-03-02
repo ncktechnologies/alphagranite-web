@@ -255,7 +255,7 @@ export function TemplatingDetailsPage() {
               </Card>
               <Card>
                 <CardContent>
-                  <TemplatingActivityForm fabId={id} />
+                  <TemplatingActivityForm fabId={id} revenue={fab?.revenue} />
                 </CardContent>
               </Card>
             </div>

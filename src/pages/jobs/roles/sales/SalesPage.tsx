@@ -51,6 +51,8 @@ const transformFabToJob = (fab: Fab): IJob => {
         template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
         template_received: '',
         templater: fab.technician_name || '-',
+        acct_name: fab.account_name || '',
+        input_area: fab.input_area || '',
         no_of_pieces: '',
         total_sq_ft: String(fab.total_sqft),
         revenue: '',

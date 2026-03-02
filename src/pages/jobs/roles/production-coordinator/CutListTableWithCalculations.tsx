@@ -377,7 +377,7 @@ export const CutListTableWithCalculations = ({
     const generateFabInfo = (list: CalculatedCutListData): { jobInfo: string[]; materialInfo: string[] } => {
         const jobInfo: string[] = [];
         const materialInfo: string[] = [];
-
+        const stoneInfo: string[] = [];
         // Job-related information
         if (list.acct_name) {
             jobInfo.push(list.acct_name);
@@ -392,27 +392,25 @@ export const CutListTableWithCalculations = ({
         }
 
         // Material & measurement details
-        if (list.total_sq_ft) {
-            materialInfo.push(`${list.total_sq_ft} sq ft`);
-        }
+        
 
         if (list.stone_type_name) {
-            materialInfo.push(list.stone_type_name);
+            stoneInfo.push(list.stone_type_name);
         }
 
         if (list.stone_color_name) {
-            materialInfo.push(list.stone_color_name);
+            stoneInfo.push(list.stone_color_name);
         }
 
         if (list.stone_thickness_value) {
-            materialInfo.push(list.stone_thickness_value);
+            stoneInfo.push(list.stone_thickness_value);
         }
 
         if (list.edge_name) {
             materialInfo.push(list.edge_name);
         }
 
-        return { jobInfo, materialInfo };
+        return { jobInfo, materialInfo, stoneInfo };
     };
 
     const baseColumns = useMemo<ColumnDef<CalculatedCutListData>[]>(() => [
@@ -669,23 +667,26 @@ export const CutListTableWithCalculations = ({
                 <DataGridColumnHeader title="FAB INFO" column={column} />
             ),
             cell: ({ row }) => {
-                const { jobInfo, materialInfo } = generateFabInfo(row.original);
+                const { jobInfo, materialInfo, stoneInfo } = generateFabInfo(row.original);
                 return (
                     <div className="flex gap-4 text-xs max-w-[400px]">
-                        {/* Job Info Side */}
                         {jobInfo.length > 0 && (
                             <div className="flex-1 min-w-0">
-                                {jobInfo.map((info, idx) => (
-                                    <div key={idx} className="truncate text-gray-600">{info}</div>
-                                ))}
+                                <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>
+                                    {jobInfo.join(' - ')}
+                                </div>
+                                {stoneInfo.length > 0 && (
+                                    <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>
+                                        {stoneInfo.join(' - ')}
+                                    </div>
+                                )}
                             </div>
                         )}
-                        {/* Material Info Side */}
                         {materialInfo.length > 0 && (
                             <div className="flex-1 min-w-0">
-                                {materialInfo.map((info, idx) => (
-                                    <div key={idx} className="truncate text-gray-600">{info}</div>
-                                ))}
+                                <div className="truncate text-gray-600" title={materialInfo.join(' - ')}>
+                                    {materialInfo.join(' - ')}
+                                </div>
                             </div>
                         )}
                     </div>

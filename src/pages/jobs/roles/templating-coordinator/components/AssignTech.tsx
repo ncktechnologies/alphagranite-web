@@ -268,7 +268,7 @@ export function AssignTechnicianModal({
                         field.onChange(formatted);
                       }}
                       placeholder="Schedule date"
-                      minDate={new Date()}
+                      minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
                     />
                   </FormControl>
                   <FormMessage>{fieldState.error?.message}</FormMessage>

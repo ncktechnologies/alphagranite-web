@@ -213,3 +213,9 @@ export default {
   // Alias for backward compatibility
   formatDate,
 };
+
+export const formatTime = (date: Date | string, is12HourFormat: boolean) => {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return is12HourFormat ? format(d, 'hh:mm a') : format(d, 'HH:mm');
+};      
+

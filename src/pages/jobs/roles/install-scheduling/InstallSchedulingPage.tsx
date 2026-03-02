@@ -40,7 +40,8 @@ const transformFabToJob = (fab: Fab): IJob => {
         current_stage: fab.current_stage,
         sales_person_name: fab.sales_person_name || '',
         // Optional fields with default values
-        acct_name: '',
+        acct_name: fab.account_name || '',
+        input_area: fab.input_area || '',
         template_received: fab.template_received ? 'Yes' : 'No',
         template_needed: fab.template_needed ? 'No' : 'Yes',
         // no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",

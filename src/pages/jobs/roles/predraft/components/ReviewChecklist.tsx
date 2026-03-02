@@ -91,6 +91,11 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                 form.setValue('square_ft', fabData.total_sqft.toString());
             }
         }
+        if (fabData) {
+            if (fabData.template_received) {
+                form.setValue('templatereceived', fabData.template_received);
+            }
+        }
     }, [fabData, form]);
 
     // Handle template received checkbox change

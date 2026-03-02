@@ -298,7 +298,7 @@ export const TimeTrackingComponent = ({
     const timePart = date.toLocaleTimeString('en-GB', {
       hour: '2-digit',
       minute: '2-digit',
-      hour12: false,
+      hour12: true,
     });
     return `${datePart} | ${timePart}`;
   };

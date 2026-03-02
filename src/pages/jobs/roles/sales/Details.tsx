@@ -21,7 +21,7 @@ export function SalesDetailsPage() {
     { label: 'FAB Type', value: fab.fab_type },
     { label: 'Account', value: fab.account_name }, // Placeholder
     { label: 'Job name', value: fab.job_details?.name }, // Placeholder
-    { label: 'Job #', value: String(fab.job_details?.job_number) },
+    { label: 'Job #', value: <Link to={`/job/details/${fab.job_details?.id}`} className="text-primary hover:underline">{fab.job_details?.job_number}</Link> },
     { label: 'Area (s)', value: fab.input_area },
     { label: 'Stone type', value: fab.stone_type_name || 'N/A' },
     { label: 'Stone color', value: fab.stone_color_name || 'N/A' },

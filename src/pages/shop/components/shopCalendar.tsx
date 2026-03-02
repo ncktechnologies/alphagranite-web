@@ -30,6 +30,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useGetAllShopPlansQuery, useGetFabTypesQuery, useGetWorkstationsQuery, useGetEmployeesQuery } from '@/store/api';
 import CreateEventForm from './createEvent';
+import { formatTime } from '@/utils/date-utils';
 
 const DAY_START_HOUR = 7;
 const DAY_END_HOUR = 17;
@@ -42,11 +43,11 @@ const ShopCalendarPage = () => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
-  
+
   const [is12HourFormat, setIs12HourFormat] = useState(true);
   const [isAxisSwapped, setIsAxisSwapped] = useState(false);
-  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
-  
+  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day');
+
   const [filters, setFilters] = useState({
     fabType: '',
     workstation: '',
@@ -181,17 +182,14 @@ const ShopCalendarPage = () => {
     return `${hour.toString().padStart(2, '0')}:00`;
   });
 
-  const formatTime = (date: Date | string) => {
-    const d = typeof date === 'string' ? new Date(date) : date;
-    return is12HourFormat ? format(d, 'hh:mm a') : format(d, 'HH:mm');
-  };
+
 
   const getFabTypeColor = (fabType: string) => {
     const map: Record<string, string> = {
       standard: 'bg-[#9eeb47] text-gray-900 border-[#9eeb47]',
       'fab only': 'bg-[#5bd1d7] text-gray-900 border-[#5bd1d7]',
       'cust redo': 'bg-[#f0bf4c] text-gray-900 border-[#f0bf4c]',
-     "resurface": 'bg-[#d094ea] text-gray-900 border-[#d094ea]',
+      "resurface": 'bg-[#d094ea] text-gray-900 border-[#d094ea]',
       'fast track': 'bg-[#f59794] text-gray-900 border-[#f59794]',
       'ag redo': 'bg-[#f5cc94] text-gray-900 border-[#f5cc94]',
     };
@@ -209,7 +207,7 @@ const ShopCalendarPage = () => {
 
   const getEventsWithPositions = (events: any[]) => {
     if (!events.length) return [];
-    const sorted = [...events].sort((a, b) => 
+    const sorted = [...events].sort((a, b) =>
       new Date(a.scheduled_start_date).getTime() - new Date(b.scheduled_start_date).getTime()
     );
     const ranges = sorted.map((event, idx) => {
@@ -243,8 +241,8 @@ const ShopCalendarPage = () => {
   };
 
   const renderEventCard = (event: any) => {
-    const startTime = formatTime(new Date(event.scheduled_start_date));
-    const endTime = formatTime(new Date(new Date(event.scheduled_start_date).getTime() + event.estimated_hours * 60 * 60 * 1000));
+    const startTime = formatTime(new Date(event.scheduled_start_date), is12HourFormat);
+    const endTime = formatTime(new Date(new Date(event.scheduled_start_date).getTime() + event.estimated_hours * 60 * 60 * 1000), is12HourFormat);
     return (
       <div
         key={event.id}
@@ -286,11 +284,11 @@ const ShopCalendarPage = () => {
               viewMode === 'day'
                 ? format(currentDate, 'EEEE, MMMM d, yyyy')
                 : viewMode === 'week'
-                ? `Week of ${format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMMM d')} – ${format(
+                  ? `Week of ${format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMMM d')} – ${format(
                     addDays(startOfWeek(currentDate, { weekStartsOn: 1 }), 6),
                     'MMMM d, yyyy'
                   )}`
-                : format(currentDate, 'MMMM yyyy')
+                  : format(currentDate, 'MMMM yyyy')
             }
           />
           <ToolbarActions className="flex items-center gap-2 flex-wrap">
@@ -298,42 +296,20 @@ const ShopCalendarPage = () => {
               <Button variant={viewMode === 'day' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('day')}>
                 Day
               </Button>
-              <Button variant={viewMode === 'week' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('week')}>
+              {/* <Button variant={viewMode === 'week' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('week')}>
                 Week
-              </Button>
+              </Button> */}
               <Button variant={viewMode === 'month' ? 'default' : 'outline'} size="sm" onClick={() => setViewMode('month')}>
                 Month
               </Button>
             </div>
 
-            <div className="flex items-center gap-1 border-r pr-2">
-              <Button variant="outline" size="sm" onClick={handlePrevious}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    <CalendarIcon className="h-4 w-4 mr-2" />
-                    {format(currentDate, 'MMM d, yyyy')}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={currentDate}
-                    onSelect={(date) => date && setCurrentDate(date)}
-                  />
-                </PopoverContent>
-              </Popover>
-              <Button variant="outline" size="sm" onClick={handleNext}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
 
-            <Button variant="outline" size="sm" onClick={() => setIs12HourFormat(!is12HourFormat)}>
+
+            {/* <Button variant="outline" size="sm" onClick={() => setIs12HourFormat(!is12HourFormat)}>
               <Clock className="h-4 w-4 mr-2" />
               {is12HourFormat ? '12h' : '24h'}
-            </Button>
+            </Button> */}
 
             {viewMode !== 'month' && (
               <Button variant="outline" size="sm" onClick={() => setIsAxisSwapped(!isAxisSwapped)}>
@@ -423,7 +399,7 @@ const ShopCalendarPage = () => {
         <Card className="mt-6">
           <CardHeader className="pb-3 border-b">
             <CardTitle className="text-lg font-semibold">
-              <p className="text-sm text-gray-600 mt-1">
+              {/* <p className="text-sm text-gray-600 mt-1">
                 {viewMode === 'day'
                   ? format(currentDate, 'EEEE, MMMM d, yyyy')
                   : viewMode === 'week'
@@ -432,7 +408,30 @@ const ShopCalendarPage = () => {
                       'EEEE, MMMM d, yyyy'
                     )}`
                   : format(currentDate, 'MMMM yyyy')}
-              </p>
+              </p> */}
+              <div className="flex items-center gap-1 border-r pr-2">
+                <Button variant="outline" size="sm" onClick={handlePrevious}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <CalendarIcon className="h-4 w-4 mr-2" />
+                      {format(currentDate, 'MMM d, yyyy')}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={currentDate}
+                      onSelect={(date) => date && setCurrentDate(date)}
+                    />
+                  </PopoverContent>
+                </Popover>
+                <Button variant="outline" size="sm" onClick={handleNext}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
             </CardTitle>
             <div className="text-right">
               <p className="text-sm font-medium text-gray-700">
@@ -474,9 +473,8 @@ const ShopCalendarPage = () => {
                               return (
                                 <div
                                   key={dateKey}
-                                  className={`border rounded p-2 min-h-[80px] cursor-pointer hover:bg-gray-50 transition-colors ${
-                                    !isCurrentMonth ? 'bg-gray-100 text-gray-400' : ''
-                                  }`}
+                                  className={`border rounded p-2 min-h-[80px] cursor-pointer hover:bg-gray-50 transition-colors ${!isCurrentMonth ? 'bg-gray-100 text-gray-400' : ''
+                                    }`}
                                   onClick={() => {
                                     setCurrentDate(day);
                                     setViewMode('day');
@@ -512,7 +510,7 @@ const ShopCalendarPage = () => {
                                     className="absolute w-full text-xs font-medium text-gray-600"
                                     style={{ top: i * HOUR_HEIGHT, height: HOUR_HEIGHT, lineHeight: `${HOUR_HEIGHT}px` }}
                                   >
-                                    {formatTime(new Date().setHours(hour, 0, 0, 0))}
+                                    {formatTime(new Date().setHours(hour, 0, 0, 0), is12HourFormat)}
                                   </div>
                                 );
                               })}
@@ -532,9 +530,8 @@ const ShopCalendarPage = () => {
                                     {format(day, 'EEE')}
                                   </div>
                                   <div
-                                    className={`text-lg font-bold ${
-                                      isSameDay(day, new Date()) ? 'text-blue-600' : 'text-gray-900'
-                                    }`}
+                                    className={`text-lg font-bold ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-gray-900'
+                                      }`}
                                   >
                                     {format(day, 'd')}
                                   </div>
@@ -561,7 +558,9 @@ const ShopCalendarPage = () => {
                         <div className="flex gap-2">
                           <div className="w-24 flex-shrink-0">
                             <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Day</div>
-                            <div style={{ height: displayDays.length * 80 }}>
+                            <div 
+                            style={{ height: displayDays.length * 80 }}
+                            >
                               {displayDays.map((day, idx) => (
                                 <div
                                   key={format(day, 'yyyy-MM-dd')}
@@ -571,9 +570,8 @@ const ShopCalendarPage = () => {
                                     {format(day, 'EEE')}
                                   </div>
                                   <div
-                                    className={`text-lg font-bold ${
-                                      isSameDay(day, new Date()) ? 'text-blue-600' : 'text-gray-900'
-                                    }`}
+                                    className={`text-lg font-bold ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-gray-900'
+                                      }`}
                                   >
                                     {format(day, 'd')}
                                   </div>
@@ -588,7 +586,7 @@ const ShopCalendarPage = () => {
                               <div key={time} className="flex-1 min-w-[100px]">
                                 <div className="text-center mb-2">
                                   <div className="text-xs font-semibold text-gray-500 uppercase">
-                                    {formatTime(new Date().setHours(hour, 0, 0, 0))}
+                                    {formatTime(new Date().setHours(hour, 0, 0, 0), is12HourFormat)}
                                   </div>
                                 </div>
                                 <div>

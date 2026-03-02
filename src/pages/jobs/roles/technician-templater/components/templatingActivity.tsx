@@ -27,13 +27,15 @@ const formSchema = z.object({
   ),
   notes: z.string().optional(),
   square_ft: z.string().optional(),
+  revenue: z.string().optional(),
 });
 
 interface TemplatingActivityFormProps {
   fabId?: string;
+  revenue?: number;
 }
 
-export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
+export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFormProps) {
   const [openModal, setOpenModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -149,7 +151,8 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
       schedule_start_date: "", // Added default
       duration: "",
       notes: "",
-      square_ft: ''
+      square_ft: '',
+      revenue: ''
     },
   });
 
@@ -170,13 +173,17 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
           : "",
         duration: templatingData.data.duration || "",
         notes: "",
-        square_ft: templatingData.data.total_sqft?.toString() || ''
+        square_ft: templatingData.data.total_sqft?.toString() || '',
       };
+     
 
       // Use reset with { keepDefaultValues: false } to prevent infinite loop
       form.reset(formValues, { keepDefaultValues: false });
     }
-  }, [templatingData]);
+    if (revenue && !form.getValues('revenue')) {
+      form.setValue('revenue', String(revenue));
+    }
+  }, [templatingData, revenue]);
 
   if (isTemplatingLoading) {
     return <div>Loading...</div>;
@@ -262,6 +269,7 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
                         field.onChange(formatted);
                       }}
                       placeholder="Select scheduled date"
+                      minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
                     />
                   </FormControl>
                   <FormMessage />
@@ -306,6 +314,26 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
                         }
                       }}
                       placeholder="Select complete date"
+                      minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="revenue"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Revenue</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="Enter revenue amount"
+                      {...field}
                     />
                   </FormControl>
                   <FormMessage />
@@ -326,6 +354,8 @@ export function TemplatingActivityForm({ fabId }: TemplatingActivityFormProps) {
               )}
             />
           </div>
+
+         
 
           <FormField
             control={form.control}
