@@ -1389,7 +1389,7 @@ export const jobApi = createApi({
             // Delete file from slab smith
             deleteFileFromSlabSmith: build.mutation<any, { slabsmith_id: number; file_id: string }>({
                 query: ({ slabsmith_id, file_id }) => ({
-                    url: `/slabsmith/${slabsmith_id}/files/${file_id}`,
+                    url: `/slabsmith/${slabsmith_id}/file/${file_id}`,
                     method: "delete"
                 }),
                 invalidatesTags: ["Fab"],

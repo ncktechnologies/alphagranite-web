@@ -36,6 +36,7 @@ const DAY_START_HOUR = 7;
 const DAY_END_HOUR = 17;
 const TOTAL_HOURS = DAY_END_HOUR - DAY_START_HOUR;
 const HOUR_HEIGHT = 60;
+const HOUR_WIDTH = 100;
 
 const ShopCalendarPage = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -181,7 +182,7 @@ const ShopCalendarPage = () => {
     const hour = 7 + i;
     return `${hour.toString().padStart(2, '0')}:00`;
   });
-
+  
 
 
   const getFabTypeColor = (fabType: string) => {
@@ -303,8 +304,6 @@ const ShopCalendarPage = () => {
                 Month
               </Button>
             </div>
-
-
 
             {/* <Button variant="outline" size="sm" onClick={() => setIs12HourFormat(!is12HourFormat)}>
               <Clock className="h-4 w-4 mr-2" />
@@ -555,70 +554,124 @@ const ShopCalendarPage = () => {
                           })}
                         </div>
                       ) : (
-                        <div className="flex gap-2">
-                          <div className="w-24 flex-shrink-0">
-                            <div className="text-xs font-semibold text-gray-500 uppercase mb-2">Day</div>
-                            <div 
-                            style={{ height: displayDays.length * 80 }}
-                            >
-                              {displayDays.map((day, idx) => (
-                                <div
-                                  key={format(day, 'yyyy-MM-dd')}
-                                  className="h-20 flex flex-col justify-center"
-                                >
+                        // Time Rows layout — each day is a row; events span columns by duration
+                        <div>
+                          {/* Time header */}
+                          <div className="flex">
+                            <div className="w-24 flex-shrink-0" />
+                            <div className="flex" style={{ minWidth: TOTAL_HOURS * HOUR_WIDTH }}>
+                              {Array.from({ length: TOTAL_HOURS }, (_, i) => {
+                                const hour = DAY_START_HOUR + i;
+                                return (
+                                  <div
+                                    key={hour}
+                                    className="text-xs font-semibold text-gray-500 uppercase text-center mb-2"
+                                    style={{ width: HOUR_WIDTH, flexShrink: 0 }}
+                                  >
+                                    {formatTime(new Date().setHours(hour, 0, 0, 0), is12HourFormat)}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Day rows */}
+                          {displayDays.map((day) => {
+                            const dateKey = format(day, 'yyyy-MM-dd');
+                            const dayEvents = eventsByDay[dateKey] || [];
+                            const ROW_LANE_HEIGHT = 36;
+
+                            // Compute lanes so overlapping events don't stack
+                            const sorted = [...dayEvents].sort(
+                              (a, b) =>
+                                new Date(a.scheduled_start_date).getTime() -
+                                new Date(b.scheduled_start_date).getTime()
+                            );
+                            const lanes: any[][] = [];
+                            sorted.forEach((event) => {
+                              const start = new Date(event.scheduled_start_date).getTime();
+                              const end = start + event.estimated_hours * 3600000;
+                              let placed = false;
+                              for (const lane of lanes) {
+                                const last = lane[lane.length - 1];
+                                const lastEnd =
+                                  new Date(last.scheduled_start_date).getTime() +
+                                  last.estimated_hours * 3600000;
+                                if (lastEnd <= start) {
+                                  lane.push(event);
+                                  placed = true;
+                                  break;
+                                }
+                              }
+                              if (!placed) lanes.push([event]);
+                            });
+                            const numLanes = Math.max(lanes.length, 1);
+                            const rowHeight = numLanes * ROW_LANE_HEIGHT + 8;
+
+                            return (
+                              <div key={dateKey} className="flex border-b border-gray-100">
+                                <div className="w-24 flex-shrink-0 flex flex-col justify-center p-2">
                                   <div className="text-xs font-semibold text-gray-500">
                                     {format(day, 'EEE')}
                                   </div>
                                   <div
-                                    className={`text-lg font-bold ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-gray-900'
-                                      }`}
+                                    className={`text-lg font-bold ${
+                                      isSameDay(day, new Date()) ? 'text-blue-600' : 'text-gray-900'
+                                    }`}
                                   >
                                     {format(day, 'd')}
                                   </div>
                                 </div>
-                              ))}
-                            </div>
-                          </div>
+                                <div
+                                  className="relative border-l border-gray-200 cursor-pointer hover:bg-gray-50"
+                                  style={{ height: rowHeight, minWidth: TOTAL_HOURS * HOUR_WIDTH }}
+                                  onClick={() => handleCreateEvent(day)}
+                                >
+                                  {/* Hour grid lines */}
+                                  {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
+                                    <div
+                                      key={i}
+                                      className="absolute top-0 bottom-0 border-l border-gray-100"
+                                      style={{ left: i * HOUR_WIDTH }}
+                                    />
+                                  ))}
 
-                          {timeSlots.map((time) => {
-                            const hour = parseInt(time.split(':')[0]);
-                            return (
-                              <div key={time} className="flex-1 min-w-[100px]">
-                                <div className="text-center mb-2">
-                                  <div className="text-xs font-semibold text-gray-500 uppercase">
-                                    {formatTime(new Date().setHours(hour, 0, 0, 0), is12HourFormat)}
-                                  </div>
-                                </div>
-                                <div>
-                                  {displayDays.map((day) => {
-                                    const dayEvents = eventsByDay[format(day, 'yyyy-MM-dd')] || [];
-                                    const eventsAtHour = dayEvents.filter(
-                                      (e) => new Date(e.scheduled_start_date).getHours() === hour
-                                    );
-                                    return (
-                                      <div
-                                        key={format(day, 'yyyy-MM-dd') + time}
-                                        className="border border-gray-200 rounded p-1 h-20 cursor-pointer hover:bg-gray-50 relative overflow-y-auto"
-                                        onClick={() => handleCreateEvent(day, time)}
-                                      >
-                                        {eventsAtHour.map((e) => (
-                                          <div
-                                            key={e.id}
-                                            className={`text-[10px] p-0.5 rounded truncate ${getFabTypeColor(e.fab_type)}`}
-                                            onClick={(ev) => {
-                                              ev.stopPropagation();
-                                              setSelectedEvent(e);
-                                              setSelectedDate(new Date(e.scheduled_start_date));
-                                              setSelectedTimeSlot(time);
-                                              setShowCreateForm(true);
-                                            }}
-                                          >
-                                            FAB-{e.fab_id}
+                                  {/* Events absolutely positioned */}
+                                  {lanes.map((lane, laneIdx) =>
+                                    lane.map((event) => {
+                                      const startDt = new Date(event.scheduled_start_date);
+                                      const startHour =
+                                        startDt.getHours() + startDt.getMinutes() / 60;
+                                      const leftOffset = (startHour - DAY_START_HOUR) * HOUR_WIDTH;
+                                      const width = event.estimated_hours * HOUR_WIDTH;
+                                      return (
+                                        <div
+                                          key={event.id}
+                                          className={`absolute rounded border-l-4 overflow-hidden text-[10px] leading-tight px-1 cursor-pointer ${getFabTypeColor(event.fab_type)}`}
+                                          style={{
+                                            left: Math.max(0, leftOffset) + 1,
+                                            width: Math.max(HOUR_WIDTH * 0.5, width) - 3,
+                                            top: laneIdx * ROW_LANE_HEIGHT + 4,
+                                            height: ROW_LANE_HEIGHT - 6,
+                                          }}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedEvent(event);
+                                            setSelectedDate(new Date(event.scheduled_start_date));
+                                            setSelectedTimeSlot(
+                                              format(new Date(event.scheduled_start_date), 'HH:mm')
+                                            );
+                                            setShowCreateForm(true);
+                                          }}
+                                        >
+                                          <div className="font-semibold truncate">
+                                            FAB-{event.fab_id}
                                           </div>
-                                        ))}
-                                      </div>
-                                    );
-                                  })}
+                                          <div className="truncate">{event.fab_type}</div>
+                                        </div>
+                                      );
+                                    })
+                                  )}
                                 </div>
                               </div>
                             );

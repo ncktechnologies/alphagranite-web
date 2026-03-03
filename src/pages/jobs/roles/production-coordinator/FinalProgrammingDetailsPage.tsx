@@ -14,7 +14,8 @@ import {
   useToggleFabOnHoldMutation,
   useCreateFabNoteMutation,
   useAddFilesToFinalProgrammingMutation,
-  useCompleteFinalProgrammingMutation
+  useCompleteFinalProgrammingMutation,
+  useDeleteFileFromDraftingMutation
 } from '@/store/api/job';
 import { TimeTrackingComponent } from './components/TimeTrackingComponent';
 // import { FileViewer } from './components/FileViewer';
@@ -28,6 +29,7 @@ import { Documents } from '@/pages/shop/components/files';
 import { FileWithPreview } from '@/hooks/use-file-upload';
 import { getFileStage } from '@/utils/file-labeling';
 import { FileViewer } from '../slab-smith/components';
+import { BackButton } from '@/components/common/BackButton';
 
 
 const formatBytes = (bytes: number, decimals = 2) => {
@@ -59,7 +61,7 @@ export function FinalProgrammingDetailsPage() {
   const [createFabNote] = useCreateFabNoteMutation();
   const [addFilesToFinalProgramming] = useAddFilesToFinalProgrammingMutation();
   const [completeFinalProgramming] = useCompleteFinalProgrammingMutation();
-
+  const [deleteFileFromDraft] = useDeleteFileFromDraftingMutation();
   // Timer / Session State
   const [isDrafting, setIsDrafting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
@@ -268,8 +270,25 @@ export function FinalProgrammingDetailsPage() {
     setUploadedFileMetas(newFileMetas);
   }, []);
 
+  const handleDeleteFile = async (fileId: number) => {
+    
+    if (!fabData?.draft_data?.id) {
+      toast.error('Drafting entry not found');
+      return;
+    }
+    try {
+      await deleteFileFromDraft({ drafting_id: fabData?.draft_data?.id, file_id: String(fileId) }).unwrap();
+      toast.success('File deleted successfully');
+      refetchFab()
+    } catch (error) {
+      console.error('Failed to delete file:', error);
+      toast.error('Failed to delete file');
+    }
+  };
+  
+
   // Determine if upload section should be visible – show when timer is running/paused or files exist
-  const shouldShowUploadSection = (isDrafting || isPaused) || ((fabData as any)?.draft_data?.files?.length > 0);
+  const shouldShowUploadSection = (isDrafting && !isPaused) ;
 
   // Determine if submission is allowed – session must be ended (not active/paused) and files must exist
   const finalProgrammingFiles = fabData?.draft_data?.files?.filter((file: any) =>
@@ -280,7 +299,7 @@ export function FinalProgrammingDetailsPage() {
 ) || [];
 
 const hasFinalProgrammingFiles = finalProgrammingFiles.length > 0;
-const canOpenSubmit = hasFinalProgrammingFiles;
+const canOpenSubmit = hasFinalProgrammingFiles  && !isPaused && isDrafting;
 
   const handleOpenSubmissionModal = async () => {
     try {
@@ -451,14 +470,20 @@ const canOpenSubmit = hasFinalProgrammingFiles;
                       draftingId={fabData?.draft_data?.id}
                       refetchFiles={refetchFab}
                       stage="final_programming"
-                      disabled={!isDrafting && !isPaused}
+                      disabled={!isDrafting && isPaused}
                     />
                   ) : (
                     <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                      <p className="text-gray-500">Start the timer to enable file uploads</p>
-                      <p className="text-sm text-gray-400 mt-2">
-                        Files will appear here once uploaded
-                      </p>
+                      {isPaused ? (
+                        <p className="text-gray-500">Session is paused. Please resume to enable file uploads</p>
+                      ) : (
+                        <>
+                          <p className="text-gray-500">Start the timer to enable file uploads</p>
+                          <p className="text-sm text-gray-400 mt-2">
+                            Files will appear here once uploaded
+                          </p>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>
@@ -479,11 +504,14 @@ const canOpenSubmit = hasFinalProgrammingFiles;
                         file_ids: ""
                       }}
                       onFileClick={handleFileClick}
+                      onDeleteFile={(fileId: string) => handleDeleteFile(Number(fileId))}
+                      draftingId={fabData?.draft_data?.id}
                     />
                   </div>
                 )}
               </CardContent>
-              <div className="flex justify-end p-6 pt-0">
+              <div className="flex justify-end p-6 pt-0 gap-2 items-center">
+              <BackButton fallbackUrl="/job/final-programming" label='Cancel' />
                 <Can action="create" on="Final Programming">
                   <Button
                     onClick={handleOpenSubmissionModal}

@@ -787,7 +787,7 @@ export function RevisionDetailsPage() {
                   {/* Submit Button */}
                   {viewMode === 'activity' && (
                     <div className="flex justify-end gap-3 mt-6">
-                      <BackButton fallbackUrl="/job/revisions" label='Cancel' />
+                      <BackButton fallbackUrl="/job/revision" label='Cancel' />
                       <Button
                         onClick={() => setShowSubmissionModal(true)}
                         className="bg-purple-600 hover:bg-purple-700"

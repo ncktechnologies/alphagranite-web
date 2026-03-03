@@ -13,6 +13,7 @@ import {
   useGetSlabSmithByFabIdQuery,
   useCreateSlabSmithMutation,
   useAddFilesToSlabSmithMutation,
+  useDeleteFileFromSlabSmithMutation,
   useManageSlabSmithSessionMutation,
   useGetSlabSmithSessionStatusQuery,
   useToggleFabOnHoldMutation,
@@ -29,6 +30,7 @@ import { UploadedFileMeta } from '@/types/uploads';
 import { X } from 'lucide-react';
 import { Can } from '@/components/permission';
 import { getFileStage } from '@/utils/file-labeling';      // <-- IMPORT for stage detection
+import { BackButton } from '@/components/common/BackButton';
 
 
 const formatBytes = (bytes: number, decimals = 2) => {
@@ -57,6 +59,7 @@ export function SlabSmithDetailsPage() {
   // Mutations
   const [createSlabSmith] = useCreateSlabSmithMutation();
   const [addFilesToSlabSmith] = useAddFilesToSlabSmithMutation();
+  const [deleteFileFromSlabSmith] = useDeleteFileFromSlabSmithMutation();
   const [manageSlabSmithSession] = useManageSlabSmithSessionMutation();
   const [toggleFabOnHold] = useToggleFabOnHoldMutation();
   const [createFabNote] = useCreateFabNoteMutation();
@@ -214,6 +217,23 @@ export function SlabSmithDetailsPage() {
     }
   }, [pendingFiles, slabSmithData, fabId, currentEmployeeId, createSlabSmith, addFilesToSlabSmith, refetchSlabSmith, fabData?.total_sqft]);
 
+  const handleDeleteFile = async (fileId: number) => {
+    
+    if (!slabSmithData?.id) {
+      toast.error('SlabSmith entry not found');
+      return;
+    }
+    try {
+      await deleteFileFromSlabSmith({ slabsmith_id: slabSmithData?.id, file_id: String(fileId) }).unwrap();
+      toast.success('File deleted successfully');
+      refetchFab()
+    } catch (error) {
+      console.error('Failed to delete file:', error);
+      toast.error('Failed to delete file');
+    }
+  };
+  
+
   // -----------------------------------------------------------------
   // Timer Handlers
   // -----------------------------------------------------------------
@@ -351,11 +371,11 @@ export function SlabSmithDetailsPage() {
   // Submission flow
   // -----------------------------------------------------------------
   // Determine if upload section should be visible – show when timer is running/paused or files exist
-  const shouldShowUploadSection = (isDrafting || isPaused) || ((fabData as any)?.slabsmith_data?.files?.length > 0);
+  const shouldShowUploadSection = (isDrafting && !isPaused) ;
 
   // Determine if submission is allowed – session must be ended (not active/paused) and files must exist
   const hasFiles = ((fabData as any)?.slabsmith_data?.files?.length > 0);
-  const canOpenSubmit = hasFiles;
+  const canOpenSubmit = hasFiles && !isPaused && isDrafting;
 
   const handleOpenSubmissionModal = async () => {
     try {
@@ -579,16 +599,23 @@ export function SlabSmithDetailsPage() {
                       onFileClick={handleFileClick}
                       slabSmithId={slabSmithData?.id}
                       refetchFiles={refetchFab}
-                      disabled={!isDrafting && !isPaused}
+                      disabled={!isDrafting}
                     />
                   ) : (
                     <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                      <p className="text-gray-500">Start the timer to enable file uploads</p>
-                      <p className="text-sm text-gray-400 mt-2">
-                        Files will appear here once uploaded
-                      </p>
+                      {isPaused ? (
+                        <p className="text-gray-500">Session is paused. Please resume to enable file uploads</p>
+                      ) : (
+                        <>
+                          <p className="text-gray-500">Start the timer to enable file uploads</p>
+                          <p className="text-sm text-gray-400 mt-2">
+                            Files will appear here once uploaded
+                          </p>
+                        </>
+                      )}
                     </div>
                   )}
+                    
                 </div>
 
                 {/* Server‑uploaded files – now also uses the same file click handler */}
@@ -599,12 +626,17 @@ export function SlabSmithDetailsPage() {
                       <Documents
                         slabsmithData={(fabData as any)?.slabsmith_data}
                         onFileClick={handleFileClick}
+                        // disabled={isPaused}
+                        onDeleteFile={(fileId: string) => handleDeleteFile(Number(fileId))}
+                        draftingId={slabSmithData?.id}
                       />
                     </div>
                   )}
               </CardContent>
 
-              <div className="flex justify-end p-6 pt-0">
+              <div className="flex justify-end p-6 pt-0 gap-2 items-center">
+              <BackButton fallbackUrl="/job/slab-smith" label='Cancel' />
+
                 {/* <Can action="create" on="Slab Smith"> */}
                   <Button
                     onClick={handleOpenSubmissionModal}
