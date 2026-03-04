@@ -129,6 +129,14 @@ export const shopCutPlanningApi = createApi({
         }),
         invalidatesTags: ["ShopCutPlan"],
       }),
+      createShopSuggestion: build.mutation<ShopCutPlanSuccessResponse<ShopCutPlan[]>, ShopCutPlanCreate>({
+        query: (data) => ({
+          url: "/api/v1/shop/plans/suggestions",
+          method: "post",
+          data: data,
+        }),
+        invalidatesTags: ["ShopCutPlan"],
+      }),
 
       // Get all shop plans
       getAllShopPlans: build.query<ShopCutPlanListResponse, ShopCutPlanListParams | void>({
@@ -237,4 +245,5 @@ export const {
   useDeleteShopPlanMutation,
   useUnscheduleShopPlanMutation,
   useRescheduleShopPlanMutation,
+  useCreateShopSuggestionMutation,
 } = shopCutPlanningApi;

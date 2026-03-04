@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Clock, Calendar, LoaderCircle, Plus, X } from 'lucide-react';
-import { format } from 'date-fns';
+import { ArrowLeft, Clock, Calendar, LoaderCircle, Plus, X, Sparkles } from 'lucide-react';
+import { format, addDays } from 'date-fns';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -16,11 +16,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { useCreateShopPlansMutation, useUpdateShopPlanMutation } from '@/store/api';
+import { useCreateShopPlansMutation, useCreateShopSuggestionMutation, useUpdateShopPlanMutation } from '@/store/api';
 import { useGetWorkstationsQuery, useGetPlanningSectionsQuery } from '@/store/api/workstation';
 import { useGetEmployeesQuery } from '@/store/api/employee';
+import { useGetFabsQuery } from '@/store/api/job'; // Added for FAB dropdown
 
 interface CreatePlanPageProps {
   onBack?: () => void;
@@ -43,11 +52,11 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const [searchParams] = useSearchParams();
   const urlFabId = searchParams.get('fabId');
 
-  // Use prop first, then URL param
   const effectivePrefillFabId = propPrefillFabId || urlFabId || '';
 
   const [createShopPlan, { isLoading }] = useCreateShopPlansMutation();
   const [updateShopPlan] = useUpdateShopPlanMutation();
+  const [createShopPlansSuggestion, { isLoading: isAutoScheduling }] = useCreateShopSuggestionMutation();
 
   const { data: workstationsData } = useGetWorkstationsQuery();
   const workstations = workstationsData?.data || (Array.isArray(workstationsData) ? workstationsData : []);
@@ -58,17 +67,36 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const { data: employeesData } = useGetEmployeesQuery();
   const employees = employeesData?.data || (Array.isArray(employeesData) ? employeesData : employeesData || []);
 
-  // Helper to create an empty entry, optionally with a specific date
+  // Fetch all FABs for dropdown
+  const { data: allFabsData, isLoading: isLoadingFabs } = useGetFabsQuery({ limit: 1000, current_stage: 'cut_list' });
+
+  const fabOptions = useMemo(() => {
+    if (!allFabsData) return [];
+    const fabs = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
+    return fabs.map((fab: any) => ({
+      value: String(fab.id),
+      label: `Fab ${fab.id} - (${fab.fab_type || 'N/A'})`,
+    }));
+  }, [allFabsData]);
+
+  // State for auto‑schedule modal
+  const [autoScheduleModalOpen, setAutoScheduleModalOpen] = useState(false);
+  const [windowStart, setWindowStart] = useState<Date>(propSelectedDate || new Date());
+  const [windowEnd, setWindowEnd] = useState<Date>(addDays(propSelectedDate || new Date(), 7));
+  const [slotMinutes, setSlotMinutes] = useState(30);
+  const [maxSuggestions, setMaxSuggestions] = useState(10);
+
+  // Helper to create an empty entry
   const emptyEntry = (date?: Date) => ({
     id: undefined as number | undefined,
     fab_id: effectivePrefillFabId || '',
     workstation_id: '',
     operator_id: '',
     notes: '',
-    start_time: selectedTimeSlot || '09:00',
+    start_time: selectedTimeSlot || '',
     end_time: '',
     planning_section_id: undefined as string | undefined,
-    date: date || propSelectedDate || new Date(), // per‑stage date
+    date: date || propSelectedDate || new Date(),
   });
 
   const [entries, setEntries] = useState(() => [emptyEntry()]);
@@ -86,7 +114,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
         start_time: format(new Date(ev.scheduled_start_date), 'HH:mm'),
         end_time: ev.scheduled_end_date ? format(new Date(ev.scheduled_end_date), 'HH:mm') : '',
         planning_section_id: String(ev.planning_section_id || '') || undefined,
-        date: new Date(ev.scheduled_start_date), // use the event's date
+        date: new Date(ev.scheduled_start_date),
       }]);
     } else {
       setEntries([emptyEntry()]);
@@ -95,7 +123,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
 
   const addEntry = () =>
     setEntries((p) => {
-      // New stage inherits the fab_id from the first stage, but date can be independent
       const newEntry = emptyEntry();
       if (p[0]?.fab_id) newEntry.fab_id = p[0].fab_id;
       return [...p, newEntry];
@@ -106,7 +133,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const updateEntry = (idx: number, patch: Partial<any>) =>
     setEntries((p) => {
       const updated = p.map((e, i) => (i === idx ? { ...e, ...patch } : e));
-      // If first entry's fab_id changes, propagate to all others
       if (idx === 0 && patch.fab_id !== undefined) {
         return updated.map((e) => ({ ...e, fab_id: patch.fab_id }));
       }
@@ -114,11 +140,8 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     });
 
   const handleBack = () => {
-    if (onBack) {
-      onBack();
-    } else {
-      navigate(-1);
-    }
+    if (onBack) onBack();
+    else navigate(-1);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -200,7 +223,62 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     } catch (error: any) {
       console.error('Error creating/updating event:', error);
       const errorMsg = error?.data?.detail?.message || 'Failed to create/update Plan';
-      // toast.error(errorMsg);
+      toast.error(errorMsg);
+    }
+  };
+
+  // Auto‑schedule handler
+  const handleAutoSchedule = async () => {
+    // Validate entries
+    for (const entry of entries) {
+      if (!entry.fab_id) { toast.error('FAB ID is required'); return; }
+      if (!entry.operator_id) { toast.error('Operator is required'); return; }
+      if (!entry.workstation_id) { toast.error('Workstation is required'); return; }
+      if (!entry.start_time) { toast.error('Start time is required'); return; }
+      if (!entry.end_time) { toast.error('End time is required'); return; }
+      if (!entry.date) { toast.error('Date is required for each stage'); return; }
+    }
+
+    try {
+      const stages = entries.map((entry) => {
+        const scheduledDate = format(entry.date, 'yyyy-MM-dd');
+        const scheduledStart = `${scheduledDate}T${entry.start_time}:00`;
+        const scheduledEnd = `${scheduledDate}T${entry.end_time}:00`;
+        const diffMs = new Date(scheduledEnd).getTime() - new Date(scheduledStart).getTime();
+        const estimatedHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
+        return {
+          workstation_id: Number(entry.workstation_id),
+          planning_section_id: Number(entry.planning_section_id) || (planningSections[0]?.id ?? 0),
+          operator_ids: [Number(entry.operator_id)],
+          estimated_hours: estimatedHours,
+          scheduled_start: scheduledStart,
+          notes: entry.notes ? entry.notes : undefined,
+        };
+      });
+
+      const planData = {
+        fab_id: Number(entries[0].fab_id),
+        estimated_hours: stages.reduce((sum, s) => sum + s.estimated_hours, 0),
+        status_id: 1,
+        notes: entries[0].notes || undefined,
+        stages,
+      };
+
+      const payload = {
+        plan_data: planData,
+        window_start: windowStart.toISOString(),
+        window_end: windowEnd.toISOString(),
+        slot_minutes: slotMinutes,
+        max_suggestions_per_stage: maxSuggestions,
+      };
+
+      const result = await createShopPlansSuggestion(payload).unwrap();
+      toast.success('Auto‑scheduling suggestions received');
+      console.log('Suggestions:', result);
+      setAutoScheduleModalOpen(false);
+    } catch (error: any) {
+      console.error('Auto‑schedule error:', error);
+      toast.error(error?.data?.detail?.message || 'Failed to get suggestions');
     }
   };
 
@@ -261,21 +339,29 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
                 </div>
               </CardHeader>
               <CardContent className="pt-5 space-y-5">
-                {/* FAB ID */}
+                {/* FAB ID - Dropdown for first stage, disabled input for others */}
                 <div>
-                  <Label className="font-['Proxima_Nova:Semibold',sans-serif] text-[13px] text-[#4b545d]">FAB ID *</Label>
+                  <Label className=" text-[13px] text-[#4b545d]">FAB ID *</Label>
                   {idx === 0 ? (
-                    <Input
-                      type="number"
-                      placeholder="e.g., 37"
+                    <Select
                       value={entry.fab_id}
-                      onChange={(e) => updateEntry(idx, { fab_id: e.target.value })}
-                      className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]"
-                      disabled={!!effectivePrefillFabId && !isEditing}
-                    />
+                      onValueChange={(value) => updateEntry(idx, { fab_id: value })}
+                      disabled={isLoadingFabs || (!!effectivePrefillFabId && !isEditing)}
+                    >
+                      <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                        <SelectValue placeholder={isLoadingFabs ? "Loading FABs..." : "Select FAB ID"} />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-60" >
+                        {fabOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   ) : (
                     <Input
-                      type="number"
+                      type="text"
                       value={entry.fab_id}
                       disabled
                       className="mt-2 h-[42px] bg-[#f9f9f9] border-[#e2e4ed] rounded-[6px] text-[13px]"
@@ -415,13 +501,26 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
             <span className="font-['Proxima_Nova:Semibold',sans-serif] text-[14px]">Add Another Stage</span>
           </button>
 
+          {/* Auto Schedule button */}
+          {/* <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setAutoScheduleModalOpen(true)}
+              className="h-[44px] px-6 rounded-[8px] border border-[#7a9705] bg-white flex items-center justify-center gap-2 text-[#7a9705] hover:bg-[#f0f4e8] transition-all font-['Proxima_Nova:Semibold',sans-serif] text-[14px]"
+              disabled={isLoading || isAutoScheduling}
+            >
+              <Sparkles className="h-4 w-4" />
+              Auto Schedule
+            </button>
+          </div> */}
+
           {/* Footer actions */}
           <div className="flex items-center gap-3 pt-2 pb-8">
             <button
               type="button"
               onClick={handleBack}
               className="flex-1 h-[44px] border border-[#e2e4ed] rounded-[8px] font-['Proxima_Nova:Semibold',sans-serif] text-[14px] text-[#4b545d] hover:bg-gray-50 transition-colors"
-              disabled={isLoading}
+              disabled={isLoading || isAutoScheduling}
             >
               Cancel
             </button>
@@ -429,7 +528,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               type="submit"
               className="flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white font-['Proxima_Nova:Semibold',sans-serif] text-[14px] font-semibold disabled:opacity-60"
               style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
-              disabled={isLoading}
+              disabled={isLoading || isAutoScheduling}
             >
               {isLoading ? (
                 <>
@@ -443,6 +542,121 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
           </div>
         </form>
       </div>
+
+      {/* Auto‑Schedule Modal */}
+      <Dialog open={autoScheduleModalOpen} onOpenChange={setAutoScheduleModalOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Auto Schedule</DialogTitle>
+            <DialogDescription>
+              Set the scheduling window and parameters. The system will suggest optimal slots for your stages.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            {/* Window Start */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="window-start" className="text-right">Start</Label>
+              <div className="col-span-3">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        'w-full justify-start text-left font-normal',
+                        !windowStart && 'text-muted-foreground'
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {windowStart ? format(windowStart, 'PPP') : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={windowStart}
+                      onSelect={(date) => date && setWindowStart(date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            {/* Window End */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="window-end" className="text-right">End</Label>
+              <div className="col-span-3">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        'w-full justify-start text-left font-normal',
+                        !windowEnd && 'text-muted-foreground'
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {windowEnd ? format(windowEnd, 'PPP') : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={windowEnd}
+                      onSelect={(date) => date && setWindowEnd(date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            {/* Slot Minutes */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="slot-minutes" className="text-right">Slot (min)</Label>
+              <Input
+                id="slot-minutes"
+                type="number"
+                min={1}
+                value={slotMinutes}
+                onChange={(e) => setSlotMinutes(parseInt(e.target.value) || 30)}
+                className="col-span-3"
+              />
+            </div>
+
+            {/* Max Suggestions */}
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="max-suggestions" className="text-right">Max suggestions</Label>
+              <Input
+                id="max-suggestions"
+                type="number"
+                min={1}
+                value={maxSuggestions}
+                onChange={(e) => setMaxSuggestions(parseInt(e.target.value) || 10)}
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAutoScheduleModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAutoSchedule}
+              disabled={isAutoScheduling}
+            >
+              {isAutoScheduling ? (
+                <>
+                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                'Get Suggestions'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

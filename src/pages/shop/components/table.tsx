@@ -82,7 +82,15 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
     const [salesPersonFilter, setSalesPersonFilter] = useState<string>('all');
     const navigate = useNavigate();
 
-    const handleViewCalendar = (fabId: string) => navigate(`/shop/calendar?fabId=${fabId}`);
+    const handleViewCalendar = (fabId: string, date?: string) => {
+        const url = `/shop/calendar?fabId=${fabId}`;
+        if (date) {
+            const formattedDate = format(new Date(date), 'yyyy-MM-dd');
+            navigate(`${url}&date=${formattedDate}`);
+        } else {
+            navigate(url);
+        }
+    };
     const handleCreatePlan = (fabId: string) => navigate(`/shop/create-plan?fabId=${fabId}`);
 
     const queryParams = useMemo(() => ({
@@ -107,19 +115,45 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
     const totalRecords = fabsData?.total || 0;
 
     // Flatten into plan rows – only cut plans (planning_section_id === 7)
-  // Flatten into plan rows – include cut plans AND FABs without cut plans
-const planRows: ShopPlanRow[] = useMemo(() => {
-    const rows: ShopPlanRow[] = [];
-    fabs.forEach((fab: any) => {
-        const plans = fab.plans || [];
-        // Filter for cut planning section (id = 7)
-        const cutPlans = plans.filter((plan: any) => plan.planning_section_id === 7);
+    // Flatten into plan rows – include cut plans AND FABs without cut plans
+    const planRows: ShopPlanRow[] = useMemo(() => {
+        const rows: ShopPlanRow[] = [];
+        fabs.forEach((fab: any) => {
+            const plans = fab.plans || [];
+            // Filter for cut planning section (id = 7)
+            const cutPlans = plans.filter((plan: any) => plan.planning_section_id === 7);
 
-        if (cutPlans.length > 0) {
-            // FAB has cut plans – one row per cut plan
-            cutPlans.forEach((plan: any) => {
-                const scheduledDate = plan.scheduled_start_date;
-                const dateGroup = scheduledDate ? scheduledDate.split('T')[0] : 'unscheduled';
+            if (cutPlans.length > 0) {
+                // FAB has cut plans – one row per cut plan
+                cutPlans.forEach((plan: any) => {
+                    const scheduledDate = plan.scheduled_start_date;
+                    const dateGroup = scheduledDate ? scheduledDate.split('T')[0] : 'unscheduled';
+                    rows.push({
+                        fab_id: String(fab.id),
+                        fab_type: fab.fab_type || 'N/A',
+                        job_no: fab.job_details?.job_number || 'N/A',
+                        job_name: fab.job_details?.name || 'N/A',
+                        fab_info: `${fab.job_details?.name || ''} - ${fab.stone_type_name || ''} - ${fab.stone_color_name || ''}`.trim(),
+                        pieces: fab.no_of_pieces || 0,
+                        total_sq_ft: fab.total_sqft || 0,
+                        total_cut_ln_ft: fab.total_cut_ln_ft || 0,
+                        saw_cut_ln_ft: fab.cnc_linft || 0,
+                        water_jet_ln_ft: fab.wj_linft || 0,
+                        percent_complete: fab.percent_complete || 0,
+                        plan_id: plan.id,
+                        workstation_name: plan.workstation_name || '-',
+                        operator_name: plan.operator_name || '-',
+                        estimated_hours: plan.estimated_hours || 0,
+                        scheduled_start_date: plan.scheduled_start_date,
+                        plan_notes: plan.notes,
+                        date_group: dateGroup,
+                        shop_office_date_scheduled: fab.shop_date_schedule
+                            ? format(new Date(fab.shop_date_schedule), 'MM/dd/yyyy')
+                            : undefined,
+                    });
+                });
+            } else {
+                // FAB has NO cut plans – display one row with empty plan fields
                 rows.push({
                     fab_id: String(fab.id),
                     fab_type: fab.fab_type || 'N/A',
@@ -132,47 +166,21 @@ const planRows: ShopPlanRow[] = useMemo(() => {
                     saw_cut_ln_ft: fab.cnc_linft || 0,
                     water_jet_ln_ft: fab.wj_linft || 0,
                     percent_complete: fab.percent_complete || 0,
-                    plan_id: plan.id,
-                    workstation_name: plan.workstation_name || '-',
-                    operator_name: plan.operator_name || '-',
-                    estimated_hours: plan.estimated_hours || 0,
-                    scheduled_start_date: plan.scheduled_start_date,
-                    plan_notes: plan.notes,
-                    date_group: dateGroup,
+                    plan_id: 0, // placeholder, no actual plan
+                    workstation_name: '-',
+                    operator_name: '-',
+                    estimated_hours: 0,
+                    scheduled_start_date: undefined, // no date – will be grouped as 'unscheduled'
+                    plan_notes: null,
+                    date_group: 'unscheduled',
                     shop_office_date_scheduled: fab.shop_date_schedule
                         ? format(new Date(fab.shop_date_schedule), 'MM/dd/yyyy')
                         : undefined,
                 });
-            });
-        } else {
-            // FAB has NO cut plans – display one row with empty plan fields
-            rows.push({
-                fab_id: String(fab.id),
-                fab_type: fab.fab_type || 'N/A',
-                job_no: fab.job_details?.job_number || 'N/A',
-                job_name: fab.job_details?.name || 'N/A',
-                fab_info: `${fab.job_details?.name || ''} - ${fab.stone_type_name || ''} - ${fab.stone_color_name || ''}`.trim(),
-                pieces: fab.no_of_pieces || 0,
-                total_sq_ft: fab.total_sqft || 0,
-                total_cut_ln_ft: fab.total_cut_ln_ft || 0,
-                saw_cut_ln_ft: fab.cnc_linft || 0,
-                water_jet_ln_ft: fab.wj_linft || 0,
-                percent_complete: fab.percent_complete || 0,
-                plan_id: 0, // placeholder, no actual plan
-                workstation_name: '-',
-                operator_name: '-',
-                estimated_hours: 0,
-                scheduled_start_date: undefined, // no date – will be grouped as 'unscheduled'
-                plan_notes: null,
-                date_group: 'unscheduled',
-                shop_office_date_scheduled: fab.shop_date_schedule
-                        ? format(new Date(fab.shop_date_schedule), 'MM/dd/yyyy')
-                        : undefined,
-            });
-        }
-    });
-    return rows;
-}, [fabs]);
+            }
+        });
+        return rows;
+    }, [fabs]);
 
     // Filtering (client‑side after server filtering)
     const filteredRows = useMemo(() => {
@@ -237,13 +245,13 @@ const planRows: ShopPlanRow[] = useMemo(() => {
     const handleFabIdClick = (fabId: string) => console.log('PDF for', fabId);
 
     const columns = useMemo<ColumnDef<ShopPlanRow>[]>(() => [
-         {
+        {
             id: 'actions',
             header: () => <span className="text-sm text-text">ACTIONS</span>,
             cell: ({ row }) => (
                 <ActionsCell
                     row={row}
-                    onViewCalendar={() => handleViewCalendar(row.original.fab_id)}
+                    onViewCalendar={() => handleViewCalendar(row.original.fab_id, row.original.scheduled_start_date)}
                     onCreatePlan={() => handleCreatePlan(row.original.fab_id)}
                 />
             ),
@@ -399,7 +407,7 @@ const planRows: ShopPlanRow[] = useMemo(() => {
             enableSorting: true,
             size: 300,
         },
-       
+
     ], []);
 
     const flatData = useMemo(() => Object.values(groupedRows).flatMap(g => g.rows), [groupedRows]);

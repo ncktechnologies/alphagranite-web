@@ -78,14 +78,26 @@ interface ShopCalendarPageProps {
 
 const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
   const navigate = useNavigate();
-  const [currentDate, setCurrentDate] = useState(new Date());
+  // const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
 
-  const params = new URLSearchParams(location.search);
-  const lockedFabId = params.get('fabId');
+  // const params = new URLSearchParams(location.search);
+  // const lockedFabId = params.get('fabId');
 
+  const params = new URLSearchParams(location.search);
+const lockedFabId = params.get('fabId');
+const urlDate = params.get('date'); // get date from URL
+
+// Use urlDate to set initial currentDate if provided
+const [currentDate, setCurrentDate] = useState(() => {
+  if (urlDate) {
+    const parsed = new Date(urlDate);
+    if (!isNaN(parsed.getTime())) return parsed;
+  }
+  return new Date();
+});
   const [is12HourFormat] = useState(true);
   const [isAxisSwapped, setIsAxisSwapped] = useState(false);
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day');
@@ -592,7 +604,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                             >
                               <div className={`text-right text-[13px] font-medium ${!inMonth ? 'text-[#c0c4cc]' : 'text-[#4b545d]'}`}>{format(day, 'd')}</div>
                               {evs.length > 0 && (
-                                <Badge variant="outline" className="mt-1 text-[11px]">{evs.length} plan{evs.length !== 1 ? 's' : ''}</Badge>
+                                <Badge variant="outline" className="mt-1 text-[14px] font-semibold">{evs.length} plan{evs.length !== 1 ? 's' : ''}</Badge>
                               )}
                             </div>
                           );
@@ -666,11 +678,11 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                             >
                               <div className="relative flex items-center">
                                 <div
-                                  className="absolute -left-[90px] flex items-center justify-center rounded-[4px] px-1.5 py-0.5"
+                                  className="absolute -left-[90px] flex items-center justify-center rounded-[4px] px-1 py-0.5 z-20"
                                   style={{ backgroundColor: '#ee1a1d' }}
                                 >
-                                  <span className="text-[10px] font-semibold text-white whitespace-nowrap">
-                                    {format(currentTime, 'HH:mm')}
+                                  <span className="text-[9px] font-semibold text-white whitespace-nowrap  ">
+                                    {formatTime(currentTime, is12HourFormat)}
                                   </span>
                                 </div>
                                 {/* <div className="w-full h-px bg-[#ee1a1d]" /> */}
