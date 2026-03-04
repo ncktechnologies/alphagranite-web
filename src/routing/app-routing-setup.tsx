@@ -56,6 +56,7 @@ import { ResurfacingPage } from '@/pages/jobs/roles/resurfacing';
 import { InstallSchedulingPage } from '@/pages/jobs/roles/install-scheduling';
 import { InstallSchedulingDetailsPage } from '@/pages/jobs/roles/install-scheduling/components/details';
 import { ResurfacingDetailsPage } from '@/pages/jobs/roles/resurfacing/components/details';
+import CreatePlanPage from '@/pages/shop/components/createPlanePage';
 // import ShopCalendarPage from '@/pages/shop/calendarPage';
 
 export function AppRoutingSetup() {
@@ -364,6 +365,12 @@ export function AppRoutingSetup() {
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <ShopCalendarPage/>
               // </ProtectedRoute>
+            }
+          />
+          <Route
+            path='/shop/create-plan'
+            element={
+            <CreatePlanPage/>
             }
           />
           <Route

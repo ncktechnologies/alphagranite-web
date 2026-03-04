@@ -24,39 +24,39 @@ import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
 import { DataGridPagination } from '@/components/ui/data-grid-pagination';
 import { DataGridTableRowSelect, DataGridTableRowSelectAll } from '@/components/ui/data-grid-table';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Search, CalendarDays } from 'lucide-react';
+import { Search, CalendarDays, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DateRange } from 'react-day-picker';
-import { format } from 'date-fns';
+import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useGetFabsQuery } from '@/store/api/job'; // Import the API hook
-import { formatDate } from '@/utils/date-utils';
+import { useGetFabsQuery } from '@/store/api/job';
+import ActionsCell from './action';
+import { useNavigate } from 'react-router';
 
-export interface CutPlanningData {
-    id: number;
-    month: string;
-    monthDate?: string; // Full date format like "08 DECEMBER, 2025"
-    shop_cut_date_scheduled: string;
-    office_cut_date_scheduled: string;
-    fab_completion_date: string;
-    fab_type: string;
+export interface ShopPlanRow {
     fab_id: string;
+    fab_type: string;
     job_no: string;
+    job_name: string;
     fab_info: string;
     pieces: number;
     total_sq_ft: number;
-    percent_complete: number;
     total_cut_ln_ft: number;
     saw_cut_ln_ft: number;
-    wj_linft: number;
-    machining_workstation: string;
-    hours_scheduled: number;
-    machine_operator: string;
-    notes: string;
+    water_jet_ln_ft: number;
+    percent_complete: number;
+    plan_id: number;
+    workstation_name: string;
+    operator_name: string;
+    estimated_hours: number;
+    scheduled_start_date: string;
+    plan_notes: string | null;
+    date_group: string;
+    shop_office_date_scheduled?: string;
 }
 
 interface ShopTableProps {
@@ -67,7 +67,7 @@ interface ShopTableProps {
 
 const salesPersons: string[] = ['Mike Rodriguez', 'Sarah Johnson', 'Bruno Pires', 'Maria Garcia'];
 
-const ShopTable: React.FC<ShopTableProps> = ({ path = '/job/cut-list', isSuperAdmin = false, isLoading: externalLoading }) => {
+const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => {
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
         pageSize: 10,
@@ -75,454 +75,307 @@ const ShopTable: React.FC<ShopTableProps> = ({ path = '/job/cut-list', isSuperAd
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
-    const [dateRange, setDateRange] = useState<DateRange | undefined>({
-        // from: new Date(2025, 5, 2), // June 2, 2025
-        // to: new Date(2025, 5, 9), // June 9, 2025
-    });
+    const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
     const [salesPersonFilter, setSalesPersonFilter] = useState<string>('all');
+    const navigate = useNavigate();
 
-    // Fetch cut list data from API using the same approach as CutListPage
-    const queryParams = useMemo(() => {
-        return {
-            current_stage: 'cut_list',
-            skip: pagination.pageIndex * pagination.pageSize,
-            limit: pagination.pageSize,
-            ...(searchQuery && { search: searchQuery }),
-            ...(fabTypeFilter !== 'all' && { fab_type: fabTypeFilter }),
-        };
-    }, [searchQuery, fabTypeFilter, pagination]);
-    
+    const handleViewCalendar = (fabId: string) => navigate(`/shop/calendar?fabId=${fabId}`);
+    const handleCreatePlan = (fabId: string) => navigate(`/shop/create-plan?fabId=${fabId}`);
+
+    const queryParams = useMemo(() => ({
+        current_stage: 'cut_list',
+        skip: pagination.pageIndex * pagination.pageSize,
+        limit: pagination.pageSize,
+        ...(searchQuery && { search: searchQuery }),
+        ...(fabTypeFilter !== 'all' && { fab_type: fabTypeFilter }),
+    }), [searchQuery, fabTypeFilter, pagination]);
+
     const { data: fabsData, isLoading: isApiLoading } = useGetFabsQuery(queryParams);
-    
-    // Extract the fabs array from the response
+
     const fabs = useMemo(() => {
         if (!fabsData) return [];
-        
-        // Handle different response formats
-        if (Array.isArray(fabsData)) {
-            return fabsData;
-        } else if (typeof fabsData === 'object' && 'data' in fabsData) {
+        if (Array.isArray(fabsData)) return fabsData;
+        if (typeof fabsData === 'object' && 'data' in fabsData) {
             const responseData = fabsData.data;
-            if (Array.isArray(responseData)) {
-                return responseData;
-            } else if (typeof responseData === 'object' && responseData.data) {
-                return responseData.data || [];
-            }
+            if (Array.isArray(responseData)) return responseData;
+            if (typeof responseData === 'object' && responseData.data) return responseData.data || [];
         }
         return [];
     }, [fabsData]);
 
-    // Transform the Fab data to CutPlanningData format
-    const actualData: CutPlanningData[] = useMemo(() => {
-        return fabs.map((fab: any) => ({
-            id: fab.id,
-            month: fab.fab_type ? `${fab.fab_type.toUpperCase()} ${new Date().getFullYear()}` : 'N/A',
-            monthDate: fab.created_at ? format(new Date(fab.created_at), 'dd MMMM, yyyy') : format(new Date(), 'dd MMMM, yyyy'),
-            shop_cut_date_scheduled: fab.shop_date_schedule || '-',
-            office_cut_date_scheduled: fab.office_cut_date_scheduled || '-',
-            fab_completion_date: fab.completion_date || '-',
-            fab_type: fab.fab_type || 'N/A',
-            fab_id: fab.id.toString(),
-            job_no: fab.job_details?.job_number || 'N/A',
-            job_name: fab.job_details?.name || 'N/A',
-            fab_info: `${fab.job_details?.name || ''} - ${fab.stone_type_name || ''} - ${fab.stone_color_name || ''}`.trim(),
-            pieces: fab.no_of_pieces || 0,
-            total_sq_ft: fab.total_sqft || 0,
-            percent_complete: fab.percent_complete || 0,
-            total_cut_ln_ft: fab.total_cut_ln_ft || 0,
-            saw_cut_ln_ft: fab.saw_cut_ln_ft || 0,
-            water_jet_ln_ft: fab.water_jet_ln_ft || 0,
-            machining_workstation: fab.machining_workstation || '-',
-            hours_scheduled: fab.hours_scheduled || 0,
-            machine_operator: fab.machine_operator || '-',
-            notes: fab.notes || '-',
-        }));
+    const totalRecords = fabsData && typeof fabsData === 'object' && 'data' in fabsData && 'total' in fabsData ? fabsData.total : 0;
+
+    // Flatten into plan rows
+    const planRows: ShopPlanRow[] = useMemo(() => {
+        const rows: ShopPlanRow[] = [];
+        fabs.forEach((fab: any) => {
+            const plans = fab.plans || [];
+            plans.forEach((plan: any) => {
+                const scheduledDate = plan.scheduled_start_date;
+                const dateGroup = scheduledDate ? scheduledDate.split('T')[0] : 'unscheduled';
+                rows.push({
+                    fab_id: String(fab.id),
+                    fab_type: fab.fab_type || 'N/A',
+                    job_no: fab.job_details?.job_number || 'N/A',
+                    job_name: fab.job_details?.name || 'N/A',
+                    fab_info: `${fab.job_details?.name || ''} - ${fab.stone_type_name || ''} - ${fab.stone_color_name || ''}`.trim(),
+                    pieces: fab.no_of_pieces || 0,
+                    total_sq_ft: fab.total_sqft || 0,
+                    total_cut_ln_ft: fab.total_sqft || 0,
+                    saw_cut_ln_ft: fab.total_sqft || 0,
+                    water_jet_ln_ft: fab.wj_linft || 0,
+                    percent_complete: fab.percent_complete || 0,
+                    plan_id: plan.id,
+                    workstation_name: plan.workstation_name || '-',
+                    operator_name: plan.operator_name || '-',
+                    estimated_hours: plan.estimated_hours || 0,
+                    scheduled_start_date: plan.scheduled_start_date,
+                    plan_notes: plan.notes,
+                    date_group: dateGroup,
+                    shop_office_date_scheduled: fab.shop_date_schedule ? format(new Date(fab.shop_date_schedule), 'MM/dd/yyyy') : undefined,
+                });
+            });
+        });
+        return rows;
     }, [fabs]);
 
-    // If some rows only have fab_id but no fab_type, fetch details for those fabs
-    const [fabTypeMap, setFabTypeMap] = React.useState<Record<string, string>>({});
-    React.useEffect(() => {
-        const idsToFetch = Array.from(
-            new Set(
-                fabs
-                    .map((f: any) => f.id)
-                    .filter((id: any) => {
-                        const row = fabs.find((x: any) => x.id === id);
-                        return row && !row.fab_type && !fabTypeMap[String(id)];
-                    }),
-            ),
-        );
-
-        if (idsToFetch.length === 0) return;
-
-        let cancelled = false;
-
-        (async () => {
-            try {
-                await Promise.all(
-                    idsToFetch.map(async (id) => {
-                        try {
-                            const res = await fetch(`/api/v1/fabs/${id}`);
-                            if (!res.ok) return;
-                            const json = await res.json();
-                            const data = json?.data || json;
-                            const fabType = data?.fab_type || data?.fabType || '';
-                            if (!cancelled && fabType) {
-                                setFabTypeMap((prev) => ({ ...prev, [String(id)]: fabType }));
-                            }
-                        } catch (e) {
-                            // ignore individual failures
-                        }
-                    }),
-                );
-            } catch (err) {
-                // ignore
-            }
-        })();
-
-        return () => {
-            cancelled = true;
-        };
-    }, [fabs, fabTypeMap]);
-
-    const filteredData = useMemo(() => {
-        let result = actualData as CutPlanningData[];
-
-        // Text search
+    // Filtering
+    const filteredRows = useMemo(() => {
+        let result = planRows;
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
-            result = result.filter(
-                (item: CutPlanningData) =>
-                    item.job_no.toLowerCase().includes(q) ||
-                    item.fab_id.toLowerCase().includes(q) ||
-                    item.fab_info.toLowerCase().includes(q)
+            result = result.filter(r =>
+                r.job_no.toLowerCase().includes(q) ||
+                r.fab_id.toLowerCase().includes(q) ||
+                r.fab_info.toLowerCase().includes(q) ||
+                r.workstation_name.toLowerCase().includes(q) ||
+                r.operator_name.toLowerCase().includes(q)
             );
         }
-
-        // FAB type filter
         if (fabTypeFilter !== 'all') {
-            result = result.filter((item: CutPlanningData) => item.fab_type.toLowerCase() === fabTypeFilter.toLowerCase());
+            result = result.filter(r => r.fab_type.toLowerCase() === fabTypeFilter.toLowerCase());
         }
-
-        // Sales person filter (if we had that data, for now skip)
-
-        // Date range filter
         if (dateRange?.from && dateRange?.to) {
-            result = result.filter((item: CutPlanningData) => {
-                const itemDate = new Date(item.shop_cut_date_scheduled);
-                const start = new Date(dateRange.from!);
-                const end = new Date(dateRange.to!);
-                end.setHours(23, 59, 59, 999);
-                return itemDate >= start && itemDate <= end;
+            const start = startOfDay(dateRange.from);
+            const end = startOfDay(dateRange.to);
+            end.setHours(23, 59, 59, 999);
+            result = result.filter(r => {
+                if (!r.scheduled_start_date) return false;
+                const d = new Date(r.scheduled_start_date);
+                return d >= start && d <= end;
             });
         }
-
         return result;
-    }, [actualData, searchQuery, fabTypeFilter, salesPersonFilter, dateRange]);
+    }, [planRows, searchQuery, fabTypeFilter, dateRange]);
 
-    // Group data by shop_cut_date_scheduled (formatted) and get the display date
-    const groupedData = useMemo(() => {
-        const groups: Record<string, { rows: CutPlanningData[]; dateDisplay: string }> = {};
-        filteredData.forEach((item: CutPlanningData) => {
-            const rawDate = item.shop_cut_date_scheduled;
-            const dateDisplay = rawDate ? formatDate(rawDate) : 'Unscheduled';
-            const key = dateDisplay; // group by the formatted date
-            if (!groups[key]) {
-                groups[key] = {
-                    rows: [],
-                    dateDisplay,
-                };
-            }
-            groups[key].rows.push(item);
+    // Group by date
+    const groupedRows = useMemo(() => {
+        const groups: Record<string, { rows: ShopPlanRow[]; dateDisplay: string }> = {};
+        filteredRows.forEach(r => {
+            const key = r.date_group;
+            const display = key !== 'unscheduled'
+                ? format(new Date(r.scheduled_start_date), 'EEEE, MMMM d, yyyy')
+                : 'Unscheduled';
+            if (!groups[key]) groups[key] = { rows: [], dateDisplay: display };
+            groups[key].rows.push(r);
         });
         return groups;
-    }, [filteredData]);
+    }, [filteredRows]);
 
-    // Calculate totals for all data (single total row at top)
+    // Totals (deduplicate FABs)
     const overallTotals = useMemo(() => {
-        return {
-            pieces: filteredData.reduce((sum: number, row: CutPlanningData) => sum + row.pieces, 0),
-            total_sq_ft: filteredData.reduce((sum: number, row: CutPlanningData) => sum + row.total_sq_ft, 0),
-            total_cut_ln_ft: filteredData.reduce((sum: number, row: CutPlanningData) => sum + row.total_cut_ln_ft, 0),
-            saw_cut_ln_ft: filteredData.reduce((sum: number, row: CutPlanningData) => sum + row.saw_cut_ln_ft, 0),
-            water_jet_ln_ft: filteredData.reduce((sum: number, row: CutPlanningData) => sum + row.water_jet_ln_ft, 0),
-        };
-    }, [filteredData]);
+        const seen = new Set<string>();
+        let pieces = 0, sqft = 0, totalCut = 0, sawCut = 0, waterJet = 0;
+        filteredRows.forEach(r => {
+            if (!seen.has(r.fab_id)) {
+                seen.add(r.fab_id);
+                pieces += r.pieces;
+                sqft += r.total_sq_ft;
+                totalCut += r.total_cut_ln_ft;
+                sawCut += r.saw_cut_ln_ft;
+                waterJet += r.water_jet_ln_ft;
+            }
+        });
+        return { pieces, sqft, totalCut, sawCut, waterJet };
+    }, [filteredRows]);
 
-    const handleFabIdClick = (fabId: string) => {
-        // TODO: Open PDF diagram for this FAB ID
-        console.log('Opening PDF for FAB ID:', fabId);
-        // You can implement PDF viewer modal here
-    };
+    const handleFabIdClick = (fabId: string) => console.log('PDF for', fabId);
 
-    const columns = useMemo<ColumnDef<CutPlanningData>[]>(
-        () => [
-            // {
-            //     accessorKey: 'id',
-            //     accessorFn: (row: CutPlanningData) => row.id,
-            //     header: () => <DataGridTableRowSelectAll />,
-            //     cell: ({ row }) => <DataGridTableRowSelect row={row} />,
-            //     enableSorting: false,
-            //     enableHiding: false,
-            //     size: 48,
-            // },
-            {
-                id: 'month',
-                accessorFn: (row) => row.month,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="MONTH" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text font-medium">
-                        {row.original.month}
-                    </span>
-                ),
-                enableSorting: true,
-                size: 200,
+    const columns = useMemo<ColumnDef<ShopPlanRow>[]>(() => [
+        {
+            id: 'month',
+            accessorFn: r => r.scheduled_start_date,
+            header: ({ column }) => <DataGridColumnHeader title="MONTH" column={column} />,
+            cell: ({ row }) => {
+                const date = row.original.scheduled_start_date;
+                return <span className="text-sm text-text font-medium">{date ? format(new Date(date), 'MMM yyyy') : '-'}</span>;
             },
-            {
-                id: 'shop_cut_date_scheduled',
-                accessorFn: (row) => row.shop_cut_date_scheduled,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="SHOP CUT DATE SCHEDULED" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text">
-                        {row.original.shop_cut_date_scheduled !==null ? formatDate(row.original.shop_cut_date_scheduled) : '-'}
-                    </span>
-                ),
-                enableSorting: true,
-                size: 150,
-            },
-            {
-                id: 'office_cut_date_scheduled',
-                accessorFn: (row) => row.office_cut_date_scheduled,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="OFFICE CUT DATE SCHEDULED" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text">
-                        {row.original.office_cut_date_scheduled || '-'}
-                    </span>
-                ),
-                enableSorting: true,
-                size: 150,
-            },
-            {
-                id: 'fab_completion_date',
-                accessorFn: (row) => row.fab_completion_date,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="FAB COMPLETION DATE" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text">
-                        {row.original.fab_completion_date || '-'}
-                    </span>
-                ),
-                enableSorting: true,
-                size: 150,
-            },
-            {
-                id: 'fab_type',
-                accessorFn: (row) => row.fab_type,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="FAB TYPE" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text whitespace-nowrap">
-                        {row.original.fab_type}
-                    </span>
-                ),
-                enableSorting: true,
-                size: 100,
-            },
-            {
-                id: 'fab_id',
-                accessorFn: (row) => row.fab_id,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="FAB ID" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <button
-                        onClick={() => handleFabIdClick(row.original.fab_id)}
-                        className="text-sm text-primary hover:underline cursor-pointer"
-                    >
-                        {row.original.fab_id}
-                    </button>
-                ),
-                enableSorting: true,
-                size: 100,
-            },
-            {
-                id: 'job_no',
-                accessorFn: (row) => row.job_no,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="JOB NO" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text">{row.original.job_no}</span>
-                ),
-                enableSorting: true,
-                size: 100,
-            },
-            {
-                id: 'fab_info',
-                accessorFn: (row) => row.fab_info,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="FAB INFO" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text">
-                        {row.original.fab_info}
-                    </span>
-                ),
-                enableSorting: true,
-                size: 500, // Increase the size for better readability
-            },
-            {
-                id: 'pieces',
-                accessorFn: (row) => row.pieces,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="NO. OF PIECES" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text">{row.original.pieces}</span>
-                ),
-                enableSorting: true,
-            },
-            {
-                id: 'total_sq_ft',
-                accessorFn: (row) => row.total_sq_ft,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="TOTAL SQ FT" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text">{row.original.total_sq_ft}</span>
-                ),
-                enableSorting: true,
-            },
-            {
-                id: 'percent_complete',
-                accessorFn: (row) => row.percent_complete,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="% COMPLETE" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text">
-                        {row.original.percent_complete.toFixed(2)}%
-                    </span>
-                ),
-                enableSorting: true,
-            },
-            {
-                id: 'total_cut_ln_ft',
-                accessorFn: (row) => row.total_cut_ln_ft,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="TOTAL CUT LN FT" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text">
-                        {row.original.total_cut_ln_ft || '-'}
-                    </span>
-                ),
-                enableSorting: true,
-            },
-            {
-                id: 'saw_cut_ln_ft',
-                accessorFn: (row) => row.saw_cut_ln_ft,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="SAW CUT LN FT" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text">
-                        {row.original.saw_cut_ln_ft || '-'}
-                    </span>
-                ),
-                enableSorting: true,
-            },
-            {
-                id: 'water_jet_ln_ft',
-                accessorFn: (row) => row.wj_linft,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="WATER JET LN FT" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text">
-                        {row.original.wj_linft || '-'}
-                    </span>
-                ),
-                enableSorting: true,
-            },
-            {
-                id: 'machining_workstation',
-                accessorFn: (row) => row.machining_workstation,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="MACHINING WORKSTATION" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text">
-                        {row.original.machining_workstation || '-'}
-                    </span>
-                ),
-                enableSorting: true,
-            },
-            {
-                id: 'hours_scheduled',
-                accessorFn: (row) => row.hours_scheduled,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="HOURS SCHEDULED" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text">
-                        {row.original.hours_scheduled || '0'}
-                    </span>
-                ),
-                enableSorting: true,
-            },
-            {
-                id: 'machine_operator',
-                accessorFn: (row) => row.machine_operator,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="MACHINE OPERATOR" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text">
-                        {row.original.machine_operator || '-'}
-                    </span>
-                ),
-                enableSorting: true,
-            },
-            {
-                id: 'notes',
-                accessorFn: (row) => row.notes,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="NOTES" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text">
-                        {row.original.notes || '-'}
-                    </span>
-                ),
-                enableSorting: true,
-                size: 300, // Increase the size for better readability
-            },
-        ],
-        []
-    );
+            enableSorting: true,
+            size: 200,
+        },
+        {
+            id: 'shop_cut_date_scheduled',
+            accessorFn: r => r.scheduled_start_date,
+            header: ({ column }) => <DataGridColumnHeader title="SHOP CUT DATE SCHEDULED" column={column} />,
+            cell: ({ row }) => (
+                <span className="text-sm text-text">
+                    {row.original.scheduled_start_date ? format(new Date(row.original.scheduled_start_date), 'MM/dd/yyyy') : '-'}
+                </span>
+            ),
+            enableSorting: true,
+            size: 150,
+        },
+        {
+            id: 'shop_office_date_scheduled',
+            accessorFn: (row) => row.shop_office_date_scheduled,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="OFFICE CUT DATE SCHEDULED" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm text-text">
+                    {row.original.shop_office_date_scheduled || '-'}
+                </span>
+            ),
+            enableSorting: true,
+            size: 150,
+        },
+        {
+            id: 'fab_type',
+            accessorFn: r => r.fab_type,
+            header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text whitespace-nowrap">{row.original.fab_type}</span>,
+            enableSorting: true,
+            size: 100,
+        },
+        {
+            id: 'fab_id',
+            accessorFn: r => r.fab_id,
+            header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
+            cell: ({ row }) => (
+                <button
+                    onClick={() => handleFabIdClick(row.original.fab_id)}
+                    className="text-sm text-primary hover:underline cursor-pointer"
+                >
+                    {row.original.fab_id}
+                </button>
+            ),
+            enableSorting: true,
+            size: 100,
+        },
+        {
+            id: 'job_no',
+            accessorFn: r => r.job_no,
+            header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.job_no}</span>,
+            enableSorting: true,
+            size: 100,
+        },
+        {
+            id: 'fab_info',
+            accessorFn: r => r.fab_info,
+            header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.fab_info}</span>,
+            enableSorting: true,
+            size: 500,
+        },
+        {
+            id: 'pieces',
+            accessorFn: r => r.pieces,
+            header: ({ column }) => <DataGridColumnHeader title="NO. OF PIECES" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.pieces}</span>,
+            enableSorting: true,
+        },
+        {
+            id: 'total_sq_ft',
+            accessorFn: r => r.total_sq_ft,
+            header: ({ column }) => <DataGridColumnHeader title="TOTAL SQ FT" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.total_sq_ft}</span>,
+            enableSorting: true,
+        },
+        {
+            id: 'percent_complete',
+            accessorFn: r => r.percent_complete,
+            header: ({ column }) => <DataGridColumnHeader title="% COMPLETE" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.percent_complete.toFixed(2)}%</span>,
+            enableSorting: true,
+        },
+        {
+            id: 'total_cut_ln_ft',
+            accessorFn: r => r.total_cut_ln_ft,
+            header: ({ column }) => <DataGridColumnHeader title="TOTAL CUT LN FT" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.total_cut_ln_ft || '-'}</span>,
+            enableSorting: true,
+        },
+        {
+            id: 'saw_cut_ln_ft',
+            accessorFn: r => r.saw_cut_ln_ft,
+            header: ({ column }) => <DataGridColumnHeader title="SAW CUT LN FT" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.saw_cut_ln_ft || '-'}</span>,
+            enableSorting: true,
+        },
+        {
+            id: 'water_jet_ln_ft',
+            accessorFn: r => r.water_jet_ln_ft,
+            header: ({ column }) => <DataGridColumnHeader title="WATER JET LN FT" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.water_jet_ln_ft || '-'}</span>,
+            enableSorting: true,
+        },
+        {
+            id: 'workstation',
+            accessorFn: r => r.workstation_name,
+            header: ({ column }) => <DataGridColumnHeader title="WORKSTATION" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.workstation_name}</span>,
+            enableSorting: true,
+            size: 150,
+        },
+        {
+            id: 'operator',
+            accessorFn: r => r.operator_name,
+            header: ({ column }) => <DataGridColumnHeader title="OPERATOR" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.operator_name}</span>,
+            enableSorting: true,
+            size: 150,
+        },
+        {
+            id: 'hours_scheduled',
+            accessorFn: r => r.estimated_hours,
+            header: ({ column }) => <DataGridColumnHeader title="HOURS SCHEDULED" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.estimated_hours.toFixed(1)}</span>,
+            enableSorting: true,
+        },
+        {
+            id: 'notes',
+            accessorFn: r => r.plan_notes,
+            header: ({ column }) => <DataGridColumnHeader title="NOTES" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.plan_notes || '-'}</span>,
+            enableSorting: true,
+            size: 300,
+        },
+        {
+            id: 'actions',
+            header: () => <span className="text-sm text-text">ACTIONS</span>,
+            cell: ({ row }) => (
+                <ActionsCell
+                    row={row}
+                    onViewCalendar={() => handleViewCalendar(row.original.fab_id)}
+                    onCreatePlan={() => handleCreatePlan(row.original.fab_id)}
+                />
+            ),
+            enableSorting: false,
+            size: 50,
+        },
+    ], []);
 
-    // Flatten grouped data for table (we'll render groups manually)
-    const flatData = useMemo(() => {
-        return Object.values(groupedData).flatMap((group) => group.rows);
-    }, [groupedData]);
+    const flatData = useMemo(() => Object.values(groupedRows).flatMap(g => g.rows), [groupedRows]);
 
     const table = useReactTable({
         columns,
         data: flatData,
-        pageCount: Math.ceil((flatData?.length || 0) / pagination.pageSize),
-        getRowId: (row: CutPlanningData) => String(row.id),
+        pageCount: Math.ceil(totalRecords / pagination.pageSize),
+        getRowId: row => `${row.fab_id}_${row.plan_id}`,
         state: { pagination, sorting, rowSelection },
         columnResizeMode: 'onChange',
         onPaginationChange: setPagination,
@@ -533,6 +386,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ path = '/job/cut-list', isSuperAd
         getFilteredRowModel: getFilteredRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
+        manualPagination: true, // since we control via API
     });
 
     return (
@@ -554,10 +408,10 @@ const ShopTable: React.FC<ShopTableProps> = ({ path = '/job/cut-list', isSuperAd
                         <div className="relative">
                             <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
                             <Input
-                                placeholder="Search by job, Fab ID"
+                                placeholder="Search by job, Fab ID, workstation..."
                                 value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="ps-9 w-[230px] h-[34px]"
+                                onChange={e => setSearchQuery(e.target.value)}
+                                className="ps-9 w-[280px] h-[34px]"
                                 disabled={isApiLoading || externalLoading}
                             />
                             {searchQuery && (
@@ -606,25 +460,8 @@ const ShopTable: React.FC<ShopTableProps> = ({ path = '/job/cut-list', isSuperAd
                                     numberOfMonths={2}
                                 />
                                 <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => {
-                                            setTempDateRange(undefined);
-                                            setDateRange(undefined);
-                                        }}
-                                    >
-                                        Reset
-                                    </Button>
-                                    <Button
-                                        size="sm"
-                                        onClick={() => {
-                                            setDateRange(tempDateRange);
-                                            setIsDatePickerOpen(false);
-                                        }}
-                                    >
-                                        Apply
-                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); }}>Reset</Button>
+                                    <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
                                 </div>
                             </PopoverContent>
                         </Popover>
@@ -650,18 +487,12 @@ const ShopTable: React.FC<ShopTableProps> = ({ path = '/job/cut-list', isSuperAd
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Sales Persons</SelectItem>
-                                {salesPersons.map((person) => (
-                                    <SelectItem key={person} value={person}>
-                                        {person}
-                                    </SelectItem>
+                                {salesPersons.map(person => (
+                                    <SelectItem key={person} value={person}>{person}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
-                        <Button
-                            variant="outline"
-                            onClick={() => exportTableToCSV(table, 'cut-planning-data')}
-                            disabled={isApiLoading || externalLoading}
-                        >
+                        <Button variant="outline" onClick={() => exportTableToCSV(table, 'shop-plan-schedule')} disabled={isApiLoading || externalLoading}>
                             Export CSV
                         </Button>
                     </CardToolbar>
@@ -672,158 +503,91 @@ const ShopTable: React.FC<ShopTableProps> = ({ path = '/job/cut-list', isSuperAd
                         <div className="relative">
                             {(isApiLoading || externalLoading) ? (
                                 <div className="flex items-center justify-center h-64">
-                                    <p>Loading cut list data...</p>
+                                    <p>Loading shop schedule...</p>
                                 </div>
                             ) : (
                                 <table className="w-full border-collapse">
-                                    {/* Table Header */}
                                     <thead>
-                                        {table.getHeaderGroups().map((headerGroup) => (
+                                        {table.getHeaderGroups().map(headerGroup => (
                                             <tr key={headerGroup.id}>
-                                                {headerGroup.headers.map((header) => (
+                                                {headerGroup.headers.map(header => (
                                                     <th
                                                         key={header.id}
-                                                        className="px-4 py-3 text-left text-xs font-medium text-muted-foreground border-b border-border bg-muted/50 break-words whitespace-normal min-h-10" // Added padding and background
+                                                        className="px-4 py-3 text-left text-xs font-medium text-muted-foreground border-b border-border bg-muted/50 break-words whitespace-normal"
                                                         style={{ width: header.getSize() }}
                                                     >
-                                                        {header.isPlaceholder
-                                                            ? null
-                                                            : flexRender(header.column.columnDef.header, header.getContext())}
+                                                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                                     </th>
                                                 ))}
                                             </tr>
                                         ))}
                                     </thead>
-                                    {/* Table Body */}
                                     <tbody>
-                                        {/* Single Total Row at Top */}
-                                        {filteredData.length > 0 && (
+                                        {/* Totals Row – "Total" only in month column */}
+                                        {filteredRows.length > 0 && (
                                             <tr className="bg-muted/30 font-medium border-b-2 border-border">
-                                                {table.getVisibleFlatColumns().map((column) => {
-                                                    const columnId = column.id;
-
-                                                    // Checkbox column - show "Total"
-                                                    if (columnId === 'id') {
-                                                        return (
-                                                            <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border break-words">
-                                                                Total
-                                                            </td>
-                                                        );
+                                                {table.getVisibleFlatColumns().map(column => {
+                                                    const colId = column.id;
+                                                    if (colId === 'month') {
+                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">Total</td>;
                                                     }
-                                                    // Month column - show "-"
-                                                    else if (columnId === 'month') {
-                                                        return (
-                                                            <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border break-words">
-                                                                -
-                                                            </td>
-                                                        );
+                                                    if (colId === 'pieces') {
+                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.pieces}</td>;
                                                     }
-                                                    // Numeric columns with totals
-                                                    else if (columnId === 'pieces') {
-                                                        return (
-                                                            <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border break-words">
-                                                                {overallTotals.pieces}
-                                                            </td>
-                                                        );
-                                                    } else if (columnId === 'total_sq_ft') {
-                                                        return (
-                                                            <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border break-words">
-                                                                {overallTotals.total_sq_ft.toFixed(1)}
-                                                            </td>
-                                                        );
-                                                    } else if (columnId === 'total_cut_ln_ft') {
-                                                        return (
-                                                            <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border break-words">
-                                                                {overallTotals.total_cut_ln_ft.toFixed(1)}
-                                                            </td>
-                                                        );
-                                                    } else if (columnId === 'saw_cut_ln_ft') {
-                                                        return (
-                                                            <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border break-words">
-                                                                {overallTotals.saw_cut_ln_ft.toFixed(1)}
-                                                            </td>
-                                                        );
-                                                    } else if (columnId === 'water_jet_ln_ft') {
-                                                        return (
-                                                            <td key={column.id} className="px-4 py-2 text-sm font-semibold border-r border-border break-words">
-                                                                {overallTotals.water_jet_ln_ft.toFixed(1)}
-                                                            </td>
-                                                        );
-                                                    } else {
-                                                        // All other columns - EMPTY (not dash)
-                                                        return (
-                                                            <td key={column.id} className="px-4 py-2 text-sm border-r border-border break-words">
-                                                                {/* Empty - no dash */}
-                                                            </td>
-                                                        );
+                                                    if (colId === 'total_sq_ft') {
+                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.sqft.toFixed(1)}</td>;
                                                     }
+                                                    if (colId === 'total_cut_ln_ft') {
+                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.totalCut.toFixed(1)}</td>;
+                                                    }
+                                                    if (colId === 'saw_cut_ln_ft') {
+                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.sawCut.toFixed(1)}</td>;
+                                                    }
+                                                    if (colId === 'water_jet_ln_ft') {
+                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.waterJet.toFixed(1)}</td>;
+                                                    }
+                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border"></td>;
                                                 })}
                                             </tr>
                                         )}
 
-                                        {/* Month Groups */}
-                                        {Object.entries(groupedData).map(([dateKey, groupData]) => {
-                                            const monthRows = table.getRowModel().rows.filter((row) =>
-                                                groupData.rows.some((r: CutPlanningData) => r.id === row.original.id)
-                                            );
-
-                                            return (
-                                                <React.Fragment key={dateKey}>
-                                                    {/* Date Header Row - Spans ALL columns */}
-                                                    <tr className="bg-[#F6FFE7] ">
-                                                        <td
-                                                            className="px-4 py-2 text-xs font-medium text-gray-800 text-start break-words"
-                                                            colSpan={table.getVisibleFlatColumns().length}
-                                                        >
-                                                            {groupData.dateDisplay}
-                                                        </td>
-                                                    </tr>
-
-                                                    {/* Data Rows for this Date - Month column is EMPTY */}
-                                                    {monthRows.map((row) => (
-                                                        <tr
-                                                            key={row.id}
-                                                            className="border-b border-border "
-                                                            data-fab-type={(row.original.fab_type || fabTypeMap[String(row.original.id)] || fabTypeMap[String(row.original.fab_id)] || 'unknown').toString().toLowerCase()}
-                                                        >
-                                                            {row.getVisibleCells().map((cell) => {
-                                                                // If this is the month column, show empty cell
+                                        {/* Grouped rows by date */}
+                                        {Object.entries(groupedRows).map(([dateKey, group]) => (
+                                            <React.Fragment key={dateKey}>
+                                                <tr className="bg-[#F6FFE7]">
+                                                    <td className="px-4 py-2 text-xs font-medium text-gray-800 text-start" colSpan={table.getVisibleFlatColumns().length}>
+                                                        {group.dateDisplay}
+                                                    </td>
+                                                </tr>
+                                                {group.rows.map(row => {
+                                                    const tableRow = table.getRowModel().rows.find(r => r.original.plan_id === row.plan_id && r.original.fab_id === row.fab_id);
+                                                    if (!tableRow) return null;
+                                                    return (
+                                                        <tr key={tableRow.id} className="border-b border-border" data-fab-type={row.fab_type.toLowerCase()}>
+                                                            {tableRow.getVisibleCells().map(cell => {
                                                                 if (cell.column.id === 'month') {
-                                                                    return (
-                                                                        <td
-
-                                                                            key={cell.id}
-                                                                            className="px-4 py-2 text-sm border-r border-border last:border-r-0 break-words"
-                                                                        >
-                                                                            {/* Empty - date already shown in header row */}
-                                                                        </td>
-                                                                    );
+                                                                    return <td key={cell.id} className="px-4 py-2 text-sm border-r border-border"></td>;
                                                                 }
-
-                                                                // For FAB INFO and NOTES columns, allow wrapping
-                                                                const isLongTextColumn = cell.column.id === 'fab_info' || cell.column.id === 'notes';
-                                                                const cellClassName = `px-4 py-2 text-sm border-r border-border last:border-r-0 ${isLongTextColumn ? 'whitespace-normal break-words min-w-[200px]' : 'break-words'}
-                                                                    }`;
-
-                                                                // For all other columns, render normally
+                                                                const isLongText = cell.column.id === 'fab_info' || cell.column.id === 'notes';
                                                                 return (
                                                                     <td
                                                                         key={cell.id}
-                                                                        className={cellClassName}
+                                                                        className={`px-4 py-2 text-sm border-r border-border last:border-r-0 ${isLongText ? 'whitespace-normal break-words min-w-[200px]' : 'break-words'}`}
                                                                     >
                                                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                                     </td>
                                                                 );
                                                             })}
                                                         </tr>
-                                                    ))}
-                                                </React.Fragment>
-                                            );
-                                        })}
-                                        {Object.keys(groupedData).length === 0 && (
+                                                    );
+                                                })}
+                                            </React.Fragment>
+                                        ))}
+
+                                        {Object.keys(groupedRows).length === 0 && (
                                             <tr>
                                                 <td colSpan={table.getVisibleFlatColumns().length} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                                                    No data available
+                                                    No scheduled plans found.
                                                 </td>
                                             </tr>
                                         )}
@@ -838,7 +602,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ path = '/job/cut-list', isSuperAd
                     <DataGridPagination />
                 </CardFooter>
             </Card>
-
         </DataGrid>
     );
 };
