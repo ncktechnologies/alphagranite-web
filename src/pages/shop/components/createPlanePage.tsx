@@ -110,7 +110,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
         fab_id: String(ev.fab_id || effectivePrefillFabId || ''),
         workstation_id: String(ev.workstation_id || ''),
         operator_id: String(ev.operator_id || ''),
-        notes: ev.notes || ev.plan_name || '',
+        notes: ev.notes || '',
         start_time: format(new Date(ev.scheduled_start_date), 'HH:mm'),
         end_time: ev.scheduled_end_date ? format(new Date(ev.scheduled_end_date), 'HH:mm') : '',
         planning_section_id: String(ev.planning_section_id || '') || undefined,
