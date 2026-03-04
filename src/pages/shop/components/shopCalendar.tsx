@@ -37,14 +37,13 @@ const HOUR_WIDTH = 120;   // px per hour for time-row view
 
 // Figma pastel palette (matches CutPlanning.tsx design)
 const FAB_TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-  standard: { bg: '#d5e7ff', border: '#70a5f8', text: '#2563eb' },
-  'fab only': { bg: '#caf2d7', border: '#5fd28c', text: '#16a34a' },
-  'cust redo': { bg: '#ffebcf', border: '#ffb84d', text: '#b45309' },
-  resurface: { bg: '#ffe0e3', border: '#ed7172', text: '#dc2626' },
-  'fast track': { bg: '#c4edea', border: '#4db6ac', text: '#0f766e' },
-  'ag redo': { bg: '#f1f2f4', border: '#8f929c', text: '#4b5563' },
+  'standard': { bg: '#9eeb47', border: '#6b9e2f', text: '#1e293b' },
+  'fab only': { bg: '#5bd1d7', border: '#2e8b8f', text: '#1e293b' },
+  'cust redo': { bg: '#f0bf4c', border: '#b88a2a', text: '#1e293b' },
+  'resurface': { bg: '#d094ea', border: '#8f5ca8', text: '#1e293b' },
+  'fast track': { bg: '#f59794', border: '#b35e5b', text: '#1e293b' },
+  'ag redo': { bg: '#f5cc94', border: '#b58f4f', text: '#1e293b' },
 };
-
 const DEFAULT_COLOR = { bg: '#e8f5e9', border: '#81c784', text: '#2e7d32' };
 
 function getFabTypeColor(fabType: string) {
@@ -674,7 +673,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                                     {format(currentTime, 'HH:mm')}
                                   </span>
                                 </div>
-                                <div className="w-full h-px bg-[#ee1a1d]" />
+                                {/* <div className="w-full h-px bg-[#ee1a1d]" /> */}
                               </div>
                             </div>
                           )}

@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 import { useCreateShopPlansMutation, useUpdateShopPlanMutation } from '@/store/api';
 import { useGetWorkstationsQuery, useGetPlanningSectionsQuery } from '@/store/api/workstation';
 import { useGetEmployeesQuery } from '@/store/api/employee';
@@ -57,15 +58,8 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const { data: employeesData } = useGetEmployeesQuery();
   const employees = employeesData?.data || (Array.isArray(employeesData) ? employeesData : employeesData || []);
 
-  // Local date state – can be changed by user
-  const [localDate, setLocalDate] = useState<Date>(() => propSelectedDate || new Date());
-
-  // Update localDate when prop changes (e.g., when editing an event)
-  useEffect(() => {
-    if (propSelectedDate) setLocalDate(propSelectedDate);
-  }, [propSelectedDate]);
-
-  const emptyEntry = () => ({
+  // Helper to create an empty entry, optionally with a specific date
+  const emptyEntry = (date?: Date) => ({
     id: undefined as number | undefined,
     fab_id: effectivePrefillFabId || '',
     workstation_id: '',
@@ -74,6 +68,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     start_time: selectedTimeSlot || '09:00',
     end_time: '',
     planning_section_id: undefined as string | undefined,
+    date: date || propSelectedDate || new Date(), // per‑stage date
   });
 
   const [entries, setEntries] = useState(() => [emptyEntry()]);
@@ -91,6 +86,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
         start_time: format(new Date(ev.scheduled_start_date), 'HH:mm'),
         end_time: ev.scheduled_end_date ? format(new Date(ev.scheduled_end_date), 'HH:mm') : '',
         planning_section_id: String(ev.planning_section_id || '') || undefined,
+        date: new Date(ev.scheduled_start_date), // use the event's date
       }]);
     } else {
       setEntries([emptyEntry()]);
@@ -99,6 +95,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
 
   const addEntry = () =>
     setEntries((p) => {
+      // New stage inherits the fab_id from the first stage, but date can be independent
       const newEntry = emptyEntry();
       if (p[0]?.fab_id) newEntry.fab_id = p[0].fab_id;
       return [...p, newEntry];
@@ -120,24 +117,29 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     if (onBack) {
       onBack();
     } else {
-      navigate(-1); // Go back in history
+      navigate(-1);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      const scheduledDate = format(localDate, 'yyyy-MM-dd');
 
+    // Validate each entry
+    for (const entry of entries) {
+      if (!entry.fab_id) { toast.error('FAB ID is required'); return; }
+      if (!entry.operator_id) { toast.error('Operator is required'); return; }
+      if (!entry.workstation_id) { toast.error('Workstation is required'); return; }
+      if (!entry.start_time) { toast.error('Start time is required'); return; }
+      if (!entry.end_time) { toast.error('End time is required'); return; }
+      if (!entry.date) { toast.error('Date is required for each stage'); return; }
+    }
+
+    try {
       const groups: Record<string, typeof entries> = {};
       const updates: typeof entries = [];
 
       for (const entry of entries) {
-        if (!entry.fab_id) { toast.error('FAB ID is required'); return; }
-        if (!entry.operator_id) { toast.error('Operator is required'); return; }
-        if (!entry.workstation_id) { toast.error('Workstation is required'); return; }
-        if (!entry.start_time) { toast.error('Start time is required'); return; }
-        if (!entry.end_time) { toast.error('End time is required'); return; }
+        const scheduledDate = format(entry.date, 'yyyy-MM-dd');
 
         if (entry.id) {
           updates.push(entry);
@@ -148,10 +150,12 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
         }
       }
 
+      // Create new plans (grouped by fab_id)
       for (const fabId in groups) {
         const groupEntries = groups[fabId];
         let totalEst = 0;
         const stages = groupEntries.map((entry) => {
+          const scheduledDate = format(entry.date, 'yyyy-MM-dd');
           const scheduledStart = `${scheduledDate}T${entry.start_time}:00`;
           const scheduledEnd = `${scheduledDate}T${entry.end_time}:00`;
           const diffMs = new Date(scheduledEnd).getTime() - new Date(scheduledStart).getTime();
@@ -164,14 +168,16 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
             estimated_hours: estimatedHours,
             scheduled_start: scheduledStart,
             scheduled_end: scheduledEnd,
-            notes: entry.notes ? [entry.notes] : undefined,
+            notes: entry.notes ? entry.notes : undefined,
           };
         });
         const planData = { fab_id: Number(fabId), estimated_hours: totalEst, status_id: 1, stages } as any;
         await createShopPlan(planData).unwrap();
       }
 
+      // Update existing plans (editing)
       for (const entry of updates) {
+        const scheduledDate = format(entry.date, 'yyyy-MM-dd');
         const scheduledStart = `${scheduledDate}T${entry.start_time}:00`;
         const scheduledEnd = `${scheduledDate}T${entry.end_time}:00`;
         const diffMs = new Date(scheduledEnd).getTime() - new Date(scheduledStart).getTime();
@@ -183,7 +189,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
           estimated_hours: estimatedHours,
           scheduled_start: scheduledStart,
           scheduled_end: scheduledEnd,
-          notes: entry.notes ? [entry.notes] : undefined,
+          notes: entry.notes ? entry.notes : undefined,
         };
         await updateShopPlan({ plan_id: Number(entry.id), data: { stage: stageObj } } as any).unwrap();
       }
@@ -194,7 +200,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     } catch (error: any) {
       console.error('Error creating/updating event:', error);
       const errorMsg = error?.data?.detail?.message || 'Failed to create/update Plan';
-      toast.error(errorMsg);
+      // toast.error(errorMsg);
     }
   };
 
@@ -217,9 +223,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               <p className="font-['Proxima_Nova:Semibold',sans-serif] text-[28px] leading-[32px] text-black font-semibold">
                 {isEditing ? 'Edit Plan' : 'Create Plan'}
               </p>
-              <p className="font-['Proxima_Nova:Semibold',sans-serif] text-[16px] leading-[24px] text-[#4a4d59]">
-                {format(localDate, 'EEEE, MMMM d, yyyy')}
-              </p>
             </div>
           </div>
 
@@ -238,37 +241,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       {/* Form Content */}
       <div className="px-10 py-8 max-w-4xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Date picker card */}
-          <Card className="border border-[#ecedf0] rounded-[12px]">
-            <CardContent className="pt-5 pb-5">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-[8px] bg-[#f0f4e8] flex items-center justify-center">
-                  <Calendar className="h-5 w-5 text-[#7a9705]" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-['Proxima_Nova:Regular',sans-serif] text-[12px] text-[#7c8689]">Scheduled Date</p>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
-                        className="font-['Proxima_Nova:Semibold',sans-serif] text-[15px] text-[#4b545d] font-semibold hover:underline focus:outline-none"
-                      >
-                        {format(localDate, 'EEEE, MMMM d, yyyy')}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={localDate}
-                        onSelect={(date) => date && setLocalDate(date)}
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Plan entries */}
           {entries.map((entry, idx) => (
             <Card key={idx} className="border border-[#ecedf0] rounded-[12px]">
@@ -309,6 +281,33 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
                       className="mt-2 h-[42px] bg-[#f9f9f9] border-[#e2e4ed] rounded-[6px] text-[13px]"
                     />
                   )}
+                </div>
+
+                {/* Date picker per stage */}
+                <div>
+                  <Label className="font-['Proxima_Nova:Semibold',sans-serif] text-[13px] text-[#4b545d]">Date *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className={cn(
+                          'mt-2 w-full h-[42px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[13px] flex items-center gap-2',
+                          !entry.date && 'text-muted-foreground'
+                        )}
+                      >
+                        <Calendar className="h-4 w-4 text-[#7a9705]" />
+                        {entry.date ? format(entry.date, 'PPP') : <span>Pick a date</span>}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={entry.date}
+                        onSelect={(date) => date && updateEntry(idx, { date })}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 {/* Time */}
