@@ -499,7 +499,7 @@ export const CutListTableWithCalculations = ({
                 <DataGridColumnHeader title="NO OF PCS" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm text-right block">
+                <span className="text-sm  block">
                     {row.original.no_of_pcs.toLocaleString()}
                 </span>
             ),
@@ -542,7 +542,7 @@ export const CutListTableWithCalculations = ({
                 <DataGridColumnHeader title="Edging: Lin ft" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm text-right block">
+                <span className="text-sm  block">
                     {row.original.edging_ln_ft.toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
@@ -557,7 +557,7 @@ export const CutListTableWithCalculations = ({
                 <DataGridColumnHeader title="CNC: LIN FT " column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm text-right block">
+                <span className="text-sm  block">
                     {row.original.cnc_ln_ft.toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
@@ -572,7 +572,7 @@ export const CutListTableWithCalculations = ({
                 <DataGridColumnHeader title="MILTER:LIN FT" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm text-right block">
+                <span className="text-sm  block">
                     {row.original.milter_ln_ft.toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
@@ -587,7 +587,7 @@ export const CutListTableWithCalculations = ({
                 <DataGridColumnHeader title="COST OF STONE" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm text-right block">
+                <span className="text-sm  block">
                     ${row.original.cost_of_stone.toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2
@@ -602,7 +602,7 @@ export const CutListTableWithCalculations = ({
                 <DataGridColumnHeader title="REVENUE" column={column} />
             ),
             cell: ({ row }) => (
-                <span className="text-sm text-right block">
+                <span className="text-sm  block">
                     ${row.original.revenue.toLocaleString(undefined, {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2

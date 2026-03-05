@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Settings } from 'lucide-react';
 import { Link } from 'react-router';
 import { CuttingPlan } from './components/table';
+import { ShopStatusTable } from '../components/statustable';
 
 const WJPlanPage = () => {
     return (
@@ -11,7 +12,7 @@ const WJPlanPage = () => {
             <Container>
                 <Toolbar className=' '>
 
-                    <ToolbarHeading title="Shop" description="View shop status list for jobs  " />
+                    <ToolbarHeading title="Shop Status" description="View shop status list for jobs  " />
 
                     {/* <ToolbarActions>
                         <Link to='/shop/settings'>
@@ -22,7 +23,7 @@ const WJPlanPage = () => {
                         </Link>
                     </ToolbarActions> */}
                 </Toolbar>
-                <CuttingPlan />
+                <ShopStatusTable />
             </Container>
         </div>
     );

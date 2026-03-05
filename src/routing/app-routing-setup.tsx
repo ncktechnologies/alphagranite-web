@@ -374,7 +374,7 @@ export function AppRoutingSetup() {
             }
           />
           <Route
-            path="/shop/wj"
+            path="/status"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <WJPlanPage/>

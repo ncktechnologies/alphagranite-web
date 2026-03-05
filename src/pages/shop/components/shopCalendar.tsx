@@ -146,7 +146,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     if (viewMode === 'day') return [currentDate];
     if (viewMode === 'week') {
       const ws = startOfWeek(currentDate, { weekStartsOn: 1 });
-      return Array.from({ length: 7 }, (_, i) => addDays(ws, i));
+      return Array.from({ length: 5 }, (_, i) => addDays(ws, i));
     }
     return eachDayOfInterval({ start: startOfMonth(currentDate), end: endOfMonth(currentDate) });
   }, [currentDate, viewMode]);
@@ -302,6 +302,8 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
             <p><span className="font-semibold">Workstation:</span> {event.workstation_name || 'N/A'}</p>
             <p><span className="font-semibold">Est. Hours:</span> {event.estimated_hours ?? 'N/A'}</p>
             <p><span className="font-semibold">% Complete:</span> {event.percent_complete ?? 0}%</p>
+            <p><span className="font-semibold">Job:</span> {`${event.job_name}-${event.job_number}` || 'N/A'}</p>
+            <p><span className="font-semibold">Account Name:</span> {event.account_name || 'N/A'}</p>
             {event.notes && <p><span className="font-semibold">Notes:</span> {event.notes}</p>}
           </div>
         </TooltipContent>

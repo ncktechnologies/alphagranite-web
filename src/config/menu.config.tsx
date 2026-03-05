@@ -94,7 +94,12 @@ export const MENU_SIDEBAR: MenuConfig = [
   {
     title: 'Shop',
     icon: 'shop.svg',
-    path: '/shop'
+    path: '/shop',
+    children: [
+          // { title: 'View Job Widgets', path: '/job' },
+          { title: 'Shop Planning', path: '/shop' },
+          { title: 'Shop Status', path: '/status' },
+        ],
   },
   {
     title: 'Settings',
