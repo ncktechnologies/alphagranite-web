@@ -84,6 +84,7 @@ export interface ShopStatusFab {
     notes?: string | null;
     plans: ShopStatusPlan[];
     date_group: string;
+    shop_date_schedule?: string;
 }
 
 export type ShopStatusRow = {
@@ -94,7 +95,7 @@ export type ShopStatusRow = {
     type: 'plan';
     fab_id: string;
     plan: ShopStatusPlan;
-    stage_value: number;
+    stage_total: number;   // raw value from backend (e.g. edging_linft)
     stage_unit: string;
     stage_percent: number;
     date_group: string;
@@ -133,8 +134,11 @@ const getTotalForStage = (fab: any, sectionId: number): number => {
 };
 
 // ------------------ Progress Bar ------------------
+// `total`   = raw value from backend (e.g. edging_linft, cnc_linft) — displayed as the number
+// `percent` = work_percentage from the plan — drives the bar fill
 const ProgressBar: React.FC<{ value: number; total: number; percent: number; unit: string }> = ({
-    value,
+    // value kept in props signature for call-site compatibility but not used in display
+    total,
     percent,
     unit,
 }) => {
@@ -148,7 +152,7 @@ const ProgressBar: React.FC<{ value: number; total: number; percent: number; uni
     return (
         <div className="flex flex-col gap-1 items-start min-w-[100px]">
             <p className="text-sm text-[#4b545d]">
-                {value.toFixed(1)} {unit}
+                {total.toFixed(1)} {unit}
             </p>
             <div className="w-full bg-[#e2e4ed] rounded-full h-[6px] overflow-hidden">
                 <div
@@ -251,6 +255,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     : null,
                 plans: fab.plans || [],
                 date_group: dateGroup,
+                shop_date_schedule: fab.shop_date_schedule,
             };
 
             // Build child rows for each plan
@@ -275,7 +280,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                         work_percentage:      percent,
                         notes:                plan.notes,
                     },
-                    stage_value:   completed,
+                    stage_total:   total,
                     stage_unit:    unit,
                     stage_percent: percent,
                     date_group:    dateGroup,
@@ -407,7 +412,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const date = row.original.data.expected_completion_date;
-                    return <span className="text-sm text-[#4b545d]">{date ? format(new Date(date), 'MM/dd/yyyy') : '-'}</span>;
+                    return <span className="text-sm text-[#4b545d]">{''}</span>;
                 }
                 if (row.original.type === 'plan') {
                     // Show plan summary in this column for child rows
@@ -431,7 +436,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             ),
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
-                    const date = row.original.data.cut_date_scheduled;
+                    const date = row.original.data.shop_date_schedule;
                     return <span className="text-sm text-[#4b545d]">{date ? format(new Date(date), 'MM/dd/yyyy') : '-'}</span>;
                 }
                 if (row.original.type === 'plan') {
@@ -541,7 +546,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 if (row.original.type === 'plan') {
                     return (
                         <span className="text-xs text-gray-400 pl-4">
-                            Est. {row.original.plan.estimated_hours}h
+                            Estimated hrs:. {row.original.plan.estimated_hours}h
                         </span>
                     );
                 }
@@ -593,7 +598,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     return <ProgressBar value={p.completed} total={p.total} percent={p.percent} unit={p.unit} />;
                 }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 7) {
-                    return <ProgressBar value={row.original.stage_value} total={0} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                    return <ProgressBar value={0} total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
                 }
                 return null;
             },
@@ -610,7 +615,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     return <ProgressBar value={p.completed} total={p.total} percent={p.percent} unit={p.unit} />;
                 }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 8) {
-                    return <ProgressBar value={row.original.stage_value} total={0} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                    return <ProgressBar value={0} total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
                 }
                 return null;
             },
@@ -627,7 +632,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     return <ProgressBar value={p.completed} total={p.total} percent={p.percent} unit={p.unit} />;
                 }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 9) {
-                    return <ProgressBar value={row.original.stage_value} total={0} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                    return <ProgressBar value={0} total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
                 }
                 return null;
             },
@@ -644,7 +649,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     return <ProgressBar value={p.completed} total={p.total} percent={p.percent} unit={p.unit} />;
                 }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 2) {
-                    return <ProgressBar value={row.original.stage_value} total={0} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                    return <ProgressBar value={0} total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
                 }
                 return null;
             },
@@ -661,7 +666,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     return <ProgressBar value={p.completed} total={p.total} percent={p.percent} unit={p.unit} />;
                 }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 1) {
-                    return <ProgressBar value={row.original.stage_value} total={0} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                    return <ProgressBar value={0} total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
                 }
                 return null;
             },
@@ -678,7 +683,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     return <ProgressBar value={p.completed} total={p.total} percent={p.percent} unit={p.unit} />;
                 }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 6) {
-                    return <ProgressBar value={row.original.stage_value} total={0} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                    return <ProgressBar value={0} total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
                 }
                 return null;
             },
@@ -704,22 +709,22 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             size: 120,
         },
         // Notes
-        // {
-        //     id: 'notes',
-        //     header: ({ column }) => (
-        //         <DataGridColumnHeader title="NOTES" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-        //     ),
-        //     cell: ({ row }) => {
-        //         if (row.original.type === 'fab') {
-        //             return <span className="text-sm text-[#4b545d] line-clamp-2">{row.original.data.notes || '-'}</span>;
-        //         }
-        //         if (row.original.type === 'plan') {
-        //             return <span className="text-xs text-gray-500">{row.original.plan.notes || '-'}</span>;
-        //         }
-        //         return null;
-        //     },
-        //     size: 150,
-        // },
+        {
+            id: 'notes',
+            header: ({ column }) => (
+                <DataGridColumnHeader title="NOTES" column={column} className="text-[#7c8689] text-[15px] font-normal" />
+            ),
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    return <span className="text-sm text-[#4b545d] line-clamp-2">{row.original.data.notes || '-'}</span>;
+                }
+                if (row.original.type === 'plan') {
+                    return <span className="text-xs text-gray-500">{row.original.plan.notes || '-'}</span>;
+                }
+                return null;
+            },
+            size: 150,
+        },
     ], []);
 
     // ------------------ Table Instance ------------------
@@ -962,7 +967,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
                                 <tbody>
                                     {/* Overall totals row */}
-                                    {renderTotalsRow('Total', overallTotals, 'bg-[#eef0f6]')}
+                                    {renderTotalsRow('Overall Total', overallTotals, 'bg-[#eef0f6]')}
 
                                     {Object.entries(groupedParents).map(([dateKey, group]) => {
                                         const groupTotal = groupTotals[dateKey] || { pieces: 0, sqft: 0, wj: 0, edging: 0, miter: 0, cnc: 0 };
@@ -980,7 +985,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                 </tr>
 
                                                 {/* Group totals row */}
-                                                {renderTotalsRow('Total', groupTotal)}
+                                                {renderTotalsRow('Group Total', groupTotal)}
 
                                                 {/* FAB rows + their expanded plan child rows */}
                                                 {group.parents.map(parent => {
@@ -997,7 +1002,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                     return (
                                                         <React.Fragment key={parentRow.id}>
                                                             {/* Parent FAB row */}
-                                                            <tr className="border-b border-[#e2e4ed] hover:bg-gray-50/40 transition-colors">
+                                                            <tr className="border-b border-[#e2e4ed]  transition-colors" data-fab-type={parentRow.original.type === 'fab' ? parentRow.original.data.fab_type?.toLowerCase() : undefined}>
                                                                 {parentRow.getVisibleCells().map(cell => (
                                                                     <td
                                                                         key={cell.id}

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { Fragment, useMemo, useState } from 'react';
 import { flexRender } from '@tanstack/react-table';
 import {
     ColumnDef,
@@ -44,9 +44,13 @@ export interface ShopPlanRow {
     fab_info: string;
     pieces: number;
     total_sq_ft: number;
-    total_cut_ln_ft: number;
-    saw_cut_ln_ft: number;
-    water_jet_ln_ft: number;
+    // Cutlist linear feet fields
+    wl_ln_ft: number;      // water jet
+    sl_ln_ft: number;      // saw cut
+    edging_ln_ft: number;
+    cnc_ln_ft: number;
+    milter_ln_ft: number;
+    total_cut_ln_ft: number;   // kept for reference
     percent_complete: number;
     // Cut plan fields
     plan_id: number;
@@ -65,7 +69,28 @@ interface ShopTableProps {
     isLoading?: boolean;
 }
 
-const salesPersons: string[] = ['Mike Rodriguez', 'Sarah Johnson', 'Bruno Pires', 'Maria Garcia'];
+// Helper to compute group subtotals
+const computeGroupTotals = (rows: ShopPlanRow[]) => {
+    return rows.reduce((acc, row) => ({
+        pieces: acc.pieces + row.pieces,
+        total_sq_ft: acc.total_sq_ft + row.total_sq_ft,
+        total_cut_ln_ft: acc.total_cut_ln_ft + row.total_cut_ln_ft,
+        wl_ln_ft: acc.wl_ln_ft + row.wl_ln_ft,
+        sl_ln_ft: acc.sl_ln_ft + row.sl_ln_ft,
+        edging_ln_ft: acc.edging_ln_ft + row.edging_ln_ft,
+        cnc_ln_ft: acc.cnc_ln_ft + row.cnc_ln_ft,
+        milter_ln_ft: acc.milter_ln_ft + row.milter_ln_ft,
+    }), {
+        pieces: 0,
+        total_sq_ft: 0,
+        total_cut_ln_ft: 0,
+        wl_ln_ft: 0,
+        sl_ln_ft: 0,
+        edging_ln_ft: 0,
+        cnc_ln_ft: 0,
+        milter_ln_ft: 0,
+    });
+};
 
 const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => {
     const [pagination, setPagination] = useState<PaginationState>({
@@ -114,7 +139,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
 
     const totalRecords = fabsData?.total || 0;
 
-    // Flatten into plan rows – only cut plans (planning_section_id === 7)
     // Flatten into plan rows – include cut plans AND FABs without cut plans
     const planRows: ShopPlanRow[] = useMemo(() => {
         const rows: ShopPlanRow[] = [];
@@ -123,23 +147,32 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             // Filter for cut planning section (id = 7)
             const cutPlans = plans.filter((plan: any) => plan.planning_section_id === 7);
 
+            // Base row data (common for both cases)
+            const baseRow = {
+                fab_id: String(fab.id),
+                fab_type: fab.fab_type || 'N/A',
+                job_no: fab.job_details?.job_number || 'N/A',
+                job_name: fab.job_details?.name || 'N/A',
+                fab_info: `${fab.job_details?.name || ''} - ${fab.stone_type_name || ''} - ${fab.stone_color_name || ''}`.trim(),
+                pieces: fab.no_of_pieces || 0,
+                total_sq_ft: fab.total_sqft || 0,
+                // Linear feet fields (match cutlist naming)
+                wl_ln_ft: fab.wj_linft || 0,
+                sl_ln_ft: fab.sl_linft || 0,
+                edging_ln_ft: fab.edging_linft || 0,
+                cnc_ln_ft: fab.cnc_linft || 0,
+                milter_ln_ft: fab.miter_linft || 0,
+                total_cut_ln_ft: fab.total_cut_ln_ft || 0,
+                percent_complete: fab.percent_complete || 0,
+            };
+
             if (cutPlans.length > 0) {
                 // FAB has cut plans – one row per cut plan
                 cutPlans.forEach((plan: any) => {
                     const scheduledDate = plan.scheduled_start_date;
                     const dateGroup = scheduledDate ? scheduledDate.split('T')[0] : 'unscheduled';
                     rows.push({
-                        fab_id: String(fab.id),
-                        fab_type: fab.fab_type || 'N/A',
-                        job_no: fab.job_details?.job_number || 'N/A',
-                        job_name: fab.job_details?.name || 'N/A',
-                        fab_info: `${fab.job_details?.name || ''} - ${fab.stone_type_name || ''} - ${fab.stone_color_name || ''}`.trim(),
-                        pieces: fab.no_of_pieces || 0,
-                        total_sq_ft: fab.total_sqft || 0,
-                        total_cut_ln_ft: fab.total_cut_ln_ft || 0,
-                        saw_cut_ln_ft: fab.cnc_linft || 0,
-                        water_jet_ln_ft: fab.wj_linft || 0,
-                        percent_complete: fab.percent_complete || 0,
+                        ...baseRow,
                         plan_id: plan.id,
                         workstation_name: plan.workstation_name || '-',
                         operator_name: plan.operator_name || '-',
@@ -153,24 +186,14 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                     });
                 });
             } else {
-                // FAB has NO cut plans – display one row with empty plan fields
+                // FAB has NO cut plans – one row with empty plan fields
                 rows.push({
-                    fab_id: String(fab.id),
-                    fab_type: fab.fab_type || 'N/A',
-                    job_no: fab.job_details?.job_number || 'N/A',
-                    job_name: fab.job_details?.name || 'N/A',
-                    fab_info: `${fab.job_details?.name || ''} - ${fab.stone_type_name || ''} - ${fab.stone_color_name || ''}`.trim(),
-                    pieces: fab.no_of_pieces || 0,
-                    total_sq_ft: fab.total_sqft || 0,
-                    total_cut_ln_ft: fab.total_cut_ln_ft || 0,
-                    saw_cut_ln_ft: fab.cnc_linft || 0,
-                    water_jet_ln_ft: fab.wj_linft || 0,
-                    percent_complete: fab.percent_complete || 0,
-                    plan_id: 0, // placeholder, no actual plan
+                    ...baseRow,
+                    plan_id: 0,
                     workstation_name: '-',
                     operator_name: '-',
                     estimated_hours: 0,
-                    scheduled_start_date: undefined, // no date – will be grouped as 'unscheduled'
+                    scheduled_start_date: undefined,
                     plan_notes: null,
                     date_group: 'unscheduled',
                     shop_office_date_scheduled: fab.shop_date_schedule
@@ -225,25 +248,30 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
         return groups;
     }, [filteredRows]);
 
-    // Totals (deduplicate FABs – each FAB counted once)
+    // Overall totals (deduplicate FABs – each FAB counted once)
     const overallTotals = useMemo(() => {
         const seen = new Set<string>();
-        let pieces = 0, sqft = 0, totalCut = 0, sawCut = 0, waterJet = 0;
+        let pieces = 0, sqft = 0, totalCut = 0,
+            wl = 0, sl = 0, edging = 0, cnc = 0, milter = 0;
         filteredRows.forEach(r => {
             if (!seen.has(r.fab_id)) {
                 seen.add(r.fab_id);
                 pieces += r.pieces;
                 sqft += r.total_sq_ft;
                 totalCut += r.total_cut_ln_ft;
-                sawCut += r.saw_cut_ln_ft;
-                waterJet += r.water_jet_ln_ft;
+                wl += r.wl_ln_ft;
+                sl += r.sl_ln_ft;
+                edging += r.edging_ln_ft;
+                cnc += r.cnc_ln_ft;
+                milter += r.milter_ln_ft;
             }
         });
-        return { pieces, sqft, totalCut, sawCut, waterJet };
+        return { pieces, sqft, totalCut, wl, sl, edging, cnc, milter };
     }, [filteredRows]);
 
     const handleFabIdClick = (fabId: string) => console.log('PDF for', fabId);
 
+    // Column definitions – includes all cutlist linear feet columns
     const columns = useMemo<ColumnDef<ShopPlanRow>[]>(() => [
         {
             id: 'actions',
@@ -310,7 +338,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             cell: ({ row }) => (
                 <button
                     onClick={() => handleFabIdClick(row.original.fab_id)}
-                    className="text-sm  hover:underline cursor-pointer"
+                    className="text-sm hover:underline cursor-pointer"
                 >
                     {row.original.fab_id}
                 </button>
@@ -345,7 +373,51 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             id: 'total_sq_ft',
             accessorFn: r => r.total_sq_ft,
             header: ({ column }) => <DataGridColumnHeader title="TOTAL SQ FT" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-text">{row.original.total_sq_ft}</span>,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.total_sq_ft.toFixed(2)}</span>,
+            enableSorting: true,
+        },
+        // New linear feet columns (matching cutlist)
+        {
+            id: 'wl_ln_ft',
+            accessorFn: r => r.wl_ln_ft,
+            header: ({ column }) => <DataGridColumnHeader title="WJ:LN FT" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.wl_ln_ft.toFixed(2)}</span>,
+            enableSorting: true,
+        },
+        {
+            id: 'sl_ln_ft',
+            accessorFn: r => r.sl_ln_ft,
+            header: ({ column }) => <DataGridColumnHeader title="SL:LN FT" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.sl_ln_ft.toFixed(2)}</span>,
+            enableSorting: true,
+        },
+        {
+            id: 'edging_ln_ft',
+            accessorFn: r => r.edging_ln_ft,
+            header: ({ column }) => <DataGridColumnHeader title="EDGING:LN FT" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.edging_ln_ft.toFixed(2)}</span>,
+            enableSorting: true,
+        },
+        {
+            id: 'cnc_ln_ft',
+            accessorFn: r => r.cnc_ln_ft,
+            header: ({ column }) => <DataGridColumnHeader title="CNC:LN FT" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.cnc_ln_ft.toFixed(2)}</span>,
+            enableSorting: true,
+        },
+        {
+            id: 'milter_ln_ft',
+            accessorFn: r => r.milter_ln_ft,
+            header: ({ column }) => <DataGridColumnHeader title="MILTER:LN FT" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.milter_ln_ft.toFixed(2)}</span>,
+            enableSorting: true,
+        },
+        // Keep total_cut_ln_ft if needed, or remove it (it's now redundant)
+        {
+            id: 'total_cut_ln_ft',
+            accessorFn: r => r.total_cut_ln_ft,
+            header: ({ column }) => <DataGridColumnHeader title="TOTAL CUT LN FT" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.total_cut_ln_ft.toFixed(2)}</span>,
             enableSorting: true,
         },
         {
@@ -353,27 +425,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             accessorFn: r => r.percent_complete,
             header: ({ column }) => <DataGridColumnHeader title="% COMPLETE" column={column} />,
             cell: ({ row }) => <span className="text-sm text-text">{row.original.percent_complete.toFixed(2)}%</span>,
-            enableSorting: true,
-        },
-        {
-            id: 'total_cut_ln_ft',
-            accessorFn: r => r.total_cut_ln_ft,
-            header: ({ column }) => <DataGridColumnHeader title="TOTAL CUT LN FT" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-text">{row.original.total_cut_ln_ft || '-'}</span>,
-            enableSorting: true,
-        },
-        {
-            id: 'saw_cut_ln_ft',
-            accessorFn: r => r.saw_cut_ln_ft,
-            header: ({ column }) => <DataGridColumnHeader title="SAW CUT LN FT" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-text">{row.original.saw_cut_ln_ft || '-'}</span>,
-            enableSorting: true,
-        },
-        {
-            id: 'water_jet_ln_ft',
-            accessorFn: r => r.water_jet_ln_ft,
-            header: ({ column }) => <DataGridColumnHeader title="WATER JET LN FT" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-text">{row.original.water_jet_ln_ft || '-'}</span>,
             enableSorting: true,
         },
         {
@@ -407,7 +458,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             enableSorting: true,
             size: 300,
         },
-
     ], []);
 
     const flatData = useMemo(() => Object.values(groupedRows).flatMap(g => g.rows), [groupedRows]);
@@ -522,17 +572,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                     </div>
 
                     <CardToolbar>
-                        <Select value={salesPersonFilter} onValueChange={setSalesPersonFilter} disabled={isApiLoading || externalLoading}>
-                            <SelectTrigger className="w-[205px] h-[34px]">
-                                <SelectValue placeholder="Select sales person" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Sales Persons</SelectItem>
-                                {salesPersons.map(person => (
-                                    <SelectItem key={person} value={person}>{person}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
                         <Button variant="outline" onClick={() => exportTableToCSV(table, 'shop-cut-planning')} disabled={isApiLoading || externalLoading}>
                             Export CSV
                         </Button>
@@ -564,7 +603,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                                         ))}
                                     </thead>
                                     <tbody>
-                                        {/* Totals Row – "Total" only in month column */}
+                                        {/* Overall totals row (above all groups) */}
                                         {filteredRows.length > 0 && (
                                             <tr className="bg-muted/30 font-medium border-b-2 border-border">
                                                 {table.getVisibleFlatColumns().map(column => {
@@ -576,54 +615,107 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                                                         return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.pieces}</td>;
                                                     }
                                                     if (colId === 'total_sq_ft') {
-                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.sqft.toFixed(1)}</td>;
+                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.sqft.toFixed(2)}</td>;
+                                                    }
+                                                    if (colId === 'wl_ln_ft') {
+                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.wl.toFixed(2)}</td>;
+                                                    }
+                                                    if (colId === 'sl_ln_ft') {
+                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.sl.toFixed(2)}</td>;
+                                                    }
+                                                    if (colId === 'edging_ln_ft') {
+                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.edging.toFixed(2)}</td>;
+                                                    }
+                                                    if (colId === 'cnc_ln_ft') {
+                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.cnc.toFixed(2)}</td>;
+                                                    }
+                                                    if (colId === 'milter_ln_ft') {
+                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.milter.toFixed(2)}</td>;
                                                     }
                                                     if (colId === 'total_cut_ln_ft') {
-                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.totalCut.toFixed(1)}</td>;
+                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.totalCut.toFixed(2)}</td>;
                                                     }
-                                                    if (colId === 'saw_cut_ln_ft') {
-                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.sawCut.toFixed(1)}</td>;
-                                                    }
-                                                    if (colId === 'water_jet_ln_ft') {
-                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.waterJet.toFixed(1)}</td>;
-                                                    }
+                                                    // Other columns – empty
                                                     return <td key={colId} className="px-4 py-2 text-sm border-r border-border"></td>;
                                                 })}
                                             </tr>
                                         )}
 
-                                        {/* Grouped rows by date */}
-                                        {Object.entries(groupedRows).map(([dateKey, group]) => (
-                                            <React.Fragment key={dateKey}>
-                                                <tr className="bg-[#F6FFE7]">
-                                                    <td className="px-4 py-2 text-xs font-medium text-gray-800 text-start" colSpan={table.getVisibleFlatColumns().length}>
-                                                        {group.dateDisplay}
-                                                    </td>
-                                                </tr>
-                                                {group.rows.map(row => {
-                                                    const tableRow = table.getRowModel().rows.find(r => r.original.plan_id === row.plan_id && r.original.fab_id === row.fab_id);
-                                                    if (!tableRow) return null;
-                                                    return (
-                                                        <tr key={tableRow.id} className="border-b border-border" data-fab-type={row.fab_type.toLowerCase()}>
-                                                            {tableRow.getVisibleCells().map(cell => {
-                                                                if (cell.column.id === 'month') {
-                                                                    return <td key={cell.id} className="px-4 py-2 text-sm border-r border-border"></td>;
-                                                                }
-                                                                const isLongText = cell.column.id === 'fab_info' || cell.column.id === 'notes';
-                                                                return (
-                                                                    <td
-                                                                        key={cell.id}
-                                                                        className={`px-4 py-2 text-sm border-r border-border last:border-r-0 ${isLongText ? 'whitespace-normal break-words min-w-[200px]' : 'break-words'}`}
-                                                                    >
-                                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                                    </td>
-                                                                );
-                                                            })}
-                                                        </tr>
-                                                    );
-                                                })}
-                                            </React.Fragment>
-                                        ))}
+                                        {/* Grouped rows by date with per‑group subtotals */}
+                                        {Object.entries(groupedRows).map(([dateKey, group]) => {
+                                            const groupTotals = computeGroupTotals(group.rows);
+                                            return (
+                                                <Fragment key={dateKey}>
+                                                    {/* Group header */}
+                                                    <tr className="bg-[#F6FFE7]">
+                                                        <td className="px-4 py-2 text-xs font-medium text-gray-800 text-start" colSpan={table.getVisibleFlatColumns().length}>
+                                                            {group.dateDisplay}
+                                                        </td>
+                                                    </tr>
+                                                    {/* Detail rows */}
+                                                    {/* Subtotal row for this group */}
+                                                    <tr className="bg-gray-50 font-medium border-t border-b border-gray-200">
+                                                        {table.getVisibleFlatColumns().map(column => {
+                                                            const colId = column.id;
+                                                            // For month column (or actions) show "Total"
+                                                            if (colId === 'month' || colId === 'actions') {
+                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border"></td>;
+                                                            }
+                                                            // Numeric columns – display group totals
+                                                            if (colId === 'pieces') {
+                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.pieces}</td>;
+                                                            }
+                                                            if (colId === 'total_sq_ft') {
+                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.total_sq_ft.toFixed(2)}</td>;
+                                                            }
+                                                            if (colId === 'wl_ln_ft') {
+                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.wl_ln_ft.toFixed(2)}</td>;
+                                                            }
+                                                            if (colId === 'sl_ln_ft') {
+                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.sl_ln_ft.toFixed(2)}</td>;
+                                                            }
+                                                            if (colId === 'edging_ln_ft') {
+                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.edging_ln_ft.toFixed(2)}</td>;
+                                                            }
+                                                            if (colId === 'cnc_ln_ft') {
+                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.cnc_ln_ft.toFixed(2)}</td>;
+                                                            }
+                                                            if (colId === 'milter_ln_ft') {
+                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.milter_ln_ft.toFixed(2)}</td>;
+                                                            }
+                                                            if (colId === 'total_cut_ln_ft') {
+                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.total_cut_ln_ft.toFixed(2)}</td>;
+                                                            }
+                                                            // Other columns – empty
+                                                            return <td key={colId} className="px-4 py-2 text-sm border-r border-border"></td>;
+                                                        })}
+                                                    </tr>
+                                                    {group.rows.map(row => {
+                                                        const tableRow = table.getRowModel().rows.find(r => r.original.plan_id === row.plan_id && r.original.fab_id === row.fab_id);
+                                                        if (!tableRow) return null;
+                                                        return (
+                                                            <tr key={tableRow.id} className="border-b border-border" data-fab-type={row.fab_type.toLowerCase()}>
+                                                                {tableRow.getVisibleCells().map(cell => {
+                                                                    if (cell.column.id === 'month') {
+                                                                        return <td key={cell.id} className="px-4 py-2 text-sm border-r border-border"></td>;
+                                                                    }
+                                                                    const isLongText = cell.column.id === 'fab_info' || cell.column.id === 'notes';
+                                                                    return (
+                                                                        <td
+                                                                            key={cell.id}
+                                                                            className={`px-4 py-2 text-sm border-r border-border last:border-r-0 ${isLongText ? 'whitespace-normal break-words min-w-[200px]' : 'break-words'}`}
+                                                                        >
+                                                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                                        </td>
+                                                                    );
+                                                                })}
+                                                            </tr>
+                                                        );
+                                                    })}
+                                                    
+                                                </Fragment>
+                                            );
+                                        })}
 
                                         {Object.keys(groupedRows).length === 0 && (
                                             <tr>
