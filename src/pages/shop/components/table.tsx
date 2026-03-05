@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { useGetFabsQuery } from '@/store/api/job';
 import ActionsCell from './action';
 import { useNavigate } from 'react-router';
+import CreatePlanSheet from './createEvent';
 
 export interface ShopPlanRow {
     fab_id: string;
@@ -105,6 +106,13 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
     const [salesPersonFilter, setSalesPersonFilter] = useState<string>('all');
+
+    // Sheet state
+    const [planSheetOpen, setPlanSheetOpen] = useState(false);
+    const [selectedFabForSheet, setSelectedFabForSheet] = useState<string>('');
+    const [selectedDateForSheet, setSelectedDateForSheet] = useState<Date | null>(null);
+    const [selectedEventForSheet, setSelectedEventForSheet] = useState<any | null>(null);
+
     const navigate = useNavigate();
 
     const handleViewCalendar = (fabId: string, date?: string) => {
@@ -116,7 +124,22 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             navigate(url);
         }
     };
-    const handleCreatePlan = (fabId: string) => navigate(`/shop/create-plan?fabId=${fabId}`);
+
+    // Replace navigation with sheet opening
+    const handleCreatePlan = (fabId: string) => {
+        setSelectedFabForSheet(fabId);
+        setSelectedDateForSheet(null); // user will pick date in sheet
+        setSelectedEventForSheet(null);
+        setPlanSheetOpen(true);
+    };
+
+    // Optional: if you want to edit an existing plan, you can add an edit action that sets selectedEventForSheet
+    // const handleEditPlan = (plan: any) => {
+    //     setSelectedEventForSheet(plan);
+    //     setSelectedFabForSheet(String(plan.fab_id));
+    //     setSelectedDateForSheet(new Date(plan.scheduled_start_date));
+    //     setPlanSheetOpen(true);
+    // };
 
     const queryParams = useMemo(() => ({
         current_stage: 'cut_list',
@@ -126,7 +149,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
         ...(fabTypeFilter !== 'all' && { fab_type: fabTypeFilter }),
     }), [searchQuery, fabTypeFilter, pagination]);
 
-    const { data: fabsData, isLoading: isApiLoading } = useGetFabsQuery(queryParams);
+    const { data: fabsData, isLoading: isApiLoading, refetch } = useGetFabsQuery(queryParams);
 
     // Extract fabs array from the nested response
     const fabs = useMemo(() => {
@@ -481,261 +504,275 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
     });
 
     return (
-        <DataGrid
-            table={table}
-            recordCount={totalRecords}
-            isLoading={isApiLoading || externalLoading}
-            groupByDate={false}
-            tableLayout={{
-                columnsPinnable: true,
-                columnsMovable: true,
-                columnsVisibility: true,
-                cellBorder: true,
-            }}
-        >
-            <Card>
-                <CardHeader className="flex flex-wrap items-center justify-between gap-2 py-3 border-b">
-                    <div className="flex flex-wrap items-center gap-3">
-                        <div className="relative">
-                            <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
-                            <Input
-                                placeholder="Search by job, Fab ID, workstation..."
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                                className="ps-9 w-[280px] h-[34px]"
-                                disabled={isApiLoading || externalLoading}
-                            />
-                            {searchQuery && (
-                                <Button
-                                    mode="icon"
-                                    variant="ghost"
-                                    className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                                    onClick={() => setSearchQuery('')}
-                                >
-                                    <X />
-                                </Button>
-                            )}
-                        </div>
-
-                        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    className={cn(
-                                        'w-[200px] h-[34px] justify-start text-left font-normal',
-                                        !dateRange && 'text-muted-foreground'
-                                    )}
+        <>
+            <DataGrid
+                table={table}
+                recordCount={totalRecords}
+                isLoading={isApiLoading || externalLoading}
+                groupByDate={false}
+                tableLayout={{
+                    columnsPinnable: true,
+                    columnsMovable: true,
+                    columnsVisibility: true,
+                    cellBorder: true,
+                }}
+            >
+                <Card>
+                    <CardHeader className="flex flex-wrap items-center justify-between gap-2 py-3 border-b">
+                        <div className="flex flex-wrap items-center gap-3">
+                            <div className="relative">
+                                <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                                <Input
+                                    placeholder="Search by job, Fab ID, workstation..."
+                                    value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                    className="ps-9 w-[280px] h-[34px]"
                                     disabled={isApiLoading || externalLoading}
-                                >
-                                    <CalendarDays className="mr-2 h-4 w-4" />
-                                    {dateRange?.from ? (
-                                        dateRange.to ? (
-                                            <>
-                                                {format(dateRange.from, 'MMM dd')} - {format(dateRange.to, 'MMM dd, yyyy')}
-                                            </>
-                                        ) : (
-                                            format(dateRange.from, 'MMM dd, yyyy')
-                                        )
-                                    ) : (
-                                        <span>Pick dates</span>
-                                    )}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    initialFocus
-                                    mode="range"
-                                    defaultMonth={dateRange?.from || new Date()}
-                                    selected={tempDateRange}
-                                    onSelect={setTempDateRange}
-                                    numberOfMonths={2}
                                 />
-                                <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
-                                    <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); }}>Reset</Button>
-                                    <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
+                                {searchQuery && (
+                                    <Button
+                                        mode="icon"
+                                        variant="ghost"
+                                        className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                                        onClick={() => setSearchQuery('')}
+                                    >
+                                        <X />
+                                    </Button>
+                                )}
+                            </div>
 
-                        <Select value={fabTypeFilter} onValueChange={setFabTypeFilter} disabled={isApiLoading || externalLoading}>
-                            <SelectTrigger className="w-[120px] h-[34px]">
-                                <SelectValue placeholder="FAB type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Types</SelectItem>
-                                <SelectItem value="standard">Standard</SelectItem>
-                                <SelectItem value="premium">Premium</SelectItem>
-                                <SelectItem value="ag redo">AG Redo</SelectItem>
-                                <SelectItem value="fab only">FAB only</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <CardToolbar>
-                        <Button variant="outline" onClick={() => exportTableToCSV(table, 'shop-cut-planning')} disabled={isApiLoading || externalLoading}>
-                            Export CSV
-                        </Button>
-                    </CardToolbar>
-                </CardHeader>
-
-                <CardTable>
-                    <ScrollArea>
-                        <div className="relative">
-                            {(isApiLoading || externalLoading) ? (
-                                <div className="flex items-center justify-center h-64">
-                                    <p>Loading...</p>
-                                </div>
-                            ) : (
-                                <table className="w-full border-collapse">
-                                    <thead>
-                                        {table.getHeaderGroups().map(headerGroup => (
-                                            <tr key={headerGroup.id}>
-                                                {headerGroup.headers.map(header => (
-                                                    <th
-                                                        key={header.id}
-                                                        className="px-4 py-3 text-left text-xs font-medium text-muted-foreground border-b border-border bg-muted/50 break-words whitespace-normal"
-                                                        style={{ width: header.getSize() }}
-                                                    >
-                                                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
-                                                    </th>
-                                                ))}
-                                            </tr>
-                                        ))}
-                                    </thead>
-                                    <tbody>
-                                        {/* Overall totals row (above all groups) */}
-                                        {filteredRows.length > 0 && (
-                                            <tr className="bg-muted/30 font-medium border-b-2 border-border">
-                                                {table.getVisibleFlatColumns().map(column => {
-                                                    const colId = column.id;
-                                                    if (colId === 'month') {
-                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">Total</td>;
-                                                    }
-                                                    if (colId === 'pieces') {
-                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.pieces}</td>;
-                                                    }
-                                                    if (colId === 'total_sq_ft') {
-                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.sqft.toFixed(2)}</td>;
-                                                    }
-                                                    if (colId === 'wl_ln_ft') {
-                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.wl.toFixed(2)}</td>;
-                                                    }
-                                                    if (colId === 'sl_ln_ft') {
-                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.sl.toFixed(2)}</td>;
-                                                    }
-                                                    if (colId === 'edging_ln_ft') {
-                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.edging.toFixed(2)}</td>;
-                                                    }
-                                                    if (colId === 'cnc_ln_ft') {
-                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.cnc.toFixed(2)}</td>;
-                                                    }
-                                                    if (colId === 'milter_ln_ft') {
-                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.milter.toFixed(2)}</td>;
-                                                    }
-                                                    if (colId === 'total_cut_ln_ft') {
-                                                        return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.totalCut.toFixed(2)}</td>;
-                                                    }
-                                                    // Other columns – empty
-                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border"></td>;
-                                                })}
-                                            </tr>
+                            <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className={cn(
+                                            'w-[200px] h-[34px] justify-start text-left font-normal',
+                                            !dateRange && 'text-muted-foreground'
                                         )}
-
-                                        {/* Grouped rows by date with per‑group subtotals */}
-                                        {Object.entries(groupedRows).map(([dateKey, group]) => {
-                                            const groupTotals = computeGroupTotals(group.rows);
-                                            return (
-                                                <Fragment key={dateKey}>
-                                                    {/* Group header */}
-                                                    <tr className="bg-[#F6FFE7]">
-                                                        <td className="px-4 py-2 text-xs font-medium text-gray-800 text-start" colSpan={table.getVisibleFlatColumns().length}>
-                                                            {group.dateDisplay}
-                                                        </td>
-                                                    </tr>
-                                                    {/* Detail rows */}
-                                                    {/* Subtotal row for this group */}
-                                                    <tr className="bg-gray-50 font-medium border-t border-b border-gray-200">
-                                                        {table.getVisibleFlatColumns().map(column => {
-                                                            const colId = column.id;
-                                                            // For month column (or actions) show "Total"
-                                                            if (colId === 'month' || colId === 'actions') {
-                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border"></td>;
-                                                            }
-                                                            // Numeric columns – display group totals
-                                                            if (colId === 'pieces') {
-                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.pieces}</td>;
-                                                            }
-                                                            if (colId === 'total_sq_ft') {
-                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.total_sq_ft.toFixed(2)}</td>;
-                                                            }
-                                                            if (colId === 'wl_ln_ft') {
-                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.wl_ln_ft.toFixed(2)}</td>;
-                                                            }
-                                                            if (colId === 'sl_ln_ft') {
-                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.sl_ln_ft.toFixed(2)}</td>;
-                                                            }
-                                                            if (colId === 'edging_ln_ft') {
-                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.edging_ln_ft.toFixed(2)}</td>;
-                                                            }
-                                                            if (colId === 'cnc_ln_ft') {
-                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.cnc_ln_ft.toFixed(2)}</td>;
-                                                            }
-                                                            if (colId === 'milter_ln_ft') {
-                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.milter_ln_ft.toFixed(2)}</td>;
-                                                            }
-                                                            if (colId === 'total_cut_ln_ft') {
-                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.total_cut_ln_ft.toFixed(2)}</td>;
-                                                            }
-                                                            // Other columns – empty
-                                                            return <td key={colId} className="px-4 py-2 text-sm border-r border-border"></td>;
-                                                        })}
-                                                    </tr>
-                                                    {group.rows.map(row => {
-                                                        const tableRow = table.getRowModel().rows.find(r => r.original.plan_id === row.plan_id && r.original.fab_id === row.fab_id);
-                                                        if (!tableRow) return null;
-                                                        return (
-                                                            <tr key={tableRow.id} className="border-b border-border" data-fab-type={row.fab_type.toLowerCase()}>
-                                                                {tableRow.getVisibleCells().map(cell => {
-                                                                    if (cell.column.id === 'month') {
-                                                                        return <td key={cell.id} className="px-4 py-2 text-sm border-r border-border"></td>;
-                                                                    }
-                                                                    const isLongText = cell.column.id === 'fab_info' || cell.column.id === 'notes';
-                                                                    return (
-                                                                        <td
-                                                                            key={cell.id}
-                                                                            className={`px-4 py-2 text-sm border-r border-border last:border-r-0 ${isLongText ? 'whitespace-normal break-words min-w-[200px]' : 'break-words'}`}
-                                                                        >
-                                                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                                        </td>
-                                                                    );
-                                                                })}
-                                                            </tr>
-                                                        );
-                                                    })}
-                                                    
-                                                </Fragment>
-                                            );
-                                        })}
-
-                                        {Object.keys(groupedRows).length === 0 && (
-                                            <tr>
-                                                <td colSpan={table.getVisibleFlatColumns().length} className="px-4 py-8 text-center text-sm text-muted-foreground">
-                                                    No cut plans found.
-                                                </td>
-                                            </tr>
+                                        disabled={isApiLoading || externalLoading}
+                                    >
+                                        <CalendarDays className="mr-2 h-4 w-4" />
+                                        {dateRange?.from ? (
+                                            dateRange.to ? (
+                                                <>
+                                                    {format(dateRange.from, 'MMM dd')} - {format(dateRange.to, 'MMM dd, yyyy')}
+                                                </>
+                                            ) : (
+                                                format(dateRange.from, 'MMM dd, yyyy')
+                                            )
+                                        ) : (
+                                            <span>Pick dates</span>
                                         )}
-                                    </tbody>
-                                </table>
-                            )}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        initialFocus
+                                        mode="range"
+                                        defaultMonth={dateRange?.from || new Date()}
+                                        selected={tempDateRange}
+                                        onSelect={setTempDateRange}
+                                        numberOfMonths={2}
+                                    />
+                                    <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
+                                        <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); }}>Reset</Button>
+                                        <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+
+                            <Select value={fabTypeFilter} onValueChange={setFabTypeFilter} disabled={isApiLoading || externalLoading}>
+                                <SelectTrigger className="w-[120px] h-[34px]">
+                                    <SelectValue placeholder="FAB type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Types</SelectItem>
+                                    <SelectItem value="standard">Standard</SelectItem>
+                                    <SelectItem value="premium">Premium</SelectItem>
+                                    <SelectItem value="ag redo">AG Redo</SelectItem>
+                                    <SelectItem value="fab only">FAB only</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                        <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
-                </CardTable>
-                <CardFooter>
-                    <DataGridPagination />
-                </CardFooter>
-            </Card>
-        </DataGrid>
+
+                        <CardToolbar>
+                            <Button variant="outline" onClick={() => exportTableToCSV(table, 'shop-cut-planning')} disabled={isApiLoading || externalLoading}>
+                                Export CSV
+                            </Button>
+                        </CardToolbar>
+                    </CardHeader>
+
+                    <CardTable>
+                        <ScrollArea>
+                            <div className="relative">
+                                {(isApiLoading || externalLoading) ? (
+                                    <div className="flex items-center justify-center h-64">
+                                        <p>Loading...</p>
+                                    </div>
+                                ) : (
+                                    <table className="w-full border-collapse">
+                                        <thead>
+                                            {table.getHeaderGroups().map(headerGroup => (
+                                                <tr key={headerGroup.id}>
+                                                    {headerGroup.headers.map(header => (
+                                                        <th
+                                                            key={header.id}
+                                                            className="px-4 py-3 text-left text-xs font-medium text-muted-foreground border-b border-border bg-muted/50 break-words whitespace-normal"
+                                                            style={{ width: header.getSize() }}
+                                                        >
+                                                            {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                                        </th>
+                                                    ))}
+                                                </tr>
+                                            ))}
+                                        </thead>
+                                        <tbody>
+                                            {/* Overall totals row (above all groups) */}
+                                            {filteredRows.length > 0 && (
+                                                <tr className="bg-muted/30 font-medium border-b-2 border-border">
+                                                    {table.getVisibleFlatColumns().map(column => {
+                                                        const colId = column.id;
+                                                        if (colId === 'month') {
+                                                            return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">Total</td>;
+                                                        }
+                                                        if (colId === 'pieces') {
+                                                            return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.pieces}</td>;
+                                                        }
+                                                        if (colId === 'total_sq_ft') {
+                                                            return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.sqft.toFixed(2)}</td>;
+                                                        }
+                                                        if (colId === 'wl_ln_ft') {
+                                                            return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.wl.toFixed(2)}</td>;
+                                                        }
+                                                        if (colId === 'sl_ln_ft') {
+                                                            return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.sl.toFixed(2)}</td>;
+                                                        }
+                                                        if (colId === 'edging_ln_ft') {
+                                                            return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.edging.toFixed(2)}</td>;
+                                                        }
+                                                        if (colId === 'cnc_ln_ft') {
+                                                            return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.cnc.toFixed(2)}</td>;
+                                                        }
+                                                        if (colId === 'milter_ln_ft') {
+                                                            return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.milter.toFixed(2)}</td>;
+                                                        }
+                                                        if (colId === 'total_cut_ln_ft') {
+                                                            return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.totalCut.toFixed(2)}</td>;
+                                                        }
+                                                        // Other columns – empty
+                                                        return <td key={colId} className="px-4 py-2 text-sm border-r border-border"></td>;
+                                                    })}
+                                                </tr>
+                                            )}
+
+                                            {/* Grouped rows by date with per‑group subtotals */}
+                                            {Object.entries(groupedRows).map(([dateKey, group]) => {
+                                                const groupTotals = computeGroupTotals(group.rows);
+                                                return (
+                                                    <Fragment key={dateKey}>
+                                                        {/* Group header */}
+                                                        <tr className="bg-[#F6FFE7]">
+                                                            <td className="px-4 py-2 text-xs font-medium text-gray-800 text-start" colSpan={table.getVisibleFlatColumns().length}>
+                                                                {group.dateDisplay}
+                                                            </td>
+                                                        </tr>
+                                                        {/* Subtotal row for this group (above details) */}
+                                                        <tr className="bg-gray-50 font-medium border-t border-b border-gray-200">
+                                                            {table.getVisibleFlatColumns().map(column => {
+                                                                const colId = column.id;
+                                                                // For month column (or actions) show "Total"
+                                                                if (colId === 'month' || colId === 'actions') {
+                                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border">Total</td>;
+                                                                }
+                                                                // Numeric columns – display group totals
+                                                                if (colId === 'pieces') {
+                                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.pieces}</td>;
+                                                                }
+                                                                if (colId === 'total_sq_ft') {
+                                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.total_sq_ft.toFixed(2)}</td>;
+                                                                }
+                                                                if (colId === 'wl_ln_ft') {
+                                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.wl_ln_ft.toFixed(2)}</td>;
+                                                                }
+                                                                if (colId === 'sl_ln_ft') {
+                                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.sl_ln_ft.toFixed(2)}</td>;
+                                                                }
+                                                                if (colId === 'edging_ln_ft') {
+                                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.edging_ln_ft.toFixed(2)}</td>;
+                                                                }
+                                                                if (colId === 'cnc_ln_ft') {
+                                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.cnc_ln_ft.toFixed(2)}</td>;
+                                                                }
+                                                                if (colId === 'milter_ln_ft') {
+                                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.milter_ln_ft.toFixed(2)}</td>;
+                                                                }
+                                                                if (colId === 'total_cut_ln_ft') {
+                                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.total_cut_ln_ft.toFixed(2)}</td>;
+                                                                }
+                                                                // Other columns – empty
+                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border"></td>;
+                                                            })}
+                                                        </tr>
+                                                        {/* Detail rows */}
+                                                        {group.rows.map(row => {
+                                                            const tableRow = table.getRowModel().rows.find(r => r.original.plan_id === row.plan_id && r.original.fab_id === row.fab_id);
+                                                            if (!tableRow) return null;
+                                                            return (
+                                                                <tr key={tableRow.id} className="border-b border-border" data-fab-type={row.fab_type.toLowerCase()}>
+                                                                    {tableRow.getVisibleCells().map(cell => {
+                                                                        if (cell.column.id === 'month') {
+                                                                            return <td key={cell.id} className="px-4 py-2 text-sm border-r border-border"></td>;
+                                                                        }
+                                                                        const isLongText = cell.column.id === 'fab_info' || cell.column.id === 'notes';
+                                                                        return (
+                                                                            <td
+                                                                                key={cell.id}
+                                                                                className={`px-4 py-2 text-sm border-r border-border last:border-r-0 ${isLongText ? 'whitespace-normal break-words min-w-[200px]' : 'break-words'}`}
+                                                                            >
+                                                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                                            </td>
+                                                                        );
+                                                                    })}
+                                                                </tr>
+                                                            );
+                                                        })}
+                                                    </Fragment>
+                                                );
+                                            })}
+
+                                            {Object.keys(groupedRows).length === 0 && (
+                                                <tr>
+                                                    <td colSpan={table.getVisibleFlatColumns().length} className="px-4 py-8 text-center text-sm text-muted-foreground">
+                                                        No cut plans found.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </tbody>
+                                    </table>
+                                )}
+                            </div>
+                            <ScrollBar orientation="horizontal" />
+                        </ScrollArea>
+                    </CardTable>
+                    <CardFooter>
+                        <DataGridPagination />
+                    </CardFooter>
+                </Card>
+            </DataGrid>
+
+            {/* Create/Edit Plan Sheet */}
+            <CreatePlanSheet
+                open={planSheetOpen}
+                onOpenChange={setPlanSheetOpen}
+                selectedDate={selectedDateForSheet}
+                selectedTimeSlot={null} // we don't have time slot from table
+                selectedEvent={selectedEventForSheet}
+                onEventCreated={() => {
+                    // Refresh data after plan creation
+                    refetch();
+                }}
+            />
+        </>
     );
 };
 

@@ -295,7 +295,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               className="h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] bg-white flex items-center gap-2 text-[#4b545d] hover:bg-gray-50 transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
-              <span className="font-['Proxima_Nova:Semibold',sans-serif] text-[14px]">Back to Calendar</span>
+              <span className="font-['Proxima_Nova:Semibold',sans-serif] text-[14px]">Back</span>
             </button>
             <div className="flex flex-col gap-1">
               <p className="font-['Proxima_Nova:Semibold',sans-serif] text-[28px] leading-[32px] text-black font-semibold">

@@ -709,22 +709,22 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             size: 120,
         },
         // Notes
-        {
-            id: 'notes',
-            header: ({ column }) => (
-                <DataGridColumnHeader title="NOTES" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-            ),
-            cell: ({ row }) => {
-                if (row.original.type === 'fab') {
-                    return <span className="text-sm text-[#4b545d] line-clamp-2">{row.original.data.notes || '-'}</span>;
-                }
-                if (row.original.type === 'plan') {
-                    return <span className="text-xs text-gray-500">{row.original.plan.notes || '-'}</span>;
-                }
-                return null;
-            },
-            size: 150,
-        },
+        // {
+        //     id: 'notes',
+        //     header: ({ column }) => (
+        //         <DataGridColumnHeader title="NOTES" column={column} className="text-[#7c8689] text-[15px] font-normal" />
+        //     ),
+        //     cell: ({ row }) => {
+        //         if (row.original.type === 'fab') {
+        //             return <span className="text-sm text-[#4b545d] line-clamp-2">{row.original.data.notes || '-'}</span>;
+        //         }
+        //         if (row.original.type === 'plan') {
+        //             return <span className="text-xs text-gray-500">{row.original.plan.notes || '-'}</span>;
+        //         }
+        //         return null;
+        //     },
+        //     size: 150,
+        // },
     ], []);
 
     // ------------------ Table Instance ------------------
@@ -914,7 +914,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
                     <CardToolbar className="flex gap-4">
                         {/* Sales Person */}
-                        <Select value={salesPersonFilter} onValueChange={setSalesPersonFilter} disabled={isLoading}>
+                        {/* <Select value={salesPersonFilter} onValueChange={setSalesPersonFilter} disabled={isLoading}>
                             <SelectTrigger className="w-[205px] h-[34px] border-[#e2e4ed]">
                                 <SelectValue placeholder="Select sales person" />
                             </SelectTrigger>
@@ -924,7 +924,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                     <SelectItem key={p} value={p}>{p}</SelectItem>
                                 ))}
                             </SelectContent>
-                        </Select>
+                        </Select> */}
 
                         {/* Export */}
                         <Button

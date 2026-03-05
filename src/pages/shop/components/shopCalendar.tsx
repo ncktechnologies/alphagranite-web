@@ -419,11 +419,10 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
-                className={`px-[15px] py-[8px] rounded-[4px] font-semibold text-[14px] leading-[21px] capitalize transition-all ${
-                  viewMode === mode
+                className={`px-[15px] py-[8px] rounded-[4px] font-semibold text-[14px] leading-[21px] capitalize transition-all ${viewMode === mode
                     ? 'bg-white text-black shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]'
                     : 'text-[#78829d]'
-                }`}
+                  }`}
               >
                 {mode}
               </button>
@@ -610,9 +609,8 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                         >
                           <span className="text-[12px] text-[#7c8689] uppercase tracking-wide">{format(day, 'EEE')}</span>
                           <span
-                            className={`text-[22px] font-semibold w-9 h-9 flex items-center justify-center rounded-full ${
-                              isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'
-                            }`}
+                            className={`text-[22px] font-semibold w-9 h-9 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'
+                              }`}
                           >
                             {format(day, 'd')}
                           </span>
@@ -737,9 +735,8 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                           <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] flex flex-col justify-center items-center py-3 gap-0.5 bg-white">
                             <span className="text-[11px] text-[#7c8689] uppercase tracking-wide">{format(day, 'EEE')}</span>
                             <span
-                              className={`text-[20px] font-semibold w-8 h-8 flex items-center justify-center rounded-full ${
-                                isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'
-                              }`}
+                              className={`text-[20px] font-semibold w-8 h-8 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'
+                                }`}
                             >
                               {format(day, 'd')}
                             </span>
@@ -766,26 +763,41 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                                 const width = ev.estimated_hours * HOUR_WIDTH;
                                 const { bg, border, text } = getColorForFab(ev.fab_id, ev.fab_type);
                                 return (
-                                  <div
-                                    key={ev.id}
-                                    className="absolute rounded-[10px] border overflow-hidden cursor-pointer transition-opacity hover:opacity-90"
-                                    style={{
-                                      left: Math.max(0, left) + GAP,
-                                      width: Math.max(HOUR_WIDTH * 0.5, width) - GAP * 2,
-                                      top: laneIdx * (ROW_LANE_H + GAP) + GAP,
-                                      height: ROW_LANE_H,
-                                      backgroundColor: bg,
-                                      borderColor: border,
-                                    }}
-                                    onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(ev); }}
-                                  >
-                                    <div className="px-2 py-1 h-full flex flex-col justify-center overflow-hidden">
-                                      <p className="text-[12px] font-semibold truncate" style={{ color: text }}>Fab ID {ev.fab_id}</p>
-                                      <p className="text-[10px] truncate" style={{ color: text, opacity: 0.7 }}>{ev.percent_complete ?? 0}%</p>
-                                    </div>
-                                  </div>
+                                  <Tooltip key={ev.id} delayDuration={300}>
+                                    <TooltipTrigger asChild>
+                                      <div
+                                        className="absolute rounded-[10px] border overflow-hidden cursor-pointer transition-opacity hover:opacity-90"
+                                        style={{
+                                          left: Math.max(0, left) + GAP,
+                                          width: Math.max(HOUR_WIDTH * 0.5, width) - GAP * 2,
+                                          top: laneIdx * (ROW_LANE_H + GAP) + GAP,
+                                          height: ROW_LANE_H,
+                                          backgroundColor: bg,
+                                          borderColor: border,
+                                        }}
+                                        onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(ev); }}
+                                      >
+                                        <div className="px-2 py-1 h-full flex flex-col justify-center overflow-hidden">
+                                          <p className="text-[12px] font-semibold truncate" style={{ color: text }}>Fab ID {ev.fab_id}</p>
+                                          <p className="text-[10px] truncate" style={{ color: text, opacity: 0.7 }}>{ev.percent_complete ?? 0}%</p>
+                                        </div>
+                                      </div>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right" className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700">
+                                      <div className="space-y-1">
+                                        <p><span className="font-semibold">Operator:</span> {ev.operator_name || 'N/A'}</p>
+                                        <p><span className="font-semibold">Workstation:</span> {ev.workstation_name || 'N/A'}</p>
+                                        <p><span className="font-semibold">Est. Hours:</span> {ev.estimated_hours ?? 'N/A'}</p>
+                                        <p><span className="font-semibold">% Complete:</span> {ev.percent_complete ?? 0}%</p>
+                                        <p><span className="font-semibold">Job:</span> {`${ev.job_name}-${ev.job_number}` || 'N/A'}</p>
+                                        <p><span className="font-semibold">Account Name:</span> {ev.account_name || 'N/A'}</p>
+                                        {ev.notes && <p><span className="font-semibold">Notes:</span> {ev.notes}</p>}
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
                                 );
-                              }),
+                              })
+
                             )}
                           </div>
                         </div>
