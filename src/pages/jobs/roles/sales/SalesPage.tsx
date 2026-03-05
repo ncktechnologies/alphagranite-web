@@ -47,7 +47,6 @@ const transformFabToJob = (fab: Fab): IJob => {
         // date: fab.created_at, // Using created_at as date
         current_stage: fab.current_stage, // Add current_stage
         // Optional fields with default values
-        acct_name: '',
         template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
         template_received: '',
         templater: fab.technician_name || '-',
