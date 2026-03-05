@@ -87,7 +87,7 @@ const NewFabIdForm = () => {
   const firstFieldRef = useRef<HTMLButtonElement>(null);
   const lastProcessedJobRef = useRef<{ name: string; number: string } | null>(null);
 
- 
+
   // Focus first field when form opens
   useEffect(() => {
     if (firstFieldRef.current) {
@@ -172,14 +172,17 @@ const NewFabIdForm = () => {
 
   // Nested popover states for adding new items
   const [showAddThickness, setShowAddThickness] = useState(false);
-
+  const [showAddStoneType, setShowAddStoneType] = useState(false);
+  const [newStoneType, setNewStoneType] = useState('');
+  const [stoneTypePopoverOpen, setStoneTypePopoverOpen] = useState(false);
+  const [stoneTypeSearch, setStoneTypeSearch] = useState('');
   // New item states
   const [newThickness, setNewThickness] = useState('');
 
-   const handlePopupClose = () => {
-        setShowPopover(false);
-        navigate('/job');
-    };
+  const handlePopupClose = () => {
+    setShowPopover(false);
+    navigate('/job');
+  };
 
   const form = useForm<FabIdFormData>({
     resolver: zodResolver(fabIdFormSchema),
@@ -368,6 +371,9 @@ const NewFabIdForm = () => {
       const currentAccount = accountsData?.find((account: any) => account.name === accountValue);
 
       if (currentAccount) {
+        // If jobs data is still loading, don't clear yet
+        if (isEffectiveJobsLoading) return;
+
         // Check if the last processed job belongs to the current account
         const jobForCurrentAccount = effectiveJobsData?.find((job: any) =>
           (job.name === lastProcessedJobRef.current?.name ||
@@ -383,8 +389,7 @@ const NewFabIdForm = () => {
         }
       }
     }
-  }, [accountValue, accountsData, effectiveJobsData, form]);
-
+  }, [accountValue, accountsData, effectiveJobsData, form, isEffectiveJobsLoading]);
   // Add this cleanup effect
   useEffect(() => {
     return () => {
@@ -427,6 +432,26 @@ const NewFabIdForm = () => {
           toast.error(`Failed to add thickness: ${error.data.message}`);
         } else {
           toast.error('Failed to add thickness');
+        }
+      }
+    }
+  };
+  const handleAddStoneType = async () => {
+    if (newStoneType.trim()) {
+      try {
+        await createStoneType({ name: newStoneType.trim() }).unwrap();
+        setNewStoneType('');
+        setShowAddStoneType(false);
+        setStoneTypePopoverOpen(false);
+        toast.success('Stone type added successfully');
+      } catch (error: any) {
+        console.error('Failed to add stone type:', error);
+        if (error?.status === 'FETCH_ERROR') {
+          toast.error('Network error: Unable to add stone type. Please check your connection.');
+        } else if (error?.data?.message) {
+          toast.error(`Failed to add stone type: ${error.data.message}`);
+        } else {
+          toast.error('Failed to add stone type');
         }
       }
     }
@@ -506,7 +531,7 @@ const NewFabIdForm = () => {
         sct_needed: !values.sctNotNeeded,
         final_programming_needed: !values.finalProgrammingNotNeeded,
       }).unwrap();
-      
+
       // Get the created FAB ID from response
       const newFabId = response.data?.id;
       setFabId(newFabId);
@@ -912,26 +937,98 @@ const NewFabIdForm = () => {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Stone Type *</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingStoneTypes}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder={isLoadingStoneTypes ? 'Loading...' : 'Select stone type'} />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {isStoneTypesError ? (
-                                    <div className="px-3 py-2 text-sm text-red-500">
-                                      Failed to load stone types: Server error occurred
+                              <Popover open={stoneTypePopoverOpen} onOpenChange={setStoneTypePopoverOpen}>
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <Button
+                                      variant="outline"
+                                      className="w-full justify-between h-[48px] px-4 text-sm border-input shadow-xs shadow-black/5"
+                                      disabled={isLoadingStoneTypes}
+                                    >
+                                      <span className={!field.value ? "text-muted-foreground" : ""}>
+                                        {isLoadingStoneTypes ? 'Loading...' : (field.value || "Select stone type")}
+                                      </span>
+                                      <ChevronDown className="h-4 w-4 opacity-60" />
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                  <div className="p-2">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-sm font-medium">Stone Types</span>
+                                      <Popover open={showAddStoneType} onOpenChange={setShowAddStoneType}>
+                                        <PopoverTrigger asChild>
+                                          <Button variant="ghost" size="sm" className="h-7 px-2">
+                                            <Plus className="w-3 h-3 mr-1" />
+                                            Add
+                                          </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-80" align="end">
+                                          <div className="space-y-3">
+                                            <div>
+                                              <Label htmlFor="newStoneType">Stone Type Name</Label>
+                                              <Input
+                                                id="newStoneType"
+                                                placeholder="Enter stone type"
+                                                value={newStoneType}
+                                                onChange={(e) => setNewStoneType(e.target.value)}
+                                              />
+                                            </div>
+                                            <div className="flex justify-end gap-2">
+                                              <Button variant="outline" size="sm" onClick={() => setShowAddStoneType(false)}>
+                                                Cancel
+                                              </Button>
+                                              <Button size="sm" onClick={handleAddStoneType}>
+                                                Add
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </PopoverContent>
+                                      </Popover>
                                     </div>
-                                  ) : (
-                                    stoneTypes.map((type: string) => (
-                                      <SelectItem key={type} value={type}>
-                                        {type}
-                                      </SelectItem>
-                                    ))
-                                  )}
-                                </SelectContent>
-                              </Select>
+                                    <div className="relative mb-2">
+                                      <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
+                                      <Input
+                                        placeholder="Search stone type"
+                                        className="pl-8"
+                                        value={stoneTypeSearch}
+                                        onChange={(e) => setStoneTypeSearch(e.target.value)}
+                                      />
+                                    </div>
+                                    {isStoneTypesError && (
+                                      <div className="px-3 py-2 text-sm text-red-500 text-center">
+                                        Failed to load stone types: Server error occurred
+                                      </div>
+                                    )}
+                                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                                      {stoneTypes
+                                        .filter((type: string) =>
+                                          type.toLowerCase().includes(stoneTypeSearch.toLowerCase())
+                                        )
+                                        .map((type: string) => (
+                                          <div
+                                            key={type}
+                                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
+                                            onClick={() => {
+                                              field.onChange(type);
+                                              setStoneTypeSearch('');
+                                              setStoneTypePopoverOpen(false);
+                                            }}
+                                          >
+                                            {type}
+                                          </div>
+                                        ))}
+                                      {stoneTypes.filter((type: string) =>
+                                        type.toLowerCase().includes(stoneTypeSearch.toLowerCase())
+                                      ).length === 0 && !isStoneTypesError && (
+                                          <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                            {isLoadingStoneTypes ? 'Loading stone types...' : 'No stone types found'}
+                                          </div>
+                                        )}
+                                    </div>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -1351,18 +1448,18 @@ const NewFabIdForm = () => {
       </Container>
       <Popup isOpen={showPopover}
         title={`${fabId} created successfully `}
-        description={'Your fab ID has been created successfully' }
+        description={'Your fab ID has been created successfully'}
 
       >
 
         <div className="flex gap-x-3 items-center mt-4">
           <Link to={`/sales/edit/${fabId}`}>
-          <Button
-            className="px-8"
-           
-          >
-            Edit Fab Details
-          </Button>
+            <Button
+              className="px-8"
+
+            >
+              Edit Fab Details
+            </Button>
           </Link>
           <Button
             className="px-8"
