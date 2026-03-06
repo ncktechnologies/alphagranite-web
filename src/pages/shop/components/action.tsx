@@ -1,6 +1,6 @@
 import { Row } from '@tanstack/react-table';
 import { toast } from 'sonner';
-import { EllipsisVertical, Eye, MessageSquare, CalendarDays, Plus } from 'lucide-react';
+import { EllipsisVertical, Eye, MessageSquare, CalendarDays, Plus, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -64,7 +64,7 @@ function ActionsCell({ row, onView, onViewCalendar, onCreatePlan, onAddNote, onA
             <DropdownMenuItem
               onClick={(e) => { e.stopPropagation(); onAutoSchedule(fabId); }}
             >
-                <Plus className="mr-2 h-4 w-4" />
+                <Sparkles className="mr-2 h-4 w-4" />
                 Auto Schedule
               </DropdownMenuItem>
           )}
