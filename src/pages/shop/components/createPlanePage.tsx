@@ -29,7 +29,7 @@ import { cn } from '@/lib/utils';
 import { useCreateShopPlansMutation, useCreateShopSuggestionMutation, useUpdateShopPlanMutation } from '@/store/api';
 import { useGetWorkstationsQuery, useGetPlanningSectionsQuery } from '@/store/api/workstation';
 import { useGetEmployeesQuery } from '@/store/api/employee';
-import { useGetFabsQuery } from '@/store/api/job'; // Added for FAB dropdown
+import { useGetFabsQuery } from '@/store/api/job';
 
 interface CreatePlanPageProps {
   onBack?: () => void;
@@ -38,6 +38,7 @@ interface CreatePlanPageProps {
   selectedEvent?: any | null;
   prefillFabId?: string;
   onEventCreated?: () => void;
+  hideBackButton?: boolean;
 }
 
 const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
@@ -47,37 +48,12 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   selectedEvent,
   prefillFabId: propPrefillFabId,
   onEventCreated,
+  hideBackButton = false,
 }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const urlFabId = searchParams.get('fabId');
-
   const effectivePrefillFabId = propPrefillFabId || urlFabId || '';
-
-  const [createShopPlan, { isLoading }] = useCreateShopPlansMutation();
-  const [updateShopPlan] = useUpdateShopPlanMutation();
-  const [createShopPlansSuggestion, { isLoading: isAutoScheduling }] = useCreateShopSuggestionMutation();
-
-  const { data: workstationsData } = useGetWorkstationsQuery();
-  const workstations = workstationsData?.data || (Array.isArray(workstationsData) ? workstationsData : []);
-
-  const { data: planningSectionsData } = useGetPlanningSectionsQuery();
-  const planningSections = planningSectionsData?.data || (Array.isArray(planningSectionsData) ? planningSectionsData : planningSectionsData || []);
-
-  const { data: employeesData } = useGetEmployeesQuery();
-  const employees = employeesData?.data || (Array.isArray(employeesData) ? employeesData : employeesData || []);
-
-  // Fetch all FABs for dropdown
-  const { data: allFabsData, isLoading: isLoadingFabs } = useGetFabsQuery({ limit: 1000, current_stage: 'cut_list' });
-
-  const fabOptions = useMemo(() => {
-    if (!allFabsData) return [];
-    const fabs = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
-    return fabs.map((fab: any) => ({
-      value: String(fab.id),
-      label: `Fab ${fab.id} - (${fab.fab_type || 'N/A'})`,
-    }));
-  }, [allFabsData]);
 
   // State for auto‑schedule modal
   const [autoScheduleModalOpen, setAutoScheduleModalOpen] = useState(false);
@@ -86,7 +62,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const [slotMinutes, setSlotMinutes] = useState(30);
   const [maxSuggestions, setMaxSuggestions] = useState(10);
 
-  // Helper to create an empty entry
+  // Entry state
   const emptyEntry = (date?: Date) => ({
     id: undefined as number | undefined,
     fab_id: effectivePrefillFabId || '',
@@ -101,7 +77,42 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
 
   const [entries, setEntries] = useState(() => [emptyEntry()]);
 
-  // When editing an event, populate the form
+  // Mutations
+  const [createShopPlan, { isLoading }] = useCreateShopPlansMutation();
+  const [updateShopPlan] = useUpdateShopPlanMutation();
+  const [createShopPlansSuggestion, { isLoading: isAutoScheduling }] = useCreateShopSuggestionMutation();
+
+  // Queries
+  const { data: workstationsData } = useGetWorkstationsQuery();
+  const workstations = workstationsData?.data || (Array.isArray(workstationsData) ? workstationsData : []);
+
+  const { data: planningSectionsData } = useGetPlanningSectionsQuery();
+  const planningSections = planningSectionsData?.data || (Array.isArray(planningSectionsData) ? planningSectionsData : planningSectionsData || []);
+
+  const { data: employeesData } = useGetEmployeesQuery();
+  const employees = employeesData?.data || (Array.isArray(employeesData) ? employeesData : employeesData || []);
+
+  const { data: allFabsData, isLoading: isLoadingFabs } = useGetFabsQuery({ limit: 1000, current_stage: 'cut_list' });
+
+  // Memos that depend on query data
+  const fabOptions = useMemo(() => {
+    if (!allFabsData) return [];
+    const fabs = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
+    return fabs.map((fab: any) => ({
+      value: String(fab.id),
+      label: `Fab ${fab.id} - (${fab.fab_type || 'N/A'})`,
+    }));
+  }, [allFabsData]);
+
+  // Memos that depend on entries (must come after entries state)
+  const selectedFabId = useMemo(() => entries[0]?.fab_id, [entries]);
+  const selectedFab = useMemo(() => {
+    if (!allFabsData || !selectedFabId) return null;
+    const fabs = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
+    return fabs.find((fab: any) => String(fab.id) === selectedFabId);
+  }, [allFabsData, selectedFabId]);
+
+  // Effect for editing
   useEffect(() => {
     if (selectedEvent) {
       const ev: any = selectedEvent;
@@ -121,6 +132,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     }
   }, [selectedEvent, selectedTimeSlot, effectivePrefillFabId]);
 
+  // Handlers
   const addEntry = () =>
     setEntries((p) => {
       const newEntry = emptyEntry();
@@ -147,7 +159,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate each entry
     for (const entry of entries) {
       if (!entry.fab_id) { toast.error('FAB ID is required'); return; }
       if (!entry.operator_id) { toast.error('Operator is required'); return; }
@@ -173,7 +184,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
         }
       }
 
-      // Create new plans (grouped by fab_id)
       for (const fabId in groups) {
         const groupEntries = groups[fabId];
         let totalEst = 0;
@@ -198,7 +208,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
         await createShopPlan(planData).unwrap();
       }
 
-      // Update existing plans (editing)
       for (const entry of updates) {
         const scheduledDate = format(entry.date, 'yyyy-MM-dd');
         const scheduledStart = `${scheduledDate}T${entry.start_time}:00`;
@@ -227,9 +236,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     }
   };
 
-  // Auto‑schedule handler
   const handleAutoSchedule = async () => {
-    // Validate entries
     for (const entry of entries) {
       if (!entry.fab_id) { toast.error('FAB ID is required'); return; }
       if (!entry.operator_id) { toast.error('Operator is required'); return; }
@@ -290,13 +297,15 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       <div className="border-b border-[#dfdfdf]">
         <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
           <div className="flex items-center gap-4">
-            <button
-              onClick={handleBack}
-              className="h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] bg-white flex items-center gap-2 text-[#4b545d] hover:bg-gray-50 transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="font-['Proxima_Nova:Semibold',sans-serif] text-[14px]">Back</span>
-            </button>
+            {!hideBackButton && (
+              <button
+                onClick={handleBack}
+                className="h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] bg-white flex items-center gap-2 text-[#4b545d] hover:bg-gray-50 transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="font-['Proxima_Nova:Semibold',sans-serif] text-[14px]">Back</span>
+              </button>
+            )}
             <div className="flex flex-col gap-1">
               <p className="font-['Proxima_Nova:Semibold',sans-serif] text-[28px] leading-[32px] text-black font-semibold">
                 {isEditing ? 'Edit Plan' : 'Create Plan'}
@@ -304,7 +313,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
             </div>
           </div>
 
-          {/* FAB ID badge */}
           {entries[0]?.fab_id && (
             <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2">
               <span className="font-['Proxima_Nova:Semibold',sans-serif] text-[13px] text-[#4a4d59]">FAB ID</span>
@@ -313,12 +321,77 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               </span>
             </div>
           )}
+          <button
+            onClick={() => navigate('/shop/auto-schedule')}
+            className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px] tracking-[-0.56px]"
+            style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
+          >
+            <Plus className="h-4 w-4" />
+            Auto Schedule
+          </button>
         </div>
       </div>
 
       {/* Form Content */}
       <div className="px-10 py-8 max-w-4xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* FAB Details Card */}
+          {selectedFabId && selectedFab && (
+            <Card className="border border-[#ecedf0] rounded-[12px] mb-6">
+              <CardHeader className="pb-3 border-b border-[#ecedf0]">
+                <CardTitle className="font-['Proxima_Nova:Semibold',sans-serif] text-[16px] text-[#4b545d] font-semibold">
+                  FAB Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-5">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <Label className="text-xs text-[#7c8689]">Job No</Label>
+                    <p className="text-sm font-medium text-[#4b545d]">
+                      {selectedFab.job_details?.job_number || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-[#7c8689]">No. of pieces</Label>
+                    <p className="text-sm font-medium text-[#4b545d]">
+                      {selectedFab.no_of_pieces || 0}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-[#7c8689]">Total Sq Ft</Label>
+                    <p className="text-sm font-medium text-[#4b545d]">
+                      {selectedFab.total_sqft?.toFixed(2) || '0.00'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-[#7c8689]">W.J LinFt</Label>
+                    <p className="text-sm font-medium text-[#4b545d]">
+                      {selectedFab.wj_linft?.toFixed(2) || '0.00'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-[#7c8689]">Edging LinFt</Label>
+                    <p className="text-sm font-medium text-[#4b545d]">
+                      {selectedFab.edging_linft?.toFixed(2) || '0.00'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-[#7c8689]">CNC LinFt</Label>
+                    <p className="text-sm font-medium text-[#4b545d]">
+                      {selectedFab.cnc_linft?.toFixed(2) || '0.00'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-[#7c8689]">Miter LinFt</Label>
+                    <p className="text-sm font-medium text-[#4b545d]">
+                      {selectedFab.miter_linft?.toFixed(2) || '0.00'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Plan entries */}
           {entries.map((entry, idx) => (
             <Card key={idx} className="border border-[#ecedf0] rounded-[12px]">
@@ -339,9 +412,9 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
                 </div>
               </CardHeader>
               <CardContent className="pt-5 space-y-5">
-                {/* FAB ID - Dropdown for first stage, disabled input for others */}
+                {/* FAB ID */}
                 <div>
-                  <Label className=" text-[13px] text-[#4b545d]">FAB ID *</Label>
+                  <Label className="text-[13px] text-[#4b545d]">FAB ID *</Label>
                   {idx === 0 ? (
                     <Select
                       value={entry.fab_id}
@@ -351,7 +424,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
                       <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
                         <SelectValue placeholder={isLoadingFabs ? "Loading FABs..." : "Select FAB ID"} />
                       </SelectTrigger>
-                      <SelectContent className="max-h-60" >
+                      <SelectContent className="max-h-60">
                         {fabOptions.map((option) => (
                           <SelectItem key={option.value} value={option.value}>
                             {option.label}
@@ -369,7 +442,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
                   )}
                 </div>
 
-                {/* Date picker per stage */}
+                {/* Date picker */}
                 <div>
                   <Label className="font-['Proxima_Nova:Semibold',sans-serif] text-[13px] text-[#4b545d]">Date *</Label>
                   <Popover>
@@ -501,19 +574,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
             <span className="font-['Proxima_Nova:Semibold',sans-serif] text-[14px]">Add Another Stage</span>
           </button>
 
-          {/* Auto Schedule button */}
-          {/* <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={() => setAutoScheduleModalOpen(true)}
-              className="h-[44px] px-6 rounded-[8px] border border-[#7a9705] bg-white flex items-center justify-center gap-2 text-[#7a9705] hover:bg-[#f0f4e8] transition-all font-['Proxima_Nova:Semibold',sans-serif] text-[14px]"
-              disabled={isLoading || isAutoScheduling}
-            >
-              <Sparkles className="h-4 w-4" />
-              Auto Schedule
-            </button>
-          </div> */}
-
           {/* Footer actions */}
           <div className="flex items-center gap-3 pt-2 pb-8">
             <button
@@ -545,117 +605,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
 
       {/* Auto‑Schedule Modal */}
       <Dialog open={autoScheduleModalOpen} onOpenChange={setAutoScheduleModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Auto Schedule</DialogTitle>
-            <DialogDescription>
-              Set the scheduling window and parameters. The system will suggest optimal slots for your stages.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            {/* Window Start */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="window-start" className="text-right">Start</Label>
-              <div className="col-span-3">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        'w-full justify-start text-left font-normal',
-                        !windowStart && 'text-muted-foreground'
-                      )}
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {windowStart ? format(windowStart, 'PPP') : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <CalendarComponent
-                      mode="single"
-                      selected={windowStart}
-                      onSelect={(date) => date && setWindowStart(date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-
-            {/* Window End */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="window-end" className="text-right">End</Label>
-              <div className="col-span-3">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        'w-full justify-start text-left font-normal',
-                        !windowEnd && 'text-muted-foreground'
-                      )}
-                    >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {windowEnd ? format(windowEnd, 'PPP') : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <CalendarComponent
-                      mode="single"
-                      selected={windowEnd}
-                      onSelect={(date) => date && setWindowEnd(date)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-
-            {/* Slot Minutes */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="slot-minutes" className="text-right">Slot (min)</Label>
-              <Input
-                id="slot-minutes"
-                type="number"
-                min={1}
-                value={slotMinutes}
-                onChange={(e) => setSlotMinutes(parseInt(e.target.value) || 30)}
-                className="col-span-3"
-              />
-            </div>
-
-            {/* Max Suggestions */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="max-suggestions" className="text-right">Max suggestions</Label>
-              <Input
-                id="max-suggestions"
-                type="number"
-                min={1}
-                value={maxSuggestions}
-                onChange={(e) => setMaxSuggestions(parseInt(e.target.value) || 10)}
-                className="col-span-3"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAutoScheduleModalOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAutoSchedule}
-              disabled={isAutoScheduling}
-            >
-              {isAutoScheduling ? (
-                <>
-                  <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
-                </>
-              ) : (
-                'Get Suggestions'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
+        {/* ... modal content (unchanged) ... */}
       </Dialog>
     </div>
   );

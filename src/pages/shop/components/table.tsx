@@ -112,7 +112,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
     const [selectedFabForSheet, setSelectedFabForSheet] = useState<string>('');
     const [selectedDateForSheet, setSelectedDateForSheet] = useState<Date | null>(null);
     const [selectedEventForSheet, setSelectedEventForSheet] = useState<any | null>(null);
-
     const navigate = useNavigate();
 
     const handleViewCalendar = (fabId: string, date?: string) => {
@@ -767,6 +766,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                 selectedDate={selectedDateForSheet}
                 selectedTimeSlot={null} // we don't have time slot from table
                 selectedEvent={selectedEventForSheet}
+                prefillFabId={selectedFabForSheet}
                 onEventCreated={() => {
                     // Refresh data after plan creation
                     refetch();

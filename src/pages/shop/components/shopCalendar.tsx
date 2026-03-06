@@ -411,6 +411,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
             <Plus className="h-4 w-4" />
             Create Plan
           </button>
+          
         </div>
 
         <div className="flex items-center px-10 h-[65px]">

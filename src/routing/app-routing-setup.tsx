@@ -57,6 +57,7 @@ import { InstallSchedulingPage } from '@/pages/jobs/roles/install-scheduling';
 import { InstallSchedulingDetailsPage } from '@/pages/jobs/roles/install-scheduling/components/details';
 import { ResurfacingDetailsPage } from '@/pages/jobs/roles/resurfacing/components/details';
 import CreatePlanPage from '@/pages/shop/components/createPlanePage';
+import CreateAutoPlanPage from '@/pages/shop/components/autoSuggest';
 // import ShopCalendarPage from '@/pages/shop/calendarPage';
 
 export function AppRoutingSetup() {
@@ -371,6 +372,14 @@ export function AppRoutingSetup() {
             path='/shop/create-plan'
             element={
             <CreatePlanPage/>
+            }
+          />
+            <Route
+            path="/shop/auto-schedule"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <CreateAutoPlanPage/>
+              // </ProtectedRoute>
             }
           />
           <Route

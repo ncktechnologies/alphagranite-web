@@ -35,6 +35,7 @@ const updateFabSchema = z.object({
   edgingLinFt: z.string().optional(),
   cncLinFt: z.string().optional(),
   miterLinFt: z.string().optional(),
+  sawCutLnft: z.string().optional(),
   shopDate: z.string().optional(),
   installationDate: z.string().optional(),
   revisionComplete: z.boolean().optional(),
@@ -54,15 +55,10 @@ const formatDate = (date: Date | undefined): string => {
 // Helper function to parse date string to Date object (handles timezone correctly)
 const parseDateString = (dateString: string | undefined): Date | undefined => {
   if (!dateString) return undefined;
-  
-  // If the string is already in YYYY-MM-DD format, parse it correctly
   const parts = dateString.split('-');
   if (parts.length === 3) {
-    // Create date in local timezone (not UTC)
     return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
   }
-  
-  // Fallback to Date constructor
   const date = new Date(dateString);
   return isNaN(date.getTime()) ? undefined : date;
 };
@@ -95,13 +91,13 @@ export function UpdateFabIdModal({
       edgingLinFt: "",
       cncLinFt: "",
       miterLinFt: "",
+      sawCutLnft: "",
       shopDate: "",
       installationDate: "",
       revisionComplete: undefined,
     },
   });
 
-  // Reset form when cutListData changes
   useEffect(() => {
     if (cutListData?.data) {
       const data = cutListData.data;
@@ -112,6 +108,7 @@ export function UpdateFabIdModal({
         edgingLinFt: data.edging_linft?.toString() || "",
         cncLinFt: data.cnc_linft?.toString() || "",
         miterLinFt: data.miter_linft?.toString() || "",
+        sawCutLnft: data.saw_cut_lnft?.toString() || "",
         shopDate: data.shop_date_schedule || "",
         installationDate: data.installation_date || "",
         revisionComplete: data.revision_complete === true,
@@ -119,7 +116,6 @@ export function UpdateFabIdModal({
     }
   }, [cutListData, form]);
 
-  // ---------------- JOB INFO DATA ---------------- //
   const jobInfo = [
     { label: "Job #", value: fabData?.job_details?.job_number || '-' },
     { label: "FAB type", value: fabData?.fab_type || '-' },
@@ -131,25 +127,10 @@ export function UpdateFabIdModal({
     { label: "Edge", value: fabData?.edge_name || '-' },
   ];
 
-  // ---------------- SUBMIT HANDLER ---------------- //
   const onSubmit = async (values: UpdateFabData) => {
     setIsSubmitting(true);
-
     try {
-      // If revision_complete is checked, call the update endpoint
-      if (values.revisionComplete) {
-        await updateCutList({
-          fab_id: fabData?.id,
-          data: { revision_complete: true }
-        }).unwrap();
-
-        toast.success("Revision marked as complete!");
-        onClose();
-        navigate('/job/cut-list');
-        return;
-      }
-
-      // Otherwise, prepare data for schedule API call
+      // Always update all schedule fields first
       const requestData = {
         fab_id: fabData?.id,
         no_of_pieces: values.pieces ? parseInt(values.pieces) : undefined,
@@ -158,22 +139,29 @@ export function UpdateFabIdModal({
         edging_linft: values.edgingLinFt ? parseFloat(values.edgingLinFt) : undefined,
         cnc_linft: values.cncLinFt ? parseFloat(values.cncLinFt) : undefined,
         miter_linft: values.miterLinFt ? parseFloat(values.miterLinFt) : undefined,
+        saw_cut_lnft: values.sawCutLnft ? parseFloat(values.sawCutLnft) : undefined,
         shop_date_schedule: values.shopDate || null,
-        installation_date: values.installationDate || null ,
+        installation_date: values.installationDate || null,
       };
 
-      // Remove undefined values
       const cleanedData = Object.fromEntries(
         Object.entries(requestData).filter(([_, v]) => v !== undefined)
       );
 
-      // Call the schedule API endpoint
       await updateCutListSchedule({
         fab_id: fabData?.id,
         data: cleanedData
       }).unwrap();
 
-      toast.success("FAB scheduled successfully!");
+      // If revision_complete is checked, fire that update too
+      if (values.revisionComplete) {
+        await updateCutList({
+          fab_id: fabData?.id,
+          data: { revision_complete: true }
+        }).unwrap();
+      }
+
+      toast.success(values.revisionComplete ? "FAB scheduled and revision confirmed!" : "FAB scheduled successfully!");
       onClose();
       navigate('/job/cut-list');
     } catch (error) {
@@ -203,7 +191,6 @@ export function UpdateFabIdModal({
           <DialogTitle>Update FAB ID</DialogTitle>
         </DialogHeader>
 
-        {/* ---------- FAB HEADER ---------- */}
         <div className="space-y-1 mb-4">
           <p className="font-bold text-lg">
             {fabData?.fabId || `FAB-${fabData?.id || "2024-001"}`}
@@ -213,7 +200,6 @@ export function UpdateFabIdModal({
           </p>
         </div>
 
-        {/* ---------- JOB INFO GRID ---------- */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6">
           {jobInfo.map((item, idx) => (
             <div key={idx}>
@@ -229,11 +215,10 @@ export function UpdateFabIdModal({
 
         <Separator />
 
-        {/* ---------- SCROLLABLE FORM CONTAINER ---------- */}
         <div className="overflow-y-auto overflow-x-visible flex-grow pr-2 -mr-2">
-          {/* ---------- FORM ---------- */}
           <Form {...form}>
             <form id="update-fab-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 py-4">
+
               {/* ---- QUANTITIES ROW ---- */}
               <div className="grid grid-cols-3 gap-4">
                 <FormField
@@ -249,7 +234,6 @@ export function UpdateFabIdModal({
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="totalSqFt"
@@ -263,7 +247,6 @@ export function UpdateFabIdModal({
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="wjLinFt"
@@ -280,7 +263,7 @@ export function UpdateFabIdModal({
               </div>
 
               {/* ---- LINEAR FT ROW ---- */}
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <FormField
                   control={form.control}
                   name="edgingLinFt"
@@ -294,7 +277,6 @@ export function UpdateFabIdModal({
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="cncLinFt"
@@ -308,7 +290,6 @@ export function UpdateFabIdModal({
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="miterLinFt"
@@ -322,11 +303,23 @@ export function UpdateFabIdModal({
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="sawCutLnft"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Saw Cut LnFt</FormLabel>
+                      <FormControl>
+                        <Input placeholder="0" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
 
               {/* ---- DATES + REVISION ROW ---- */}
               <div className="grid grid-cols-3 gap-4">
-                {/* Shop date */}
                 <FormField
                   control={form.control}
                   name="shopDate"
@@ -336,16 +329,12 @@ export function UpdateFabIdModal({
                       <DateTimePicker
                         mode="date"
                         value={parseDateString(field.value)}
-                        onChange={(date) => {
-                          field.onChange(formatDate(date));
-                        }}
+                        onChange={(date) => { field.onChange(formatDate(date)); }}
                       />
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
-                {/* Installation date */}
                 <FormField
                   control={form.control}
                   name="installationDate"
@@ -355,16 +344,12 @@ export function UpdateFabIdModal({
                       <DateTimePicker
                         mode="date"
                         value={parseDateString(field.value)}
-                        onChange={(date) => {
-                          field.onChange(formatDate(date));
-                        }}
+                        onChange={(date) => { field.onChange(formatDate(date)); }}
                       />
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
-                {/* Revision complete */}
                 <FormField
                   control={form.control}
                   name="revisionComplete"
@@ -381,16 +366,15 @@ export function UpdateFabIdModal({
                   )}
                 />
               </div>
+
             </form>
           </Form>
         </div>
 
-        {/* ---- FOOTER BUTTONS ---- */}
         <DialogFooter className="flex justify-end gap-2 pt-4">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-
           <Button type="submit" form="update-fab-form" disabled={isSubmitting}>
             {isSubmitting ? (
               <span className="flex items-center gap-2">

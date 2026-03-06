@@ -131,7 +131,7 @@ export const shopCutPlanningApi = createApi({
       }),
       createShopSuggestion: build.mutation<ShopCutPlanSuccessResponse<ShopCutPlan[]>, ShopCutPlanCreate>({
         query: (data) => ({
-          url: "/api/v1/shop/plans/suggestions",
+          url: "/api/v1/shop/plans/earliest-availability",
           method: "post",
           data: data,
         }),

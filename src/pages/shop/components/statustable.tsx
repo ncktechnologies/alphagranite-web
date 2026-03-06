@@ -953,8 +953,9 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                             {hg.headers.map(header => (
                                                 <th
                                                     key={header.id}
-                                                    className="px-4 py-3 text-left text-xs font-medium text-[#7c8689] bg-[#f9f9f9] border-b border-r border-[#e2e4ed] last:border-r-0 whitespace-normal"
+                                                    className="px-4 py-3 text-left text-xs font-medium text-[#7c8689] bg-[#f9f9f9] border-b border-r border-[#e2e4ed] last:border-r-0 whitespace-normal sticky top-0 z-10"
                                                     style={{ width: header.getSize() }}
+
                                                 >
                                                     {header.isPlaceholder
                                                         ? null
