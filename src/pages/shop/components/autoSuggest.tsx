@@ -49,7 +49,6 @@ const FAB_STAGE_FIELDS: { section_id: number; field: string; label: string }[] =
   { section_id: 9, field: 'edging_linft',  label: 'Edging'  },
   { section_id: 2, field: 'miter_linft',   label: 'Miter'   },
   { section_id: 1, field: 'cnc_linft',     label: 'CNC'     },
-  { section_id: 6, field: 'total_sqft',    label: 'Touchup' },
 ];
 
 // Returns the stages that have a value > 0 on this fab
