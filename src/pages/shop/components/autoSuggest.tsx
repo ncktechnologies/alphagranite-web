@@ -742,11 +742,11 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
           </button>
 
           {/* Auto-populate button */}
-          {!isEditing && entries.some(e => e.operator_id && e.workstation_id && e.planning_section_id) && (
+          {/* {!isEditing && entries.some(e => e.operator_id && e.workstation_id && e.planning_section_id) && ( */}
             <button
               type="button"
               onClick={handleAutoPopulate}
-              disabled={isAutoScheduling}
+              disabled={isAutoScheduling && !isEditing && entries.some(e => e.operator_id && e.workstation_id && e.planning_section_id)}
               className="w-full h-[44px] border border-[#9cc15e] rounded-[8px] flex items-center justify-center gap-2 text-[#5a7a00] bg-[#f0f4e8] hover:bg-[#e6f0d4] transition-colors disabled:opacity-60 text-[14px] font-semibold"
             >
               {isAutoScheduling ? (
@@ -761,7 +761,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
                 </>
               )}
             </button>
-          )}
+        
 
           {/* Footer actions */}
           <div className="flex items-center gap-3 pt-2 pb-8">

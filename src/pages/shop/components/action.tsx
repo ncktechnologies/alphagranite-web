@@ -20,9 +20,11 @@ interface ActionsCellProps {
   /** Open the Create Plan page pre-filled with this fab's ID */
   onCreatePlan?: (fabId: string) => void;
   onAddNote?: (fabId: string) => void;
+  /** Auto-schedule the fab based on its current cut stages and shop availability */
+  onAutoSchedule?: (fabId: string) => void;
 }
 
-function ActionsCell({ row, onView, onViewCalendar, onCreatePlan, onAddNote }: ActionsCellProps) {
+function ActionsCell({ row, onView, onViewCalendar, onCreatePlan, onAddNote, onAutoSchedule }: ActionsCellProps) {
   const fabId = String(row.original.id ?? row.original.fab_id ?? '');
 
   return (
@@ -57,6 +59,14 @@ function ActionsCell({ row, onView, onViewCalendar, onCreatePlan, onAddNote }: A
               <Plus className="mr-2 h-4 w-4" />
               Create Plan
             </DropdownMenuItem>
+          )}
+          {onAutoSchedule && (
+            <DropdownMenuItem
+              onClick={(e) => { e.stopPropagation(); onAutoSchedule(fabId); }}
+            >
+                <Plus className="mr-2 h-4 w-4" />
+                Auto Schedule
+              </DropdownMenuItem>
           )}
 
           {onAddNote && (

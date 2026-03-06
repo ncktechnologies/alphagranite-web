@@ -123,6 +123,9 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             navigate(url);
         }
     };
+    const handleAutoSchedule = (fabId: string) => {
+        navigate(`/shop/auto-schedule?fabId=${fabId}`);
+    }
 
     // Replace navigation with sheet opening
     const handleCreatePlan = (fabId: string) => {
@@ -180,11 +183,11 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                 total_sq_ft: fab.total_sqft || 0,
                 // Linear feet fields (match cutlist naming)
                 wl_ln_ft: fab.wj_linft || 0,
-                sl_ln_ft: fab.sl_linft || 0,
+                sl_ln_ft: fab.saw_cut_lnft || 0,
                 edging_ln_ft: fab.edging_linft || 0,
                 cnc_ln_ft: fab.cnc_linft || 0,
                 milter_ln_ft: fab.miter_linft || 0,
-                total_cut_ln_ft: fab.total_cut_ln_ft || 0,
+                total_cut_ln_ft: fab.total_cut_lnft || 0,
                 percent_complete: fab.percent_complete || 0,
             };
 
@@ -303,6 +306,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                     row={row}
                     onViewCalendar={() => handleViewCalendar(row.original.fab_id, row.original.scheduled_start_date)}
                     onCreatePlan={() => handleCreatePlan(row.original.fab_id)}
+                    onAutoSchedule={() => handleAutoSchedule(row.original.fab_id)}
                 />
             ),
             enableSorting: false,
