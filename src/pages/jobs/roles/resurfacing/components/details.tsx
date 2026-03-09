@@ -207,7 +207,7 @@ export function ResurfacingDetailsPage() {
               </p>
             </CardHeader>
             <CardContent>
-              <ReviewChecklistForm />
+              <ReviewChecklistForm fabId={fab.id} />
             </CardContent>
           </Card>
         </div>

@@ -1899,7 +1899,7 @@ export const jobApi = createApi({
             // Resurfacing Scheduling mutations
             createResurfaceScheduling: build.mutation<any, { fab_id: number; scheduled_start_date?: string; scheduled_end_date?: string }>({  
                 query: ({ fab_id, scheduled_start_date, scheduled_end_date }) => ({
-                    url: `/api/v1/resurface-scheduling`,
+                    url: `/resurface-scheduling`,
                     method: "POST",
                     data: {
                         fab_id,
@@ -1912,7 +1912,7 @@ export const jobApi = createApi({
 
             updateResurfaceScheduling: build.mutation<any, { resurface_scheduling_id: number; data: { is_completed?: boolean; actual_start_date?: string; actual_end_date?: string } }>({  
                 query: ({ resurface_scheduling_id, data }) => ({
-                    url: `/api/v1/resurface-scheduling/${resurface_scheduling_id}`,
+                    url: `/resurface-scheduling/${resurface_scheduling_id}`,
                     method: "PUT",
                     data
                 }),
@@ -1921,7 +1921,7 @@ export const jobApi = createApi({
 
             getResurfaceSchedulingByFabId: build.query<any, number>({
                 query: (fab_id) => ({
-                    url: `/api/v1/resurface-scheduling/fab/${fab_id}`,
+                    url: `/resurface-scheduling/fab/${fab_id}`,
                     method: "GET"
                 }),
                 providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],

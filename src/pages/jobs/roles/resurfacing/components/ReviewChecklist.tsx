@@ -4,226 +4,304 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { LoaderCircle, Check, Undo2, Save } from "lucide-react";
+import { LoaderCircle } from "lucide-react";
 import { toast } from "sonner";
-
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router";
 import {
-    useUpdateFabMutation,
-    useGetFabByIdQuery,
-    useCreateFabNoteMutation,
-    useCreateResurfaceSchedulingMutation,
-    useUpdateResurfaceSchedulingMutation,
-    useGetResurfaceSchedulingByFabIdQuery
+  useUpdateFabMutation,
+  useGetFabByIdQuery,
+  useCreateFabNoteMutation,
+  useCreateResurfaceSchedulingMutation,
+  useUpdateResurfaceSchedulingMutation,
+  useGetResurfaceSchedulingByFabIdQuery,
+  useUpdateCutListScheduleMutation,
 } from "@/store/api/job";
-
 import { useGetSalesPersonsQuery } from "@/store/api";
-import { Can } from '@/components/permission';
+import { Can } from "@/components/permission";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
+
+// ---------- Helper functions ----------
+const formatDate = (date: Date | undefined): string => {
+  if (!date) return "";
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const parseDateString = (dateString: string | undefined): Date | undefined => {
+  if (!dateString) return undefined;
+  const parts = dateString.split('-');
+  if (parts.length === 3) {
+    return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+  }
+  const date = new Date(dateString);
+  return isNaN(date.getTime()) ? undefined : date;
+};
+// --------------------------------------
 
 const reviewChecklistSchema = z.object({
-    resurface_completed: z.boolean(),
-    fab_notes: z.string().optional(),
-    drafter: z.string().optional(),
+  resurface_completed: z.boolean(),
+  fab_notes: z.string().optional(),
+  drafter: z.string().optional(),
+  shop_date_schedule: z.string().optional(),
 });
 
 type ReviewChecklistData = z.infer<typeof reviewChecklistSchema>;
 
 interface ReviewChecklistFormProps {
-    fabId?: number;
+  fabId?: number;
 }
 
 export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
-    // Fetch employees and departments
-    const {
-        data: salesPersonsData,
-        isLoading: isLoadingSalesPersons,
-        isError: isSalesPersonsError
-    } = useGetSalesPersonsQuery();
+  // Fetch sales persons (optional)
+  const { data: salesPersonsData } = useGetSalesPersonsQuery();
+  const salesPersons = Array.isArray(salesPersonsData) ? salesPersonsData : [];
 
-    // Extract sales persons from the response
-    const salesPersons = Array.isArray(salesPersonsData) ? salesPersonsData : [];
+  // Mutations
+  const [updateFab] = useUpdateFabMutation();
+  const [createFabNote] = useCreateFabNoteMutation();
+  const [createResurfaceScheduling] = useCreateResurfaceSchedulingMutation();
+  const [updateResurfaceScheduling] = useUpdateResurfaceSchedulingMutation();
+  const [updateCutListSchedule] = useUpdateCutListScheduleMutation();
 
-    const [updateFab] = useUpdateFabMutation();
-    const [createFabNote] = useCreateFabNoteMutation();
-    const [createResurfaceScheduling] = useCreateResurfaceSchedulingMutation();
-    const [updateResurfaceScheduling] = useUpdateResurfaceSchedulingMutation();
+  // Queries
+  const { data: fabData } = useGetFabByIdQuery(fabId || 0, { skip: !fabId });
+  const { data: resurfaceData } = useGetResurfaceSchedulingByFabIdQuery(fabId || 0, { skip: !fabId });
 
-    const { data: fabData } = useGetFabByIdQuery(fabId || 0, { skip: !fabId });
-    const { data: resurfaceData } = useGetResurfaceSchedulingByFabIdQuery(fabId || 0, { skip: !fabId });
+  const form = useForm<ReviewChecklistData>({
+    resolver: zodResolver(reviewChecklistSchema),
+    defaultValues: {
+      resurface_completed: false,
+      drafter: 'none',
+      shop_date_schedule: '',
+    },
+  });
 
-    const form = useForm<ReviewChecklistData>({
-        resolver: zodResolver(reviewChecklistSchema),
-        defaultValues: {
-            resurface_completed: false,
-            drafter: 'none'
-        },
-    });
+  // Pre-fill form when fabData loads
+  useEffect(() => {
+    if (fabData?.data) {
+      const data = fabData.data;
+      form.reset({
+        resurface_completed: data.resurface_completed === true,
+        fab_notes: data.fab_notes || '',
+        drafter: data.drafter || 'none',
+        shop_date_schedule: data.shop_date_schedule || '',
+      });
+    }
+  }, [fabData, form]);
 
-    const onSubmit = async (values: ReviewChecklistData) => {
-        setIsSubmitting(true);
+  const onSubmit = async (values: ReviewChecklistData) => {
+    // Guard: fabId must be present
+    if (!fabId) {
+      toast.error("No FAB ID provided. Cannot save.");
+      return;
+    }
 
+    // Check if any changes were made
+    const hasNotes = values.fab_notes?.trim() ? true : false;
+    const hasShopDate = values.shop_date_schedule ? true : false;
+    const hasResurface = values.resurface_completed;
+
+    if (!hasNotes && !hasShopDate && !hasResurface) {
+      toast.warning("No changes to save.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    let someSuccess = false;
+
+    try {
+      // 1. Save fab note if provided
+      if (hasNotes) {
         try {
-            // Create fab note if provided
-            if (values.fab_notes && values.fab_notes.trim() && fabId) {
-                try {
-                    await createFabNote({
-                        fab_id: fabId,
-                        note: values.fab_notes.trim(),
-                        stage: "resurfacing"
-                    }).unwrap();
-                } catch (noteError) {
-                    console.error("Error creating fab note:", noteError);
-                    // Don't prevent submission if note creation fails
-                }
-            }
-            
-            // If resurface completed is marked, handle resurfacing workflow
-            if (values.resurface_completed && fabId) {
-                try {
-                    // Check if resurfacing record exists
-                    let resurifaceId = resurfaceData?.data?.id || resurfaceData?.id;
-                    console.log("Existing resurface ID:", resurifaceId);
-
-                    // If no resurfacing record exists, create one
-                    if (!resurifaceId) {
-                        console.log("Creating new resurfacing record for fab:", fabId);
-                        const createResponse = await createResurfaceScheduling({
-                            fab_id: fabId
-                        }).unwrap();
-                        console.log("Create response:", createResponse);
-                        resurifaceId = createResponse?.data?.id || createResponse?.id;
-                        console.log("New resurface ID:", resurifaceId);
-                    }
-
-                    // Update resurfacing record to mark as completed
-                    if (resurifaceId) {
-                        console.log("Updating resurface record:", resurifaceId);
-                        await updateResurfaceScheduling({
-                            resurface_scheduling_id: resurifaceId,
-                            data: {
-                                is_completed: true,
-                                actual_start_date: new Date().toISOString(),
-                                actual_end_date: new Date().toISOString()
-                            }
-                        }).unwrap();
-                        console.log("Resurface record updated successfully");
-                    } else {
-                        throw new Error("Failed to get resurface scheduling ID");
-                    }
-                    
-                    toast.success("Resurfacing checklist completed successfully!");
-                    navigate('/job/resurfacing');
-                } catch (resurfaceError) {
-                    console.error("Error in resurfacing workflow:", resurfaceError);
-                    toast.error("Error processing resurfacing: " + (resurfaceError as any)?.message);
-                    setIsSubmitting(false);
-                    return;
-                }
-            } else {
-                if (!values.resurface_completed) {
-                    toast.error("Please mark 'Resurface completed' before submitting");
-                    setIsSubmitting(false);
-                    return;
-                }
-            }
-        } catch (error) {
-            console.error("Failed to process resurfacing:", error);
-            toast.error("Failed to process resurfacing");
-        } finally {
-            setIsSubmitting(false);
+          await createFabNote({
+            fab_id: fabId,
+            note: values.fab_notes!.trim(),
+            stage: "resurfacing",
+          }).unwrap();
+          someSuccess = true;
+        } catch (noteError) {
+          console.error("Error creating fab note:", noteError);
+          toast.error("Failed to save note");
+          // Continue with other operations? Decide based on requirements.
+          // Here we stop on note failure, but you might want to continue.
+          setIsSubmitting(false);
+          return;
         }
-    };
+      }
 
-    return (
-        <>
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <Can action="update" on="Pre-draft Review">
+      // 2. Handle resurface completed workflow
+      if (hasResurface) {
+        try {
+          // Check if resurfacing record exists
+          let resurifaceId = resurfaceData?.data?.id || resurfaceData?.id;
 
-                        <FormField
-                            control={form.control}
-                            name="resurface_completed"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-row items-center space-x-3">
-                                    <FormControl>
-                                        <Checkbox
-                                            checked={field.value}
-                                            onCheckedChange={field.onChange}
-                                        />
-                                    </FormControl>
-                                    <FormLabel className="text-base font-semibold text-text">Resurface completed</FormLabel>
-                                </FormItem>
-                            )}
-                        />
+          if (!resurifaceId) {
+            const createResponse = await createResurfaceScheduling({ fab_id: fabId }).unwrap();
+            resurifaceId = createResponse?.data?.id || createResponse?.id;
+          }
 
-                        <FormField
-                            control={form.control}
-                            name="fab_notes"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Notes</FormLabel>
-                                    <FormControl>
-                                        <Textarea
-                                            placeholder="Type here..."
-                                            className="min-h-[100px] resize-none"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </Can>
+          if (resurifaceId) {
+            await updateResurfaceScheduling({
+              resurface_scheduling_id: resurifaceId,
+              data: {
+                is_completed: true,
+                // actual_start_date: new Date().toISOString(),
+                // actual_end_date: new Date().toISOString(),
+              },
+            }).unwrap();
+            someSuccess = true;
+          } else {
+            throw new Error("Could not obtain resurface scheduling ID");
+          }
+        } catch (resurfaceError) {
+          console.error("Error in resurfacing workflow:", resurfaceError);
+          toast.error("Resurfacing update failed: " + (resurfaceError as any)?.message);
+          setIsSubmitting(false);
+          return;
+        }
+      }
 
-                    <Separator className="my-4" />
+      // 3. Save shop date schedule if provided
+      if (hasShopDate) {
+        try {
+          await updateCutListSchedule({
+            fab_id: fabId,
+            data: { shop_date_schedule: values.shop_date_schedule },
+          }).unwrap();
+          someSuccess = true;
+        } catch (scheduleError) {
+          console.error("Error saving shop date:", scheduleError);
+          toast.error("Failed to save shop date");
+          // Decide if you want to stop or continue
+          setIsSubmitting(false);
+          return;
+        }
+      }
 
-                    <div className="space-y-3 mt-6">
-                        <Can action="update" on="Pre-draft Review">
-                            <div className="mb-2">
-                                <Button
-                                    className="w-full py-6 text-base"
-                                    type="submit"
-                                    disabled={isSubmitting || !form.watch("resurface_completed")}
-                                >
-                                    {isSubmitting ? (
-                                        <span className="flex items-center gap-2">
-                                            <LoaderCircle className="w-4 h-4 animate-spin" />
-                                            Processing...
-                                        </span>
-                                    ) : (
-                                        "Start Resurfacing"
-                                    )}
-                                </Button>
-                                {!form.watch("resurface_completed") && (
-                                    <p className="text-xs text-gray-500 mt-1 text-center">
-                                        Please check 'Resurface completed'
-                                    </p>
-                                )}
-                            </div>
-                        </Can>
-                        <Button variant="outline" type="button" className="w-full text-secondary font-bold py-6 text-base" onClick={() => navigate('/job/resurfacing')}>
-                            Cancel
-                        </Button>
-                    </div>
-                </form>
-            </Form>
+      // Final success message based on what was saved
+      if (someSuccess) {
+        if (hasResurface) {
+          toast.success("Resurfacing checklist completed and saved!");
+          navigate('/job/resurfacing');
+        } else {
+          toast.success("Changes saved successfully");
+          // Optionally stay on page or navigate
+        }
+      } else {
+        toast.warning("No data was saved");
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      toast.error("An unexpected error occurred");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-            {/* Removed the AssignTechnicianModal component */}
-        </>
-    );
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <Can action="update" on="Pre-draft Review">
+          {/* Resurface completed checkbox */}
+          <FormField
+            control={form.control}
+            name="resurface_completed"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center space-x-3">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <FormLabel className="text-base font-semibold text-text">
+                  Resurface completed
+                </FormLabel>
+              </FormItem>
+            )}
+          />
+
+          {/* Notes field */}
+          <FormField
+            control={form.control}
+            name="fab_notes"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Notes</FormLabel>
+                <FormControl>
+                  <Textarea
+                    placeholder="Type here..."
+                    className="min-h-[100px] resize-none"
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Shop date schedule */}
+          <FormField
+            control={form.control}
+            name="shop_date_schedule"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Shop date schedule</FormLabel>
+                <DateTimePicker
+                  mode="date"
+                  value={parseDateString(field.value)}
+                  onChange={(date) => field.onChange(formatDate(date))}
+                />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </Can>
+
+        <Separator className="my-4" />
+
+        <div className="space-y-3 mt-6">
+          <Can action="update" on="Pre-draft Review">
+            <Button
+              className="w-full py-6 text-base"
+              type="submit"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? (
+                <span className="flex items-center gap-2">
+                  <LoaderCircle className="w-4 h-4 animate-spin" />
+                  Processing...
+                </span>
+              ) : (
+                "Save Changes"
+              )}
+            </Button>
+          </Can>
+          <Button
+            variant="outline"
+            type="button"
+            className="w-full text-secondary font-bold py-6 text-base"
+            onClick={() => navigate('/job/resurfacing')}
+          >
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </Form>
+  );
 }

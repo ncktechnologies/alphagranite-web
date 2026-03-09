@@ -212,7 +212,7 @@ const CutListDetailsPage = () => {
                                     <Documents
                                         draftingData={{
                                             ...fabData?.draft_data,
-                                            files: fabData?.draft_data.files.filter((file: any) =>
+                                            files: fabData?.draft_data?.files?.filter((file: any) =>
                                                 file.stage === 'final_programming' ||
                                                 file.stage === 'cut_list' ||
                                                 (file.stage && file.stage.toLowerCase().includes('final_programming')) ||
