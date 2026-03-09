@@ -32,7 +32,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DateRange } from 'react-day-picker';
 import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useGetFabsQuery } from '@/store/api/job';
+import { useGetFabsQuery, useGetFabTypesQuery } from '@/store/api/job';
 
 // ------------------ Types ------------------
 export interface ShopStatusPlan {
@@ -110,11 +110,11 @@ const salesPersons: string[] = ['Mike Rodriguez', 'Sarah Johnson', 'Bruno Pires'
 
 // Mapping of planning_section_id to stage details
 const stageMapping = [
-    { id: 7, name: 'cut',     unit: 'SF' },
-    { id: 8, name: 'wj',      unit: 'LF' },
-    { id: 9, name: 'edging',  unit: 'LF' },
-    { id: 2, name: 'miter',   unit: 'LF' },
-    { id: 1, name: 'cnc',     unit: 'LF' },
+    { id: 7, name: 'cut', unit: 'SF' },
+    { id: 8, name: 'wj', unit: 'LF' },
+    { id: 9, name: 'edging', unit: 'LF' },
+    { id: 2, name: 'miter', unit: 'LF' },
+    { id: 1, name: 'cnc', unit: 'LF' },
     { id: 6, name: 'touchup', unit: 'SF' },
 ];
 
@@ -123,12 +123,12 @@ const getStageInfo = (id: number) => stageMapping.find(s => s.id === id) || null
 // Get the total value from a raw fab object for a given planning section
 const getTotalForStage = (fab: any, sectionId: number): number => {
     switch (sectionId) {
-        case 7: return fab.total_sqft   || 0;
-        case 8: return fab.wj_linft     || 0;
+        case 7: return fab.total_sqft || 0;
+        case 8: return fab.wj_linft || 0;
         case 9: return fab.edging_linft || 0;
-        case 2: return fab.miter_linft  || 0;
-        case 1: return fab.cnc_linft    || 0;
-        case 6: return fab.total_sqft   || 0;
+        case 2: return fab.miter_linft || 0;
+        case 1: return fab.cnc_linft || 0;
+        case 6: return fab.total_sqft || 0;
         default: return 0;
     }
 };
@@ -145,9 +145,9 @@ const ProgressBar: React.FC<{ value: number; total: number; percent: number; uni
     const displayPercent = percent || 0;
     const barColor =
         displayPercent === 100 ? '#4caf50' :
-        displayPercent >= 75   ? '#2196f3' :
-        displayPercent >= 50   ? '#ff9800' :
-        displayPercent >= 25   ? '#f44336' : '#9e9e9e';
+            displayPercent >= 75 ? '#2196f3' :
+                displayPercent >= 50 ? '#ff9800' :
+                    displayPercent >= 25 ? '#f44336' : '#9e9e9e';
 
     return (
         <div className="flex flex-col gap-1 items-start min-w-[100px]">
@@ -187,6 +187,34 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     }), [searchQuery, fabTypeFilter, currentPage, itemsPerPage]);
 
     const { data: fabsData, isLoading: isApiLoading } = useGetFabsQuery(queryParams);
+    const { data: fabTypesData } = useGetFabTypesQuery();
+
+    const fabTypes = useMemo(() => {
+        if (!fabTypesData) {
+            return [];
+        }
+
+        // Handle both possible response formats
+        let rawData: any[] = [];
+        if (Array.isArray(fabTypesData)) {
+            rawData = fabTypesData;
+        } else if (typeof fabTypesData === 'object' && 'data' in fabTypesData) {
+            rawData = (fabTypesData as any).data || [];
+        }
+
+        // Extract names from FabType objects
+        const extractName = (item: { name: string } | string) => {
+            if (typeof item === 'string') {
+                return item;
+            }
+            if (typeof item === 'object' && item !== null) {
+                return item.name || String(item);
+            }
+            return String(item);
+        };
+
+        return rawData.map(extractName);
+    }, [fabTypesData]);
 
     // fabsData is already shaped as { data: Fab[], total: number } by transformResponse
     const fabs = useMemo(() => {
@@ -221,29 +249,29 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             };
 
             const fabData: ShopStatusFab = {
-                fab_id:               String(fab.id),
-                fab_type:             fab.fab_type || 'N/A',
-                job_no:               fab.job_details?.job_number || 'N/A',
-                job_name:             fab.job_details?.name || 'N/A',
-                acct_name:            fab.account_name,
-                input_area:           fab.input_area,
-                stone_type_name:      fab.stone_type_name,
-                stone_color_name:     fab.stone_color_name,
+                fab_id: String(fab.id),
+                fab_type: fab.fab_type || 'N/A',
+                job_no: fab.job_details?.job_number || 'N/A',
+                job_name: fab.job_details?.name || 'N/A',
+                acct_name: fab.account_name,
+                input_area: fab.input_area,
+                stone_type_name: fab.stone_type_name,
+                stone_color_name: fab.stone_color_name,
                 stone_thickness_value: fab.stone_thickness_value,
-                edge_name:            fab.edge_name,
-                pieces:               fab.no_of_pieces || 0,
-                total_sq_ft:          fab.total_sqft || 0,
+                edge_name: fab.edge_name,
+                pieces: fab.no_of_pieces || 0,
+                total_sq_ft: fab.total_sqft || 0,
                 // Raw linft totals (used for group/overall totals)
-                wj_total:             fab.wj_linft     || 0,
-                edging_total:         fab.edging_linft || 0,
-                miter_total:          fab.miter_linft  || 0,
-                cnc_total:            fab.cnc_linft    || 0,
+                wj_total: fab.wj_linft || 0,
+                edging_total: fab.edging_linft || 0,
+                miter_total: fab.miter_linft || 0,
+                cnc_total: fab.cnc_linft || 0,
                 // Progress per stage
-                cut_progress:     buildProgress(7),
-                wj_progress:      buildProgress(8),
-                edging_progress:  buildProgress(9),
-                miter_progress:   buildProgress(2),
-                cnc_progress:     buildProgress(1),
+                cut_progress: buildProgress(7),
+                wj_progress: buildProgress(8),
+                edging_progress: buildProgress(9),
+                miter_progress: buildProgress(2),
+                cnc_progress: buildProgress(1),
                 touchup_progress: buildProgress(6),
                 // Dates
                 expected_completion_date: expectedDate,
@@ -270,20 +298,20 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     type: 'plan',
                     fab_id: String(fab.id),
                     plan: {
-                        plan_id:              plan.id,
-                        planning_section_id:  plan.planning_section_id,
-                        plan_name:            plan.plan_name || stageInfo?.name?.toUpperCase() || 'PLAN',
-                        workstation_name:     plan.workstation_name || '-',
-                        operator_name:        plan.operator_name || '-',
-                        estimated_hours:      plan.estimated_hours || 0,
+                        plan_id: plan.id,
+                        planning_section_id: plan.planning_section_id,
+                        plan_name: plan.plan_name || stageInfo?.name?.toUpperCase() || 'PLAN',
+                        workstation_name: plan.workstation_name || '-',
+                        operator_name: plan.operator_name || '-',
+                        estimated_hours: plan.estimated_hours || 0,
                         scheduled_start_date: plan.scheduled_start_date,
-                        work_percentage:      percent,
-                        notes:                plan.notes,
+                        work_percentage: percent,
+                        notes: plan.notes,
                     },
-                    stage_total:   total,
-                    stage_unit:    unit,
+                    stage_total: total,
+                    stage_unit: unit,
                     stage_percent: percent,
-                    date_group:    dateGroup,
+                    date_group: dateGroup,
                     subRows: [],   // plans have no children
                 };
             });
@@ -306,8 +334,8 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 r.type === 'fab' && (
                     r.data.job_no.toLowerCase().includes(q) ||
                     r.data.fab_id.toLowerCase().includes(q) ||
-                    (r.data.acct_name  && r.data.acct_name.toLowerCase().includes(q)) ||
-                    (r.data.job_name   && r.data.job_name.toLowerCase().includes(q))
+                    (r.data.acct_name && r.data.acct_name.toLowerCase().includes(q)) ||
+                    (r.data.job_name && r.data.job_name.toLowerCase().includes(q))
                 )
             );
         }
@@ -321,7 +349,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
         if (dateRange?.from && dateRange?.to) {
             const start = startOfDay(dateRange.from);
-            const end   = startOfDay(dateRange.to);
+            const end = startOfDay(dateRange.to);
             end.setHours(23, 59, 59, 999);
             result = result.filter(r => {
                 if (r.type !== 'fab' || !r.data.expected_completion_date) return false;
@@ -354,12 +382,12 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             if (parent.type !== 'fab') return;
             const key = parent.data.date_group;
             if (!totals[key]) totals[key] = { pieces: 0, sqft: 0, wj: 0, edging: 0, miter: 0, cnc: 0 };
-            totals[key].pieces  += parent.data.pieces;
-            totals[key].sqft    += parent.data.total_sq_ft;
-            totals[key].wj      += parent.data.wj_total;
-            totals[key].edging  += parent.data.edging_total;
-            totals[key].miter   += parent.data.miter_total;
-            totals[key].cnc     += parent.data.cnc_total;
+            totals[key].pieces += parent.data.pieces;
+            totals[key].sqft += parent.data.total_sq_ft;
+            totals[key].wj += parent.data.wj_total;
+            totals[key].edging += parent.data.edging_total;
+            totals[key].miter += parent.data.miter_total;
+            totals[key].cnc += parent.data.cnc_total;
         });
         return totals;
     }, [filteredData]);
@@ -368,12 +396,12 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         let pieces = 0, sqft = 0, wj = 0, edging = 0, miter = 0, cnc = 0;
         filteredData.forEach(parent => {
             if (parent.type !== 'fab') return;
-            pieces  += parent.data.pieces;
-            sqft    += parent.data.total_sq_ft;
-            wj      += parent.data.wj_total;
-            edging  += parent.data.edging_total;
-            miter   += parent.data.miter_total;
-            cnc     += parent.data.cnc_total;
+            pieces += parent.data.pieces;
+            sqft += parent.data.total_sq_ft;
+            wj += parent.data.wj_total;
+            edging += parent.data.edging_total;
+            miter += parent.data.miter_total;
+            cnc += parent.data.cnc_total;
         });
         return { pieces, sqft, wj, edging, miter, cnc };
     }, [filteredData]);
@@ -526,7 +554,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const f = row.original.data;
-                    const jobParts   = [f.acct_name, f.job_name, f.input_area ? `Area: ${f.input_area}` : ''].filter(Boolean);
+                    const jobParts = [f.acct_name, f.job_name, f.input_area ? `Area: ${f.input_area}` : ''].filter(Boolean);
                     const stoneParts = [f.stone_type_name, f.stone_color_name, f.stone_thickness_value, f.edge_name].filter(Boolean);
                     return (
                         <div className="flex flex-col gap-1 text-xs max-w-[360px]">
@@ -751,11 +779,11 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         onSortingChange: setSorting,
         onExpandedChange: setExpanded,
-        getCoreRowModel:      getCoreRowModel(),
-        getFilteredRowModel:  getFilteredRowModel(),
+        getCoreRowModel: getCoreRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel:    getSortedRowModel(),
-        getExpandedRowModel:  getExpandedRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getExpandedRowModel: getExpandedRowModel(),
         // This is the key: TanStack will use subRows from each row object
         getSubRows: (row) =>
             row.type === 'fab' && row.subRows.length > 0 ? row.subRows : undefined,
@@ -763,17 +791,17 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     });
 
     // ------------------ Pagination helpers ------------------
-    const totalPages  = Math.ceil(totalRecords / itemsPerPage) || 1;
-    const startItem   = totalRecords === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
-    const endItem     = Math.min(currentPage * itemsPerPage, totalRecords);
+    const totalPages = Math.ceil(totalRecords / itemsPerPage) || 1;
+    const startItem = totalRecords === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
+    const endItem = Math.min(currentPage * itemsPerPage, totalRecords);
 
     const pageNumbers = useMemo(() => {
-        const half  = 2;
-        let start   = Math.max(1, currentPage - half);
-        let end     = Math.min(totalPages, currentPage + half);
+        const half = 2;
+        let start = Math.max(1, currentPage - half);
+        let end = Math.min(totalPages, currentPage + half);
         if (end - start < 4) {
-            if (start === 1) end   = Math.min(totalPages, start + 4);
-            else             start = Math.max(1, end - 4);
+            if (start === 1) end = Math.min(totalPages, start + 4);
+            else start = Math.max(1, end - 4);
         }
         return Array.from({ length: end - start + 1 }, (_, i) => start + i);
     }, [currentPage, totalPages]);
@@ -792,14 +820,14 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                         {content}
                     </td>
                 );
-                if (id === 'expander')     return <td key={id} className="px-4 py-2 border-r border-[#e2e4ed]" />;
-                if (id === 'month')        return td(label);
-                if (id === 'pieces')       return td(totals.pieces);
-                if (id === 'total_sq_ft')  return td(`${totals.sqft.toFixed(1)} SF`);
-                if (id === 'wj')           return td(`${totals.wj.toFixed(1)} LF`);
-                if (id === 'edging')       return td(`${totals.edging.toFixed(1)} LF`);
-                if (id === 'miter')        return td(`${totals.miter.toFixed(1)} LF`);
-                if (id === 'cnc')          return td(`${totals.cnc.toFixed(1)} LF`);
+                if (id === 'expander') return <td key={id} className="px-4 py-2 border-r border-[#e2e4ed]" />;
+                if (id === 'month') return td(label);
+                if (id === 'pieces') return td(totals.pieces);
+                if (id === 'total_sq_ft') return td(`${totals.sqft.toFixed(1)} SF`);
+                if (id === 'wj') return td(`${totals.wj.toFixed(1)} LF`);
+                if (id === 'edging') return td(`${totals.edging.toFixed(1)} LF`);
+                if (id === 'miter') return td(`${totals.miter.toFixed(1)} LF`);
+                if (id === 'cnc') return td(`${totals.cnc.toFixed(1)} LF`);
                 return <td key={id} className="px-4 py-2 border-r border-[#e2e4ed] last:border-r-0" />;
             })}
         </tr>
@@ -815,10 +843,10 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             isLoading={isLoading}
             groupByDate={false}
             tableLayout={{
-                columnsPinnable:    true,
-                columnsMovable:     true,
-                columnsVisibility:  true,
-                cellBorder:         true,
+                columnsPinnable: true,
+                columnsMovable: true,
+                columnsVisibility: true,
+                cellBorder: true,
             }}
         >
             <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)]">
@@ -901,13 +929,12 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">All Types</SelectItem>
-                                <SelectItem value="standard">Standard</SelectItem>
-                                <SelectItem value="premium">Premium</SelectItem>
-                                <SelectItem value="ag redo">AG Redo</SelectItem>
-                                <SelectItem value="fab only">FAB Only</SelectItem>
-                                <SelectItem value="resurface">Resurface</SelectItem>
-                                <SelectItem value="fast track">Fast Track</SelectItem>
-                                <SelectItem value="cust redo">Cust Redo</SelectItem>
+
+                                {fabTypes.map((type) => (
+                                    <SelectItem key={type} value={type}>
+                                        {type}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
@@ -940,20 +967,20 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
                 {/* ---- Table Body ---- */}
                 <CardTable>
-                    <ScrollArea>
+                    <ScrollArea className="h-[calc(100vh-280px)]">
                         {isLoading ? (
                             <div className="flex items-center justify-center h-64">
                                 <p className="text-[#7c8689]">Loading…</p>
                             </div>
                         ) : (
                             <table className="w-full border-collapse">
-                                <thead>
+                                <thead className="bg-[#f9f9f9] sticky top-0 z-10">
                                     {table.getHeaderGroups().map(hg => (
                                         <tr key={hg.id}>
                                             {hg.headers.map(header => (
                                                 <th
                                                     key={header.id}
-                                                    className="px-4 py-3 text-left text-xs font-medium text-[#7c8689] bg-[#f9f9f9] border-b border-r border-[#e2e4ed] last:border-r-0 whitespace-normal sticky top-0 z-10"
+                                                    className="px-4 py-3 text-left text-xs font-medium text-[#7c8689] bg-[#f9f9f9] border-b border-r border-[#e2e4ed] last:border-r-0 whitespace-normal "
                                                     style={{ width: header.getSize() }}
 
                                                 >
@@ -986,7 +1013,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                 </tr>
 
                                                 {/* Group totals row */}
-                                                {renderTotalsRow('Group Total', groupTotal)}
+                                                {renderTotalsRow('', groupTotal)}
 
                                                 {/* FAB rows + their expanded plan child rows */}
                                                 {group.parents.map(parent => {

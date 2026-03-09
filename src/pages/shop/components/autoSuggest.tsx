@@ -268,7 +268,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
       handleBack();
     } catch (error: any) {
       console.error('Error creating/updating event:', error);
-      toast.error(error?.data?.detail?.message || 'Failed to create/update Plan');
+    //   toast.error(error?.data?.detail?.message || 'Failed to create/update Plan');
     }
   };
 
@@ -279,6 +279,10 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
       if (!entry.operator_id)   { toast.error('Please select an operator for each stage'); return; }
       if (!entry.workstation_id){ toast.error('Please select a workstation for each stage'); return; }
       if (!entry.planning_section_id){ toast.error('Please select a planning section for each stage'); return; }
+       if (!entry.estimated_hours || parseFloat(entry.estimated_hours as string) <= 0) {
+      toast.error('Estimated hours is required for each stage before auto-populating');
+      return;
+    }
     }
 
     try {
@@ -287,7 +291,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
           planning_section_id: Number(entry.planning_section_id),
           operator_id:         Number(entry.operator_id),
           workstation_id:      Number(entry.workstation_id),
-          estimated_hours:     parseFloat(entry.estimated_hours as string) || 1,
+          estimated_hours:     parseFloat(entry.estimated_hours as string) ,
         })),
         start_from:                new Date().toISOString(),
         slot_minutes:              30,
@@ -336,7 +340,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
       toast.success('Earliest slots applied — pick an alternative below each stage if needed');
     } catch (error: any) {
       console.error('Auto-populate error:', error);
-      toast.error(error?.data?.detail?.message || 'Failed to fetch available slots');
+    //   toast.error(error?.data?.detail?.message || 'Failed to fetch available slots');
     }
   };
 
@@ -382,7 +386,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
             )}
             <div className="flex flex-col gap-1">
               <p className="text-[28px] leading-[32px] text-black font-semibold">
-                {isEditing ? 'Edit Plan' : 'Create Plan'}
+                {isEditing ? 'Edit Plan' : 'Auto Schedule Plan'}
               </p>
             </div>
           </div>
@@ -746,7 +750,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
             <button
               type="button"
               onClick={handleAutoPopulate}
-              disabled={isAutoScheduling && !isEditing && entries.some(e => e.operator_id && e.workstation_id && e.planning_section_id)}
+              disabled={isAutoScheduling && !isEditing && entries.some(e => e.operator_id && e.workstation_id && e.planning_section_id && e.estimated_hours)}
               className="w-full h-[44px] border border-[#9cc15e] rounded-[8px] flex items-center justify-center gap-2 text-[#5a7a00] bg-[#f0f4e8] hover:bg-[#e6f0d4] transition-colors disabled:opacity-60 text-[14px] font-semibold"
             >
               {isAutoScheduling ? (
@@ -775,7 +779,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
             </button>
             <button
               type="submit"
-              className="flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold disabled:opacity-60"
+              className="flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold disabled:opacity-60 cursor-pointer"
               style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
               disabled={isLoading || isAutoScheduling}
             >

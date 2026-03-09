@@ -75,7 +75,7 @@ export interface CalculatedCutListData {
     stone_thickness_value?: string;
     edge_name?: string;
     final_programming_completed_date?: string; // Add final programming completed date field
-
+saw_cut_lnft?: number; // Add saw_cut_lnft field
 }
 
 // Update the calculateCutListData function to work with Fab
@@ -112,6 +112,7 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
         edging_ln_ft: fabWithExtraFields.edging_linft || 0,
         cnc_ln_ft: fabWithExtraFields.cnc_linft || 0,
         milter_ln_ft: fabWithExtraFields.miter_linft || 0,
+        saw_cut_lnft: fabWithExtraFields.saw_cut_linft || 0,    
         cost_of_stone: calculateCostOfStone(),
         revenue: fabWithExtraFields.revenue || 0,
         fp_completed: fabWithExtraFields.final_programming_complete ? 'Yes' : 'No',
@@ -392,7 +393,7 @@ export const CutListTableWithCalculations = ({
         }
 
         // Material & measurement details
-        
+
 
         if (list.stone_type_name) {
             stoneInfo.push(list.stone_type_name);
@@ -581,6 +582,13 @@ export const CutListTableWithCalculations = ({
             ),
         },
         {
+            id: 'saw_cut_lnft',
+            accessorFn:"saw_cut_lnft",
+            header: ({ column }) => <DataGridColumnHeader title="SAW:LN FT" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.saw_cut_lnft.toFixed(2)}</span>,
+            enableSorting: true,
+        },
+        {
             id: "cost_of_stone",
             accessorKey: "cost_of_stone",
             header: ({ column }) => (
@@ -617,13 +625,13 @@ export const CutListTableWithCalculations = ({
                 <DataGridColumnHeader title="FP COMPLETED DATE" column={column} />
             ),
             cell: ({ row }) => (
-                 <span className="text-sm">
-                   {row.original.final_programming_completed_date ?
+                <span className="text-sm">
+                    {row.original.final_programming_completed_date ?
                         new Date(row.original.final_programming_completed_date).toLocaleDateString() :
                         'Not Completed'
                     }
                 </span>
-               
+
             ),
         },
         {
@@ -813,7 +821,7 @@ export const CutListTableWithCalculations = ({
             enableSorting: false,
             size: 80,
         },
-        
+
     ], [path]);
 
 
@@ -859,7 +867,7 @@ export const CutListTableWithCalculations = ({
                     columnsVisibility: true,
                     cellBorder: true,
                 }}
-                // onRowClick={(row) => handleRowClickInternal(row as CalculatedCutListData)}
+            // onRowClick={(row) => handleRowClickInternal(row as CalculatedCutListData)}
             >
                 <Card>
                     <CardHeader className="py-3.5 border-b">

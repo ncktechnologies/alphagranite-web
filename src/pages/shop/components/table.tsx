@@ -32,7 +32,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DateRange } from 'react-day-picker';
 import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useGetFabsQuery } from '@/store/api/job';
+import { useGetFabsQuery, useGetFabTypesQuery } from '@/store/api/job';
 import ActionsCell from './action';
 import { useNavigate } from 'react-router';
 import CreatePlanSheet from './createEvent';
@@ -45,15 +45,13 @@ export interface ShopPlanRow {
     fab_info: string;
     pieces: number;
     total_sq_ft: number;
-    // Cutlist linear feet fields
-    wl_ln_ft: number;      // water jet
-    sl_ln_ft: number;      // saw cut
+    wl_ln_ft: number;
+    sl_ln_ft: number;
     edging_ln_ft: number;
     cnc_ln_ft: number;
     milter_ln_ft: number;
-    total_cut_ln_ft: number;   // kept for reference
+    total_cut_ln_ft: number;
     percent_complete: number;
-    // Cut plan fields
     plan_id: number;
     workstation_name: string;
     operator_name: string;
@@ -70,7 +68,6 @@ interface ShopTableProps {
     isLoading?: boolean;
 }
 
-// Helper to compute group subtotals
 const computeGroupTotals = (rows: ShopPlanRow[]) => {
     return rows.reduce((acc, row) => ({
         pieces: acc.pieces + row.pieces,
@@ -82,22 +79,13 @@ const computeGroupTotals = (rows: ShopPlanRow[]) => {
         cnc_ln_ft: acc.cnc_ln_ft + row.cnc_ln_ft,
         milter_ln_ft: acc.milter_ln_ft + row.milter_ln_ft,
     }), {
-        pieces: 0,
-        total_sq_ft: 0,
-        total_cut_ln_ft: 0,
-        wl_ln_ft: 0,
-        sl_ln_ft: 0,
-        edging_ln_ft: 0,
-        cnc_ln_ft: 0,
-        milter_ln_ft: 0,
+        pieces: 0, total_sq_ft: 0, total_cut_ln_ft: 0,
+        wl_ln_ft: 0, sl_ln_ft: 0, edging_ln_ft: 0, cnc_ln_ft: 0, milter_ln_ft: 0,
     });
 };
 
 const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => {
-    const [pagination, setPagination] = useState<PaginationState>({
-        pageIndex: 0,
-        pageSize: 25,
-    });
+    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 25 });
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
@@ -106,8 +94,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
     const [salesPersonFilter, setSalesPersonFilter] = useState<string>('all');
-
-    // Sheet state
     const [planSheetOpen, setPlanSheetOpen] = useState(false);
     const [selectedFabForSheet, setSelectedFabForSheet] = useState<string>('');
     const [selectedDateForSheet, setSelectedDateForSheet] = useState<Date | null>(null);
@@ -117,31 +103,18 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
     const handleViewCalendar = (fabId: string, date?: string) => {
         const url = `/shop/calendar?fabId=${fabId}`;
         if (date) {
-            const formattedDate = format(new Date(date), 'yyyy-MM-dd');
-            navigate(`${url}&date=${formattedDate}`);
+            navigate(`${url}&date=${format(new Date(date), 'yyyy-MM-dd')}`);
         } else {
             navigate(url);
         }
     };
-    const handleAutoSchedule = (fabId: string) => {
-        navigate(`/shop/auto-schedule?fabId=${fabId}`);
-    }
-
-    // Replace navigation with sheet opening
+    const handleAutoSchedule = (fabId: string) => navigate(`/shop/auto-schedule?fabId=${fabId}`);
     const handleCreatePlan = (fabId: string) => {
         setSelectedFabForSheet(fabId);
-        setSelectedDateForSheet(null); // user will pick date in sheet
+        setSelectedDateForSheet(null);
         setSelectedEventForSheet(null);
         setPlanSheetOpen(true);
     };
-
-    // Optional: if you want to edit an existing plan, you can add an edit action that sets selectedEventForSheet
-    // const handleEditPlan = (plan: any) => {
-    //     setSelectedEventForSheet(plan);
-    //     setSelectedFabForSheet(String(plan.fab_id));
-    //     setSelectedDateForSheet(new Date(plan.scheduled_start_date));
-    //     setPlanSheetOpen(true);
-    // };
 
     const queryParams = useMemo(() => ({
         current_stage: 'cut_list',
@@ -152,11 +125,37 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
     }), [searchQuery, fabTypeFilter, pagination]);
 
     const { data: fabsData, isLoading: isApiLoading, refetch } = useGetFabsQuery(queryParams);
+    const { data: fabTypesData } = useGetFabTypesQuery();
 
-    // Extract fabs array from the nested response
+    const fabTypes = useMemo(() => {
+        if (!fabTypesData) {
+            return [];
+        }
+
+        // Handle both possible response formats
+        let rawData: any[] = [];
+        if (Array.isArray(fabTypesData)) {
+            rawData = fabTypesData;
+        } else if (typeof fabTypesData === 'object' && 'data' in fabTypesData) {
+            rawData = (fabTypesData as any).data || [];
+        }
+
+        // Extract names from FabType objects
+        const extractName = (item: { name: string } | string) => {
+            if (typeof item === 'string') {
+                return item;
+            }
+            if (typeof item === 'object' && item !== null) {
+                return item.name || String(item);
+            }
+            return String(item);
+        };
+
+        return rawData.map(extractName);
+    }, [fabTypesData]);
+
     const fabs = useMemo(() => {
         if (!fabsData) return [];
-        // Assuming response structure: { data: { data: [...], total, ... } }
         const nested = fabsData?.data;
         if (Array.isArray(nested)) return nested;
         return [];
@@ -164,15 +163,12 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
 
     const totalRecords = fabsData?.total || 0;
 
-    // Flatten into plan rows – include cut plans AND FABs without cut plans
     const planRows: ShopPlanRow[] = useMemo(() => {
         const rows: ShopPlanRow[] = [];
         fabs.forEach((fab: any) => {
             const plans = fab.plans || [];
-            // Filter for cut planning section (id = 7)
             const cutPlans = plans.filter((plan: any) => plan.planning_section_id === 7);
 
-            // Base row data (common for both cases)
             const baseRow = {
                 fab_id: String(fab.id),
                 fab_type: fab.fab_type || 'N/A',
@@ -181,7 +177,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                 fab_info: `${fab.job_details?.name || ''} - ${fab.stone_type_name || ''} - ${fab.stone_color_name || ''}`.trim(),
                 pieces: fab.no_of_pieces || 0,
                 total_sq_ft: fab.total_sqft || 0,
-                // Linear feet fields (match cutlist naming)
                 wl_ln_ft: fab.wj_linft || 0,
                 sl_ln_ft: fab.saw_cut_lnft || 0,
                 edging_ln_ft: fab.edging_linft || 0,
@@ -192,17 +187,19 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             };
 
             if (cutPlans.length > 0) {
-                // FAB has cut plans – one row per cut plan
                 cutPlans.forEach((plan: any) => {
-                    const scheduledDate = plan.scheduled_start_date;
-                    const dateGroup = scheduledDate ? scheduledDate.split('T')[0] : 'unscheduled';
+                    // Robustly get scheduled date — handle null, undefined, empty string
+                    const scheduledDate = plan.scheduled_start_date || plan.scheduled_start || null;
+                    const isValidDate = scheduledDate && typeof scheduledDate === 'string' && scheduledDate.trim().length > 0;
+                    const dateGroup = isValidDate ? scheduledDate.split('T')[0] : 'unscheduled';
+
                     rows.push({
                         ...baseRow,
                         plan_id: plan.id,
                         workstation_name: plan.workstation_name || '-',
                         operator_name: plan.operator_name || '-',
                         estimated_hours: plan.estimated_hours || 0,
-                        scheduled_start_date: plan.scheduled_start_date,
+                        scheduled_start_date: isValidDate ? scheduledDate : undefined,
                         plan_notes: plan.notes,
                         date_group: dateGroup,
                         shop_office_date_scheduled: fab.shop_date_schedule
@@ -211,7 +208,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                     });
                 });
             } else {
-                // FAB has NO cut plans – one row with empty plan fields
                 rows.push({
                     ...baseRow,
                     plan_id: 0,
@@ -230,7 +226,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
         return rows;
     }, [fabs]);
 
-    // Filtering (client‑side after server filtering)
     const filteredRows = useMemo(() => {
         let result = planRows;
         if (searchQuery) {
@@ -259,25 +254,32 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
         return result;
     }, [planRows, searchQuery, fabTypeFilter, dateRange]);
 
-    // Group by date (using the cut plan's scheduled_start_date)
     const groupedRows = useMemo(() => {
         const groups: Record<string, { rows: ShopPlanRow[]; dateDisplay: string }> = {};
         filteredRows.forEach(r => {
             const key = r.date_group;
-            const display = key !== 'unscheduled'
+            const display = (key !== 'unscheduled' && r.scheduled_start_date)
                 ? format(new Date(r.scheduled_start_date), 'EEEE, MMMM d, yyyy')
                 : 'Unscheduled';
             if (!groups[key]) groups[key] = { rows: [], dateDisplay: display };
             groups[key].rows.push(r);
         });
-        return groups;
+
+        // Sort: unscheduled always first, then dates ascending
+        const sorted: Record<string, { rows: ShopPlanRow[]; dateDisplay: string }> = {};
+        Object.keys(groups)
+            .sort((a, b) => {
+                if (a === 'unscheduled') return -1;
+                if (b === 'unscheduled') return 1;
+                return a.localeCompare(b); // ISO date strings sort correctly
+            })
+            .forEach(k => { sorted[k] = groups[k]; });
+        return sorted;
     }, [filteredRows]);
 
-    // Overall totals (deduplicate FABs – each FAB counted once)
     const overallTotals = useMemo(() => {
         const seen = new Set<string>();
-        let pieces = 0, sqft = 0, totalCut = 0,
-            wl = 0, sl = 0, edging = 0, cnc = 0, milter = 0;
+        let pieces = 0, sqft = 0, totalCut = 0, wl = 0, sl = 0, edging = 0, cnc = 0, milter = 0;
         filteredRows.forEach(r => {
             if (!seen.has(r.fab_id)) {
                 seen.add(r.fab_id);
@@ -296,7 +298,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
 
     const handleFabIdClick = (fabId: string) => console.log('PDF for', fabId);
 
-    // Column definitions – includes all cutlist linear feet columns
     const columns = useMemo<ColumnDef<ShopPlanRow>[]>(() => [
         {
             id: 'actions',
@@ -337,14 +338,10 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
         },
         {
             id: 'shop_office_date_scheduled',
-            accessorFn: (row) => row.shop_office_date_scheduled,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="OFFICE CUT DATE SCHEDULED" column={column} />
-            ),
+            accessorFn: r => r.shop_office_date_scheduled,
+            header: ({ column }) => <DataGridColumnHeader title="OFFICE CUT DATE SCHEDULED" column={column} />,
             cell: ({ row }) => (
-                <span className="text-sm text-text">
-                    {row.original.shop_office_date_scheduled || '-'}
-                </span>
+                <span className="text-sm text-text">{row.original.shop_office_date_scheduled || '-'}</span>
             ),
             enableSorting: true,
             size: 150,
@@ -362,10 +359,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             accessorFn: r => r.fab_id,
             header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
             cell: ({ row }) => (
-                <button
-                    onClick={() => handleFabIdClick(row.original.fab_id)}
-                    className="text-sm hover:underline cursor-pointer"
-                >
+                <button onClick={() => handleFabIdClick(row.original.fab_id)} className="text-sm hover:underline cursor-pointer">
                     {row.original.fab_id}
                 </button>
             ),
@@ -402,7 +396,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             cell: ({ row }) => <span className="text-sm text-text">{row.original.total_sq_ft.toFixed(2)}</span>,
             enableSorting: true,
         },
-        // New linear feet columns (matching cutlist)
         {
             id: 'wl_ln_ft',
             accessorFn: r => r.wl_ln_ft,
@@ -413,7 +406,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
         {
             id: 'sl_ln_ft',
             accessorFn: r => r.sl_ln_ft,
-            header: ({ column }) => <DataGridColumnHeader title="SL:LN FT" column={column} />,
+            header: ({ column }) => <DataGridColumnHeader title="SAW:LN FT" column={column} />,
             cell: ({ row }) => <span className="text-sm text-text">{row.original.sl_ln_ft.toFixed(2)}</span>,
             enableSorting: true,
         },
@@ -438,7 +431,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             cell: ({ row }) => <span className="text-sm text-text">{row.original.milter_ln_ft.toFixed(2)}</span>,
             enableSorting: true,
         },
-        // Keep total_cut_ln_ft if needed, or remove it (it's now redundant)
         {
             id: 'total_cut_ln_ft',
             accessorFn: r => r.total_cut_ln_ft,
@@ -526,19 +518,14 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                             <div className="relative">
                                 <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
                                 <Input
-                                    placeholder="Search by job, Fab ID, workstation..."
+                                    placeholder="Search by job, Fab ID"
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
                                     className="ps-9 w-[280px] h-[34px]"
                                     disabled={isApiLoading || externalLoading}
                                 />
                                 {searchQuery && (
-                                    <Button
-                                        mode="icon"
-                                        variant="ghost"
-                                        className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                                        onClick={() => setSearchQuery('')}
-                                    >
+                                    <Button mode="icon" variant="ghost" className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6" onClick={() => setSearchQuery('')}>
                                         <X />
                                     </Button>
                                 )}
@@ -548,24 +535,15 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"
-                                        className={cn(
-                                            'w-[200px] h-[34px] justify-start text-left font-normal',
-                                            !dateRange && 'text-muted-foreground'
-                                        )}
+                                        className={cn('w-[200px] h-[34px] justify-start text-left font-normal', !dateRange && 'text-muted-foreground')}
                                         disabled={isApiLoading || externalLoading}
                                     >
                                         <CalendarDays className="mr-2 h-4 w-4" />
                                         {dateRange?.from ? (
-                                            dateRange.to ? (
-                                                <>
-                                                    {format(dateRange.from, 'MMM dd')} - {format(dateRange.to, 'MMM dd, yyyy')}
-                                                </>
-                                            ) : (
-                                                format(dateRange.from, 'MMM dd, yyyy')
-                                            )
-                                        ) : (
-                                            <span>Pick dates</span>
-                                        )}
+                                            dateRange.to
+                                                ? <>{format(dateRange.from, 'MMM dd')} - {format(dateRange.to, 'MMM dd, yyyy')}</>
+                                                : format(dateRange.from, 'MMM dd, yyyy')
+                                        ) : <span>Pick dates</span>}
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0" align="start">
@@ -590,10 +568,12 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Types</SelectItem>
-                                    <SelectItem value="standard">Standard</SelectItem>
-                                    <SelectItem value="premium">Premium</SelectItem>
-                                    <SelectItem value="ag redo">AG Redo</SelectItem>
-                                    <SelectItem value="fab only">FAB only</SelectItem>
+                                    
+                                    {fabTypes.map((type) => (
+                                        <SelectItem key={type} value={type}>
+                                            {type}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -606,7 +586,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                     </CardHeader>
 
                     <CardTable>
-                        <ScrollArea>
+                        <ScrollArea className="h-[calc(100vh-280px)]">
                             <div className="relative">
                                 {(isApiLoading || externalLoading) ? (
                                     <div className="flex items-center justify-center h-64">
@@ -614,7 +594,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                                     </div>
                                 ) : (
                                     <table className="w-full border-collapse">
-                                        <thead>
+                                        <thead className="sticky top-0 z-10 bg-white">
                                             {table.getHeaderGroups().map(headerGroup => (
                                                 <tr key={headerGroup.id}>
                                                     {headerGroup.headers.map(header => (
@@ -630,93 +610,50 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                                             ))}
                                         </thead>
                                         <tbody>
-                                            {/* Overall totals row (above all groups) */}
                                             {filteredRows.length > 0 && (
                                                 <tr className="bg-muted/30 font-medium border-b-2 border-border">
                                                     {table.getVisibleFlatColumns().map(column => {
                                                         const colId = column.id;
-                                                        if (colId === 'month') {
-                                                            return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">Total</td>;
-                                                        }
-                                                        if (colId === 'pieces') {
-                                                            return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.pieces}</td>;
-                                                        }
-                                                        if (colId === 'total_sq_ft') {
-                                                            return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.sqft.toFixed(2)}</td>;
-                                                        }
-                                                        if (colId === 'wl_ln_ft') {
-                                                            return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.wl.toFixed(2)}</td>;
-                                                        }
-                                                        if (colId === 'sl_ln_ft') {
-                                                            return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.sl.toFixed(2)}</td>;
-                                                        }
-                                                        if (colId === 'edging_ln_ft') {
-                                                            return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.edging.toFixed(2)}</td>;
-                                                        }
-                                                        if (colId === 'cnc_ln_ft') {
-                                                            return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.cnc.toFixed(2)}</td>;
-                                                        }
-                                                        if (colId === 'milter_ln_ft') {
-                                                            return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.milter.toFixed(2)}</td>;
-                                                        }
-                                                        if (colId === 'total_cut_ln_ft') {
-                                                            return <td key={colId} className="px-4 py-2 text-sm font-semibold border-r border-border">{overallTotals.totalCut.toFixed(2)}</td>;
-                                                        }
-                                                        // Other columns – empty
+                                                        const cls = "px-4 py-2 text-sm font-semibold border-r border-border";
+                                                        if (colId === 'month') return <td key={colId} className={cls}>Total</td>;
+                                                        if (colId === 'pieces') return <td key={colId} className={cls}>{overallTotals.pieces}</td>;
+                                                        if (colId === 'total_sq_ft') return <td key={colId} className={cls}>{overallTotals.sqft.toFixed(2)}</td>;
+                                                        if (colId === 'wl_ln_ft') return <td key={colId} className={cls}>{overallTotals.wl.toFixed(2)}</td>;
+                                                        if (colId === 'sl_ln_ft') return <td key={colId} className={cls}>{overallTotals.sl.toFixed(2)}</td>;
+                                                        if (colId === 'edging_ln_ft') return <td key={colId} className={cls}>{overallTotals.edging.toFixed(2)}</td>;
+                                                        if (colId === 'cnc_ln_ft') return <td key={colId} className={cls}>{overallTotals.cnc.toFixed(2)}</td>;
+                                                        if (colId === 'milter_ln_ft') return <td key={colId} className={cls}>{overallTotals.milter.toFixed(2)}</td>;
+                                                        if (colId === 'total_cut_ln_ft') return <td key={colId} className={cls}>{overallTotals.totalCut.toFixed(2)}</td>;
                                                         return <td key={colId} className="px-4 py-2 text-sm border-r border-border"></td>;
                                                     })}
                                                 </tr>
                                             )}
 
-                                            {/* Grouped rows by date with per‑group subtotals */}
                                             {Object.entries(groupedRows).map(([dateKey, group]) => {
                                                 const groupTotals = computeGroupTotals(group.rows);
                                                 return (
                                                     <Fragment key={dateKey}>
-                                                        {/* Group header */}
                                                         <tr className="bg-[#F6FFE7]">
                                                             <td className="px-4 py-2 text-xs font-medium text-gray-800 text-start" colSpan={table.getVisibleFlatColumns().length}>
                                                                 {group.dateDisplay}
                                                             </td>
                                                         </tr>
-                                                        {/* Subtotal row for this group (above details) */}
                                                         <tr className="bg-gray-50 font-medium border-t border-b border-gray-200">
                                                             {table.getVisibleFlatColumns().map(column => {
                                                                 const colId = column.id;
-                                                                // For month column (or actions) show "Total"
-                                                                if (colId === 'month' || colId === 'actions') {
-                                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border">Total</td>;
-                                                                }
-                                                                // Numeric columns – display group totals
-                                                                if (colId === 'pieces') {
-                                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.pieces}</td>;
-                                                                }
-                                                                if (colId === 'total_sq_ft') {
-                                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.total_sq_ft.toFixed(2)}</td>;
-                                                                }
-                                                                if (colId === 'wl_ln_ft') {
-                                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.wl_ln_ft.toFixed(2)}</td>;
-                                                                }
-                                                                if (colId === 'sl_ln_ft') {
-                                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.sl_ln_ft.toFixed(2)}</td>;
-                                                                }
-                                                                if (colId === 'edging_ln_ft') {
-                                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.edging_ln_ft.toFixed(2)}</td>;
-                                                                }
-                                                                if (colId === 'cnc_ln_ft') {
-                                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.cnc_ln_ft.toFixed(2)}</td>;
-                                                                }
-                                                                if (colId === 'milter_ln_ft') {
-                                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.milter_ln_ft.toFixed(2)}</td>;
-                                                                }
-                                                                if (colId === 'total_cut_ln_ft') {
-                                                                    return <td key={colId} className="px-4 py-2 text-sm border-r border-border">{groupTotals.total_cut_ln_ft.toFixed(2)}</td>;
-                                                                }
-                                                                // Other columns – empty
-                                                                return <td key={colId} className="px-4 py-2 text-sm border-r border-border"></td>;
+                                                                const cls = "px-4 py-2 text-sm border-r border-border";
+                                                                if (colId === 'month' || colId === 'actions') return <td key={colId} className={cls}>Total</td>;
+                                                                if (colId === 'pieces') return <td key={colId} className={cls}>{groupTotals.pieces}</td>;
+                                                                if (colId === 'total_sq_ft') return <td key={colId} className={cls}>{groupTotals.total_sq_ft.toFixed(2)}</td>;
+                                                                if (colId === 'wl_ln_ft') return <td key={colId} className={cls}>{groupTotals.wl_ln_ft.toFixed(2)}</td>;
+                                                                if (colId === 'sl_ln_ft') return <td key={colId} className={cls}>{groupTotals.sl_ln_ft.toFixed(2)}</td>;
+                                                                if (colId === 'edging_ln_ft') return <td key={colId} className={cls}>{groupTotals.edging_ln_ft.toFixed(2)}</td>;
+                                                                if (colId === 'cnc_ln_ft') return <td key={colId} className={cls}>{groupTotals.cnc_ln_ft.toFixed(2)}</td>;
+                                                                if (colId === 'milter_ln_ft') return <td key={colId} className={cls}>{groupTotals.milter_ln_ft.toFixed(2)}</td>;
+                                                                if (colId === 'total_cut_ln_ft') return <td key={colId} className={cls}>{groupTotals.total_cut_ln_ft.toFixed(2)}</td>;
+                                                                return <td key={colId} className={cls}></td>;
                                                             })}
                                                         </tr>
-                                                        {/* Detail rows */}
                                                         {group.rows.map(row => {
                                                             const tableRow = table.getRowModel().rows.find(r => r.original.plan_id === row.plan_id && r.original.fab_id === row.fab_id);
                                                             if (!tableRow) return null;
@@ -763,18 +700,14 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                 </Card>
             </DataGrid>
 
-            {/* Create/Edit Plan Sheet */}
             <CreatePlanSheet
                 open={planSheetOpen}
                 onOpenChange={setPlanSheetOpen}
                 selectedDate={selectedDateForSheet}
-                selectedTimeSlot={null} // we don't have time slot from table
+                selectedTimeSlot={null}
                 selectedEvent={selectedEventForSheet}
                 prefillFabId={selectedFabForSheet}
-                onEventCreated={() => {
-                    // Refresh data after plan creation
-                    refetch();
-                }}
+                onEventCreated={() => { refetch(); }}
             />
         </>
     );
