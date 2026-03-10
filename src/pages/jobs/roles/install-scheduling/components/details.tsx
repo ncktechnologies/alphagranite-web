@@ -25,7 +25,7 @@ export function InstallSchedulingDetailsPage() {
     const { data: fab, isLoading, isError, error } = useGetFabByIdQuery(Number(id));
 
 
-     const sidebarSections = [
+    const sidebarSections = [
         {
             title: "Job Details",
             type: "details",
@@ -204,7 +204,20 @@ export function InstallSchedulingDetailsPage() {
                 </div>
 
                 {/* <GraySidebar sections={sidebarSections as any} /> */}
-                <InstallChecklistForm fabId={fab.id} />
+                {/* RIGHT: Review checklist */}
+                <div className='border-l'>
+                    <Card className='border-none py-6'>
+                        <CardHeader className='border-b pb-4 flex-col items-start'>
+                            <CardTitle className='font-semibold text-text'>FAB ID</CardTitle>
+                            <p className="text-sm text-text-foreground">
+                                Review and approve resurfacing details
+                            </p>
+                        </CardHeader>
+                        <CardContent>
+                            <ReviewChecklistForm fabId={fab.id} />
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </Container>
     );
