@@ -210,11 +210,11 @@ export function InstallSchedulingDetailsPage() {
                         <CardHeader className='border-b pb-4 flex-col items-start'>
                             <CardTitle className='font-semibold text-text'>FAB ID</CardTitle>
                             <p className="text-sm text-text-foreground">
-                                Review and approve resurfacing details
+                                Review and approve install scheduling details
                             </p>
                         </CardHeader>
                         <CardContent>
-                            <ReviewChecklistForm fabId={fab.id} />
+                            <InstallChecklistForm fabId={fab.id} />
                         </CardContent>
                     </Card>
                 </div>
