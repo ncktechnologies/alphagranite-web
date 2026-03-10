@@ -134,6 +134,14 @@ export interface IJob {
   // Slab smith status fields
   slabsmith_ag_needed?: boolean;
   slabsmith_completed_date?: string;
+  // Install scheduling fields
+  est_completion_date?: string;
+  percent_complete?: number | string;
+  completion_date?: string;
+  installer?: string;
+  install_date?: string;
+  install_confirmed?: boolean | string;
+  shop_status?: string;
 }
 
 

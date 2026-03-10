@@ -210,6 +210,27 @@ const NewFabIdForm = () => {
     },
   });
 
+  // Auto-check all checkboxes when FAB type is resurfacing
+const fabTypeValue = form.watch('fabType');
+
+useEffect(() => {
+  if (fabTypeValue?.toLowerCase() === 'resurface') {
+    form.setValue('templateNotNeeded', true);
+    form.setValue('draftNotNeeded', true);
+    form.setValue('slabSmithCustNotNeeded', true);
+    form.setValue('sctNotNeeded', true);
+    form.setValue('slabSmithAGNotNeeded', true);
+    form.setValue('finalProgrammingNotNeeded', true);
+  } else {
+    form.setValue('templateNotNeeded', false);
+    form.setValue('draftNotNeeded', false);
+    form.setValue('slabSmithCustNotNeeded', false);
+    form.setValue('sctNotNeeded', false);
+    form.setValue('slabSmithAGNotNeeded', false);
+    form.setValue('finalProgrammingNotNeeded', false);
+  }
+}, [fabTypeValue, form]);
+
   // Watch for account changes
   const accountValue = form.watch('account');
 

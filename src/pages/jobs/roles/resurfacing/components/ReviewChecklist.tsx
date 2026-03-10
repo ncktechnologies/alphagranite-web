@@ -111,7 +111,6 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
       return;
     }
 
-    // Check if any changes were made
     const hasNotes = values.fab_notes?.trim() ? true : false;
     const hasShopDate = values.shop_date_schedule ? true : false;
     const hasResurface = values.resurface_completed;
@@ -137,32 +136,62 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
         } catch (noteError) {
           console.error("Error creating fab note:", noteError);
           toast.error("Failed to save note");
-          // Continue with other operations? Decide based on requirements.
-          // Here we stop on note failure, but you might want to continue.
           setIsSubmitting(false);
           return;
         }
       }
 
-      // 2. Handle resurface completed workflow
-      if (hasResurface) {
-        try {
-          // Check if resurfacing record exists
-          let resurifaceId = resurfaceData?.data?.id || resurfaceData?.id;
+      // 2. Ensure a resurfacing record exists if scheduling a date or marking complete
+      let resurfaceId = resurfaceData?.data?.id || resurfaceData?.id;
 
-          if (!resurifaceId) {
-            const createResponse = await createResurfaceScheduling({ fab_id: fabId }).unwrap();
-            resurifaceId = createResponse?.data?.id || createResponse?.id;
+      if ((hasShopDate || hasResurface) && !resurfaceId) {
+        try {
+          const createResponse = await createResurfaceScheduling({ fab_id: fabId }).unwrap();
+          resurfaceId = createResponse?.data?.id || createResponse?.id;
+
+          if (!resurfaceId) {
+            throw new Error("Could not obtain resurface scheduling ID after creation");
+          }
+        } catch (createError) {
+          console.error("Error creating resurfacing record:", createError);
+          toast.error("Failed to initialise resurfacing record");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // 3. Save shop date schedule if provided — sets is_completed: false
+      if (hasShopDate) {
+        try {
+          await updateCutListSchedule({
+            fab_id: fabId,
+            data: { shop_date_schedule: values.shop_date_schedule },
+          }).unwrap();
+
+          // Only mark as not-completed if we're not also ticking the checkbox
+          if (resurfaceId && !hasResurface) {
+            await updateResurfaceScheduling({
+              resurface_scheduling_id: resurfaceId,
+              data: { is_completed: false },
+            }).unwrap();
           }
 
-          if (resurifaceId) {
+          someSuccess = true;
+        } catch (scheduleError) {
+          console.error("Error saving shop date:", scheduleError);
+          toast.error("Failed to save shop date");
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      // 4. Handle resurface completed — sets is_completed: true
+      if (hasResurface) {
+        try {
+          if (resurfaceId) {
             await updateResurfaceScheduling({
-              resurface_scheduling_id: resurifaceId,
-              data: {
-                is_completed: true,
-                // actual_start_date: new Date().toISOString(),
-                // actual_end_date: new Date().toISOString(),
-              },
+              resurface_scheduling_id: resurfaceId,
+              data: { is_completed: true },
             }).unwrap();
             someSuccess = true;
           } else {
@@ -176,23 +205,6 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
         }
       }
 
-      // 3. Save shop date schedule if provided
-      if (hasShopDate) {
-        try {
-          await updateCutListSchedule({
-            fab_id: fabId,
-            data: { shop_date_schedule: values.shop_date_schedule },
-          }).unwrap();
-          someSuccess = true;
-        } catch (scheduleError) {
-          console.error("Error saving shop date:", scheduleError);
-          toast.error("Failed to save shop date");
-          // Decide if you want to stop or continue
-          setIsSubmitting(false);
-          return;
-        }
-      }
-
       // Final success message based on what was saved
       if (someSuccess) {
         if (hasResurface) {
@@ -200,7 +212,6 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
           navigate('/job/resurfacing');
         } else {
           toast.success("Changes saved successfully");
-          // Optionally stay on page or navigate
         }
       } else {
         toast.warning("No data was saved");

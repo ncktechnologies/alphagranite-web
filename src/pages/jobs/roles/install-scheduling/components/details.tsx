@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+import { InstallChecklistForm } from './reviewCheckList';
 
 // Helper function to filter fab notes by stage
 const filterNotesByStage = (fabNotes: any[], stage: string) => {
@@ -22,6 +23,55 @@ const getAllFabNotes = (fabNotes: any[]) => {
 export function InstallSchedulingDetailsPage() {
     const { id } = useParams<{ id: string }>();
     const { data: fab, isLoading, isError, error } = useGetFabByIdQuery(Number(id));
+
+
+     const sidebarSections = [
+        {
+            title: "Job Details",
+            type: "details",
+            items: [
+                { label: "Job Name", value: fab?.job_details?.name || `Job ${fab?.job_id}` },
+                { label: "Job Number", value: fab?.job_details?.job_number || String(fab?.job_id) },
+                { label: "Stone Type", value: fab?.stone_type_name || 'N/A' },
+                { label: "Stone Color", value: fab?.stone_color_name || 'N/A' },
+                { label: "Stone Thickness", value: fab?.stone_thickness_value || 'N/A' },
+                { label: "Edge Profile", value: fab?.edge_name || 'N/A' },
+                { label: "Total Sq Ft", value: fab?.total_sqft?.toString() || 'N/A' },
+                { label: "Input Area", value: fab?.input_area?.toString() || 'N/A' },
+                { label: "FAB Type", value: fab?.fab_type || 'N/A' },
+            ],
+        },
+        {
+            title: "FAB Notes",
+            type: "notes",
+            notes: getAllFabNotes(fab?.fab_notes || []).map(note => {
+                // Stage display mapping
+                const stageConfig: Record<string, { label: string; color: string }> = {
+                    templating: { label: 'Templating', color: 'text-blue-700' },
+                    pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
+                    drafting: { label: 'Drafting', color: 'text-green-700' },
+                    sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
+                    slab_smith_request: { label: 'Slab Smith Request', color: 'text-red-700' },
+                    cut_list: { label: 'Final Programming', color: 'text-purple-700' },
+                    cutting: { label: 'Cutting', color: 'text-orange-700' },
+                    revisions: { label: 'Revisions', color: 'text-purple-700' },
+                    draft: { label: 'Draft', color: 'text-green-700' },
+                    general: { label: 'General', color: 'text-gray-700' }
+                };
+
+                const stage = note.stage || 'general';
+                const config = stageConfig[stage] || stageConfig.general;
+
+                return {
+                    id: note.id,
+                    avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+                    content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${note.note}`,
+                    author: note.created_by_name || 'Unknown',
+                    timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+                };
+            })
+        }
+    ];
 
     if (isLoading) {
         return (
@@ -153,7 +203,8 @@ export function InstallSchedulingDetailsPage() {
                     )}
                 </div>
 
-                <GraySidebar fab={fab} />
+                {/* <GraySidebar sections={sidebarSections as any} /> */}
+                <InstallChecklistForm fabId={fab.id} />
             </div>
         </Container>
     );

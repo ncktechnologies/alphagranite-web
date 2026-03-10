@@ -161,7 +161,7 @@ export function ResurfacingDetailsPage() {
               <h1 className="text-2xl font-semibold">Resurfacing</h1>
              
           </div>
-          <Link to="/jobs/reschedule">
+          <Link to="/job/resurfacing">
               <Button variant="outline">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back 

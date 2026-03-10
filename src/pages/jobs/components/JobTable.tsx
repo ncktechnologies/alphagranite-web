@@ -252,7 +252,7 @@ export const JobTable = ({
     // Column definitions (all data columns have enableSorting: true)
     const baseColumns = useMemo<ColumnDef<IJob>[]>(() => [
         // ID column (checkbox) – no sorting
-         
+
         {
             accessorKey: 'id',
             accessorFn: (row) => row.id,
@@ -664,6 +664,86 @@ export const JobTable = ({
             size: 100,
             enableSorting: true,
         },
+        // Est. Completion Date
+        
+        // % Complete
+        {
+            id: 'percent_complete',
+            accessorKey: 'percent_complete',
+            header: ({ column }) => <DataGridColumnHeader title="% COMPLETE" column={column} />,
+            cell: ({ row }) => {
+                const val = (row.original as any).percent_complete;
+                return (
+                    <span className="text-xs">
+                        {val != null ? `${val}%` : '-'}
+                    </span>
+                );
+            },
+            size: 100,
+            enableSorting: true,
+        },
+        // Completion Date
+        {
+            id: 'completion_date',
+            accessorKey: 'completion_date',
+            header: ({ column }) => <DataGridColumnHeader title="COMPLETION DATE" column={column} />,
+            cell: ({ row }) => <span className="text-xs">{(row.original as any).completion_date || '-'}</span>,
+            size: 140,
+            enableSorting: true,
+        },
+        // Install Notes
+        {
+            id: 'install_notes',
+            header: ({ column }) => <DataGridColumnHeader title="INSTALL NOTES" column={column} />,
+            cell: ({ row }) => renderNotes(row, 'install_schedulling'),
+            enableSorting: true,
+            size: 180,
+        },
+        // Installer
+        {
+            id: 'installer',
+            accessorKey: 'installer',
+            header: ({ column }) => <DataGridColumnHeader title="INSTALLER" column={column} />,
+            cell: ({ row }) => <span className="text-xs">{(row.original as any).installer || '-'}</span>,
+            size: 130,
+            enableSorting: true,
+        },
+        // Install Date (scheduled_install_date)
+        {
+            id: 'install_date',
+            accessorKey: 'install_date',
+            header: ({ column }) => <DataGridColumnHeader title="INSTALL DATE" column={column} />,
+            cell: ({ row }) => <span className="text-xs">{(row.original as any).install_date || '-'}</span>,
+            size: 120,
+            enableSorting: true,
+        },
+        // Install Confirmed
+        {
+            id: 'install_confirmed',
+            accessorKey: 'install_confirmed',
+            header: ({ column }) => <DataGridColumnHeader title="INSTALL CONFIRMED" column={column} />,
+            cell: ({ row }) => {
+                const confirmed = (row.original as any).install_confirmed;
+                if (confirmed === true || confirmed === 'Yes') {
+                    return <span className="text-xs font-medium text-green-600">Yes</span>;
+                }
+                if (confirmed === false || confirmed === 'No') {
+                    return <span className="text-xs font-medium text-red-500">No</span>;
+                }
+                return <span className="text-xs text-gray-400">-</span>;
+            },
+            size: 140,
+            enableSorting: true,
+        },
+        // Shop Status
+        {
+            id: 'shop_status',
+            accessorKey: 'shop_status',
+            header: ({ column }) => <DataGridColumnHeader title="SHOP STATUS" column={column} />,
+            cell: ({ row }) => <span className="text-xs">{(row.original as any).shop_status || '-'}</span>,
+            size: 120,
+            enableSorting: true,
+        },
         // On Hold switch – sorting disabled
         {
             id: "on_hold",
@@ -715,7 +795,7 @@ export const JobTable = ({
             size: 80,
         },
         // Actions column
-       
+
     ], [getPath, path, dateRange, enableMultiSelect, effectiveSelectedRows, filteredData, loadingStates, optimisticUpdates, onRescheduleClick]);
 
     // Helper to render notes (simplified)
@@ -744,7 +824,7 @@ export const JobTable = ({
         if (job.stone_color_name) stoneInfo.push(job.stone_color_name);
         if (job.stone_thickness_value) stoneInfo.push(job.stone_thickness_value);
         if (job.edge_name) materialInfo.push(job.edge_name);
-        return { jobInfo, materialInfo, stoneInfo,};
+        return { jobInfo, materialInfo, stoneInfo, };
     };
 
     const toggleRowSelection = (fabId: string) => {

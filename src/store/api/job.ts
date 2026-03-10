@@ -992,6 +992,53 @@ export const jobApi = createApi({
                 transformResponse: (response: any) => response.data || response,
                 providesTags: ["Fab"],
             }),
+             getFabsInResurfacing: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
+                query: (params) => {
+                    const queryParams = params || {};
+                    return {
+                        url: "/resurface-schedule",
+                        method: "get",
+                        params: {
+                            skip: queryParams.skip || 0,
+                            limit: queryParams.limit || 100,
+                            // Existing filters
+                            ...(queryParams.job_id !== undefined && { job_id: queryParams.job_id }),
+                            ...(queryParams.fab_type && { fab_type: queryParams.fab_type }),
+                            ...(queryParams.sales_person_id !== undefined && { sales_person_id: queryParams.sales_person_id }),
+                            ...(queryParams.templater_id !== undefined && { templater_id: queryParams.templater_id }),
+                            ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
+                            ...(queryParams.current_stage && { current_stage: queryParams.current_stage }),
+                            // New stage filter
+                            ...(queryParams.next_stage && { next_stage: queryParams.next_stage }),
+                            // Search filter
+                            ...(queryParams.search && { search: queryParams.search }),
+                            // Schedule date filters
+                            ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
+                            ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
+                            ...(queryParams.schedule_status && { schedule_status: queryParams.schedule_status }),
+                            // Date filter (predefined periods)
+                            ...(queryParams.date_filter && { date_filter: queryParams.date_filter }),
+                            // Shop date range filters
+                            ...(queryParams.shop_date_start && { shop_date_start: queryParams.shop_date_start }),
+                            ...(queryParams.shop_date_end && { shop_date_end: queryParams.shop_date_end }),
+                            // Template completion date range filters
+                            ...(queryParams.template_completed_start && { template_completed_start: queryParams.template_completed_start }),
+                            ...(queryParams.template_completed_end && { template_completed_end: queryParams.template_completed_end }),
+                            // Predraft completion date range filters
+                            ...(queryParams.predraft_completed_start && { predraft_completed_start: queryParams.predraft_completed_start }),
+                            ...(queryParams.predraft_completed_end && { predraft_completed_end: queryParams.predraft_completed_end }),
+                            // Draft completion date range filters
+                            ...(queryParams.draft_completed_start && { draft_completed_start: queryParams.draft_completed_start }),
+                            ...(queryParams.draft_completed_end && { draft_completed_end: queryParams.draft_completed_end }),
+                            // SCT completion date range filters
+                            ...(queryParams.sct_completed_start && { sct_completed_start: queryParams.sct_completed_start }),
+                            ...(queryParams.sct_completed_end && { sct_completed_end: queryParams.sct_completed_end }),
+                        }
+                    };
+                },
+                transformResponse: (response: any) => response.data || response,
+                providesTags: ["Fab"],
+            }),
 
             createFab: build.mutation<Fab, FabCreate>({
                 query: (data) => ({
@@ -1926,6 +1973,35 @@ export const jobApi = createApi({
                 }),
                 providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
             }),
+             createInstallScheduling: build.mutation<any, { fab_id: number; scheduled_start_date?: string; scheduled_end_date?: string }>({  
+                query: ({ fab_id, scheduled_start_date, scheduled_end_date }) => ({
+                    url: `/install-scheduling`,
+                    method: "POST",
+                    data: {
+                        fab_id,
+                        scheduled_start_date,
+                        scheduled_end_date
+                    }
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            updateInstallScheduling: build.mutation<any, { install_scheduling_id: number; data: { is_completed?: boolean; actual_start_date?: string; actual_end_date?: string } }>({  
+                query: ({ install_scheduling_id, data }) => ({
+                    url: `/install-scheduling/${install_scheduling_id}`,
+                    method: "PUT",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            getInstallSchedulingByFabId: build.query<any, number>({
+                query: (fab_id) => ({
+                    url: `/install-scheduling/fab/${fab_id}`,
+                    method: "GET"
+                }),
+                providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
+            }),
         };
     },
 });
@@ -1943,6 +2019,7 @@ export const {
     useGetFabsByStageQuery,
     useGetFabsInFinalProgrammingPendingQuery,
     useGetFabsInSlabSmithPendingQuery,
+    useGetFabsInResurfacingQuery,
     useCreateFabMutation,
     useUpdateFabMutation,
     useDeleteFabMutation,
@@ -2017,6 +2094,11 @@ export const {
     useCreateResurfaceSchedulingMutation,
     useUpdateResurfaceSchedulingMutation,
     useGetResurfaceSchedulingByFabIdQuery,
+
+    // install scheduling hooks
+    useCreateInstallSchedulingMutation,
+    useUpdateInstallSchedulingMutation,
+    useGetInstallSchedulingByFabIdQuery,
     // Job Media hooks
     useGetJobMediaQuery,
     useUploadJobMediaMutation,

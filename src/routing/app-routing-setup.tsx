@@ -58,6 +58,7 @@ import { InstallSchedulingDetailsPage } from '@/pages/jobs/roles/install-schedul
 import { ResurfacingDetailsPage } from '@/pages/jobs/roles/resurfacing/components/details';
 import CreatePlanPage from '@/pages/shop/components/createPlanePage';
 import CreateAutoPlanPage from '@/pages/shop/components/autoSuggest';
+import ResurfacingStatusPage from '@/pages/shop/resurfacing/page';
 // import ShopCalendarPage from '@/pages/shop/calendarPage';
 
 export function AppRoutingSetup() {
@@ -387,6 +388,14 @@ export function AppRoutingSetup() {
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <WJPlanPage/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/resurfacing-status"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <ResurfacingStatusPage/>
               // </ProtectedRoute>
             }
           />

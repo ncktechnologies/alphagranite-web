@@ -39,20 +39,20 @@ const transformFabToJob = (fab: Fab): IJob => {
         date: fab.template_completed_date || '',
         current_stage: fab.current_stage,
         sales_person_name: fab.sales_person_name || '',
-        // Optional fields with default values
         acct_name: fab.account_name || '',
         input_area: fab.input_area || '',
         template_received: fab.template_received ? 'Yes' : 'No',
         template_needed: fab.template_needed ? 'No' : 'Yes',
-        // no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
         total_sq_ft: String(fab.total_sqft || "-"),
         revenue: fab.job_details?.project_value || "-",
-        gp: "-",
+        gp: (fab as any).gp ?? "-",
         revised: '',
         sct_completed: '',
         draft_completed: '',
         review_completed: fab.current_stage === 'completed' ? 'Yes' : 'No',
-        template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
+        template_schedule: fab.templating_schedule_start_date
+            ? formatDate(fab.templating_schedule_start_date)
+            : '-',
         templater: fab.technician_name || '-',
         stone_type_name: fab.stone_type_name || '',
         stone_color_name: fab.stone_color_name || '',
@@ -62,6 +62,22 @@ const transformFabToJob = (fab: Fab): IJob => {
         job_id: fab.job_id,
         on_hold: fab.on_hold,
         status_id: fab.status_id,
+        no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
+
+        // ── Install scheduling fields ──
+        est_completion_date: (fab as any).est_completion_date
+            ? formatDate((fab as any).est_completion_date)
+            : '-',
+        percent_complete: (fab as any).percent_complete ?? undefined,
+        completion_date: (fab as any).completion_date
+            ? formatDate((fab as any).completion_date)
+            : undefined,
+        installer: (fab as any).installer_name || (fab as any).installer || undefined,
+        install_date: (fab as any).scheduled_install_date
+            ? formatDate((fab as any).scheduled_install_date)
+            : undefined,
+        install_confirmed: (fab as any).install_confirmed ?? undefined,
+        shop_status: (fab as any).shop_status || undefined,
     };
 };
 
@@ -219,7 +235,25 @@ export function InstallSchedulingPage() {
                 showSalesPersonFilter={true}
                 showScheduleFilter={false} // Remove separate schedule filter
                 salesPersons={salesPersons}
-                visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'on_hold']}
+                visibleColumns={[
+                    'fab_type',
+                    'fab_id',
+                    'job_no',
+                    'no_of_pieces',
+                    'fab_info',
+                    'total_sq_ft',
+                    'revenue',
+                    'gp',
+                    'est_completion_date',
+                    'percent_complete',
+                    'completion_date',
+                    'install_notes',
+                    'installer',
+                    'install_date',
+                    'install_confirmed',
+                    'shop_status',
+                    'on_hold',
+                ]}
             />
         </Container>
     );
