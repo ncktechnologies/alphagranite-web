@@ -84,7 +84,7 @@ const computeGroupTotals = (rows: ShopPlanRow[]) => {
     });
 };
 
-const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => {
+const ShopTable: React.FC<ShopTableProps> = () => {
     const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 25 });
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
@@ -296,7 +296,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
         return { pieces, sqft, totalCut, wl, sl, edging, cnc, milter };
     }, [filteredRows]);
 
-    const handleFabIdClick = (fabId: string) => console.log('PDF for', fabId);
+    const handleFabIdClick = (fabId: string) => navigate("/sales/" + fabId);
 
     const columns = useMemo<ColumnDef<ShopPlanRow>[]>(() => [
         {
@@ -359,9 +359,10 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             accessorFn: r => r.fab_id,
             header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
             cell: ({ row }) => (
-                <button onClick={() => handleFabIdClick(row.original.fab_id)} className="text-sm hover:underline cursor-pointer">
-                    {row.original.fab_id}
-                </button>
+                // <button onClick={() => handleFabIdClick(row.original.fab_id)} className="text-sm hover:underline cursor-pointer">
+                //     {row.original.fab_id}
+                // </button>
+                <div></div>
             ),
             enableSorting: true,
             size: 100,
@@ -503,7 +504,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             <DataGrid
                 table={table}
                 recordCount={totalRecords}
-                isLoading={isApiLoading || externalLoading}
+                isLoading={isApiLoading }
                 groupByDate={false}
                 tableLayout={{
                     columnsPinnable: true,
@@ -522,7 +523,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
                                     className="ps-9 w-[280px] h-[34px]"
-                                    disabled={isApiLoading || externalLoading}
+                                    disabled={isApiLoading }
                                 />
                                 {searchQuery && (
                                     <Button mode="icon" variant="ghost" className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6" onClick={() => setSearchQuery('')}>
@@ -536,7 +537,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                                     <Button
                                         variant="outline"
                                         className={cn('w-[200px] h-[34px] justify-start text-left font-normal', !dateRange && 'text-muted-foreground')}
-                                        disabled={isApiLoading || externalLoading}
+                                        disabled={isApiLoading}
                                     >
                                         <CalendarDays className="mr-2 h-4 w-4" />
                                         {dateRange?.from ? (
@@ -562,7 +563,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                                 </PopoverContent>
                             </Popover>
 
-                            <Select value={fabTypeFilter} onValueChange={setFabTypeFilter} disabled={isApiLoading || externalLoading}>
+                            <Select value={fabTypeFilter} onValueChange={setFabTypeFilter} disabled={isApiLoading}>
                                 <SelectTrigger className="w-auto h-[34px]">
                                     <SelectValue placeholder="FAB type" />
                                 </SelectTrigger>
@@ -579,7 +580,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                         </div>
 
                         <CardToolbar>
-                            <Button variant="outline" onClick={() => exportTableToCSV(table, 'shop-cut-planning')} disabled={isApiLoading || externalLoading}>
+                            <Button variant="outline" onClick={() => exportTableToCSV(table, 'shop-cut-planning')} disabled={isApiLoading}>
                                 Export CSV
                             </Button>
                         </CardToolbar>
@@ -588,7 +589,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                     <CardTable>
                         <ScrollArea className="h-[calc(100vh-280px)]">
                             <div className="relative">
-                                {(isApiLoading || externalLoading) ? (
+                                {(isApiLoading ) ? (
                                     <div className="flex items-center justify-center h-64">
                                         <p>Loading...</p>
                                     </div>

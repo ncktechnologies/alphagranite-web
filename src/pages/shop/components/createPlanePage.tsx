@@ -165,32 +165,26 @@ useEffect(() => {
 
   const ev: any = selectedEvent;
   const startDate = new Date(ev.scheduled_start_date);
-  const endDate = ev.scheduled_end_date ? new Date(ev.scheduled_end_date) : null;
 
-  const endTime = endDate
-    ? format(endDate, 'HH:mm')
-    : ev.estimated_hours
-      ? format(new Date(startDate.getTime() + ev.estimated_hours * 3_600_000), 'HH:mm')
-      : '';
-
-  const operatorId = Array.isArray(ev.operator_ids)
-    ? String(ev.operator_ids[0] ?? '')
-    : String(ev.operator_id ?? '');
+  // No scheduled_end_date in API — derive from estimated_hours
+  const endTime = ev.estimated_hours
+    ? format(new Date(startDate.getTime() + ev.estimated_hours * 3_600_000), 'HH:mm')
+    : '';
 
   setEntries([{
     id: ev.id,
-    fab_id: String(ev.fab_id || effectivePrefillFabId || ''),
-    workstation_id: String(ev.workstation_id ?? ev.workstation?.id ?? ''),
-    operator_id: operatorId,
-    notes: ev.notes || '',
-    start_time: format(startDate, 'HH:mm'),
+    fab_id: String(ev.fab_id ?? ''),
+    workstation_id: String(ev.workstation_id ?? ''),   // "4"
+    operator_id: String(ev.operator_id ?? ''),         // "10"
+    notes: ev.notes ?? '',
+    start_time: format(startDate, 'HH:mm'),            // "08:30"
     end_time: endTime,
-    planning_section_id: ev.planning_section_id
-      ? String(ev.planning_section_id)
+    planning_section_id: ev.planning_section_id != null
+      ? String(ev.planning_section_id)                 // "3"
       : undefined,
     date: startDate,
   }]);
-}, [selectedEvent, effectivePrefillFabId, workstationsLoaded, employeesLoaded]);
+}, [selectedEvent, workstationsLoaded, employeesLoaded]);
 // Handlers
   const addEntry = () =>
     setEntries((p) => {

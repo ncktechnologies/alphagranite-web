@@ -33,6 +33,7 @@ import { DateRange } from 'react-day-picker';
 import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useGetFabsQuery, useGetFabTypesQuery } from '@/store/api/job';
+import { Link } from 'react-router';
 
 // ------------------ Types ------------------
 export interface ShopStatusPlan {
@@ -519,9 +520,9 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     return (
-                        <span className="text-sm text-[#4b545d] hover:underline cursor-pointer">
+                        <Link to={`/sales/${row.original.data.fab_id}`} className="text-sm text-[#4b545d] hover:underline cursor-pointer">
                             {row.original.data.fab_id}
-                        </span>
+                        </Link>
                     );
                 }
                 return null;

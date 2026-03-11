@@ -204,36 +204,13 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     setActivePage('create-plan');
   };
 
-  // const handleOpenEditPlan = (event: any) => {
-  //   setSelectedEvent(event);
-  //   setSelectedDate(new Date(event.scheduled_start_date));
-  //   setSelectedTimeSlot(format(new Date(event.scheduled_start_date), 'HH:mm'));
-  //   setCreatePlanFabId(String(event.fab_id));
-  //   setActivePage('create-plan');
-  // };
-
   const handleOpenEditPlan = (event: any) => {
-  // Normalise the event so CreatePlanPage always gets a consistent shape
-  const normalisedEvent = {
-    ...event,
-    // operator_id may be an array from the API — take the first element
-    operator_id: Array.isArray(event.operator_ids)
-      ? event.operator_ids[0]
-      : event.operator_id ?? '',
-    // ensure planning_section_id is never null/undefined
-    planning_section_id: event.planning_section_id ?? '',
-    // ensure workstation_id is present
-    workstation_id: event.workstation_id ?? '',
-    // notes fallback
-    notes: event.notes ?? '',
+    setSelectedEvent(event);
+    setSelectedDate(new Date(event.scheduled_start_date));
+    setSelectedTimeSlot(format(new Date(event.scheduled_start_date), 'HH:mm'));
+    setCreatePlanFabId(String(event.fab_id));
+    setActivePage('create-plan');
   };
-
-  setSelectedEvent(normalisedEvent);
-  setSelectedDate(new Date(event.scheduled_start_date));
-  setSelectedTimeSlot(format(new Date(event.scheduled_start_date), 'HH:mm'));
-  setCreatePlanFabId(String(event.fab_id));
-  setActivePage('create-plan');
-};
 
   const handleBackToCalendar = () => {
     setActivePage('calendar');

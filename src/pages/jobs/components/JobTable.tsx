@@ -317,7 +317,8 @@ export const JobTable = ({
             id: "fab_id",
             accessorKey: "fab_id",
             header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.fab_id}</span>,
+            cell: ({ row }) => <Link  to={`/sales/${row.original.fab_id}`} className="text-xs hover:underline">{row.original.fab_id}</Link>,
+            
             size: 80,
             enableSorting: true,
         },

@@ -296,7 +296,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
         return { pieces, sqft, totalCut, wl, sl, edging, cnc, milter };
     }, [filteredRows]);
 
-    const handleFabIdClick = (fabId: string) => console.log('PDF for', fabId);
+    const handleFabIdClick = (fabId: string) => navigate("/sales/" + fabId);
 
     const columns = useMemo<ColumnDef<ShopPlanRow>[]>(() => [
         {
