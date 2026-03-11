@@ -362,7 +362,6 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                 <button onClick={() => handleFabIdClick(row.original.fab_id)} className="text-sm hover:underline cursor-pointer">
                     {row.original.fab_id}
                 </button>
-                <div></div>
             ),
             enableSorting: true,
             size: 100,
