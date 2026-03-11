@@ -563,7 +563,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                             </Popover>
 
                             <Select value={fabTypeFilter} onValueChange={setFabTypeFilter} disabled={isApiLoading || externalLoading}>
-                                <SelectTrigger className="w-[120px] h-[34px]">
+                                <SelectTrigger className="w-auto h-[34px]">
                                     <SelectValue placeholder="FAB type" />
                                 </SelectTrigger>
                                 <SelectContent>

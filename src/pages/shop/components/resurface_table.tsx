@@ -427,7 +427,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
         {
             id: 'milter_ln_ft',
             accessorFn: r => r.milter_ln_ft,
-            header: ({ column }) => <DataGridColumnHeader title="MILTER:LN FT" column={column} />,
+            header: ({ column }) => <DataGridColumnHeader title="MITER:LN FT" column={column} />,
             cell: ({ row }) => <span className="text-sm text-text">{row.original.milter_ln_ft.toFixed(2)}</span>,
             enableSorting: true,
         },
@@ -563,7 +563,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                             </Popover>
 
                             <Select value={fabTypeFilter} onValueChange={setFabTypeFilter} disabled={isApiLoading || externalLoading}>
-                                <SelectTrigger className="w-[120px] h-[34px]">
+                                <SelectTrigger className="w-auto h-[34px]">
                                     <SelectValue placeholder="FAB type" />
                                 </SelectTrigger>
                                 <SelectContent>

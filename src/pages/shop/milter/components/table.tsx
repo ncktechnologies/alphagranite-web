@@ -197,7 +197,7 @@ const CuttingPlan = () => {
                 id: 'milter_planning',
                 accessorFn: (row) => row.miter_planning,
                 header: ({ column }) => (
-                    <DataGridColumnHeader title="Miter PlaninG" column={column} className='uppercase' />
+                    <DataGridColumnHeader title="Miter Planing" column={column} className='uppercase' />
                 ),
                 cell: ({ row }) => (
                     <span className="text-sm text-text max-w-[200px]">{row.original.miter_planning}</span>

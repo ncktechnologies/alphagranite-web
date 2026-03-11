@@ -41,6 +41,25 @@ interface CreatePlanPageProps {
   hideBackButton?: boolean;
 }
 
+// ── 15-minute time slots (06:00 – 22:00) ──────────────────────────────────
+const TIME_SLOTS = (() => {
+  const slots: { value: string; label: string }[] = [];
+  for (let h = 6; h <= 22; h++) {
+    for (const m of [0, 15, 30, 45]) {
+      if (h === 22 && m > 0) break; // stop at 22:00
+      const hh = String(h).padStart(2, '0');
+      const mm = String(m).padStart(2, '0');
+      const value = `${hh}:${mm}`;
+      // 12-hour display with AM/PM
+      const period = h < 12 ? 'AM' : 'PM';
+      const displayH = h % 12 === 0 ? 12 : h % 12;
+      const label = `${displayH}:${mm} ${period}`;
+      slots.push({ value, label });
+    }
+  }
+  return slots;
+})();
+
 const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   onBack,
   selectedDate: propSelectedDate,
@@ -113,26 +132,66 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   }, [allFabsData, selectedFabId]);
 
   // Effect for editing
-  useEffect(() => {
-    if (selectedEvent) {
-      const ev: any = selectedEvent;
-      setEntries([{
-        id: ev.id,
-        fab_id: String(ev.fab_id || effectivePrefillFabId || ''),
-        workstation_id: String(ev.workstation_id || ''),
-        operator_id: String(ev.operator_id || ''),
-        notes: ev.notes || '',
-        start_time: format(new Date(ev.scheduled_start_date), 'HH:mm'),
-        end_time: ev.scheduled_end_date ? format(new Date(ev.scheduled_end_date), 'HH:mm') : '',
-        planning_section_id: String(ev.planning_section_id || '') || undefined,
-        date: new Date(ev.scheduled_start_date),
-      }]);
-    } else {
-      setEntries([emptyEntry()]);
-    }
-  }, [selectedEvent, selectedTimeSlot, effectivePrefillFabId]);
+  // useEffect(() => {
+  //   if (selectedEvent) {
+  //     const ev: any = selectedEvent;
+  //     setEntries([{
+  //       id: ev.id,
+  //       fab_id: String(ev.fab_id || effectivePrefillFabId || ''),
+  //       workstation_id: String(ev.workstation_id || ''),
+  //       operator_id: String(ev.operator_id || ''),
+  //       notes: ev.notes || '',
+  //       start_time: format(new Date(ev.scheduled_start_date), 'HH:mm'),
+  //       end_time: ev.scheduled_end_date ? format(new Date(ev.scheduled_end_date), 'HH:mm') : '',
+  //       planning_section_id: String(ev.planning_section_id || '') || undefined,
+  //       date: new Date(ev.scheduled_start_date),
+  //     }]);
+  //   } else {
+  //     setEntries([emptyEntry()]);
+  //   }
+  // }, [selectedEvent, selectedTimeSlot, effectivePrefillFabId]);
+// Replace the useEffect in CreatePlanPage.tsx
 
-  // Handlers
+const workstationsLoaded = workstations.length > 0;
+const employeesLoaded = employees.length > 0;
+
+useEffect(() => {
+  if (!selectedEvent) {
+    setEntries([emptyEntry()]);
+    return;
+  }
+
+  if (!workstationsLoaded || !employeesLoaded) return;
+
+  const ev: any = selectedEvent;
+  const startDate = new Date(ev.scheduled_start_date);
+  const endDate = ev.scheduled_end_date ? new Date(ev.scheduled_end_date) : null;
+
+  const endTime = endDate
+    ? format(endDate, 'HH:mm')
+    : ev.estimated_hours
+      ? format(new Date(startDate.getTime() + ev.estimated_hours * 3_600_000), 'HH:mm')
+      : '';
+
+  const operatorId = Array.isArray(ev.operator_ids)
+    ? String(ev.operator_ids[0] ?? '')
+    : String(ev.operator_id ?? '');
+
+  setEntries([{
+    id: ev.id,
+    fab_id: String(ev.fab_id || effectivePrefillFabId || ''),
+    workstation_id: String(ev.workstation_id ?? ev.workstation?.id ?? ''),
+    operator_id: operatorId,
+    notes: ev.notes || '',
+    start_time: format(startDate, 'HH:mm'),
+    end_time: endTime,
+    planning_section_id: ev.planning_section_id
+      ? String(ev.planning_section_id)
+      : undefined,
+    date: startDate,
+  }]);
+}, [selectedEvent, effectivePrefillFabId, workstationsLoaded, employeesLoaded]);
+// Handlers
   const addEntry = () =>
     setEntries((p) => {
       const newEntry = emptyEntry();
@@ -322,7 +381,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
             </div>
           )}
           <button
-            onClick={() => navigate('/shop/auto-schedule')}
+            onClick={() => navigate('/shop/auto-schedule?')}
             className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px] tracking-[-0.56px]"
             style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
           >
@@ -343,52 +402,60 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
                   FAB Details
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-5">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <Label className="text-xs text-[#7c8689]">Job No</Label>
-                    <p className="text-sm font-medium text-[#4b545d]">
-                      {selectedFab.job_details?.job_number || '-'}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-[#7c8689]">No. of pieces</Label>
-                    <p className="text-sm font-medium text-[#4b545d]">
-                      {selectedFab.no_of_pieces || 0}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-[#7c8689]">Total Sq Ft</Label>
-                    <p className="text-sm font-medium text-[#4b545d]">
-                      {selectedFab.total_sqft?.toFixed(2) || '0.00'}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-[#7c8689]">W.J LinFt</Label>
-                    <p className="text-sm font-medium text-[#4b545d]">
-                      {selectedFab.wj_linft?.toFixed(2) || '0.00'}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-[#7c8689]">Edging LinFt</Label>
-                    <p className="text-sm font-medium text-[#4b545d]">
-                      {selectedFab.edging_linft?.toFixed(2) || '0.00'}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-[#7c8689]">CNC LinFt</Label>
-                    <p className="text-sm font-medium text-[#4b545d]">
-                      {selectedFab.cnc_linft?.toFixed(2) || '0.00'}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-[#7c8689]">Miter LinFt</Label>
-                    <p className="text-sm font-medium text-[#4b545d]">
-                      {selectedFab.miter_linft?.toFixed(2) || '0.00'}
-                    </p>
-                  </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <Label className="text-xs text-[#7c8689]">Job No</Label>
+                  <p className="text-sm font-medium text-[#4b545d]">
+                    {selectedFab.job_details?.job_number || '-'}
+                  </p>
                 </div>
-              </CardContent>
+                <div>
+                  <Label className="text-xs text-[#7c8689]">Job Name</Label>
+                  <p className="text-sm font-medium text-[#4b545d]">
+                    {selectedFab.job_details?.name || '-'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-[#7c8689]">Account Name</Label>
+                  <p className="text-sm font-medium text-[#4b545d]">
+                    {selectedFab?.account_name || '-'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-[#7c8689]">No. of Pieces</Label>
+                  <p className="text-sm font-medium text-[#4b545d]">{selectedFab.no_of_pieces || 0}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-[#7c8689]">Total Sq Ft</Label>
+                  <p className="text-sm font-medium text-[#4b545d]">
+                    {selectedFab.total_sqft?.toFixed(2) || '0.00'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-[#7c8689]">WJ LinFt</Label>
+                  <p className="text-sm font-medium text-[#4b545d]">
+                    {selectedFab.wj_linft?.toFixed(2) || '0.00'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-[#7c8689]">Edging LinFt</Label>
+                  <p className="text-sm font-medium text-[#4b545d]">
+                    {selectedFab.edging_linft?.toFixed(2) || '0.00'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-[#7c8689]">CNC LinFt</Label>
+                  <p className="text-sm font-medium text-[#4b545d]">
+                    {selectedFab.cnc_linft?.toFixed(2) || '0.00'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-xs text-[#7c8689]">Miter LinFt</Label>
+                  <p className="text-sm font-medium text-[#4b545d]">
+                    {selectedFab.miter_linft?.toFixed(2) || '0.00'}
+                  </p>
+                </div>
+              </div>
             </Card>
           )}
 
@@ -398,7 +465,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               <CardHeader className="pb-3 border-b border-[#ecedf0]">
                 <div className="flex items-center justify-between">
                   <CardTitle className="font-['Proxima_Nova:Semibold',sans-serif] text-[16px] text-[#4b545d] font-semibold">
-                    Plan Stage {idx + 1}
+                    Plan Section {idx + 1}
                   </CardTitle>
                   {entries.length > 1 && (
                     <button
@@ -470,6 +537,8 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
                 </div>
 
                 {/* Time */}
+
+                {/* Time */}
                 <div>
                   <div className="flex items-center gap-2 mb-3">
                     <Clock className="h-4 w-4 text-[#7a9705]" />
@@ -478,23 +547,39 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="font-['Proxima_Nova:Regular',sans-serif] text-[12px] text-[#7c8689] mb-1">Start</p>
-                      <Input
-                        type="time"
+                      <Select
                         value={entry.start_time}
-                        onChange={(e) => updateEntry(idx, { start_time: e.target.value })}
-                        className="h-[42px] border-[#e2e4ed] rounded-[6px]"
-                        required
-                      />
+                        onValueChange={(value) => updateEntry(idx, { start_time: value })}
+                      >
+                        <SelectTrigger className="h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                          <SelectValue placeholder="Select start" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60">
+                          {TIME_SLOTS.map((slot) => (
+                            <SelectItem key={slot.value} value={slot.value}>
+                              {slot.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <p className="font-['Proxima_Nova:Regular',sans-serif] text-[12px] text-[#7c8689] mb-1">End</p>
-                      <Input
-                        type="time"
+                      <Select
                         value={entry.end_time}
-                        onChange={(e) => updateEntry(idx, { end_time: e.target.value })}
-                        className="h-[42px] border-[#e2e4ed] rounded-[6px]"
-                        required
-                      />
+                        onValueChange={(value) => updateEntry(idx, { end_time: value })}
+                      >
+                        <SelectTrigger className="h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                          <SelectValue placeholder="Select end" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-60">
+                          {TIME_SLOTS.filter((slot) => !entry.start_time || slot.value > entry.start_time).map((slot) => (
+                            <SelectItem key={slot.value} value={slot.value}>
+                              {slot.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                 </div>

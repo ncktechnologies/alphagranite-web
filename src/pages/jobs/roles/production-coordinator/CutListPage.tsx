@@ -241,7 +241,7 @@ const CutListPage = () => {
                     TCNC: LIN FT: {stageTotals?.cnc_linft || 0}
                 </div>
                 <div className='pl-5 text-[#4B5675] text-[14px]'>
-                    Milter: LIN FT: {stageTotals?.miter_linft || 0}
+                    Miter: LIN FT: {stageTotals?.miter_linft || 0}
                 </div>
                 <div className='pl-5 text-[#4B5675] text-[14px]'>
                     No. of Pieces: {stageTotals?.no_of_pieces || 0}

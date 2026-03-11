@@ -924,7 +924,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
                         {/* FAB Type */}
                         <Select value={fabTypeFilter} onValueChange={setFabTypeFilter} disabled={isLoading}>
-                            <SelectTrigger className="w-[140px] h-[34px] border-[#e2e4ed]">
+                            <SelectTrigger className="w-auto h-[34px] border-[#e2e4ed]">
                                 <SelectValue placeholder="FAB type" />
                             </SelectTrigger>
                             <SelectContent>

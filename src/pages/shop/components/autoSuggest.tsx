@@ -444,6 +444,18 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
                     </p>
                   </div>
                   <div>
+                    <Label className="text-xs text-[#7c8689]">Job Name</Label>
+                    <p className="text-sm font-medium text-[#4b545d]">
+                      {selectedFab.job_details?.name || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-[#7c8689]">Account Name</Label>
+                    <p className="text-sm font-medium text-[#4b545d]">
+                      {selectedFab?.account_name || '-'}
+                    </p>
+                  </div>
+                  <div>
                     <Label className="text-xs text-[#7c8689]">No. of Pieces</Label>
                     <p className="text-sm font-medium text-[#4b545d]">{selectedFab.no_of_pieces || 0}</p>
                   </div>
@@ -531,7 +543,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
                         )}
                       />
                       <CardTitle className="text-[15px] text-[#4b545d] font-semibold truncate">
-                        {stageName || `Plan Stage ${idx + 1}`}
+                        {stageName || `Plan Section ${idx + 1}`}
                       </CardTitle>
                       {stageName && (
                         <span className="px-2 py-0.5 rounded-full bg-[#f0f4e8] border border-[#9cc15e] text-[#5a7a00] text-xs font-semibold shrink-0">

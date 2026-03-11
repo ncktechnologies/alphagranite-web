@@ -165,7 +165,7 @@ const jobInfo = [
                                     // disabled={}
                                     size="lg"
                                 >
-                                    Schedule for milter
+                                    Schedule for miter
                                 </Button>
                             </div>
                         </>

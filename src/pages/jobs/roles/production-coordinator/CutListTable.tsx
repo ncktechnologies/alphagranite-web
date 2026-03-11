@@ -379,7 +379,7 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
             id: "milter_ln_ft",
             accessorKey: "milter_ln_ft",
             header: ({ column }) => (
-                <DataGridColumnHeader title="MILTER LN FT" column={column} />
+                <DataGridColumnHeader title="MITER LN FT" column={column} />
             ),
             cell: ({ row }) => (
                 <span className="text-sm text-right block">

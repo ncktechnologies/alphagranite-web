@@ -204,13 +204,36 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     setActivePage('create-plan');
   };
 
+  // const handleOpenEditPlan = (event: any) => {
+  //   setSelectedEvent(event);
+  //   setSelectedDate(new Date(event.scheduled_start_date));
+  //   setSelectedTimeSlot(format(new Date(event.scheduled_start_date), 'HH:mm'));
+  //   setCreatePlanFabId(String(event.fab_id));
+  //   setActivePage('create-plan');
+  // };
+
   const handleOpenEditPlan = (event: any) => {
-    setSelectedEvent(event);
-    setSelectedDate(new Date(event.scheduled_start_date));
-    setSelectedTimeSlot(format(new Date(event.scheduled_start_date), 'HH:mm'));
-    setCreatePlanFabId(String(event.fab_id));
-    setActivePage('create-plan');
+  // Normalise the event so CreatePlanPage always gets a consistent shape
+  const normalisedEvent = {
+    ...event,
+    // operator_id may be an array from the API — take the first element
+    operator_id: Array.isArray(event.operator_ids)
+      ? event.operator_ids[0]
+      : event.operator_id ?? '',
+    // ensure planning_section_id is never null/undefined
+    planning_section_id: event.planning_section_id ?? '',
+    // ensure workstation_id is present
+    workstation_id: event.workstation_id ?? '',
+    // notes fallback
+    notes: event.notes ?? '',
   };
+
+  setSelectedEvent(normalisedEvent);
+  setSelectedDate(new Date(event.scheduled_start_date));
+  setSelectedTimeSlot(format(new Date(event.scheduled_start_date), 'HH:mm'));
+  setCreatePlanFabId(String(event.fab_id));
+  setActivePage('create-plan');
+};
 
   const handleBackToCalendar = () => {
     setActivePage('calendar');
@@ -298,11 +321,13 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
         </TooltipTrigger>
         <TooltipContent side="right" className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700">
           <div className="space-y-1">
+            <p><span className="font-semibold">FAB ID:</span> {event.fab_id}</p>
             <p><span className="font-semibold">Operator:</span> {event.operator_name || 'N/A'}</p>
             <p><span className="font-semibold">Workstation:</span> {event.workstation_name || 'N/A'}</p>
             <p><span className="font-semibold">Est. Hours:</span> {event.estimated_hours ?? 'N/A'}</p>
             <p><span className="font-semibold">% Complete:</span> {event.percent_complete ?? 0}%</p>
             <p><span className="font-semibold">Job:</span> {`${event.job_name}-${event.job_number}` || 'N/A'}</p>
+            <p><span className="font-semibold">Job No:</span> {event.job_number || 'N/A'}</p>
             <p><span className="font-semibold">Account Name:</span> {event.account_name || 'N/A'}</p>
             {event.notes && <p><span className="font-semibold">Notes:</span> {event.notes}</p>}
           </div>
@@ -411,7 +436,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
             <Plus className="h-4 w-4" />
             Create Plan
           </button>
-          
+
         </div>
 
         <div className="flex items-center px-10 h-[65px]">
@@ -421,8 +446,8 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                 key={mode}
                 onClick={() => setViewMode(mode)}
                 className={`px-[15px] py-[8px] rounded-[4px] font-semibold text-[14px] leading-[21px] capitalize transition-all ${viewMode === mode
-                    ? 'bg-white text-black shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]'
-                    : 'text-[#78829d]'
+                  ? 'bg-white text-black shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]'
+                  : 'text-[#78829d]'
                   }`}
               >
                 {mode}
@@ -786,11 +811,13 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                                     </TooltipTrigger>
                                     <TooltipContent side="right" className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700">
                                       <div className="space-y-1">
+                                        <p><span className="font-semibold">FAB ID:</span> {event.fab_id}</p>
                                         <p><span className="font-semibold">Operator:</span> {ev.operator_name || 'N/A'}</p>
                                         <p><span className="font-semibold">Workstation:</span> {ev.workstation_name || 'N/A'}</p>
                                         <p><span className="font-semibold">Est. Hours:</span> {ev.estimated_hours ?? 'N/A'}</p>
                                         <p><span className="font-semibold">% Complete:</span> {ev.percent_complete ?? 0}%</p>
                                         <p><span className="font-semibold">Job:</span> {`${ev.job_name}-${ev.job_number}` || 'N/A'}</p>
+                                        <p><span className="font-semibold">Job No:</span> {ev.job_number || 'N/A'}</p>
                                         <p><span className="font-semibold">Account Name:</span> {ev.account_name || 'N/A'}</p>
                                         {ev.notes && <p><span className="font-semibold">Notes:</span> {ev.notes}</p>}
                                       </div>

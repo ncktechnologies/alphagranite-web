@@ -570,7 +570,7 @@ export const CutListTableWithCalculations = ({
             id: "milter_ln_ft",
             accessorKey: "milter_ln_ft",
             header: ({ column }) => (
-                <DataGridColumnHeader title="MILTER:LIN FT" column={column} />
+                <DataGridColumnHeader title="MITER:LIN FT" column={column} />
             ),
             cell: ({ row }) => (
                 <span className="text-sm  block">
