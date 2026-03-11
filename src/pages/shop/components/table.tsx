@@ -359,9 +359,9 @@ const ShopTable: React.FC<ShopTableProps> = () => {
             accessorFn: r => r.fab_id,
             header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
             cell: ({ row }) => (
-                // <button onClick={() => handleFabIdClick(row.original.fab_id)} className="text-sm hover:underline cursor-pointer">
-                //     {row.original.fab_id}
-                // </button>
+                <button onClick={() => handleFabIdClick(row.original.fab_id)} className="text-sm hover:underline cursor-pointer">
+                    {row.original.fab_id}
+                </button>
                 <div></div>
             ),
             enableSorting: true,
