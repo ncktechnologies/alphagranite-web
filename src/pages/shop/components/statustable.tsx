@@ -95,7 +95,6 @@ export interface ShopStatusFab {
     cnc_progress: StageProgress;
     touchup_progress: StageProgress;
     estimated_completion_date?: string;
-    shop_est_completion_date?: string;
     cut_date_scheduled?: string;
     install_date?: string;
     percent_complete: number;
@@ -318,7 +317,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     const tableData: ShopStatusRow[] = useMemo(() => {
         return fabs.map((fab: any): ShopStatusRow => {
             // Use estimated_completion_date as the primary date grouping field
-            const expectedDate = fab.shop_est_completion_date;
+            const expectedDate = fab.estimated_completion_date || fab.shop_date_schedule || fab.installation_date;
             const dateGroup = expectedDate
                 ? format(new Date(expectedDate), 'yyyy-MM')
                 : 'unscheduled';
@@ -361,7 +360,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 cnc_progress: buildProgress(1),
                 touchup_progress: buildProgress(6),
                 // Use estimated_completion_date from API
-                shop_est_completion_date: fab.shop_est_completion_date,
+                estimated_completion_date: fab.estimated_completion_date,
                 cut_date_scheduled: (fab.plans || []).find((p: any) => p.planning_section_id === 7)?.scheduled_start_date,
                 install_date: fab.installation_date,
                 percent_complete: fab.percent_complete || 0,
@@ -431,8 +430,8 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             const end = startOfDay(dateRange.to);
             end.setHours(23, 59, 59, 999);
             result = result.filter(r => {
-                if (r.type !== 'fab' || !r.data.shop_est_completion_date) return false;
-                const d = new Date(r.data.shop_est_completion_date);
+                if (r.type !== 'fab' || !r.data.estimated_completion_date) return false;
+                const d = new Date(r.data.estimated_completion_date);
                 return d >= start && d <= end;
             });
         }
@@ -447,7 +446,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             if (parent.type !== 'fab') return;
             const key = parent.data.date_group;
             const display = key !== 'unscheduled'
-                ? format(new Date(parent.data.shop_est_completion_date!), 'MMMM yyyy').toUpperCase()
+                ? format(new Date(parent.data.estimated_completion_date!), 'MMMM yyyy').toUpperCase()
                 : 'UNSCHEDULED';
             if (!groups[key]) groups[key] = { parents: [], dateDisplay: display };
             groups[key].parents.push(parent);
@@ -525,14 +524,14 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         // Est. Completion Date — now uses estimated_completion_date
         {
-            id: 'shop_est_completion_date',
-            accessorFn: (r) => r.type === 'fab' ? r.data.shop_est_completion_date : null,
+            id: 'estimated_completion_date',
+            accessorFn: (r) => r.type === 'fab' ? r.data.estimated_completion_date : null,
             header: ({ column }) => (
                 <DataGridColumnHeader title="EST. COMPLETION DATE" column={column} className="text-[#7c8689] text-[15px] font-normal" />
             ),
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
-                    const date = row.original.data.shop_est_completion_date;
+                    const date = row.original.data.estimated_completion_date;
                     return (
                         <span className="text-sm text-[#4b545d]">
                             {date ? format(new Date(date), 'MM/dd/yyyy') : '-'}
@@ -706,16 +705,17 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             enableSorting: true,
             size: 120,
         },
-        // ---- Stage columns: progress bars ONLY shown on plan rows ----
+        // ---- Stage columns: FAB rows show total + % text; plan rows show full progress bar ----
         {
             id: 'cut',
             header: ({ column }) => (
                 <DataGridColumnHeader title="CUT" column={column} className="text-[#7c8689] text-[15px] font-normal" />
             ),
             cell: ({ row }) => {
-                // FAB row: no bar
-                if (row.original.type === 'fab') return null;
-                // Plan row: show bar only for this stage
+                if (row.original.type === 'fab') {
+                    const p = row.original.data.cut_progress;
+                    return <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit} · {p.percent.toFixed(1)}%</span>;
+                }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 7) {
                     return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
                 }
@@ -729,7 +729,10 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 <DataGridColumnHeader title="WJ" column={column} className="text-[#7c8689] text-[15px] font-normal" />
             ),
             cell: ({ row }) => {
-                if (row.original.type === 'fab') return null;
+                if (row.original.type === 'fab') {
+                    const p = row.original.data.wj_progress;
+                    return <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit} · {p.percent.toFixed(1)}%</span>;
+                }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 8) {
                     return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
                 }
@@ -743,7 +746,10 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 <DataGridColumnHeader title="EDGING" column={column} className="text-[#7c8689] text-[15px] font-normal" />
             ),
             cell: ({ row }) => {
-                if (row.original.type === 'fab') return null;
+                if (row.original.type === 'fab') {
+                    const p = row.original.data.edging_progress;
+                    return <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit} · {p.percent.toFixed(1)}%</span>;
+                }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 9) {
                     return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
                 }
@@ -757,7 +763,10 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 <DataGridColumnHeader title="MITER" column={column} className="text-[#7c8689] text-[15px] font-normal" />
             ),
             cell: ({ row }) => {
-                if (row.original.type === 'fab') return null;
+                if (row.original.type === 'fab') {
+                    const p = row.original.data.miter_progress;
+                    return <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit} · {p.percent.toFixed(1)}%</span>;
+                }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 2) {
                     return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
                 }
@@ -771,7 +780,10 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 <DataGridColumnHeader title="CNC" column={column} className="text-[#7c8689] text-[15px] font-normal" />
             ),
             cell: ({ row }) => {
-                if (row.original.type === 'fab') return null;
+                if (row.original.type === 'fab') {
+                    const p = row.original.data.cnc_progress;
+                    return <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit} · {p.percent.toFixed(1)}%</span>;
+                }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 1) {
                     return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
                 }
@@ -785,7 +797,10 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 <DataGridColumnHeader title="TOUCHUP QA" column={column} className="text-[#7c8689] text-[15px] font-normal" />
             ),
             cell: ({ row }) => {
-                if (row.original.type === 'fab') return null;
+                if (row.original.type === 'fab') {
+                    const p = row.original.data.touchup_progress;
+                    return <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit} · {p.percent.toFixed(1)}%</span>;
+                }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 6) {
                     return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
                 }
@@ -879,7 +894,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     </td>
                 );
                 if (id === 'expander' || id === 'actions') return <td key={id} className="px-4 py-2 border-r border-[#e2e4ed]" />;
-                if (id === 'shop_est_completion_date') return td(label);
+                if (id === 'estimated_completion_date') return td(label);
                 if (id === 'pieces') return td(totals.pieces);
                 if (id === 'total_sq_ft') return td(`${totals.sqft.toFixed(1)} SF`);
                 if (id === 'wj') return td(`${totals.wj.toFixed(1)} LF`);
@@ -1036,7 +1051,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
                                     <tbody>
                                         {/* Overall totals row */}
-                                        {renderTotalsRow('Overall Total', overallTotals, 'bg-[#eef0f6]')}
+                                        {renderTotalsRow('', overallTotals, 'bg-[#eef0f6]')}
 
                                         {Object.entries(groupedParents).map(([dateKey, group]) => {
                                             const groupTotal = groupTotals[dateKey] || { pieces: 0, sqft: 0, wj: 0, edging: 0, miter: 0, cnc: 0 };
@@ -1071,7 +1086,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                             <React.Fragment key={parentRow.id}>
                                                                 {/* Parent FAB row */}
                                                                 <tr
-                                                                    className="border-b border-[#e2e4ed] transition-colors "
+                                                                    className="border-b border-[#e2e4ed] transition-colors"
                                                                     data-fab-type={parentRow.original.type === 'fab' ? parentRow.original.data.fab_type?.toLowerCase() : undefined}
                                                                 >
                                                                     {parentRow.getVisibleCells().map(cell => (

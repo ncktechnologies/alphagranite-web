@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useState } from 'react';
 import { ShopData } from './shop';
+import { useNavigate } from 'react-router';
 
 interface ActionsCellProps {
   row: Row<ShopData>;
@@ -26,7 +27,7 @@ interface ActionsCellProps {
 
 function ActionsCell({ row, onView, onViewCalendar, onCreatePlan, onAddNote, onAutoSchedule }: ActionsCellProps) {
   const fabId = String(row.original.id ?? row.original.fab_id ?? '');
-
+  const navigate = useNavigate();
   return (
     <div className="flex space-x-1">
       <DropdownMenu>
@@ -36,12 +37,15 @@ function ActionsCell({ row, onView, onViewCalendar, onCreatePlan, onAddNote, onA
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          {onView && (
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onView(); }}>
-              <Eye className="mr-2 h-4 w-4" />
-              View
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/shop/fab/${fabId}`);
+            }}
+          >
+            <Eye className="mr-2 h-4 w-4" />
+            View Details
+          </DropdownMenuItem>
 
           {onViewCalendar && (
             <DropdownMenuItem
@@ -64,9 +68,9 @@ function ActionsCell({ row, onView, onViewCalendar, onCreatePlan, onAddNote, onA
             <DropdownMenuItem
               onClick={(e) => { e.stopPropagation(); onAutoSchedule(fabId); }}
             >
-                <Sparkles className="mr-2 h-4 w-4" />
-                Auto Schedule
-              </DropdownMenuItem>
+              <Sparkles className="mr-2 h-4 w-4" />
+              Auto Schedule
+            </DropdownMenuItem>
           )}
 
           {onAddNote && (

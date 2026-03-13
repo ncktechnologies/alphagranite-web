@@ -55,6 +55,8 @@ const TIME_SLOTS = (() => {
     return slots;
 })();
 
+const SEQUENCE_OPTIONS = Array.from({ length: 20 }, (_, i) => i + 1);
+
 const stageMapping: Record<number, { label: string; unit: string; order: number }> = {
     7: { label: 'CUT',        unit: 'SF', order: 1 },
     8: { label: 'WJ',         unit: 'LF', order: 2 },
@@ -122,7 +124,7 @@ const MiniProgress: React.FC<{ percent: number }> = ({ percent }) => {
 };
 
 // ----------------------------------------------------------------------
-// Info Row (used in Job Information and sidebar)
+// Info Row
 // ----------------------------------------------------------------------
 const InfoRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
     <div className="flex flex-col gap-0.5">
@@ -132,7 +134,7 @@ const InfoRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, v
 );
 
 // ----------------------------------------------------------------------
-// Editable Shop Est. Completion Date (from first version)
+// Editable Shop Est. Completion Date (separate card now)
 // ----------------------------------------------------------------------
 const ShopEstDateField: React.FC<{ value: string | undefined; fabId: number; onSaved: () => void }> = ({
     value, fabId, onSaved,
@@ -194,7 +196,7 @@ const ShopEstDateField: React.FC<{ value: string | undefined; fabId: number; onS
 };
 
 // ----------------------------------------------------------------------
-// PlanStageCard (from second version, with time slots)
+// PlanStageCard (with sequence dropdown in header)
 // ----------------------------------------------------------------------
 interface PlanStageCardProps {
     plan: any;
@@ -231,6 +233,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
         end_time:        deriveEndTime(),
         work_percentage: String(plan.work_percentage ?? 0),
         notes:           plan.notes ?? '',
+        sequence:        plan.sequence ?? 1,
     });
 
     const [draft, setDraft] = useState(buildDraft);
@@ -259,6 +262,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                 estimated_hours:     estimatedHours,
                 work_percentage:     Number(draft.work_percentage),
                 notes:               draft.notes || undefined,
+                sequence:            Number(draft.sequence) || 1,
                 ...(scheduledStart && { scheduled_start: scheduledStart }),
                 ...(scheduledEnd   && { scheduled_end:   scheduledEnd   }),
             };
@@ -287,6 +291,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
 
     return (
         <Card className="border border-[#e2e4ed] shadow-sm">
+            {/* Header with sequence on the right */}
             <CardHeader className="py-3 px-4 border-b border-[#e2e4ed] flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Badge
@@ -301,16 +306,37 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                     </Badge>
                     {planPct === 100 && <CheckCircle2 className="h-4 w-4 text-green-500" />}
                 </div>
-                {!isEditing && (
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 text-[#7c8689] hover:text-[#4b545d]"
-                        onClick={() => setIsEditing(true)}
-                    >
-                        <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                )}
+
+                <div className="flex items-center gap-2">
+                    {isEditing ? (
+                        // Sequence dropdown in edit mode
+                        <Select value={String(draft.sequence)} onValueChange={v => patch({ sequence: v })}>
+                            <SelectTrigger className="h-7 w-16 text-xs border-[#e2e4ed]">
+                                <SelectValue placeholder="Seq" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {SEQUENCE_OPTIONS.map(num => (
+                                    <SelectItem key={num} value={String(num)}>{num}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    ) : (
+                        <>
+                            {/* Sequence badge in read mode */}
+                            <Badge variant="outline" className="text-xs font-normal">
+                                Seq: {plan.sequence ?? 1}
+                            </Badge>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-[#7c8689] hover:text-[#4b545d]"
+                                onClick={() => setIsEditing(true)}
+                            >
+                                <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                        </>
+                    )}
+                </div>
             </CardHeader>
 
             <CardContent className="pt-4 px-4 pb-4">
@@ -554,7 +580,6 @@ const FabDetailsPage: React.FC = () => {
 
     const fabNotes: any[] = fab.fab_notes || [];
 
-    // Job information items (using InfoRow)
     const jobInfo = [
         { label: 'FAB ID',          value: String(fab.id) },
         { label: 'FAB Type',        value: <span className="uppercase">{fab.fab_type || 'N/A'}</span> },
@@ -577,32 +602,23 @@ const FabDetailsPage: React.FC = () => {
 
     return (
         <Container className="border-t">
-            <Toolbar>
+            {/* <Toolbar>
                 <ToolbarHeading
                     title={fab.job_details?.name || `FAB #${fabId}`}
                     description={`Job #${fab.job_details?.job_number || fab.job_id || fabId}`}
                 />
-            </Toolbar>
+            </Toolbar> */}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
                 {/* LEFT 2/3 */}
                 <div className="lg:col-span-2 space-y-6">
 
-                    {/* Sub-header */}
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <h3 className="text-lg font-semibold">FAB Details</h3>
-                            <p className="text-sm text-muted-foreground">Current Stage: {fab.current_stage || 'N/A'}</p>
-                        </div>
-                        <Link to="/shop/status">
-                            <Badge variant="outline">Back to List</Badge>
-                        </Link>
-                    </div>
+                   
 
-                    {/* Job Information Card (using InfoRow) */}
+                    {/* Job Information Card */}
                     <Card>
-                        <CardHeader><CardTitle>Job Information</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>Fab details</CardTitle></CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-4">
                                 {jobInfo.map((item, i) => (
@@ -641,7 +657,7 @@ const FabDetailsPage: React.FC = () => {
                         </CardContent>
                     </Card>
 
-                    {/* FAB Notes — collapsible (from first version) */}
+                    {/* FAB Notes — collapsible */}
                     <Card>
                         <Collapsible open={fabNotesOpen} onOpenChange={setFabNotesOpen}>
                             <CollapsibleTrigger asChild>
@@ -721,9 +737,27 @@ const FabDetailsPage: React.FC = () => {
                     </Card>
                 </div>
 
-                {/* RIGHT 1/3 */}
-                <div className="border-l space-y-0">
-                    {/* Schedule Dates */}
+                {/* RIGHT */}
+                <div className="border-l space-y-6">
+
+                    {/* 1. Estimated Completion Date (separate card) */}
+                    <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
+                        <CardHeader className="pb-3 border-b border-[#e2e4ed]">
+                            <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
+                                <CalendarDays className="h-4 w-4 text-[#7c8689]" />
+                                Estimated Completion Date
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4">
+                            <ShopEstDateField
+                                value={fab.shop_est_completion_date}
+                                fabId={Number(fabId)}
+                                onSaved={refetch}
+                            />
+                        </CardContent>
+                    </Card>
+
+                    {/* 2. Schedule Dates (read-only) */}
                     <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
                         <CardHeader className="pb-3 border-b border-[#e2e4ed]">
                             <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
@@ -732,14 +766,6 @@ const FabDetailsPage: React.FC = () => {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-4 flex flex-col gap-3">
-                            {/* Editable Shop Est. Completion */}
-                            <ShopEstDateField
-                                value={fab.shop_est_completion_date}
-                                fabId={Number(fabId)}
-                                onSaved={refetch}
-                            />
-
-                            {/* Additional schedule dates */}
                             <InfoRow
                                 label="Shop Date Schedule"
                                 value={fab.shop_date_schedule ? format(new Date(fab.shop_date_schedule), 'MMM dd, yyyy') : '—'}
@@ -748,8 +774,6 @@ const FabDetailsPage: React.FC = () => {
                                 label="Install Date"
                                 value={fab.installation_date ? format(new Date(fab.installation_date), 'MMM dd, yyyy') : '—'}
                             />
-
-                            {/* Cut Date Scheduled (from second version) */}
                             <InfoRow
                                 label="Cut Date Scheduled"
                                 value={
@@ -758,8 +782,6 @@ const FabDetailsPage: React.FC = () => {
                                         : '—'
                                 }
                             />
-
-                            {/* All stage start dates (from first version) */}
                             {plans.map((plan: any) => {
                                 const info = stageMapping[plan.planning_section_id];
                                 if (!info || !plan.scheduled_start_date) return null;
@@ -774,10 +796,10 @@ const FabDetailsPage: React.FC = () => {
                         </CardContent>
                     </Card>
 
-                    <Separator />
+                   
 
-                    {/* Add Note card (from first version) */}
-                    <Card className="border-none rounded-none">
+                    {/*  Add Note card */}
+                    {/* <Card className="border-none rounded-none">
                         <CardHeader className="border-b pb-4 flex-col items-start gap-1">
                             <CardTitle className="font-semibold text-text">Add Note</CardTitle>
                             <p className="text-sm text-muted-foreground">Add a shop status note to this FAB</p>
@@ -795,7 +817,7 @@ const FabDetailsPage: React.FC = () => {
                                     : 'Save Note'}
                             </Button>
                         </CardContent>
-                    </Card>
+                    </Card> */}
                 </div>
             </div>
         </Container>

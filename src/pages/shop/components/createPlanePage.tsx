@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Clock, Calendar, LoaderCircle, Plus, X, Sparkles } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, ChevronDown, LoaderCircle, Plus, X, Sparkles } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -31,6 +31,27 @@ import { useGetWorkstationsQuery, useGetPlanningSectionsQuery } from '@/store/ap
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetFabsQuery } from '@/store/api/job';
 
+// Sequence options 1‑20
+const SEQUENCE_OPTIONS = Array.from({ length: 20 }, (_, i) => i + 1);
+
+// ── 15-minute time slots (06:00 – 22:00) ──────────────────────────────────
+const TIME_SLOTS = (() => {
+  const slots: { value: string; label: string }[] = [];
+  for (let h = 6; h <= 22; h++) {
+    for (const m of [0, 15, 30, 45]) {
+      if (h === 22 && m > 0) break;
+      const hh = String(h).padStart(2, '0');
+      const mm = String(m).padStart(2, '0');
+      const value = `${hh}:${mm}`;
+      const period = h < 12 ? 'AM' : 'PM';
+      const displayH = h % 12 === 0 ? 12 : h % 12;
+      const label = `${displayH}:${mm} ${period}`;
+      slots.push({ value, label });
+    }
+  }
+  return slots;
+})();
+
 interface CreatePlanPageProps {
   onBack?: () => void;
   selectedDate?: Date | null;
@@ -40,25 +61,6 @@ interface CreatePlanPageProps {
   onEventCreated?: () => void;
   hideBackButton?: boolean;
 }
-
-// ── 15-minute time slots (06:00 – 22:00) ──────────────────────────────────
-const TIME_SLOTS = (() => {
-  const slots: { value: string; label: string }[] = [];
-  for (let h = 6; h <= 22; h++) {
-    for (const m of [0, 15, 30, 45]) {
-      if (h === 22 && m > 0) break; // stop at 22:00
-      const hh = String(h).padStart(2, '0');
-      const mm = String(m).padStart(2, '0');
-      const value = `${hh}:${mm}`;
-      // 12-hour display with AM/PM
-      const period = h < 12 ? 'AM' : 'PM';
-      const displayH = h % 12 === 0 ? 12 : h % 12;
-      const label = `${displayH}:${mm} ${period}`;
-      slots.push({ value, label });
-    }
-  }
-  return slots;
-})();
 
 const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   onBack,
@@ -81,6 +83,9 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const [slotMinutes, setSlotMinutes] = useState(30);
   const [maxSuggestions, setMaxSuggestions] = useState(10);
 
+  // Collapsible state per card (expanded by default)
+  const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
+
   // Entry state
   const emptyEntry = (date?: Date) => ({
     id: undefined as number | undefined,
@@ -92,6 +97,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     end_time: '',
     planning_section_id: undefined as string | undefined,
     date: date || propSelectedDate || new Date(),
+    sequence: '1', // default sequence
   });
 
   const [entries, setEntries] = useState(() => [emptyEntry()]);
@@ -113,7 +119,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
 
   const { data: allFabsData, isLoading: isLoadingFabs } = useGetFabsQuery({ limit: 1000, current_stage: 'cut_list' });
 
-  // Memos that depend on query data
   const fabOptions = useMemo(() => {
     if (!allFabsData) return [];
     const fabs = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
@@ -123,7 +128,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     }));
   }, [allFabsData]);
 
-  // Memos that depend on entries (must come after entries state)
   const selectedFabId = useMemo(() => entries[0]?.fab_id, [entries]);
   const selectedFab = useMemo(() => {
     if (!allFabsData || !selectedFabId) return null;
@@ -131,61 +135,37 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     return fabs.find((fab: any) => String(fab.id) === selectedFabId);
   }, [allFabsData, selectedFabId]);
 
-  // Effect for editing
-  // useEffect(() => {
-  //   if (selectedEvent) {
-  //     const ev: any = selectedEvent;
-  //     setEntries([{
-  //       id: ev.id,
-  //       fab_id: String(ev.fab_id || effectivePrefillFabId || ''),
-  //       workstation_id: String(ev.workstation_id || ''),
-  //       operator_id: String(ev.operator_id || ''),
-  //       notes: ev.notes || '',
-  //       start_time: format(new Date(ev.scheduled_start_date), 'HH:mm'),
-  //       end_time: ev.scheduled_end_date ? format(new Date(ev.scheduled_end_date), 'HH:mm') : '',
-  //       planning_section_id: String(ev.planning_section_id || '') || undefined,
-  //       date: new Date(ev.scheduled_start_date),
-  //     }]);
-  //   } else {
-  //     setEntries([emptyEntry()]);
-  //   }
-  // }, [selectedEvent, selectedTimeSlot, effectivePrefillFabId]);
-// Replace the useEffect in CreatePlanPage.tsx
+  const workstationsLoaded = workstations.length > 0;
+  const employeesLoaded = employees.length > 0;
 
-const workstationsLoaded = workstations.length > 0;
-const employeesLoaded = employees.length > 0;
+  useEffect(() => {
+    if (!selectedEvent) {
+      setEntries([emptyEntry()]);
+      return;
+    }
 
-useEffect(() => {
-  if (!selectedEvent) {
-    setEntries([emptyEntry()]);
-    return;
-  }
+    if (!workstationsLoaded || !employeesLoaded) return;
 
-  if (!workstationsLoaded || !employeesLoaded) return;
+    const ev: any = selectedEvent;
+    const startDate = new Date(ev.scheduled_start_date);
+    const endTime = ev.estimated_hours
+      ? format(new Date(startDate.getTime() + ev.estimated_hours * 3_600_000), 'HH:mm')
+      : '';
 
-  const ev: any = selectedEvent;
-  const startDate = new Date(ev.scheduled_start_date);
+    setEntries([{
+      id: ev.id,
+      fab_id: String(ev.fab_id ?? ''),
+      workstation_id: String(ev.workstation_id ?? ''),
+      operator_id: String(ev.operator_id ?? ''),
+      notes: ev.notes ?? '',
+      start_time: format(startDate, 'HH:mm'),
+      end_time: endTime,
+      planning_section_id: ev.planning_section_id != null ? String(ev.planning_section_id) : undefined,
+      date: startDate,
+      sequence: ev.sequence ? String(ev.sequence) : '1',
+    }]);
+  }, [selectedEvent, workstationsLoaded, employeesLoaded]);
 
-  // No scheduled_end_date in API — derive from estimated_hours
-  const endTime = ev.estimated_hours
-    ? format(new Date(startDate.getTime() + ev.estimated_hours * 3_600_000), 'HH:mm')
-    : '';
-
-  setEntries([{
-    id: ev.id,
-    fab_id: String(ev.fab_id ?? ''),
-    workstation_id: String(ev.workstation_id ?? ''),   // "4"
-    operator_id: String(ev.operator_id ?? ''),         // "10"
-    notes: ev.notes ?? '',
-    start_time: format(startDate, 'HH:mm'),            // "08:30"
-    end_time: endTime,
-    planning_section_id: ev.planning_section_id != null
-      ? String(ev.planning_section_id)                 // "3"
-      : undefined,
-    date: startDate,
-  }]);
-}, [selectedEvent, workstationsLoaded, employeesLoaded]);
-// Handlers
   const addEntry = () =>
     setEntries((p) => {
       const newEntry = emptyEntry();
@@ -255,6 +235,7 @@ useEffect(() => {
             scheduled_start: scheduledStart,
             scheduled_end: scheduledEnd,
             notes: entry.notes ? entry.notes : undefined,
+            sequence: Number(entry.sequence) || 1,
           };
         });
         const planData = { fab_id: Number(fabId), estimated_hours: totalEst, status_id: 1, stages } as any;
@@ -275,6 +256,7 @@ useEffect(() => {
           scheduled_start: scheduledStart,
           scheduled_end: scheduledEnd,
           notes: entry.notes ? entry.notes : undefined,
+          sequence: Number(entry.sequence) || 1,
         };
         await updateShopPlan({ plan_id: Number(entry.id), data: { stage: stageObj } } as any).unwrap();
       }
@@ -396,252 +378,297 @@ useEffect(() => {
                   FAB Details
                 </CardTitle>
               </CardHeader>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div>
-                  <Label className="text-xs text-[#7c8689]">Job No</Label>
-                  <p className="text-sm font-medium text-[#4b545d]">
-                    {selectedFab.job_details?.job_number || '-'}
-                  </p>
+              <CardContent className="pt-5">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <Label className="text-xs text-[#7c8689]">Job No</Label>
+                    <p className="text-sm font-medium text-[#4b545d]">
+                      {selectedFab.job_details?.job_number || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-[#7c8689]">Job Name</Label>
+                    <p className="text-sm font-medium text-[#4b545d]">
+                      {selectedFab.job_details?.name || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-[#7c8689]">Account Name</Label>
+                    <p className="text-sm font-medium text-[#4b545d]">
+                      {selectedFab?.account_name || '-'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-[#7c8689]">No. of Pieces</Label>
+                    <p className="text-sm font-medium text-[#4b545d]">{selectedFab.no_of_pieces || 0}</p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-[#7c8689]">Total Sq Ft</Label>
+                    <p className="text-sm font-medium text-[#4b545d]">
+                      {selectedFab.total_sqft?.toFixed(2) || '0.00'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-[#7c8689]">WJ LinFt</Label>
+                    <p className="text-sm font-medium text-[#4b545d]">
+                      {selectedFab.wj_linft?.toFixed(2) || '0.00'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-[#7c8689]">Edging LinFt</Label>
+                    <p className="text-sm font-medium text-[#4b545d]">
+                      {selectedFab.edging_linft?.toFixed(2) || '0.00'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-[#7c8689]">CNC LinFt</Label>
+                    <p className="text-sm font-medium text-[#4b545d]">
+                      {selectedFab.cnc_linft?.toFixed(2) || '0.00'}
+                    </p>
+                  </div>
+                  <div>
+                    <Label className="text-xs text-[#7c8689]">Miter LinFt</Label>
+                    <p className="text-sm font-medium text-[#4b545d]">
+                      {selectedFab.miter_linft?.toFixed(2) || '0.00'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <Label className="text-xs text-[#7c8689]">Job Name</Label>
-                  <p className="text-sm font-medium text-[#4b545d]">
-                    {selectedFab.job_details?.name || '-'}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-xs text-[#7c8689]">Account Name</Label>
-                  <p className="text-sm font-medium text-[#4b545d]">
-                    {selectedFab?.account_name || '-'}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-xs text-[#7c8689]">No. of Pieces</Label>
-                  <p className="text-sm font-medium text-[#4b545d]">{selectedFab.no_of_pieces || 0}</p>
-                </div>
-                <div>
-                  <Label className="text-xs text-[#7c8689]">Total Sq Ft</Label>
-                  <p className="text-sm font-medium text-[#4b545d]">
-                    {selectedFab.total_sqft?.toFixed(2) || '0.00'}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-xs text-[#7c8689]">WJ LinFt</Label>
-                  <p className="text-sm font-medium text-[#4b545d]">
-                    {selectedFab.wj_linft?.toFixed(2) || '0.00'}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-xs text-[#7c8689]">Edging LinFt</Label>
-                  <p className="text-sm font-medium text-[#4b545d]">
-                    {selectedFab.edging_linft?.toFixed(2) || '0.00'}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-xs text-[#7c8689]">CNC LinFt</Label>
-                  <p className="text-sm font-medium text-[#4b545d]">
-                    {selectedFab.cnc_linft?.toFixed(2) || '0.00'}
-                  </p>
-                </div>
-                <div>
-                  <Label className="text-xs text-[#7c8689]">Miter LinFt</Label>
-                  <p className="text-sm font-medium text-[#4b545d]">
-                    {selectedFab.miter_linft?.toFixed(2) || '0.00'}
-                  </p>
-                </div>
-              </div>
+              </CardContent>
             </Card>
           )}
 
           {/* Plan entries */}
-          {entries.map((entry, idx) => (
-            <Card key={idx} className="border border-[#ecedf0] rounded-[12px]">
-              <CardHeader className="pb-3 border-b border-[#ecedf0]">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="font-['Proxima_Nova:Semibold',sans-serif] text-[16px] text-[#4b545d] font-semibold">
-                    Plan Section {idx + 1}
-                  </CardTitle>
-                  {entries.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => removeEntry(idx)}
-                      className="h-7 w-7 rounded-[6px] border border-[#e2e4ed] flex items-center justify-center hover:bg-red-50 transition-colors"
-                    >
-                      <X className="h-4 w-4 text-red-500" />
-                    </button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="pt-5 space-y-5">
-                {/* FAB ID */}
-                <div>
-                  <Label className="text-[13px] text-[#4b545d]">FAB ID *</Label>
-                  {idx === 0 ? (
-                    <Select
-                      value={entry.fab_id}
-                      onValueChange={(value) => updateEntry(idx, { fab_id: value })}
-                      disabled={isLoadingFabs || (!!effectivePrefillFabId && !isEditing)}
-                    >
-                      <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
-                        <SelectValue placeholder={isLoadingFabs ? "Loading FABs..." : "Select FAB ID"} />
-                      </SelectTrigger>
-                      <SelectContent className="max-h-60">
-                        {fabOptions.map((option) => (
-                          <SelectItem key={option.value} value={option.value}>
-                            {option.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <Input
-                      type="text"
-                      value={entry.fab_id}
-                      disabled
-                      className="mt-2 h-[42px] bg-[#f9f9f9] border-[#e2e4ed] rounded-[6px] text-[13px]"
-                    />
-                  )}
-                </div>
+          {entries.map((entry, idx) => {
+            const isExpanded = expandedCards[idx] !== false; // default true
+            const hasSlot = !!(entry.date && entry.start_time && entry.end_time);
 
-                {/* Date picker */}
-                <div>
-                  <Label className="font-['Proxima_Nova:Semibold',sans-serif] text-[13px] text-[#4b545d]">Date *</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <button
-                        type="button"
+            return (
+              <Card key={idx} className="border border-[#ecedf0] rounded-[12px] overflow-hidden">
+                {/* Card Header — always visible, click to toggle */}
+                <CardHeader
+                  className="pb-3 border-b border-[#ecedf0] cursor-pointer select-none"
+                  onClick={() => setExpandedCards(prev => ({ ...prev, [idx]: !isExpanded }))}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <ChevronDown
                         className={cn(
-                          'mt-2 w-full h-[42px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[13px] flex items-center gap-2',
-                          !entry.date && 'text-muted-foreground'
+                          'h-4 w-4 text-[#7c8689] transition-transform shrink-0',
+                          !isExpanded && '-rotate-90'
                         )}
-                      >
-                        <Calendar className="h-4 w-4 text-[#7a9705]" />
-                        {entry.date ? format(entry.date, 'PPP') : <span>Pick a date</span>}
-                      </button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent
-                        mode="single"
-                        selected={entry.date}
-                        onSelect={(date) => date && updateEntry(idx, { date })}
-                        initialFocus
                       />
-                    </PopoverContent>
-                  </Popover>
-                </div>
+                      <CardTitle className="font-['Proxima_Nova:Semibold',sans-serif] text-[16px] text-[#4b545d] font-semibold truncate">
+                        Plan Section {idx + 1}
+                      </CardTitle>
+                      {/* Collapsed summary */}
+                      {!isExpanded && hasSlot && (
+                        <span className="text-xs text-[#7c8689] shrink-0">
+                          {format(entry.date!, 'MMM d')} · {format(new Date(`1970-01-01T${entry.start_time}`), 'hh:mm a')}–{format(new Date(`1970-01-01T${entry.end_time}`), 'hh:mm a')}
+                        </span>
+                      )}
+                    </div>
 
-                {/* Time */}
-
-                {/* Time */}
-                <div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <Clock className="h-4 w-4 text-[#7a9705]" />
-                    <Label className="font-['Proxima_Nova:Semibold',sans-serif] text-[13px] text-[#4b545d]">Scheduled Time *</Label>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="font-['Proxima_Nova:Regular',sans-serif] text-[12px] text-[#7c8689] mb-1">Start</p>
+                    <div className="flex items-center gap-2 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
+                      {/* Sequence dropdown (always visible) */}
                       <Select
-                        value={entry.start_time}
-                        onValueChange={(value) => updateEntry(idx, { start_time: value })}
+                        value={entry.sequence}
+                        onValueChange={value => updateEntry(idx, { sequence: value })}
                       >
-                        <SelectTrigger className="h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
-                          <SelectValue placeholder="Select start" />
+                        <SelectTrigger className="h-7 w-16 text-xs border-[#e2e4ed] rounded-[4px]">
+                          <SelectValue placeholder="Seq" />
                         </SelectTrigger>
-                        <SelectContent className="max-h-60">
-                          {TIME_SLOTS.map((slot) => (
-                            <SelectItem key={slot.value} value={slot.value}>
-                              {slot.label}
+                        <SelectContent>
+                          {SEQUENCE_OPTIONS.map(num => (
+                            <SelectItem key={num} value={String(num)}>{num}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      {entries.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeEntry(idx)}
+                          className="h-7 w-7 rounded-[6px] border border-[#e2e4ed] flex items-center justify-center hover:bg-red-50 transition-colors"
+                        >
+                          <X className="h-4 w-4 text-red-500" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+
+                {/* Collapsible body */}
+                {isExpanded && (
+                  <CardContent className="pt-5 space-y-5">
+                    {/* FAB ID */}
+                    <div>
+                      <Label className="text-[13px] text-[#4b545d]">FAB ID *</Label>
+                      {idx === 0 ? (
+                        <Select
+                          value={entry.fab_id}
+                          onValueChange={(value) => updateEntry(idx, { fab_id: value })}
+                          disabled={isLoadingFabs || (!!effectivePrefillFabId && !isEditing)}
+                        >
+                          <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                            <SelectValue placeholder={isLoadingFabs ? "Loading FABs..." : "Select FAB ID"} />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-60">
+                            {fabOptions.map((option) => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          type="text"
+                          value={entry.fab_id}
+                          disabled
+                          className="mt-2 h-[42px] bg-[#f9f9f9] border-[#e2e4ed] rounded-[6px] text-[13px]"
+                        />
+                      )}
+                    </div>
+
+                    {/* Date picker */}
+                    <div>
+                      <Label className="font-['Proxima_Nova:Semibold',sans-serif] text-[13px] text-[#4b545d]">Date *</Label>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <button
+                            type="button"
+                            className={cn(
+                              'mt-2 w-full h-[42px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[13px] flex items-center gap-2',
+                              !entry.date && 'text-muted-foreground'
+                            )}
+                          >
+                            <Calendar className="h-4 w-4 text-[#7a9705]" />
+                            {entry.date ? format(entry.date, 'PPP') : <span>Pick a date</span>}
+                          </button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={entry.date}
+                            onSelect={(date) => date && updateEntry(idx, { date })}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    {/* Time */}
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Clock className="h-4 w-4 text-[#7a9705]" />
+                        <Label className="font-['Proxima_Nova:Semibold',sans-serif] text-[13px] text-[#4b545d]">Scheduled Time *</Label>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="font-['Proxima_Nova:Regular',sans-serif] text-[12px] text-[#7c8689] mb-1">Start</p>
+                          <Select
+                            value={entry.start_time}
+                            onValueChange={(value) => updateEntry(idx, { start_time: value })}
+                          >
+                            <SelectTrigger className="h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                              <SelectValue placeholder="Select start" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                              {TIME_SLOTS.map((slot) => (
+                                <SelectItem key={slot.value} value={slot.value}>
+                                  {slot.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <p className="font-['Proxima_Nova:Regular',sans-serif] text-[12px] text-[#7c8689] mb-1">End</p>
+                          <Select
+                            value={entry.end_time}
+                            onValueChange={(value) => updateEntry(idx, { end_time: value })}
+                          >
+                            <SelectTrigger className="h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                              <SelectValue placeholder="Select end" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                              {TIME_SLOTS.filter((slot) => !entry.start_time || slot.value > entry.start_time).map((slot) => (
+                                <SelectItem key={slot.value} value={slot.value}>
+                                  {slot.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Planning Section */}
+                    <div>
+                      <Label className="font-['Proxima_Nova:Semibold',sans-serif] text-[13px] text-[#4b545d]">Shop Activity.</Label>
+                      <Select value={entry.planning_section_id} onValueChange={(value) => updateEntry(idx, { planning_section_id: value })}>
+                        <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                          <SelectValue placeholder="Select section" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {planningSections.map((ps: any) => (
+                            <SelectItem key={ps.id} value={String(ps.id)}>
+                              {ps.name || ps.plan_name || ps.title}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
+
+                    {/* Workstation */}
                     <div>
-                      <p className="font-['Proxima_Nova:Regular',sans-serif] text-[12px] text-[#7c8689] mb-1">End</p>
-                      <Select
-                        value={entry.end_time}
-                        onValueChange={(value) => updateEntry(idx, { end_time: value })}
-                      >
-                        <SelectTrigger className="h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
-                          <SelectValue placeholder="Select end" />
+                      <Label className="font-['Proxima_Nova:Semibold',sans-serif] text-[13px] text-[#4b545d]">Workstation *</Label>
+                      <Select value={entry.workstation_id} onValueChange={(value) => updateEntry(idx, { workstation_id: value })}>
+                        <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                          <SelectValue placeholder="Select workstation" />
                         </SelectTrigger>
-                        <SelectContent className="max-h-60">
-                          {TIME_SLOTS.filter((slot) => !entry.start_time || slot.value > entry.start_time).map((slot) => (
-                            <SelectItem key={slot.value} value={slot.value}>
-                              {slot.label}
+                        <SelectContent>
+                          {workstations.map((ws: any) => (
+                            <SelectItem key={ws.id} value={String(ws.id)}>
+                              {ws.name || ws.workstation_name || `WS ${ws.id}`}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                </div>
 
-                {/* Planning Section */}
-                <div>
-                  <Label className="font-['Proxima_Nova:Semibold',sans-serif] text-[13px] text-[#4b545d]">Shop Activity.</Label>
-                  <Select value={entry.planning_section_id} onValueChange={(value) => updateEntry(idx, { planning_section_id: value })}>
-                    <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
-                      <SelectValue placeholder="Select section" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {planningSections.map((ps: any) => (
-                        <SelectItem key={ps.id} value={String(ps.id)}>
-                          {ps.name || ps.plan_name || ps.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                    {/* Operator */}
+                    <div>
+                      <Label className="font-['Proxima_Nova:Semibold',sans-serif] text-[13px] text-[#4b545d]">Operator *</Label>
+                      <Select value={entry.operator_id} onValueChange={(value) => updateEntry(idx, { operator_id: value })}>
+                        <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                          <SelectValue placeholder="Select operator" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {employees.map((emp: any) => (
+                            <SelectItem key={emp.id} value={String(emp.id)}>
+                              {`${emp.first_name || emp.name || ''} ${emp.last_name || ''}`.trim() || emp.email}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                {/* Workstation */}
-                <div>
-                  <Label className="font-['Proxima_Nova:Semibold',sans-serif] text-[13px] text-[#4b545d]">Workstation *</Label>
-                  <Select value={entry.workstation_id} onValueChange={(value) => updateEntry(idx, { workstation_id: value })}>
-                    <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
-                      <SelectValue placeholder="Select workstation" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {workstations.map((ws: any) => (
-                        <SelectItem key={ws.id} value={String(ws.id)}>
-                          {ws.name || ws.workstation_name || `WS ${ws.id}`}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Operator */}
-                <div>
-                  <Label className="font-['Proxima_Nova:Semibold',sans-serif] text-[13px] text-[#4b545d]">Operator *</Label>
-                  <Select value={entry.operator_id} onValueChange={(value) => updateEntry(idx, { operator_id: value })}>
-                    <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
-                      <SelectValue placeholder="Select operator" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {employees.map((emp: any) => (
-                        <SelectItem key={emp.id} value={String(emp.id)}>
-                          {`${emp.first_name || emp.name || ''} ${emp.last_name || ''}`.trim() || emp.email}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Notes */}
-                <div>
-                  <Label className="font-['Proxima_Nova:Semibold',sans-serif] text-[13px] text-[#4b545d]">Description / Notes</Label>
-                  <Textarea
-                    placeholder="Add any notes about this plan..."
-                    value={entry.notes}
-                    onChange={(e) => updateEntry(idx, { notes: e.target.value })}
-                    className="mt-2 min-h-24 border-[#e2e4ed] rounded-[6px] text-[13px]"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                    {/* Notes */}
+                    <div>
+                      <Label className="font-['Proxima_Nova:Semibold',sans-serif] text-[13px] text-[#4b545d]">Description / Notes</Label>
+                      <Textarea
+                        placeholder="Add any notes about this plan..."
+                        value={entry.notes}
+                        onChange={(e) => updateEntry(idx, { notes: e.target.value })}
+                        className="mt-2 min-h-24 border-[#e2e4ed] rounded-[6px] text-[13px]"
+                      />
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
+            );
+          })}
 
           {/* Add another stage */}
           <button
@@ -682,9 +709,9 @@ useEffect(() => {
         </form>
       </div>
 
-      {/* Auto‑Schedule Modal */}
+      {/* Auto‑Schedule Modal (unchanged, omitted for brevity) */}
       <Dialog open={autoScheduleModalOpen} onOpenChange={setAutoScheduleModalOpen}>
-        {/* ... modal content (unchanged) ... */}
+        {/* ... modal content ... */}
       </Dialog>
     </div>
   );

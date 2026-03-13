@@ -31,6 +31,9 @@ import { useGetWorkstationsQuery, useGetPlanningSectionsQuery } from '@/store/ap
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetFabsQuery } from '@/store/api/job';
 
+// Sequence options 1‑20
+const SEQUENCE_OPTIONS = Array.from({ length: 20 }, (_, i) => i + 1);
+
 interface CreatePlanPageProps {
   onBack?: () => void;
   selectedDate?: Date | null;
@@ -42,7 +45,6 @@ interface CreatePlanPageProps {
 }
 
 // Maps a fab object's fields to planning_section_id
-// Returns the linft/sqft value for that stage from the fab
 const FAB_STAGE_FIELDS: { section_id: number; field: string; label: string }[] = [
   { section_id: 7, field: 'total_sqft',    label: 'Cut'     },
   { section_id: 8, field: 'wj_linft',      label: 'WJ'      },
@@ -51,7 +53,6 @@ const FAB_STAGE_FIELDS: { section_id: number; field: string; label: string }[] =
   { section_id: 1, field: 'cnc_linft',     label: 'CNC'     },
 ];
 
-// Returns the stages that have a value > 0 on this fab
 function getActiveStagesFromFab(fab: any): { section_id: number; label: string }[] {
   return FAB_STAGE_FIELDS.filter(s => {
     const val = fab?.[s.field];
@@ -73,10 +74,8 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
   const urlFabId = searchParams.get('fabId');
   const effectivePrefillFabId = propPrefillFabId || urlFabId || '';
 
-  // Auto-populate state
-  const [proposals, setProposals] = useState<Record<number, any[]>>({}); // keyed by entry index
+  const [proposals, setProposals] = useState<Record<number, any[]>>({});
 
-  // Build a blank entry, optionally pre-filled with a stage section_id and label
   const emptyEntry = (opts?: { date?: Date; section_id?: number; stageName?: string; fab_id?: string }) => ({
     id: undefined as number | undefined,
     fab_id: opts?.fab_id ?? effectivePrefillFabId ?? '',
@@ -84,22 +83,21 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
     operator_id: '',
     notes: '',
     estimated_hours: '' as string,
-    start_time: '' as string,   // populated by auto-populate response
-    end_time:   '' as string,   // populated by auto-populate response
+    start_time: '' as string,
+    end_time:   '' as string,
     planning_section_id: opts?.section_id !== undefined ? String(opts.section_id) : undefined as string | undefined,
-    stageName: opts?.stageName || '',          // display label only, not sent to API
+    stageName: opts?.stageName || '',
     date: opts?.date || propSelectedDate || undefined as Date | undefined,
+    sequence: '1',
   });
 
   const [entries, setEntries] = useState(() => [emptyEntry()]);
-  const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({}); // undefined = expanded by default
+  const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
 
-  // Mutations
   const [createShopPlan, { isLoading }] = useCreateShopPlansMutation();
   const [updateShopPlan] = useUpdateShopPlanMutation();
   const [createShopPlansSuggestion, { isLoading: isAutoScheduling }] = useCreateShopSuggestionMutation();
 
-  // Queries
   const { data: workstationsData } = useGetWorkstationsQuery();
   const workstations = workstationsData?.data || (Array.isArray(workstationsData) ? workstationsData : []);
 
@@ -128,19 +126,13 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
     return fabs.find((fab: any) => String(fab.id) === selectedFabId) || null;
   }, [allFabsData, selectedFabId]);
 
-  // When a FAB is selected (and not editing), auto-populate entries for every
-  // stage whose fab field is > 0
   useEffect(() => {
     if (selectedEvent || !selectedFab) return;
-
     const activeStages = getActiveStagesFromFab(selectedFab);
-
     if (activeStages.length === 0) {
-      // No stage values — show a single blank entry preserving the selected fab
       setEntries([emptyEntry({ fab_id: String(selectedFab.id) })]);
       return;
     }
-
     const currentFabId = String(selectedFab.id);
     setEntries(
       activeStages.map(s =>
@@ -149,7 +141,6 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
     );
   }, [selectedFab, selectedEvent]);
 
-  // Effect for editing an existing event
   useEffect(() => {
     if (!selectedEvent) return;
     const ev: any = selectedEvent;
@@ -165,10 +156,10 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
       planning_section_id: String(ev.planning_section_id || '') || undefined,
       stageName: ev.stage_name || '',
       date: new Date(ev.scheduled_start_date),
+      sequence: ev.sequence ? String(ev.sequence) : '1',
     }]);
   }, [selectedEvent, selectedTimeSlot, effectivePrefillFabId]);
 
-  // Handlers
   const addEntry = () =>
     setEntries(p => {
       const newEntry = emptyEntry();
@@ -181,7 +172,6 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
   const updateEntry = (idx: number, patch: Partial<typeof entries[0]>) =>
     setEntries(p => {
       const updated = p.map((e, i) => (i === idx ? { ...e, ...patch } : e));
-      // Changing fab_id on the first entry propagates to all entries and re-triggers useEffect
       if (idx === 0 && patch.fab_id !== undefined) {
         return updated.map(e => ({ ...e, fab_id: patch.fab_id as string }));
       }
@@ -195,7 +185,6 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     for (const entry of entries) {
       if (!entry.fab_id)         { toast.error('FAB ID is required'); return; }
       if (!entry.operator_id)    { toast.error('Operator is required'); return; }
@@ -241,6 +230,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
             scheduled_start:     scheduledStart,
             ...(scheduledEnd && { scheduled_end: scheduledEnd }),
             notes:               entry.notes || undefined,
+            sequence:            Number(entry.sequence) || 1,
           };
         });
         await createShopPlan({ fab_id: Number(fabId), estimated_hours: totalEst, status_id: 1, stages } as any).unwrap();
@@ -259,6 +249,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
           scheduled_start:     scheduledStart,
           ...(scheduledEnd && { scheduled_end: scheduledEnd }),
           notes:               entry.notes || undefined,
+          sequence:            Number(entry.sequence) || 1,
         };
         await updateShopPlan({ plan_id: Number(entry.id), data: { stage: stageObj } } as any).unwrap();
       }
@@ -268,21 +259,18 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
       handleBack();
     } catch (error: any) {
       console.error('Error creating/updating event:', error);
-    //   toast.error(error?.data?.detail?.message || 'Failed to create/update Plan');
     }
   };
 
-  // Auto-populate: asks backend for earliest available slots for all stages at once
   const handleAutoPopulate = async () => {
-    // Validate only the fields we need for this request
     for (const entry of entries) {
       if (!entry.operator_id)   { toast.error('Please select an operator for each stage'); return; }
       if (!entry.workstation_id){ toast.error('Please select a workstation for each stage'); return; }
       if (!entry.planning_section_id){ toast.error('Please select a planning section for each stage'); return; }
-       if (!entry.estimated_hours || parseFloat(entry.estimated_hours as string) <= 0) {
-      toast.error('Estimated hours is required for each stage before auto-populating');
-      return;
-    }
+      if (!entry.estimated_hours || parseFloat(entry.estimated_hours as string) <= 0) {
+        toast.error('Estimated hours is required for each stage before auto-populating');
+        return;
+      }
     }
 
     try {
@@ -300,8 +288,6 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
       };
 
       const response = await createShopPlansSuggestion(payload as any).unwrap();
-
-      // Response shape: { success, data: { results: [{ planning_section_id, proposed_ranges: [{start, end}] }] } }
       const results: any[] = response?.data?.results ?? (Array.isArray(response) ? response : []);
 
       if (results.length === 0) {
@@ -309,7 +295,6 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
         return;
       }
 
-      // Build proposals keyed by entry index, matched by planning_section_id
       const newProposals: Record<number, any[]> = {};
       entries.forEach((entry, idx) => {
         const match = results.find(
@@ -321,15 +306,14 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
       });
       setProposals(newProposals);
 
-      // Auto-apply the first (earliest) proposed_range to each entry WITHOUT clearing other fields
       setEntries(prev =>
         prev.map((entry, idx) => {
           const first = newProposals[idx]?.[0];
-          if (!first) return entry; // no proposal for this stage — leave untouched
+          if (!first) return entry;
           const start = new Date(first.start);
           const end   = new Date(first.end);
           return {
-            ...entry,                               // preserve fab_id, operator, workstation, notes etc.
+            ...entry,
             date:       start,
             start_time: format(start, 'HH:mm'),
             end_time:   format(end,   'HH:mm'),
@@ -340,11 +324,9 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
       toast.success('Earliest slots applied — pick an alternative below each stage if needed');
     } catch (error: any) {
       console.error('Auto-populate error:', error);
-    //   toast.error(error?.data?.detail?.message || 'Failed to fetch available slots');
     }
   };
 
-  // Apply a specific proposal range for one entry (user picks alternative)
   const applyProposal = (entryIdx: number, proposal: { start: string; end: string }) => {
     const start = new Date(proposal.start);
     const end   = new Date(proposal.end);
@@ -357,7 +339,6 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
     );
   };
 
-  // Resolve a stage display name for a given entry
   const getStageName = (entry: typeof entries[0]): string => {
     if (entry.stageName) return entry.stageName;
     if (entry.planning_section_id) {
@@ -371,7 +352,6 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
 
   return (
     <div className="bg-white min-h-screen">
-      {/* Page Header */}
       <div className="border-b border-[#dfdfdf]">
         <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
           <div className="flex items-center gap-4">
@@ -402,11 +382,10 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
         </div>
       </div>
 
-      {/* Form Content */}
       <div className="px-10 py-8 max-w-4xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-6">
 
-          {/* FAB selector — always visible at the top, outside the per-entry cards */}
+          {/* FAB selector */}
           <Card className="border border-[#ecedf0] rounded-[12px]">
             <CardContent className="pt-5">
               <Label className="text-[13px] text-[#4b545d] font-semibold">FAB ID *</Label>
@@ -491,7 +470,6 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
                   </div>
                 </div>
 
-                {/* Stage value pills — visual hint of what got auto-populated */}
                 <div className="mt-4 flex flex-wrap gap-2">
                   {FAB_STAGE_FIELDS.map(s => {
                     const val = selectedFab?.[s.field];
@@ -520,22 +498,21 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
             </Card>
           )}
 
-          {/* Plan entries — one card per active stage */}
+          {/* Plan entries */}
           {entries.map((entry, idx) => {
             const stageName = getStageName(entry);
-            const isExpanded = expandedCards[idx] !== false; // default expanded
+            const isExpanded = expandedCards[idx] !== false;
             const hasSlot = !!(entry.date && entry.start_time && entry.end_time);
 
             return (
               <Card key={idx} className="border border-[#ecedf0] rounded-[12px] overflow-hidden">
-                {/* Card Header — always visible, click to collapse/expand */}
+                {/* Header with sequence dropdown */}
                 <CardHeader
                   className="pb-3 border-b border-[#ecedf0] cursor-pointer select-none"
                   onClick={() => setExpandedCards(prev => ({ ...prev, [idx]: !isExpanded }))}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
-                      {/* Collapse chevron */}
                       <ChevronDown
                         className={cn(
                           'h-4 w-4 text-[#7c8689] transition-transform shrink-0',
@@ -550,14 +527,29 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
                           {stageName}
                         </span>
                       )}
-                      {/* Summary when collapsed */}
                       {!isExpanded && hasSlot && (
                         <span className="text-xs text-[#7c8689] shrink-0">
                           {format(entry.date!, 'MMM d')} · {format(new Date(`1970-01-01T${entry.start_time}`), 'hh:mm a')}–{format(new Date(`1970-01-01T${entry.end_time}`), 'hh:mm a')}
                         </span>
                       )}
                     </div>
+
                     <div className="flex items-center gap-2 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
+                      {/* Sequence dropdown (always visible) */}
+                      <Select
+                        value={entry.sequence}
+                        onValueChange={value => updateEntry(idx, { sequence: value })}
+                      >
+                        <SelectTrigger className="h-7 w-16 text-xs border-[#e2e4ed] rounded-[4px]">
+                          <SelectValue placeholder="Seq" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {SEQUENCE_OPTIONS.map(num => (
+                            <SelectItem key={num} value={String(num)}>{num}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
                       {entries.length > 1 && (
                         <button
                           type="button"
@@ -575,7 +567,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
                 {isExpanded && (
                   <CardContent className="pt-5 space-y-5">
 
-                    {/* Row 1: Planning Section + Estimated Hours */}
+                    {/* Row 1: Planning Section + Estimated Hours (2 columns) */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label className="text-[13px] text-[#4b545d] font-semibold">Shop Activity</Label>
@@ -600,7 +592,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
                         </Select>
                       </div>
                       <div>
-                        <Label className="text-[13px] text-[#4b545d] font-semibold">Estimated Hours *</Label>
+                        <Label className="text-[13px] text-[#4b545d] font-semibold">Est. Hours *</Label>
                         <Input
                           type="number"
                           min="0.5"
@@ -654,7 +646,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
                       </div>
                     </div>
 
-                    {/* Row 3: Date + Scheduled time (from auto-populate) */}
+                    {/* Row 3: Date + Scheduled time */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label className="text-[13px] text-[#4b545d] font-semibold">Date</Label>
@@ -697,7 +689,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
                       </div>
                     </div>
 
-                    {/* Proposal slots from auto-populate */}
+                    {/* Proposals */}
                     {proposals[idx] && proposals[idx].length > 0 && (
                       <div>
                         <Label className="text-[12px] text-[#7c8689] mb-2 block">
@@ -730,7 +722,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
                       </div>
                     )}
 
-                    {/* Notes — full width */}
+                    {/* Notes */}
                     <div>
                       <Label className="text-[13px] text-[#4b545d] font-semibold">Description / Notes</Label>
                       <Textarea
@@ -747,7 +739,6 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
             );
           })}
 
-          {/* Add another stage manually */}
           <button
             type="button"
             onClick={addEntry}
@@ -757,29 +748,25 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
             <span className="text-[14px] font-semibold">Add Another Stage</span>
           </button>
 
-          {/* Auto-populate button */}
-          {/* {!isEditing && entries.some(e => e.operator_id && e.workstation_id && e.planning_section_id) && ( */}
-            <button
-              type="button"
-              onClick={handleAutoPopulate}
-              disabled={isAutoScheduling && !isEditing && entries.some(e => e.operator_id && e.workstation_id && e.planning_section_id && e.estimated_hours)}
-              className="w-full h-[44px] border border-[#9cc15e] rounded-[8px] flex items-center justify-center gap-2 text-[#5a7a00] bg-[#f0f4e8] hover:bg-[#e6f0d4] transition-colors disabled:opacity-60 text-[14px] font-semibold"
-            >
-              {isAutoScheduling ? (
-                <>
-                  <LoaderCircle className="h-4 w-4 animate-spin" />
-                  Finding earliest slots…
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-4 w-4" />
-                  Auto-populate Dates
-                </>
-              )}
-            </button>
-        
+          <button
+            type="button"
+            onClick={handleAutoPopulate}
+            disabled={isAutoScheduling && !isEditing && entries.some(e => e.operator_id && e.workstation_id && e.planning_section_id && e.estimated_hours)}
+            className="w-full h-[44px] border border-[#9cc15e] rounded-[8px] flex items-center justify-center gap-2 text-[#5a7a00] bg-[#f0f4e8] hover:bg-[#e6f0d4] transition-colors disabled:opacity-60 text-[14px] font-semibold"
+          >
+            {isAutoScheduling ? (
+              <>
+                <LoaderCircle className="h-4 w-4 animate-spin" />
+                Finding earliest slots…
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-4 w-4" />
+                Auto-populate Dates
+              </>
+            )}
+          </button>
 
-          {/* Footer actions */}
           <div className="flex items-center gap-3 pt-2 pb-8">
             <button
               type="button"
@@ -807,8 +794,6 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
           </div>
         </form>
       </div>
-
-
     </div>
   );
 };
