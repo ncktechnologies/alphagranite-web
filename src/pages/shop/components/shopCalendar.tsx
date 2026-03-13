@@ -93,7 +93,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [is12HourFormat] = useState(true);
-  const [isAxisSwapped, setIsAxisSwapped] = useState(false);
+  const [isAxisSwapped, setIsAxisSwapped] = useState(true);
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day');
   const [activePage, setActivePage] = useState<'calendar' | 'create-plan'>('calendar');
   const [fabPickerOpen, setFabPickerOpen] = useState(false);
@@ -788,7 +788,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                                     </TooltipTrigger>
                                     <TooltipContent side="right" className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700">
                                       <div className="space-y-1">
-                                        <p><span className="font-semibold">FAB ID:</span> {event.fab_id}</p>
+                                        <p><span className="font-semibold">FAB ID:</span> {ev.fab_id}</p>
                                         <p><span className="font-semibold">Operator:</span> {ev.operator_name || 'N/A'}</p>
                                         <p><span className="font-semibold">Workstation:</span> {ev.workstation_name || 'N/A'}</p>
                                         <p><span className="font-semibold">Est. Hours:</span> {ev.estimated_hours ?? 'N/A'}</p>

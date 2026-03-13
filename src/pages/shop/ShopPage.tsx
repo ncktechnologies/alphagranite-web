@@ -11,7 +11,7 @@ const ShopPage = () => {
             <Container>
                  <Toolbar className=' '>
 
-                    <ToolbarHeading title="Shop" description="View shop status list for jobs  " />
+                    <ToolbarHeading title="Shop Planning" description="View shop status list for jobs  " />
 
                     <ToolbarActions>
                         <Link to='/shop/calendar'>

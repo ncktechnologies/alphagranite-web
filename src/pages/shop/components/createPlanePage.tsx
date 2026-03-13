@@ -580,7 +580,7 @@ useEffect(() => {
 
                 {/* Planning Section */}
                 <div>
-                  <Label className="font-['Proxima_Nova:Semibold',sans-serif] text-[13px] text-[#4b545d]">Planning Section</Label>
+                  <Label className="font-['Proxima_Nova:Semibold',sans-serif] text-[13px] text-[#4b545d]">Shop Activity.</Label>
                   <Select value={entry.planning_section_id} onValueChange={(value) => updateEntry(idx, { planning_section_id: value })}>
                     <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
                       <SelectValue placeholder="Select section" />

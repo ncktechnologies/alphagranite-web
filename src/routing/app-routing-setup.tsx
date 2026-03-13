@@ -59,6 +59,7 @@ import { ResurfacingDetailsPage } from '@/pages/jobs/roles/resurfacing/component
 import CreatePlanPage from '@/pages/shop/components/createPlanePage';
 import CreateAutoPlanPage from '@/pages/shop/components/autoSuggest';
 import ResurfacingStatusPage from '@/pages/shop/resurfacing/page';
+import { FabDetailsPage } from '@/pages/shop/components/statusDetails';
 // import ShopCalendarPage from '@/pages/shop/calendarPage';
 
 export function AppRoutingSetup() {
@@ -391,6 +392,7 @@ export function AppRoutingSetup() {
               // </ProtectedRoute>
             }
           />
+          <Route path="/shop/fab/:fabId" element={<FabDetailsPage/>} />
           <Route
             path="/resurfacing-status"
             element={

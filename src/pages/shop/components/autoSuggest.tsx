@@ -578,7 +578,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
                     {/* Row 1: Planning Section + Estimated Hours */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label className="text-[13px] text-[#4b545d] font-semibold">Planning Section</Label>
+                        <Label className="text-[13px] text-[#4b545d] font-semibold">Shop Activity</Label>
                         <Select
                           value={entry.planning_section_id}
                           onValueChange={value => {

@@ -6,7 +6,6 @@ import {
     getFilteredRowModel,
     getPaginationRowModel,
     getSortedRowModel,
-    PaginationState,
     SortingState,
     useReactTable,
     ExpandedState,
@@ -23,17 +22,34 @@ import {
 import { DataGrid } from '@/components/ui/data-grid';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { Search, CalendarDays, X, ChevronLeft, ChevronRight, ChevronDown, ChevronRight as ChevronRightIcon } from 'lucide-react';
+import {
+    Search, CalendarDays, X, ChevronLeft, ChevronRight,
+    ChevronDown, ChevronRight as ChevronRightIcon,
+    EllipsisVertical, Eye, MessageSquare,
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select, SelectContent, SelectItem,
+    SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import {
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+    DropdownMenuSeparator, DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DateRange } from 'react-day-picker';
 import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useGetFabsQuery, useGetFabTypesQuery } from '@/store/api/job';
-import { Link } from 'react-router';
+import { useGetFabsQuery, useGetFabTypesQuery, useCreateFabNoteMutation } from '@/store/api/job';
+import { Link, useNavigate } from 'react-router';
+import { toast } from 'sonner';
+import {
+    Dialog, DialogContent, DialogHeader,
+    DialogTitle, DialogFooter,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 // ------------------ Types ------------------
 export interface ShopStatusPlan {
@@ -78,7 +94,8 @@ export interface ShopStatusFab {
     miter_progress: StageProgress;
     cnc_progress: StageProgress;
     touchup_progress: StageProgress;
-    expected_completion_date?: string;
+    estimated_completion_date?: string;
+    shop_est_completion_date?: string;
     cut_date_scheduled?: string;
     install_date?: string;
     percent_complete: number;
@@ -96,7 +113,7 @@ export type ShopStatusRow = {
     type: 'plan';
     fab_id: string;
     plan: ShopStatusPlan;
-    stage_total: number;   // raw value from backend (e.g. edging_linft)
+    stage_total: number;
     stage_unit: string;
     stage_percent: number;
     date_group: string;
@@ -106,8 +123,6 @@ export type ShopStatusRow = {
 interface ShopStatusTableProps {
     isLoading?: boolean;
 }
-
-const salesPersons: string[] = ['Mike Rodriguez', 'Sarah Johnson', 'Bruno Pires', 'Maria Garcia'];
 
 // Mapping of planning_section_id to stage details
 const stageMapping = [
@@ -121,7 +136,6 @@ const stageMapping = [
 
 const getStageInfo = (id: number) => stageMapping.find(s => s.id === id) || null;
 
-// Get the total value from a raw fab object for a given planning section
 const getTotalForStage = (fab: any, sectionId: number): number => {
     switch (sectionId) {
         case 7: return fab.total_sqft || 0;
@@ -134,15 +148,8 @@ const getTotalForStage = (fab: any, sectionId: number): number => {
     }
 };
 
-// ------------------ Progress Bar ------------------
-// `total`   = raw value from backend (e.g. edging_linft, cnc_linft) — displayed as the number
-// `percent` = work_percentage from the plan — drives the bar fill
-const ProgressBar: React.FC<{ value: number; total: number; percent: number; unit: string }> = ({
-    // value kept in props signature for call-site compatibility but not used in display
-    total,
-    percent,
-    unit,
-}) => {
+// ------------------ Progress Bar (plan rows only) ------------------
+const ProgressBar: React.FC<{ total: number; percent: number; unit: string }> = ({ total, percent, unit }) => {
     const displayPercent = percent || 0;
     const barColor =
         displayPercent === 100 ? '#4caf50' :
@@ -152,9 +159,7 @@ const ProgressBar: React.FC<{ value: number; total: number; percent: number; uni
 
     return (
         <div className="flex flex-col gap-1 items-start min-w-[100px]">
-            <p className="text-sm text-[#4b545d]">
-                {total.toFixed(1)} {unit}
-            </p>
+            <p className="text-sm text-[#4b545d]">{total.toFixed(1)} {unit}</p>
             <div className="w-full bg-[#e2e4ed] rounded-full h-[6px] overflow-hidden">
                 <div
                     className="h-full rounded-full transition-all duration-300"
@@ -162,6 +167,106 @@ const ProgressBar: React.FC<{ value: number; total: number; percent: number; uni
                 />
             </div>
             <p className="text-xs text-[#4b545d]">{displayPercent.toFixed(1)}%</p>
+        </div>
+    );
+};
+
+// ------------------ Add Note Dialog ------------------
+interface AddNoteDialogProps {
+    open: boolean;
+    fabId: string;
+    onClose: () => void;
+}
+
+const AddNoteDialog: React.FC<AddNoteDialogProps> = ({ open, fabId, onClose }) => {
+    const [note, setNote] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [createFabNote] = useCreateFabNoteMutation();
+
+    const handleSubmit = async () => {
+        if (!note.trim()) {
+            toast.warning('Please enter a note.');
+            return;
+        }
+        setIsSubmitting(true);
+        try {
+            await createFabNote({
+                fab_id: Number(fabId),
+                note: note.trim(),
+                stage: 'shop_status',
+            }).unwrap();
+            toast.success('Note added successfully.');
+            setNote('');
+            onClose();
+        } catch {
+            toast.error('Failed to add note.');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+            <DialogContent className="sm:max-w-[440px]">
+                <DialogHeader>
+                    <DialogTitle>Add Note</DialogTitle>
+                </DialogHeader>
+                <Textarea
+                    placeholder="Type your note here..."
+                    className="min-h-[120px] resize-none"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                />
+                <DialogFooter className="gap-2">
+                    <Button variant="outline" onClick={onClose} disabled={isSubmitting}>Cancel</Button>
+                    <Button onClick={handleSubmit} disabled={isSubmitting}>
+                        {isSubmitting ? 'Saving...' : 'Save Note'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+// ------------------ Actions Cell ------------------
+interface ActionsCellProps {
+    fabId: string;
+    onAddNote: (fabId: string) => void;
+}
+
+const ActionsCell: React.FC<ActionsCellProps> = ({ fabId, onAddNote }) => {
+    const navigate = useNavigate();
+
+    return (
+        <div className="flex items-center justify-center">
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
+                        <EllipsisVertical className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/shop/fab/${fabId}`);
+                        }}
+                    >
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onAddNote(fabId);
+                        }}
+                    >
+                        <MessageSquare className="mr-2 h-4 w-4" />
+                        Add Note
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
         </div>
     );
 };
@@ -174,10 +279,12 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
-    const [salesPersonFilter, setSalesPersonFilter] = useState<string>('all');
     const [expanded, setExpanded] = useState<ExpandedState>({});
     const [itemsPerPage, setItemsPerPage] = useState<number>(25);
     const [currentPage, setCurrentPage] = useState<number>(1);
+
+    // Add note dialog state
+    const [noteDialogFabId, setNoteDialogFabId] = useState<string | null>(null);
 
     const queryParams = useMemo(() => ({
         current_stage: 'cut_list',
@@ -191,33 +298,15 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     const { data: fabTypesData } = useGetFabTypesQuery();
 
     const fabTypes = useMemo(() => {
-        if (!fabTypesData) {
-            return [];
-        }
-
-        // Handle both possible response formats
+        if (!fabTypesData) return [];
         let rawData: any[] = [];
-        if (Array.isArray(fabTypesData)) {
-            rawData = fabTypesData;
-        } else if (typeof fabTypesData === 'object' && 'data' in fabTypesData) {
-            rawData = (fabTypesData as any).data || [];
-        }
-
-        // Extract names from FabType objects
-        const extractName = (item: { name: string } | string) => {
-            if (typeof item === 'string') {
-                return item;
-            }
-            if (typeof item === 'object' && item !== null) {
-                return item.name || String(item);
-            }
-            return String(item);
-        };
-
+        if (Array.isArray(fabTypesData)) rawData = fabTypesData;
+        else if (typeof fabTypesData === 'object' && 'data' in fabTypesData) rawData = (fabTypesData as any).data || [];
+        const extractName = (item: { name: string } | string) =>
+            typeof item === 'string' ? item : (typeof item === 'object' && item !== null ? item.name || String(item) : String(item));
         return rawData.map(extractName);
     }, [fabTypesData]);
 
-    // fabsData is already shaped as { data: Fab[], total: number } by transformResponse
     const fabs = useMemo(() => {
         if (!fabsData) return [];
         return Array.isArray(fabsData.data) ? fabsData.data : [];
@@ -228,18 +317,17 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     // ------------------ Transform API data → ShopStatusRow tree ------------------
     const tableData: ShopStatusRow[] = useMemo(() => {
         return fabs.map((fab: any): ShopStatusRow => {
-            const expectedDate = fab.shop_date_schedule || fab.installation_date;
+            // Use estimated_completion_date as the primary date grouping field
+            const expectedDate = fab.shop_est_completion_date;
             const dateGroup = expectedDate
                 ? format(new Date(expectedDate), 'yyyy-MM')
                 : 'unscheduled';
 
-            // Returns the work_percentage for a given planning section from this fab's plans
             const getPlanPercent = (sectionId: number): number => {
                 const plan = (fab.plans || []).find((p: any) => p.planning_section_id === sectionId);
                 return plan?.work_percentage || 0;
             };
 
-            // Builds a StageProgress object for a section
             const buildProgress = (sectionId: number): StageProgress => {
                 const info = getStageInfo(sectionId);
                 const unit = info?.unit || 'SF';
@@ -262,20 +350,18 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 edge_name: fab.edge_name,
                 pieces: fab.no_of_pieces || 0,
                 total_sq_ft: fab.total_sqft || 0,
-                // Raw linft totals (used for group/overall totals)
                 wj_total: fab.wj_linft || 0,
                 edging_total: fab.edging_linft || 0,
                 miter_total: fab.miter_linft || 0,
                 cnc_total: fab.cnc_linft || 0,
-                // Progress per stage
                 cut_progress: buildProgress(7),
                 wj_progress: buildProgress(8),
                 edging_progress: buildProgress(9),
                 miter_progress: buildProgress(2),
                 cnc_progress: buildProgress(1),
                 touchup_progress: buildProgress(6),
-                // Dates
-                expected_completion_date: expectedDate,
+                // Use estimated_completion_date from API
+                shop_est_completion_date: fab.shop_est_completion_date,
                 cut_date_scheduled: (fab.plans || []).find((p: any) => p.planning_section_id === 7)?.scheduled_start_date,
                 install_date: fab.installation_date,
                 percent_complete: fab.percent_complete || 0,
@@ -287,14 +373,11 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 shop_date_schedule: fab.shop_date_schedule,
             };
 
-            // Build child rows for each plan
             const subRows: ShopStatusRow[] = (fab.plans || []).map((plan: any): ShopStatusRow => {
                 const stageInfo = getStageInfo(plan.planning_section_id);
                 const unit = stageInfo?.unit || 'SF';
                 const total = getTotalForStage(fab, plan.planning_section_id);
                 const percent = plan.work_percentage || 0;
-                const completed = total * (percent / 100);
-
                 return {
                     type: 'plan',
                     fab_id: String(fab.id),
@@ -313,19 +396,15 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     stage_unit: unit,
                     stage_percent: percent,
                     date_group: dateGroup,
-                    subRows: [],   // plans have no children
+                    subRows: [],
                 };
             });
 
-            return {
-                type: 'fab',
-                data: fabData,
-                subRows,
-            };
+            return { type: 'fab', data: fabData, subRows };
         });
     }, [fabs]);
 
-    // ------------------ Client-side Filtering (on top of server pagination) ------------------
+    // ------------------ Client-side Filtering ------------------
     const filteredData = useMemo(() => {
         let result = tableData;
 
@@ -343,8 +422,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
         if (fabTypeFilter !== 'all') {
             result = result.filter(r =>
-                r.type === 'fab' &&
-                r.data.fab_type.toLowerCase() === fabTypeFilter.toLowerCase()
+                r.type === 'fab' && r.data.fab_type.toLowerCase() === fabTypeFilter.toLowerCase()
             );
         }
 
@@ -353,8 +431,8 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             const end = startOfDay(dateRange.to);
             end.setHours(23, 59, 59, 999);
             result = result.filter(r => {
-                if (r.type !== 'fab' || !r.data.expected_completion_date) return false;
-                const d = new Date(r.data.expected_completion_date);
+                if (r.type !== 'fab' || !r.data.shop_est_completion_date) return false;
+                const d = new Date(r.data.shop_est_completion_date);
                 return d >= start && d <= end;
             });
         }
@@ -369,7 +447,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             if (parent.type !== 'fab') return;
             const key = parent.data.date_group;
             const display = key !== 'unscheduled'
-                ? format(new Date(parent.data.expected_completion_date!), 'MMMM yyyy').toUpperCase()
+                ? format(new Date(parent.data.shop_est_completion_date!), 'MMMM yyyy').toUpperCase()
                 : 'UNSCHEDULED';
             if (!groups[key]) groups[key] = { parents: [], dateDisplay: display };
             groups[key].parents.push(parent);
@@ -422,8 +500,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                         >
                             {row.getIsExpanded()
                                 ? <ChevronDown className="h-4 w-4" />
-                                : <ChevronRightIcon className="h-4 w-4" />
-                            }
+                                : <ChevronRightIcon className="h-4 w-4" />}
                         </button>
                     );
                 }
@@ -431,20 +508,38 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             },
             size: 36,
         },
-        // Est. Completion Date (also used to show plan summary for child rows)
+        // Actions
         {
-            id: 'month',
-            accessorFn: (r) => r.type === 'fab' ? r.data.expected_completion_date : null,
+            id: 'actions',
+            header: () => null,
+            cell: ({ row }) => {
+                if (row.original.type !== 'fab') return null;
+                return (
+                    <ActionsCell
+                        fabId={row.original.data.fab_id}
+                        onAddNote={(id) => setNoteDialogFabId(id)}
+                    />
+                );
+            },
+            size: 48,
+        },
+        // Est. Completion Date — now uses estimated_completion_date
+        {
+            id: 'shop_est_completion_date',
+            accessorFn: (r) => r.type === 'fab' ? r.data.shop_est_completion_date : null,
             header: ({ column }) => (
                 <DataGridColumnHeader title="EST. COMPLETION DATE" column={column} className="text-[#7c8689] text-[15px] font-normal" />
             ),
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
-                    const date = row.original.data.expected_completion_date;
-                    return <span className="text-sm text-[#4b545d]">{''}</span>;
+                    const date = row.original.data.shop_est_completion_date;
+                    return (
+                        <span className="text-sm text-[#4b545d]">
+                            {date ? format(new Date(date), 'MM/dd/yyyy') : '-'}
+                        </span>
+                    );
                 }
                 if (row.original.type === 'plan') {
-                    // Show plan summary in this column for child rows
                     return (
                         <span className="text-xs text-gray-500 pl-4">
                             {row.original.plan.plan_name} · {row.original.plan.workstation_name} · {row.original.plan.operator_name}
@@ -520,7 +615,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     return (
-                        <Link to={`/sales/${row.original.data.fab_id}`} className="text-sm text-[#4b545d] hover:underline cursor-pointer">
+                        <Link to={`/shop/fab/${row.original.data.fab_id}`} className="text-sm text-[#4b545d] hover:underline cursor-pointer">
                             {row.original.data.fab_id}
                         </Link>
                     );
@@ -560,14 +655,10 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     return (
                         <div className="flex flex-col gap-1 text-xs max-w-[360px]">
                             {jobParts.length > 0 && (
-                                <div className="truncate text-gray-600" title={jobParts.join(' - ')}>
-                                    {jobParts.join(' - ')}
-                                </div>
+                                <div className="truncate text-gray-600" title={jobParts.join(' - ')}>{jobParts.join(' - ')}</div>
                             )}
                             {stoneParts.length > 0 && (
-                                <div className="truncate text-gray-500" title={stoneParts.join(' - ')}>
-                                    {stoneParts.join(' - ')}
-                                </div>
+                                <div className="truncate text-gray-500" title={stoneParts.join(' - ')}>{stoneParts.join(' - ')}</div>
                             )}
                         </div>
                     );
@@ -575,7 +666,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 if (row.original.type === 'plan') {
                     return (
                         <span className="text-xs text-gray-400 pl-4">
-                            Estimated hrs:. {row.original.plan.estimated_hours}h
+                            Estimated hrs: {row.original.plan.estimated_hours}h
                         </span>
                     );
                 }
@@ -615,19 +706,18 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             enableSorting: true,
             size: 120,
         },
-        // ---- Stage columns ----
+        // ---- Stage columns: progress bars ONLY shown on plan rows ----
         {
             id: 'cut',
             header: ({ column }) => (
                 <DataGridColumnHeader title="CUT" column={column} className="text-[#7c8689] text-[15px] font-normal" />
             ),
             cell: ({ row }) => {
-                if (row.original.type === 'fab') {
-                    const p = row.original.data.cut_progress;
-                    return <ProgressBar value={p.completed} total={p.total} percent={p.percent} unit={p.unit} />;
-                }
+                // FAB row: no bar
+                if (row.original.type === 'fab') return null;
+                // Plan row: show bar only for this stage
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 7) {
-                    return <ProgressBar value={0} total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                    return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
                 }
                 return null;
             },
@@ -639,12 +729,9 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 <DataGridColumnHeader title="WJ" column={column} className="text-[#7c8689] text-[15px] font-normal" />
             ),
             cell: ({ row }) => {
-                if (row.original.type === 'fab') {
-                    const p = row.original.data.wj_progress;
-                    return <ProgressBar value={p.completed} total={p.total} percent={p.percent} unit={p.unit} />;
-                }
+                if (row.original.type === 'fab') return null;
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 8) {
-                    return <ProgressBar value={0} total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                    return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
                 }
                 return null;
             },
@@ -656,12 +743,9 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 <DataGridColumnHeader title="EDGING" column={column} className="text-[#7c8689] text-[15px] font-normal" />
             ),
             cell: ({ row }) => {
-                if (row.original.type === 'fab') {
-                    const p = row.original.data.edging_progress;
-                    return <ProgressBar value={p.completed} total={p.total} percent={p.percent} unit={p.unit} />;
-                }
+                if (row.original.type === 'fab') return null;
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 9) {
-                    return <ProgressBar value={0} total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                    return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
                 }
                 return null;
             },
@@ -673,12 +757,9 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 <DataGridColumnHeader title="MITER" column={column} className="text-[#7c8689] text-[15px] font-normal" />
             ),
             cell: ({ row }) => {
-                if (row.original.type === 'fab') {
-                    const p = row.original.data.miter_progress;
-                    return <ProgressBar value={p.completed} total={p.total} percent={p.percent} unit={p.unit} />;
-                }
+                if (row.original.type === 'fab') return null;
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 2) {
-                    return <ProgressBar value={0} total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                    return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
                 }
                 return null;
             },
@@ -690,12 +771,9 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 <DataGridColumnHeader title="CNC" column={column} className="text-[#7c8689] text-[15px] font-normal" />
             ),
             cell: ({ row }) => {
-                if (row.original.type === 'fab') {
-                    const p = row.original.data.cnc_progress;
-                    return <ProgressBar value={p.completed} total={p.total} percent={p.percent} unit={p.unit} />;
-                }
+                if (row.original.type === 'fab') return null;
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 1) {
-                    return <ProgressBar value={0} total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                    return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
                 }
                 return null;
             },
@@ -707,12 +785,9 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 <DataGridColumnHeader title="TOUCHUP QA" column={column} className="text-[#7c8689] text-[15px] font-normal" />
             ),
             cell: ({ row }) => {
-                if (row.original.type === 'fab') {
-                    const p = row.original.data.touchup_progress;
-                    return <ProgressBar value={p.completed} total={p.total} percent={p.percent} unit={p.unit} />;
-                }
+                if (row.original.type === 'fab') return null;
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 6) {
-                    return <ProgressBar value={0} total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                    return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
                 }
                 return null;
             },
@@ -737,29 +812,12 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             enableSorting: true,
             size: 120,
         },
-        // Notes
-        // {
-        //     id: 'notes',
-        //     header: ({ column }) => (
-        //         <DataGridColumnHeader title="NOTES" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-        //     ),
-        //     cell: ({ row }) => {
-        //         if (row.original.type === 'fab') {
-        //             return <span className="text-sm text-[#4b545d] line-clamp-2">{row.original.data.notes || '-'}</span>;
-        //         }
-        //         if (row.original.type === 'plan') {
-        //             return <span className="text-xs text-gray-500">{row.original.plan.notes || '-'}</span>;
-        //         }
-        //         return null;
-        //     },
-        //     size: 150,
-        // },
     ], []);
 
     // ------------------ Table Instance ------------------
     const table = useReactTable({
         columns,
-        data: filteredData,   // only parent FAB rows; TanStack reads subRows from each
+        data: filteredData,
         pageCount: Math.ceil(totalRecords / itemsPerPage),
         getRowId: (row) =>
             row.type === 'fab'
@@ -785,7 +843,6 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getExpandedRowModel: getExpandedRowModel(),
-        // This is the key: TanStack will use subRows from each row object
         getSubRows: (row) =>
             row.type === 'fab' && row.subRows.length > 0 ? row.subRows : undefined,
         manualPagination: true,
@@ -821,8 +878,8 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                         {content}
                     </td>
                 );
-                if (id === 'expander') return <td key={id} className="px-4 py-2 border-r border-[#e2e4ed]" />;
-                if (id === 'month') return td(label);
+                if (id === 'expander' || id === 'actions') return <td key={id} className="px-4 py-2 border-r border-[#e2e4ed]" />;
+                if (id === 'shop_est_completion_date') return td(label);
                 if (id === 'pieces') return td(totals.pieces);
                 if (id === 'total_sq_ft') return td(`${totals.sqft.toFixed(1)} SF`);
                 if (id === 'wj') return td(`${totals.wj.toFixed(1)} LF`);
@@ -838,336 +895,307 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
     // ------------------ Render ------------------
     return (
-        <DataGrid
-            table={table}
-            recordCount={totalRecords}
-            isLoading={isLoading}
-            groupByDate={false}
-            tableLayout={{
-                columnsPinnable: true,
-                columnsMovable: true,
-                columnsVisibility: true,
-                cellBorder: true,
-            }}
-        >
-            <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)]">
+        <>
+            <DataGrid
+                table={table}
+                recordCount={totalRecords}
+                isLoading={isLoading}
+                groupByDate={false}
+                tableLayout={{
+                    columnsPinnable: true,
+                    columnsMovable: true,
+                    columnsVisibility: true,
+                    cellBorder: true,
+                }}
+            >
+                <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)]">
 
-                {/* ---- Filters ---- */}
-                <CardHeader className="flex flex-wrap items-center justify-between gap-2 py-3 border-b border-[#e2e4ed] px-5">
-                    <div className="flex flex-wrap items-center gap-3">
-                        {/* Search */}
-                        <div className="relative">
-                            <Search className="size-4 text-[#7c8689] absolute start-3 top-1/2 -translate-y-1/2" />
-                            <Input
-                                placeholder="Search by job, Fab ID"
-                                value={searchQuery}
-                                onChange={e => setSearchQuery(e.target.value)}
-                                className="ps-9 w-[280px] h-[34px] border-[#e2e4ed] focus-visible:ring-0"
-                                disabled={isLoading}
-                            />
-                            {searchQuery && (
-                                <Button
-                                    size="icon" variant="ghost"
-                                    className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                                    onClick={() => setSearchQuery('')}
-                                >
-                                    <X className="h-4 w-4" />
-                                </Button>
-                            )}
-                        </div>
-
-                        {/* Date Range */}
-                        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    className={cn(
-                                        'w-[210px] h-[34px] justify-start text-left font-normal border-[#e2e4ed]',
-                                        !dateRange && 'text-muted-foreground'
-                                    )}
+                    {/* ---- Filters ---- */}
+                    <CardHeader className="flex flex-wrap items-center justify-between gap-2 py-3 border-b border-[#e2e4ed] px-5">
+                        <div className="flex flex-wrap items-center gap-3">
+                            {/* Search */}
+                            <div className="relative">
+                                <Search className="size-4 text-[#7c8689] absolute start-3 top-1/2 -translate-y-1/2" />
+                                <Input
+                                    placeholder="Search by job, Fab ID"
+                                    value={searchQuery}
+                                    onChange={e => setSearchQuery(e.target.value)}
+                                    className="ps-9 w-[280px] h-[34px] border-[#e2e4ed] focus-visible:ring-0"
                                     disabled={isLoading}
-                                >
-                                    <CalendarDays className="mr-2 h-4 w-4 text-[#7c8689]" />
-                                    {dateRange?.from ? (
-                                        dateRange.to
-                                            ? `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}`
-                                            : format(dateRange.from, 'MMM dd, yyyy')
-                                    ) : (
-                                        <span>Pick dates</span>
-                                    )}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                    initialFocus
-                                    mode="range"
-                                    defaultMonth={dateRange?.from || new Date()}
-                                    selected={tempDateRange}
-                                    onSelect={setTempDateRange}
-                                    numberOfMonths={2}
                                 />
-                                <div className="flex items-center justify-end gap-1.5 border-t border-[#e2e4ed] p-3">
+                                {searchQuery && (
                                     <Button
-                                        variant="outline" size="sm"
-                                        onClick={() => { setTempDateRange(undefined); setDateRange(undefined); }}
+                                        size="icon" variant="ghost"
+                                        className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                                        onClick={() => setSearchQuery('')}
                                     >
-                                        Reset
+                                        <X className="h-4 w-4" />
                                     </Button>
-                                    <Button
-                                        size="sm"
-                                        onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}
-                                    >
-                                        Apply
-                                    </Button>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-
-                        {/* FAB Type */}
-                        <Select value={fabTypeFilter} onValueChange={setFabTypeFilter} disabled={isLoading}>
-                            <SelectTrigger className="w-auto h-[34px] border-[#e2e4ed]">
-                                <SelectValue placeholder="FAB type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Types</SelectItem>
-
-                                {fabTypes.map((type) => (
-                                    <SelectItem key={type} value={type}>
-                                        {type}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    <CardToolbar className="flex gap-4">
-                        {/* Sales Person */}
-                        {/* <Select value={salesPersonFilter} onValueChange={setSalesPersonFilter} disabled={isLoading}>
-                            <SelectTrigger className="w-[205px] h-[34px] border-[#e2e4ed]">
-                                <SelectValue placeholder="Select sales person" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Sales Persons</SelectItem>
-                                {salesPersons.map(p => (
-                                    <SelectItem key={p} value={p}>{p}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select> */}
-
-                        {/* Export */}
-                        <Button
-                            variant="outline"
-                            onClick={() => exportTableToCSV(table, 'shop-status')}
-                            disabled={isLoading}
-                            className="h-[34px] border-[#e2e4ed] text-[#4b545d]"
-                        >
-                            Export CSV
-                        </Button>
-                    </CardToolbar>
-                </CardHeader>
-
-                {/* ---- Table Body ---- */}
-                <CardTable>
-                    <ScrollArea className="h-[calc(100vh-280px)]">
-                        {isLoading ? (
-                            <div className="flex items-center justify-center h-64">
-                                <p className="text-[#7c8689]">Loading…</p>
+                                )}
                             </div>
-                        ) : (
-                            <table className="w-full border-collapse">
-                                <thead className="bg-[#f9f9f9] sticky top-0 z-10">
-                                    {table.getHeaderGroups().map(hg => (
-                                        <tr key={hg.id}>
-                                            {hg.headers.map(header => (
-                                                <th
-                                                    key={header.id}
-                                                    className="px-4 py-3 text-left text-xs font-medium text-[#7c8689] bg-[#f9f9f9] border-b border-r border-[#e2e4ed] last:border-r-0 whitespace-normal "
-                                                    style={{ width: header.getSize() }}
 
-                                                >
-                                                    {header.isPlaceholder
-                                                        ? null
-                                                        : flexRender(header.column.columnDef.header, header.getContext())}
-                                                </th>
-                                            ))}
-                                        </tr>
+                            {/* Date Range */}
+                            <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button
+                                        variant="outline"
+                                        className={cn(
+                                            'w-[210px] h-[34px] justify-start text-left font-normal border-[#e2e4ed]',
+                                            !dateRange && 'text-muted-foreground'
+                                        )}
+                                        disabled={isLoading}
+                                    >
+                                        <CalendarDays className="mr-2 h-4 w-4 text-[#7c8689]" />
+                                        {dateRange?.from ? (
+                                            dateRange.to
+                                                ? `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}`
+                                                : format(dateRange.from, 'MMM dd, yyyy')
+                                        ) : (
+                                            <span>Pick dates</span>
+                                        )}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        initialFocus
+                                        mode="range"
+                                        defaultMonth={dateRange?.from || new Date()}
+                                        selected={tempDateRange}
+                                        onSelect={setTempDateRange}
+                                        numberOfMonths={2}
+                                    />
+                                    <div className="flex items-center justify-end gap-1.5 border-t border-[#e2e4ed] p-3">
+                                        <Button
+                                            variant="outline" size="sm"
+                                            onClick={() => { setTempDateRange(undefined); setDateRange(undefined); }}
+                                        >
+                                            Reset
+                                        </Button>
+                                        <Button
+                                            size="sm"
+                                            onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}
+                                        >
+                                            Apply
+                                        </Button>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+
+                            {/* FAB Type */}
+                            <Select value={fabTypeFilter} onValueChange={setFabTypeFilter} disabled={isLoading}>
+                                <SelectTrigger className="w-auto h-[34px] border-[#e2e4ed]">
+                                    <SelectValue placeholder="FAB type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Types</SelectItem>
+                                    {fabTypes.map((type) => (
+                                        <SelectItem key={type} value={type}>{type}</SelectItem>
                                     ))}
-                                </thead>
-
-                                <tbody>
-                                    {/* Overall totals row */}
-                                    {renderTotalsRow('Overall Total', overallTotals, 'bg-[#eef0f6]')}
-
-                                    {Object.entries(groupedParents).map(([dateKey, group]) => {
-                                        const groupTotal = groupTotals[dateKey] || { pieces: 0, sqft: 0, wj: 0, edging: 0, miter: 0, cnc: 0 };
-
-                                        return (
-                                            <React.Fragment key={dateKey}>
-                                                {/* Date group header */}
-                                                <tr className="bg-[#F6FFE7]">
-                                                    <td
-                                                        className="px-4 py-2 text-xs font-semibold text-[#4b545d]"
-                                                        colSpan={table.getVisibleFlatColumns().length}
-                                                    >
-                                                        {group.dateDisplay}
-                                                    </td>
-                                                </tr>
-
-                                                {/* Group totals row */}
-                                                {renderTotalsRow('', groupTotal)}
-
-                                                {/* FAB rows + their expanded plan child rows */}
-                                                {group.parents.map(parent => {
-                                                    if (parent.type !== 'fab') return null;
-
-                                                    // Find the TanStack row object for this FAB
-                                                    const parentRow = table.getRowModel().rows.find(
-                                                        r =>
-                                                            r.original.type === 'fab' &&
-                                                            r.original.data.fab_id === parent.data.fab_id
-                                                    );
-                                                    if (!parentRow) return null;
-
-                                                    return (
-                                                        <React.Fragment key={parentRow.id}>
-                                                            {/* Parent FAB row */}
-                                                            <tr className="border-b border-[#e2e4ed]  transition-colors" data-fab-type={parentRow.original.type === 'fab' ? parentRow.original.data.fab_type?.toLowerCase() : undefined}>
-                                                                {parentRow.getVisibleCells().map(cell => (
-                                                                    <td
-                                                                        key={cell.id}
-                                                                        className="px-4 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
-                                                                    >
-                                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                                    </td>
-                                                                ))}
-                                                            </tr>
-
-                                                            {/* Child plan rows — TanStack provides these via parentRow.subRows */}
-                                                            {parentRow.getIsExpanded() &&
-                                                                parentRow.subRows.map(childRow => (
-                                                                    <tr
-                                                                        key={childRow.id}
-                                                                        className="border-b border-[#e2e4ed] bg-gray-50/60"
-                                                                    >
-                                                                        {childRow.getVisibleCells().map(cell => (
-                                                                            <td
-                                                                                key={cell.id}
-                                                                                className="px-4 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
-                                                                            >
-                                                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                                            </td>
-                                                                        ))}
-                                                                    </tr>
-                                                                ))
-                                                            }
-                                                        </React.Fragment>
-                                                    );
-                                                })}
-                                            </React.Fragment>
-                                        );
-                                    })}
-
-                                    {filteredData.length === 0 && (
-                                        <tr>
-                                            <td
-                                                colSpan={table.getVisibleFlatColumns().length}
-                                                className="px-4 py-12 text-center text-sm text-[#7c8689]"
-                                            >
-                                                No records found.
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
-                        )}
-                        <ScrollBar orientation="horizontal" />
-                    </ScrollArea>
-                </CardTable>
-
-                {/* ---- Pagination Footer ---- */}
-                <CardFooter className="flex items-center justify-between px-5 py-3 border-t border-[#e2e4ed]">
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm text-[#7c8689]">Show</span>
-                        <Select
-                            value={String(itemsPerPage)}
-                            onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}
-                        >
-                            <SelectTrigger className="h-8 w-[70px] border-[#dbdfe9] bg-[#f9f9f9] text-xs">
-                                <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="10">10</SelectItem>
-                                <SelectItem value="25">25</SelectItem>
-                                <SelectItem value="50">50</SelectItem>
-                                <SelectItem value="100">100</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <span className="text-sm text-[#7c8689]">per page</span>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                        <span className="text-sm text-[#7c8689]">
-                            {startItem}–{endItem} of {totalRecords}
-                        </span>
-
-                        <div className="flex items-center gap-1">
-                            {/* First */}
-                            <Button
-                                variant="ghost" size="icon" className="h-8 w-8"
-                                disabled={currentPage === 1}
-                                onClick={() => setCurrentPage(1)}
-                            >
-                                <ChevronLeft className="h-4 w-4" />
-                                <ChevronLeft className="h-4 w-4 -ml-3" />
-                            </Button>
-                            {/* Prev */}
-                            <Button
-                                variant="ghost" size="icon" className="h-8 w-8"
-                                disabled={currentPage === 1}
-                                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            >
-                                <ChevronLeft className="h-4 w-4" />
-                            </Button>
-
-                            {pageNumbers.map(page => (
-                                <Button
-                                    key={page}
-                                    variant={currentPage === page ? 'default' : 'ghost'}
-                                    size="icon"
-                                    className={cn(
-                                        'h-8 w-8 text-sm',
-                                        currentPage === page
-                                            ? 'bg-[#e2e4ed] text-[#4b545d] hover:bg-[#e2e4ed]'
-                                            : 'text-[#7c8689]'
-                                    )}
-                                    onClick={() => setCurrentPage(page)}
-                                >
-                                    {page}
-                                </Button>
-                            ))}
-
-                            {/* Next */}
-                            <Button
-                                variant="ghost" size="icon" className="h-8 w-8"
-                                disabled={currentPage >= totalPages}
-                                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            >
-                                <ChevronRight className="h-4 w-4" />
-                            </Button>
-                            {/* Last */}
-                            <Button
-                                variant="ghost" size="icon" className="h-8 w-8"
-                                disabled={currentPage >= totalPages}
-                                onClick={() => setCurrentPage(totalPages)}
-                            >
-                                <ChevronRight className="h-4 w-4" />
-                                <ChevronRight className="h-4 w-4 -ml-3" />
-                            </Button>
+                                </SelectContent>
+                            </Select>
                         </div>
-                    </div>
-                </CardFooter>
-            </Card>
-        </DataGrid>
+
+                        <CardToolbar className="flex gap-4">
+                            <Button
+                                variant="outline"
+                                onClick={() => exportTableToCSV(table, 'shop-status')}
+                                disabled={isLoading}
+                                className="h-[34px] border-[#e2e4ed] text-[#4b545d]"
+                            >
+                                Export CSV
+                            </Button>
+                        </CardToolbar>
+                    </CardHeader>
+
+                    {/* ---- Table Body ---- */}
+                    <CardTable>
+                        <ScrollArea className="h-[calc(100vh-280px)]">
+                            {isLoading ? (
+                                <div className="flex items-center justify-center h-64">
+                                    <p className="text-[#7c8689]">Loading…</p>
+                                </div>
+                            ) : (
+                                <table className="w-full border-collapse">
+                                    <thead className="bg-[#f9f9f9] sticky top-0 z-10">
+                                        {table.getHeaderGroups().map(hg => (
+                                            <tr key={hg.id}>
+                                                {hg.headers.map(header => (
+                                                    <th
+                                                        key={header.id}
+                                                        className="px-4 py-3 text-left text-xs font-medium text-[#7c8689] bg-[#f9f9f9] border-b border-r border-[#e2e4ed] last:border-r-0 whitespace-normal"
+                                                        style={{ width: header.getSize() }}
+                                                    >
+                                                        {header.isPlaceholder
+                                                            ? null
+                                                            : flexRender(header.column.columnDef.header, header.getContext())}
+                                                    </th>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                    </thead>
+
+                                    <tbody>
+                                        {/* Overall totals row */}
+                                        {renderTotalsRow('Overall Total', overallTotals, 'bg-[#eef0f6]')}
+
+                                        {Object.entries(groupedParents).map(([dateKey, group]) => {
+                                            const groupTotal = groupTotals[dateKey] || { pieces: 0, sqft: 0, wj: 0, edging: 0, miter: 0, cnc: 0 };
+
+                                            return (
+                                                <React.Fragment key={dateKey}>
+                                                    {/* Date group header */}
+                                                    <tr className="bg-[#F6FFE7]">
+                                                        <td
+                                                            className="px-4 py-2 text-xs font-semibold text-[#4b545d]"
+                                                            colSpan={table.getVisibleFlatColumns().length}
+                                                        >
+                                                            {group.dateDisplay}
+                                                        </td>
+                                                    </tr>
+
+                                                    {/* Group totals row */}
+                                                    {renderTotalsRow('', groupTotal)}
+
+                                                    {/* FAB rows */}
+                                                    {group.parents.map(parent => {
+                                                        if (parent.type !== 'fab') return null;
+
+                                                        const parentRow = table.getRowModel().rows.find(
+                                                            r =>
+                                                                r.original.type === 'fab' &&
+                                                                r.original.data.fab_id === parent.data.fab_id
+                                                        );
+                                                        if (!parentRow) return null;
+
+                                                        return (
+                                                            <React.Fragment key={parentRow.id}>
+                                                                {/* Parent FAB row */}
+                                                                <tr
+                                                                    className="border-b border-[#e2e4ed] transition-colors "
+                                                                    data-fab-type={parentRow.original.type === 'fab' ? parentRow.original.data.fab_type?.toLowerCase() : undefined}
+                                                                >
+                                                                    {parentRow.getVisibleCells().map(cell => (
+                                                                        <td
+                                                                            key={cell.id}
+                                                                            className="px-4 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
+                                                                        >
+                                                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                                        </td>
+                                                                    ))}
+                                                                </tr>
+
+                                                                {/* Child plan rows — only shown when expanded */}
+                                                                {parentRow.getIsExpanded() &&
+                                                                    parentRow.subRows.map(childRow => (
+                                                                        <tr
+                                                                            key={childRow.id}
+                                                                            className="border-b border-[#e2e4ed] bg-gray-50/60"
+                                                                        >
+                                                                            {childRow.getVisibleCells().map(cell => (
+                                                                                <td
+                                                                                    key={cell.id}
+                                                                                    className="px-4 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
+                                                                                >
+                                                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                                                </td>
+                                                                            ))}
+                                                                        </tr>
+                                                                    ))
+                                                                }
+                                                            </React.Fragment>
+                                                        );
+                                                    })}
+                                                </React.Fragment>
+                                            );
+                                        })}
+
+                                        {filteredData.length === 0 && (
+                                            <tr>
+                                                <td
+                                                    colSpan={table.getVisibleFlatColumns().length}
+                                                    className="px-4 py-12 text-center text-sm text-[#7c8689]"
+                                                >
+                                                    No records found.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            )}
+                            <ScrollBar orientation="horizontal" />
+                        </ScrollArea>
+                    </CardTable>
+
+                    {/* ---- Pagination Footer ---- */}
+                    <CardFooter className="flex items-center justify-between px-5 py-3 border-t border-[#e2e4ed]">
+                        <div className="flex items-center gap-2">
+                            <span className="text-sm text-[#7c8689]">Show</span>
+                            <Select
+                                value={String(itemsPerPage)}
+                                onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}
+                            >
+                                <SelectTrigger className="h-8 w-[70px] border-[#dbdfe9] bg-[#f9f9f9] text-xs">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="10">10</SelectItem>
+                                    <SelectItem value="25">25</SelectItem>
+                                    <SelectItem value="50">50</SelectItem>
+                                    <SelectItem value="100">100</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <span className="text-sm text-[#7c8689]">per page</span>
+                        </div>
+
+                        <div className="flex items-center gap-4">
+                            <span className="text-sm text-[#7c8689]">
+                                {startItem}–{endItem} of {totalRecords}
+                            </span>
+
+                            <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="icon" className="h-8 w-8" disabled={currentPage === 1} onClick={() => setCurrentPage(1)}>
+                                    <ChevronLeft className="h-4 w-4" /><ChevronLeft className="h-4 w-4 -ml-3" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>
+                                    <ChevronLeft className="h-4 w-4" />
+                                </Button>
+
+                                {pageNumbers.map(page => (
+                                    <Button
+                                        key={page}
+                                        variant={currentPage === page ? 'default' : 'ghost'}
+                                        size="icon"
+                                        className={cn(
+                                            'h-8 w-8 text-sm',
+                                            currentPage === page ? 'bg-[#e2e4ed] text-[#4b545d] hover:bg-[#e2e4ed]' : 'text-[#7c8689]'
+                                        )}
+                                        onClick={() => setCurrentPage(page)}
+                                    >
+                                        {page}
+                                    </Button>
+                                ))}
+
+                                <Button variant="ghost" size="icon" className="h-8 w-8" disabled={currentPage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>
+                                    <ChevronRight className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" disabled={currentPage >= totalPages} onClick={() => setCurrentPage(totalPages)}>
+                                    <ChevronRight className="h-4 w-4" /><ChevronRight className="h-4 w-4 -ml-3" />
+                                </Button>
+                            </div>
+                        </div>
+                    </CardFooter>
+                </Card>
+            </DataGrid>
+
+            {/* Add Note Dialog */}
+            {noteDialogFabId && (
+                <AddNoteDialog
+                    open={!!noteDialogFabId}
+                    fabId={noteDialogFabId}
+                    onClose={() => setNoteDialogFabId(null)}
+                />
+            )}
+        </>
     );
 };
 

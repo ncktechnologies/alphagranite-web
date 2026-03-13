@@ -159,7 +159,7 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
 
                         {/* Planning Section Select */}
                         <FormItem>
-                            <FormLabel>Planning Section</FormLabel>
+                            <FormLabel>Shop Activity.</FormLabel>
                             <FormControl>
                                 <Select value={planningSectionId !== undefined ? String(planningSectionId) : undefined} onValueChange={(v) => setPlanningSectionId(v ? Number(v) : undefined)}>
                                     <SelectTrigger>
