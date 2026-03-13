@@ -32,7 +32,7 @@ import {
     useCreateFabNoteMutation,
 } from '@/store/api/job';
 import { useUpdateShopPlanMutation } from '@/store/api';
-import { useGetWorkstationsQuery } from '@/store/api/workstation';
+import { useGetWorkstationsQuery, useGetWorkStationByPlanningSectionsQuery } from '@/store/api/workstation';
 import { useGetEmployeesQuery } from '@/store/api/employee';
 
 // ----------------------------------------------------------------------
@@ -58,23 +58,23 @@ const TIME_SLOTS = (() => {
 const SEQUENCE_OPTIONS = Array.from({ length: 20 }, (_, i) => i + 1);
 
 const stageMapping: Record<number, { label: string; unit: string; order: number }> = {
-    7: { label: 'CUT',        unit: 'SF', order: 1 },
-    8: { label: 'WJ',         unit: 'LF', order: 2 },
-    9: { label: 'EDGING',     unit: 'LF', order: 3 },
-    2: { label: 'MITER',      unit: 'LF', order: 4 },
-    1: { label: 'CNC',        unit: 'LF', order: 5 },
+    7: { label: 'CUT', unit: 'SF', order: 1 },
+    8: { label: 'WJ', unit: 'LF', order: 2 },
+    9: { label: 'EDGING', unit: 'LF', order: 3 },
+    2: { label: 'MITER', unit: 'LF', order: 4 },
+    1: { label: 'CNC', unit: 'LF', order: 5 },
     6: { label: 'TOUCHUP QA', unit: 'SF', order: 6 },
 };
 
 const noteStageConfig: Record<string, { label: string; color: string }> = {
-    shop_status:        { label: 'Shop Status',        color: 'text-blue-700' },
-    templating:         { label: 'Templating',         color: 'text-blue-700' },
-    pre_draft_review:   { label: 'Pre-Draft Review',   color: 'text-indigo-700' },
-    drafting:           { label: 'Drafting',           color: 'text-green-700' },
-    cut_list:           { label: 'Final Programming',  color: 'text-purple-700' },
-    cutting:            { label: 'Cutting',            color: 'text-orange-700' },
+    shop_status: { label: 'Shop Status', color: 'text-blue-700' },
+    templating: { label: 'Templating', color: 'text-blue-700' },
+    pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
+    drafting: { label: 'Drafting', color: 'text-green-700' },
+    cut_list: { label: 'Final Programming', color: 'text-purple-700' },
+    cutting: { label: 'Cutting', color: 'text-orange-700' },
     install_scheduling: { label: 'Install Scheduling', color: 'text-teal-700' },
-    general:            { label: 'General',            color: 'text-gray-700' },
+    general: { label: 'General', color: 'text-gray-700' },
 };
 
 const parseDateString = (s: string | undefined): Date | undefined => {
@@ -110,9 +110,9 @@ const MiniProgress: React.FC<{ percent: number }> = ({ percent }) => {
     const p = Math.min(percent || 0, 100);
     const color =
         p === 100 ? '#4caf50' :
-        p >= 75   ? '#2196f3' :
-        p >= 50   ? '#ff9800' :
-        p >= 25   ? '#f44336' : '#9e9e9e';
+            p >= 75 ? '#2196f3' :
+                p >= 50 ? '#ff9800' :
+                    p >= 25 ? '#f44336' : '#9e9e9e';
     return (
         <div className="flex items-center gap-2 w-full">
             <div className="flex-1 bg-[#e2e4ed] rounded-full h-[6px] overflow-hidden">
@@ -139,10 +139,10 @@ const InfoRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, v
 const ShopEstDateField: React.FC<{ value: string | undefined; fabId: number; onSaved: () => void }> = ({
     value, fabId, onSaved,
 }) => {
-    const [updateFab]  = useUpdateFabMutation();
-    const [isEditing,  setIsEditing]  = useState(false);
+    const [updateFab] = useUpdateFabMutation();
+    const [isEditing, setIsEditing] = useState(false);
     const [editedDate, setEditedDate] = useState<Date | undefined>(parseDateString(value?.split('T')[0]));
-    const [isSaving,   setIsSaving]   = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => { setEditedDate(parseDateString(value?.split('T')[0])); }, [value]);
 
@@ -211,6 +211,11 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
     const [isSaving, setIsSaving] = useState(false);
 
     const stageInfo = stageMapping[plan.planning_section_id];
+    const { data: workstationData, isLoading: isLoadingWorkstations } = useGetWorkStationByPlanningSectionsQuery(
+        plan.planning_section_id,
+        { skip: !plan.planning_section_id }
+    );
+    const workstationsForSection = workstationData?.workstations || [];
 
     const deriveEndTime = () => {
         if (plan.scheduled_end_date) return parseTimeFromISO(plan.scheduled_end_date);
@@ -226,14 +231,14 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
     };
 
     const buildDraft = () => ({
-        workstation_id:  String(plan.workstation_id  ?? ''),
-        operator_id:     String(plan.operator_id     ?? ''),
-        start_date:      parseDateString(plan.scheduled_start_date?.split('T')[0]),
-        start_time:      parseTimeFromISO(plan.scheduled_start_date),
-        end_time:        deriveEndTime(),
+        workstation_id: String(plan.workstation_id ?? ''),
+        operator_id: String(plan.operator_id ?? ''),
+        start_date: parseDateString(plan.scheduled_start_date?.split('T')[0]),
+        start_time: parseTimeFromISO(plan.scheduled_start_date),
+        end_time: deriveEndTime(),
         work_percentage: String(plan.work_percentage ?? 0),
-        notes:           plan.notes ?? '',
-        sequence:        plan.sequence ?? 1,
+        notes: plan.notes ?? '',
+        sequence: plan.sequence ?? 1,
     });
 
     const [draft, setDraft] = useState(buildDraft);
@@ -244,9 +249,9 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            const dateStr       = draft.start_date ? formatDate(draft.start_date) : '';
+            const dateStr = draft.start_date ? formatDate(draft.start_date) : '';
             const scheduledStart = dateStr && draft.start_time ? `${dateStr}T${draft.start_time}:00` : undefined;
-            const scheduledEnd   = dateStr && draft.end_time   ? `${dateStr}T${draft.end_time}:00`   : undefined;
+            const scheduledEnd = dateStr && draft.end_time ? `${dateStr}T${draft.end_time}:00` : undefined;
 
             const diffMs = scheduledStart && scheduledEnd
                 ? new Date(scheduledEnd).getTime() - new Date(scheduledStart).getTime()
@@ -257,14 +262,14 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
 
             const stageObj: any = {
                 planning_section_id: plan.planning_section_id,
-                workstation_id:      Number(draft.workstation_id) || undefined,
-                operator_ids:        draft.operator_id ? [Number(draft.operator_id)] : undefined,
-                estimated_hours:     estimatedHours,
-                work_percentage:     Number(draft.work_percentage),
-                notes:               draft.notes || undefined,
-                sequence:            Number(draft.sequence) || 1,
+                workstation_id: Number(draft.workstation_id) || undefined,
+                operator_ids: draft.operator_id ? [Number(draft.operator_id)] : undefined,
+                estimated_hours: estimatedHours,
+                work_percentage: Number(draft.work_percentage),
+                notes: draft.notes || undefined,
+                sequence: Number(draft.sequence) || 1,
                 ...(scheduledStart && { scheduled_start: scheduledStart }),
-                ...(scheduledEnd   && { scheduled_end:   scheduledEnd   }),
+                ...(scheduledEnd && { scheduled_end: scheduledEnd }),
             };
 
             await updateShopPlan({ plan_id: Number(plan.id), data: { stage: stageObj } } as any).unwrap();
@@ -272,20 +277,31 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
             setIsEditing(false);
             onSaved();
         } catch {
-            toast.error('Failed to save changes.');
+            // toast.error('Failed to save changes.');
         } finally {
             setIsSaving(false);
         }
     };
 
     const wsName = workstations.find(w => String(w.id) === String(plan.workstation_id))?.name
-                || workstations.find(w => String(w.id) === String(plan.workstation_id))?.workstation_name
-                || '—';
+        || workstations.find(w => String(w.id) === String(plan.workstation_id))?.workstation_name
+        || '—';
     const opName = (() => {
         const emp = employees.find(e => String(e.id) === String(plan.operator_id));
         if (!emp) return '—';
         return `${emp.first_name || emp.name || ''} ${emp.last_name || ''}`.trim() || emp.email || '—';
     })();
+
+    const selectedWorkstation = workstationsForSection.find(w => String(w.id) === draft.workstation_id);
+    const allowedOperatorIds = selectedWorkstation?.operator_ids?.map(String) || [];
+    const filteredEmployees = employees.filter(emp => allowedOperatorIds.includes(String(emp.id)));
+
+    // If current operator is not allowed (e.g., after workstation change), reset it
+    useEffect(() => {
+        if (draft.operator_id && !allowedOperatorIds.includes(draft.operator_id)) {
+            patch({ operator_id: '' });
+        }
+    }, [draft.workstation_id, allowedOperatorIds]);
 
     const planPct = plan.work_percentage || 0;
 
@@ -298,7 +314,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                         className="text-xs font-semibold px-2 py-0.5"
                         style={{
                             backgroundColor: planPct === 100 ? '#dcfce7' : '#f0f4e8',
-                            color:           planPct === 100 ? '#166534' : '#4b6a05',
+                            color: planPct === 100 ? '#166534' : '#4b6a05',
                             border: 'none',
                         }}
                     >
@@ -347,12 +363,12 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                             <Label className="text-xs text-muted-foreground uppercase tracking-wide">Workstation</Label>
                             <Select value={draft.workstation_id} onValueChange={v => patch({ workstation_id: v })}>
                                 <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
-                                    <SelectValue placeholder="Select workstation" />
+                                    <SelectValue placeholder={isLoadingWorkstations ? "Loading..." : "Select workstation"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {workstations.map((ws: any) => (
+                                    {workstationsForSection.map((ws: any) => (
                                         <SelectItem key={ws.id} value={String(ws.id)}>
-                                            {ws.name || ws.workstation_name || `WS ${ws.id}`}
+                                            {ws.name}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -367,7 +383,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                                     <SelectValue placeholder="Select operator" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {employees.map((emp: any) => (
+                                    {filteredEmployees.map((emp: any) => (
                                         <SelectItem key={emp.id} value={String(emp.id)}>
                                             {`${emp.first_name || emp.name || ''} ${emp.last_name || ''}`.trim() || emp.email}
                                         </SelectItem>
@@ -464,7 +480,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                         <Separator className="my-0.5" />
                         <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
                             <InfoRow label="Workstation" value={wsName} />
-                            <InfoRow label="Operator"    value={opName} />
+                            <InfoRow label="Operator" value={opName} />
                             <InfoRow
                                 label="Scheduled Start"
                                 value={plan.scheduled_start_date
@@ -508,10 +524,10 @@ const FabDetailsPage: React.FC = () => {
     const fab = fabResponse?.data ?? fabResponse;
 
     // Fab notes state
-    const [fabNotesOpen,     setFabNotesOpen]     = useState(false);
-    const [showNoteInput,    setShowNoteInput]     = useState(false);
-    const [noteText,         setNoteText]          = useState('');
-    const [isSubmittingNote, setIsSubmittingNote]  = useState(false);
+    const [fabNotesOpen, setFabNotesOpen] = useState(false);
+    const [showNoteInput, setShowNoteInput] = useState(false);
+    const [noteText, setNoteText] = useState('');
+    const [isSubmittingNote, setIsSubmittingNote] = useState(false);
 
     const handleAddNote = async () => {
         if (!noteText.trim()) { toast.warning('Note cannot be empty.'); return; }
@@ -539,7 +555,7 @@ const FabDetailsPage: React.FC = () => {
                         <div className="flex justify-between"><Skeleton className="h-6 w-40" /><Skeleton className="h-8 w-24" /></div>
                         <Card><CardHeader><Skeleton className="h-6 w-40" /></CardHeader><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
                         <div className="grid grid-cols-3 gap-4">
-                            {[1,2,3].map(i => <Skeleton key={i} className="h-64 w-full rounded-lg" />)}
+                            {[1, 2, 3].map(i => <Skeleton key={i} className="h-64 w-full rounded-lg" />)}
                         </div>
                     </div>
                     <Skeleton className="h-[600px] w-full" />
@@ -581,23 +597,25 @@ const FabDetailsPage: React.FC = () => {
     const fabNotes: any[] = fab.fab_notes || [];
 
     const jobInfo = [
-        { label: 'FAB ID',          value: String(fab.id) },
-        { label: 'FAB Type',        value: <span className="uppercase">{fab.fab_type || 'N/A'}</span> },
-        { label: 'Account',         value: fab.account_name || 'N/A' },
-        { label: 'Job Name',        value: fab.job_details?.name || 'N/A' },
-        { label: 'Job #',           value: fab.job_details?.id
-            ? <Link to={`/job/details/${fab.job_details.id}`} className="text-primary hover:underline">{fab.job_details.job_number}</Link>
-            : (fab.job_details?.job_number || 'N/A') },
-        { label: 'Input Area',      value: fab.input_area || 'N/A' },
-        { label: 'Stone Type',      value: fab.stone_type_name || 'N/A' },
-        { label: 'Stone Color',     value: fab.stone_color_name || 'N/A' },
+        { label: 'FAB ID', value: String(fab.id) },
+        { label: 'FAB Type', value: <span className="uppercase">{fab.fab_type || 'N/A'}</span> },
+        { label: 'Account', value: fab.account_name || 'N/A' },
+        { label: 'Job Name', value: fab.job_details?.name || 'N/A' },
+        {
+            label: 'Job #', value: fab.job_details?.id
+                ? <Link to={`/job/details/${fab.job_details.id}`} className="text-primary hover:underline">{fab.job_details.job_number}</Link>
+                : (fab.job_details?.job_number || 'N/A')
+        },
+        { label: 'Input Area', value: fab.input_area || 'N/A' },
+        { label: 'Stone Type', value: fab.stone_type_name || 'N/A' },
+        { label: 'Stone Color', value: fab.stone_color_name || 'N/A' },
         { label: 'Stone Thickness', value: fab.stone_thickness_value || 'N/A' },
-        { label: 'Edge',            value: fab.edge_name || 'N/A' },
-        { label: 'No. of Pieces',   value: String(fab.no_of_pieces || 0) },
-        { label: 'Total Sq Ft',     value: fab.total_sqft ? `${Number(fab.total_sqft).toFixed(1)} SF` : 'N/A' },
-        { label: 'Sales Person',    value: fab.sales_person_name || 'N/A' },
-        { label: 'Current Stage',   value: fab.current_stage || 'N/A' },
-        { label: '% Complete',      value: `${(fab.percent_complete || 0).toFixed(1)}%` },
+        { label: 'Edge', value: fab.edge_name || 'N/A' },
+        { label: 'No. of Pieces', value: String(fab.no_of_pieces || 0) },
+        { label: 'Total Sq Ft', value: fab.total_sqft ? `${Number(fab.total_sqft).toFixed(1)} SF` : 'N/A' },
+        { label: 'Sales Person', value: fab.sales_person_name || 'N/A' },
+        { label: 'Current Stage', value: fab.current_stage || 'N/A' },
+        { label: '% Complete', value: `${(fab.percent_complete || 0).toFixed(1)}%` },
     ];
 
     return (
@@ -614,7 +632,7 @@ const FabDetailsPage: React.FC = () => {
                 {/* LEFT 2/3 */}
                 <div className="lg:col-span-2 space-y-6">
 
-                   
+
 
                     {/* Job Information Card */}
                     <Card>
@@ -796,7 +814,7 @@ const FabDetailsPage: React.FC = () => {
                         </CardContent>
                     </Card>
 
-                   
+
 
                     {/*  Add Note card */}
                     {/* <Card className="border-none rounded-none">

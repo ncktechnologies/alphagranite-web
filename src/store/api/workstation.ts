@@ -164,6 +164,16 @@ export const workstationApi = createApi({
         transformResponse: (response: any) => response.data || response,
         providesTags: ["Workstation"],
       }),
+
+      getWorkStationByPlanningSections: build.query<PlanningSection[], void>({
+        query: (id) => ({
+          url: `/api/v1/planning-section/${id}/workstations`,
+          method: "get",
+        }),
+        transformResponse: (response: any) => response.data || response,
+        providesTags: ["Workstation"],
+      }),
+
     };
   },
 });
@@ -179,4 +189,5 @@ export const {
   useUpdateWorkstationMutation,
   useDeleteWorkstationMutation,
   useGetPlanningSectionsQuery,
+  useGetWorkStationByPlanningSectionsQuery,
 } = workstationApi;

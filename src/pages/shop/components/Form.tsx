@@ -104,20 +104,20 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
     async function onSubmit(values: WorkstationFormType) {
         setIsSubmitting(true);
         try {
-            // Backend expects form-encoded data (multipart/form-data)
-            const formData = new FormData();
-            formData.append('planning_section_id', String(planningSectionId ?? ''));
-            formData.append('name', values.workstationName);
-            formData.append('status_id', String(1));
-            formData.append('assigned_operatives', selectedUsers.join(',') || '');
-            if (values.other) formData.append('machine_statuses', values.other);
+            const payload = {
+                planning_section_id: planningSectionId ?? null,
+                name: values.workstationName,
+                status_id: 1,
+                assigned_operatives: selectedUsers.map(Number),
+                ...(values.other ? { machine_statuses: values.other } : {}),
+            };
 
             if (mode === 'new') {
-                await createWorkstation(formData as any).unwrap();
+                await createWorkstation(payload as any).unwrap();
                 toast.success('Workstation created');
             } else if (mode === 'edit' && role) {
                 const id = Number(role.id);
-                await updateWorkstation({ id, data: formData as any }).unwrap();
+                await updateWorkstation({ id, data: payload as any }).unwrap();
                 toast.success('Workstation updated');
             }
 
@@ -131,97 +131,97 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
     }
 
     return (
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-xl font-semibold text-black">
-                            {mode === 'new' ? 'New Workstation:' : `Edit Workstation:: ${role?.workstationName}`}
-                        </h2>
-                        <Button variant="ghost" size="sm" onClick={onCancel}>
-                            <X className="w-4 h-4" />
-                        </Button>
-                    </div>
-                    {/* <div className=" sp"> */}
-                        <FormField
-                            control={form.control}
-                            name="workstationName"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Workstation Name *</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="e.g., Cutting" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        {/* Planning Section Select */}
+                <div className="flex items-center justify-between">
+                    <h2 className="text-xl font-semibold text-black">
+                        {mode === 'new' ? 'New Workstation:' : `Edit Workstation:: ${role?.workstationName}`}
+                    </h2>
+                    <Button variant="ghost" size="sm" onClick={onCancel}>
+                        <X className="w-4 h-4" />
+                    </Button>
+                </div>
+                {/* <div className=" sp"> */}
+                <FormField
+                    control={form.control}
+                    name="workstationName"
+                    render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Shop Activity.</FormLabel>
+                            <FormLabel>Workstation Name *</FormLabel>
                             <FormControl>
-                                <Select value={planningSectionId !== undefined ? String(planningSectionId) : undefined} onValueChange={(v) => setPlanningSectionId(v ? Number(v) : undefined)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder={isPlanningSectionsLoading ? 'Loading sections...' : 'Select planning section'} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {planningSections.map((ps: any) => (
-                                            <SelectItem key={ps.id} value={String(ps.id)}>{ps.plan_name}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <Input placeholder="e.g., Cutting" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                {/* Planning Section Select */}
+                <FormItem>
+                    <FormLabel>Shop Activity.</FormLabel>
+                    <FormControl>
+                        <Select value={planningSectionId !== undefined ? String(planningSectionId) : undefined} onValueChange={(v) => setPlanningSectionId(v ? Number(v) : undefined)}>
+                            <SelectTrigger>
+                                <SelectValue placeholder={isPlanningSectionsLoading ? 'Loading sections...' : 'Select planning section'} />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {planningSections.map((ps: any) => (
+                                    <SelectItem key={ps.id} value={String(ps.id)}>{ps.plan_name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </FormControl>
+                </FormItem>
+
+
+                <FormField
+                    control={form.control}
+                    name="other"
+                    render={({ field }) => (
+                        <FormItem className="col-span-2">
+                            <FormLabel>Other</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Type here..." {...field} />
                             </FormControl>
                         </FormItem>
+                    )}
+                />
+                {/* </div> */}
 
-                       
-                        <FormField
-                            control={form.control}
-                            name="other"
-                            render={({ field }) => (
-                                <FormItem className="col-span-2">
-                                    <FormLabel>Other</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="Type here..." {...field} />
-                                    </FormControl>
-                                </FormItem>
-                            )}
-                        />
+                {/* Assign Operator */}
+                <div>
+                    {/* <FormLabel>Assign Operator</FormLabel> */}
+                    {/* <div className="border rounded-md p-3"> */}
+                    <UserAssignment
+                        selectedUsers={selectedUsers}
+                        onUserToggle={handleUserToggle}
+                    />
                     {/* </div> */}
+                </div>
 
-                    {/* Assign Operator */}
-                    <div>
-                        {/* <FormLabel>Assign Operator</FormLabel> */}
-                        {/* <div className="border rounded-md p-3"> */}
-                            <UserAssignment
-                                selectedUsers={selectedUsers}
-                                onUserToggle={handleUserToggle}
-                            />
-                        {/* </div> */}
-                    </div>
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                    <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+                        Cancel
+                    </Button>
+                    <Button
+                        type="submit"
+                        variant="primary"
+                        disabled={isSubmitting}
+                        className="justify-center"
+                    >
+                        {isSubmitting ? (
+                            <span className="flex items-center gap-2">
+                                <LoaderCircleIcon className="h-4 w-4 animate-spin" />
+                                Saving...
+                            </span>
+                        ) : (
+                            'Save Workstation'
+                        )}
+                    </Button>
+                </div>
+            </form>
+        </Form>
 
-                    <div className="flex justify-end gap-3 pt-4 border-t">
-                        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
-                            Cancel
-                        </Button>
-                        <Button
-                            type="submit"
-                            variant="primary"
-                            disabled={isSubmitting}
-                            className="justify-center"
-                        >
-                            {isSubmitting ? (
-                                <span className="flex items-center gap-2">
-                                    <LoaderCircleIcon className="h-4 w-4 animate-spin" />
-                                    Saving...
-                                </span>
-                            ) : (
-                                'Save Workstation'
-                            )}
-                        </Button>
-                    </div>
-                </form>
-            </Form>
-        
     );
 };

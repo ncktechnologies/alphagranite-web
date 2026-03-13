@@ -16,25 +16,36 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useCreateShopPlansMutation, useCreateShopSuggestionMutation, useUpdateShopPlanMutation } from '@/store/api';
-import { useGetWorkstationsQuery, useGetPlanningSectionsQuery } from '@/store/api/workstation';
+import { useGetPlanningSectionsQuery } from '@/store/api/workstation';
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetFabsQuery } from '@/store/api/job';
+import { useGetWorkStationByPlanningSectionsQuery } from '@/store/api/workstation';  // <-- new hook
 
 // Sequence options 1‑20
 const SEQUENCE_OPTIONS = Array.from({ length: 20 }, (_, i) => i + 1);
 
-interface CreatePlanPageProps {
+// 15-minute time slots
+const TIME_SLOTS = (() => {
+  const slots: { value: string; label: string }[] = [];
+  for (let h = 6; h <= 22; h++) {
+    for (const m of [0, 15, 30, 45]) {
+      if (h === 22 && m > 0) break;
+      const hh = String(h).padStart(2, '0');
+      const mm = String(m).padStart(2, '0');
+      const value = `${hh}:${mm}`;
+      const period = h < 12 ? 'AM' : 'PM';
+      const displayH = h % 12 === 0 ? 12 : h % 12;
+      const label = `${displayH}:${mm} ${period}`;
+      slots.push({ value, label });
+    }
+  }
+  return slots;
+})();
+
+interface CreateAutoPlanPageProps {
   onBack?: () => void;
   selectedDate?: Date | null;
   selectedTimeSlot?: string | null;
@@ -46,21 +57,14 @@ interface CreatePlanPageProps {
 
 // Maps a fab object's fields to planning_section_id
 const FAB_STAGE_FIELDS: { section_id: number; field: string; label: string }[] = [
-  { section_id: 7, field: 'total_sqft',    label: 'Cut'     },
-  { section_id: 8, field: 'wj_linft',      label: 'WJ'      },
-  { section_id: 9, field: 'edging_linft',  label: 'Edging'  },
-  { section_id: 2, field: 'miter_linft',   label: 'Miter'   },
-  { section_id: 1, field: 'cnc_linft',     label: 'CNC'     },
+  { section_id: 7, field: 'total_sqft', label: 'Cut' },
+  { section_id: 8, field: 'wj_linft', label: 'WJ' },
+  { section_id: 9, field: 'edging_linft', label: 'Edging' },
+  { section_id: 2, field: 'miter_linft', label: 'Miter' },
+  { section_id: 1, field: 'cnc_linft', label: 'CNC' },
 ];
 
-function getActiveStagesFromFab(fab: any): { section_id: number; label: string }[] {
-  return FAB_STAGE_FIELDS.filter(s => {
-    const val = fab?.[s.field];
-    return typeof val === 'number' && val > 0;
-  });
-}
-
-const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
+const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   onBack,
   selectedDate: propSelectedDate,
   selectedTimeSlot,
@@ -75,6 +79,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
   const effectivePrefillFabId = propPrefillFabId || urlFabId || '';
 
   const [proposals, setProposals] = useState<Record<number, any[]>>({});
+  const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
 
   const emptyEntry = (opts?: { date?: Date; section_id?: number; stageName?: string; fab_id?: string }) => ({
     id: undefined as number | undefined,
@@ -84,7 +89,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
     notes: '',
     estimated_hours: '' as string,
     start_time: '' as string,
-    end_time:   '' as string,
+    end_time: '' as string,
     planning_section_id: opts?.section_id !== undefined ? String(opts.section_id) : undefined as string | undefined,
     stageName: opts?.stageName || '',
     date: opts?.date || propSelectedDate || undefined as Date | undefined,
@@ -92,14 +97,10 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
   });
 
   const [entries, setEntries] = useState(() => [emptyEntry()]);
-  const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
 
   const [createShopPlan, { isLoading }] = useCreateShopPlansMutation();
   const [updateShopPlan] = useUpdateShopPlanMutation();
   const [createShopPlansSuggestion, { isLoading: isAutoScheduling }] = useCreateShopSuggestionMutation();
-
-  const { data: workstationsData } = useGetWorkstationsQuery();
-  const workstations = workstationsData?.data || (Array.isArray(workstationsData) ? workstationsData : []);
 
   const { data: planningSectionsData } = useGetPlanningSectionsQuery();
   const planningSections = planningSectionsData?.data || (Array.isArray(planningSectionsData) ? planningSectionsData : planningSectionsData || []);
@@ -119,15 +120,17 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
   }, [allFabsData]);
 
   const selectedFabId = useMemo(() => entries[0]?.fab_id, [entries]);
-
   const selectedFab = useMemo(() => {
     if (!allFabsData || !selectedFabId) return null;
     const fabs = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
-    return fabs.find((fab: any) => String(fab.id) === selectedFabId) || null;
+    return fabs.find((fab: any) => String(fab.id) === selectedFabId);
   }, [allFabsData, selectedFabId]);
+
+  const employeesLoaded = employees.length > 0;
 
   useEffect(() => {
     if (selectedEvent || !selectedFab) return;
+
     const activeStages = getActiveStagesFromFab(selectedFab);
     if (activeStages.length === 0) {
       setEntries([emptyEntry({ fab_id: String(selectedFab.id) })]);
@@ -143,22 +146,29 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
 
   useEffect(() => {
     if (!selectedEvent) return;
+    if (!employeesLoaded) return;
+
     const ev: any = selectedEvent;
+    const startDate = new Date(ev.scheduled_start_date);
+    const endTime = ev.estimated_hours
+      ? format(new Date(startDate.getTime() + ev.estimated_hours * 3_600_000), 'HH:mm')
+      : '';
+
     setEntries([{
       id: ev.id,
-      fab_id: String(ev.fab_id || effectivePrefillFabId || ''),
-      workstation_id: String(ev.workstation_id || ''),
-      operator_id: String(ev.operator_id || ''),
-      notes: ev.notes || '',
-      estimated_hours: String(ev.estimated_hours || ''),
-      start_time: ev.scheduled_start_date ? format(new Date(ev.scheduled_start_date), 'HH:mm') : '',
-      end_time:   ev.scheduled_end_date   ? format(new Date(ev.scheduled_end_date),   'HH:mm') : '',
-      planning_section_id: String(ev.planning_section_id || '') || undefined,
+      fab_id: String(ev.fab_id ?? ''),
+      workstation_id: String(ev.workstation_id ?? ''),
+      operator_id: String(ev.operator_id ?? ''),
+      notes: ev.notes ?? '',
+      estimated_hours: String(ev.estimated_hours ?? ''),
+      start_time: format(startDate, 'HH:mm'),
+      end_time: endTime,
+      planning_section_id: ev.planning_section_id != null ? String(ev.planning_section_id) : undefined,
       stageName: ev.stage_name || '',
-      date: new Date(ev.scheduled_start_date),
+      date: startDate,
       sequence: ev.sequence ? String(ev.sequence) : '1',
     }]);
-  }, [selectedEvent, selectedTimeSlot, effectivePrefillFabId]);
+  }, [selectedEvent, employeesLoaded]);
 
   const addEntry = () =>
     setEntries(p => {
@@ -186,8 +196,8 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     for (const entry of entries) {
-      if (!entry.fab_id)         { toast.error('FAB ID is required'); return; }
-      if (!entry.operator_id)    { toast.error('Operator is required'); return; }
+      if (!entry.fab_id) { toast.error('FAB ID is required'); return; }
+      if (!entry.operator_id) { toast.error('Operator is required'); return; }
       if (!entry.workstation_id) { toast.error('Workstation is required'); return; }
       if (!entry.planning_section_id) { toast.error('Planning section is required'); return; }
       if (!entry.estimated_hours || parseFloat(entry.estimated_hours as string) <= 0) {
@@ -217,39 +227,39 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
         const groupEntries = groups[fabId];
         let totalEst = 0;
         const stages = groupEntries.map(entry => {
-          const scheduledDate  = format(entry.date!, 'yyyy-MM-dd');
+          const scheduledDate = format(entry.date!, 'yyyy-MM-dd');
           const scheduledStart = entry.start_time ? `${scheduledDate}T${entry.start_time}:00` : `${scheduledDate}T00:00:00`;
-          const scheduledEnd   = entry.end_time   ? `${scheduledDate}T${entry.end_time}:00`   : undefined;
+          const scheduledEnd = entry.end_time ? `${scheduledDate}T${entry.end_time}:00` : undefined;
           const estimatedHours = parseFloat(entry.estimated_hours as string) || 0;
           totalEst += estimatedHours;
           return {
-            workstation_id:      Number(entry.workstation_id),
+            workstation_id: Number(entry.workstation_id),
             planning_section_id: Number(entry.planning_section_id) || (planningSections[0]?.id ?? 0),
-            operator_ids:        [Number(entry.operator_id)],
-            estimated_hours:     estimatedHours,
-            scheduled_start:     scheduledStart,
+            operator_ids: [Number(entry.operator_id)],
+            estimated_hours: estimatedHours,
+            scheduled_start: scheduledStart,
             ...(scheduledEnd && { scheduled_end: scheduledEnd }),
-            notes:               entry.notes || undefined,
-            sequence:            Number(entry.sequence) || 1,
+            notes: entry.notes || undefined,
+            sequence: Number(entry.sequence) || 1,
           };
         });
         await createShopPlan({ fab_id: Number(fabId), estimated_hours: totalEst, status_id: 1, stages } as any).unwrap();
       }
 
       for (const entry of updates) {
-        const scheduledDate  = format(entry.date!, 'yyyy-MM-dd');
+        const scheduledDate = format(entry.date!, 'yyyy-MM-dd');
         const scheduledStart = entry.start_time ? `${scheduledDate}T${entry.start_time}:00` : `${scheduledDate}T00:00:00`;
-        const scheduledEnd   = entry.end_time   ? `${scheduledDate}T${entry.end_time}:00`   : undefined;
+        const scheduledEnd = entry.end_time ? `${scheduledDate}T${entry.end_time}:00` : undefined;
         const estimatedHours = parseFloat(entry.estimated_hours as string) || 0;
         const stageObj: any = {
-          workstation_id:      Number(entry.workstation_id),
+          workstation_id: Number(entry.workstation_id),
           planning_section_id: Number(entry.planning_section_id) || (planningSections[0]?.id ?? 0),
-          operator_ids:        [Number(entry.operator_id)],
-          estimated_hours:     estimatedHours,
-          scheduled_start:     scheduledStart,
+          operator_ids: [Number(entry.operator_id)],
+          estimated_hours: estimatedHours,
+          scheduled_start: scheduledStart,
           ...(scheduledEnd && { scheduled_end: scheduledEnd }),
-          notes:               entry.notes || undefined,
-          sequence:            Number(entry.sequence) || 1,
+          notes: entry.notes || undefined,
+          sequence: Number(entry.sequence) || 1,
         };
         await updateShopPlan({ plan_id: Number(entry.id), data: { stage: stageObj } } as any).unwrap();
       }
@@ -259,14 +269,16 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
       handleBack();
     } catch (error: any) {
       console.error('Error creating/updating event:', error);
+      const errorMsg = error?.data?.detail?.message || 'Failed to create/update Plan';
+      toast.error(errorMsg);
     }
   };
 
   const handleAutoPopulate = async () => {
     for (const entry of entries) {
-      if (!entry.operator_id)   { toast.error('Please select an operator for each stage'); return; }
-      if (!entry.workstation_id){ toast.error('Please select a workstation for each stage'); return; }
-      if (!entry.planning_section_id){ toast.error('Please select a planning section for each stage'); return; }
+      if (!entry.operator_id) { toast.error('Please select an operator for each stage'); return; }
+      if (!entry.workstation_id) { toast.error('Please select a workstation for each stage'); return; }
+      if (!entry.planning_section_id) { toast.error('Please select a planning section for each stage'); return; }
       if (!entry.estimated_hours || parseFloat(entry.estimated_hours as string) <= 0) {
         toast.error('Estimated hours is required for each stage before auto-populating');
         return;
@@ -277,13 +289,13 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
       const payload = {
         requests: entries.map(entry => ({
           planning_section_id: Number(entry.planning_section_id),
-          operator_id:         Number(entry.operator_id),
-          workstation_id:      Number(entry.workstation_id),
-          estimated_hours:     parseFloat(entry.estimated_hours as string) ,
+          operator_id: Number(entry.operator_id),
+          workstation_id: Number(entry.workstation_id),
+          estimated_hours: parseFloat(entry.estimated_hours as string),
         })),
-        start_from:                new Date().toISOString(),
-        slot_minutes:              30,
-        search_horizon_days:       30,
+        start_from: new Date().toISOString(),
+        slot_minutes: 30,
+        search_horizon_days: 30,
         max_proposals_per_request: 3,
       };
 
@@ -311,12 +323,12 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
           const first = newProposals[idx]?.[0];
           if (!first) return entry;
           const start = new Date(first.start);
-          const end   = new Date(first.end);
+          const end = new Date(first.end);
           return {
             ...entry,
-            date:       start,
+            date: start,
             start_time: format(start, 'HH:mm'),
-            end_time:   format(end,   'HH:mm'),
+            end_time: format(end, 'HH:mm'),
           };
         })
       );
@@ -324,12 +336,14 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
       toast.success('Earliest slots applied — pick an alternative below each stage if needed');
     } catch (error: any) {
       console.error('Auto-populate error:', error);
+      const errorMsg = error?.data?.detail?.message || 'Failed to fetch available slots';
+      toast.error(errorMsg);
     }
   };
 
   const applyProposal = (entryIdx: number, proposal: { start: string; end: string }) => {
     const start = new Date(proposal.start);
-    const end   = new Date(proposal.end);
+    const end = new Date(proposal.end);
     setEntries(prev =>
       prev.map((entry, idx) =>
         idx === entryIdx
@@ -349,9 +363,15 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
   };
 
   const isEditing = !!selectedEvent;
-
+  function getActiveStagesFromFab(fab: any): { section_id: number; label: string }[] {
+    return FAB_STAGE_FIELDS.filter(s => {
+      const val = fab?.[s.field];
+      return typeof val === 'number' && val > 0;
+    });
+  }
   return (
     <div className="bg-white min-h-screen">
+      {/* Page Header */}
       <div className="border-b border-[#dfdfdf]">
         <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
           <div className="flex items-center gap-4">
@@ -382,9 +402,9 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
         </div>
       </div>
 
+      {/* Form Content */}
       <div className="px-10 py-8 max-w-4xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-6">
-
           {/* FAB selector */}
           <Card className="border border-[#ecedf0] rounded-[12px]">
             <CardContent className="pt-5">
@@ -470,6 +490,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
                   </div>
                 </div>
 
+                {/* Stage value pills */}
                 <div className="mt-4 flex flex-wrap gap-2">
                   {FAB_STAGE_FIELDS.map(s => {
                     const val = selectedFab?.[s.field];
@@ -500,13 +521,32 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
 
           {/* Plan entries */}
           {entries.map((entry, idx) => {
+            // Fetch workstations for this planning section
+            const { data: workstationData, isLoading: isLoadingWorkstations } = useGetWorkStationByPlanningSectionsQuery(
+              entry.planning_section_id ? Number(entry.planning_section_id) : undefined,
+              { skip: !entry.planning_section_id }
+            );
+            const workstationsForSection = workstationData?.workstations || [];
+
+            // Filter operators based on selected workstation
+            const selectedWorkstation = workstationsForSection.find(w => String(w.id) === entry.workstation_id);
+            const allowedOperatorIds = selectedWorkstation?.operator_ids?.map(String) || [];
+            const filteredEmployees = employees.filter(emp => allowedOperatorIds.includes(String(emp.id)));
+
+            // Reset operator if it becomes invalid
+            useEffect(() => {
+              if (entry.operator_id && !allowedOperatorIds.includes(entry.operator_id)) {
+                updateEntry(idx, { operator_id: '' });
+              }
+            }, [entry.workstation_id, allowedOperatorIds]);
+
             const stageName = getStageName(entry);
             const isExpanded = expandedCards[idx] !== false;
             const hasSlot = !!(entry.date && entry.start_time && entry.end_time);
 
             return (
               <Card key={idx} className="border border-[#ecedf0] rounded-[12px] overflow-hidden">
-                {/* Header with sequence dropdown */}
+                {/* Header */}
                 <CardHeader
                   className="pb-3 border-b border-[#ecedf0] cursor-pointer select-none"
                   onClick={() => setExpandedCards(prev => ({ ...prev, [idx]: !isExpanded }))}
@@ -535,7 +575,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
-                      {/* Sequence dropdown (always visible) */}
+                      {/* Sequence dropdown */}
                       <Select
                         value={entry.sequence}
                         onValueChange={value => updateEntry(idx, { sequence: value })}
@@ -563,11 +603,10 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
                   </div>
                 </CardHeader>
 
-                {/* Collapsible body */}
+                {/* Collapsible Body */}
                 {isExpanded && (
                   <CardContent className="pt-5 space-y-5">
-
-                    {/* Row 1: Planning Section + Estimated Hours (2 columns) */}
+                    {/* Planning Section + Estimated Hours */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label className="text-[13px] text-[#4b545d] font-semibold">Shop Activity</Label>
@@ -576,7 +615,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
                           onValueChange={value => {
                             const section = planningSections.find((ps: any) => String(ps.id) === value);
                             const name = section?.name || section?.plan_name || section?.title || '';
-                            updateEntry(idx, { planning_section_id: value, stageName: name });
+                            updateEntry(idx, { planning_section_id: value, stageName: name, workstation_id: '', operator_id: '' });
                           }}
                         >
                           <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
@@ -606,47 +645,65 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
                       </div>
                     </div>
 
-                    {/* Row 2: Workstation + Operator */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label className="text-[13px] text-[#4b545d] font-semibold">Workstation *</Label>
-                        <Select
-                          value={entry.workstation_id}
-                          onValueChange={value => updateEntry(idx, { workstation_id: value })}
-                        >
-                          <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
-                            <SelectValue placeholder="Select workstation" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {workstations.map((ws: any) => (
-                              <SelectItem key={ws.id} value={String(ws.id)}>
-                                {ws.name || ws.workstation_name || `WS ${ws.id}`}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label className="text-[13px] text-[#4b545d] font-semibold">Operator *</Label>
-                        <Select
-                          value={entry.operator_id}
-                          onValueChange={value => updateEntry(idx, { operator_id: value })}
-                        >
-                          <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
-                            <SelectValue placeholder="Select operator" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {employees.map((emp: any) => (
-                              <SelectItem key={emp.id} value={String(emp.id)}>
-                                {`${emp.first_name || emp.name || ''} ${emp.last_name || ''}`.trim() || emp.email}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
+                    {/* Workstation */}
+                    <div>
+                      <Label className="text-[13px] text-[#4b545d] font-semibold">Workstation *</Label>
+                      <Select
+                        value={entry.workstation_id}
+                        onValueChange={value => updateEntry(idx, { workstation_id: value, operator_id: '' })}
+                        disabled={!entry.planning_section_id || isLoadingWorkstations}
+                      >
+                        <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                          <SelectValue
+                            placeholder={
+                              isLoadingWorkstations
+                                ? "Loading workstations..."
+                                : !entry.planning_section_id
+                                  ? "Select a section first"
+                                  : "Select workstation"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {workstationsForSection.map((ws: any) => (
+                            <SelectItem key={ws.id} value={String(ws.id)}>
+                              {ws.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
-                    {/* Row 3: Date + Scheduled time */}
+                    {/* Operator */}
+                    <div>
+                      <Label className="text-[13px] text-[#4b545d] font-semibold">Operator *</Label>
+                      <Select
+                        value={entry.operator_id}
+                        onValueChange={value => updateEntry(idx, { operator_id: value })}
+                        disabled={!entry.workstation_id || filteredEmployees.length === 0}
+                      >
+                        <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                          <SelectValue
+                            placeholder={
+                              !entry.workstation_id
+                                ? "Select a workstation first"
+                                : filteredEmployees.length === 0
+                                  ? "No operators assigned"
+                                  : "Select operator"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {filteredEmployees.map((emp: any) => (
+                            <SelectItem key={emp.id} value={String(emp.id)}>
+                              {`${emp.first_name || emp.name || ''} ${emp.last_name || ''}`.trim() || emp.email}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Date */}
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label className="text-[13px] text-[#4b545d] font-semibold">Date</Label>
@@ -698,7 +755,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
                         <div className="flex flex-wrap gap-2">
                           {proposals[idx].map((proposal: any, pIdx: number) => {
                             const start = new Date(proposal.start || proposal.scheduled_start);
-                            const end   = new Date(proposal.end   || proposal.scheduled_end);
+                            const end = new Date(proposal.end || proposal.scheduled_end);
                             const isActive =
                               entry.start_time === format(start, 'HH:mm') &&
                               entry.date && format(entry.date, 'yyyy-MM-dd') === format(start, 'yyyy-MM-dd');
@@ -732,13 +789,13 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
                         className="mt-2 min-h-[80px] border-[#e2e4ed] rounded-[6px] text-[13px]"
                       />
                     </div>
-
                   </CardContent>
                 )}
               </Card>
             );
           })}
 
+          {/* Add another stage */}
           <button
             type="button"
             onClick={addEntry}
@@ -748,6 +805,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
             <span className="text-[14px] font-semibold">Add Another Stage</span>
           </button>
 
+          {/* Auto-populate button */}
           <button
             type="button"
             onClick={handleAutoPopulate}
@@ -767,6 +825,7 @@ const CreateAutoPlanPage: React.FC<CreatePlanPageProps> = ({
             )}
           </button>
 
+          {/* Footer actions */}
           <div className="flex items-center gap-3 pt-2 pb-8">
             <button
               type="button"
