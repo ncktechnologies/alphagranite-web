@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft, Pencil } from 'lucide-react';
 import { FileGallery, type FileSource, type UnifiedFile } from '@/pages/jobs/components/FileGallery';
 import { FileViewer } from '../drafters/components';
+import { BackButton } from '@/components/common/BackButton';
 
 export function SalesDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -22,29 +23,29 @@ export function SalesDetailsPage() {
   // ── Job info rows ──────────────────────────────────────────────────────
   const jobInfo = fab
     ? [
-        { label: 'FAB ID',          value: String(fab.id) },
-        { label: 'FAB Type',        value: fab.fab_type },
-        { label: 'Account',         value: fab.account_name },
-        { label: 'Job name',        value: fab.job_details?.name },
-        {
-          label: 'Job #',
-          value: (
-            <Link
-              to={`/job/details/${fab.job_details?.id}`}
-              className="text-primary hover:underline"
-            >
-              {fab.job_details?.job_number}
-            </Link>
-          ),
-        },
-        { label: 'Area (s)',         value: fab.input_area },
-        { label: 'Stone type',       value: fab.stone_type_name || 'N/A' },
-        { label: 'Stone color',      value: fab.stone_color_name || 'N/A' },
-        { label: 'Stone thickness',  value: fab.stone_thickness_value || 'N/A' },
-        { label: 'Edge',             value: fab.edge_name || 'N/A' },
-        { label: 'Total square ft',  value: String(fab.total_sqft) },
-        { label: 'Notes',            value: fab.templating_notes?.join(', ') || 'N/A' },
-      ]
+      { label: 'FAB ID', value: String(fab.id) },
+      { label: 'FAB Type', value: fab.fab_type },
+      { label: 'Account', value: fab.account_name },
+      { label: 'Job name', value: fab.job_details?.name },
+      {
+        label: 'Job #',
+        value: (
+          <Link
+            to={`/job/details/${fab.job_details?.id}`}
+            className="text-primary hover:underline"
+          >
+            {fab.job_details?.job_number}
+          </Link>
+        ),
+      },
+      { label: 'Area (s)', value: fab.input_area },
+      { label: 'Stone type', value: fab.stone_type_name || 'N/A' },
+      { label: 'Stone color', value: fab.stone_color_name || 'N/A' },
+      { label: 'Stone thickness', value: fab.stone_thickness_value || 'N/A' },
+      { label: 'Edge', value: fab.edge_name || 'N/A' },
+      { label: 'Total square ft', value: String(fab.total_sqft) },
+      { label: 'Notes', value: fab.templating_notes?.join(', ') || 'N/A' },
+    ]
     : [];
 
   // ── Build file sources from actual API shape ───────────────────────────
@@ -61,15 +62,15 @@ export function SalesDetailsPage() {
     // Helper to map a raw file array to UnifiedFile[]
     const mapFiles = (files: any[], stage: string, uploadedBy?: string): UnifiedFile[] =>
       (files ?? []).map((f): UnifiedFile => ({
-        id:         String(f.id),
-        name:       f.name || f.filename || `File_${f.id}`,
-        size:       parseInt(f.file_size) || f.size || 0,
-        type:       f.file_type || f.mime_type || 'application/octet-stream',
-        url:        f.file_url || f.url || '',
+        id: String(f.id),
+        name: f.name || f.filename || `File_${f.id}`,
+        size: parseInt(f.file_size) || f.size || 0,
+        type: f.file_type || f.mime_type || 'application/octet-stream',
+        url: f.file_url || f.url || '',
         stage,
         uploadedBy,
         uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
-        _raw:       f,
+        _raw: f,
       }));
 
     // 1. Drafting files  →  fab.draft_data.files
@@ -190,6 +191,8 @@ export function SalesDetailsPage() {
           <h1 className="text-2xl font-semibold">FAB ID: {fab?.id}</h1>
           <p className="text-sm text-muted-foreground">Review fabrication details</p>
         </div>
+        <BackButton label='back' />
+
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">

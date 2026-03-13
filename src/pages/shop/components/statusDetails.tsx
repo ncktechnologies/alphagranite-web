@@ -32,6 +32,7 @@ import {
 import { useUpdateShopPlanMutation } from '@/store/api';
 import { useGetWorkstationsQuery, useGetWorkStationByPlanningSectionsQuery } from '@/store/api/workstation';
 import { useGetEmployeesQuery } from '@/store/api/employee';
+import { BackButton } from '@/components/common/BackButton';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants & Helpers
@@ -56,23 +57,23 @@ const TIME_SLOTS = (() => {
 const SEQUENCE_OPTIONS = Array.from({ length: 20 }, (_, i) => i + 1);
 
 const stageMapping: Record<number, { label: string; unit: string; order: number }> = {
-    7: { label: 'CUT',        unit: 'SF', order: 1 },
-    8: { label: 'WJ',         unit: 'LF', order: 2 },
-    9: { label: 'EDGING',     unit: 'LF', order: 3 },
-    5: { label: 'MITER',      unit: 'LF', order: 4 },
-    3: { label: 'CNC',        unit: 'LF', order: 5 },
+    7: { label: 'CUT', unit: 'SF', order: 1 },
+    8: { label: 'WJ', unit: 'LF', order: 2 },
+    9: { label: 'EDGING', unit: 'LF', order: 3 },
+    5: { label: 'MITER', unit: 'LF', order: 4 },
+    3: { label: 'CNC', unit: 'LF', order: 5 },
     6: { label: 'TOUCHUP QA', unit: 'SF', order: 6 },
 };
 
 const noteStageConfig: Record<string, { label: string; color: string }> = {
-    shop_status:       { label: 'Shop Status',        color: 'text-blue-700' },
-    templating:        { label: 'Templating',          color: 'text-blue-700' },
-    pre_draft_review:  { label: 'Pre-Draft Review',    color: 'text-indigo-700' },
-    drafting:          { label: 'Drafting',            color: 'text-green-700' },
-    cut_list:          { label: 'Final Programming',   color: 'text-purple-700' },
-    cutting:           { label: 'Cutting',             color: 'text-orange-700' },
-    install_scheduling:{ label: 'Install Scheduling',  color: 'text-teal-700' },
-    general:           { label: 'General',             color: 'text-gray-700' },
+    shop_status: { label: 'Shop Status', color: 'text-blue-700' },
+    templating: { label: 'Templating', color: 'text-blue-700' },
+    pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
+    drafting: { label: 'Drafting', color: 'text-green-700' },
+    cut_list: { label: 'Final Programming', color: 'text-purple-700' },
+    cutting: { label: 'Cutting', color: 'text-orange-700' },
+    install_scheduling: { label: 'Install Scheduling', color: 'text-teal-700' },
+    general: { label: 'General', color: 'text-gray-700' },
 };
 
 const parseDateString = (s: string | undefined): Date | undefined => {
@@ -100,9 +101,9 @@ const MiniProgress: React.FC<{ percent: number }> = ({ percent }) => {
     const p = Math.min(percent || 0, 100);
     const color =
         p === 100 ? '#4caf50' :
-        p >= 75   ? '#2196f3' :
-        p >= 50   ? '#ff9800' :
-        p >= 25   ? '#f44336' : '#9e9e9e';
+            p >= 75 ? '#2196f3' :
+                p >= 50 ? '#ff9800' :
+                    p >= 25 ? '#f44336' : '#9e9e9e';
     return (
         <div className="flex items-center gap-2 w-full">
             <div className="flex-1 bg-[#e2e4ed] rounded-full h-[6px] overflow-hidden">
@@ -227,12 +228,12 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
 
     const buildDraft = () => ({
         workstation_id: String(plan.workstation_id ?? ''),
-        operator_id:    String(plan.operator_id ?? ''),
-        start_date:     parseDateString(plan.scheduled_start_date?.split('T')[0]),
-        start_time:     parseTimeFromISO(plan.scheduled_start_date),
-        end_time:       deriveEndTime(),
-        notes:          plan.notes ?? '',
-        sequence:       plan.sequence ?? 1,
+        operator_id: String(plan.operator_id ?? ''),
+        start_date: parseDateString(plan.scheduled_start_date?.split('T')[0]),
+        start_time: parseTimeFromISO(plan.scheduled_start_date),
+        end_time: deriveEndTime(),
+        notes: plan.notes ?? '',
+        sequence: plan.sequence ?? 1,
     });
 
     const [draft, setDraft] = useState(buildDraft);
@@ -242,8 +243,8 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
 
     // Derive filtered operators from the selected workstation's operator_ids
     const selectedWorkstation = workstationsForSection.find(w => String(w.id) === draft.workstation_id);
-    const allowedOperatorIds  = selectedWorkstation?.operator_ids?.map(String) || [];
-    const filteredEmployees   = allowedOperatorIds.length > 0
+    const allowedOperatorIds = selectedWorkstation?.operator_ids?.map(String) || [];
+    const filteredEmployees = allowedOperatorIds.length > 0
         ? employees.filter(emp => allowedOperatorIds.includes(String(emp.id)))
         : [];
 
@@ -257,9 +258,9 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            const dateStr        = draft.start_date ? formatDate(draft.start_date) : '';
+            const dateStr = draft.start_date ? formatDate(draft.start_date) : '';
             const scheduledStart = dateStr && draft.start_time ? `${dateStr}T${draft.start_time}:00` : undefined;
-            const scheduledEnd   = dateStr && draft.end_time   ? `${dateStr}T${draft.end_time}:00`   : undefined;
+            const scheduledEnd = dateStr && draft.end_time ? `${dateStr}T${draft.end_time}:00` : undefined;
 
             const diffMs = scheduledStart && scheduledEnd
                 ? new Date(scheduledEnd).getTime() - new Date(scheduledStart).getTime() : 0;
@@ -272,13 +273,13 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                 data: {
                     stage: {
                         planning_section_id: plan.planning_section_id,
-                        workstation_id:      Number(draft.workstation_id) || undefined,
-                        operator_ids:        draft.operator_id ? [Number(draft.operator_id)] : undefined,
-                        estimated_hours:     estimatedHours,
-                        notes:               draft.notes || undefined,
-                        sequence:            Number(draft.sequence) || 1,
+                        workstation_id: Number(draft.workstation_id) || undefined,
+                        operator_ids: draft.operator_id ? [Number(draft.operator_id)] : undefined,
+                        estimated_hours: estimatedHours,
+                        notes: draft.notes || undefined,
+                        sequence: Number(draft.sequence) || 1,
                         ...(scheduledStart && { scheduled_start: scheduledStart }),
-                        ...(scheduledEnd   && { scheduled_end:   scheduledEnd   }),
+                        ...(scheduledEnd && { scheduled_end: scheduledEnd }),
                     },
                 },
             } as any).unwrap();
@@ -314,7 +315,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                         className="text-xs font-semibold px-2 py-0.5"
                         style={{
                             backgroundColor: planPct === 100 ? '#dcfce7' : '#f0f4e8',
-                            color:           planPct === 100 ? '#166534' : '#4b6a05',
+                            color: planPct === 100 ? '#166534' : '#4b6a05',
                             border: 'none',
                         }}
                     >
@@ -370,8 +371,8 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                                             isLoadingWorkstations
                                                 ? 'Loading workstations…'
                                                 : workstationsForSection.length === 0
-                                                ? 'No workstations for this stage'
-                                                : 'Select workstation'
+                                                    ? 'No workstations for this stage'
+                                                    : 'Select workstation'
                                         }
                                     />
                                 </SelectTrigger>
@@ -405,8 +406,8 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                                             !draft.workstation_id
                                                 ? 'Select a workstation first'
                                                 : filteredEmployees.length === 0
-                                                ? 'No operators assigned to this workstation'
-                                                : 'Select operator'
+                                                    ? 'No operators assigned to this workstation'
+                                                    : 'Select operator'
                                         }
                                     />
                                 </SelectTrigger>
@@ -497,8 +498,8 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                         <MiniProgress percent={planPct} />
                         <Separator className="my-0.5" />
                         <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
-                            <InfoRow label="Workstation"     value={wsName} />
-                            <InfoRow label="Operator"        value={opName} />
+                            <InfoRow label="Workstation" value={wsName} />
+                            <InfoRow label="Operator" value={opName} />
                             <InfoRow
                                 label="Scheduled Start"
                                 value={plan.scheduled_start_date
@@ -541,9 +542,9 @@ const FabDetailsPage: React.FC = () => {
 
     const fab = fabResponse?.data ?? fabResponse;
 
-    const [fabNotesOpen,     setFabNotesOpen]     = useState(false);
-    const [showNoteInput,    setShowNoteInput]    = useState(false);
-    const [noteText,         setNoteText]         = useState('');
+    const [fabNotesOpen, setFabNotesOpen] = useState(false);
+    const [showNoteInput, setShowNoteInput] = useState(false);
+    const [noteText, setNoteText] = useState('');
     const [isSubmittingNote, setIsSubmittingNote] = useState(false);
 
     const handleAddNote = async () => {
@@ -573,7 +574,7 @@ const FabDetailsPage: React.FC = () => {
                     <div className="lg:col-span-2 space-y-6">
                         <Card><CardHeader><Skeleton className="h-6 w-40" /></CardHeader><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
                         <div className="grid grid-cols-3 gap-4">
-                            {[1,2,3].map(i => <Skeleton key={i} className="h-64 w-full rounded-lg" />)}
+                            {[1, 2, 3].map(i => <Skeleton key={i} className="h-64 w-full rounded-lg" />)}
                         </div>
                     </div>
                     <Skeleton className="h-[600px] w-full" />
@@ -615,30 +616,38 @@ const FabDetailsPage: React.FC = () => {
     const fabNotes: any[] = fab.fab_notes || [];
 
     const jobInfo = [
-        { label: 'FAB ID',           value: String(fab.id) },
-        { label: 'FAB Type',         value: <span className="uppercase">{fab.fab_type || 'N/A'}</span> },
-        { label: 'Account',          value: fab.account_name || 'N/A' },
-        { label: 'Job Name',         value: fab.job_details?.name || 'N/A' },
+        { label: 'FAB ID', value: String(fab.id) },
+        { label: 'FAB Type', value: <span className="uppercase">{fab.fab_type || 'N/A'}</span> },
+        { label: 'Account', value: fab.account_name || 'N/A' },
+        { label: 'Job Name', value: fab.job_details?.name || 'N/A' },
         {
             label: 'Job #',
             value: fab.job_details?.id
                 ? <Link to={`/job/details/${fab.job_details.id}`} className="text-primary hover:underline">{fab.job_details.job_number}</Link>
                 : (fab.job_details?.job_number || 'N/A'),
         },
-        { label: 'Input Area',       value: fab.input_area || 'N/A' },
-        { label: 'Stone Type',       value: fab.stone_type_name || 'N/A' },
-        { label: 'Stone Color',      value: fab.stone_color_name || 'N/A' },
-        { label: 'Stone Thickness',  value: fab.stone_thickness_value || 'N/A' },
-        { label: 'Edge',             value: fab.edge_name || 'N/A' },
-        { label: 'No. of Pieces',    value: String(fab.no_of_pieces || 0) },
-        { label: 'Total Sq Ft',      value: fab.total_sqft ? `${Number(fab.total_sqft).toFixed(1)} SF` : 'N/A' },
-        { label: 'Sales Person',     value: fab.sales_person_name || 'N/A' },
-        { label: 'Current Stage',    value: fab.current_stage || 'N/A' },
-        { label: '% Complete',       value: `${(fab.percent_complete || 0).toFixed(1)}%` },
+        { label: 'Input Area', value: fab.input_area || 'N/A' },
+        { label: 'Stone Type', value: fab.stone_type_name || 'N/A' },
+        { label: 'Stone Color', value: fab.stone_color_name || 'N/A' },
+        { label: 'Stone Thickness', value: fab.stone_thickness_value || 'N/A' },
+        { label: 'Edge', value: fab.edge_name || 'N/A' },
+        { label: 'No. of Pieces', value: String(fab.no_of_pieces || 0) },
+        { label: 'Total Sq Ft', value: fab.total_sqft ? `${Number(fab.total_sqft).toFixed(1)} SF` : 'N/A' },
+        { label: 'Sales Person', value: fab.sales_person_name || 'N/A' },
+        { label: 'Current Stage', value: fab.current_stage || 'N/A' },
+        { label: '% Complete', value: `${(fab.percent_complete || 0).toFixed(1)}%` },
     ];
 
     return (
         <Container className="border-t">
+            <div className="flex items-center justify-between mb-6">
+                <div>
+                    <h1 className="text-2xl font-semibold">FAB ID: {fab?.id}</h1>
+                    <p className="text-sm text-muted-foreground">Review Plan Activity</p>
+                </div>
+                <BackButton label='back'/>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
 
                 {/* ── LEFT 2/3 ── */}

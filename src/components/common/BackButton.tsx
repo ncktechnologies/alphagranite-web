@@ -8,20 +8,27 @@ interface BackButtonProps {
   label?: string;
 }
 
-export const BackButton = ({ fallbackUrl = '/', className = '', label = 'Back' }: BackButtonProps) => {
+export const BackButton = ({
+  fallbackUrl = '/',
+  className = '',
+  label = 'Back'
+}: BackButtonProps) => {
   const navigate = useNavigate();
 
   const handleClick = () => {
-    // Navigate to fallback URL directly
-    navigate(fallbackUrl);
+    if (window.history.length > 1) {
+      navigate(-1); // go back
+    } else {
+      navigate(fallbackUrl); // fallback
+    }
   };
 
   return (
-    <Button 
-      variant="outline" 
+    <Button
+      variant="outline"
       onClick={handleClick}
       className={className}
-      type='button'
+      type="button"
     >
       <ArrowLeft className="mr-2 h-4 w-4" />
       {label}

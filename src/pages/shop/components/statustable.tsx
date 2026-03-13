@@ -614,7 +614,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     return (
-                        <Link to={`/shop/fab/${row.original.data.fab_id}`} className="text-sm text-[#4b545d] hover:underline cursor-pointer">
+                        <Link to={`/sales/${row.original.data.fab_id}`} className="text-sm text-[#4b545d] hover:underline cursor-pointer">
                             {row.original.data.fab_id}
                         </Link>
                     );
