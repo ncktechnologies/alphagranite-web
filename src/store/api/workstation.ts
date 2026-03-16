@@ -16,7 +16,7 @@ export interface Workstation {
   planning_section_id?: number;
   workstation_name?: string;
   status?: string;
-  assigned_operatives?: string;
+  operator_ids?: string;
   machines?: string;
   machine_statuses?: string;
 }
@@ -25,7 +25,7 @@ export interface WorkstationCreatePayload {
   planning_section_id: number;
   workstation_name: string;
   status: string;
-  assigned_operatives: string;
+  operator_ids: string;
   machines: string;
   machine_statuses: string;
 }
@@ -34,7 +34,7 @@ export interface WorkstationUpdatePayload {
   planning_section_id: number;
   workstation_name: string;
   status: string;
-  assigned_operatives: string;
+  operator_ids: string;
   machines: string;
   machine_statuses: string;
 }
