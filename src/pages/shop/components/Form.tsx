@@ -56,6 +56,8 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
     const { data: planningSectionsData, isLoading: isPlanningSectionsLoading } = useGetPlanningSectionsQuery();
     const planningSections = Array.isArray(planningSectionsData) ? planningSectionsData : (planningSectionsData && (planningSectionsData as any).data ? (planningSectionsData as any).data : []);
     const [planningSectionId, setPlanningSectionId] = useState<number | undefined>(undefined);
+    
+    console.log('Planning Sections:', planningSections, 'isLoading:', isPlanningSectionsLoading);
 
     const form = useForm<WorkstationFormType>({
         resolver: zodResolver(workstationSchema),
@@ -69,13 +71,9 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
     // Populate form when editing
     useEffect(() => {
         if (mode === 'edit' && role) {
-            console.log('=== EDIT MODE - Role Data ===', role);
-            console.log('Role operators:', role.operators);
+            const rawRole = role as any;
             
             // Get the original operator IDs from the raw role data
-            // The role.operators array contains names, but we need to extract IDs
-            // We'll use the role data structure to get the actual IDs
-            const rawRole = role as any;
             const operatorIds = rawRole.operator_ids || []; // This should be the original IDs
             
             console.log('Operator IDs from role:', operatorIds);
@@ -91,7 +89,13 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
             
             // Attempt to populate planning section if present on role
             const ps = rawRole.planning_section_id ?? rawRole.planningSectionId ?? undefined;
-            setPlanningSectionId(ps !== undefined ? Number(ps) : undefined);
+            console.log('Planning section ID from role:', ps);
+            console.log('Setting planningSectionId to:', ps !== undefined ? Number(ps) : undefined);
+            
+            // Use a small delay to ensure state updates properly
+            setTimeout(() => {
+                setPlanningSectionId(ps !== undefined ? Number(ps) : undefined);
+            }, 0);
         } else if (mode === 'new') {
             form.reset({
                 workstationName: '',
@@ -175,9 +179,12 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
                 <FormItem>
                     <FormLabel>Shop Activity.</FormLabel>
                     <FormControl>
-                        <Select value={planningSectionId !== undefined ? String(planningSectionId) : undefined} onValueChange={(v) => setPlanningSectionId(v ? Number(v) : undefined)}>
+                        <Select value={planningSectionId !== undefined ? String(planningSectionId) : ''} onValueChange={(v) => {
+                            console.log('Select changed to:', v);
+                            setPlanningSectionId(v ? Number(v) : undefined);
+                        }}>
                             <SelectTrigger>
-                                <SelectValue placeholder={isPlanningSectionsLoading ? 'Loading sections...' : 'Select planning section'} />
+                                <SelectValue placeholder={isPlanningSectionsLoading ? 'Loading sections...' : planningSectionId !== undefined ? `Selected: ${planningSectionId}` : 'Select planning section'} />
                             </SelectTrigger>
                             <SelectContent>
                                 {planningSections.map((ps: any) => (

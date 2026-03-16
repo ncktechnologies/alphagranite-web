@@ -9,6 +9,7 @@ import { StationList } from '../components/StationList';
 import { Toolbar, ToolbarActions, ToolbarBreadcrumbs, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { useGetWorkstationsQuery } from '@/store/api';
 import { useGetEmployeesQuery } from '@/store/api/employee';
+import { useGetPlanningSectionsQuery } from '@/store/api/workstation';
 
 function SettingsPage() {
     const [viewMode, setViewMode] = useState<ViewMode>('details');
@@ -21,6 +22,10 @@ function SettingsPage() {
     const { data: employeesData } = useGetEmployeesQuery();
     const employees: any[] = employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
     
+    // Fetch planning sections to map section IDs to names
+    const { data: planningSectionsData } = useGetPlanningSectionsQuery();
+    const planningSections: any[] = planningSectionsData?.data || (Array.isArray(planningSectionsData) ? planningSectionsData : []);
+    
     console.log(workstationsData?.data, 'KSKSKKS')
     
     // Convert API data to Station format
@@ -30,8 +35,11 @@ function SettingsPage() {
         return workstationsData.data.map((ws: any) => {
             // Handle operator_ids safely - could be string, array, or number
             let operatorArray: string[] = [];
+            let rawOperatorIds: any[] = []; // Keep track of original IDs
+            
             if (ws.operator_ids && Array.isArray(ws.operator_ids)) {
-                // Map employee IDs to names
+                rawOperatorIds = ws.operator_ids; // Store original IDs
+                // Map employee IDs to names for display
                 operatorArray = ws.operator_ids.map((empId: number) => {
                     const emp = employees.find(e => e.id === empId);
                     if (emp) {
@@ -40,10 +48,19 @@ function SettingsPage() {
                     return `ID: ${empId}`;
                 });
             } else if (ws.operator_ids && typeof ws.operator_ids === 'string') {
+                rawOperatorIds = ws.operator_ids.split(',').map(Number);
                 operatorArray = ws.operator_ids.split(',');
             } else if (ws.operator_ids && typeof ws.operator_ids === 'number') {
+                rawOperatorIds = [ws.operator_ids];
                 const emp = employees.find(e => e.id === ws.operator_ids);
                 operatorArray = [emp ? `${emp.first_name || ''} ${emp.last_name || ''}`.trim() : `ID: ${ws.operator_ids}`];
+            }
+            
+            // Get planning section name
+            let planningSectionName = 'Not assigned';
+            if (ws.planning_section_id) {
+                const section = planningSections.find(ps => ps.id === ws.planning_section_id);
+                planningSectionName = section?.plan_name || section?.name || `Section ${ws.planning_section_id}`;
             }
             
             return {
@@ -55,10 +72,15 @@ function SettingsPage() {
                 avatars: [],
                 machine: ws.machines || '',
                 operators: operatorArray,
-                other: ws.machine_statuses || ''
+                other: ws.machine_statuses || '',
+                // Add the raw operator_ids for the form to use
+                operator_ids: rawOperatorIds as any,
+                // Add planning_section_id and name for display
+                planning_section_id: ws.planning_section_id,
+                planning_section_name: planningSectionName
             } as Station;
         });
-    }, [workstationsData, employees]);
+    }, [workstationsData, employees, planningSections]);
     
     useEffect(() => {
         if (workstations.length > 0 && !selectedRole && viewMode !== 'new' && viewMode !== 'edit') {

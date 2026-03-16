@@ -11,6 +11,11 @@ interface RoleDetailsViewProps {
 }
 
 export const StationDetailsView = ({ role, onEdit, onDelete }: RoleDetailsViewProps) => {
+  // Get planning section name from the role data
+  const rawRole = role as any;
+  const planningSectionName = rawRole.planning_section_name || 'Not assigned';
+  const operatorNames = rawRole.operators || [];
+  
   return (
     <div className="space-y-2">
       <StationHeader role={role} onEdit={onEdit} OnDelete={onDelete} />      
@@ -22,12 +27,16 @@ export const StationDetailsView = ({ role, onEdit, onDelete }: RoleDetailsViewPr
         </div>
        
         <div>
-            <h4 className="text-secondary font-semibold text-sm pb-2.5">Assigned operator</h4>
-            <h2 className="text-black leading-6 font-semibold ">{role.operators}</h2>
+            <h4 className="text-secondary font-semibold text-sm pb-2.5">Shop Activity</h4>
+            <h2 className="text-black leading-6 font-semibold ">{planningSectionName}</h2>
+        </div>
+        <div>
+            <h4 className="text-secondary font-semibold text-sm pb-2.5">Assigned Operators</h4>
+            <h2 className="text-black leading-6 font-semibold ">{Array.isArray(operatorNames) ? operatorNames.join(', ') : operatorNames || '-'}</h2>
         </div>
         <div>
             <h4 className="text-secondary font-semibold text-sm pb-2.5">Other</h4>
-            <h2 className="text-black leading-6 font-semibold ">{role.other}</h2>
+            <h2 className="text-black leading-6 font-semibold ">{role.other || '-'}</h2>
         </div>
       </div>
     </div>

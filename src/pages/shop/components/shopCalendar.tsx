@@ -30,7 +30,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useGetAllShopPlansQuery, useGetFabTypesQuery, useGetWorkstationsQuery, useGetEmployeesQuery } from '@/store/api';
+import { useGetAllShopPlansQuery, useGetFabTypesQuery, useGetWorkstationsQuery, useGetEmployeesQuery, useGetShopPlanQuery } from '@/store/api';
 import { formatTime } from '@/utils/date-utils';
 import CreatePlanPage from './createPlanePage';
 
@@ -91,7 +91,6 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
   });
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [is12HourFormat] = useState(true);
   const [isAxisSwapped, setIsAxisSwapped] = useState(true);
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day');
@@ -99,6 +98,9 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
   const [fabPickerOpen, setFabPickerOpen] = useState(false);
   const [fabPickerInput, setFabPickerInput] = useState('');
   const [createPlanFabId, setCreatePlanFabId] = useState<string>('');
+
+  // ← Track which plan id is being edited; drives useGetShopPlanQuery
+  const [editingPlanId, setEditingPlanId] = useState<number | null>(null);
 
   const [searchFabId, setSearchFabId] = useState('');
   const [filterFabType, setFilterFabType] = useState('');
@@ -119,6 +121,11 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
   }), [currentDate, effectiveFabId, filterFabType, filterWorkstation, filterOperator]);
 
   const { data: plansResponse, isLoading } = useGetAllShopPlansQuery(queryParams);
+
+  // ← Fetch the full plan by id when editing; skipped when not editing
+  const { data: shopPlanData } = useGetShopPlanQuery(editingPlanId!, {
+    skip: editingPlanId == null,
+  });
 
   const { data: fabTypesData } = useGetFabTypesQuery();
   const { data: workstationsData } = useGetWorkstationsQuery();
@@ -179,6 +186,27 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     [eventsByDay],
   );
 
+  // ← Build the resolved event from the fetched plan, enriched with derived end time
+  const resolvedEvent = useMemo(() => {
+    if (!shopPlanData) return null;
+    // API returns { success, message, data: { ...plan } }
+    const plan = (shopPlanData as any)?.data ?? shopPlanData;
+    if (!plan?.id) return null;
+    return {
+      ...plan,
+      // sequence may be absent from this endpoint — default to 1
+      sequence: plan.sequence ?? 1,
+      // Derive scheduled_end_date from start + estimated_hours
+      scheduled_end_date:
+        plan.scheduled_start_date && plan.estimated_hours
+          ? new Date(
+              new Date(plan.scheduled_start_date).getTime() +
+              plan.estimated_hours * 3_600_000
+            ).toISOString()
+          : undefined,
+    };
+  }, [shopPlanData]);
+
   const handlePrevious = () => {
     if (viewMode === 'day') setCurrentDate(addDays(currentDate, -1));
     else if (viewMode === 'week') setCurrentDate(addDays(currentDate, -7));
@@ -192,7 +220,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
   };
 
   const openFabPicker = (date: Date) => {
-    setSelectedEvent(null);
+    setEditingPlanId(null);
     setSelectedDate(date);
     setFabPickerInput('');
     setFabPickerOpen(true);
@@ -204,18 +232,35 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     setActivePage('create-plan');
   };
 
+  // ← Just store the plan id and flip the page — no field mapping needed
   const handleOpenEditPlan = (event: any) => {
-    setSelectedEvent(event);
+    setEditingPlanId(event.id);
+    setCreatePlanFabId(String(event.fab_id));
     setSelectedDate(new Date(event.scheduled_start_date));
     setSelectedTimeSlot(format(new Date(event.scheduled_start_date), 'HH:mm'));
-    setCreatePlanFabId(String(event.fab_id));
-    setActivePage('create-plan');
+    // Don't flip page yet — wait for resolvedEvent to be ready
+    setPendingEditNav(true);
   };
+
+  // For new plans (no editingPlanId) flip immediately.
+  // For edits, wait until resolvedEvent is populated so CreatePlanPage
+  // always mounts with complete data — never with null then data.
+  const [pendingEditNav, setPendingEditNav] = useState(false);
+
+  useEffect(() => {
+    if (pendingEditNav && resolvedEvent) {
+      setActivePage('create-plan');
+      setPendingEditNav(false);
+    }
+  }, [pendingEditNav, resolvedEvent]);
 
   const handleBackToCalendar = () => {
     setActivePage('calendar');
-    setSelectedEvent(null);
+    setEditingPlanId(null);
     setCreatePlanFabId('');
+    setSelectedDate(null);
+    setSelectedTimeSlot(null);
+    setPendingEditNav(false);
   };
 
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -306,6 +351,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
             <p><span className="font-semibold">Job:</span> {`${event.job_name}-${event.job_number}` || 'N/A'}</p>
             <p><span className="font-semibold">Job No:</span> {event.job_number || 'N/A'}</p>
             <p><span className="font-semibold">Account Name:</span> {event.account_name || 'N/A'}</p>
+            <p><span className="font-semibold">Plan:</span> {event.plan_name}</p>
             {event.notes && <p><span className="font-semibold">Notes:</span> {event.notes}</p>}
           </div>
         </TooltipContent>
@@ -313,13 +359,26 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     );
   }
 
+  // ← Show a loading state while fetching the plan for edit
+  if (pendingEditNav) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-[#7c8689]">Loading plan…</p>
+      </div>
+    );
+  }
+
   if (activePage === 'create-plan') {
     return (
       <CreatePlanPage
         onBack={handleBackToCalendar}
-        selectedDate={selectedDate}
-        selectedTimeSlot={selectedTimeSlot}
-        selectedEvent={selectedEvent}
+        selectedDate={resolvedEvent
+          ? new Date(resolvedEvent.scheduled_start_date)
+          : selectedDate}
+        selectedTimeSlot={resolvedEvent
+          ? format(new Date(resolvedEvent.scheduled_start_date), 'HH:mm')
+          : selectedTimeSlot}
+        selectedEvent={resolvedEvent}
         prefillFabId={createPlanFabId}
         onEventCreated={handleBackToCalendar}
       />
@@ -413,7 +472,6 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
             <Plus className="h-4 w-4" />
             Create Plan
           </button>
-
         </div>
 
         <div className="flex items-center px-10 h-[65px]">
@@ -554,7 +612,6 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
             </div>
           </div>
 
-          {/* Grid with tooltips */}
           {isLoading ? (
             <div className="flex items-center justify-center py-16">
               <p className="text-[#7c8689]">Loading calendar events…</p>
@@ -612,8 +669,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                         >
                           <span className="text-[12px] text-[#7c8689] uppercase tracking-wide">{format(day, 'EEE')}</span>
                           <span
-                            className={`text-[22px] font-semibold w-9 h-9 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'
-                              }`}
+                            className={`text-[22px] font-semibold w-9 h-9 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'}`}
                           >
                             {format(day, 'd')}
                           </span>
@@ -654,22 +710,12 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                             onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(true); } : undefined}
                           >
                             {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
-                              <div
-                                key={i}
-                                className="absolute w-full border-t border-[#ecedf0]"
-                                style={{ top: i * HOUR_HEIGHT }}
-                              />
+                              <div key={i} className="absolute w-full border-t border-[#ecedf0]" style={{ top: i * HOUR_HEIGHT }} />
                             ))}
-
                             {isToday && <div className="absolute inset-0 bg-[#7a9705]/[0.02] pointer-events-none" />}
-
                             {positioned.map((ev) => renderEventCard(ev))}
-
                             {isToday && showTimeIndicator && (
-                              <div
-                                className="absolute left-0 right-0 z-10 pointer-events-none"
-                                style={{ top: currentTimeTop }}
-                              >
+                              <div className="absolute left-0 right-0 z-10 pointer-events-none" style={{ top: currentTimeTop }}>
                                 <div className="relative flex items-center">
                                   <div
                                     className="absolute -left-[90px] flex items-center justify-center rounded-[4px] px-1 py-0.5 z-20"
@@ -738,8 +784,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                           <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] flex flex-col justify-center items-center py-3 gap-0.5 bg-white">
                             <span className="text-[11px] text-[#7c8689] uppercase tracking-wide">{format(day, 'EEE')}</span>
                             <span
-                              className={`text-[20px] font-semibold w-8 h-8 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'
-                                }`}
+                              className={`text-[20px] font-semibold w-8 h-8 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'}`}
                             >
                               {format(day, 'd')}
                             </span>
@@ -751,11 +796,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                             onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(true); } : undefined}
                           >
                             {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
-                              <div
-                                key={i}
-                                className="absolute top-0 bottom-0 border-l border-[#ecedf0]"
-                                style={{ left: i * HOUR_WIDTH }}
-                              />
+                              <div key={i} className="absolute top-0 bottom-0 border-l border-[#ecedf0]" style={{ left: i * HOUR_WIDTH }} />
                             ))}
 
                             {lanes.map((lane, laneIdx) =>
@@ -798,13 +839,11 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                                         <p><span className="font-semibold">Account Name:</span> {ev.account_name || 'N/A'}</p>
                                         <p><span className="font-semibold">Plan:</span> {ev.plan_name}</p>
                                         {ev.notes && <p><span className="font-semibold">Notes:</span> {ev.notes}</p>}
-
                                       </div>
                                     </TooltipContent>
                                   </Tooltip>
                                 );
                               })
-
                             )}
                           </div>
                         </div>

@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Clock, Calendar, ChevronDown, LoaderCircle, Plus, X } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+import { format } from 'date-fns';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -16,22 +15,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useCreateShopPlansMutation, useCreateShopSuggestionMutation, useUpdateShopPlanMutation } from '@/store/api';
-import { useGetPlanningSectionsQuery, useGetWorkStationByPlanningSectionsQuery } from '@/store/api/workstation';
+import { useGetPlanningSectionsQuery, useGetWorkStationByPlanningSectionsQuery, useGetWorkstationsQuery } from '@/store/api/workstation';
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetFabsQuery } from '@/store/api/job';
-
-// Sequence options are generated dynamically from entries.length — see PlanEntryCard
 
 const TIME_SLOTS = (() => {
   const slots: { value: string; label: string }[] = [];
@@ -49,7 +38,6 @@ const TIME_SLOTS = (() => {
   return slots;
 })();
 
-// ── Entry type ────────────────────────────────────────────────────────────
 interface PlanEntry {
   id?: number;
   fab_id: string;
@@ -63,7 +51,6 @@ interface PlanEntry {
   sequence: string;
 }
 
-// ── PlanEntryCard — hooks live here, not inside .map() ───────────────────
 interface PlanEntryCardProps {
   entry: PlanEntry;
   idx: number;
@@ -75,7 +62,7 @@ interface PlanEntryCardProps {
   isLoadingFabs: boolean;
   effectivePrefillFabId: string;
   isEditing: boolean;
-  sequenceOptions: number[]; // ← ADDED: only shows as many options as there are stages
+  sequenceOptions: number[];
   onToggleExpand: () => void;
   onUpdate: (patch: Partial<PlanEntry>) => void;
   onRemove: () => void;
@@ -84,8 +71,7 @@ interface PlanEntryCardProps {
 const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
   entry, idx, total, employees, planningSections,
   isExpanded, fabOptions, isLoadingFabs, effectivePrefillFabId, isEditing,
-  sequenceOptions,
-  onToggleExpand, onUpdate, onRemove,
+  sequenceOptions, onToggleExpand, onUpdate, onRemove,
 }) => {
   const { data: workstationData, isLoading: isLoadingWorkstations } = useGetWorkStationByPlanningSectionsQuery(
     entry.planning_section_id ? Number(entry.planning_section_id) : 0,
@@ -93,26 +79,31 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
   );
   const workstationsForSection: any[] = workstationData?.workstations || (Array.isArray(workstationData) ? workstationData : []);
 
-  // Check if workstations are loaded for this entry's planning section
-  const areWorkstationsLoaded = !entry.planning_section_id || !isLoadingWorkstations;
-
   const selectedWorkstation = workstationsForSection.find(w => String(w.id) === entry.workstation_id);
   const allowedOperatorIds = selectedWorkstation?.operator_ids?.map(String) || [];
   const filteredEmployees = allowedOperatorIds.length > 0
     ? employees.filter(emp => allowedOperatorIds.includes(String(emp.id)))
     : [];
 
+  // Only reset operator when workstations have loaded AND the current operator
+  // is not in the allowed list. Never reset during initial load (allowedOperatorIds
+  // is empty while the workstation query is still in flight).
   useEffect(() => {
-    if (entry.operator_id && allowedOperatorIds.length > 0 && !allowedOperatorIds.includes(entry.operator_id)) {
+    if (
+      !isLoadingWorkstations &&
+      workstationsForSection.length > 0 &&
+      entry.operator_id &&
+      allowedOperatorIds.length > 0 &&
+      !allowedOperatorIds.includes(entry.operator_id)
+    ) {
       onUpdate({ operator_id: '' });
     }
-  }, [entry.workstation_id]);
+  }, [entry.workstation_id, isLoadingWorkstations, workstationsForSection.length]);
 
   const hasSlot = !!(entry.date && entry.start_time && entry.end_time);
 
   return (
     <Card className="border border-[#ecedf0] rounded-[12px] overflow-hidden">
-      {/* Header */}
       <CardHeader
         className="pb-3 border-b border-[#ecedf0] cursor-pointer select-none"
         onClick={onToggleExpand}
@@ -125,14 +116,14 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
             <CardTitle className="text-[16px] text-[#4b545d] font-semibold truncate">
               {entry.planning_section_id
                 ? (planningSections.find(ps => String(ps.id) === entry.planning_section_id)?.plan_name
-                    || planningSections.find(ps => String(ps.id) === entry.planning_section_id)?.name
-                    || planningSections.find(ps => String(ps.id) === entry.planning_section_id)?.title
-                    || `Plan Section ${idx + 1}`)
+                  || planningSections.find(ps => String(ps.id) === entry.planning_section_id)?.name
+                  || planningSections.find(ps => String(ps.id) === entry.planning_section_id)?.title
+                  || `Plan Section ${idx + 1}`)
                 : `Plan Section ${idx + 1}`}
             </CardTitle>
             {!isExpanded && hasSlot && (
               <span className="text-xs text-[#7c8689] shrink-0">
-                {format(entry.date, 'MMM d')} · {format(new Date(`1970-01-01T${entry.start_time}`), 'hh:mm a')}–{format(new Date(`1970-01-01T${entry.end_time}`), 'hh:mm a')}
+                {format(entry.date!, 'MMM d')} · {format(new Date(`1970-01-01T${entry.start_time}`), 'hh:mm a')}–{format(new Date(`1970-01-01T${entry.end_time}`), 'hh:mm a')}
               </span>
             )}
           </div>
@@ -144,7 +135,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
               </SelectTrigger>
               <SelectContent>
                 {sequenceOptions.map(num => (
-                  <SelectItem key={num} value={String(num)}> Seq:{num}</SelectItem>
+                  <SelectItem key={num} value={String(num)}>Seq: {num}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -162,7 +153,6 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
         </div>
       </CardHeader>
 
-      {/* Body */}
       {isExpanded && (
         <CardContent className="pt-5 space-y-5">
           {/* FAB ID */}
@@ -288,9 +278,9 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
                 <SelectValue
                   placeholder={
                     isLoadingWorkstations ? 'Loading workstations…' :
-                    !entry.planning_section_id ? 'Select a section first' :
-                    workstationsForSection.length === 0 ? 'No workstations for this section' :
-                    'Select workstation'
+                      !entry.planning_section_id ? 'Select a section first' :
+                        workstationsForSection.length === 0 ? 'No workstations for this section' :
+                          'Select workstation'
                   }
                 />
               </SelectTrigger>
@@ -314,8 +304,8 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
                 <SelectValue
                   placeholder={
                     !entry.workstation_id ? 'Select a workstation first' :
-                    filteredEmployees.length === 0 ? 'No operators assigned to this workstation' :
-                    'Select operator'
+                      filteredEmployees.length === 0 ? 'No operators assigned to this workstation' :
+                        'Select operator'
                   }
                 />
               </SelectTrigger>
@@ -351,14 +341,13 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
   );
 };
 
-// ── Main Page ─────────────────────────────────────────────────────────────
 interface CreatePlanPageProps {
   onBack?: () => void;
   selectedDate?: Date | null;
   selectedTimeSlot?: string | null;
   selectedEvent?: any | null;
   prefillFabId?: string;
-  prefillPlanSectionId?: number; // ← ADDED: pre-selects the Shop Activity dropdown
+  prefillPlanSectionId?: number;
   onEventCreated?: () => void;
   hideBackButton?: boolean;
 }
@@ -369,7 +358,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   selectedTimeSlot,
   selectedEvent,
   prefillFabId: propPrefillFabId,
-  prefillPlanSectionId, // ← ADDED
+  prefillPlanSectionId,
   onEventCreated,
   hideBackButton = false,
 }) => {
@@ -378,11 +367,8 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const urlFabId = searchParams.get('fabId');
   const effectivePrefillFabId = propPrefillFabId || urlFabId || '';
 
-  const [autoScheduleModalOpen, setAutoScheduleModalOpen] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
 
-  // ← ADDED: converts prefillPlanSectionId to a string for the entry state,
-  //   matching the planning_section_id field type used throughout the form.
   const prefillSectionIdStr = prefillPlanSectionId != null ? String(prefillPlanSectionId) : undefined;
 
   const emptyEntry = (): PlanEntry => ({
@@ -393,7 +379,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     start_time: selectedTimeSlot || '',
     end_time: '',
     planning_section_id: prefillSectionIdStr,
-    date: propSelectedDate ?? undefined!,  // only set if explicitly passed in
+    date: propSelectedDate ?? undefined,
     sequence: '1',
   });
 
@@ -401,7 +387,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
 
   const [createShopPlan, { isLoading }] = useCreateShopPlansMutation();
   const [updateShopPlan] = useUpdateShopPlanMutation();
-  const [createShopPlansSuggestion, { isLoading: isAutoScheduling }] = useCreateShopSuggestionMutation();
+  const [, { isLoading: isAutoScheduling }] = useCreateShopSuggestionMutation();
 
   const { data: planningSectionsData } = useGetPlanningSectionsQuery();
   const planningSections: any[] = planningSectionsData?.data || (Array.isArray(planningSectionsData) ? planningSectionsData : []);
@@ -410,6 +396,10 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const employees: any[] = employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
 
   const { data: allFabsData, isLoading: isLoadingFabs } = useGetFabsQuery({ limit: 1000, current_stage: 'cut_list' });
+  
+  // Get workstations for ALL sections (needed for edit mode)
+  const { data: allWorkstationsData } = useGetWorkstationsQuery();
+  const allWorkstations: any[] = allWorkstationsData?.data || (Array.isArray(allWorkstationsData) ? allWorkstationsData : []);
 
   const fabOptions = useMemo(() => {
     const fabs = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
@@ -427,44 +417,91 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   }, [allFabsData, selectedFabId]);
 
   const employeesLoaded = employees.length > 0;
-  const workstationsLoaded =   !entries.some(e => e.planning_section_id);
-
-  useEffect(() => {
-    if (selectedEvent && employeesLoaded && workstationsLoaded) {
-      setExpandedCards({ 0: true });
-    }
-  }, [selectedEvent, employeesLoaded, workstationsLoaded]);
+  const workstationsLoaded = allWorkstations.length > 0;
 
   useEffect(() => {
     if (!selectedEvent) {
       setEntries([emptyEntry()]);
       return;
     }
-    // Wait for both employees and workstations to be loaded
-    if (!employeesLoaded || !workstationsLoaded) return;
+    
+    // Wait for data to be loaded before populating form
+    if (!employeesLoaded || !workstationsLoaded) {
+      console.log('Waiting for data... employeesLoaded:', employeesLoaded, 'workstationsLoaded:', workstationsLoaded);
+      return;
+    }
 
     const ev: any = selectedEvent;
-    const startDate = new Date(ev.scheduled_start_date);
-    const endTime = ev.estimated_hours
-      ? format(new Date(startDate.getTime() + ev.estimated_hours * 3_600_000), 'HH:mm') : '';
+    console.log('=== EDITING EVENT RAW OBJECT ===', ev);
+    console.log('Event keys:', Object.keys(ev));
+    
+    // Extract values from the event object using the EXACT property names from API
+    const fabId = ev.fab_id ?? '';
+    const workstationId = ev.workstation_id ?? '';
+    const operatorId = ev.operator_id ?? '';
+    const planningSectionId = ev.planning_section_id ?? null;
+    const scheduledStart = ev.scheduled_start_date ?? null;
+    const scheduledEnd = ev.scheduled_end_date ?? null;  // ✅ This exists in the API!
+    const notes = ev.notes ?? '';
+    const sequence = ev.sequence ?? 1;
+    const estimatedHours = ev.estimated_hours ?? 0;
+    
+    console.log('Extracted from API:', {
+      fab_id: fabId,
+      workstation_id: workstationId,
+      operator_id: operatorId,
+      planning_section_id: planningSectionId,
+      scheduled_start_date: scheduledStart,
+      scheduled_end_date: scheduledEnd,
+      notes: notes,
+      sequence: sequence,
+      estimated_hours: estimatedHours
+    });
+    
+    const startDate = scheduledStart ? new Date(scheduledStart) : new Date();
+    
+    // Derive end_time: prefer scheduled_end_date, fall back to estimated_hours offset
+    let endTime = '';
+    if (scheduledEnd) {
+      // ✅ Use the scheduled_end_date directly from API
+      endTime = format(new Date(scheduledEnd), 'HH:mm');
+      console.log('Using scheduled_end_date from API:', scheduledEnd, '->', endTime);
+    } else if (estimatedHours) {
+      endTime = format(
+        new Date(startDate.getTime() + estimatedHours * 3_600_000),
+        'HH:mm'
+      );
+      console.log('Using estimated_hours to calculate end time:', estimatedHours, '->', endTime);
+    }
 
-    setEntries([{
+    const finalEntry = {
       id: ev.id,
-      fab_id: String(ev.fab_id ?? ''),
-      workstation_id: String(ev.workstation_id ?? ''),
-      operator_id: String(ev.operator_id ?? ''),
-      notes: ev.notes ?? '',
+      fab_id: String(fabId),
+      workstation_id: String(workstationId),
+      operator_id: String(operatorId),
+      notes: String(notes),
       start_time: format(startDate, 'HH:mm'),
-      end_time: endTime,
-      planning_section_id: ev.planning_section_id != null
-        ? String(ev.planning_section_id)
+      end_time: endTime,  // ✅ Should now be '11:00' from your API
+      planning_section_id: planningSectionId != null
+        ? String(planningSectionId)
         : prefillSectionIdStr,
       date: startDate,
-      sequence: ev.sequence != null ? String(ev.sequence) : '1',
-    }]);
-  }, [selectedEvent, employeesLoaded, workstationsLoaded]);
+      sequence: String(sequence),
+    };
+    
+    console.log('Setting entries with:', finalEntry);
+    console.log('Workstation ID as string:', String(workstationId));
+    console.log('Operator ID as string:', String(operatorId));
+    console.log('Planning Section ID as string:', planningSectionId != null ? String(planningSectionId) : prefillSectionIdStr);
 
-  // Minimum of 3 options always shown; grows automatically if stages exceed 3
+    setEntries([finalEntry]);
+    
+    // Auto-expand the card after data is loaded
+    setTimeout(() => {
+      setExpandedCards({ 0: true });
+    }, 100);
+  }, [selectedEvent, employeesLoaded, workstationsLoaded, prefillSectionIdStr]);
+
   const sequenceOptions = useMemo(
     () => Array.from({ length: Math.max(3, entries.length) }, (_, i) => i + 1),
     [entries.length]
@@ -473,14 +510,12 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const addEntry = () => setEntries(p => {
     const e = emptyEntry();
     if (p[0]?.fab_id) e.fab_id = p[0].fab_id;
-    // Auto-assign next sequence number
     e.sequence = String(p.length + 1);
     return [...p, e];
   });
 
   const removeEntry = (idx: number) => setEntries(p => {
     const next = p.filter((_, i) => i !== idx);
-    // Re-number sequences after removal so they stay contiguous
     return next.map((e, i) => ({ ...e, sequence: String(i + 1) }));
   });
 
@@ -515,8 +550,8 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
 
       for (const fabId in groups) {
         let totalEst = 0;
-        const stages = groups[fabId].map(entry => {
-          const d = format(entry.date, 'yyyy-MM-dd');
+        const stages = groups[fabId].map((entry, idx) => {
+          const d = format(entry.date!, 'yyyy-MM-dd');
           const start = `${d}T${entry.start_time}:00`;
           const end   = `${d}T${entry.end_time}:00`;
           const hrs = Math.round(((new Date(end).getTime() - new Date(start).getTime()) / 3_600_000) * 100) / 100;
@@ -536,7 +571,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       }
 
       for (const entry of updates) {
-        const d = format(entry.date, 'yyyy-MM-dd');
+        const d = format(entry.date!, 'yyyy-MM-dd');
         const start = `${d}T${entry.start_time}:00`;
         const end   = `${d}T${entry.end_time}:00`;
         const hrs = Math.round(((new Date(end).getTime() - new Date(start).getTime()) / 3_600_000) * 100) / 100;
@@ -563,19 +598,14 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       handleBack();
     } catch (error: any) {
       const msg = error?.data?.detail?.message || 'Failed to create/update Plan';
-      // toast.error(msg);
+      
     }
-  };
-
-  const handleAutoSchedule = async () => {
-    // keep your existing auto-schedule implementation
   };
 
   const isEditing = !!selectedEvent;
 
   return (
     <div className="bg-white min-h-screen">
-      {/* Header */}
       <div className="border-b border-[#dfdfdf]">
         <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
           <div className="flex items-center gap-4">
@@ -611,7 +641,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
         </div>
       </div>
 
-      {/* Content */}
       <div className="px-10 py-8 max-w-4xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* FAB Details */}
@@ -703,8 +732,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
           </div>
         </form>
       </div>
-
-    
     </div>
   );
 };
