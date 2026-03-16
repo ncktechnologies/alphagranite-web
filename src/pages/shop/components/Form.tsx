@@ -69,14 +69,28 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
     // Populate form when editing
     useEffect(() => {
         if (mode === 'edit' && role) {
+            console.log('=== EDIT MODE - Role Data ===', role);
+            console.log('Role operators:', role.operators);
+            
+            // Get the original operator IDs from the raw role data
+            // The role.operators array contains names, but we need to extract IDs
+            // We'll use the role data structure to get the actual IDs
+            const rawRole = role as any;
+            const operatorIds = rawRole.operator_ids || []; // This should be the original IDs
+            
+            console.log('Operator IDs from role:', operatorIds);
+            
             form.reset({
                 workstationName: role.workstationName || '',
                 other: role.other || '',
-                operator_ids: role.operator_ids || [],
+                operator_ids: operatorIds.map(String), // Convert IDs to strings for the form
             });
-            setSelectedUsers(role.operator_ids ? role.operator_ids.map(String) : []);
+            
+            // Set selected users using the operator IDs (as strings)
+            setSelectedUsers(operatorIds.map(String));
+            
             // Attempt to populate planning section if present on role
-            const ps = (role as any).planning_section_id ?? (role as any).planningSectionId ?? undefined;
+            const ps = rawRole.planning_section_id ?? rawRole.planningSectionId ?? undefined;
             setPlanningSectionId(ps !== undefined ? Number(ps) : undefined);
         } else if (mode === 'new') {
             form.reset({

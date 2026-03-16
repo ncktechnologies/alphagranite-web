@@ -8,6 +8,7 @@ import { Container } from '@/components/common/container';
 import { StationList } from '../components/StationList';
 import { Toolbar, ToolbarActions, ToolbarBreadcrumbs, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { useGetWorkstationsQuery } from '@/store/api';
+import { useGetEmployeesQuery } from '@/store/api/employee';
 
 function SettingsPage() {
     const [viewMode, setViewMode] = useState<ViewMode>('details');
@@ -16,22 +17,48 @@ function SettingsPage() {
     // Fetch workstations from API
     const { data: workstationsData, isLoading, isError, refetch } = useGetWorkstationsQuery();
     
+    // Fetch employees to map operator IDs to names
+    const { data: employeesData } = useGetEmployeesQuery();
+    const employees: any[] = employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
+    
+    console.log(workstationsData?.data, 'KSKSKKS')
+    
     // Convert API data to Station format
-    const workstations = useMemo(() => {
+    const workstations: Station[] = useMemo(() => {
         if (!workstationsData) return [];
         
-        return workstationsData?.data?.map(ws => ({
-            id: ws.id.toString(),
-            workstationName: ws.name,
-            description: ws.curremt_stage,
-            status: ws.status || 'Active',
-            members: ws.operator_ids ? ws.operator_ids.split(',').length : 0,
-            avatars: [],
-            machine: ws.machines || '',
-            operators: ws.operator_ids ? ws.operator_ids.split(',') : [],
-            other: ws.machine_statuses || ''
-        }));
-    }, [workstationsData]);
+        return workstationsData.data.map((ws: any) => {
+            // Handle operator_ids safely - could be string, array, or number
+            let operatorArray: string[] = [];
+            if (ws.operator_ids && Array.isArray(ws.operator_ids)) {
+                // Map employee IDs to names
+                operatorArray = ws.operator_ids.map((empId: number) => {
+                    const emp = employees.find(e => e.id === empId);
+                    if (emp) {
+                        return `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.email || `ID: ${empId}`;
+                    }
+                    return `ID: ${empId}`;
+                });
+            } else if (ws.operator_ids && typeof ws.operator_ids === 'string') {
+                operatorArray = ws.operator_ids.split(',');
+            } else if (ws.operator_ids && typeof ws.operator_ids === 'number') {
+                const emp = employees.find(e => e.id === ws.operator_ids);
+                operatorArray = [emp ? `${emp.first_name || ''} ${emp.last_name || ''}`.trim() : `ID: ${ws.operator_ids}`];
+            }
+            
+            return {
+                id: ws.id.toString(),
+                workstationName: ws.name,
+                description: ws.curremt_stage,
+                status: (ws.status_id === 1) ? 'Active' : 'Inactive',
+                members: operatorArray.length,
+                avatars: [],
+                machine: ws.machines || '',
+                operators: operatorArray,
+                other: ws.machine_statuses || ''
+            } as Station;
+        });
+    }, [workstationsData, employees]);
     
     useEffect(() => {
         if (workstations.length > 0 && !selectedRole && viewMode !== 'new' && viewMode !== 'edit') {

@@ -136,6 +136,7 @@ export function InstallSchedulingPage() {
 
         if (tableState.searchQuery) {
             params.search = tableState.searchQuery;
+            params.type = (tableState as any).searchType || 'fab_id'; // Add search type
         }
 
         if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') {

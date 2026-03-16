@@ -796,7 +796,9 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                                         <p><span className="font-semibold">Job:</span> {`${ev.job_name}-${ev.job_number}` || 'N/A'}</p>
                                         <p><span className="font-semibold">Job No:</span> {ev.job_number || 'N/A'}</p>
                                         <p><span className="font-semibold">Account Name:</span> {ev.account_name || 'N/A'}</p>
+                                        <p><span className="font-semibold">Plan:</span> {ev.plan_name}</p>
                                         {ev.notes && <p><span className="font-semibold">Notes:</span> {ev.notes}</p>}
+
                                       </div>
                                     </TooltipContent>
                                   </Tooltip>

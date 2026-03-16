@@ -93,6 +93,9 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
   );
   const workstationsForSection: any[] = workstationData?.workstations || (Array.isArray(workstationData) ? workstationData : []);
 
+  // Check if workstations are loaded for this entry's planning section
+  const areWorkstationsLoaded = !entry.planning_section_id || !isLoadingWorkstations;
+
   const selectedWorkstation = workstationsForSection.find(w => String(w.id) === entry.workstation_id);
   const allowedOperatorIds = selectedWorkstation?.operator_ids?.map(String) || [];
   const filteredEmployees = allowedOperatorIds.length > 0
@@ -424,13 +427,21 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   }, [allFabsData, selectedFabId]);
 
   const employeesLoaded = employees.length > 0;
+  const workstationsLoaded =   !entries.some(e => e.planning_section_id);
+
+  useEffect(() => {
+    if (selectedEvent && employeesLoaded && workstationsLoaded) {
+      setExpandedCards({ 0: true });
+    }
+  }, [selectedEvent, employeesLoaded, workstationsLoaded]);
 
   useEffect(() => {
     if (!selectedEvent) {
       setEntries([emptyEntry()]);
       return;
     }
-    if (!employeesLoaded) return;
+    // Wait for both employees and workstations to be loaded
+    if (!employeesLoaded || !workstationsLoaded) return;
 
     const ev: any = selectedEvent;
     const startDate = new Date(ev.scheduled_start_date);
@@ -449,10 +460,9 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
         ? String(ev.planning_section_id)
         : prefillSectionIdStr,
       date: startDate,
-      // ← Always prefill sequence from the backend value; fall back to '1'
       sequence: ev.sequence != null ? String(ev.sequence) : '1',
     }]);
-  }, [selectedEvent, employeesLoaded]);
+  }, [selectedEvent, employeesLoaded, workstationsLoaded]);
 
   // Minimum of 3 options always shown; grows automatically if stages exceed 3
   const sequenceOptions = useMemo(

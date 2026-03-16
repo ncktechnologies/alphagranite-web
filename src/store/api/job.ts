@@ -367,6 +367,7 @@ export interface FabListParams {
     current_stage?: string;
     next_stage?: string;
     search?: string;
+    type?: 'fab_id' | 'job_number' | 'job_name'; // Add search type parameter
     schedule_start_date?: string;
     schedule_due_date?: string;
     date_filter?: string; // Add date filter for backend filtering
@@ -835,6 +836,9 @@ export const jobApi = createApi({
                             ...(queryParams.next_stage && { next_stage: queryParams.next_stage }),
                             // Search filter
                             ...(queryParams.search && { search: queryParams.search }),
+                            // Search type filter (fab_id, job_number, job_name)
+                            ...(queryParams.type && { type: queryParams.type }),
+                            
                             // Schedule date filters
                             ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
                             ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),

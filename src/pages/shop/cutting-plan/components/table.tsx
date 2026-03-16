@@ -136,6 +136,7 @@ const CuttingPlan = () => {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id'); // Default to fab_id
     const [dateRange, setDateRange] = useState<DateRange | undefined>({
         from: new Date(2025, 5, 2), // June 2, 2025
         to: new Date(2025, 5, 9), // June 9, 2025
@@ -148,15 +149,19 @@ const CuttingPlan = () => {
     const filteredData = useMemo(() => {
         let result = dummyData;
 
-        // Text search
+        // Text search with type filter
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
-            result = result.filter(
-                (item) =>
-                    item.job_no.toLowerCase().includes(q) ||
-                    item.fab_id.toLowerCase().includes(q) ||
-                    item.fab_info.toLowerCase().includes(q)
-            );
+            result = result.filter((item) => {
+                if (searchType === 'fab_id') {
+                    return item.fab_id.toLowerCase().includes(q);
+                } else if (searchType === 'job_number') {
+                    return item.job_no.toLowerCase().includes(q);
+                } else if (searchType === 'job_name') {
+                    return item.fab_info.toLowerCase().includes(q);
+                }
+                return false;
+            });
         }
 
         // FAB type filter
@@ -504,14 +509,27 @@ const CuttingPlan = () => {
             <Card>
                 <CardHeader className="flex flex-wrap items-center justify-between gap-2 py-3 border-b">
                     <div className="flex flex-wrap items-center gap-3">
-                        <div className="relative">
-                            <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
-                            <Input
-                                placeholder="Search by job, Fab ID"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="ps-9 w-[230px] h-[34px]"
-                            />
+                        {/* Search with type selector */}
+                        <div className="relative flex items-center">
+                            <Select value={searchType} onValueChange={(v) => setSearchType(v as 'fab_id' | 'job_number' | 'job_name')}>
+                                <SelectTrigger className="w-[140px] h-[34px] rounded-e-none border-r-0">
+                                    <SelectValue placeholder="Search by" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="fab_id">Fab ID</SelectItem>
+                                    <SelectItem value="job_number">Job Number</SelectItem>
+                                    <SelectItem value="job_name">Job Name</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <div className="relative">
+                                <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                                <Input
+                                    placeholder={`Search by ${searchType.replace('_', ' ')}`}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="ps-9 w-[230px] h-[34px] rounded-s-none"
+                                />
+                            </div>
                         </div>
 
                         <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>

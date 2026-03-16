@@ -91,6 +91,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id'); // Default to fab_id
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -123,8 +124,9 @@ const ShopTable: React.FC<ShopTableProps> = () => {
         skip: pagination.pageIndex * pagination.pageSize,
         limit: pagination.pageSize,
         ...(searchQuery && { search: searchQuery }),
+        ...(searchQuery && { type: searchType }), // Add search type parameter
         ...(fabTypeFilter !== 'all' && { fab_type: fabTypeFilter }),
-    }), [searchQuery, fabTypeFilter, pagination]);
+    }), [searchQuery, searchType, fabTypeFilter, pagination]);
 
     const { data: fabsData, isLoading: isApiLoading, refetch } = useGetFabsQuery(queryParams);
     const { data: fabTypesData } = useGetFabTypesQuery();
@@ -559,20 +561,32 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                 <Card>
                     <CardHeader className="flex flex-wrap items-center justify-between gap-2 py-3 border-b">
                         <div className="flex flex-wrap items-center gap-3">
-                            <div className="relative">
-                                <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
-                                <Input
-                                    placeholder="Search by job, Fab ID"
-                                    value={searchQuery}
-                                    onChange={e => setSearchQuery(e.target.value)}
-                                    className="ps-9 w-[280px] h-[34px]"
-                                    disabled={isApiLoading}
-                                />
-                                {searchQuery && (
-                                    <Button mode="icon" variant="ghost" className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6" onClick={() => setSearchQuery('')}>
-                                        <X />
-                                    </Button>
-                                )}
+                            <div className="relative flex items-center">
+                                <Select value={searchType} onValueChange={(v) => setSearchType(v as 'fab_id' | 'job_number' | 'job_name')}>
+                                    <SelectTrigger className="w-[140px] h-[34px] rounded-e-none border-r-0">
+                                        <SelectValue placeholder="Search by" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="fab_id">Fab ID</SelectItem>
+                                        <SelectItem value="job_number">Job Number</SelectItem>
+                                        <SelectItem value="job_name">Job Name</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <div className="relative">
+                                    <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                                    <Input
+                                        placeholder={`Search by ${searchType.replace('_', ' ')}`}
+                                        value={searchQuery}
+                                        onChange={e => setSearchQuery(e.target.value)}
+                                        className="ps-9 w-[280px] h-[34px] rounded-s-none"
+                                        disabled={isApiLoading}
+                                    />
+                                    {searchQuery && (
+                                        <Button mode="icon" variant="ghost" className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6" onClick={() => setSearchQuery('')}>
+                                            <X />
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
 
                             <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>

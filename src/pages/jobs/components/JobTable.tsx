@@ -102,6 +102,7 @@ export const JobTable = ({
     });
     const [sorting, setSorting] = useState<SortingState>([]);
     const [localSearchQuery, setLocalSearchQuery] = useState('');
+    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id'); // Default to fab_id
     const [localDateFilter, setLocalDateFilter] = useState<string>('all');
     const [localFabTypeFilter, setLocalFabTypeFilter] = useState<string>('all');
     const [localSalesPersonFilter, setLocalSalesPersonFilter] = useState<string>('all');
@@ -122,6 +123,8 @@ export const JobTable = ({
     // const setSorting = tableState?.setSorting || setLocalSorting;
     const searchQuery = tableState?.searchQuery || localSearchQuery;
     const setSearchQuery = tableState?.setSearchQuery || setLocalSearchQuery;
+    const effectiveSearchType = (tableState as any)?.searchType || searchType;
+    const setEffectiveSearchType = (tableState as any)?.setSearchType || setSearchType;
     const dateFilter = tableState?.dateFilter || localDateFilter;
     const setDateFilter = tableState?.setDateFilter || setLocalDateFilter;
     const fabTypeFilter = tableState?.fabTypeFilter || localFabTypeFilter;
@@ -171,17 +174,21 @@ export const JobTable = ({
 
         let result = jobs;
 
-        // Text search
+        // Text search with type filter
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
-            result = result.filter((job) =>
-                job.job_name?.toLowerCase().includes(q) ||
-                job.fab_id?.toLowerCase().includes(q) ||
-                job.job_no?.toLowerCase().includes(q) ||
-                job.fab_type?.toLowerCase().includes(q) ||
-                job.template_schedule?.toLowerCase().includes(q) ||
-                job.templater?.toLowerCase().includes(q)
-            );
+            result = result.filter((job) => {
+                // If specific search type is selected, only search that field
+                if (effectiveSearchType === 'fab_id') {
+                    return job.fab_id?.toLowerCase().includes(q);
+                } else if (effectiveSearchType === 'job_number') {
+                    return job.job_no?.toLowerCase().includes(q);
+                } else if (effectiveSearchType === 'job_name') {
+                    return job.job_name?.toLowerCase().includes(q);
+                }
+                // Fallback: search all fields (should not happen due to default)
+                return false;
+            });
         }
 
         // Date filter
@@ -241,6 +248,7 @@ export const JobTable = ({
         jobs,
         useBackendPagination,
         searchQuery,
+        effectiveSearchType,
         dateFilter,
         dateRange,
         fabTypeFilter,
@@ -892,25 +900,37 @@ export const JobTable = ({
                 <CardHeader className="py-3.5 border-b">
                     <CardHeading>
                         <div className="flex items-center gap-2.5 flex-wrap">
-                            {/* Search input */}
-                            <div className="relative">
-                                <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
-                                <Input
-                                    placeholder="Search by job, Fab ID"
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="ps-9 w-[230px] h-[34px]"
-                                />
-                                {searchQuery && (
-                                    <Button
-                                        mode="icon"
-                                        variant="ghost"
-                                        className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                                        onClick={() => setSearchQuery('')}
-                                    >
-                                        <X />
-                                    </Button>
-                                )}
+                            {/* Search input with type selector */}
+                            <div className="relative flex items-center">
+                                <Select value={effectiveSearchType} onValueChange={(v) => setEffectiveSearchType(v as 'fab_id' | 'job_number' | 'job_name')}>
+                                    <SelectTrigger className="w-[140px] h-[34px] rounded-e-none border-r-0">
+                                        <SelectValue placeholder="Search by" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="fab_id">Fab ID</SelectItem>
+                                        <SelectItem value="job_number">Job Number</SelectItem>
+                                        <SelectItem value="job_name">Job Name</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <div className="relative">
+                                    <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                                    <Input
+                                        placeholder={`Search by ${effectiveSearchType.replace('_', ' ')}`}
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="ps-9 w-[230px] h-[34px] rounded-s-none"
+                                    />
+                                    {searchQuery && (
+                                        <Button
+                                            mode="icon"
+                                            variant="ghost"
+                                            className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                                            onClick={() => setSearchQuery('')}
+                                        >
+                                            <X />
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
 
                             {/* Fab Type filter */}
