@@ -64,7 +64,7 @@ export interface Station {
   members?: number;
   avatars?: string[];
   machine?: string
-  operators?: string[]
+  operator_ids?: string[]
   other?:string
 }
 

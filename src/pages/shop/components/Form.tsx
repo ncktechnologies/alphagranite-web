@@ -42,7 +42,7 @@ const workstationSchema = z.object({
     workstationName: z.string().min(1, 'Workstation name is required'),
     // machine: z.string().min(1, 'Machine is required'),
     other: z.string().optional(),
-    operators: z.array(z.string()).optional(),
+    operator_ids: z.array(z.string()).optional(),
 });
 
 type WorkstationFormType = z.infer<typeof workstationSchema>;
@@ -62,7 +62,7 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
         defaultValues: {
             workstationName: '',
             other: '',
-            operators: [],
+            operator_ids: [],
         },
     });
 
@@ -72,9 +72,9 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
             form.reset({
                 workstationName: role.workstationName || '',
                 other: role.other || '',
-                operators: role.operators || [],
+                operator_ids: role.operator_ids || [],
             });
-            setSelectedUsers(role.operators ? role.operators.map(String) : []);
+            setSelectedUsers(role.operator_ids ? role.operator_ids.map(String) : []);
             // Attempt to populate planning section if present on role
             const ps = (role as any).planning_section_id ?? (role as any).planningSectionId ?? undefined;
             setPlanningSectionId(ps !== undefined ? Number(ps) : undefined);
@@ -82,7 +82,7 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
             form.reset({
                 workstationName: '',
                 other: '',
-                operators: [],
+                operator_ids: [],
             });
             setSelectedUsers([]);
             setPlanningSectionId(undefined);
@@ -94,10 +94,10 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
             prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId]
         );
         form.setValue(
-            'operators',
-            form.getValues('operators')?.includes(userId)
-                ? form.getValues('operators')?.filter((id) => id !== userId)
-                : [...(form.getValues('operators') || []), userId]
+            'operator_ids',
+            form.getValues('operator_ids')?.includes(userId)
+                ? form.getValues('operator_ids')?.filter((id) => id !== userId)
+                : [...(form.getValues('operator_ids') || []), userId]
         );
     };
 
@@ -175,7 +175,7 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
                 </FormItem>
 
 
-                <FormField
+                {/* <FormField
                     control={form.control}
                     name="other"
                     render={({ field }) => (
@@ -186,7 +186,7 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
                             </FormControl>
                         </FormItem>
                     )}
-                />
+                /> */}
                 {/* </div> */}
 
                 {/* Assign Operator */}
