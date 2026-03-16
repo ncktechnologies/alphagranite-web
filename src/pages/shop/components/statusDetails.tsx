@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router';
-import { format, addHours } from 'date-fns';
+import { format } from 'date-fns';
 import { toast } from 'sonner';
 import {
     AlertCircle, Pencil, X, LoaderCircle,
@@ -33,6 +33,7 @@ import { useUpdateShopPlanMutation } from '@/store/api';
 import { useGetWorkstationsQuery, useGetWorkStationByPlanningSectionsQuery } from '@/store/api/workstation';
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { BackButton } from '@/components/common/BackButton';
+import { usePlanSections } from '@/hooks/usePlanningSection';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants & Helpers
@@ -53,17 +54,6 @@ const TIME_SLOTS = (() => {
     }
     return slots;
 })();
-
-const SEQUENCE_OPTIONS = Array.from({ length: 20 }, (_, i) => i + 1);
-
-const stageMapping: Record<number, { label: string; unit: string; order: number }> = {
-    7: { label: 'CUT', unit: 'SF', order: 1 },
-    8: { label: 'WJ', unit: 'LF', order: 2 },
-    9: { label: 'EDGING', unit: 'LF', order: 3 },
-    5: { label: 'MITER', unit: 'LF', order: 4 },
-    3: { label: 'CNC', unit: 'LF', order: 5 },
-    6: { label: 'TOUCHUP QA', unit: 'SF', order: 6 },
-};
 
 const noteStageConfig: Record<string, { label: string; color: string }> = {
     shop_status: { label: 'Shop Status', color: 'text-blue-700' },
@@ -193,19 +183,28 @@ const ShopEstDateField: React.FC<{ value: string | undefined; fabId: number; onS
 // ─────────────────────────────────────────────────────────────────────────────
 interface PlanStageCardProps {
     plan: any;
-    workstations: any[];  // full list (for read-mode name lookup only)
+    workstations: any[];
     employees: any[];
+    totalPlans: number;         // ← total plans on this fab, drives sequence options
     onSaved: () => void;
 }
 
-const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, employees, onSaved }) => {
+const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, employees, totalPlans, onSaved }) => {
     const [updateShopPlan] = useUpdateShopPlanMutation();
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    const stageInfo = stageMapping[plan.planning_section_id];
+    // ← Use shared hook — resolves label by section id, no hardcoded stageMapping needed
+    const { sections: planSections } = usePlanSections();
+    const sectionInfo = planSections.find(s => s.id === plan.planning_section_id);
+    const sectionLabel = sectionInfo?.plan_name ?? `Section ${plan.planning_section_id}`;
 
-    // ✅ Fetch workstations scoped to this plan's planning_section_id
+    // Sequence options: always at least 3, grows with total plans
+    const sequenceOptions = Array.from(
+        { length: Math.max(3, totalPlans) },
+        (_, i) => i + 1
+    );
+
     const { data: workstationData, isLoading: isLoadingWorkstations } = useGetWorkStationByPlanningSectionsQuery(
         plan.planning_section_id,
         { skip: !plan.planning_section_id }
@@ -241,14 +240,12 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
 
     const handleCancel = () => { setDraft(buildDraft()); setIsEditing(false); };
 
-    // Derive filtered operators from the selected workstation's operator_ids
     const selectedWorkstation = workstationsForSection.find(w => String(w.id) === draft.workstation_id);
     const allowedOperatorIds = selectedWorkstation?.operator_ids?.map(String) || [];
     const filteredEmployees = allowedOperatorIds.length > 0
         ? employees.filter(emp => allowedOperatorIds.includes(String(emp.id)))
         : [];
 
-    // Reset operator when workstation changes and it's no longer valid
     useEffect(() => {
         if (draft.operator_id && allowedOperatorIds.length > 0 && !allowedOperatorIds.includes(draft.operator_id)) {
             patch({ operator_id: '' });
@@ -284,7 +281,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                 },
             } as any).unwrap();
 
-            toast.success(`${stageInfo?.label ?? 'Plan'} updated.`);
+            toast.success(`${sectionLabel} updated.`);
             setIsEditing(false);
             onSaved();
         } catch {
@@ -294,7 +291,6 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
         }
     };
 
-    // Read-mode display names
     const wsName = workstations.find(w => String(w.id) === String(plan.workstation_id))?.name
         || workstations.find(w => String(w.id) === String(plan.workstation_id))?.workstation_name
         || '—';
@@ -319,7 +315,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                             border: 'none',
                         }}
                     >
-                        {stageInfo?.label ?? `Section ${plan.planning_section_id}`}
+                        {sectionLabel}
                     </Badge>
                     {planPct === 100 && <CheckCircle2 className="h-4 w-4 text-green-500" />}
                 </div>
@@ -327,12 +323,12 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                 <div className="flex items-center gap-2">
                     {isEditing ? (
                         <Select value={String(draft.sequence)} onValueChange={v => patch({ sequence: v })}>
-                            <SelectTrigger className="h-7 w-16 text-xs border-[#e2e4ed]">
+                            <SelectTrigger className="h-7 w-suto text-xs border-[#e2e4ed]">
                                 <SelectValue placeholder="Seq" />
                             </SelectTrigger>
                             <SelectContent>
-                                {SEQUENCE_OPTIONS.map(num => (
-                                    <SelectItem key={num} value={String(num)}>{num}</SelectItem>
+                                {sequenceOptions.map(num => (
+                                    <SelectItem key={num} value={String(num)}>Seq: {num}</SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
@@ -356,8 +352,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
             <CardContent className="pt-4 px-4 pb-4">
                 {isEditing ? (
                     <div className="flex flex-col gap-4">
-
-                        {/* ── Workstation (scoped to planning section) ── */}
+                        {/* Workstation */}
                         <div className="flex flex-col gap-1.5">
                             <Label className="text-xs text-muted-foreground uppercase tracking-wide">Workstation</Label>
                             <Select
@@ -392,7 +387,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                             </Select>
                         </div>
 
-                        {/* ── Operator (scoped to selected workstation's operator_ids) ── */}
+                        {/* Operator */}
                         <div className="flex flex-col gap-1.5">
                             <Label className="text-xs text-muted-foreground uppercase tracking-wide">Operator</Label>
                             <Select
@@ -493,7 +488,6 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                         </div>
                     </div>
                 ) : (
-                    /* ── READ MODE ── */
                     <div className="flex flex-col gap-3">
                         <MiniProgress percent={planPct} />
                         <Separator className="my-0.5" />
@@ -539,6 +533,9 @@ const FabDetailsPage: React.FC = () => {
 
     const { data: employeesData } = useGetEmployeesQuery();
     const employees: any[] = employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
+
+    // ← usePlanSections used at page level for the sidebar schedule dates label lookup
+    const { sections: planSections } = usePlanSections();
 
     const fab = fabResponse?.data ?? fabResponse;
 
@@ -607,12 +604,7 @@ const FabDetailsPage: React.FC = () => {
         );
     }
 
-    const plans: any[] = [...(fab.plans || [])].sort((a, b) => {
-        const oa = stageMapping[a.planning_section_id]?.order ?? 99;
-        const ob = stageMapping[b.planning_section_id]?.order ?? 99;
-        return oa - ob;
-    });
-
+    const plans: any[] = [...(fab.plans || [])].sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0));
     const fabNotes: any[] = fab.fab_notes || [];
 
     const jobInfo = [
@@ -645,7 +637,7 @@ const FabDetailsPage: React.FC = () => {
                     <h1 className="text-2xl font-semibold">FAB ID: {fab?.id}</h1>
                     <p className="text-sm text-muted-foreground">Review Plan Activity</p>
                 </div>
-                <BackButton label='back'/>
+                <BackButton label='back' />
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
@@ -686,6 +678,7 @@ const FabDetailsPage: React.FC = () => {
                                             plan={plan}
                                             workstations={workstations}
                                             employees={employees}
+                                            totalPlans={plans.length} // ← drives sequence options
                                             onSaved={refetch}
                                         />
                                     ))}
@@ -806,13 +799,14 @@ const FabDetailsPage: React.FC = () => {
                                 value={fab.installation_date
                                     ? format(new Date(fab.installation_date), 'MMM dd, yyyy') : '—'}
                             />
+                            {/* ← Uses planSections from hook instead of hardcoded stageMapping */}
                             {plans.map((plan: any) => {
-                                const info = stageMapping[plan.planning_section_id];
-                                if (!info || !plan.scheduled_start_date) return null;
+                                const section = planSections.find(s => s.id === plan.planning_section_id);
+                                if (!section || !plan.scheduled_start_date) return null;
                                 return (
                                     <InfoRow
                                         key={plan.id}
-                                        label={`${info.label} Date`}
+                                        label={`${section.plan_name} Date`}
                                         value={format(new Date(plan.scheduled_start_date), 'MMM dd, yyyy')}
                                     />
                                 );

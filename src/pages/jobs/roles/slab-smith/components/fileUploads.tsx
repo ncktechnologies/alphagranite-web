@@ -49,6 +49,7 @@ interface UploadDocumentsProps {
   refetchFiles?: () => void; // Add refetch function
   stage?: string; // Required: workflow stage
   fileDesign?: string; // Required: file design identifier
+  onUploadComplete?: () => void; // Callback when upload completes
 }
 
 export function UploadDocuments({
@@ -62,6 +63,7 @@ export function UploadDocuments({
   refetchFiles,
   stage,
   fileDesign,
+  onUploadComplete,
 }: UploadDocumentsProps) {
   const [uploadFiles, setUploadFiles] = useState<FileUploadItem[]>([]);
   const [uploadBoxes, setUploadBoxes] = useState([{ id: 1 }]);
@@ -97,8 +99,8 @@ export function UploadDocuments({
     console.log('SlabSmith ID available:', slabSmithId);
     console.log('Stage:', stage);
     console.log('File Design:', fileDesign);
-      
-    if (!slabsmithId) {
+        
+    if (!slabSmithId) {
       console.log('No SlabSmith ID - setting error state');
       setUploadFiles(prev => 
         prev.map(f => 
@@ -108,35 +110,6 @@ export function UploadDocuments({
         )
       );
       processingFilesRef.current.delete(fileItem.id);
-      return;
-    }
-  
-    // Validate required fields
-    if (!stage) {
-      console.log('Missing stage - setting error state');
-      setUploadFiles(prev => 
-        prev.map(f => 
-          f.id === fileItem.id 
-            ? { ...f, status: 'error' as const, error: 'Stage is required. Please select a stage before uploading.' } 
-            : f
-        )
-      );
-      processingFilesRef.current.delete(fileItem.id);
-      toast.error('Stage is required. Please select a stage before uploading.');
-      return;
-    }
-  
-    if (!fileDesign) {
-      console.log('Missing file_design - setting error state');
-      setUploadFiles(prev => 
-        prev.map(f => 
-          f.id === fileItem.id 
-            ? { ...f, status: 'error' as const, error: 'File design is required. Please enter file design before uploading.' } 
-            : f
-        )
-      );
-      processingFilesRef.current.delete(fileItem.id);
-      toast.error('File design is required. Please enter file design before uploading.');
       return;
     }
 
@@ -188,6 +161,11 @@ export function UploadDocuments({
       }, 1500);
       
       toast.success('File uploaded successfully');
+      
+      // Call upload complete callback to reset file design
+      if (onUploadComplete) {
+        onUploadComplete();
+      }
     } catch (error: any) {
       console.error('Upload error:', error);
       
@@ -203,12 +181,22 @@ export function UploadDocuments({
   };
 
   // Create a custom handler for file selection
-  const handleFileSelection = (newFiles: FileWithPreview[]) => {
+  const handleFileSelection = useCallback((newFiles: FileWithPreview[]) => {
     console.log('=== HANDLE FILE SELECTION CALLED ===');
     console.log('Received files:', newFiles.length);
-    console.log('File IDs:', newFiles.map(f => f.id));
-    console.log('Current uploadFiles state length:', uploadFiles.length);
-    console.log('Current processing files:', processingFilesRef.current.size);
+    console.log('Current stage:', stage);
+    console.log('Current fileDesign:', fileDesign);
+    
+    // Validate required fields BEFORE accepting files
+    if (!stage) {
+      toast.error('Stage is required. Please select a stage before uploading.');
+      return;
+    }
+    
+    if (!fileDesign) {
+      toast.error('File design is required. Please select a file design before uploading.');
+      return;
+    }
     
     // Filter out files already being processed
     const uniqueFiles = newFiles.filter(file => !processingFilesRef.current.has(file.id));
@@ -247,7 +235,7 @@ export function UploadDocuments({
       handleRealUpload(fileItem);
     });
     
-  };
+  }, [stage, fileDesign]); // Add dependencies
 
   // Handle drop directly to avoid duplicate events
   const handleCustomDrop = useCallback(async (e: React.DragEvent<HTMLElement>) => {

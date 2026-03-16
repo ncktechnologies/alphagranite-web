@@ -1441,7 +1441,7 @@ useEffect(() => {
                     <CardFooter className='flex justify-between items-center'>
                       <Link to="/sales" className="flex flex-nowrap items-center gap-2 text-sm text-primary underline">
                         <ArrowLeft className="w-4 h-4" />
-                        Back to Fabs
+                        Back to All Fabs
                       </Link>
                       {/* Action Buttons */}
                       <div className="flex items-center justify-end gap-3 ">

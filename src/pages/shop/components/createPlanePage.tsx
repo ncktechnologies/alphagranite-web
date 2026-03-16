@@ -31,7 +31,7 @@ import { useGetPlanningSectionsQuery, useGetWorkStationByPlanningSectionsQuery }
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetFabsQuery } from '@/store/api/job';
 
-const SEQUENCE_OPTIONS = Array.from({ length: 20 }, (_, i) => i + 1);
+// Sequence options are generated dynamically from entries.length — see PlanEntryCard
 
 const TIME_SLOTS = (() => {
   const slots: { value: string; label: string }[] = [];
@@ -59,7 +59,7 @@ interface PlanEntry {
   start_time: string;
   end_time: string;
   planning_section_id?: string;
-  date: Date;
+  date: Date | undefined;
   sequence: string;
 }
 
@@ -75,6 +75,7 @@ interface PlanEntryCardProps {
   isLoadingFabs: boolean;
   effectivePrefillFabId: string;
   isEditing: boolean;
+  sequenceOptions: number[]; // ← ADDED: only shows as many options as there are stages
   onToggleExpand: () => void;
   onUpdate: (patch: Partial<PlanEntry>) => void;
   onRemove: () => void;
@@ -83,9 +84,9 @@ interface PlanEntryCardProps {
 const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
   entry, idx, total, employees, planningSections,
   isExpanded, fabOptions, isLoadingFabs, effectivePrefillFabId, isEditing,
+  sequenceOptions,
   onToggleExpand, onUpdate, onRemove,
 }) => {
-  // ✅ Hooks called unconditionally at top level of component
   const { data: workstationData, isLoading: isLoadingWorkstations } = useGetWorkStationByPlanningSectionsQuery(
     entry.planning_section_id ? Number(entry.planning_section_id) : 0,
     { skip: !entry.planning_section_id }
@@ -98,7 +99,6 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
     ? employees.filter(emp => allowedOperatorIds.includes(String(emp.id)))
     : [];
 
-  // Reset operator when workstation changes and operator is no longer valid
   useEffect(() => {
     if (entry.operator_id && allowedOperatorIds.length > 0 && !allowedOperatorIds.includes(entry.operator_id)) {
       onUpdate({ operator_id: '' });
@@ -120,7 +120,12 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
               className={cn('h-4 w-4 text-[#7c8689] transition-transform shrink-0', !isExpanded && '-rotate-90')}
             />
             <CardTitle className="text-[16px] text-[#4b545d] font-semibold truncate">
-              Plan Section {idx + 1}
+              {entry.planning_section_id
+                ? (planningSections.find(ps => String(ps.id) === entry.planning_section_id)?.plan_name
+                    || planningSections.find(ps => String(ps.id) === entry.planning_section_id)?.name
+                    || planningSections.find(ps => String(ps.id) === entry.planning_section_id)?.title
+                    || `Plan Section ${idx + 1}`)
+                : `Plan Section ${idx + 1}`}
             </CardTitle>
             {!isExpanded && hasSlot && (
               <span className="text-xs text-[#7c8689] shrink-0">
@@ -131,12 +136,12 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
 
           <div className="flex items-center gap-2 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
             <Select value={entry.sequence} onValueChange={value => onUpdate({ sequence: value })}>
-              <SelectTrigger className="h-7 w-16 text-xs border-[#e2e4ed] rounded-[4px]">
+              <SelectTrigger className="h-7 w-auto text-xs border-[#e2e4ed] rounded-[4px]">
                 <SelectValue placeholder="Seq" />
               </SelectTrigger>
               <SelectContent>
-                {SEQUENCE_OPTIONS.map(num => (
-                  <SelectItem key={num} value={String(num)}>{num}</SelectItem>
+                {sequenceOptions.map(num => (
+                  <SelectItem key={num} value={String(num)}> Seq:{num}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -350,6 +355,7 @@ interface CreatePlanPageProps {
   selectedTimeSlot?: string | null;
   selectedEvent?: any | null;
   prefillFabId?: string;
+  prefillPlanSectionId?: number; // ← ADDED: pre-selects the Shop Activity dropdown
   onEventCreated?: () => void;
   hideBackButton?: boolean;
 }
@@ -360,6 +366,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   selectedTimeSlot,
   selectedEvent,
   prefillFabId: propPrefillFabId,
+  prefillPlanSectionId, // ← ADDED
   onEventCreated,
   hideBackButton = false,
 }) => {
@@ -371,6 +378,10 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const [autoScheduleModalOpen, setAutoScheduleModalOpen] = useState(false);
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
 
+  // ← ADDED: converts prefillPlanSectionId to a string for the entry state,
+  //   matching the planning_section_id field type used throughout the form.
+  const prefillSectionIdStr = prefillPlanSectionId != null ? String(prefillPlanSectionId) : undefined;
+
   const emptyEntry = (): PlanEntry => ({
     fab_id: effectivePrefillFabId || '',
     workstation_id: '',
@@ -378,8 +389,8 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     notes: '',
     start_time: selectedTimeSlot || '',
     end_time: '',
-    planning_section_id: undefined,
-    date: propSelectedDate || new Date(),
+    planning_section_id: prefillSectionIdStr,
+    date: propSelectedDate ?? undefined!,  // only set if explicitly passed in
     sequence: '1',
   });
 
@@ -415,12 +426,17 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const employeesLoaded = employees.length > 0;
 
   useEffect(() => {
-    if (!selectedEvent) { setEntries([emptyEntry()]); return; }
+    if (!selectedEvent) {
+      setEntries([emptyEntry()]);
+      return;
+    }
     if (!employeesLoaded) return;
+
     const ev: any = selectedEvent;
     const startDate = new Date(ev.scheduled_start_date);
     const endTime = ev.estimated_hours
       ? format(new Date(startDate.getTime() + ev.estimated_hours * 3_600_000), 'HH:mm') : '';
+
     setEntries([{
       id: ev.id,
       fab_id: String(ev.fab_id ?? ''),
@@ -429,33 +445,42 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       notes: ev.notes ?? '',
       start_time: format(startDate, 'HH:mm'),
       end_time: endTime,
-      planning_section_id: ev.planning_section_id != null ? String(ev.planning_section_id) : undefined,
+      planning_section_id: ev.planning_section_id != null
+        ? String(ev.planning_section_id)
+        : prefillSectionIdStr,
       date: startDate,
-      sequence: ev.sequence ? String(ev.sequence) : '1',
+      // ← Always prefill sequence from the backend value; fall back to '1'
+      sequence: ev.sequence != null ? String(ev.sequence) : '1',
     }]);
   }, [selectedEvent, employeesLoaded]);
+
+  // Minimum of 3 options always shown; grows automatically if stages exceed 3
+  const sequenceOptions = useMemo(
+    () => Array.from({ length: Math.max(3, entries.length) }, (_, i) => i + 1),
+    [entries.length]
+  );
 
   const addEntry = () => setEntries(p => {
     const e = emptyEntry();
     if (p[0]?.fab_id) e.fab_id = p[0].fab_id;
+    // Auto-assign next sequence number
+    e.sequence = String(p.length + 1);
     return [...p, e];
   });
 
-  const removeEntry = (idx: number) => setEntries(p => p.filter((_, i) => i !== idx));
+  const removeEntry = (idx: number) => setEntries(p => {
+    const next = p.filter((_, i) => i !== idx);
+    // Re-number sequences after removal so they stay contiguous
+    return next.map((e, i) => ({ ...e, sequence: String(i + 1) }));
+  });
 
-  const updateEntry = (idx: number, patch: Partial<PlanEntry>) =>
-    setEntries(p => p.map((e, i) => {
-      if (i !== idx) return i === 0 ? e : { ...e, fab_id: patch.fab_id !== undefined ? patch.fab_id : e.fab_id };
-      const updated = { ...e, ...patch };
-      // Sync fab_id across all entries when changed on entry 0
-      return updated;
-    }).map((e, i) => {
-      if (idx === 0 && patch.fab_id !== undefined && i !== 0) return { ...e, fab_id: patch.fab_id };
-      if (i === idx) return { ...e, ...patch };
-      return e;
-    }));
+  const resetForm = () => setEntries([emptyEntry()]);
 
-  const handleBack = () => { if (onBack) onBack(); else navigate(-1); };
+  const handleBack = () => {
+    resetForm();
+    if (onBack) onBack();
+    else navigate(-1);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -494,7 +519,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
             scheduled_start: start,
             scheduled_end: end,
             notes: entry.notes || undefined,
-            sequence: Number(entry.sequence) || 1,
+            sequence: Number(entry.sequence) || (idx + 1),
           };
         });
         await createShopPlan({ fab_id: Number(fabId), estimated_hours: totalEst, status_id: 1, stages } as any).unwrap();
@@ -523,11 +548,12 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       }
 
       toast.success('Plans scheduled successfully');
+      resetForm();
       onEventCreated?.();
       handleBack();
     } catch (error: any) {
       const msg = error?.data?.detail?.message || 'Failed to create/update Plan';
-      toast.error(msg);
+      // toast.error(msg);
     }
   };
 
@@ -546,7 +572,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
             {!hideBackButton && (
               <button
                 onClick={handleBack}
-                className="h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] bg-white flex items-center gap-2 text-[#4b545d] hover:bg-gray-50 transition-colors"
+                className="h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] bg-white flex items-center justify-center gap-2 text-[#4b545d] hover:bg-gray-50 transition-colors"
               >
                 <ArrowLeft className="h-4 w-4" />
                 <span className="text-[14px] font-semibold">Back</span>
@@ -565,7 +591,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
           )}
 
           <button
-            onClick={() => setAutoScheduleModalOpen(true)}
+            onClick={() => navigate(`/shop/auto-schedule?fabId=${entries[0]?.fab_id || ''}`)}
             className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px]"
             style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
           >
@@ -607,7 +633,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
             </Card>
           )}
 
-          {/* Plan entry cards — each is its own component so hooks are safe */}
+          {/* Plan entry cards */}
           {entries.map((entry, idx) => (
             <PlanEntryCard
               key={idx}
@@ -621,11 +647,11 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               isLoadingFabs={isLoadingFabs}
               effectivePrefillFabId={effectivePrefillFabId}
               isEditing={isEditing}
+              sequenceOptions={sequenceOptions}
               onToggleExpand={() => setExpandedCards(p => ({ ...p, [idx]: !(p[idx] !== false) }))}
               onUpdate={patch => {
                 setEntries(p => p.map((e, i) => {
                   if (i === idx) return { ...e, ...patch };
-                  // sync fab_id to all entries when changed on entry 0
                   if (idx === 0 && patch.fab_id !== undefined) return { ...e, fab_id: patch.fab_id };
                   return e;
                 }));
@@ -668,24 +694,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
         </form>
       </div>
 
-      {/* Auto-Schedule Modal */}
-      <Dialog open={autoScheduleModalOpen} onOpenChange={setAutoScheduleModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Auto‑Schedule Options</DialogTitle>
-            <DialogDescription>Define the window for scheduling suggestions.</DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            {/* keep your existing modal fields */}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAutoScheduleModalOpen(false)}>Cancel</Button>
-            <Button onClick={handleAutoSchedule} disabled={isAutoScheduling}>
-              {isAutoScheduling ? 'Processing…' : 'Get Suggestions'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+    
     </div>
   );
 };

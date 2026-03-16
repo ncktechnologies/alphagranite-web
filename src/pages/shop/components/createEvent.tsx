@@ -9,6 +9,7 @@ interface CreatePlanSheetProps {
   selectedTimeSlot?: string | null;
   selectedEvent?: any | null;
   prefillFabId?: string;
+  prefillPlanSectionId?: number; 
   onEventCreated?: () => void;
 }
 
@@ -19,6 +20,7 @@ const CreatePlanSheet: React.FC<CreatePlanSheetProps> = ({
   selectedTimeSlot,
   selectedEvent,
   prefillFabId,
+  prefillPlanSectionId,  
   onEventCreated,
 }) => {
   const handleBack = () => {
@@ -34,6 +36,7 @@ const CreatePlanSheet: React.FC<CreatePlanSheetProps> = ({
           selectedTimeSlot={selectedTimeSlot}
           selectedEvent={selectedEvent}
           prefillFabId={prefillFabId}
+          prefillPlanSectionId={prefillPlanSectionId}  
           onEventCreated={onEventCreated}
         />
       </SheetContent>

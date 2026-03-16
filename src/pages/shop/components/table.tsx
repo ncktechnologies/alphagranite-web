@@ -36,6 +36,7 @@ import { useGetFabsQuery, useGetFabTypesQuery } from '@/store/api/job';
 import ActionsCell from './action';
 import { useNavigate } from 'react-router';
 import CreatePlanSheet from './createEvent';
+import PlanSectionCell from './planSectionCell';
 
 export interface ShopPlanRow {
     fab_id: string;
@@ -60,6 +61,7 @@ export interface ShopPlanRow {
     plan_notes: string | null;
     date_group: string;
     shop_office_date_scheduled?: string;
+    _rawPlans: any[];
 }
 
 interface ShopTableProps {
@@ -184,6 +186,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                 milter_ln_ft: fab.miter_linft || 0,
                 total_cut_ln_ft: fab.total_cut_lnft || 0,
                 percent_complete: fab.percent_complete || 0,
+                _rawPlans: plans,
             };
 
             if (cutPlans.length > 0) {
@@ -400,35 +403,76 @@ const ShopTable: React.FC<ShopTableProps> = () => {
             id: 'wl_ln_ft',
             accessorFn: r => r.wl_ln_ft,
             header: ({ column }) => <DataGridColumnHeader title="WJ:LN FT" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-text">{row.original.wl_ln_ft.toFixed(2)}</span>,
+            // cell: ({ row }) => <span className="text-sm text-text">{row.original.wl_ln_ft.toFixed(2)}</span>,
+            cell: ({ row }) => (
+                <PlanSectionCell
+                    value={row.original.wl_ln_ft.toFixed(2)}
+                    sectionKeyword="wj"
+                    fabId={row.original.fab_id}
+                    fabPlans={row.original._rawPlans}
+                    onPlanSaved={refetch}
+                />
+            ),
             enableSorting: true,
         },
         {
             id: 'sl_ln_ft',
             accessorFn: r => r.sl_ln_ft,
             header: ({ column }) => <DataGridColumnHeader title="SAW:LN FT" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-text">{row.original.sl_ln_ft.toFixed(2)}</span>,
+            cell: ({ row }) => (
+                <PlanSectionCell
+                    value={row.original.sl_ln_ft.toFixed(2)}
+                    sectionKeyword="cut"
+                    fabId={row.original.fab_id}
+                    fabPlans={row.original._rawPlans}
+                    onPlanSaved={refetch}
+                />
+            ),
             enableSorting: true,
         },
         {
             id: 'edging_ln_ft',
             accessorFn: r => r.edging_ln_ft,
             header: ({ column }) => <DataGridColumnHeader title="EDGING:LN FT" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-text">{row.original.edging_ln_ft.toFixed(2)}</span>,
+            cell: ({ row }) => (
+                <PlanSectionCell
+                    value={row.original.edging_ln_ft.toFixed(2)}
+                    sectionKeyword="edg"
+                    fabId={row.original.fab_id}
+                    fabPlans={row.original._rawPlans}
+                    onPlanSaved={refetch}
+                />
+            ),
             enableSorting: true,
         },
         {
             id: 'cnc_ln_ft',
             accessorFn: r => r.cnc_ln_ft,
             header: ({ column }) => <DataGridColumnHeader title="CNC:LN FT" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-text">{row.original.cnc_ln_ft.toFixed(2)}</span>,
+            cell: ({ row }) => (
+                <PlanSectionCell
+                    value={row.original.cnc_ln_ft.toFixed(2)}
+                    sectionKeyword="cnc"
+                    fabId={row.original.fab_id}
+                    fabPlans={row.original._rawPlans}
+                    onPlanSaved={refetch}
+                />
+            ),
             enableSorting: true,
         },
         {
             id: 'milter_ln_ft',
             accessorFn: r => r.milter_ln_ft,
             header: ({ column }) => <DataGridColumnHeader title="MILTER:LN FT" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-text">{row.original.milter_ln_ft.toFixed(2)}</span>,
+            cell: ({ row }) => (
+                <PlanSectionCell
+                    value={row.original.milter_ln_ft.toFixed(2)}
+                    sectionKeyword="mit"
+                    fabId={row.original.fab_id}
+                    fabPlans={row.original._rawPlans}
+                    onPlanSaved={refetch}
+                />
+            ),
             enableSorting: true,
         },
         {
@@ -503,7 +547,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
             <DataGrid
                 table={table}
                 recordCount={totalRecords}
-                isLoading={isApiLoading }
+                isLoading={isApiLoading}
                 groupByDate={false}
                 tableLayout={{
                     columnsPinnable: true,
@@ -522,7 +566,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
                                     className="ps-9 w-[280px] h-[34px]"
-                                    disabled={isApiLoading }
+                                    disabled={isApiLoading}
                                 />
                                 {searchQuery && (
                                     <Button mode="icon" variant="ghost" className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6" onClick={() => setSearchQuery('')}>
@@ -568,7 +612,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Types</SelectItem>
-                                    
+
                                     {fabTypes.map((type) => (
                                         <SelectItem key={type} value={type}>
                                             {type}
@@ -588,7 +632,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                     <CardTable>
                         <ScrollArea className="h-[calc(100vh-280px)]">
                             <div className="relative">
-                                {(isApiLoading ) ? (
+                                {(isApiLoading) ? (
                                     <div className="flex items-center justify-center h-64">
                                         <p>Loading...</p>
                                     </div>

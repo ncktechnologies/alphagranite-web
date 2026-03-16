@@ -22,15 +22,17 @@ import { useCreateShopPlansMutation, useCreateShopSuggestionMutation, useUpdateS
 import { useGetPlanningSectionsQuery, useGetWorkStationByPlanningSectionsQuery } from '@/store/api/workstation';
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetFabsQuery } from '@/store/api/job';
+import { usePlanSections } from '@/hooks/usePlanningSection';
 
-const SEQUENCE_OPTIONS = Array.from({ length: 20 }, (_, i) => i + 1);
 
-const FAB_STAGE_FIELDS: { section_id: number; field: string; label: string }[] = [
-  { section_id: 7, field: 'total_sqft',    label: 'Cut' },
-  { section_id: 8, field: 'wj_linft',      label: 'WJ' },
-  { section_id: 9, field: 'edging_linft',  label: 'Edging' },
-  { section_id: 2, field: 'miter_linft',   label: 'Miter' },
-  { section_id: 1, field: 'cnc_linft',     label: 'CNC' },
+// Field-to-keyword mapping — only field names and search keywords are coupled here,
+// never raw IDs. IDs are resolved at runtime from the API via usePlanSections.
+const FAB_STAGE_FIELDS: { keyword: string; field: string; label: string }[] = [
+  { keyword: 'cut',    field: 'total_sqft',   label: 'Cut' },
+  { keyword: 'wj',     field: 'wj_linft',     label: 'WJ' },
+  { keyword: 'edg',    field: 'edging_linft', label: 'Edging' },
+  { keyword: 'mit',    field: 'miter_linft',  label: 'Miter' },
+  { keyword: 'cnc',    field: 'cnc_linft',    label: 'CNC' },
 ];
 
 // ── Entry type ────────────────────────────────────────────────────────────
@@ -58,6 +60,7 @@ interface AutoPlanEntryCardProps {
   planningSections: any[];
   proposals: any[];
   isExpanded: boolean;
+  sequenceOptions: number[]; // ← dynamic, passed from parent
   onToggleExpand: () => void;
   onUpdate: (patch: Partial<AutoPlanEntry>) => void;
   onRemove: () => void;
@@ -66,9 +69,8 @@ interface AutoPlanEntryCardProps {
 
 const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
   entry, idx, total, employees, planningSections, proposals,
-  isExpanded, onToggleExpand, onUpdate, onRemove, onApplyProposal,
+  isExpanded, sequenceOptions, onToggleExpand, onUpdate, onRemove, onApplyProposal,
 }) => {
-  // ✅ Hooks at top level — no longer inside .map()
   const { data: workstationData, isLoading: isLoadingWorkstations } = useGetWorkStationByPlanningSectionsQuery(
     entry.planning_section_id ? Number(entry.planning_section_id) : 0,
     { skip: !entry.planning_section_id }
@@ -127,16 +129,19 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
           </div>
 
           <div className="flex items-center gap-2 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
+            {/* Sequence — always visible, uses dynamic options (min 3) */}
             <Select value={entry.sequence} onValueChange={value => onUpdate({ sequence: value })}>
-              <SelectTrigger className="h-7 w-16 text-xs border-[#e2e4ed] rounded-[4px]">
+              <SelectTrigger className="h-7 w-auto text-xs border-[#e2e4ed] rounded-[4px]">
                 <SelectValue placeholder="Seq" />
               </SelectTrigger>
               <SelectContent>
-                {SEQUENCE_OPTIONS.map(num => (
-                  <SelectItem key={num} value={String(num)}>{num}</SelectItem>
+                {sequenceOptions.map(num => (
+                  <SelectItem key={num} value={String(num)}>Seq: {num}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
+
+            {/* Remove — only shown when more than one stage */}
             {total > 1 && (
               <button
                 type="button"
@@ -388,6 +393,12 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
 
   const [entries, setEntries] = useState<AutoPlanEntry[]>([emptyEntry()]);
 
+  // Minimum 3 options always shown; grows automatically if stages exceed 3
+  const sequenceOptions = useMemo(
+    () => Array.from({ length: Math.max(3, entries.length) }, (_, i) => i + 1),
+    [entries.length]
+  );
+
   const [createShopPlan, { isLoading }] = useCreateShopPlansMutation();
   const [updateShopPlan] = useUpdateShopPlanMutation();
   const [createShopPlansSuggestion, { isLoading: isAutoScheduling }] = useCreateShopSuggestionMutation();
@@ -415,17 +426,29 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     return fabs.find((fab: any) => String(fab.id) === selectedFabId) || null;
   }, [allFabsData, selectedFabId]);
 
+  const { findSectionByKeyword } = usePlanSections();
+
   const employeesLoaded = employees.length > 0;
 
   function getActiveStagesFromFab(fab: any) {
-    return FAB_STAGE_FIELDS.filter(s => typeof fab?.[s.field] === 'number' && fab[s.field] > 0);
+    return FAB_STAGE_FIELDS
+      .map(s => {
+        const section = findSectionByKeyword(s.keyword);
+        return section ? { ...s, section_id: section.id } : null;
+      })
+      .filter((s): s is NonNullable<typeof s> =>
+        s !== null && typeof fab?.[s.field] === 'number' && fab[s.field] > 0
+      );
   }
 
   useEffect(() => {
     if (selectedEvent || !selectedFab) return;
     const activeStages = getActiveStagesFromFab(selectedFab);
     if (activeStages.length === 0) { setEntries([emptyEntry({ fab_id: String(selectedFab.id) })]); return; }
-    setEntries(activeStages.map(s => emptyEntry({ section_id: s.section_id, stageName: s.label, fab_id: String(selectedFab.id) })));
+    setEntries(activeStages.map((s, i) => ({
+      ...emptyEntry({ section_id: s.section_id, stageName: s.label, fab_id: String(selectedFab.id) }),
+      sequence: String(i + 1), // auto-number on fab selection
+    })));
   }, [selectedFab, selectedEvent]);
 
   useEffect(() => {
@@ -446,18 +469,23 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       planning_section_id: ev.planning_section_id != null ? String(ev.planning_section_id) : undefined,
       stageName: ev.stage_name || '',
       date: startDate,
-      sequence: ev.sequence ? String(ev.sequence) : '1',
+      sequence: ev.sequence != null ? String(ev.sequence) : '1',
     }]);
   }, [selectedEvent, employeesLoaded]);
 
   const addEntry = () => setEntries(p => {
     const e = emptyEntry();
     if (p[0]?.fab_id) e.fab_id = p[0].fab_id;
+    e.sequence = String(p.length + 1); // auto-assign next sequence
     return [...p, e];
   });
 
   const removeEntry = (idx: number) => {
-    setEntries(p => p.filter((_, i) => i !== idx));
+    setEntries(p => {
+      const next = p.filter((_, i) => i !== idx);
+      // Re-number sequences to stay contiguous after removal
+      return next.map((e, i) => ({ ...e, sequence: String(i + 1) }));
+    });
     setProposals(p => {
       const next = { ...p };
       delete next[idx];
@@ -505,7 +533,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
 
       for (const fabId in groups) {
         let totalEst = 0;
-        const stages = groups[fabId].map(entry => {
+        const stages = groups[fabId].map((entry, idx) => {
           const d = format(entry.date!, 'yyyy-MM-dd');
           const start = entry.start_time ? `${d}T${entry.start_time}:00` : `${d}T00:00:00`;
           const end   = entry.end_time   ? `${d}T${entry.end_time}:00`   : undefined;
@@ -519,7 +547,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
             scheduled_start: start,
             ...(end && { scheduled_end: end }),
             notes: entry.notes || undefined,
-            sequence: Number(entry.sequence) || 1,
+            sequence: Number(entry.sequence) || (idx + 1),
           };
         });
         await createShopPlan({ fab_id: Number(fabId), estimated_hours: totalEst, status_id: 1, stages } as any).unwrap();
@@ -690,7 +718,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
                     const active = typeof val === 'number' && val > 0;
                     return (
                       <span
-                        key={s.section_id}
+                        key={s.keyword}
                         className={cn(
                           'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border',
                           active ? 'bg-[#f0f4e8] border-[#9cc15e] text-[#5a7a00]' : 'bg-gray-50 border-[#e2e4ed] text-[#b0b7bc]'
@@ -717,6 +745,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
               planningSections={planningSections}
               proposals={proposals[idx] || []}
               isExpanded={expandedCards[idx] !== false}
+              sequenceOptions={sequenceOptions}
               onToggleExpand={() => setExpandedCards(p => ({ ...p, [idx]: !(p[idx] !== false) }))}
               onUpdate={patch => updateEntry(idx, patch)}
               onRemove={() => removeEntry(idx)}

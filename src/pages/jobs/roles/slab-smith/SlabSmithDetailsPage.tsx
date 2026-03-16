@@ -31,6 +31,13 @@ import { X } from 'lucide-react';
 import { Can } from '@/components/permission';
 import { getFileStage } from '@/utils/file-labeling';      // <-- IMPORT for stage detection
 import { BackButton } from '@/components/common/BackButton';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 
 const formatBytes = (bytes: number, decimals = 2) => {
@@ -600,19 +607,22 @@ export function SlabSmithDetailsPage() {
                       <label className="text-sm font-medium text-gray-700 block mb-2">
                         File Design *
                       </label>
-                      <select
+                      <Select
                         value={fileDesign}
-                        onChange={(e) => setFileDesign(e.target.value)}
-                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        onValueChange={(value) => setFileDesign(value)}
                         disabled={!isDrafting}
                       >
-                        <option value="">Select file design</option>
-                        <option value="Block Drawing">Block Drawing</option>
-                        <option value="Layout">Layout</option>
-                        <option value="SS Layout">SS Layout</option>
-                        <option value="Shop Drawing">Shop Drawing</option>
-                        <option value="Photo / Media">Photo / Media</option>
-                      </select>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select file design" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Block Drawing">Block Drawing</SelectItem>
+                          <SelectItem value="Layout">Layout</SelectItem>
+                          <SelectItem value="SS Layout">SS Layout</SelectItem>
+                          <SelectItem value="Shop Drawing">Shop Drawing</SelectItem>
+                          <SelectItem value="Photo / Media">Photo / Media</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <p className="text-xs text-muted-foreground mt-1">
                         File design is required before uploading files
                       </p>
@@ -627,6 +637,7 @@ export function SlabSmithDetailsPage() {
                       refetchFiles={refetchFab}
                       stage="slab_smith"
                       fileDesign={fileDesign}
+                      onUploadComplete={() => setFileDesign('')}
                       disabled={!isDrafting}
                     />
                   ) : (
