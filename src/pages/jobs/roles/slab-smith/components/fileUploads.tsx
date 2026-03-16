@@ -47,6 +47,8 @@ interface UploadDocumentsProps {
   simulateUpload?: boolean;
   disabled?: boolean;
   refetchFiles?: () => void; // Add refetch function
+  stage?: string; // Required: workflow stage
+  fileDesign?: string; // Required: file design identifier
 }
 
 export function UploadDocuments({
@@ -58,6 +60,8 @@ export function UploadDocuments({
   simulateUpload = true,
   disabled = false,
   refetchFiles,
+  stage,
+  fileDesign,
 }: UploadDocumentsProps) {
   const [uploadFiles, setUploadFiles] = useState<FileUploadItem[]>([]);
   const [uploadBoxes, setUploadBoxes] = useState([{ id: 1 }]);
@@ -91,8 +95,10 @@ export function UploadDocuments({
   const handleRealUpload = async (fileItem: FileUploadItem) => {
     console.log('Starting real upload for file:', fileItem.file.name);
     console.log('SlabSmith ID available:', slabSmithId);
-    
-    if (!slabSmithId) {
+    console.log('Stage:', stage);
+    console.log('File Design:', fileDesign);
+      
+    if (!slabsmithId) {
       console.log('No SlabSmith ID - setting error state');
       setUploadFiles(prev => 
         prev.map(f => 
@@ -102,6 +108,35 @@ export function UploadDocuments({
         )
       );
       processingFilesRef.current.delete(fileItem.id);
+      return;
+    }
+  
+    // Validate required fields
+    if (!stage) {
+      console.log('Missing stage - setting error state');
+      setUploadFiles(prev => 
+        prev.map(f => 
+          f.id === fileItem.id 
+            ? { ...f, status: 'error' as const, error: 'Stage is required. Please select a stage before uploading.' } 
+            : f
+        )
+      );
+      processingFilesRef.current.delete(fileItem.id);
+      toast.error('Stage is required. Please select a stage before uploading.');
+      return;
+    }
+  
+    if (!fileDesign) {
+      console.log('Missing file_design - setting error state');
+      setUploadFiles(prev => 
+        prev.map(f => 
+          f.id === fileItem.id 
+            ? { ...f, status: 'error' as const, error: 'File design is required. Please enter file design before uploading.' } 
+            : f
+        )
+      );
+      processingFilesRef.current.delete(fileItem.id);
+      toast.error('File design is required. Please enter file design before uploading.');
       return;
     }
 
@@ -116,11 +151,13 @@ export function UploadDocuments({
         )
       );
 
-      console.log('Calling addFilesToSlabSmith API');
+      console.log('Calling addFilesToSlabSmith API with stage and file_design');
       // Upload file
       const response = await addFilesToSlabSmith({
         slabsmith_id: slabSmithId,
         files: [fileItem.file as File],
+        stage: stage,
+        file_design: fileDesign,
       }).unwrap();
       
       console.log('Upload successful, response:', response);

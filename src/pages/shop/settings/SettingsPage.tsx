@@ -25,10 +25,10 @@ function SettingsPage() {
             workstationName: ws.name,
             description: ws.curremt_stage,
             status: ws.status || 'Active',
-            members: ws.assigned_operatives ? ws.assigned_operatives.split(',').length : 0,
+            members: ws.operator_ids ? ws.operator_ids.split(',').length : 0,
             avatars: [],
             machine: ws.machines || '',
-            operators: ws.assigned_operatives ? ws.assigned_operatives.split(',') : [],
+            operators: ws.operator_ids ? ws.operator_ids.split(',') : [],
             other: ws.machine_statuses || ''
         }));
     }, [workstationsData]);

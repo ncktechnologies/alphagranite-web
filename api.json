@@ -7012,6 +7012,72 @@
         ]
       }
     },
+    "/api/v1/resurface-schedule": {
+      "get": {
+        "tags": [
+          "Fabs"
+        ],
+        "summary": "Get Resurface Schedule",
+        "description": "Get all FABs where:\n- fab_type is RESURFACE\n- shop_date_schedule is set (not null)\n\nEnriched with label fields for frontend display.",
+        "operationId": "get_resurface_schedule_api_v1_resurface_schedule_get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of records to skip",
+              "default": 0,
+              "title": "Skip"
+            },
+            "description": "Number of records to skip"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Number of records to return",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Number of records to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/fabs/{fab_id}/notes": {
       "get": {
         "tags": [
@@ -8296,6 +8362,15 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_add_file_to_drafting_api_v1_drafting__drafting_id__add_file_post"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -8895,6 +8970,38 @@
             "schema": {
               "type": "integer",
               "title": "File Id"
+            }
+          },
+          {
+            "name": "file_design",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "File Design"
+            }
+          },
+          {
+            "name": "stage_name",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Stage Name"
             }
           }
         ],
@@ -12842,6 +12949,69 @@
         ]
       }
     },
+    "/api/v1/planning-section/{planning_section_id}/workstations": {
+      "get": {
+        "tags": [
+          "Planning Sections"
+        ],
+        "summary": "Get Workstations By Planning Section",
+        "operationId": "get_workstations_by_planning_section_api_v1_planning_section__planning_section_id__workstations_get",
+        "parameters": [
+          {
+            "name": "planning_section_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Planning Section Id"
+            }
+          },
+          {
+            "name": "status_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/workstation": {
       "post": {
         "tags": [
@@ -12854,9 +13024,9 @@
         "requestBody": {
           "required": true,
           "content": {
-            "application/x-www-form-urlencoded": {
+            "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Body_create_workstation_api_v1_workstation_post"
+                "$ref": "#/components/schemas/WorkstationCreate"
               }
             }
           }
@@ -13001,10 +13171,11 @@
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
-            "application/x-www-form-urlencoded": {
+            "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/Body_update_workstation_api_v1_workstation__ws_id__put"
+                "$ref": "#/components/schemas/WorkstationUpdate"
               }
             }
           }
@@ -13043,7 +13214,7 @@
           "Workstation"
         ],
         "summary": "Delete Workstation",
-        "description": "Delete a workstation",
+        "description": "Deactivate a workstation (soft delete)",
         "operationId": "delete_workstation_api_v1_workstation__ws_id__delete",
         "parameters": [
           {
@@ -14758,6 +14929,259 @@
           }
         ]
       }
+    },
+    "/api/v1/shop/plans/{plan_id}/timer/action": {
+      "post": {
+        "tags": [
+          "Shop Cut Planning"
+        ],
+        "summary": "Manage Shop Cut Plan Timer",
+        "operationId": "manage_shop_cut_plan_timer_api_v1_shop_plans__plan_id__timer_action_post",
+        "parameters": [
+          {
+            "name": "plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Plan Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShopCutPlanTimerActionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Manage Shop Cut Plan Timer Api V1 Shop Plans  Plan Id  Timer Action Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/shop/plans/{plan_id}/timer": {
+      "get": {
+        "tags": [
+          "Shop Cut Planning"
+        ],
+        "summary": "Get Shop Cut Plan Timer State",
+        "operationId": "get_shop_cut_plan_timer_state_api_v1_shop_plans__plan_id__timer_get",
+        "parameters": [
+          {
+            "name": "plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Plan Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Shop Cut Plan Timer State Api V1 Shop Plans  Plan Id  Timer Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/shop/plans/{plan_id}/timer/history": {
+      "get": {
+        "tags": [
+          "Shop Cut Planning"
+        ],
+        "summary": "Get Shop Cut Plan Timer History",
+        "operationId": "get_shop_cut_plan_timer_history_api_v1_shop_plans__plan_id__timer_history_get",
+        "parameters": [
+          {
+            "name": "plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Plan Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Shop Cut Plan Timer History Api V1 Shop Plans  Plan Id  Timer History Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/shop/plans/suggestions": {
+      "post": {
+        "tags": [
+          "Shop Cut Planning"
+        ],
+        "summary": "Suggest Shop Plan Slots",
+        "operationId": "suggest_shop_plan_slots_api_v1_shop_plans_suggestions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShopPlanSuggestionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Suggest Shop Plan Slots Api V1 Shop Plans Suggestions Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/shop/plans/earliest-availability": {
+      "post": {
+        "tags": [
+          "Shop Cut Planning"
+        ],
+        "summary": "Get Earliest Availability",
+        "operationId": "get_earliest_availability_api_v1_shop_plans_earliest_availability_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EarliestAvailabilityRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Earliest Availability Api V1 Shop Plans Earliest Availability Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
     }
   },
   "components": {
@@ -15189,12 +15613,42 @@
         "title": "ActionMenuUpdate",
         "description": "Schema for updating an action menu"
       },
+      "Body_add_file_to_drafting_api_v1_drafting__drafting_id__add_file_post": {
+        "properties": {
+          "file_design": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Design",
+            "description": "Design name or description for the file"
+          },
+          "stage_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage Name",
+            "description": "Stage name associated with the file"
+          }
+        },
+        "type": "object",
+        "title": "Body_add_file_to_drafting_api_v1_drafting__drafting_id__add_file_post"
+      },
       "Body_add_files_to_drafting_api_v1_drafting__drafting_id__files_post": {
         "properties": {
           "files": {
             "items": {
               "type": "string",
-              "format": "binary"
+              "contentMediaType": "application/octet-stream"
             },
             "type": "array",
             "title": "Files"
@@ -15209,6 +15663,28 @@
               }
             ],
             "title": "Stage"
+          },
+          "file_design": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Design"
+          },
+          "stage_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage Name"
           }
         },
         "type": "object",
@@ -15222,7 +15698,7 @@
           "files": {
             "items": {
               "type": "string",
-              "format": "binary"
+              "contentMediaType": "application/octet-stream"
             },
             "type": "array",
             "title": "Files"
@@ -15239,10 +15715,32 @@
           "files": {
             "items": {
               "type": "string",
-              "format": "binary"
+              "contentMediaType": "application/octet-stream"
             },
             "type": "array",
             "title": "Files"
+          },
+          "file_design": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Design"
+          },
+          "stage_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stage Name"
           }
         },
         "type": "object",
@@ -15312,7 +15810,7 @@
           },
           "profile_image": {
             "type": "string",
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "Profile Image"
           }
         },
@@ -15512,24 +16010,6 @@
         ],
         "title": "Body_create_shop_planning_section_api_v1_shop_planning_section_post"
       },
-      "Body_create_workstation_api_v1_workstation_post": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "title": "Name"
-          },
-          "status_id": {
-            "type": "integer",
-            "title": "Status Id"
-          }
-        },
-        "type": "object",
-        "required": [
-          "name",
-          "status_id"
-        ],
-        "title": "Body_create_workstation_api_v1_workstation_post"
-      },
       "Body_set_sct_review_no_api_v1_salesct__sct_id__review_no_post": {
         "properties": {
           "revenue": {
@@ -15554,7 +16034,7 @@
               {
                 "items": {
                   "type": "string",
-                  "format": "binary"
+                  "contentMediaType": "application/octet-stream"
                 },
                 "type": "array"
               },
@@ -15765,7 +16245,7 @@
           },
           "profile_image": {
             "type": "string",
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "Profile Image"
           }
         },
@@ -16016,44 +16496,24 @@
         ],
         "title": "Body_update_shop_planning_section_api_v1_shop_planning_section__section_id__put"
       },
-      "Body_update_workstation_api_v1_workstation__ws_id__put": {
-        "properties": {
-          "name": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Name"
-          },
-          "status_id": {
-            "anyOf": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Status Id"
-          }
-        },
-        "type": "object",
-        "title": "Body_update_workstation_api_v1_workstation__ws_id__put"
-      },
       "Body_upload_file_files_upload_post": {
         "properties": {
           "file": {
             "type": "string",
-            "format": "binary",
+            "contentMediaType": "application/octet-stream",
             "title": "File"
           },
           "file_type": {
             "type": "string",
             "title": "File Type"
+          },
+          "file_design": {
+            "type": "string",
+            "title": "File Design"
+          },
+          "stage_name": {
+            "type": "string",
+            "title": "Stage Name"
           },
           "directory": {
             "type": "string",
@@ -16063,7 +16523,9 @@
         },
         "type": "object",
         "required": [
-          "file"
+          "file",
+          "file_design",
+          "stage_name"
         ],
         "title": "Body_upload_file_files_upload_post"
       },
@@ -16072,15 +16534,25 @@
           "files": {
             "items": {
               "type": "string",
-              "format": "binary"
+              "contentMediaType": "application/octet-stream"
             },
             "type": "array",
             "title": "Files"
+          },
+          "stage_name": {
+            "type": "string",
+            "title": "Stage Name"
+          },
+          "file_design": {
+            "type": "string",
+            "title": "File Design"
           }
         },
         "type": "object",
         "required": [
-          "files"
+          "files",
+          "stage_name",
+          "file_design"
         ],
         "title": "Body_upload_job_media_api_v1_jobs__job_id__upload_media_post"
       },
@@ -17378,6 +17850,77 @@
         "title": "DraftingUpdate",
         "description": "Schema for updating drafting information"
       },
+      "EarliestAvailabilityItem": {
+        "properties": {
+          "planning_section_id": {
+            "type": "integer",
+            "title": "Planning Section Id"
+          },
+          "operator_id": {
+            "type": "integer",
+            "title": "Operator Id"
+          },
+          "workstation_id": {
+            "type": "integer",
+            "title": "Workstation Id"
+          },
+          "estimated_hours": {
+            "type": "number",
+            "title": "Estimated Hours"
+          }
+        },
+        "type": "object",
+        "required": [
+          "planning_section_id",
+          "operator_id",
+          "workstation_id",
+          "estimated_hours"
+        ],
+        "title": "EarliestAvailabilityItem"
+      },
+      "EarliestAvailabilityRequest": {
+        "properties": {
+          "requests": {
+            "items": {
+              "$ref": "#/components/schemas/EarliestAvailabilityItem"
+            },
+            "type": "array",
+            "title": "Requests"
+          },
+          "start_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start From"
+          },
+          "slot_minutes": {
+            "type": "integer",
+            "title": "Slot Minutes",
+            "default": 30
+          },
+          "search_horizon_days": {
+            "type": "integer",
+            "title": "Search Horizon Days",
+            "default": 30
+          },
+          "max_proposals_per_request": {
+            "type": "integer",
+            "title": "Max Proposals Per Request",
+            "default": 3
+          }
+        },
+        "type": "object",
+        "required": [
+          "requests"
+        ],
+        "title": "EarliestAvailabilityRequest"
+      },
       "EdgeCreate": {
         "properties": {
           "name": {
@@ -17874,6 +18417,194 @@
         },
         "type": "object",
         "title": "FabNotesUpdate"
+      },
+      "FabPlanResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "fab_id": {
+            "type": "integer",
+            "title": "Fab Id"
+          },
+          "fab_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fab Type"
+          },
+          "workstation_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workstation Id"
+          },
+          "workstation_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workstation Name"
+          },
+          "planning_section_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planning Section Id"
+          },
+          "plan_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Name"
+          },
+          "operator_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator Id"
+          },
+          "operator_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator Name"
+          },
+          "estimated_hours": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Hours"
+          },
+          "scheduled_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Scheduled Start Date"
+          },
+          "actual_start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Start Date"
+          },
+          "actual_end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual End Date"
+          },
+          "work_percentage": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Percentage"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "fab_id"
+        ],
+        "title": "FabPlanResponse"
       },
       "FabResponse": {
         "properties": {
@@ -18382,6 +19113,17 @@
             ],
             "title": "Miter Linft"
           },
+          "saw_cut_lnft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Saw Cut Lnft"
+          },
           "installation_date": {
             "anyOf": [
               {
@@ -18590,6 +19332,26 @@
               }
             ],
             "title": "Template Completed Date"
+          },
+          "shop_est_completion_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shop Est Completion Date"
+          },
+          "plans": {
+            "items": {
+              "$ref": "#/components/schemas/FabPlanResponse"
+            },
+            "type": "array",
+            "title": "Plans",
+            "default": []
           }
         },
         "type": "object",
@@ -19216,6 +19978,30 @@
             ],
             "title": "Cost Of Stone",
             "description": "Cost of stone amount"
+          },
+          "saw_cut_lnft": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Saw Cut Lnft"
+          },
+          "shop_est_completion_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shop Est Completion Date",
+            "description": "Estimated completion date for shop"
           }
         },
         "type": "object",
@@ -20396,6 +21182,13 @@
             "type": "array",
             "title": "Notes",
             "default": []
+          },
+          "plans": {
+            "items": {
+              "$ref": "#/components/schemas/FabPlanResponse"
+            },
+            "type": "array",
+            "title": "Plans"
           }
         },
         "type": "object",
@@ -22195,12 +22988,19 @@
             "type": "integer",
             "title": "Fab Id"
           },
-          "total_estimated_hours": {
+          "estimated_hours": {
             "type": "number",
             "exclusiveMinimum": 0,
-            "title": "Total Estimated Hours"
+            "title": "Estimated Hours"
           },
-          "color_theme": {
+          "status_id": {
+            "type": "integer",
+            "maximum": 1,
+            "minimum": 0,
+            "title": "Status Id",
+            "default": 1
+          },
+          "notes": {
             "anyOf": [
               {
                 "type": "string"
@@ -22209,14 +23009,7 @@
                 "type": "null"
               }
             ],
-            "title": "Color Theme"
-          },
-          "status_id": {
-            "type": "integer",
-            "maximum": 1,
-            "minimum": 0,
-            "title": "Status Id",
-            "default": 1
+            "title": "Notes"
           },
           "stages": {
             "items": {
@@ -22229,7 +23022,7 @@
         "type": "object",
         "required": [
           "fab_id",
-          "total_estimated_hours",
+          "estimated_hours",
           "stages"
         ],
         "title": "ShopCutPlanCreate",
@@ -22237,6 +23030,12 @@
       },
       "ShopCutPlanStageCreate": {
         "properties": {
+          "sequence": {
+            "type": "integer",
+            "minimum": 1,
+            "title": "Sequence",
+            "description": "Execution order of this stage (1-based)"
+          },
           "workstation_id": {
             "type": "integer",
             "title": "Workstation Id"
@@ -22268,21 +23067,8 @@
               }
             ],
             "title": "Scheduled Start"
-          }
-        },
-        "type": "object",
-        "required": [
-          "workstation_id",
-          "planning_section_id",
-          "operator_ids",
-          "estimated_hours"
-        ],
-        "title": "ShopCutPlanStageCreate",
-        "description": "Schema for a stage in shop cut plan creation"
-      },
-      "ShopCutPlanUpdate": {
-        "properties": {
-          "color_theme": {
+          },
+          "notes": {
             "anyOf": [
               {
                 "type": "string"
@@ -22291,14 +23077,76 @@
                 "type": "null"
               }
             ],
-            "title": "Color Theme"
+            "title": "Notes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sequence",
+          "workstation_id",
+          "planning_section_id",
+          "operator_ids",
+          "estimated_hours"
+        ],
+        "title": "ShopCutPlanStageCreate",
+        "description": "Schema for a stage in shop cut plan creation"
+      },
+      "ShopCutPlanTimerActionRequest": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "title": "Action",
+            "description": "start, pause, resume, stop"
           },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "ShopCutPlanTimerActionRequest"
+      },
+      "ShopCutPlanUpdate": {
+        "properties": {
           "status_id": {
             "type": "integer",
             "maximum": 1,
             "minimum": 0,
             "title": "Status Id",
             "default": 1
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
           },
           "stage": {
             "$ref": "#/components/schemas/ShopCutPlanStageCreate"
@@ -22310,6 +23158,42 @@
         ],
         "title": "ShopCutPlanUpdate",
         "description": "Schema for updating a shop cut plan (matches POST structure)"
+      },
+      "ShopPlanSuggestionsRequest": {
+        "properties": {
+          "plan_data": {
+            "$ref": "#/components/schemas/ShopCutPlanCreate"
+          },
+          "window_start": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window Start"
+          },
+          "window_end": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Window End"
+          },
+          "slot_minutes": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Slot Minutes",
+            "default": 30
+          },
+          "max_suggestions_per_stage": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Max Suggestions Per Stage",
+            "default": 10
+          }
+        },
+        "type": "object",
+        "required": [
+          "plan_data",
+          "window_start",
+          "window_end"
+        ],
+        "title": "ShopPlanSuggestionsRequest"
       },
       "SlabSmithCreate": {
         "properties": {
@@ -25793,6 +26677,102 @@
         },
         "type": "object",
         "title": "WJSchedulingUpdate"
+      },
+      "WorkstationCreate": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "status_id": {
+            "type": "integer",
+            "title": "Status Id"
+          },
+          "planning_section_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planning Section Id"
+          },
+          "operator_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator Ids"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "status_id"
+        ],
+        "title": "WorkstationCreate"
+      },
+      "WorkstationUpdate": {
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Name"
+          },
+          "status_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Id"
+          },
+          "planning_section_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Planning Section Id"
+          },
+          "operator_ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator Ids"
+          }
+        },
+        "type": "object",
+        "title": "WorkstationUpdate"
       }
     },
     "securitySchemes": {

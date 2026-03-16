@@ -1384,14 +1384,17 @@ export const jobApi = createApi({
             }),
 
             // Add files to drafting
-            addFilesToDrafting: build.mutation<any, { drafting_id: number; files: File[]; stage?: string }>({
-                query: ({ drafting_id, files, stage }) => {
+            addFilesToDrafting: build.mutation<any, { drafting_id: number; files: File[]; stage?: string; file_design?: string }>({
+                query: ({ drafting_id, files, stage, file_design }) => {
                     const formData = new FormData();
                     files.forEach((file) => {
                         formData.append('files', file); // Changed from 'file' to 'files'
                     });
                     if (stage) {
                         formData.append('stage', stage);
+                    }
+                    if (file_design) {
+                        formData.append('file_design', file_design);
                     }
                     return {
                         url: `/drafting/${drafting_id}/files`,
@@ -1415,12 +1418,18 @@ export const jobApi = createApi({
             }),
 
             // Add files to slab smith
-            addFilesToSlabSmith: build.mutation<any, { slabsmith_id: number; files: File[] }>({
-                query: ({ slabsmith_id, files }) => {
+            addFilesToSlabSmith: build.mutation<any, { slabsmith_id: number; files: File[]; stage?: string; file_design?: string }>({
+                query: ({ slabsmith_id, files, stage, file_design }) => {
                     const formData = new FormData();
                     files.forEach((file) => {
                         formData.append('files', file);
                     });
+                    if (stage) {
+                        formData.append('stage', stage);
+                    }
+                    if (file_design) {
+                        formData.append('file_design', file_design);
+                    }
                     return {
                         url: `/slabsmith/${slabsmith_id}/files`,
                         method: "post",
@@ -1730,12 +1739,18 @@ export const jobApi = createApi({
             }),
 
             // Add files to final programming
-            addFilesToFinalProgramming: build.mutation<any, { fp_id: number; files: File[] }>({
-                query: ({ fp_id, files }) => {
+            addFilesToFinalProgramming: build.mutation<any, { fp_id: number; files: File[]; stage?: string; file_design?: string }>({
+                query: ({ fp_id, files, stage, file_design }) => {
                     const formData = new FormData();
                     files.forEach((file) => {
                         formData.append('files', file);
                     });
+                    if (stage) {
+                        formData.append('stage', stage);
+                    }
+                    if (file_design) {
+                        formData.append('file_design', file_design);
+                    }
                     return {
                         url: `/finalprogramming/${fp_id}/files`,
                         method: "POST",

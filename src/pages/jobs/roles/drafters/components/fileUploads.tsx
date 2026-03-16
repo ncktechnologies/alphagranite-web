@@ -43,6 +43,7 @@ interface UploadBoxProps {
   draftingId?: number;
   refetchFiles?: () => void;
   stage?: string;
+  fileDesign?: string; // Required: file design identifier
 }
 
 export function UploadDocuments({
@@ -53,6 +54,7 @@ export function UploadDocuments({
   enhancedFiles = [],
   draftingId,
   stage,
+  fileDesign,
   refetchFiles,
 }: UploadBoxProps) {
   const [uploadFiles, setUploadFiles] = useState<FileUploadItem[]>([]);
@@ -158,6 +160,33 @@ export function UploadDocuments({
       return;
     }
 
+    // Validate required fields
+    if (!stage) {
+      toast.error('Stage is required. Please select a stage before uploading.');
+      setUploadFiles(prev => 
+        prev.map(f => 
+          f.id === fileItem.id 
+            ? { ...f, status: 'error' as const, error: 'Stage is required. Please select a stage before uploading.' } 
+            : f
+        )
+      );
+      processingFilesRef.current.delete(fileItem.id);
+      return;
+    }
+
+    if (!fileDesign) {
+      toast.error('File design is required. Please enter file design before uploading.');
+      setUploadFiles(prev => 
+        prev.map(f => 
+          f.id === fileItem.id 
+            ? { ...f, status: 'error' as const, error: 'File design is required. Please enter file design before uploading.' } 
+            : f
+        )
+      );
+      processingFilesRef.current.delete(fileItem.id);
+      return;
+    }
+
     try {
       // Update progress
       setUploadFiles(prev => 
@@ -172,6 +201,7 @@ export function UploadDocuments({
       const response = await addFilesToDrafting({
         drafting_id: draftingId,
         stage: stage,
+        file_design: fileDesign,
         files: [fileItem.file as File],
       }).unwrap();
 

@@ -97,6 +97,7 @@ export function SlabSmithDetailsPage() {
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploadedFileMetas, setUploadedFileMetas] = useState<UploadedFileMeta[]>([]);
   const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
+  const [fileDesign, setFileDesign] = useState<string>(''); // File design input
 
   // VIEW STATE – unified file viewer
   const [activeFile, setActiveFile] = useState<any | null>(null);
@@ -593,12 +594,39 @@ export function SlabSmithDetailsPage() {
                 <div className="mb-6">
                   <h3 className="text-lg font-semibold mb-4">Files</h3>
 
+                  {/* File Design Input */}
+                  {shouldShowUploadSection && (
+                    <div className="mb-4">
+                      <label className="text-sm font-medium text-gray-700 block mb-2">
+                        File Design *
+                      </label>
+                      <select
+                        value={fileDesign}
+                        onChange={(e) => setFileDesign(e.target.value)}
+                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        disabled={!isDrafting}
+                      >
+                        <option value="">Select file design</option>
+                        <option value="Block Drawing">Block Drawing</option>
+                        <option value="Layout">Layout</option>
+                        <option value="SS Layout">SS Layout</option>
+                        <option value="Shop Drawing">Shop Drawing</option>
+                        <option value="Photo / Media">Photo / Media</option>
+                      </select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        File design is required before uploading files
+                      </p>
+                    </div>
+                  )}
+
                   {shouldShowUploadSection ? (
                     <UploadDocuments
                       onFilesChange={handleFilesChange}
                       onFileClick={handleFileClick}
                       slabSmithId={slabSmithData?.id}
                       refetchFiles={refetchFab}
+                      stage="slab_smith"
+                      fileDesign={fileDesign}
                       disabled={!isDrafting}
                     />
                   ) : (
