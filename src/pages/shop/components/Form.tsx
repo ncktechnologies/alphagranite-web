@@ -108,7 +108,7 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
                 planning_section_id: planningSectionId ?? null,
                 name: values.workstationName,
                 status_id: 1,
-                assigned_operatives: selectedUsers.map(Number),
+                operator_ids: selectedUsers.map(Number),
                 ...(values.other ? { machine_statuses: values.other } : {}),
             };
 
