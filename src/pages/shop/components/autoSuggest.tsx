@@ -629,7 +629,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
 
       toast.success('Earliest slots applied — pick an alternative below each stage if needed');
     } catch (error: any) {
-      toast.error(error?.data?.detail?.message || 'Failed to fetch available slots');
+      // toast.error(error?.data?.detail?.message || 'Failed to fetch available slots');
     }
   };
 
