@@ -191,7 +191,6 @@ export function SalesDetailsPage() {
           <h1 className="text-2xl font-semibold">FAB ID: {fab?.id}</h1>
           <p className="text-sm text-muted-foreground">Review fabrication details</p>
         </div>
-        <BackButton label='back' />
 
       </div>
 
@@ -267,12 +266,14 @@ export function SalesDetailsPage() {
                   <Pencil className="h-4 w-4" />
                   Edit FAB Details
                 </Button>
-                <Link to="/sales">
+                <BackButton label='back' className='w-full' />
+
+                {/* <Link to="/sales">
                   <Button variant="outline" className="w-full flex items-center gap-2">
                     <ArrowLeft className="h-4 w-4" />
                     Back to All Fabs
                   </Button>
-                </Link>
+                </Link> */}
               </div>
             </CardContent>
           </Card>
