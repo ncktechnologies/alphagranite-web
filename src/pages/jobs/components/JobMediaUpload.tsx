@@ -8,6 +8,8 @@ import { X, Upload, File, Image, Video, AlertCircle } from 'lucide-react';
 import { useUploadJobMediaMutation } from '@/store/api/job';
 import { toast } from 'sonner';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface JobMediaUploadProps {
   jobId: number;
@@ -23,6 +25,10 @@ export function JobMediaUpload({ jobId, onUploadComplete, onClose }: JobMediaUpl
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  
+  // Required fields for upload
+  const [selectedStage, setSelectedStage] = useState<string>('');
+  const [selectedFileDesign, setSelectedFileDesign] = useState<string>('');
 
   const [uploadMedia] = useUploadJobMediaMutation();
 
@@ -83,7 +89,21 @@ export function JobMediaUpload({ jobId, onUploadComplete, onClose }: JobMediaUpl
   };
 
   const handleUpload = async () => {
-    if (files.length === 0) return;
+    if (files.length === 0) {
+      toast.error('Please select at least one file to upload');
+      return;
+    }
+
+    // Validate required fields
+    if (!selectedStage) {
+      toast.error('Please select a stage before uploading');
+      return;
+    }
+
+    if (!selectedFileDesign) {
+      toast.error('Please select a file design before uploading');
+      return;
+    }
 
     setUploading(true);
     setUploadProgress(0);
@@ -115,6 +135,10 @@ export function JobMediaUpload({ jobId, onUploadComplete, onClose }: JobMediaUpl
         }
       });
 
+      // Reset selections after successful upload
+      setSelectedStage('');
+      setSelectedFileDesign('');
+
       onUploadComplete?.();
       onClose?.();
 
@@ -136,6 +160,46 @@ export function JobMediaUpload({ jobId, onUploadComplete, onClose }: JobMediaUpl
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Stage Selection - Required */}
+        <div className="space-y-2">
+          <Label htmlFor="stage-select">Stage *</Label>
+          <Select value={selectedStage} onValueChange={setSelectedStage}>
+            <SelectTrigger id="stage-select" className="w-full">
+              <SelectValue placeholder="Select stage" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="templating">Templating</SelectItem>
+              <SelectItem value="drafting">Drafting</SelectItem>
+              <SelectItem value="programming">Programming</SelectItem>
+              <SelectItem value="final_programming">Final Programming</SelectItem>
+              <SelectItem value="sales_ct">Sales Check</SelectItem>
+              <SelectItem value="revision">Revision</SelectItem>
+
+              
+              
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">Select the current stage for these files</p>
+        </div>
+
+        {/* File Type Selection - Required */}
+        <div className="space-y-2">
+          <Label htmlFor="file-type-select">File Type *</Label>
+          <Select value={selectedFileDesign} onValueChange={setSelectedFileDesign}>
+            <SelectTrigger id="file-type-select" className="w-full">
+              <SelectValue placeholder="Select file type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="block_drawing">Block Drawing</SelectItem>
+              <SelectItem value="layout">Layout</SelectItem>
+              <SelectItem value="ss_layout">SS Layout</SelectItem>
+              <SelectItem value="shop_drawing">Shop Drawing</SelectItem>
+              <SelectItem value="photo_media">Photo / Media</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">Select the type of file being uploaded</p>
+        </div>
+
         {/* Dropzone */}
         <div
           {...getRootProps()}
@@ -220,7 +284,7 @@ export function JobMediaUpload({ jobId, onUploadComplete, onClose }: JobMediaUpl
           </Button>
           <Button
             onClick={handleUpload}
-            disabled={files.length === 0 || uploading}
+            disabled={files.length === 0 || uploading || !selectedStage || !selectedFileDesign}
           >
             {uploading ? 'Uploading...' : `Upload ${files.length} File${files.length !== 1 ? 's' : ''}`}
           </Button>
