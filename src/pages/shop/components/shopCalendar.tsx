@@ -30,7 +30,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useGetAllShopPlansQuery, useGetFabTypesQuery, useGetWorkstationsQuery, useGetEmployeesQuery, useGetShopPlanQuery } from '@/store/api';
+import { useGetAllShopPlansQuery, useGetFabTypesQuery, useGetWorkstationsQuery, useGetEmployeesQuery } from '@/store/api';
 import { formatTime } from '@/utils/date-utils';
 import CreatePlanPage from './createPlanePage';
 
@@ -99,9 +99,6 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
   const [fabPickerInput, setFabPickerInput] = useState('');
   const [createPlanFabId, setCreatePlanFabId] = useState<string>('');
 
-  // ← Track which plan id is being edited; drives useGetShopPlanQuery
-  const [editingPlanId, setEditingPlanId] = useState<number | null>(null);
-
   const [searchFabId, setSearchFabId] = useState('');
   const [filterFabType, setFilterFabType] = useState('');
   const [filterWorkstation, setFilterWorkstation] = useState('');
@@ -122,10 +119,8 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
 
   const { data: plansResponse, isLoading } = useGetAllShopPlansQuery(queryParams);
 
-  // ← Fetch the full plan by id when editing; skipped when not editing
-  const { data: shopPlanData } = useGetShopPlanQuery(editingPlanId!, {
-    skip: editingPlanId == null,
-  });
+  // Store the selected plan event directly from the calendar (no need to fetch again)
+  const [selectedPlan, setSelectedPlan] = useState<any>(null);
 
   const { data: fabTypesData } = useGetFabTypesQuery();
   const { data: workstationsData } = useGetWorkstationsQuery();
@@ -186,27 +181,6 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     [eventsByDay],
   );
 
-  // ← Build the resolved event from the fetched plan, enriched with derived end time
-  const resolvedEvent = useMemo(() => {
-    if (!shopPlanData) return null;
-    // API returns { success, message, data: { ...plan } }
-    const plan = (shopPlanData as any)?.data ?? shopPlanData;
-    if (!plan?.id) return null;
-    return {
-      ...plan,
-      // sequence may be absent from this endpoint — default to 1
-      sequence: plan.sequence ?? 1,
-      // Derive scheduled_end_date from start + estimated_hours
-      scheduled_end_date:
-        plan.scheduled_start_date && plan.estimated_hours
-          ? new Date(
-              new Date(plan.scheduled_start_date).getTime() +
-              plan.estimated_hours * 3_600_000
-            ).toISOString()
-          : undefined,
-    };
-  }, [shopPlanData]);
-
   const handlePrevious = () => {
     if (viewMode === 'day') setCurrentDate(addDays(currentDate, -1));
     else if (viewMode === 'week') setCurrentDate(addDays(currentDate, -7));
@@ -219,11 +193,13 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     else setCurrentDate(addMonths(currentDate, 1));
   };
 
-  const openFabPicker = (date: Date) => {
-    setEditingPlanId(null);
-    setSelectedDate(date);
-    setFabPickerInput('');
-    setFabPickerOpen(true);
+
+
+  // Store the complete plan event directly from the calendar
+  const handleOpenEditPlan = (event: any) => {
+    setSelectedPlan(event);
+    setCreatePlanFabId(String(event.fab_id));
+    setActivePage('create-plan');
   };
 
   const handleOpenCreatePlanWithFab = (fabId: string) => {
@@ -232,35 +208,10 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     setActivePage('create-plan');
   };
 
-  // ← Just store the plan id and flip the page — no field mapping needed
-  const handleOpenEditPlan = (event: any) => {
-    setEditingPlanId(event.id);
-    setCreatePlanFabId(String(event.fab_id));
-    setSelectedDate(new Date(event.scheduled_start_date));
-    setSelectedTimeSlot(format(new Date(event.scheduled_start_date), 'HH:mm'));
-    // Don't flip page yet — wait for resolvedEvent to be ready
-    setPendingEditNav(true);
-  };
-
-  // For new plans (no editingPlanId) flip immediately.
-  // For edits, wait until resolvedEvent is populated so CreatePlanPage
-  // always mounts with complete data — never with null then data.
-  const [pendingEditNav, setPendingEditNav] = useState(false);
-
-  useEffect(() => {
-    if (pendingEditNav && resolvedEvent) {
-      setActivePage('create-plan');
-      setPendingEditNav(false);
-    }
-  }, [pendingEditNav, resolvedEvent]);
-
   const handleBackToCalendar = () => {
     setActivePage('calendar');
-    setEditingPlanId(null);
+    setSelectedPlan(null);
     setCreatePlanFabId('');
-    setSelectedDate(null);
-    setSelectedTimeSlot(null);
-    setPendingEditNav(false);
   };
 
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -359,26 +310,15 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     );
   }
 
-  // ← Show a loading state while fetching the plan for edit
-  if (pendingEditNav) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <p className="text-[#7c8689]">Loading plan…</p>
-      </div>
-    );
-  }
-
   if (activePage === 'create-plan') {
     return (
       <CreatePlanPage
         onBack={handleBackToCalendar}
-        selectedDate={resolvedEvent
-          ? new Date(resolvedEvent.scheduled_start_date)
-          : selectedDate}
-        selectedTimeSlot={resolvedEvent
-          ? format(new Date(resolvedEvent.scheduled_start_date), 'HH:mm')
-          : selectedTimeSlot}
-        selectedEvent={resolvedEvent}
+        // selectedDate={selectedPlan ? new Date(selectedPlan.scheduled_start_date) : selectedDate}
+        // selectedTimeSlot={selectedPlan ? format(new Date(selectedPlan.scheduled_start_date), 'HH:mm') : selectedTimeSlot}
+        selectedDate={null}
+        selectedTimeSlot={null}
+        selectedEvent={selectedPlan ?? null}
         prefillFabId={createPlanFabId}
         onEventCreated={handleBackToCalendar}
       />

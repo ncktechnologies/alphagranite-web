@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -77,19 +77,53 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
     entry.planning_section_id ? Number(entry.planning_section_id) : 0,
     { skip: !entry.planning_section_id }
   );
-  const workstationsForSection: any[] = workstationData?.workstations || (Array.isArray(workstationData) ? workstationData : []);
+
+  const [workstationReady, setWorkstationReady] = useState(false);
+
+
+  // const workstationsForSection: any[] = workstationData?.workstations || (Array.isArray(workstationData) ? workstationData : []);
+  const workstationsForSection: any[] = useMemo(() => {
+    if (!workstationData) return [];
+
+    if (Array.isArray(workstationData)) return workstationData;
+
+    if (Array.isArray(workstationData?.data)) return workstationData.data;
+
+    if (Array.isArray(workstationData?.workstations)) return workstationData.workstations;
+
+    return [];
+  }, [workstationData]);
+
+  useEffect(() => {
+    if (!isLoadingWorkstations && workstationsForSection.length > 0) {
+      setWorkstationReady(true);
+    }
+  }, [isLoadingWorkstations, workstationsForSection.length]);
+
 
   const selectedWorkstation = workstationsForSection.find(w => String(w.id) === entry.workstation_id);
   const allowedOperatorIds = selectedWorkstation?.operator_ids?.map(String) || [];
-  const filteredEmployees = allowedOperatorIds.length > 0
-    ? employees.filter(emp => allowedOperatorIds.includes(String(emp.id)))
-    : [];
 
-  // Only reset operator when workstations have loaded AND the current operator
-  // is not in the allowed list. Never reset during initial load (allowedOperatorIds
-  // is empty while the workstation query is still in flight).
+  // Show all employees if no restrictions, otherwise filter to allowed
+  const filteredEmployees = useMemo(() => {
+    if (!selectedWorkstation) return employees;
+
+    if (!allowedOperatorIds.length) return employees;
+
+    return employees.filter(emp =>
+      allowedOperatorIds.includes(String(emp.id))
+    );
+  }, [employees, selectedWorkstation]);
+
+  // Only reset operator when user actively changes the workstation
+  // AND workstations have loaded AND the operator is genuinely invalid.
+  // We track whether this is a user change vs initial mount with a ref.
+  const prevWorkstationId = useRef(entry.workstation_id);
   useEffect(() => {
+    const userChanged = prevWorkstationId.current !== entry.workstation_id;
+    prevWorkstationId.current = entry.workstation_id;
     if (
+      userChanged &&
       !isLoadingWorkstations &&
       workstationsForSection.length > 0 &&
       entry.operator_id &&
@@ -250,7 +284,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
           <div>
             <Label className="text-[13px] text-[#4b545d]">Shop Activity</Label>
             <Select
-              value={entry.planning_section_id}
+              value={entry.planning_section_id || undefined}
               onValueChange={value => onUpdate({ planning_section_id: value, workstation_id: '', operator_id: '' })}
             >
               <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
@@ -270,7 +304,8 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
           <div>
             <Label className="text-[13px] text-[#4b545d]">Workstation *</Label>
             <Select
-              value={entry.workstation_id}
+              key={workstationReady ? "ready" : "loading"}
+              value={workstationReady ? (entry.workstation_id || undefined) : undefined}
               onValueChange={value => onUpdate({ workstation_id: value, operator_id: '' })}
               disabled={!entry.planning_section_id || isLoadingWorkstations}
             >
@@ -296,7 +331,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
           <div>
             <Label className="text-[13px] text-[#4b545d]">Operator *</Label>
             <Select
-              value={entry.operator_id}
+              value={entry.operator_id || undefined}
               onValueChange={value => onUpdate({ operator_id: value })}
               disabled={!entry.workstation_id}
             >
@@ -362,10 +397,14 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   onEventCreated,
   hideBackButton = false,
 }) => {
+
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const urlFabId = searchParams.get('fabId');
   const effectivePrefillFabId = propPrefillFabId || urlFabId || '';
+
+  // Both calendar and table now pass the complete plan as selectedEvent prop directly
+  const effectiveEvent = selectedEvent;
 
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
 
@@ -396,8 +435,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const employees: any[] = employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
 
   const { data: allFabsData, isLoading: isLoadingFabs } = useGetFabsQuery({ limit: 1000, current_stage: 'cut_list' });
-  
-  // Get workstations for ALL sections (needed for edit mode)
+
   const { data: allWorkstationsData } = useGetWorkstationsQuery();
   const allWorkstations: any[] = allWorkstationsData?.data || (Array.isArray(allWorkstationsData) ? allWorkstationsData : []);
 
@@ -420,88 +458,82 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const workstationsLoaded = allWorkstations.length > 0;
 
   useEffect(() => {
-    if (!selectedEvent) {
+
+    if (!effectiveEvent) {
       setEntries([emptyEntry()]);
       return;
     }
-    
-    // Wait for data to be loaded before populating form
-    if (!employeesLoaded || !workstationsLoaded) {
-      console.log('Waiting for data... employeesLoaded:', employeesLoaded, 'workstationsLoaded:', workstationsLoaded);
+
+    // Wait for ALL required data before populating edit form
+    const sectionsLoaded = planningSections.length > 0;
+    const fabsLoaded = !!allFabsData;
+
+    if (!employeesLoaded || !workstationsLoaded || !sectionsLoaded || !fabsLoaded) {
       return;
     }
 
-    const ev: any = selectedEvent;
-    console.log('=== EDITING EVENT RAW OBJECT ===', ev);
-    console.log('Event keys:', Object.keys(ev));
-    
-    // Extract values from the event object using the EXACT property names from API
+    const ev: any = effectiveEvent;
+
+    console.log("populating event with", ev)
+
     const fabId = ev.fab_id ?? '';
     const workstationId = ev.workstation_id ?? '';
     const operatorId = ev.operator_id ?? '';
     const planningSectionId = ev.planning_section_id ?? null;
     const scheduledStart = ev.scheduled_start_date ?? null;
-    const scheduledEnd = ev.scheduled_end_date ?? null;  // ✅ This exists in the API!
+    const scheduledEnd = ev.scheduled_end_date ?? null;
     const notes = ev.notes ?? '';
     const sequence = ev.sequence ?? 1;
     const estimatedHours = ev.estimated_hours ?? 0;
-    
-    console.log('Extracted from API:', {
-      fab_id: fabId,
-      workstation_id: workstationId,
-      operator_id: operatorId,
-      planning_section_id: planningSectionId,
-      scheduled_start_date: scheduledStart,
-      scheduled_end_date: scheduledEnd,
-      notes: notes,
-      sequence: sequence,
-      estimated_hours: estimatedHours
-    });
-    
+
     const startDate = scheduledStart ? new Date(scheduledStart) : new Date();
-    
-    // Derive end_time: prefer scheduled_end_date, fall back to estimated_hours offset
+
     let endTime = '';
     if (scheduledEnd) {
-      // ✅ Use the scheduled_end_date directly from API
       endTime = format(new Date(scheduledEnd), 'HH:mm');
-      console.log('Using scheduled_end_date from API:', scheduledEnd, '->', endTime);
     } else if (estimatedHours) {
       endTime = format(
         new Date(startDate.getTime() + estimatedHours * 3_600_000),
         'HH:mm'
       );
-      console.log('Using estimated_hours to calculate end time:', estimatedHours, '->', endTime);
     }
 
     const finalEntry = {
       id: ev.id,
-      fab_id: String(fabId),
-      workstation_id: String(workstationId),
-      operator_id: String(operatorId),
-      notes: String(notes),
+
+      fab_id: fabId ? String(fabId) : '',
+
+      workstation_id: workstationId ? String(workstationId) : '',
+
+      operator_id: operatorId ? String(operatorId) : '',
+
+      notes: notes ? String(notes) : '',
+
       start_time: format(startDate, 'HH:mm'),
-      end_time: endTime,  // ✅ Should now be '11:00' from your API
-      planning_section_id: planningSectionId != null
-        ? String(planningSectionId)
-        : prefillSectionIdStr,
+
+      end_time: endTime || '',
+
+      planning_section_id:
+        planningSectionId !== null && planningSectionId !== undefined
+          ? String(planningSectionId)
+          : prefillSectionIdStr || '',
+
       date: startDate,
-      sequence: String(sequence),
+
+      sequence: sequence ? String(sequence) : '1',
     };
-    
-    console.log('Setting entries with:', finalEntry);
-    console.log('Workstation ID as string:', String(workstationId));
-    console.log('Operator ID as string:', String(operatorId));
-    console.log('Planning Section ID as string:', planningSectionId != null ? String(planningSectionId) : prefillSectionIdStr);
-
     setEntries([finalEntry]);
-    
-    // Auto-expand the card after data is loaded
-    setTimeout(() => {
-      setExpandedCards({ 0: true });
-    }, 100);
-  }, [selectedEvent, employeesLoaded, workstationsLoaded, prefillSectionIdStr]);
 
+    // Expand card safely after entry exists
+    setExpandedCards({ 0: true });
+
+  }, [
+    effectiveEvent,
+    employeesLoaded,
+    workstationsLoaded,
+    planningSections,
+    allFabsData
+  ]);
   const sequenceOptions = useMemo(
     () => Array.from({ length: Math.max(3, entries.length) }, (_, i) => i + 1),
     [entries.length]
@@ -530,12 +562,12 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     for (const entry of entries) {
-      if (!entry.fab_id)        { toast.error('FAB ID is required'); return; }
-      if (!entry.operator_id)   { toast.error('Operator is required'); return; }
-      if (!entry.workstation_id){ toast.error('Workstation is required'); return; }
-      if (!entry.start_time)    { toast.error('Start time is required'); return; }
-      if (!entry.end_time)      { toast.error('End time is required'); return; }
-      if (!entry.date)          { toast.error('Date is required'); return; }
+      if (!entry.fab_id) { toast.error('FAB ID is required'); return; }
+      if (!entry.operator_id) { toast.error('Operator is required'); return; }
+      if (!entry.workstation_id) { toast.error('Workstation is required'); return; }
+      if (!entry.start_time) { toast.error('Start time is required'); return; }
+      if (!entry.end_time) { toast.error('End time is required'); return; }
+      if (!entry.date) { toast.error('Date is required'); return; }
     }
 
     try {
@@ -553,7 +585,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
         const stages = groups[fabId].map((entry, idx) => {
           const d = format(entry.date!, 'yyyy-MM-dd');
           const start = `${d}T${entry.start_time}:00`;
-          const end   = `${d}T${entry.end_time}:00`;
+          const end = `${d}T${entry.end_time}:00`;
           const hrs = Math.round(((new Date(end).getTime() - new Date(start).getTime()) / 3_600_000) * 100) / 100;
           totalEst += hrs;
           return {
@@ -573,7 +605,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       for (const entry of updates) {
         const d = format(entry.date!, 'yyyy-MM-dd');
         const start = `${d}T${entry.start_time}:00`;
-        const end   = `${d}T${entry.end_time}:00`;
+        const end = `${d}T${entry.end_time}:00`;
         const hrs = Math.round(((new Date(end).getTime() - new Date(start).getTime()) / 3_600_000) * 100) / 100;
         await updateShopPlan({
           plan_id: Number(entry.id),
@@ -598,11 +630,11 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       handleBack();
     } catch (error: any) {
       const msg = error?.data?.detail?.message || 'Failed to create/update Plan';
-      
+      // toast.error(msg);
     }
   };
 
-  const isEditing = !!selectedEvent;
+  const isEditing = !!(effectiveEvent);
 
   return (
     <div className="bg-white min-h-screen">
@@ -652,15 +684,15 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               <CardContent className="pt-5">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
-                    { label: 'Job No',        val: selectedFab.job_details?.job_number },
-                    { label: 'Job Name',      val: selectedFab.job_details?.name },
-                    { label: 'Account Name',  val: selectedFab.account_name },
+                    { label: 'Job No', val: selectedFab.job_details?.job_number },
+                    { label: 'Job Name', val: selectedFab.job_details?.name },
+                    { label: 'Account Name', val: selectedFab.account_name },
                     { label: 'No. of Pieces', val: selectedFab.no_of_pieces || 0 },
-                    { label: 'Total Sq Ft',   val: selectedFab.total_sqft?.toFixed(2) || '0.00' },
-                    { label: 'WJ LinFt',      val: selectedFab.wj_linft?.toFixed(2) || '0.00' },
-                    { label: 'Edging LinFt',  val: selectedFab.edging_linft?.toFixed(2) || '0.00' },
-                    { label: 'CNC LinFt',     val: selectedFab.cnc_linft?.toFixed(2) || '0.00' },
-                    { label: 'Miter LinFt',   val: selectedFab.miter_linft?.toFixed(2) || '0.00' },
+                    { label: 'Total Sq Ft', val: selectedFab.total_sqft?.toFixed(2) || '0.00' },
+                    { label: 'WJ LinFt', val: selectedFab.wj_linft?.toFixed(2) || '0.00' },
+                    { label: 'Edging LinFt', val: selectedFab.edging_linft?.toFixed(2) || '0.00' },
+                    { label: 'CNC LinFt', val: selectedFab.cnc_linft?.toFixed(2) || '0.00' },
+                    { label: 'Miter LinFt', val: selectedFab.miter_linft?.toFixed(2) || '0.00' },
                   ].map(({ label, val }) => (
                     <div key={label}>
                       <Label className="text-xs text-[#7c8689]">{label}</Label>

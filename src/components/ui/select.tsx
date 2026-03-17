@@ -82,6 +82,57 @@ function SelectTrigger({ className, children, size, ...props }: SelectTriggerPro
   );
 }
 
+// Bypasses Radix's built-in auto-scroll (which ignores event overrides) by
+// using a plain div that manually drives viewport scrolling via setInterval.
+function SlowScrollButton({
+  direction,
+  className,
+  viewportRef,
+}: {
+  direction: 'up' | 'down';
+  className?: string;
+  viewportRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const intervalRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const stop = () => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  };
+
+  const start = () => {
+    stop();
+    intervalRef.current = setInterval(() => {
+      viewportRef.current?.scrollBy({ top: direction === 'up' ? -8 : 8, behavior: 'auto' });
+    }, 100);
+  };
+
+  React.useEffect(() => {
+    window.addEventListener('mouseup', stop);
+    window.addEventListener('touchend', stop);
+    return () => {
+      window.removeEventListener('mouseup', stop);
+      window.removeEventListener('touchend', stop);
+      stop();
+    };
+  }, []);
+
+  return (
+    <div
+      data-slot={direction === 'up' ? 'select-scroll-up-button' : 'select-scroll-down-button'}
+      className={cn('flex cursor-default items-center justify-center py-1 select-none', className)}
+      onMouseDown={start}
+      onMouseUp={stop}
+      onTouchStart={start}
+      onTouchEnd={stop}
+    >
+      {direction === 'up' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+    </div>
+  );
+}
+
 function SelectScrollUpButton({ className, ...props }: React.ComponentProps<typeof SelectPrimitive.ScrollUpButton>) {
   return (
     <SelectPrimitive.ScrollUpButton
@@ -115,6 +166,17 @@ function SelectContent({
   position = 'popper',
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Content>) {
+  const viewportRef = React.useRef<HTMLDivElement>(null);
+  const [canScrollUp, setCanScrollUp] = React.useState(false);
+  const [canScrollDown, setCanScrollDown] = React.useState(false);
+
+  const checkScroll = React.useCallback(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    setCanScrollUp(el.scrollTop > 0);
+    setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 1);
+  }, []);
+
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Content
@@ -128,17 +190,21 @@ function SelectContent({
         position={position}
         {...props}
       >
-        <SelectScrollUpButton />
+        {canScrollUp && <SlowScrollButton direction="up" viewportRef={viewportRef} />}
         <SelectPrimitive.Viewport
+          ref={viewportRef}
+          onScroll={checkScroll}
           className={cn(
             'p-1.5',
             position === 'popper' &&
               'h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]',
           )}
         >
+          {/* Trigger scroll check once items are rendered */}
+          <div ref={() => setTimeout(checkScroll, 0)} />
           {children}
         </SelectPrimitive.Viewport>
-        <SelectScrollDownButton />
+        {canScrollDown && <SlowScrollButton direction="down" viewportRef={viewportRef} />}
       </SelectPrimitive.Content>
     </SelectPrimitive.Portal>
   );
