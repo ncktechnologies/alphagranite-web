@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -80,17 +80,11 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
 
   const [workstationReady, setWorkstationReady] = useState(false);
 
-
-  // const workstationsForSection: any[] = workstationData?.workstations || (Array.isArray(workstationData) ? workstationData : []);
   const workstationsForSection: any[] = useMemo(() => {
     if (!workstationData) return [];
-
     if (Array.isArray(workstationData)) return workstationData;
-
-    if (Array.isArray(workstationData?.data)) return workstationData.data;
-
-    if (Array.isArray(workstationData?.workstations)) return workstationData.workstations;
-
+    if (Array.isArray((workstationData as any)?.data)) return (workstationData as any).data;
+    if (Array.isArray((workstationData as any)?.workstations)) return (workstationData as any).workstations;
     return [];
   }, [workstationData]);
 
@@ -100,24 +94,16 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
     }
   }, [isLoadingWorkstations, workstationsForSection.length]);
 
-
   const selectedWorkstation = workstationsForSection.find(w => String(w.id) === entry.workstation_id);
-  const allowedOperatorIds = selectedWorkstation?.operator_ids?.map(String) || [];
+  const allowedOperatorIds: string[] = selectedWorkstation?.operator_ids?.map(String) || [];
 
-  // Show all employees if no restrictions, otherwise filter to allowed
   const filteredEmployees = useMemo(() => {
     if (!selectedWorkstation) return employees;
-
     if (!allowedOperatorIds.length) return employees;
-
-    return employees.filter(emp =>
-      allowedOperatorIds.includes(String(emp.id))
-    );
-  }, [employees, selectedWorkstation]);
+    return employees.filter(emp => allowedOperatorIds.includes(String(emp.id)));
+  }, [employees, selectedWorkstation, allowedOperatorIds]);
 
   // Only reset operator when user actively changes the workstation
-  // AND workstations have loaded AND the operator is genuinely invalid.
-  // We track whether this is a user change vs initial mount with a ref.
   const prevWorkstationId = useRef(entry.workstation_id);
   useEffect(() => {
     const userChanged = prevWorkstationId.current !== entry.workstation_id;
@@ -304,7 +290,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
           <div>
             <Label className="text-[13px] text-[#4b545d]">Workstation *</Label>
             <Select
-              key={workstationReady ? "ready" : "loading"}
+              key={workstationReady ? 'ready' : 'loading'}
               value={workstationReady ? (entry.workstation_id || undefined) : undefined}
               onValueChange={value => onUpdate({ workstation_id: value, operator_id: '' })}
               disabled={!entry.planning_section_id || isLoadingWorkstations}
@@ -397,20 +383,19 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   onEventCreated,
   hideBackButton = false,
 }) => {
-
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const urlFabId = searchParams.get('fabId');
   const effectivePrefillFabId = propPrefillFabId || urlFabId || '';
 
-  // Both calendar and table now pass the complete plan as selectedEvent prop directly
   const effectiveEvent = selectedEvent;
 
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
 
   const prefillSectionIdStr = prefillPlanSectionId != null ? String(prefillPlanSectionId) : undefined;
 
-  const emptyEntry = (): PlanEntry => ({
+  // ✅ FIX 1: Memoize emptyEntry with useCallback so it has a stable reference
+  const emptyEntry = useCallback((): PlanEntry => ({
     fab_id: effectivePrefillFabId || '',
     workstation_id: '',
     operator_id: '',
@@ -420,9 +405,10 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     planning_section_id: prefillSectionIdStr,
     date: propSelectedDate ?? undefined,
     sequence: '1',
-  });
+  }), [effectivePrefillFabId, selectedTimeSlot, prefillSectionIdStr, propSelectedDate]);
 
-  const [entries, setEntries] = useState<PlanEntry[]>([emptyEntry()]);
+  // ✅ FIX 2: Use lazy initializer for useState to avoid calling emptyEntry on every render
+  const [entries, setEntries] = useState<PlanEntry[]>(() => [emptyEntry()]);
 
   const [createShopPlan, { isLoading }] = useCreateShopPlansMutation();
   const [updateShopPlan] = useUpdateShopPlanMutation();
@@ -454,27 +440,26 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     return fabs.find((fab: any) => String(fab.id) === selectedFabId) || null;
   }, [allFabsData, selectedFabId]);
 
+  // ✅ FIX 3: Use stable boolean flags instead of array/object references in useEffect deps
   const employeesLoaded = employees.length > 0;
   const workstationsLoaded = allWorkstations.length > 0;
+  const sectionsLoaded = planningSections.length > 0;
+  const fabsLoaded = !!allFabsData;
 
   useEffect(() => {
-
     if (!effectiveEvent) {
       setEntries([emptyEntry()]);
       return;
     }
 
     // Wait for ALL required data before populating edit form
-    const sectionsLoaded = planningSections.length > 0;
-    const fabsLoaded = !!allFabsData;
-
     if (!employeesLoaded || !workstationsLoaded || !sectionsLoaded || !fabsLoaded) {
       return;
     }
 
     const ev: any = effectiveEvent;
 
-    console.log("populating event with", ev)
+    console.log('populating event with', ev);
 
     const fabId = ev.fab_id ?? '';
     const workstationId = ev.workstation_id ?? '';
@@ -498,66 +483,65 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       );
     }
 
-    const finalEntry = {
+    const finalEntry: PlanEntry = {
       id: ev.id,
-
       fab_id: fabId ? String(fabId) : '',
-
       workstation_id: workstationId ? String(workstationId) : '',
-
       operator_id: operatorId ? String(operatorId) : '',
-
       notes: notes ? String(notes) : '',
-
       start_time: format(startDate, 'HH:mm'),
-
       end_time: endTime || '',
-
       planning_section_id:
         planningSectionId !== null && planningSectionId !== undefined
           ? String(planningSectionId)
           : prefillSectionIdStr || '',
-
       date: startDate,
-
       sequence: sequence ? String(sequence) : '1',
     };
-    setEntries([finalEntry]);
 
-    // Expand card safely after entry exists
+    setEntries([finalEntry]);
     setExpandedCards({ 0: true });
 
   }, [
     effectiveEvent,
     employeesLoaded,
     workstationsLoaded,
-    planningSections,
-    allFabsData
+    sectionsLoaded,   // ✅ boolean — stable, no reference churn
+    fabsLoaded,       // ✅ boolean — stable, no reference churn
+    emptyEntry,       // ✅ stable via useCallback
   ]);
+
   const sequenceOptions = useMemo(
     () => Array.from({ length: Math.max(3, entries.length) }, (_, i) => i + 1),
     [entries.length]
   );
 
-  const addEntry = () => setEntries(p => {
-    const e = emptyEntry();
-    if (p[0]?.fab_id) e.fab_id = p[0].fab_id;
-    e.sequence = String(p.length + 1);
-    return [...p, e];
-  });
+  // ✅ FIX 4: Memoize addEntry and resetForm so they use the stable emptyEntry
+  const addEntry = useCallback(() => {
+    setEntries(p => {
+      const e = emptyEntry();
+      if (p[0]?.fab_id) e.fab_id = p[0].fab_id;
+      e.sequence = String(p.length + 1);
+      return [...p, e];
+    });
+  }, [emptyEntry]);
 
-  const removeEntry = (idx: number) => setEntries(p => {
-    const next = p.filter((_, i) => i !== idx);
-    return next.map((e, i) => ({ ...e, sequence: String(i + 1) }));
-  });
+  const removeEntry = useCallback((idx: number) => {
+    setEntries(p => {
+      const next = p.filter((_, i) => i !== idx);
+      return next.map((e, i) => ({ ...e, sequence: String(i + 1) }));
+    });
+  }, []);
 
-  const resetForm = () => setEntries([emptyEntry()]);
+  const resetForm = useCallback(() => {
+    setEntries([emptyEntry()]);
+  }, [emptyEntry]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     resetForm();
     if (onBack) onBack();
     else navigate(-1);
-  };
+  }, [resetForm, onBack, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -630,7 +614,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       handleBack();
     } catch (error: any) {
       const msg = error?.data?.detail?.message || 'Failed to create/update Plan';
-      // toast.error(msg);
+      toast.error(msg);
     }
   };
 

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { flexRender } from '@tanstack/react-table';
 import {
     ColumnDef,
@@ -28,10 +28,11 @@ import {
     EllipsisVertical, Eye, MessageSquare,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import {
-    Select, SelectContent, SelectItem,
-    SelectTrigger, SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useGetFabsQuery, useGetFabTypesQuery } from '@/store/api/job';
+import { useNavigate } from 'react-router';
+import { Link } from 'react-router';
+import { useTableState } from '@/hooks/use-table-state';
 import {
     DropdownMenu, DropdownMenuContent, DropdownMenuItem,
     DropdownMenuSeparator, DropdownMenuTrigger,
@@ -42,8 +43,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DateRange } from 'react-day-picker';
 import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useGetFabsQuery, useGetFabTypesQuery, useCreateFabNoteMutation } from '@/store/api/job';
-import { Link, useNavigate } from 'react-router';
+import { useCreateFabNoteMutation } from '@/store/api/job';
 import { toast } from 'sonner';
 import {
     Dialog, DialogContent, DialogHeader,
@@ -273,15 +273,38 @@ const ActionsCell: React.FC<ActionsCellProps> = ({ fabId, onAddNote }) => {
 
 // ------------------ Main Component ------------------
 const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLoading }) => {
+    // Use persistent table state with localStorage
+    const tableState = useTableState({
+        tableId: 'shop-status-table',
+        defaultPagination: { pageIndex: 0, pageSize: 25 },
+        defaultDateFilter: 'all',
+        persistState: true,
+    });
+
     const [sorting, setSorting] = useState<SortingState>([]);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [dateRange, setDateRange] = useState<DateRange | undefined>();
-    const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
+    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id');
+    const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
     const [expanded, setExpanded] = useState<ExpandedState>({});
     const [itemsPerPage, setItemsPerPage] = useState<number>(25);
     const [currentPage, setCurrentPage] = useState<number>(1);
+
+    // Extract state from tableState hook
+    const {
+        pagination,
+        setPagination,
+        searchQuery,
+        setSearchQuery,
+        dateRange,
+        setDateRange,
+    } = tableState;
+
+    // Sync currentPage and itemsPerPage with pagination state
+    useEffect(() => {
+        setCurrentPage(pagination.pageIndex + 1);
+        setItemsPerPage(pagination.pageSize);
+    }, [pagination]);
 
     // Add note dialog state
     const [noteDialogFabId, setNoteDialogFabId] = useState<string | null>(null);
@@ -941,11 +964,22 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     {/* ---- Filters ---- */}
                     <CardHeader className="flex flex-wrap items-center justify-between gap-2 py-3 border-b border-[#e2e4ed] px-5">
                         <div className="flex flex-wrap items-center gap-3">
-                            {/* Search */}
+                            {/* Search Type Selector */}
+                            <Select value={searchType} onValueChange={(value: 'fab_id' | 'job_number' | 'job_name') => setSearchType(value)}>
+                                <SelectTrigger className="w-[140px] h-[34px] border-[#e2e4ed] focus-visible:ring-0">
+                                    <SelectValue placeholder="Search by" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="fab_id">FAB ID</SelectItem>
+                                    <SelectItem value="job_number">Job Number</SelectItem>
+                                    <SelectItem value="job_name">Job Name</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            {/* Search Input */}
                             <div className="relative">
                                 <Search className="size-4 text-[#7c8689] absolute start-3 top-1/2 -translate-y-1/2" />
                                 <Input
-                                    placeholder="Search by job, Fab ID"
+                                    placeholder={`Search by ${searchType.replace('_', ' ')}`}
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
                                     className="ps-9 w-[280px] h-[34px] border-[#e2e4ed] focus-visible:ring-0"

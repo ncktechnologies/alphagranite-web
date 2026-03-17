@@ -323,7 +323,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                 <div className="flex items-center gap-2">
                     {isEditing ? (
                         <Select value={String(draft.sequence)} onValueChange={v => patch({ sequence: v })}>
-                            <SelectTrigger className="h-7 w-suto text-xs border-[#e2e4ed]">
+                            <SelectTrigger className="h-7 w-auto text-xs border-[#e2e4ed]">
                                 <SelectValue placeholder="Seq" />
                             </SelectTrigger>
                             <SelectContent>

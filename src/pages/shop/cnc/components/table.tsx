@@ -64,6 +64,7 @@ const CuttingPlan = () => {
     });
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id');
     const [searchQuery, setSearchQuery] = useState('');
     const [dateFilter, setDateFilter] = useState<string>('all');
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -297,10 +298,20 @@ const CuttingPlan = () => {
             <Card>
                 <CardHeader className="flex flex-wrap items-center justify-between gap-2 py-3 border-b">
                     <div className="flex flex-wrap items-center gap-3">
+                        <Select value={searchType} onValueChange={(value: 'fab_id' | 'job_number' | 'job_name') => setSearchType(value)}>
+                            <SelectTrigger className="w-[140px] h-[34px]">
+                                <SelectValue placeholder="Search by" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="fab_id">FAB ID</SelectItem>
+                                <SelectItem value="job_number">Job Number</SelectItem>
+                                <SelectItem value="job_name">Job Name</SelectItem>
+                            </SelectContent>
+                        </Select>
                         <div className="relative">
                             <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
                             <Input
-                                placeholder="Search by job or FAB ID"
+                                placeholder={`Search by ${searchType.replace('_', ' ')}`}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="ps-9 w-[230px] h-[34px]"

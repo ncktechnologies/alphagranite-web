@@ -98,6 +98,8 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
 
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id');
+    const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [salesPersonFilter, setSalesPersonFilter] = useState<string>('all');
     const [planSheetOpen, setPlanSheetOpen] = useState(false);
@@ -112,8 +114,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
         setPagination,
         searchQuery,
         setSearchQuery,
-        searchType,
-        setSearchType,
         dateRange,
         setDateRange,
         fabTypeFilter,
@@ -548,10 +548,20 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                 <Card>
                     <CardHeader className="flex flex-wrap items-center justify-between gap-2 py-3 border-b">
                         <div className="flex flex-wrap items-center gap-3">
+                            <Select value={searchType} onValueChange={(value: 'fab_id' | 'job_number' | 'job_name') => setSearchType(value)}>
+                                <SelectTrigger className="w-[140px] h-[34px]">
+                                    <SelectValue placeholder="Search by" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="fab_id">FAB ID</SelectItem>
+                                    <SelectItem value="job_number">Job Number</SelectItem>
+                                    <SelectItem value="job_name">Job Name</SelectItem>
+                                </SelectContent>
+                            </Select>
                             <div className="relative">
                                 <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
                                 <Input
-                                    placeholder="Search by job, Fab ID"
+                                    placeholder={`Search by ${searchType.replace('_', ' ')}`}
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
                                     className="ps-9 w-[280px] h-[34px]"
