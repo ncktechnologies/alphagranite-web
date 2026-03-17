@@ -4,6 +4,7 @@ export interface ShopData {
     fab_type: string
     fab_id: string
     job_no: string
+    job_id?: number
     pieces: number
     total_sq_ft: number
     wj_time: string
@@ -205,7 +206,18 @@ export const dummyData2: ShopData[] = [
     //                 <DataGridColumnHeader title="JOB NO" column={column} />
     //             ),
     //             cell: ({ row }) => (
-    //                 <span className="text-sm text-text">{row.original.job_no}</span>
+    //                 row.original.job_id ? (
+    //                     <Link
+    //                         to={`/job/details/${row.original.job_id}`}
+    //                         target="_blank"
+    //                         rel="noopener noreferrer"
+    //                         className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+    //                     >
+    //                         {row.original.job_no}
+    //                     </Link>
+    //                 ) : (
+    //                     <span className="text-sm text-text">{row.original.job_no}</span>
+    //                 )
     //             ),
     //             enableSorting: true,
     //             size: 100,

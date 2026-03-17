@@ -27,7 +27,7 @@ import { Search, X, CalendarDays, EllipsisVertical } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { exportTableToCSV } from '@/lib/exportToCsv';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DateRange } from 'react-day-picker';
@@ -49,6 +49,7 @@ export interface CutList {
     fab_id_0?: string;
     job_name: string;
     job_no: string;
+    job_id?: number;
     no_of_pcs: number;
     total_sq_ft: number;
     wl_ln_ft: number;
@@ -286,7 +287,20 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
             header: ({ column }) => (
                 <DataGridColumnHeader title="JOB NO" column={column} />
             ),
-            cell: ({ row }) => <span className="text-sm">{row.original.job_no}</span>,
+            cell: ({ row }) => (
+                row.original.job_id ? (
+                    <Link
+                        to={`/job/details/${row.original.job_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                        {row.original.job_no}
+                    </Link>
+                ) : (
+                    <span className="text-sm">{row.original.job_no}</span>
+                )
+            ),
         },
         {
             id: "no_of_pcs",

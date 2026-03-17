@@ -75,6 +75,7 @@ export interface ShopStatusFab {
     fab_id: string;
     fab_type: string;
     job_no: string;
+    job_id?: number;
     job_name: string;
     acct_name?: string;
     input_area?: string;
@@ -340,6 +341,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 fab_id: String(fab.id),
                 fab_type: fab.fab_type || 'N/A',
                 job_no: fab.job_details?.job_number || 'N/A',
+                job_id: fab.job_details?.id || undefined,
                 job_name: fab.job_details?.name || 'N/A',
                 acct_name: fab.account_name,
                 input_area: fab.input_area,
@@ -633,7 +635,18 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             ),
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
-                    return <span className="text-sm text-[#4b545d]">{row.original.data.job_no}</span>;
+                    return row.original.data.job_id ? (
+                        <Link
+                            to={`/job/details/${row.original.data.job_id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                            {row.original.data.job_no}
+                        </Link>
+                    ) : (
+                        <span className="text-sm text-[#4b545d]">{row.original.data.job_no}</span>
+                    );
                 }
                 return null;
             },

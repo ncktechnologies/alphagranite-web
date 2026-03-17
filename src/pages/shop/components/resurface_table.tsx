@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { useGetFabsInResurfacingQuery, useGetFabTypesQuery } from '@/store/api/job';
 import ActionsCell from './action';
 import { useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import CreatePlanSheet from './createEvent';
 
 export interface ShopPlanRow {
@@ -42,6 +43,7 @@ export interface ShopPlanRow {
     fab_type: string;
     job_no: string;
     job_name: string;
+    job_id?: number;
     fab_info: string;
     pieces: number;
     total_sq_ft: number;
@@ -370,7 +372,20 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             id: 'job_no',
             accessorFn: r => r.job_no,
             header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-text">{row.original.job_no}</span>,
+            cell: ({ row }) => (
+                row.original.job_id ? (
+                    <Link
+                        to={`/job/details/${row.original.job_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                        {row.original.job_no}
+                    </Link>
+                ) : (
+                    <span className="text-sm text-text">{row.original.job_no}</span>
+                )
+            ),
             enableSorting: true,
             size: 100,
         },

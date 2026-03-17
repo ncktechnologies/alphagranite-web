@@ -457,7 +457,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
 
             <>
               <Select value={filterFabType || 'all'} onValueChange={(v) => setFilterFabType(v === 'all' ? '' : v)}>
-                <SelectTrigger className="w-[133px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
+                <SelectTrigger className="min-w-[133px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
                   <SelectValue placeholder="All FAB Types" />
                 </SelectTrigger>
                 <SelectContent>
@@ -467,7 +467,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
               </Select>
 
               <Select value={filterWorkstation || 'all'} onValueChange={(v) => setFilterWorkstation(v === 'all' ? '' : v)}>
-                <SelectTrigger className="w-[146px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
+                <SelectTrigger className="min-w-[146px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
                   <SelectValue placeholder="All Workstations" />
                 </SelectTrigger>
                 <SelectContent>
@@ -477,7 +477,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
               </Select>
 
               <Select value={filterOperator || 'all'} onValueChange={(v) => setFilterOperator(v === 'all' ? '' : v)}>
-                <SelectTrigger className="w-[137px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
+                <SelectTrigger className="min-w-[137px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
                   <SelectValue placeholder="All Operators" />
                 </SelectTrigger>
                 <SelectContent>
@@ -733,7 +733,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                           <div
                             className="relative"
                             style={{ height: rowHeight, minWidth: TOTAL_HOURS * HOUR_WIDTH }}
-                            onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(true); } : undefined}
+                            onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(false); } : undefined}
                           >
                             {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
                               <div key={i} className="absolute top-0 bottom-0 border-l border-[#ecedf0]" style={{ left: i * HOUR_WIDTH }} />

@@ -35,6 +35,7 @@ import { cn } from '@/lib/utils';
 import { useGetFabsQuery, useGetFabTypesQuery } from '@/store/api/job';
 import ActionsCell from './action';
 import { useNavigate } from 'react-router';
+import { Link } from 'react-router';
 import CreatePlanSheet from './createEvent';
 import PlanSectionCell from './planSectionCell';
 
@@ -43,6 +44,7 @@ export interface ShopPlanRow {
     fab_type: string;
     job_no: string;
     job_name: string;
+    job_id?: number;
     fab_info: string;
     pieces: number;
     total_sq_ft: number;
@@ -177,6 +179,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                 fab_id: String(fab.id),
                 fab_type: fab.fab_type || 'N/A',
                 job_no: fab.job_details?.job_number || 'N/A',
+                job_id: fab.job_details?.id || undefined,
                 job_name: fab.job_details?.name || 'N/A',
                 fab_info: `${fab.job_details?.name || ''} - ${fab.stone_type_name || ''} - ${fab.stone_color_name || ''}`.trim(),
                 pieces: fab.no_of_pieces || 0,
@@ -375,7 +378,20 @@ const ShopTable: React.FC<ShopTableProps> = () => {
             id: 'job_no',
             accessorFn: r => r.job_no,
             header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-text">{row.original.job_no}</span>,
+            cell: ({ row }) => (
+                row.original.job_id ? (
+                    <Link
+                        to={`/job/details/${row.original.job_id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                        {row.original.job_no}
+                    </Link>
+                ) : (
+                    <span className="text-sm text-text">{row.original.job_no}</span>
+                )
+            ),
             enableSorting: true,
             size: 100,
         },

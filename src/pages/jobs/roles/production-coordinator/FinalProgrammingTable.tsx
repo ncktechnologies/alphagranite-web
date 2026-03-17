@@ -24,6 +24,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router';
+import { Link } from 'react-router';
 
 interface FinalProgrammingTableProps {
     data: Fab[];
@@ -117,7 +118,20 @@ export const FinalProgrammingTable = ({
             header: ({ column }) => (
                 <DataGridColumnHeader title="JOB NO" column={column} />
             ),
-            cell: ({ row }) => <span className="text-sm">{row.original.job_details?.job_number || '-'}</span>,
+            cell: ({ row }) => (
+                row.original.job_details?.id ? (
+                    <Link
+                        to={`/job/details/${row.original.job_details.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                        {row.original.job_details?.job_number || '-'}
+                    </Link>
+                ) : (
+                    <span className="text-sm">{row.original.job_details?.job_number || '-'}</span>
+                )
+            ),
         },
         {
             id: "no_of_pieces",
