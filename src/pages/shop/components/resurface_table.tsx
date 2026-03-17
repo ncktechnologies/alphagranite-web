@@ -37,6 +37,7 @@ import ActionsCell from './action';
 import { useNavigate } from 'react-router';
 import { Link } from 'react-router';
 import CreatePlanSheet from './createEvent';
+import { useTableState } from '@/hooks/use-table-state';
 
 export interface ShopPlanRow {
     fab_id: string;
@@ -87,20 +88,37 @@ const computeGroupTotals = (rows: ShopPlanRow[]) => {
 };
 
 const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => {
-    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 25 });
+    // Use persistent table state with localStorage
+    const tableState = useTableState({
+        tableId: 'shop-resurfacing-table',
+        defaultPagination: { pageIndex: 0, pageSize: 25 },
+        defaultDateFilter: 'all',
+        persistState: true,
+    });
+
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [searchQuery, setSearchQuery] = useState('');
-    const [dateRange, setDateRange] = useState<DateRange | undefined>();
-    const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-    const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
     const [salesPersonFilter, setSalesPersonFilter] = useState<string>('all');
     const [planSheetOpen, setPlanSheetOpen] = useState(false);
     const [selectedFabForSheet, setSelectedFabForSheet] = useState<string>('');
     const [selectedDateForSheet, setSelectedDateForSheet] = useState<Date | null>(null);
     const [selectedEventForSheet, setSelectedEventForSheet] = useState<any | null>(null);
     const navigate = useNavigate();
+
+    // Extract state from tableState hook
+    const {
+        pagination,
+        setPagination,
+        searchQuery,
+        setSearchQuery,
+        searchType,
+        setSearchType,
+        dateRange,
+        setDateRange,
+        fabTypeFilter,
+        setFabTypeFilter,
+    } = tableState;
 
     const handleViewCalendar = (fabId: string, date?: string) => {
         const url = `/shop/calendar?fabId=${fabId}`;

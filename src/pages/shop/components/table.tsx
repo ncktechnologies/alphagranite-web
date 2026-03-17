@@ -1,4 +1,4 @@
-import React, { Fragment, useMemo, useState } from 'react';
+import React, { Fragment, useMemo, useState, useEffect } from 'react';
 import { flexRender } from '@tanstack/react-table';
 import {
     ColumnDef,
@@ -38,6 +38,7 @@ import { useNavigate } from 'react-router';
 import { Link } from 'react-router';
 import CreatePlanSheet from './createEvent';
 import PlanSectionCell from './planSectionCell';
+import { useTableState } from '@/hooks/use-table-state';
 
 export interface ShopPlanRow {
     fab_id: string;
@@ -89,21 +90,37 @@ const computeGroupTotals = (rows: ShopPlanRow[]) => {
 };
 
 const ShopTable: React.FC<ShopTableProps> = () => {
-    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 25 });
+    // Use persistent table state with localStorage
+    const tableState = useTableState({
+        tableId: 'shop-cut-list-table',
+        defaultPagination: { pageIndex: 0, pageSize: 25 },
+        defaultDateFilter: 'all',
+        persistState: true, // Enable localStorage persistence
+    });
+
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [searchQuery, setSearchQuery] = useState('');
-    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id'); // Default to fab_id
-    const [dateRange, setDateRange] = useState<DateRange | undefined>();
-    const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
+    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id'); // Keep searchType as local state
+    const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-    const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
     const [salesPersonFilter, setSalesPersonFilter] = useState<string>('all');
     const [planSheetOpen, setPlanSheetOpen] = useState(false);
     const [selectedFabForSheet, setSelectedFabForSheet] = useState<string>('');
     const [selectedDateForSheet, setSelectedDateForSheet] = useState<Date | null>(null);
     const [selectedEventForSheet, setSelectedEventForSheet] = useState<any | null>(null);
     const navigate = useNavigate();
+
+    // Extract state from tableState hook
+    const {
+        pagination,
+        setPagination,
+        searchQuery,
+        setSearchQuery,
+        dateRange,
+        setDateRange,
+        fabTypeFilter,
+        setFabTypeFilter,
+    } = tableState;
 
     const handleViewCalendar = (fabId: string, date?: string) => {
         const url = `/shop/calendar?fabId=${fabId}`;
@@ -128,7 +145,10 @@ const ShopTable: React.FC<ShopTableProps> = () => {
         ...(searchQuery && { search: searchQuery }),
         ...(searchQuery && { type: searchType }), // Add search type parameter
         ...(fabTypeFilter !== 'all' && { fab_type: fabTypeFilter }),
-    }), [searchQuery, searchType, fabTypeFilter, pagination]);
+        // Add date range filters for backend processing
+        ...(dateRange?.from && { schedule_start_date: format(dateRange.from, 'yyyy-MM-dd') }),
+        ...(dateRange?.to && { schedule_due_date: format(dateRange.to, 'yyyy-MM-dd') }),
+    }), [searchQuery, searchType, fabTypeFilter, dateRange, pagination]);
 
     const { data: fabsData, isLoading: isApiLoading, refetch } = useGetFabsQuery(queryParams);
     const { data: fabTypesData } = useGetFabTypesQuery();
@@ -234,33 +254,10 @@ const ShopTable: React.FC<ShopTableProps> = () => {
         return rows;
     }, [fabs]);
 
+    // No client-side filtering needed - backend handles all search/filter
     const filteredRows = useMemo(() => {
-        let result = planRows;
-        if (searchQuery) {
-            const q = searchQuery.toLowerCase();
-            result = result.filter(r =>
-                r.job_no.toLowerCase().includes(q) ||
-                r.fab_id.toLowerCase().includes(q) ||
-                r.fab_info.toLowerCase().includes(q) ||
-                r.workstation_name.toLowerCase().includes(q) ||
-                r.operator_name.toLowerCase().includes(q)
-            );
-        }
-        if (fabTypeFilter !== 'all') {
-            result = result.filter(r => r.fab_type.toLowerCase() === fabTypeFilter.toLowerCase());
-        }
-        if (dateRange?.from && dateRange?.to) {
-            const start = startOfDay(dateRange.from);
-            const end = startOfDay(dateRange.to);
-            end.setHours(23, 59, 59, 999);
-            result = result.filter(r => {
-                if (!r.scheduled_start_date) return false;
-                const d = new Date(r.scheduled_start_date);
-                return d >= start && d <= end;
-            });
-        }
-        return result;
-    }, [planRows, searchQuery, fabTypeFilter, dateRange]);
+        return planRows;
+    }, [planRows]);
 
     const groupedRows = useMemo(() => {
         const groups: Record<string, { rows: ShopPlanRow[]; dateDisplay: string }> = {};

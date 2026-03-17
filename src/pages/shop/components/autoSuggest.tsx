@@ -579,7 +579,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       onEventCreated?.();
       handleBack();
     } catch (error: any) {
-      toast.error(error?.data?.detail?.message || 'Failed to create/update Plan');
+      // toast.error(error?.data?.detail?.message || 'Failed to create/update Plan');
     }
   };
 
