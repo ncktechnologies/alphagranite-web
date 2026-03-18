@@ -333,17 +333,17 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             enableSorting: false,
             size: 50,
         },
-        {
-            id: 'month',
-            accessorFn: r => r.scheduled_start_date,
-            header: ({ column }) => <DataGridColumnHeader title="MONTH" column={column} />,
-            cell: ({ row }) => {
-                const date = row.original.scheduled_start_date;
-                return <span className="text-sm text-text font-medium">{date ? format(new Date(date), 'MMM yyyy') : '-'}</span>;
-            },
-            enableSorting: true,
-            size: 200,
-        },
+        // {
+        //     id: 'month',
+        //     accessorFn: r => r.scheduled_start_date,
+        //     header: ({ column }) => <DataGridColumnHeader title="MONTH" column={column} />,
+        //     cell: ({ row }) => {
+        //         const date = row.original.scheduled_start_date;
+        //         return <span className="text-sm text-text font-medium">{date ? format(new Date(date), 'MMM yyyy') : '-'}</span>;
+        //     },
+        //     enableSorting: true,
+        //     size: 200,
+        // },
         {
             id: 'shop_cut_date_scheduled',
             accessorFn: r => r.scheduled_start_date,
