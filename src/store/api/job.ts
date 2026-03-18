@@ -651,6 +651,8 @@ export interface JobMediaFile {
     uploaded_by: number;
     uploader_name: string;
     created_at: string;
+    stage_name:string;
+    file_design:string;
 }
 
 export interface JobMediaUploadResponse {
@@ -838,7 +840,7 @@ export const jobApi = createApi({
                             ...(queryParams.search && { search: queryParams.search }),
                             // Search type filter (fab_id, job_number, job_name)
                             ...(queryParams.type && { type: queryParams.type }),
-                            
+
                             // Schedule date filters
                             ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
                             ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
@@ -996,7 +998,7 @@ export const jobApi = createApi({
                 transformResponse: (response: any) => response.data || response,
                 providesTags: ["Fab"],
             }),
-             getFabsInResurfacing: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
+            getFabsInResurfacing: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
                 query: (params) => {
                     const queryParams = params || {};
                     return {
@@ -1043,7 +1045,7 @@ export const jobApi = createApi({
                 transformResponse: (response: any) => response.data || response,
                 providesTags: ["Fab"],
             }),
-             getFabsCompletion: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
+            getFabsCompletion: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
                 query: (params) => {
                     const queryParams = params || {};
                     return {
@@ -1905,11 +1907,13 @@ export const jobApi = createApi({
                 providesTags: (_result, _error, { job_id }) => [{ type: "Job", id: job_id }],
             }),
 
-            uploadJobMedia: build.mutation<JobMediaUploadResponse[], { job_id: number; files: File[] }>({
-                query: ({ job_id, files }) => {
+            uploadJobMedia: build.mutation<JobMediaUploadResponse[], { job_id: number; files: File[], stage_name:string, file_design:string }>({
+                query: ({ job_id, files, stage_name, file_design }) => {
                     const formData = new FormData();
                     files.forEach((file) => {
                         formData.append('files', file);
+                        formData.append('stage_name', stage_name);
+                        formData.append('file_design', file_design);
                     });
                     return {
                         url: `/jobs/${job_id}/upload-media`,
@@ -2010,7 +2014,7 @@ export const jobApi = createApi({
             }),
 
             // Resurfacing Scheduling mutations
-            createResurfaceScheduling: build.mutation<any, { fab_id: number; scheduled_start_date?: string; scheduled_end_date?: string }>({  
+            createResurfaceScheduling: build.mutation<any, { fab_id: number; scheduled_start_date?: string; scheduled_end_date?: string }>({
                 query: ({ fab_id, scheduled_start_date, scheduled_end_date }) => ({
                     url: `/resurface-scheduling`,
                     method: "POST",
@@ -2023,7 +2027,7 @@ export const jobApi = createApi({
                 invalidatesTags: ["Fab"],
             }),
 
-            updateResurfaceScheduling: build.mutation<any, { resurface_scheduling_id: number; data: { is_completed?: boolean; actual_start_date?: string; actual_end_date?: string } }>({  
+            updateResurfaceScheduling: build.mutation<any, { resurface_scheduling_id: number; data: { is_completed?: boolean; actual_start_date?: string; actual_end_date?: string } }>({
                 query: ({ resurface_scheduling_id, data }) => ({
                     url: `/resurface-scheduling/${resurface_scheduling_id}`,
                     method: "PUT",
@@ -2039,7 +2043,7 @@ export const jobApi = createApi({
                 }),
                 providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
             }),
-             createInstallScheduling: build.mutation<any, { fab_id: number; scheduled_start_date?: string; scheduled_end_date?: string }>({  
+            createInstallScheduling: build.mutation<any, { fab_id: number; scheduled_start_date?: string; scheduled_end_date?: string }>({
                 query: ({ fab_id, scheduled_start_date, scheduled_end_date }) => ({
                     url: `/install-scheduling`,
                     method: "POST",
@@ -2052,7 +2056,7 @@ export const jobApi = createApi({
                 invalidatesTags: ["Fab"],
             }),
 
-            updateInstallScheduling: build.mutation<any, { install_scheduling_id: number; data: { is_completed?: boolean; actual_start_date?: string; actual_end_date?: string } }>({  
+            updateInstallScheduling: build.mutation<any, { install_scheduling_id: number; data: { is_completed?: boolean; actual_start_date?: string; actual_end_date?: string } }>({
                 query: ({ install_scheduling_id, data }) => ({
                     url: `/install-scheduling/${install_scheduling_id}`,
                     method: "PUT",

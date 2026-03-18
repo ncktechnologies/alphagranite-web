@@ -25,7 +25,7 @@ export function JobMediaUpload({ jobId, onUploadComplete, onClose }: JobMediaUpl
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  
+
   // Required fields for upload
   const [selectedStage, setSelectedStage] = useState<string>('');
   const [selectedFileDesign, setSelectedFileDesign] = useState<string>('');
@@ -120,7 +120,12 @@ export function JobMediaUpload({ jobId, onUploadComplete, onClose }: JobMediaUpl
         });
       }, 200);
 
-      await uploadMedia({ job_id: jobId, files }).unwrap();
+      await uploadMedia({
+        job_id: jobId,
+        files,
+        stage_name: selectedStage,
+        file_design: selectedFileDesign
+      }).unwrap();
 
       clearInterval(progressInterval);
       setUploadProgress(100);
@@ -144,7 +149,7 @@ export function JobMediaUpload({ jobId, onUploadComplete, onClose }: JobMediaUpl
 
     } catch (error) {
       console.error('Upload failed:', error);
-      toast.error('Failed to upload files. Please try again.');
+      // toast.error('Failed to upload files. Please try again.');
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -175,8 +180,8 @@ export function JobMediaUpload({ jobId, onUploadComplete, onClose }: JobMediaUpl
               <SelectItem value="sales_ct">Sales Check</SelectItem>
               <SelectItem value="revision">Revision</SelectItem>
 
-              
-              
+
+
             </SelectContent>
           </Select>
           <p className="text-xs text-muted-foreground">Select the current stage for these files</p>
@@ -203,11 +208,10 @@ export function JobMediaUpload({ jobId, onUploadComplete, onClose }: JobMediaUpl
         {/* Dropzone */}
         <div
           {...getRootProps()}
-          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${
-            isDragActive
+          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors ${isDragActive
               ? 'border-blue-500 bg-blue-50'
               : 'border-gray-300 hover:border-gray-400'
-          }`}
+            }`}
         >
           <input {...getInputProps()} />
           <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
