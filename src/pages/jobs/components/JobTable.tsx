@@ -352,6 +352,39 @@ export const JobTable = ({
             size: 100,
             enableSorting: true,
         },
+         // Fab Info (computed column – still sortable by the underlying data? We'll set enableSorting: false because it's a composite)
+        {
+            id: "fab_info",
+            header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
+            cell: ({ row }) => {
+                const { jobInfo, materialInfo, stoneInfo } = generateFabInfo(row.original);
+                return (
+                    <div className="flex gap-4 text-xs max-w-[400px]">
+                        {jobInfo.length > 0 && (
+                            <div className="flex-1 min-w-0">
+                                <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>
+                                    {jobInfo.join(' - ')}
+                                </div>
+                                {stoneInfo.length > 0 && (
+                                    <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>
+                                        {stoneInfo.join(' - ')}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {materialInfo.length > 0 && (
+                            <div className="flex-1 min-w-0">
+                                <div className="truncate text-gray-600" title={materialInfo.join(' - ')}>
+                                    {materialInfo.map((info, idx) => <div key={idx} className="truncate text-gray-600">{info}</div>)}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                );
+            },
+            size: 400,
+            enableSorting: false, // Composite column, sorting not meaningful
+        },
         // Template Needed
         {
             id: "template_needed",
@@ -556,39 +589,7 @@ export const JobTable = ({
             size: 140,
             enableSorting: true,
         },
-        // Fab Info (computed column – still sortable by the underlying data? We'll set enableSorting: false because it's a composite)
-        {
-            id: "fab_info",
-            header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
-            cell: ({ row }) => {
-                const { jobInfo, materialInfo, stoneInfo } = generateFabInfo(row.original);
-                return (
-                    <div className="flex gap-4 text-xs max-w-[400px]">
-                        {jobInfo.length > 0 && (
-                            <div className="flex-1 min-w-0">
-                                <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>
-                                    {jobInfo.join(' - ')}
-                                </div>
-                                {stoneInfo.length > 0 && (
-                                    <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>
-                                        {stoneInfo.join(' - ')}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        {materialInfo.length > 0 && (
-                            <div className="flex-1 min-w-0">
-                                <div className="truncate text-gray-600" title={materialInfo.join(' - ')}>
-                                    {materialInfo.map((info, idx) => <div key={idx} className="truncate text-gray-600">{info}</div>)}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                );
-            },
-            size: 400,
-            enableSorting: false, // Composite column, sorting not meaningful
-        },
+       
         // All notes columns (enable sorting)
         { id: 'templating_notes', header: ({ column }) => <DataGridColumnHeader title="Templating Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'templating'), enableSorting: true, size: 180 },
         { id: 'drafting_notes', header: ({ column }) => <DataGridColumnHeader title="Drafting Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'drafting'), enableSorting: true, size: 180 },

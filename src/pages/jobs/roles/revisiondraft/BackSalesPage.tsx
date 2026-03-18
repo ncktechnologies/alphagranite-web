@@ -207,7 +207,7 @@ export function DraftRevisionPage() {
         <Container>
             <Toolbar>
                 <ToolbarHeading
-                    title="Revision queue"
+                    title="Revision "
                     description="View and manage revision tasks"
                 />
             </Toolbar>

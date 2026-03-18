@@ -81,7 +81,7 @@ const getWorkflowStages = (): WorkflowStage[] => [
   },
   {
     id: '6',
-    name: 'Revision Queue',
+    name: 'Revision',
     status: 'not-started',
     notes: 'Only if revision requested',
     route: '/jobs/revisions'
