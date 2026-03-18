@@ -47,7 +47,7 @@ export function JobDashboardPage() {
       'Resurface Scheduling': '/job/resurfacing',
       'Revisions': '/job/revision',
       'Install Scheduling': '/job/install-scheduling',
-      'Install Completion': '/job/install-scheduling',
+      'Install Completion': '/job/install-completion',
     };
     return routeMap[widgetId] || '/job';
   };

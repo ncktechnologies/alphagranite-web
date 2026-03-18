@@ -194,7 +194,7 @@ export function UploadDocuments({
     }
     
     if (!fileDesign) {
-      toast.error('File design is required. Please select a file design before uploading.');
+      toast.error('File type is required. Please select a file type before uploading.');
       return;
     }
     

@@ -60,6 +60,7 @@ import CreatePlanPage from '@/pages/shop/components/createPlanePage';
 import CreateAutoPlanPage from '@/pages/shop/components/autoSuggest';
 import ResurfacingStatusPage from '@/pages/shop/resurfacing/page';
 import { FabDetailsPage } from '@/pages/shop/components/statusDetails';
+import { InstallCompletionPage } from '@/pages/jobs/roles/install-completion';
 // import ShopCalendarPage from '@/pages/shop/calendarPage';
 
 export function AppRoutingSetup() {
@@ -325,6 +326,15 @@ export function AppRoutingSetup() {
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <InstallSchedulingPage/>
+                
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job/install-completion"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <InstallCompletionPage/>
                 
               // </ProtectedRoute>
             }

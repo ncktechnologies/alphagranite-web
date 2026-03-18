@@ -36,23 +36,22 @@ const transformFabToJob = (fab: Fab): IJob => {
         fab_id: String(fab.id),
         job_name: `${fab.job_details?.name}`,
         job_no: String(fab.job_details?.job_number),
-        date: fab.shop_est_completion_date || '',
+        date: fab.shop_date_schedule|| '',
         current_stage: fab.current_stage,
         sales_person_name: fab.sales_person_name || '',
-        acct_name: fab.account_name || '',
-        input_area: fab.input_area || '',
+        // Optional fields with default values
+        acct_name: '',
         template_received: fab.template_received ? 'Yes' : 'No',
         template_needed: fab.template_needed ? 'No' : 'Yes',
+        // no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
         total_sq_ft: String(fab.total_sqft || "-"),
         revenue: fab.job_details?.project_value || "-",
-        gp: (fab as any).gp ?? "-",
+        gp: "-",
         revised: '',
         sct_completed: '',
         draft_completed: '',
         review_completed: fab.current_stage === 'completed' ? 'Yes' : 'No',
-        template_schedule: fab.templating_schedule_start_date
-            ? formatDate(fab.templating_schedule_start_date)
-            : '-',
+        template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
         templater: fab.technician_name || '-',
         stone_type_name: fab.stone_type_name || '',
         stone_color_name: fab.stone_color_name || '',
@@ -62,26 +61,10 @@ const transformFabToJob = (fab: Fab): IJob => {
         job_id: fab.job_id,
         on_hold: fab.on_hold,
         status_id: fab.status_id,
-        no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
-
-        // ── Install scheduling fields ──
-        est_completion_date: (fab as any).est_completion_date
-            ? formatDate((fab as any).est_completion_date)
-            : '-',
-        percent_complete: (fab as any).percent_complete ?? undefined,
-        completion_date: (fab as any).completion_date
-            ? formatDate((fab as any).completion_date)
-            : undefined,
-        installer: (fab as any).installer_name || (fab as any).installer || undefined,
-        install_date: (fab as any).scheduled_install_date
-            ? formatDate((fab as any).scheduled_install_date)
-            : undefined,
-        install_confirmed: (fab as any).install_confirmed ?? undefined,
-        shop_status: (fab as any).shop_status || undefined,
     };
 };
 
-export function InstallSchedulingPage() {
+export function ResurfacingPage() {
     const navigate = useNavigate();
     const isUserSuperAdmin = useIsSuperAdmin();
 
@@ -115,23 +98,22 @@ export function InstallSchedulingPage() {
 
         return rawData.map(extractName);
     }, [salesPersonsData]);
+
     // Use independent table state for predraft table
     const tableState = useTableState({
-        tableId: 'predraft-table',
+        tableId: 'resurfacing-table',
         defaultPagination: { pageIndex: 0, pageSize: 25 },
         defaultDateFilter: 'all',
         persistState: false,
     });
-
-    // Calculate skip value for pagination
+     // Calculate skip value for pagination
     const skip = tableState.pagination.pageIndex * tableState.pagination.pageSize;
 
-    // Build query params for backend
     const queryParams = useMemo(() => {
         const params: any = {
             skip,
             limit: tableState.pagination.pageSize,
-            current_stage: 'install_scheduling', // Pre-draft review stage
+            current_stage: 'resurface_scheduling', // Pre-draft review stage
         };
 
         if (tableState.searchQuery) {
@@ -184,13 +166,13 @@ export function InstallSchedulingPage() {
     // Fetch data with backend pagination and filtering
     const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
 
-
-    const handleDetails = (id: string) => {
-        navigate(`/app/jobs/install-scheduling/${id}`);
-    };
     const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
 
-    if (isLoading) {
+    const handleDetails = (id: string) => {
+        navigate(`/app/jobs/resurfacing/${id}`);
+    };
+
+    if (isLoading && !data) {
         return (
             <Container className="border-t">
                 <div className="flex items-center justify-between mb-6">
@@ -211,8 +193,8 @@ export function InstallSchedulingPage() {
         <Container className="border-t">
             <Toolbar>
                 <ToolbarHeading
-                    title="Install Scheduling"
-                    description="Manage installation schedules and operations"
+                    title="Resurfacing"
+                    description="Manage resurfacing tasks and operations"
                 />
             </Toolbar>
 
@@ -221,40 +203,18 @@ export function InstallSchedulingPage() {
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Error</AlertTitle>
                     <AlertDescription>
-                        Failed to load install scheduling data. Please try again later.
+                        Failed to load resurfacing data. Please try again later.
                     </AlertDescription>
                 </Alert>
             )}
 
             <JobTable
                 jobs={jobsData}
-                path="install-scheduling"
                 isLoading={isLoading}
-                useBackendPagination={true}
-                totalRecords={data?.total || 0}
                 tableState={tableState}
-                showSalesPersonFilter={true}
-                showScheduleFilter={false} // Remove separate schedule filter
-                salesPersons={salesPersons}
-                visibleColumns={[
-                    'fab_type',
-                    'fab_id',
-                    'job_no',
-                    'no_of_pieces',
-                    'fab_info',
-                    'total_sq_ft',
-                    'revenue',
-                    'gp',
-                    'est_completion_date',
-                    // 'percent_complete',
-                    'completion_date',
-                    'install_notes',
-                    'installer',
-                    'install_date',
-                    'install_confirmed',
-                    'shop_status',
-                    'on_hold',
-                ]}
+                useBackendPagination={true}
+                visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'on_hold']}
+                path="resurfacing"
             />
         </Container>
     );

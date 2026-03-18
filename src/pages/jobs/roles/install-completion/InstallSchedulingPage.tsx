@@ -2,7 +2,7 @@ import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
-import { useGetFabsQuery, Fab } from '@/store/api/job';
+import { useGetFabsCompletionQuery, Fab } from '@/store/api/job';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
 import { useMemo } from 'react';
@@ -81,7 +81,7 @@ const transformFabToJob = (fab: Fab): IJob => {
     };
 };
 
-export function InstallSchedulingPage() {
+export function InstallCompletionPage() {
     const navigate = useNavigate();
     const isUserSuperAdmin = useIsSuperAdmin();
 
@@ -131,7 +131,7 @@ export function InstallSchedulingPage() {
         const params: any = {
             skip,
             limit: tableState.pagination.pageSize,
-            current_stage: 'install_scheduling', // Pre-draft review stage
+            // current_stage: 'install_scheduling', // Pre-draft review stage
         };
 
         if (tableState.searchQuery) {
@@ -182,7 +182,7 @@ export function InstallSchedulingPage() {
     ]);
 
     // Fetch data with backend pagination and filtering
-    const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
+    const { data, isLoading, isFetching, isError, error } = useGetFabsCompletionQuery(queryParams);
 
 
     const handleDetails = (id: string) => {
@@ -211,7 +211,7 @@ export function InstallSchedulingPage() {
         <Container className="border-t">
             <Toolbar>
                 <ToolbarHeading
-                    title="Install Scheduling"
+                    title="Install Completion"
                     description="Manage installation schedules and operations"
                 />
             </Toolbar>
@@ -228,7 +228,7 @@ export function InstallSchedulingPage() {
 
             <JobTable
                 jobs={jobsData}
-                path="install-scheduling"
+                // path="install-scheduling"
                 isLoading={isLoading}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}
@@ -246,8 +246,8 @@ export function InstallSchedulingPage() {
                     'revenue',
                     'gp',
                     'est_completion_date',
-                    // 'percent_complete',
-                    'completion_date',
+                    'percent_complete',
+                    // 'completion_date',
                     'install_notes',
                     'installer',
                     'install_date',

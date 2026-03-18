@@ -101,7 +101,7 @@ export function JobMediaUpload({ jobId, onUploadComplete, onClose }: JobMediaUpl
     }
 
     if (!selectedFileDesign) {
-      toast.error('Please select a file design before uploading');
+      toast.error('Please select a file type before uploading');
       return;
     }
 

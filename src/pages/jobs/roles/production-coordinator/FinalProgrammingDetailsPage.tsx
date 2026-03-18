@@ -475,7 +475,7 @@ const canOpenSubmit = hasFinalProgrammingFiles  && !isPaused && isDrafting;
                   {shouldShowUploadSection && (
                     <div className="mb-4">
                       <label className="text-sm font-medium text-gray-700 block mb-2">
-                        File Design *
+                        File Type *
                       </label>
                       <Select
                         value={fileDesign}
@@ -483,7 +483,7 @@ const canOpenSubmit = hasFinalProgrammingFiles  && !isPaused && isDrafting;
                         disabled={!isDrafting && isPaused}
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select file design" />
+                          <SelectValue placeholder="Select file Type" />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Block Drawing">Block Drawing</SelectItem>
@@ -494,7 +494,7 @@ const canOpenSubmit = hasFinalProgrammingFiles  && !isPaused && isDrafting;
                         </SelectContent>
                       </Select>
                       <p className="text-xs text-muted-foreground mt-1">
-                        File design is required before uploading files
+                        File type is required before uploading files
                       </p>
                     </div>
                   )}

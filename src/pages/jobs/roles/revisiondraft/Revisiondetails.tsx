@@ -775,7 +775,7 @@ export function RevisionDetailsPage() {
                     {shouldShowUploadSection && (
                       <div className="mb-4">
                         <label className="text-sm font-medium text-gray-700 block mb-2">
-                          File Design *
+                          File Type *
                         </label>
                         <Select
                           value={fileDesign}
@@ -783,7 +783,7 @@ export function RevisionDetailsPage() {
                           disabled={hasEnded || isOnHold || isPaused}
                         >
                           <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select file design" />
+                            <SelectValue placeholder="Select file type" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Block Drawing">Block Drawing</SelectItem>
@@ -794,7 +794,7 @@ export function RevisionDetailsPage() {
                           </SelectContent>
                         </Select>
                         <p className="text-xs text-muted-foreground mt-1">
-                          File design is required before uploading files
+                          File type is required before uploading files
                         </p>
                       </div>
                     )}
