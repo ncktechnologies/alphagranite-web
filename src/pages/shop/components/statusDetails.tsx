@@ -285,7 +285,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
             setIsEditing(false);
             onSaved();
         } catch {
-            toast.error('Failed to save changes.');
+            // toast.error('Failed to save changes.');
         } finally {
             setIsSaving(false);
         }

@@ -337,6 +337,39 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
     const totalRecords = fabsData?.total || 0;
 
+    // ------------------ Color mapping for fab types (matching your CSS) ------------------
+    const fabTypeColorMap: Record<string, string> = {
+        standard: '#9eeb47',
+        'fab only': '#5bd1d7',
+        'cust redo': '#f0bf4c',
+        resurface: '#d094ea',
+        'fast track': '#f59794',
+        'ag redo': '#f5cc94',
+    };
+
+    const getFabColor = (fabType: string | undefined): string => {
+        if (!fabType) return '#e2e4ed'; // fallback gray (border color)
+        const key = fabType.toLowerCase();
+        return fabTypeColorMap[key] || '#e2e4ed';
+    };
+
+    // ------------------ Identify stage columns that should show percent fill ------------------
+    const stageColumnIds = new Set(['cut', 'wj', 'edging', 'miter', 'cnc', 'touchup', 'percent_complete']);
+
+    // Helper to get the percent value for a given stage column from a fab row
+    const getStagePercent = (fab: ShopStatusFab, columnId: string): number => {
+        switch (columnId) {
+            case 'cut': return fab.cut_progress.percent;
+            case 'wj': return fab.wj_progress.percent;
+            case 'edging': return fab.edging_progress.percent;
+            case 'miter': return fab.miter_progress.percent;
+            case 'cnc': return fab.cnc_progress.percent;
+            case 'touchup': return fab.touchup_progress.percent;
+            case 'percent_complete': return fab.percent_complete;
+            default: return 0;
+        }
+    };
+
     // ------------------ Transform API data → ShopStatusRow tree ------------------
     const tableData: ShopStatusRow[] = useMemo(() => {
         return fabs.map((fab: any): ShopStatusRow => {
@@ -1136,14 +1169,28 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                                     className="border-b border-[#e2e4ed] transition-colors"
                                                                     data-fab-type={parentRow.original.type === 'fab' ? parentRow.original.data.fab_type?.toLowerCase() : undefined}
                                                                 >
-                                                                    {parentRow.getVisibleCells().map(cell => (
-                                                                        <td
-                                                                            key={cell.id}
-                                                                            className="px-4 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
-                                                                        >
-                                                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                                        </td>
-                                                                    ))}
+                                                                    {parentRow.getVisibleCells().map(cell => {
+                                                                        // Apply gradient to any column that shows a percent (stage columns and overall percent)
+                                                                        const columnId = cell.column.id;
+                                                                        let cellStyle = {};
+                                                                        if (stageColumnIds.has(columnId) && parentRow.original.type === 'fab') {
+                                                                            const percent = getStagePercent(parentRow.original.data, columnId);
+                                                                            const fabType = parentRow.original.data.fab_type;
+                                                                            const bgColor = getFabColor(fabType);
+                                                                            cellStyle = {
+                                                                                background: `linear-gradient(to right, ${bgColor} 0%, ${bgColor} ${percent}%, white ${percent}%, white 100%)`,
+                                                                            };
+                                                                        }
+                                                                        return (
+                                                                            <td
+                                                                                key={cell.id}
+                                                                                className="px-4 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
+                                                                                style={cellStyle}
+                                                                            >
+                                                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                                            </td>
+                                                                        );
+                                                                    })}
                                                                 </tr>
 
                                                                 {/* Child plan rows — only shown when expanded */}

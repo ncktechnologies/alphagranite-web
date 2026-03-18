@@ -614,8 +614,8 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       onEventCreated?.();
       handleBack();
     } catch (error: any) {
-      const msg = error?.data?.detail?.message || 'Failed to create/update Plan';
-      toast.error(msg);
+      // const msg = error?.data?.detail?.message || 'Failed to create/update Plan';
+      // c.error(msg);
     }
   };
 
