@@ -277,7 +277,7 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
               )}
             />
 
-            <FormField
+            {/* <FormField
               control={form.control}
               name="duration"
               render={({ field }) => (
@@ -286,7 +286,7 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
                   <Input placeholder="146" {...field} />
                 </FormItem>
               )}
-            />
+            /> */}
 
             <FormField
               control={form.control}
@@ -321,7 +321,7 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
                 </FormItem>
               )}
             />
-             <FormField
+             {/* <FormField
               control={form.control}
               name="revenue"
               render={({ field }) => (
@@ -339,7 +339,7 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
                   <FormMessage />
                 </FormItem>
               )}
-            />
+            /> */}
           </div>
 
           <div>
