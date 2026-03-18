@@ -225,6 +225,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
                   selected={entry.date}
                   onSelect={date => date && onUpdate({ date })}
                   initialFocus
+                  disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                 />
               </PopoverContent>
             </Popover>

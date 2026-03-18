@@ -28,11 +28,11 @@ import { usePlanSections } from '@/hooks/usePlanningSection';
 // Field-to-keyword mapping — only field names and search keywords are coupled here,
 // never raw IDs. IDs are resolved at runtime from the API via usePlanSections.
 const FAB_STAGE_FIELDS: { keyword: string; field: string; label: string }[] = [
-  { keyword: 'cut',    field: 'total_sqft',   label: 'Cut' },
-  { keyword: 'wj',     field: 'wj_linft',     label: 'WJ' },
-  { keyword: 'edg',    field: 'edging_linft', label: 'Edging' },
-  { keyword: 'mit',    field: 'miter_linft',  label: 'Miter' },
-  { keyword: 'cnc',    field: 'cnc_linft',    label: 'CNC' },
+  { keyword: 'cut', field: 'total_sqft', label: 'Cut' },
+  { keyword: 'wj', field: 'wj_linft', label: 'WJ' },
+  { keyword: 'edg', field: 'edging_linft', label: 'Edging' },
+  { keyword: 'mit', field: 'miter_linft', label: 'Miter' },
+  { keyword: 'cnc', field: 'cnc_linft', label: 'CNC' },
 ];
 
 // ── Entry type ────────────────────────────────────────────────────────────
@@ -208,9 +208,9 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
                 <SelectValue
                   placeholder={
                     isLoadingWorkstations ? 'Loading workstations…' :
-                    !entry.planning_section_id ? 'Select a section first' :
-                    workstationsForSection.length === 0 ? 'No workstations for this section' :
-                    'Select workstation'
+                      !entry.planning_section_id ? 'Select a section first' :
+                        workstationsForSection.length === 0 ? 'No workstations for this section' :
+                          'Select workstation'
                   }
                 />
               </SelectTrigger>
@@ -234,8 +234,8 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
                 <SelectValue
                   placeholder={
                     !entry.workstation_id ? 'Select a workstation first' :
-                    filteredEmployees.length === 0 ? 'No operators assigned to this workstation' :
-                    'Select operator'
+                      filteredEmployees.length === 0 ? 'No operators assigned to this workstation' :
+                        'Select operator'
                   }
                 />
               </SelectTrigger>
@@ -280,6 +280,8 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
                     selected={entry.date}
                     onSelect={date => date && onUpdate({ date })}
                     initialFocus
+                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+
                   />
                 </PopoverContent>
               </Popover>
@@ -309,7 +311,7 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
               <div className="flex flex-wrap gap-2">
                 {proposals.map((proposal: any, pIdx: number) => {
                   const start = new Date(proposal.start || proposal.scheduled_start);
-                  const end   = new Date(proposal.end   || proposal.scheduled_end);
+                  const end = new Date(proposal.end || proposal.scheduled_end);
                   const isActive =
                     entry.start_time === format(start, 'HH:mm') &&
                     entry.date && format(entry.date, 'yyyy-MM-dd') === format(start, 'yyyy-MM-dd');
@@ -502,7 +504,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
 
   const applyProposal = (entryIdx: number, proposal: { start: string; end: string }) => {
     const start = new Date(proposal.start);
-    const end   = new Date(proposal.end);
+    const end = new Date(proposal.end);
     updateEntry(entryIdx, { date: start, start_time: format(start, 'HH:mm'), end_time: format(end, 'HH:mm') });
   };
 
@@ -511,14 +513,14 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     for (const entry of entries) {
-      if (!entry.fab_id)             { toast.error('FAB ID is required'); return; }
-      if (!entry.operator_id)        { toast.error('Operator is required'); return; }
-      if (!entry.workstation_id)     { toast.error('Workstation is required'); return; }
-      if (!entry.planning_section_id){ toast.error('Planning section is required'); return; }
+      if (!entry.fab_id) { toast.error('FAB ID is required'); return; }
+      if (!entry.operator_id) { toast.error('Operator is required'); return; }
+      if (!entry.workstation_id) { toast.error('Workstation is required'); return; }
+      if (!entry.planning_section_id) { toast.error('Planning section is required'); return; }
       if (!entry.estimated_hours || parseFloat(entry.estimated_hours) <= 0) {
         toast.error('Estimated hours is required'); return;
       }
-      if (!entry.date)               { toast.error(`Date is required for ${entry.stageName || `Stage ${entries.indexOf(entry) + 1}`}`); return; }
+      if (!entry.date) { toast.error(`Date is required for ${entry.stageName || `Stage ${entries.indexOf(entry) + 1}`}`); return; }
     }
 
     try {
@@ -536,7 +538,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
         const stages = groups[fabId].map((entry, idx) => {
           const d = format(entry.date!, 'yyyy-MM-dd');
           const start = entry.start_time ? `${d}T${entry.start_time}:00` : `${d}T00:00:00`;
-          const end   = entry.end_time   ? `${d}T${entry.end_time}:00`   : undefined;
+          const end = entry.end_time ? `${d}T${entry.end_time}:00` : undefined;
           const hrs = parseFloat(entry.estimated_hours) || 0;
           totalEst += hrs;
           return {
@@ -556,7 +558,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       for (const entry of updates) {
         const d = format(entry.date!, 'yyyy-MM-dd');
         const start = entry.start_time ? `${d}T${entry.start_time}:00` : `${d}T00:00:00`;
-        const end   = entry.end_time   ? `${d}T${entry.end_time}:00`   : undefined;
+        const end = entry.end_time ? `${d}T${entry.end_time}:00` : undefined;
         const hrs = parseFloat(entry.estimated_hours) || 0;
         await updateShopPlan({
           plan_id: Number(entry.id),
@@ -585,9 +587,9 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
 
   const handleAutoPopulate = async () => {
     for (const entry of entries) {
-      if (!entry.operator_id)        { toast.error('Please select an operator for each stage'); return; }
-      if (!entry.workstation_id)     { toast.error('Please select a workstation for each stage'); return; }
-      if (!entry.planning_section_id){ toast.error('Please select a planning section for each stage'); return; }
+      if (!entry.operator_id) { toast.error('Please select an operator for each stage'); return; }
+      if (!entry.workstation_id) { toast.error('Please select a workstation for each stage'); return; }
+      if (!entry.planning_section_id) { toast.error('Please select a planning section for each stage'); return; }
       if (!entry.estimated_hours || parseFloat(entry.estimated_hours) <= 0) {
         toast.error('Estimated hours is required for each stage'); return;
       }
@@ -623,7 +625,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
         const first = newProposals[idx]?.[0];
         if (!first) return entry;
         const start = new Date(first.start);
-        const end   = new Date(first.end);
+        const end = new Date(first.end);
         return { ...entry, date: start, start_time: format(start, 'HH:mm'), end_time: format(end, 'HH:mm') };
       }));
 
@@ -696,15 +698,15 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
               <CardContent className="pt-5">
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   {[
-                    { label: 'Job No',        val: selectedFab.job_details?.job_number },
-                    { label: 'Job Name',      val: selectedFab.job_details?.name },
-                    { label: 'Account Name',  val: selectedFab.account_name },
+                    { label: 'Job No', val: selectedFab.job_details?.job_number },
+                    { label: 'Job Name', val: selectedFab.job_details?.name },
+                    { label: 'Account Name', val: selectedFab.account_name },
                     { label: 'No. of Pieces', val: selectedFab.no_of_pieces || 0 },
-                    { label: 'Total Sq Ft',   val: selectedFab.total_sqft?.toFixed(2) || '0.00' },
-                    { label: 'WJ LinFt',      val: selectedFab.wj_linft?.toFixed(2) || '0.00' },
-                    { label: 'Edging LinFt',  val: selectedFab.edging_linft?.toFixed(2) || '0.00' },
-                    { label: 'CNC LinFt',     val: selectedFab.cnc_linft?.toFixed(2) || '0.00' },
-                    { label: 'Miter LinFt',   val: selectedFab.miter_linft?.toFixed(2) || '0.00' },
+                    { label: 'Total Sq Ft', val: selectedFab.total_sqft?.toFixed(2) || '0.00' },
+                    { label: 'WJ LinFt', val: selectedFab.wj_linft?.toFixed(2) || '0.00' },
+                    { label: 'Edging LinFt', val: selectedFab.edging_linft?.toFixed(2) || '0.00' },
+                    { label: 'CNC LinFt', val: selectedFab.cnc_linft?.toFixed(2) || '0.00' },
+                    { label: 'Miter LinFt', val: selectedFab.miter_linft?.toFixed(2) || '0.00' },
                   ].map(({ label, val }) => (
                     <div key={label}>
                       <Label className="text-xs text-[#7c8689]">{label}</Label>
