@@ -167,7 +167,7 @@ export function InstallSchedulingDetailsPage() {
                     <div className="flex justify-between items-center">
                         <div>
                             <h3 className="text-lg font-semibold">Install Scheduling Details</h3>
-                            <p className="text-sm text-muted-foreground">Current Stage: {fab.current_stage}</p>
+                            {/* <p className="text-sm text-muted-foreground">Current Stage: {fab.current_stage}</p> */}
                         </div>
                         <Link to={`/app/job/install-scheduling`}>
                             <Badge variant="outline">Back to List</Badge>

@@ -120,7 +120,7 @@ const CutListDetailsPage = () => {
                         <div>
                             <ToolbarHeading
                                 title={`FAB ID: ${fabData?.id || 'Loading...'}`}
-                                description="Review drafting activity and schedule cut list"
+                                description="Review and schedule cut list"
                             />
                         </div>
                         <div className="flex items-center gap-2">

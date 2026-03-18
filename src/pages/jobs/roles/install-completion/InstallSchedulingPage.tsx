@@ -228,7 +228,7 @@ export function InstallCompletionPage() {
 
             <JobTable
                 jobs={jobsData}
-                // path="install-scheduling"
+                path="install-scheduling"
                 isLoading={isLoading}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}

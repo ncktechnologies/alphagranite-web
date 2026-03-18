@@ -37,8 +37,8 @@ import { Fragment } from "react";
 import { Fab } from "@/store/api/job"; // Import the Fab type
 import { Switch } from '@/components/ui/switch';
 import { useToggleFabOnHoldMutation } from '@/store/api/job';
-import ActionsCell from "@/pages/shop/components/action";
 import { NotesModal } from "@/components/common/NotesModal";
+import ActionsCell from './components/action';
 
 // Define the interface for calculated cut list data
 export interface CalculatedCutListData {

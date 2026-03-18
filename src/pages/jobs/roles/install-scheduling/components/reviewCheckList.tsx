@@ -354,7 +354,7 @@ export function InstallChecklistForm({ fabId }: InstallChecklistFormProps) {
             variant="outline"
             type="button"
             className="w-full text-secondary font-bold py-6 text-base"
-            onClick={() => navigate("/job/install")}
+            onClick={() => navigate("/job/install-scheduling")}
           >
             Cancel
           </Button>
