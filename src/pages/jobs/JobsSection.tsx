@@ -145,6 +145,33 @@ export const JobsSection = () => {
   const columns = useMemo<ColumnDef<ExtendedJob>[]>(
     () => [
       {
+        id: 'actions',
+        header: '',
+        cell: ({ row }) => (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <Ellipsis className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => handleView(row.original)}>
+                View
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleEdit(row.original)}>
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ),
+        enableSorting: false,
+        size: 60,
+      },
+      {
         id: 'name',
         accessorFn: (row) => row.name,
         header: ({ column }) => (
@@ -284,33 +311,7 @@ export const JobsSection = () => {
         enableSorting: false,
         size: 150,
       },
-      {
-        id: 'actions',
-        header: '',
-        cell: ({ row }) => (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <Ellipsis className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => handleView(row.original)}>
-                View
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleEdit(row.original)}>
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ),
-        enableSorting: false,
-        size: 60,
-      },
+      
     ],
     [],
   );

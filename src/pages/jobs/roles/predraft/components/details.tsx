@@ -10,147 +10,71 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 
-// Helper function to filter fab notes by stage
-const filterNotesByStage = (fabNotes: any[], stage: string) => {
-    return fabNotes.filter(note => note.stage === stage);
-};
-
 // Helper function to get all fab notes (unfiltered)
 const getAllFabNotes = (fabNotes: any[]) => {
     return fabNotes || [];
+};
+
+// Helper function to get FAB status display
+const getFabStatusInfo = (statusId: number | undefined) => {
+    if (statusId === 0) {
+        return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
+    } else if (statusId === 1) {
+        return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
+    } else {
+        return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
+    }
 };
 
 export function PreDraftDetailsPage() {
     const { id } = useParams<{ id: string }>();
     const { data: fab, isLoading, isError, error } = useGetFabByIdQuery(Number(id));
 
-    if (isLoading) {
-        return (
-            <Container className=" border-t">
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <Skeleton className="h-8 w-64" />
-                        <Skeleton className="h-4 w-80 mt-2" />
-                    </div>
-                </div>
+    // Prepare clickable links
+    const jobNameLink = fab?.job_details?.id ? `/job/details/${fab.job_details.id}` : '#';
+    const jobNumberLink = fab?.job_details?.job_number
+        ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fab.job_details.job_number}`
+        : '#';
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                    <div className="lg:col-span-2 mt-6 ">
-                        <div className="flex justify-between items-center" >
-                            <div>
-                                <Skeleton className="h-6 w-32" />
-                                <Skeleton className="h-4 w-16 mt-1" />
-                            </div>
-                            <div>
-                                <Skeleton className="h-8 w-24" />
-                            </div>
-                        </div>
-                        <Card className="mt-6 pt-6">
-                            <CardHeader>
-                                <Skeleton className="h-8 w-48" />
-                            </CardHeader>
-                            <CardContent >
-                                <div className="grid grid-cols-2 md:grid-cols-3 space-y-10">
-                                    {[1, 2, 3, 4, 5, 6].map((item) => (
-                                        <div key={item}>
-                                            <Skeleton className="h-4 w-24 mb-1" />
-                                            <Skeleton className="h-5 w-32" />
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <div className="w-full lg:w-[250px] XL:W-[300PX] 2xl:w-[400px]  lg:flex-shrink-0">
-                            <Skeleton className="h-64 w-full" />
-                        </div>
-                    </div>
-
-                    <div className=' bg-[#FAFAFA] min-h-screen pt-12 pb-3'>
-                        <Card className='border-none bg-transparent'>
-                            <CardHeader className='border-b pb-4 flex-col items-start'>
-                                <Skeleton className="h-6 w-40" />
-                                <Skeleton className="h-4 w-64 mt-2" />
-                            </CardHeader>
-                            <CardContent>
-                                <Skeleton className="h-96 w-full" />
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
-            </Container>
-        );
-    }
-
-    if (isError) {
-        return (
-            <Container className=" border-t">
-                <div className="flex items-center justify-between mb-6">
-                    <div>
-                        <h1 className="text-2xl font-semibold">FAB ID: Error</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Review and approve fabrication details
-                        </p>
-                    </div>
-                </div>
-
-                <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>
-                        {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : "Failed to load FAB data"}
-                    </AlertDescription>
-                </Alert>
-            </Container>
-        );
-    }
-
-    // Create job info based on actual FAB data
-    const jobInfo = fab ? [
-        { label: 'FAB ID', value: `FAB-${fab.id}` },
-        { label: 'FAB Type', value: fab.fab_type },
-        { label: 'Account', value: (fab as any).account_name || `Account ${(fab as any).account_id || 'N/A'}` },
-        {
-            label: 'Job name',
-            value: (
-                <Link
-                    to={`/job/details/${fab.job_id}`}
-                    className="text-primary underline hover:no-underline"
-                >
-                    {(fab as any).job_details?.name || `Job ${fab.job_id}`}
-                </Link>
-            )
-        },
-        {
-            label: 'Job #',
-            value: (
-                <Link
-                    to={`/job/details/${fab.job_id}`}
-                    className="text-primary underline hover:no-underline"
-                >
-                    {(fab as any).job_details?.job_number || String(fab.job_id)}
-                </Link>
-            )
-        },
-        { label: 'Area (s)', value: fab.input_area },
-        { label: 'Stone type', value: fab.stone_type_name || 'N/A' },
-        { label: 'Stone color', value: fab.stone_color_name || 'N/A' },
-        { label: 'Stone thickness', value: fab.stone_thickness_value || 'N/A' },
-        { label: 'Edge', value: fab.edge_name || 'N/A' },
-        { label: 'Total square ft', value: String(fab.total_sqft) },
-    ] : [];
-
+    // Build the fields for the Job Details card (exactly as required)
+    const jobDetailsFields = fab
+        ? [
+            { label: 'Account', value: fab.account_name || '—' },
+            {
+                label: 'Fab ID',
+                value: (
+                    <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">
+                        FAB-{fab.id}
+                    </Link>
+                ),
+            },
+            { label: 'Area', value: fab.input_area || '—' },
+            {
+                label: 'Material',
+                value: fab.stone_type_name
+                    ? `${fab.stone_type_name} - ${fab.stone_color_name || ''} - ${fab.stone_thickness_value || ''}`
+                    : '—',
+            },
+            {
+                label: 'Fab Type',
+                value: <span className="uppercase">{fab.fab_type || '—'}</span>,
+            },
+            { label: 'Edge', value: fab.edge_name || '—' },
+            { label: 'Total S.F', value: fab.total_sqft?.toString() || '—' },
+            { label: 'Sales Person', value: fab.sales_person_name || '—' },
+            {
+                label: 'Job Notes',
+                value: fab.job_details?.description || 'None',
+                fullWidth: true,
+            },
+        ]
+        : [];
 
     const sidebarSections = [
-        // {
-        //     title: "Template Information",
-        //     type: "details",
-        //     items: jobInfo,
-        // },
         {
             title: "FAB Notes",
             type: "notes",
             notes: getAllFabNotes(fab?.fab_notes || []).map(note => {
-                // Stage display mapping
                 const stageConfig: Record<string, { label: string; color: string }> = {
                     templating: { label: 'Templating', color: 'text-blue-700' },
                     pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
@@ -178,66 +102,153 @@ export function PreDraftDetailsPage() {
         }
     ];
 
-    return (
-
-        <Container className=" border-t">
-            <Toolbar>
-                <ToolbarHeading
-                    title="Pre-draft Review"
-                />
-            </Toolbar>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-                <div className="lg:col-span-2 mt-6 ">
-                    <div className="flex justify-between items-center" >
+    if (isLoading) {
+        return (
+            <Container className="border-t">
+                <Toolbar>
+                    <div className="flex items-center justify-between w-full">
                         <div>
-                            <p className="font-semibold text-text text-xl tracking-wide">FAB-{fab?.id || id}</p>
-                            <p className="text-sm text-text-foreground font-normal uppercase ">
-                                FAB ID
-                            </p>
+                            <ToolbarHeading
+                                title={<Skeleton className="h-8 w-96" />}
+                                description={<Skeleton className="h-4 w-80 mt-1" />}
+                            />
                         </div>
-                        <div className='text-text-foreground'>
-                            Template Status:
-                            <Badge className='text-[#0BC33F] bg-[#0BC33F]/20 rounded-[50px] h-[30px] font-medium text-[14px] ml-2 px-2'>
-                                compeleted
-                            </Badge>
+                        <div className="flex gap-2">
+                            <Skeleton className="h-6 w-20 rounded-full" />
+                            <Skeleton className="h-6 w-24 rounded-full" />
                         </div>
                     </div>
-                    <Card className="mt-6 pt-6">
+                </Toolbar>
+
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6">
+                    <div className="lg:col-span-2">
+                        <Card>
+                            <CardHeader>
+                                <Skeleton className="h-6 w-40" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                    {[...Array(8)].map((_, i) => (
+                                        <div key={i}>
+                                            <Skeleton className="h-4 w-24 mb-1" />
+                                            <Skeleton className="h-5 w-32" />
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                        <div className="mt-4">
+                            <Skeleton className="h-64 w-full" />
+                        </div>
+                    </div>
+
+                    <div className="bg-[#FAFAFA] min-h-screen pt-12 pb-3">
+                        <Card className="border-none bg-transparent">
+                            <CardHeader className="border-b pb-4 flex-col items-start">
+                                <Skeleton className="h-6 w-40" />
+                                <Skeleton className="h-4 w-64 mt-2" />
+                            </CardHeader>
+                            <CardContent>
+                                <Skeleton className="h-96 w-full" />
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            </Container>
+        );
+    }
+
+    if (isError) {
+        return (
+            <Container className="border-t">
+                <Toolbar>
+                    <ToolbarHeading title="Error loading FAB" description="Could not load pre-draft details" />
+                </Toolbar>
+                <Alert variant="destructive" className="mt-6">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>
+                        {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : "Failed to load FAB data"}
+                    </AlertDescription>
+                </Alert>
+            </Container>
+        );
+    }
+
+    const statusInfo = getFabStatusInfo(fab?.status_id);
+
+    return (
+        <Container className="border-t">
+            {/* 🔹 TOP TOOLBAR with clickable job name/number + description + status badges */}
+            <Toolbar>
+                <div className="flex items-center justify-between w-full">
+                    <ToolbarHeading
+                        title={
+                            <div className="text-2xl font-bold">
+                                <a href={jobNameLink} className="hover:underline">
+                                    {fab?.job_details?.name || `Job ${fab?.job_id}`}
+                                </a>
+                                {' - '}
+                                <a href={jobNumberLink} className="hover:underline">
+                                    {fab?.job_details?.job_number || fab?.job_id}
+                                </a>
+                            </div>
+                        }
+                        description={fab?.job_details?.description || 'No description available'}
+                    />
+                    <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
+                            {statusInfo.text}
+                        </span>
+                        <Badge className="text-[#0BC33F] bg-[#0BC33F]/20 rounded-[50px] h-[30px] font-medium text-[14px] px-2">
+                            Templating completed
+                        </Badge>
+                    </div>
+                </div>
+            </Toolbar>
+
+            {/* Main grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6">
+                {/* LEFT COLUMN (span 2) */}
+                <div className="lg:col-span-2">
+                    {/* 🔹 JOB DETAILS CARD */}
+                    <Card>
                         <CardHeader>
-                            <CardTitle className='text-[#111827] leading-[32px] text-2xl font-bold'>Job Information</CardTitle>
+                            <CardTitle className="text-[#111827] text-2xl font-bold">Job Details</CardTitle>
                         </CardHeader>
-                        <CardContent >
-                            <div className="grid grid-cols-2 md:grid-cols-3 space-y-10">
-                                {jobInfo.map((item, index) => (
-                                    <div key={index}>
+                        <CardContent>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 text-sm">
+                                {jobDetailsFields.map((field, index) => (
+                                    <div key={index} className={field.fullWidth ? 'col-span-full' : ''}>
                                         <p className="text-sm text-text-foreground font-normal uppercase tracking-wide">
-                                            {item.label}
+                                            {field.label}
                                         </p>
-                                        <p className="font-semibold text-text text-base leading-[28px] ">{item.value}</p>
+                                        <p className="font-semibold text-text text-base leading-[24px] whitespace-pre-wrap">
+                                            {field.value}
+                                        </p>
                                     </div>
                                 ))}
                             </div>
                         </CardContent>
                     </Card>
-                    <div className="w-full lg:w-[250px] XL:W-[300PX] 2xl:w-[400px]  lg:flex-shrink-0">
 
-                        <GraySidebar sections={sidebarSections as any} className='bg-transparent border-none pl-0' />
-
+                    {/* 🔹 GRAYSIDEBAR (FAB Notes) */}
+                    <div className="mt-4">
+                        <GraySidebar sections={sidebarSections as any} className="bg-transparent border-none pl-0" />
                     </div>
                 </div>
 
-                <div className=' bg-[#FAFAFA] min-h-screen pt-12 pb-3'>
-                    <Card className='border-none bg-transparent'>
-                        <CardHeader className='border-b pb-4 flex-col items-start'>
-                            <CardTitle className='text-text'>Templating Review</CardTitle>
+                {/* RIGHT COLUMN (span 1) - Templating Review */}
+                <div className="bg-[#FAFAFA] min-h-screen pt-12 pb-3">
+                    <Card className="border-none bg-transparent">
+                        <CardHeader className="border-b pb-4 flex-col items-start">
+                            <CardTitle className="text-text">Templating Review</CardTitle>
                             <p className="text-sm text-text-foreground leading-[20px]">
-                                Review and approve Complete template
+                                Review and approve completed template
                             </p>
                         </CardHeader>
                         <CardContent>
-                            <ReviewChecklistForm
-                                fabId={Number(id)}
-                            />
+                            <ReviewChecklistForm fabId={Number(id)} />
                         </CardContent>
                     </Card>
                 </div>

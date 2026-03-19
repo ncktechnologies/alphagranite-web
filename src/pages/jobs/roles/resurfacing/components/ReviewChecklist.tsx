@@ -229,7 +229,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Can action="update" on="Pre-draft Review">
           {/* Resurface completed checkbox */}
-          <FormField
+          {/* <FormField
             control={form.control}
             name="resurface_completed"
             render={({ field }) => (
@@ -245,7 +245,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                 </FormLabel>
               </FormItem>
             )}
-          />
+          /> */}
 
           {/* Notes field */}
           <FormField

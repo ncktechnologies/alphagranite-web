@@ -19,11 +19,10 @@ import { PredraftPage } from '@/pages/jobs/roles/predraft/PredraftPage';
 import { DraftRevisionPage } from '@/pages/jobs/roles/revisiondraft/BackSalesPage';
 import { SalesPage } from '@/pages/jobs/roles/sales/SalesPage';
 import { SalesDetailsPage } from '@/pages/jobs/roles/sales/Details';
-import { TechnicianDetailsPage } from '@/pages/jobs/roles/technician-templater/components/details';
 import { TemplatingDetailsPage } from '@/pages/jobs/roles/technician-templater/components/TemplatingDetailsPage';
 import { TechnicianPage } from '@/pages/jobs/roles/technician-templater/TechnicianPage';
 import { FabIdDetailsPage } from '@/pages/jobs/roles/templating-coordinator/components/details';
-import { TemplatingCoordinatorDetailsPage } from '@/pages/jobs/roles/templating-coordinator/components/TemplatingCoordinatorDetailsPage';
+// import { TemplatingCoordinatorDetailsPage } from '@/pages/jobs/roles/templating-coordinator/components/TemplatingCoordinatorDetailsPage';
 import { TemplatingPage } from '@/pages/jobs/roles/templating-coordinator/templatingPage';
 import { NotificationsSection, ProfileSection, RolesSection, PermissionsSection } from '@/pages/settings';
 import CuttingPlanPage from '@/pages/shop/cutting-plan/CuttingPlanPage';
@@ -61,6 +60,7 @@ import CreateAutoPlanPage from '@/pages/shop/components/autoSuggest';
 import ResurfacingStatusPage from '@/pages/shop/resurfacing/page';
 import { FabDetailsPage } from '@/pages/shop/components/statusDetails';
 import { InstallCompletionPage } from '@/pages/jobs/roles/install-completion';
+import { ResurfacingStatusDetailsPage } from '@/pages/jobs/roles/resurfacing-completion/components/details';
 // import ShopCalendarPage from '@/pages/shop/calendarPage';
 
 export function AppRoutingSetup() {
@@ -148,14 +148,7 @@ export function AppRoutingSetup() {
               // </ProtectedRoute>
             }
           />
-           <Route
-            path="/job/technician/:id"
-            element={
-              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <TechnicianDetailsPage/>
-              // </ProtectedRoute>
-            }
-          />
+          
           <Route
             path="/job/templating-details/:id"
             element={
@@ -164,14 +157,7 @@ export function AppRoutingSetup() {
               // </ProtectedRoute>
             }
           />
-          <Route
-            path="/job/templating-coordinator/:id"
-            element={
-              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <TemplatingCoordinatorDetailsPage/>
-              // </ProtectedRoute>
-            }
-          />
+          
           <Route
             path="/sales/new-fab-id"
             element={
@@ -408,6 +394,14 @@ export function AppRoutingSetup() {
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <ResurfacingStatusPage/>
+              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/resurfacing-status/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <ResurfacingStatusDetailsPage/>
               // </ProtectedRoute>
             }
           />

@@ -29,7 +29,7 @@ import { FileWithPreview } from '@/hooks/use-file-upload';
 import { UploadedFileMeta } from '@/types/uploads';
 import { X } from 'lucide-react';
 import { Can } from '@/components/permission';
-import { getFileStage } from '@/utils/file-labeling';      // <-- IMPORT for stage detection
+import { getFileStage } from '@/utils/file-labeling';
 import { BackButton } from '@/components/common/BackButton';
 import {
   Select,
@@ -38,7 +38,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
+import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+import { Link } from 'react-router-dom';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const formatBytes = (bytes: number, decimals = 2) => {
   if (bytes === 0) return '0 Bytes';
@@ -47,6 +49,17 @@ const formatBytes = (bytes: number, decimals = 2) => {
   const sizes = ['Bytes', 'KB', 'MB', 'GB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+};
+
+// Helper function to get FAB status display
+const getFabStatusInfo = (statusId: number | undefined) => {
+  if (statusId === 0) {
+    return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
+  } else if (statusId === 1) {
+    return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
+  } else {
+    return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
+  }
 };
 
 export function SlabSmithDetailsPage() {
@@ -62,7 +75,7 @@ export function SlabSmithDetailsPage() {
   const { data: draftingData, isLoading: isDraftingLoading, refetch: refetchDrafting } = useGetDraftingByFabIdQuery(fabId, { skip: !fabId });
   const { data: slabSmithData, isLoading: isSlabSmithLoading, refetch: refetchSlabSmith } = useGetSlabSmithByFabIdQuery(fabId, { skip: !fabId });
   const { data: ssSessionData, isLoading: isSSLoading, refetch: refetchSSSession } = useGetSlabSmithSessionStatusQuery(fabId, { skip: !fabId });
-  
+
   // Mutations
   const [createSlabSmith] = useCreateSlabSmithMutation();
   const [addFilesToSlabSmith] = useAddFilesToSlabSmithMutation();
@@ -104,7 +117,7 @@ export function SlabSmithDetailsPage() {
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploadedFileMetas, setUploadedFileMetas] = useState<UploadedFileMeta[]>([]);
   const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
-  const [fileDesign, setFileDesign] = useState<string>(''); // File design input
+  const [fileDesign, setFileDesign] = useState<string>('');
 
   // VIEW STATE – unified file viewer
   const [activeFile, setActiveFile] = useState<any | null>(null);
@@ -124,7 +137,7 @@ export function SlabSmithDetailsPage() {
     url: file.file_url || file.url,
     file_url: file.file_url || file.url,
     stage: getFileStage(file.name || file.file_name, {
-      currentStage: 'slab_smith',   // adjust to your exact stage name
+      currentStage: 'slab_smith',
       isDrafting: true,
     }),
     formattedSize: formatBytes(parseInt(file.file_size) || file.size || 0),
@@ -226,7 +239,6 @@ export function SlabSmithDetailsPage() {
   }, [pendingFiles, slabSmithData, fabId, currentEmployeeId, createSlabSmith, addFilesToSlabSmith, refetchSlabSmith, fabData?.total_sqft]);
 
   const handleDeleteFile = async (fileId: number) => {
-    
     if (!slabSmithData?.id) {
       toast.error('SlabSmith entry not found');
       return;
@@ -234,13 +246,12 @@ export function SlabSmithDetailsPage() {
     try {
       await deleteFileFromSlabSmith({ slabsmith_id: slabSmithData?.id, file_id: String(fileId) }).unwrap();
       toast.success('File deleted successfully');
-      refetchFab()
+      refetchFab();
     } catch (error) {
       console.error('Failed to delete file:', error);
       toast.error('Failed to delete file');
     }
   };
-  
 
   // -----------------------------------------------------------------
   // Timer Handlers
@@ -378,10 +389,7 @@ export function SlabSmithDetailsPage() {
   // -----------------------------------------------------------------
   // Submission flow
   // -----------------------------------------------------------------
-  // Determine if upload section should be visible – show when timer is running/paused or files exist
-  const shouldShowUploadSection = (isDrafting && !isPaused) ;
-
-  // Determine if submission is allowed – session must be ended (not active/paused) and files must exist
+  const shouldShowUploadSection = (isDrafting && !isPaused);
   const hasFiles = ((fabData as any)?.slabsmith_data?.files?.length > 0);
   const canOpenSubmit = hasFiles && !isPaused && isDrafting;
 
@@ -414,24 +422,80 @@ export function SlabSmithDetailsPage() {
   // -----------------------------------------------------------------
   const getAllFabNotes = (fabNotes: any[]) => fabNotes || [];
 
-  if (isFabLoading || isDraftingLoading || isSlabSmithLoading) return <div>Loading...</div>;
+  // Prepare clickable links
+  const jobNameLink = fabData?.job_details?.id ? `/job/details/${fabData.job_details.id}` : '#';
+  const jobNumberLink = fabData?.job_details?.job_number
+    ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fabData.job_details.job_number}`
+    : '#';
 
+  // Loading state
+  if (isFabLoading || isDraftingLoading || isSlabSmithLoading) {
+    return (
+      <Container className='lg:mx-0 max-w-full'>
+        <Toolbar className=''>
+          <div className="flex items-center justify-between w-full">
+            <div>
+              <ToolbarHeading
+                title={<Skeleton className="h-8 w-96" />}
+                description={<Skeleton className="h-4 w-80 mt-1" />}
+              />
+            </div>
+            <Skeleton className="h-6 w-20 rounded-full" />
+          </div>
+        </Toolbar>
+        <div className="border-t grid grid-cols-1 lg:grid-cols-12 gap-3 items-start h-[calc(100vh-120px)] overflow-y-auto">
+          <div className="lg:col-span-3 w-full lg:w-[250px] xl:w-[300px] ultra:w-[400px] sticky top-0 self-start">
+            <Skeleton className="h-64 w-full" />
+          </div>
+          <div className="lg:col-span-9">
+            <Card className='my-4'>
+              <CardHeader><Skeleton className="h-6 w-48" /></CardHeader>
+              <CardContent><Skeleton className="h-96 w-full" /></CardContent>
+            </Card>
+          </div>
+        </div>
+      </Container>
+    );
+  }
+
+  const statusInfo = getFabStatusInfo(fabData?.status_id);
+
+  // Sidebar sections – long format Job Details
   const sidebarSections = [
     {
       title: 'Job Details',
       type: 'details',
       items: [
-        { label: 'FAB ID', value: fabData?.id ? `FAB-${fabData.id}` : 'N/A' },
-        { label: 'FAB Type', value: fabData?.fab_type || 'N/A' },
-        { label: 'Account ID', value: fabData?.job_details?.account_id?.toString() || 'N/A' },
-        { label: 'Job name', value: fabData?.job_details?.name || 'N/A' },
-        { label: 'Job #', value: fabData?.job_details?.job_number || 'N/A' },
-        { label: 'Area (s)', value: fabData?.input_area || 'N/A' },
-        { label: 'Stone type', value: fabData?.stone_type_name || 'N/A' },
-        { label: 'Stone color', value: fabData?.stone_color_name || 'N/A' },
-        { label: 'Stone thickness', value: fabData?.stone_thickness_value || 'N/A' },
-        { label: 'Edge', value: fabData?.edge_name || 'N/A' },
-        { label: 'Total square ft', value: fabData?.total_sqft || 'N/A' },
+        { label: "Account Name", value: fabData?.account_name || '—' },
+        {
+          label: "Fab ID",
+          value: (
+            <Link to={`/sales/${fabData?.id}`} className="text-primary hover:underline">
+              FAB-{fabData?.id}
+            </Link>
+          ),
+        },
+        { label: "Area", value: fabData?.input_area || '—' },
+        {
+          label: "Material",
+          value: fabData?.stone_type_name
+            ? `${fabData.stone_type_name} - ${fabData.stone_color_name || ''} - ${fabData.stone_thickness_value || ''}`
+            : '—',
+        },
+        {
+          label: "Fab Type",
+          value: <span className="uppercase">{fabData?.fab_type || '—'}</span>,
+        },
+        { label: "Edge", value: fabData?.edge_name || '—' },
+        { label: "Total s.f.", value: fabData?.total_sqft?.toString() || '—' },
+        {
+          label: "Scheduled Date",
+          value: fabData?.templating_schedule_start_date
+            ? new Date(fabData.templating_schedule_start_date).toLocaleDateString()
+            : 'Not scheduled',
+        },
+        { label: "Assigned to", value: fabData?.draft_data?.drafter_name || 'Unassigned' },
+        { label: "Sales Person", value: fabData?.sales_person_name || '—' },
         { label: "SlabSmith Needed", value: fabData?.slab_smith_ag_needed ? 'Yes' : 'No' },
       ],
     },
@@ -468,215 +532,217 @@ export function SlabSmithDetailsPage() {
   ];
 
   // -----------------------------------------------------------------
-  // RENDER – MAIN LAYOUT (sidebar always visible)
+  // RENDER – MAIN LAYOUT
   // -----------------------------------------------------------------
   return (
-    <div className="border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0 items-start lg:flex-shrink-0">
-      {/* Sidebar – always present */}
-      <div className="lg:col-span-3 w-full lg:w-[250px] xl:w-[300px] ultra:w-[400px]">
-        <GraySidebar sections={sidebarSections as any} jobId={fabData?.job_id} />
-      </div>
+    <>
+      {/* Top toolbar with clickable job name/number and description + status badge */}
+      <Container className='lg:mx-0 max-w-full'>
+        <Toolbar className=''>
+          <div className="flex items-center justify-between w-full">
+            <ToolbarHeading
+              title={
+                <div className="text-2xl font-bold">
+                  <a href={jobNameLink} className="hover:underline">
+                    {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
+                  </a>
+                  {' - '}
+                  <a href={jobNumberLink} className="hover:underline">
+                    {fabData?.job_details?.job_number || fabData?.job_id}
+                  </a>
+                </div>
+              }
+              description="SlabSmith Details Page"
+            />
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
+                {statusInfo.text}
+              </span>
+            </div>
+          </div>
+        </Toolbar>
+      </Container>
 
-      {/* Main content – toggles between file viewer and activity UI */}
-      <Container className="lg:col-span-9">
-        {viewMode === 'file' && activeFile ? (
-          // -------------------- FILE VIEWER MODE (sidebar stays visible) --------------------
-          <div>
-            <Card className="my-4">
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <CardTitle className="text-xl mb-3">{activeFile.name}</CardTitle>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 mb-1">File Size</p>
-                        <p className="text-sm text-gray-900">{activeFile.formattedSize}</p>
+      {/* Main grid with sticky sidebar and scrollable content */}
+      <div className="border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0 items-start h-[calc(100vh-120px)] overflow-y-auto">
+        {/* Sticky sidebar */}
+        <div className="lg:col-span-3 w-full lg:w-[250px] xl:w-[300px] ultra:w-[400px] sticky top-0 self-start">
+          <GraySidebar sections={sidebarSections as any} jobId={fabData?.job_id} />
+        </div>
+
+        {/* Main content */}
+        <Container className="lg:col-span-9">
+          {viewMode === 'file' && activeFile ? (
+            // -------------------- FILE VIEWER MODE --------------------
+            <div>
+              <Card className="my-4">
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
+                    <div className="flex-1">
+                      <CardTitle className="text-xl mb-3">{activeFile.name}</CardTitle>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 mb-1">File Size</p>
+                          <p className="text-sm text-gray-900">{activeFile.formattedSize}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 mb-1">File Type</p>
+                          <p className="text-sm text-gray-900">{activeFile.type || 'Unknown'}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 mb-1">Stage</p>
+                          <span className={`inline-block px-2.5 py-1 rounded text-xs font-medium ${activeFile.stage?.color || 'text-gray-700'} bg-gray-100`}>
+                            {activeFile.stage?.label || activeFile.stage || 'Unknown'}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="text-xs font-medium text-gray-500 mb-1">Uploaded By</p>
+                          <p className="text-sm text-gray-900">{activeFile.uploadedBy}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-xs font-medium text-gray-500 mb-1">Upload Date & Time</p>
+                          <p className="text-sm text-gray-900">
+                            {activeFile.uploadedAt?.toLocaleDateString()} at {activeFile.uploadedAt?.toLocaleTimeString()}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 mb-1">File Type</p>
-                        <p className="text-sm text-gray-900">{activeFile.type || 'Unknown'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 mb-1">Stage</p>
-                        <span className={`inline-block px-2.5 py-1 rounded text-xs font-medium ${activeFile.stage?.color || 'text-gray-700'} bg-gray-100`}>
-                          {activeFile.stage?.label || activeFile.stage || 'Unknown'}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium text-gray-500 mb-1">Uploaded By</p>
-                        <p className="text-sm text-gray-900">{activeFile.uploadedBy}</p>
-                      </div>
-                      <div className="col-span-2">
-                        <p className="text-xs font-medium text-gray-500 mb-1">Upload Date & Time</p>
-                        <p className="text-sm text-gray-900">
-                          {activeFile.uploadedAt?.toLocaleDateString()} at {activeFile.uploadedAt?.toLocaleTimeString()}
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setViewMode('activity');
+                        setActiveFile(null);
+                      }}
+                      className="ml-4"
+                    >
+                      <X className="w-5 h-5" />
+                    </Button>
+                  </div>
+                </CardHeader>
+              </Card>
+              <FileViewer
+                file={activeFile}
+                onClose={() => {
+                  setActiveFile(null);
+                  setViewMode('activity');
+                }}
+              />
+            </div>
+          ) : (
+            // -------------------- ACTIVITY MODE --------------------
+            <>
+              {/* Removed the old header (FAB-... and status badges) because it's now in the toolbar */}
+
+              <Separator className="my-6" />
+
+              <Card className="my-4">
+                <CardHeader className="flex flex-col items-start py-4">
+                  <div className="flex items-center justify-between w-full">
+                    <div>
+                      <CardTitle>SlabSmith activity</CardTitle>
+                      <p className="text-sm text-[#4B5563]">Update your SlabSmith activity here</p>
+                    </div>
+                  </div>
+                </CardHeader>
+              </Card>
+
+              <Card>
+                <CardContent>
+                  <TimeTrackingComponent
+                    isDrafting={isDrafting}
+                    isPaused={isPaused}
+                    totalTime={totalTime}
+                    onStart={handleStart}
+                    onPause={handlePause}
+                    onResume={handleResume}
+                    onEnd={handleEnd}
+                    onOnHold={handleOnHold}
+                    onTimeUpdate={setTotalTime}
+                    hasEnded={hasEnded}
+                    sessionData={ssSessionData}
+                    isFabOnHold={fabData?.on_hold}
+                    pendingFilesCount={pendingFiles.length}
+                    uploadedFilesCount={uploadedFileMetas.length}
+                  />
+
+                  <Separator className="my-3" />
+
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold mb-4">Files</h3>
+
+                    {/* File Design Input */}
+                    {shouldShowUploadSection && (
+                      <div className="mb-4">
+                        <label className="text-sm font-medium text-gray-700 block mb-2">
+                          File Type *
+                        </label>
+                        <Select
+                          value={fileDesign}
+                          onValueChange={(value) => setFileDesign(value)}
+                          disabled={!isDrafting}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select file type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Block Drawing">Block Drawing</SelectItem>
+                            <SelectItem value="Layout">Layout</SelectItem>
+                            <SelectItem value="SS Layout">SS Layout</SelectItem>
+                            <SelectItem value="Shop Drawing">Shop Drawing</SelectItem>
+                            <SelectItem value="Photo / Media">Photo / Media</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          File type is required before uploading files
                         </p>
                       </div>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setViewMode('activity');
-                      setActiveFile(null);
-                    }}
-                    className="ml-4"
-                  >
-                    <X className="w-5 h-5" />
-                  </Button>
-                </div>
-              </CardHeader>
-            </Card>
-            <FileViewer
-              file={activeFile}
-              onClose={() => {
-                setActiveFile(null);
-                setViewMode('activity');
-              }}
-            />
-          </div>
-        ) : (
-          // -------------------- ACTIVITY MODE (timer, uploads, etc.) --------------------
-          <>
-            <div className="pt-6">
-              <div className="flex justify-between items-start">
-                <div className="text-black">
-                  <div className="flex items-center gap-3">
-                    <p className="font-bold text-base">FAB-{fabData?.id || 'N/A'}</p>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      SLABSMITH
-                    </span>
-                    <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        fabData?.status_id === 0
-                          ? 'bg-red-100 text-red-800'
-                          : fabData?.status_id === 1
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {fabData?.status_id === 0 ? 'ON HOLD' : fabData?.status_id === 1 ? 'ACTIVE' : 'LOADING'}
-                    </span>
-                  </div>
-                  <p className="text-sm">{fabData?.job_details?.name || 'N/A'}</p>
-                </div>
-              </div>
-            </div>
+                    )}
 
-            <Separator className="my-6" />
-
-            <Card className="my-4">
-              <CardHeader className="flex flex-col items-start py-4">
-                <div className="flex items-center justify-between w-full">
-                  <div>
-                    <CardTitle>SlabSmith activity</CardTitle>
-                    <p className="text-sm text-[#4B5563]">Update your SlabSmith activity here</p>
-                  </div>
-                </div>
-              </CardHeader>
-            </Card>
-
-            <Card>
-              <CardContent>
-                <TimeTrackingComponent
-                  isDrafting={isDrafting}
-                  isPaused={isPaused}
-                  totalTime={totalTime}
-                  onStart={handleStart}
-                  onPause={handlePause}
-                  onResume={handleResume}
-                  onEnd={handleEnd}
-                  onOnHold={handleOnHold}
-                  onTimeUpdate={setTotalTime}
-                  hasEnded={hasEnded}
-                  sessionData={ssSessionData}
-                  isFabOnHold={fabData?.on_hold}
-                  pendingFilesCount={pendingFiles.length}
-                  uploadedFilesCount={uploadedFileMetas.length}
-                />
-
-                <Separator className="my-3" />
-
-                <div className="mb-6">
-                  <h3 className="text-lg font-semibold mb-4">Files</h3>
-
-                  {/* File Design Input */}
-                  {shouldShowUploadSection && (
-                    <div className="mb-4">
-                      <label className="text-sm font-medium text-gray-700 block mb-2">
-                        File Type *
-                      </label>
-                      <Select
-                        value={fileDesign}
-                        onValueChange={(value) => setFileDesign(value)}
-                        disabled={!isDrafting}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select file type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Block Drawing">Block Drawing</SelectItem>
-                          <SelectItem value="Layout">Layout</SelectItem>
-                          <SelectItem value="SS Layout">SS Layout</SelectItem>
-                          <SelectItem value="Shop Drawing">Shop Drawing</SelectItem>
-                          <SelectItem value="Photo / Media">Photo / Media</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        File type is required before uploading files
-                      </p>
-                    </div>
-                  )}
-
-                  {shouldShowUploadSection ? (
-                    <UploadDocuments
-                      onFilesChange={handleFilesChange}
-                      onFileClick={handleFileClick}
-                      slabSmithId={slabSmithData?.id}
-                      refetchFiles={refetchFab}
-                      stage="slab_smith"
-                      fileDesign={fileDesign}
-                      onUploadComplete={() => setFileDesign('')}
-                      disabled={!isDrafting}
-                    />
-                  ) : (
-                    <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                      {isPaused ? (
-                        <p className="text-gray-500">Session is paused. Please resume to enable file uploads</p>
-                      ) : (
-                        <>
-                          <p className="text-gray-500">Start the timer to enable file uploads</p>
-                          <p className="text-sm text-gray-400 mt-2">
-                            Files will appear here once uploaded
-                          </p>
-                        </>
-                      )}
-                    </div>
-                  )}
-                    
-                </div>
-
-                {/* Server‑uploaded files – now also uses the same file click handler */}
-                {(fabData as any)?.slabsmith_data?.files &&
-                  (fabData as any).slabsmith_data.files.length > 0 && (
-                    <div className="mt-6 pt-4 border-t border-gray-200">
-                      <h3 className="text-lg font-semibold mb-4 text-gray-900">Uploaded Files from Slabsmith</h3>
-                      <Documents
-                        slabsmithData={(fabData as any)?.slabsmith_data}
+                    {shouldShowUploadSection ? (
+                      <UploadDocuments
+                        onFilesChange={handleFilesChange}
                         onFileClick={handleFileClick}
-                        // disabled={isPaused}
-                        onDeleteFile={(fileId: string) => handleDeleteFile(Number(fileId))}
-                        draftingId={slabSmithData?.id}
+                        slabSmithId={slabSmithData?.id}
+                        refetchFiles={refetchFab}
+                        stage="slab_smith"
+                        fileDesign={fileDesign}
+                        onUploadComplete={() => setFileDesign('')}
+                        disabled={!isDrafting}
                       />
-                    </div>
-                  )}
-              </CardContent>
+                    ) : (
+                      <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
+                        {isPaused ? (
+                          <p className="text-gray-500">Session is paused. Please resume to enable file uploads</p>
+                        ) : (
+                          <>
+                            <p className="text-gray-500">Start the timer to enable file uploads</p>
+                            <p className="text-sm text-gray-400 mt-2">
+                              Files will appear here once uploaded
+                            </p>
+                          </>
+                        )}
+                      </div>
+                    )}
+                  </div>
 
-              <div className="flex justify-end p-6 pt-0 gap-2 items-center">
-              <BackButton fallbackUrl="/job/slab-smith" label='Cancel' />
+                  {/* Server‑uploaded files */}
+                  {(fabData as any)?.slabsmith_data?.files &&
+                    (fabData as any).slabsmith_data.files.length > 0 && (
+                      <div className="mt-6 pt-4 border-t border-gray-200">
+                        <h3 className="text-lg font-semibold mb-4 text-gray-900">Uploaded Files from Slabsmith</h3>
+                        <Documents
+                          slabsmithData={(fabData as any)?.slabsmith_data}
+                          onFileClick={handleFileClick}
+                          onDeleteFile={(fileId: string) => handleDeleteFile(Number(fileId))}
+                          draftingId={slabSmithData?.id}
+                        />
+                      </div>
+                    )}
+                </CardContent>
 
-                {/* <Can action="create" on="Slab Smith"> */}
+                <div className="flex justify-end p-6 pt-0 gap-2 items-center">
+                  <BackButton fallbackUrl="/job/slab-smith" label="Cancel" />
                   <Button
                     onClick={handleOpenSubmissionModal}
                     disabled={!canOpenSubmit}
@@ -685,36 +751,36 @@ export function SlabSmithDetailsPage() {
                   >
                     Submit SlabSmith Work
                   </Button>
-                {/* </Can> */}
-              </div>
-            </Card>
-          </>
-        )}
+                </div>
+              </Card>
+            </>
+          )}
 
-        {/* Submission Modal – always outside the conditional block */}
-        <SubmissionModal
-          open={showSubmissionModal}
-          onClose={(success?: boolean) => {
-            setShowSubmissionModal(false);
-            if (success) {
-              handleEnd(new Date());
-              onSubmitModal({});
-            }
-          }}
-          drafting={slabSmithData}
-          uploadedFiles={uploadedFileMetas.map((meta) => ({
-            ...meta,
-            file: pendingFiles.find((f) => f.name === meta.name),
-          }))}
-          draftStart={draftStart}
-          draftEnd={draftEnd}
-          fabId={fabId}
-          userId={currentEmployeeId}
-          fabData={fabData}
-          slabSmithId={slabSmithData?.id}
-        />
-      </Container>
-    </div>
+          {/* Submission Modal */}
+          <SubmissionModal
+            open={showSubmissionModal}
+            onClose={(success?: boolean) => {
+              setShowSubmissionModal(false);
+              if (success) {
+                handleEnd(new Date());
+                onSubmitModal({});
+              }
+            }}
+            drafting={slabSmithData}
+            uploadedFiles={uploadedFileMetas.map((meta) => ({
+              ...meta,
+              file: pendingFiles.find((f) => f.name === meta.name),
+            }))}
+            draftStart={draftStart}
+            draftEnd={draftEnd}
+            fabId={fabId}
+            userId={currentEmployeeId}
+            fabData={fabData}
+            slabSmithId={slabSmithData?.id}
+          />
+        </Container>
+      </div>
+    </>
   );
 }
 

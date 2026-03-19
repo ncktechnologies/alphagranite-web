@@ -2,28 +2,40 @@ import { Container } from '@/components/common/container';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { TemplatingActivityForm } from './templatingActivity';
 import GraySidebar from '@/pages/jobs/components/job-details.tsx/GraySidebar';
-import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { useGetFabByIdQuery } from '@/store/api/job';
-import { useParams } from 'react-router';
+import { useParams, Link } from 'react-router';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Fab } from '@/store/api/job';
 import { formatDate } from '../TechnicianPage';
 
-// Helper function to filter fab notes by stage
-const filterNotesByStage = (fabNotes: any[], stage: string) => {
-  return fabNotes.filter(note => note.stage === stage);
-};
-
 // Helper function to get all fab notes (unfiltered)
 const getAllFabNotes = (fabNotes: any[]) => {
   return fabNotes || [];
 };
 
+// Helper function to get FAB status display
+const getFabStatusInfo = (statusId: number | undefined) => {
+  if (statusId === 0) {
+    return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
+  } else if (statusId === 1) {
+    return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
+  } else {
+    return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
+  }
+};
+
 export function TemplatingDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { data: fab, isLoading, isError, error } = useGetFabByIdQuery(Number(id));
+
+  // Prepare clickable links
+  const jobNameLink = fab?.job_details?.id ? `/job/details/${fab.job_details.id}` : '#';
+  const jobNumberLink = fab?.job_details?.job_number
+    ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fab.job_details.job_number}`
+    : '#';
 
   // Create sidebar sections based on actual FAB data
   const sidebarSections = fab ? [
@@ -31,29 +43,49 @@ export function TemplatingDetailsPage() {
       title: "Job Details",
       type: "details",
       items: [
-        { label: "FAB ID", value: `FAB-${fab.id}` },
-        { label: "Job Name", value: fab.job_details?.name || `Job ${fab.job_id}` },
-        { label: "Job Number", value: fab.job_details?.job_number || String(fab.job_id) },
-        { label: "Area", value: String(fab.input_area) },
-        { label: "Material", value: `${fab.stone_type_name || 'N/A'} - ${fab.stone_thickness_value || 'N/A'}` },
-        { label: 'Total square ft', value: String(fab.total_sqft) },
-        { label: "Scheduled Date", value: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-', },
-        { label: "Assigned to", value: String(fab.technician_name) },
-        { label: 'Stone type', value: fab.stone_type_name || 'N/A' },
-        { label: 'Stone color', value: fab.stone_color_name || 'N/A' },
-        { label: 'Stone thickness', value: fab.stone_thickness_value || 'N/A' },
-        { label: 'Edge', value: fab.edge_name || 'N/A' },
-        { label: 'Sales person', value: fab.sales_person_name || 'N/A' },
-        { label: 'Account Name', value: fab.account_name || 'N/A' },
-
+        { label: "Account Name", value: fab.account_name || '—' },
+        {
+          label: "Fab ID",
+          value: (
+            <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">
+              FAB-{fab.id}
+            </Link>
+          ),
+        },
+        { label: "Area", value: fab.input_area || '—' },
+        {
+          label: "Material",
+          value: fab.stone_type_name
+            ? `${fab.stone_type_name} - ${fab.stone_color_name || ''} - ${fab.stone_thickness_value || ''}`
+            : '—',
+        },
+        {
+          label: "Fab Type",
+          value: <span className="uppercase">{fab.fab_type || '—'}</span>,
+        },
+        { label: "Edge", value: fab.edge_name || '—' },
+        { label: "Total s.f.", value: fab.total_sqft?.toString() || '—' },
+        {
+          label: "Scheduled Date",
+          value: fab.templating_schedule_start_date
+            ? formatDate(fab.templating_schedule_start_date)
+            : 'Not scheduled',
+        },
+        {
+          label: "Assigned to",
+          value: fab.technician_name || 'Unassigned',
+        },
+        { label: "Sales Person", value: fab.sales_person_name || '—' },
+        {
+          label: "SlabSmith Needed",
+          value: fab.slabsmith_data ? 'Yes' : 'No', // adjust if field name differs
+        },
       ],
     },
-    // Option 1: Show ALL fab notes (current)
     {
       title: "FAB Notes",
       type: "notes",
       notes: getAllFabNotes(fab.fab_notes || []).map(note => {
-        // Stage display mapping
         const stageConfig: Record<string, { label: string; color: string }> = {
           templating: { label: 'Templating', color: 'text-blue-700' },
           pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
@@ -66,10 +98,8 @@ export function TemplatingDetailsPage() {
           draft: { label: 'Draft', color: 'text-green-700' },
           general: { label: 'General', color: 'text-gray-700' }
         };
-
         const stage = note.stage || 'general';
         const config = stageConfig[stage] || stageConfig.general;
-
         return {
           id: note.id,
           avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
@@ -79,31 +109,22 @@ export function TemplatingDetailsPage() {
         };
       })
     }
-    // Option 2: Show only TEMPLATING stage notes (commented out)
-    // {
-    //   title: "Templating Notes",
-    //   type: "notes",
-    //   notes: filterNotesByStage(fab.fab_notes || [], 'templating').map(note => ({
-    //     id: note.id,
-    //     avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
-    //     content: note.note,
-    //     author: note.created_by_name || 'Unknown',
-    //     timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
-    //   }))
-    // }
   ] : [
     {
       title: "Job Details",
       type: "details",
       items: [
-        { label: "FAB ID", value: id || 'N/A' },
-        { label: "Job Name", value: 'N/A' },
-        { label: "Job Number", value: 'N/A' },
-        { label: "Area", value: 'N/A' },
-        { label: "Material", value: 'N/A' },
-        { label: "Total square ft", value: 'N/A' },
-        { label: "Scheduled Date", value: 'N/A' },
-        { label: "Assigned to", value: 'N/A' },
+        { label: "Account Name", value: '—' },
+        { label: "Fab ID", value: id || '—' },
+        { label: "Area", value: '—' },
+        { label: "Material", value: '—' },
+        { label: "Fab Type", value: '—' },
+        { label: "Edge", value: '—' },
+        { label: "Total s.f.", value: '—' },
+        { label: "Scheduled Date", value: '—' },
+        { label: "Assigned to", value: '—' },
+        { label: "Sales Person", value: '—' },
+        { label: "SlabSmith Needed", value: '—' },
       ],
     },
     {
@@ -117,7 +138,15 @@ export function TemplatingDetailsPage() {
     return (
       <Container className='lg:mx-0 max-w-full'>
         <Toolbar className=''>
-          <ToolbarHeading title="FAB ID: Loading..." description="Update templating activity" />
+          <div className="flex items-center justify-between w-full">
+            <div>
+              <ToolbarHeading
+                title={<Skeleton className="h-8 w-96" />}
+                description={<Skeleton className="h-4 w-80 mt-1" />}
+              />
+            </div>
+            <Skeleton className="h-6 w-20 rounded-full" />
+          </div>
         </Toolbar>
         <div className="border-t flex flex-col lg:flex-row gap-3 xl:gap-4 items-start max-w-full">
           <div className="w-full lg:w-[250px] xl:w-[286px] ultra:w-[500px] lg:flex-shrink-0">
@@ -150,7 +179,7 @@ export function TemplatingDetailsPage() {
     return (
       <Container className='lg:mx-0 max-w-full'>
         <Toolbar className=''>
-          <ToolbarHeading title="FAB ID: Error" description="Update templating activity" />
+          <ToolbarHeading title="Error loading FAB" description="Could not load templating details" />
         </Toolbar>
         <div className="border-t flex flex-col lg:flex-row gap-3 xl:gap-4 items-start max-w-full">
           <div className="w-full lg:w-[250px] xl:w-[286px] ultra:w-[500px] lg:flex-shrink-0">
@@ -186,39 +215,43 @@ export function TemplatingDetailsPage() {
     );
   }
 
+  const statusInfo = getFabStatusInfo(fab?.status_id);
+
   return (
     <>
       <Container className='lg:mx-0 max-w-full'>
         <Toolbar className=''>
           <div className="flex items-center justify-between w-full">
-            <div>
-              <ToolbarHeading
-                title={`FAB ID: ${fab?.id || id}`}
-                description="Update templating activity"
-              />
-            </div>
+            <ToolbarHeading
+              title={
+                <div className="text-2xl font-bold">
+                  <a href={jobNameLink} className="hover:underline">
+                    {fab?.job_details?.name || `Job ${fab?.job_id}`}
+                  </a>
+                  {' - '}
+                  <a href={jobNumberLink} className="hover:underline">
+                    {fab?.job_details?.job_number || fab?.job_id}
+                  </a>
+                </div>
+              }
+              // description={fab?.job_details?.description || 'No description available'}
+            />
             <div className="flex items-center gap-2">
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{
-                0: 'bg-red-100 text-red-800',
-                1: 'bg-green-100 text-green-800'
-              }[fab?.status_id] || 'bg-gray-100 text-gray-800'}`}>
-                {{
-                  0: 'ON HOLD',
-                  1: 'ACTIVE'
-                }[fab?.status_id] || 'LOADING'}
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
+                {statusInfo.text}
               </span>
             </div>
           </div>
         </Toolbar>
       </Container>
 
-      {/* Changed to use flex on large screens with consistent spacing */}
+      {/* Main layout: sidebar + content */}
       <div className="border-t flex flex-col lg:flex-row gap-3 xl:gap-4 items-start max-w-full">
         {/* Sidebar - fixed width */}
         <div className="w-full lg:w-[250px] xl:w-[286px] ultra:w-[500px] lg:flex-shrink-0">
           <GraySidebar
             sections={sidebarSections as any}
-            jobId={fab?.job_id}  // Add this prop
+            jobId={fab?.job_id}
           />
           <div className="bg-text w-full py-4 px-6 shadow-sm mt-3">
             <h3 className="font-semibold text-white text-lg mb-5">Progress Timeline</h3>
@@ -229,13 +262,13 @@ export function TemplatingDetailsPage() {
             <p className="text-xs text-white ml-4 mt-1">
               {fab?.templating_schedule_start_date
                 ? new Date(fab.templating_schedule_start_date).toLocaleDateString('en-US', {
-                  month: 'long',
-                  day: 'numeric',
-                  year: 'numeric',
-                  hour: 'numeric',
-                  minute: '2-digit',
-                  hour12: true
-                })
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  })
                 : 'Not scheduled'}
             </p>
           </div>

@@ -171,6 +171,19 @@ export function UpdateFabIdModal({
       setIsSubmitting(false);
     }
   };
+  const fabBgMap: Record<string, string> = {
+  "standard": "bg-[#9eeb47]",
+  "fab only": "bg-[#5bd1d7]",
+  "cust redo": "bg-[#f0bf4c]",
+  "resurface": "bg-[#d094ea]",
+  "fast track": "bg-[#f59794]",
+  "ag redo": "bg-[#f5cc94]",
+};
+
+const fabTypeKey = fabData?.fab_type
+  ?.toLowerCase()
+  ?.replace(/_/g, " ")
+  ?.trim();
 
   if (isCutListLoading) {
     return (
@@ -186,7 +199,7 @@ export function UpdateFabIdModal({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col">
+      <DialogContent className={`sm:max-w-2xl max-h-[90vh] flex flex-col ${fabBgMap[fabTypeKey] || ""}`}>
         <DialogHeader className="border-b">
           <DialogTitle>Update FAB ID</DialogTitle>
         </DialogHeader>

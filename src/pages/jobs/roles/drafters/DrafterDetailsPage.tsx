@@ -22,7 +22,7 @@ import { FileViewer } from './components/FileViewer';
 import { SubmissionModal } from './components/SubmissionModal';
 import { SessionHistory } from './components/SessionHistory';
 import { useSelector } from 'react-redux';
-import { X, Eye, Trash2, Download } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Can } from '@/components/permission';
 import { useTabClosingWarning } from '@/hooks';
 import { BackButton } from '@/components/common/BackButton';
@@ -35,6 +35,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+import { Link } from 'react-router-dom';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Helper function to format timestamp without 'Z'
 const formatTimestamp = (date: Date) => {
@@ -56,7 +59,6 @@ const getFabStatusInfo = (statusId: number | undefined) => {
     return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
   }
 };
-
 
 export function DrafterDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -134,14 +136,6 @@ export function DrafterDetailsPage() {
       }
     }
   }, [sessionData, isSessionLoading]);
-
-  // Debug: Log server files
-  useEffect(() => {
-    if (draftData?.files) {
-      console.log('Existing files from server:', draftData.files);
-      console.log('Number of files:', draftData.files.length);
-    }
-  }, [draftData]);
 
   // Helper functions to check session state
   const isDrafting = sessionStatus === 'drafting';
@@ -232,8 +226,6 @@ export function DrafterDetailsPage() {
     on_hold: "placed on hold",
     end: "ended",
   };
-
-
 
   const updateSession = async (action: 'pause' | 'on_hold' | 'end', timestamp: Date, note?: string, sqftDrafted?: string, workPercentage?: string) => {
     try {
@@ -417,23 +409,46 @@ export function DrafterDetailsPage() {
     }
   };
 
-  if (isFabLoading || isDraftingLoading || isSessionLoading) return <div>Loading...</div>;
+  // Prepare clickable links
+  const jobNameLink = fabData?.job_details?.id ? `/job/details/${fabData.job_details.id}` : '#';
+  const jobNumberLink = fabData?.job_details?.job_number
+    ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fabData.job_details.job_number}`
+    : '#';
 
-  const sidebarSections = [
+  // Sidebar sections – now includes all required Job Details fields
+  const sidebarSections = fabData ? [
     {
       title: "Job Details",
       type: "details",
       items: [
-        { label: "Job Name", value: fabData?.job_details?.name || `Job ${fabData?.job_id}` },
-        { label: "Job Number", value: fabData?.job_details?.job_number || String(fabData?.job_id) },
-        { label: "Account Name", value: fabData?.account_name || "N/A" },
-        { label: "Area", value: fabData?.input_area || "Loading..." },
-        { label: "Material", value: `${fabData?.stone_type_name || ''} ${fabData?.stone_color_name || ''} - ${fabData?.stone_thickness_value || ''}` },
-        { label: "FAB Type", value: fabData?.fab_type || "Loading..." },
-        { label: "Sales Person", value: fabData?.sales_person_name || "N/A" },
-        { label: "Assigned to", value: fabData?.draft_data?.drafter_name || 'Unassigned' },
-        { label: "SlabSmith Needed", value: fabData?.slab_smith_ag_needed ? 'Yes' : 'No' },
-
+        { label: "Account Name", value: fabData.account_name || '—' },
+        {
+          label: "Fab ID",
+          value: (
+            <Link to={`/sales/${fabData.id}`} className="text-primary hover:underline">
+              FAB-{fabData.id}
+            </Link>
+          ),
+        },
+        { label: "Area", value: fabData.input_area || '—' },
+        {
+          label: "Material",
+          value: fabData.stone_type_name
+            ? `${fabData.stone_type_name} - ${fabData.stone_color_name || ''} - ${fabData.stone_thickness_value || ''}`
+            : '—',
+        },
+        { label: "Fab Type", value: <span className="uppercase">{fabData.fab_type || '—'}</span> },
+        { label: "Edge", value: fabData.edge_name || '—' },
+        { label: "Total s.f.", value: fabData.total_sqft?.toString() || '—' },
+        {
+          label: "Scheduled Date",
+          value: fabData.templating_schedule_start_date
+            ? new Date(fabData.templating_schedule_start_date).toLocaleDateString()
+            : 'Not scheduled',
+        },
+        { label: "Assigned to", value: fabData.draft_data?.drafter_name || 'Unassigned' },
+        { label: "Sales Person", value: fabData.sales_person_name || '—' },
+        { label: "SlabSmith Needed", value: fabData.slab_smith_ag_needed ? 'Yes' : 'No' },
       ],
     },
     {
@@ -476,7 +491,7 @@ export function DrafterDetailsPage() {
         };
       })
     }
-  ];
+  ] : [];
 
   // Prepare enhanced file metadata for SubmissionModal
   const filesForSubmission: EnhancedFileMetadata[] = allFilesForDisplay.map(file => ({
@@ -491,27 +506,79 @@ export function DrafterDetailsPage() {
     file: null
   }));
 
-  return (
-    <>
-      <Container className='lg:mx-0'>
-        <div className='py-4'>
-          <div className='flex items-center gap-3'>
-            <h2 className='text-lg font-semibold'>FAB ID: {fabData?.id || 'Loading...'}</h2>
-            {(() => {
-              const statusInfo = getFabStatusInfo(fabData?.status_id);
-              return (
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
-                  {statusInfo.text}
-                </span>
-              );
-            })()}
+  if (isFabLoading || isDraftingLoading || isSessionLoading) {
+    return (
+      <Container className='lg:mx-0 max-w-full'>
+        <Toolbar className=''>
+          <div className="flex items-center justify-between w-full">
+            <div>
+              <ToolbarHeading
+                title={<Skeleton className="h-8 w-96" />}
+                description={<Skeleton className="h-4 w-80 mt-1" />}
+              />
+            </div>
+            <Skeleton className="h-6 w-20 rounded-full" />
           </div>
-          <p className='text-sm text-muted-foreground'>Update drafting activity</p>
+        </Toolbar>
+        <div className="border-t flex flex-col lg:flex-row gap-3 xl:gap-4 items-start max-w-full">
+          <div className="w-full lg:w-[250px] xl:w-[286px] ultra:w-[500px] lg:flex-shrink-0">
+            <Skeleton className="h-64 w-full" />
+          </div>
+          <div className="lg:flex-1 min-w-0">
+            <Container className='mx-0 max-w-full px-0'>
+              <div className='max-w-6xl w-full mx-auto lg:mr-auto'>
+                <Card className='my-4'>
+                  <CardHeader className='flex flex-col items-start py-4'>
+                    <Skeleton className="h-6 w-48" />
+                    <Skeleton className="h-4 w-64 mt-2" />
+                  </CardHeader>
+                </Card>
+                <Card>
+                  <CardContent>
+                    <Skeleton className="h-96 w-full" />
+                  </CardContent>
+                </Card>
+              </div>
+            </Container>
+          </div>
         </div>
       </Container>
+    );
+  }
 
-      <div className=" border-t grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
-        <div className="lg:col-span-3 w-full lg:w-[200px]  2xl:w-[286px]  ultra:w-[500px]" >
+  const statusInfo = getFabStatusInfo(fabData?.status_id);
+
+  return (
+    <>
+      {/* 🔹 TOP TOOLBAR with clickable job name/number + description + status badge */}
+      <Container className='lg:mx-0 max-w-full'>
+        <Toolbar className=''>
+          <div className="flex items-center justify-between w-full">
+            <ToolbarHeading
+              title={
+                <div className="text-2xl font-bold">
+                  <a href={jobNameLink} className="hover:underline">
+                    {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
+                  </a>
+                  {' - '}
+                  <a href={jobNumberLink} className="hover:underline">
+                    {fabData?.job_details?.job_number || fabData?.job_id}
+                  </a>
+                </div>
+              }
+              description="Drafting Details"
+            />
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
+                {statusInfo.text}
+              </span>
+            </div>
+          </div>
+        </Toolbar>
+      </Container>
+
+      <div className="border-t grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
+        <div className="lg:col-span-3 w-full lg:w-[200px] 2xl:w-[286px] ultra:w-[500px]">
           <GraySidebar
             sections={sidebarSections as any}
             jobId={fabData?.job_id}
@@ -543,19 +610,21 @@ export function DrafterDetailsPage() {
                       <p className="text-sm text-[#4B5563]">Update your drafting activity here</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{
-                        'idle': 'bg-gray-100 text-gray-800',
-                        'drafting': 'bg-green-100 text-green-800',
-                        'paused': 'bg-yellow-100 text-yellow-800',
-                        'on_hold': 'bg-orange-100 text-orange-800',
-                        'ended': 'bg-blue-100 text-blue-800'
-                      }[sessionStatus] || 'bg-gray-100 text-gray-800'}`}>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        {
+                          idle: 'bg-gray-100 text-gray-800',
+                          drafting: 'bg-green-100 text-green-800',
+                          paused: 'bg-yellow-100 text-yellow-800',
+                          on_hold: 'bg-orange-100 text-orange-800',
+                          ended: 'bg-blue-100 text-blue-800',
+                        }[sessionStatus] || 'bg-gray-100 text-gray-800'
+                      }`}>
                         {{
-                          'idle': 'Ready to Start',
-                          'drafting': 'Drafting Active',
-                          'paused': 'Paused',
-                          'on_hold': 'On Hold',
-                          'ended': 'Completed'
+                          idle: 'Ready to Start',
+                          drafting: 'Drafting Active',
+                          paused: 'Paused',
+                          on_hold: 'On Hold',
+                          ended: 'Completed',
                         }[sessionStatus] || 'Unknown'}
                       </span>
                       {fabData?.status_id === 0 && (
@@ -646,7 +715,7 @@ export function DrafterDetailsPage() {
                   {/* Submit Button */}
                   {viewMode === 'activity' && (
                     <div className="flex justify-end gap-3 mt-6">
-                      <BackButton fallbackUrl="/job/draft" label='Cancel' />
+                      <BackButton fallbackUrl="/job/draft" label="Cancel" />
                       <Can action="create" on="Drafting">
                         <Button
                           onClick={handleOpenSubmissionModal}
@@ -658,7 +727,6 @@ export function DrafterDetailsPage() {
                       </Can>
                     </div>
                   )}
-
                 </CardContent>
               </Card>
 

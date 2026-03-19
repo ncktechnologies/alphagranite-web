@@ -107,8 +107,10 @@ const CutListPage = () => {
     const buildQueryParams = useMemo(() => {
         const params: any = {
             current_stage: 'cut_list',
-            skip: pagination.pageIndex * pagination.pageSize,
-            limit: pagination.pageSize,
+            // skip: pagination.pageIndex * pagination.pageSize,
+            // limit: pagination.pageSize,
+            page: pagination.pageIndex + 1,   // backend is 1-based
+            per_page: pagination.pageSize,
         };
 
         // Add search query

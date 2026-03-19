@@ -36,7 +36,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         fab_id: String(fab.id),
         job_name: `${fab.job_details?.name}`,
         job_no: String(fab.job_details?.job_number),
-        date: fab.shop_date_schedule|| '',
+        date: fab.shop_date_schedule || '',
         current_stage: fab.current_stage,
         sales_person_name: fab.sales_person_name || '',
         // Optional fields with default values
@@ -214,7 +214,7 @@ export function ResurfacingPage() {
                 tableState={tableState}
                 useBackendPagination={true}
                 visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'on_hold']}
-                path="resurfacing"
+                path="resurfacing-status"
             />
         </Container>
     );

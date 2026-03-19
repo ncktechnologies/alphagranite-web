@@ -137,6 +137,7 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
 
 interface CutListTableWithCalculationsProps {
     fabs: Fab[];  // Change from FabData[] to Fab[]
+    totalCount?: number;
     fabTypes?: string[]; // Add fabTypes prop
     salesPersons?: string[]; // Add salesPersons prop
     path: string;
@@ -161,6 +162,7 @@ interface CutListTableWithCalculationsProps {
 
 export const CutListTableWithCalculations = ({
     fabs,
+    totalCount = 0,
     fabTypes = [], // Destructure fabTypes with default empty array
     salesPersons = [], // Destructure salesPersons with default empty array
     path,
@@ -827,31 +829,30 @@ export const CutListTableWithCalculations = ({
 
     const [sorting, setSorting] = useState<SortingState>([]);
 
-    const table = useReactTable({
-        columns: baseColumns,
-        data: filteredData,
-        pageCount: Math.ceil(filteredData.length / effectivePagination.pageSize),
-        state: { pagination: effectivePagination, sorting },
-        onPaginationChange: (updater) => {
-            // Handle both functional and direct updates
-            const newPagination = typeof updater === 'function'
-                ? updater(effectivePagination)
-                : updater;
-            if (newPagination) {
-                setEffectivePagination(newPagination as PaginationState);
-            }
-        },
-        onSortingChange: setSorting,
-        getCoreRowModel: getCoreRowModel(),
-        getFilteredRowModel: getFilteredRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        meta: {
-            getRowAttributes: (row: any) => ({
-                'data-fab-type': row.original.fab_type?.toLowerCase()
-            })
-        }
-    });
+const table = useReactTable({
+    columns: baseColumns,
+    data: filteredData,
+    pageCount: Math.ceil(totalCount / effectivePagination.pageSize),  // from backend
+    state: { pagination: effectivePagination, sorting },
+    onPaginationChange: (updater) => {
+        const newPagination = typeof updater === 'function'
+            ? updater(effectivePagination)
+            : updater;
+        setEffectivePagination(newPagination);
+    },
+    onSortingChange: setSorting,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    manualPagination: true,    // key change
+    manualFiltering: true,
+    manualSorting: true,
+    // removed getPaginationRowModel and getFilteredRowModel
+    meta: {
+        getRowAttributes: (row: any) => ({
+            'data-fab-type': row.original.fab_type?.toLowerCase()
+        })
+    }
+});
 
     return (
         <>

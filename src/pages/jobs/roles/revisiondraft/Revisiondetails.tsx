@@ -35,8 +35,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-
-// Add Dialog imports
 import {
   Dialog,
   DialogContent,
@@ -46,12 +44,14 @@ import {
 import { FileViewer, UploadDocuments } from '../drafters/components';
 import { SessionHistory } from '../drafters/components/SessionHistory';
 import { RevisionForm } from './components';
+import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+import { Link } from 'react-router-dom';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Helper function to format timestamp without 'Z'
 const formatTimestamp = (date: Date) => {
   return date.toISOString().replace('Z', '');
 };
-
 
 // Helper function to get all fab notes (unfiltered)
 const getAllFabNotes = (fabNotes: any[]) => {
@@ -79,11 +79,9 @@ const formatBytes = (bytes: number, decimals = 2) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 };
 
-// Get revision info from SCT data - FIXED to use sales_ct_data from fabData or separate query
+// Get revision info from SCT data
 const getRevisionInfo = (fabData: any, sctData: any) => {
-  // First, try to get sales_ct_data from fabData
   const salesCTData = fabData?.sales_ct_data || sctData;
-
   if (!salesCTData) {
     return {
       revisionType: 'general',
@@ -93,11 +91,8 @@ const getRevisionInfo = (fabData: any, sctData: any) => {
       salesCTData: null
     };
   }
-
-  // Get revision type from sales CT data
   let revisionType = 'general';
   const revisionTypeFromSCT = salesCTData?.revision_type;
-
   if (revisionTypeFromSCT) {
     if (revisionTypeFromSCT.toLowerCase().includes('cad')) {
       revisionType = 'cad';
@@ -111,21 +106,14 @@ const getRevisionInfo = (fabData: any, sctData: any) => {
       revisionType = revisionTypeFromSCT.toLowerCase();
     }
   }
-
-  // Get revision count from sales CT data
   const revisionCount = salesCTData?.current_revision_count || 0;
-
-  // Get revision reason - look in fab notes first, then sct notes
   let revisionReason = 'No revision reason provided';
   const fabNotes = fabData?.fab_notes || [];
-
-  // Look for revision note in fab notes
   const revisionNote = fabNotes.find((note: any) =>
     note.stage === 'sales_ct' ||
     note.note?.includes('[REVISION REQUEST]') ||
     note.note?.includes('revision')
   );
-
   if (salesCTData?.revision_reason) {
     revisionReason = salesCTData.revision_reason;
   } else if (revisionNote?.note) {
@@ -135,7 +123,6 @@ const getRevisionInfo = (fabData: any, sctData: any) => {
   } else if (salesCTData?.sales_ct_notes) {
     revisionReason = salesCTData.sales_ct_notes;
   }
-
   return {
     revisionType,
     revisionReason,
@@ -189,22 +176,12 @@ export function RevisionDetailsPage() {
   const [createRevision] = useCreateRevisionMutation();
   const [updateRevision] = useUpdateRevisionMutation();
 
-  // Use draft_data from FAB response for displaying existing files
   const draftData = fabData?.draft_data;
 
-  // Get revision info - FIXED: Now properly using sales CT data
   const revisionInfo = useMemo(() =>
     getRevisionInfo(fabData, sctData),
     [fabData, sctData]
   );
-
-  // Debug: Log the revision info
-  useEffect(() => {
-    console.log('Revision Info:', revisionInfo);
-    console.log('SCT Data:', sctData);
-    console.log('FAB Data:', fabData);
-    console.log('FAB sales_ct_data:', fabData?.sales_ct_data);
-  }, [revisionInfo, sctData, fabData]);
 
   // Local UI state
   const [totalTime, setTotalTime] = useState<number>(0);
@@ -214,37 +191,26 @@ export function RevisionDetailsPage() {
   const [activeFile, setActiveFile] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
-  const [fileDesign, setFileDesign] = useState<string>(''); // File design input
+  const [fileDesign, setFileDesign] = useState<string>('');
 
-  // Derived states from sessionStatus
   const isDrafting = sessionStatus === 'drafting';
   const isPaused = sessionStatus === 'paused';
   const isOnHold = sessionStatus === 'on_hold';
   const hasEnded = sessionStatus === 'ended';
 
-  // Initialize session state from server data
   useEffect(() => {
     if (sessionData && !isSessionLoading) {
       const session = sessionData?.data;
       if (session) {
         setSessionStatus(session.status || 'idle');
-
-        if (session.total_time_spent) {
-          setTotalTime(session.total_time_spent);
-        }
-
-        // Map API field names to local state
-        if (session.current_session_start_time) {
-          setDraftStart(new Date(session.current_session_start_time));
-        }
-
+        if (session.total_time_spent) setTotalTime(session.total_time_spent);
+        if (session.current_session_start_time) setDraftStart(new Date(session.current_session_start_time));
         if (session.last_action_time && (session.status === 'ended' || session.status === 'on_hold')) {
           setDraftEnd(new Date(session.last_action_time));
         } else {
           setDraftEnd(null);
         }
       } else {
-        // No active session found
         setSessionStatus('idle');
         setTotalTime(0);
         setDraftStart(null);
@@ -253,12 +219,10 @@ export function RevisionDetailsPage() {
     }
   }, [sessionData, isSessionLoading]);
 
-  // Tab closing warning
   useTabClosingWarning({
     isActive: isDrafting && !isPaused,
     warningMessage: '⚠️ ACTIVE REVISION SESSION ⚠️\n\nYou have an active revision session in progress. Closing this tab will pause your session and may result in lost work.\n\nPlease pause your session properly before leaving.',
     onBeforeUnload: async () => {
-      // Auto-pause the session when tab is closing
       if (isDrafting && fabId && currentEmployeeId) {
         try {
           await manageDraftingSession({
@@ -278,10 +242,8 @@ export function RevisionDetailsPage() {
     }
   });
 
-  // Extract existing files from draft_data
   const existingFilesFromServer = draftData?.files || [];
 
-  // All files for display
   const allFilesForDisplay = useMemo(() => {
     const files = existingFilesFromServer.map((file: any) => ({
       id: file.id,
@@ -298,11 +260,9 @@ export function RevisionDetailsPage() {
       uploadedBy: file.uploaded_by || currentUser?.name || 'Unknown',
       fromServer: true
     }));
-
     return files;
   }, [existingFilesFromServer, currentUser]);
 
-  // Session management functions
   const createOrStartSession = async (action: 'start' | 'resume', startDate: Date, note?: string, sqftDrafted?: string, workPercentage?: string) => {
     try {
       await manageDraftingSession({
@@ -317,11 +277,9 @@ export function RevisionDetailsPage() {
           is_revision: true
         }
       }).unwrap();
-
       setSessionStatus('drafting');
       setDraftStart(startDate);
       setDraftEnd(null);
-
       await refetchSession();
       toast.success(`Revision session ${action === 'start' ? 'started' : 'resumed'} successfully`);
     } catch (error: any) {
@@ -330,6 +288,7 @@ export function RevisionDetailsPage() {
       throw error;
     }
   };
+
   const actionPastTense: Record<string, string> = {
     start: "started",
     resume: "resumed",
@@ -337,6 +296,7 @@ export function RevisionDetailsPage() {
     on_hold: "placed on hold",
     end: "ended",
   };
+
   const updateSession = async (action: 'pause' | 'on_hold' | 'end', timestamp: Date, note?: string, sqftDrafted?: string, workPercentage?: string) => {
     try {
       await manageDraftingSession({
@@ -351,13 +311,10 @@ export function RevisionDetailsPage() {
           is_revision: true
         }
       }).unwrap();
-
       setSessionStatus(action === 'end' ? 'ended' : action === 'on_hold' ? 'on_hold' : 'paused');
       setDraftEnd(timestamp);
-
       await refetchSession();
       toast.success(`Session ${actionPastTense[action]} successfully`);
-
     } catch (error: any) {
       console.error(`Failed to ${action} session:`, error);
       toast.error(error?.data?.message || `Failed to ${action} session`);
@@ -365,58 +322,42 @@ export function RevisionDetailsPage() {
     }
   };
 
-  // Time tracking handlers
   const handleStart = async (startDate: Date, data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     const hasDraftingAssignment = draftingData?.id || fabData?.draft_data?.id;
-
     if (!hasDraftingAssignment) {
       toast.error('Cannot start revision session - no drafting assignment found');
       return;
     }
-
     try {
       await createOrStartSession('start', startDate, data?.note, data?.sqft_drafted, data?.work_percentage_done);
-    } catch (error) {
-      // Error handled in createOrStartSession
-    }
+    } catch (error) {}
   };
 
   const handlePause = async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     try {
       await updateSession('pause', new Date(), data?.note, data?.sqft_drafted, data?.work_percentage_done);
-    } catch (error) {
-      // Error handled in updateSession
-    }
+    } catch (error) {}
   };
 
   const handleResume = async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     try {
       await createOrStartSession('resume', new Date(), data?.note, data?.sqft_drafted, data?.work_percentage_done);
-    } catch (error) {
-      // Error handled in createOrStartSession
-    }
+    } catch (error) {}
   };
 
   const handleEnd = async (endDate: Date, data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     try {
       await updateSession('end', endDate, data?.note, data?.sqft_drafted, data?.work_percentage_done);
-    } catch (error) {
-      // Error handled in updateSession
-    }
+    } catch (error) {}
   };
 
   const handleOnHold = async (data?: { note?: string }) => {
     try {
-      // If there's an active session, pause it first
       if (isDrafting) {
         await updateSession('pause', new Date(), 'Pausing session before placing on hold');
       }
-
-      // Toggle the FAB hold status
       const currentHoldStatus = fabData?.status_id === 0;
       await toggleFabOnHold({ fab_id: fabId, on_hold: !currentHoldStatus }).unwrap();
-
-      // Create FAB note with revisions stage
       if (data?.note) {
         await createFabNote({
           fab_id: fabId,
@@ -424,7 +365,6 @@ export function RevisionDetailsPage() {
           stage: 'revisions'
         }).unwrap();
       }
-
       toast.success(`FAB ${!currentHoldStatus ? 'placed on hold' : 'released from hold'} successfully`);
       await refetchFab();
       await refetchSession();
@@ -434,7 +374,6 @@ export function RevisionDetailsPage() {
     }
   };
 
-  // File handling functions
   const handleFileClick = (file: any) => {
     const enhancedFile = {
       ...file,
@@ -447,27 +386,19 @@ export function RevisionDetailsPage() {
       uploadedAt: file.created_at ? new Date(file.created_at) : new Date(),
       uploadedBy: file.uploaded_by || currentUser?.name || 'Unknown'
     };
-
     setActiveFile(enhancedFile);
     setViewMode('file');
   };
 
   const handleDeleteFile = async (fileId: number) => {
-    if (!window.confirm('Are you sure you want to delete this file?')) {
-      return;
-    }
-
+    if (!window.confirm('Are you sure you want to delete this file?')) return;
     const draftingId = draftingData?.id || fabData?.draft_data?.id;
-    if (!draftingId) {
-      return;
-    }
-
+    if (!draftingId) return;
     try {
       await deleteDraftingFile({
         drafting_id: draftingId,
         file_id: String(fileId)
       }).unwrap();
-
       await refetchAllFiles();
       toast.success('File deleted successfully');
     } catch (error) {
@@ -476,81 +407,44 @@ export function RevisionDetailsPage() {
     }
   };
 
-  // Combined refetch function
   const refetchAllFiles = useCallback(async () => {
     try {
-      await Promise.all([
-        refetchFab(),
-        refetchDrafting(),
-        refetchSession()
-      ]);
+      await Promise.all([refetchFab(), refetchDrafting(), refetchSession()]);
     } catch (error) {
       console.error('Failed to refetch files:', error);
     }
   }, [refetchFab, refetchDrafting, refetchSession]);
 
-  // Show upload section when timer is running, paused, OR when files have been uploaded
   const shouldShowUploadSection = (isDrafting || isPaused) || allFilesForDisplay.length > 0;
-
-  // Determine if submission is allowed
   const canOpenSubmit = isDrafting && allFilesForDisplay.length > 0;
 
-  // Handle revision submission
   const handleSubmitRevision = async (data: any) => {
-    console.log('=== handleSubmitRevision called ===', data);
-
     if (!fabId || !currentEmployeeId) {
-      console.log('Missing fabId or currentEmployeeId, returning early');
       toast.error("Missing required data");
       return;
     }
-
     if (isRevisionsLoading) {
       toast.error("Please wait, revisions data is still loading");
       return;
     }
-
     try {
       let revisionId;
-
-      // Check revisionsData structure
       const revisionsArray = Array.isArray(revisionsData) ? revisionsData : (revisionsData as any)?.data || [];
-      console.log('Fetched revisions:', revisionsArray);
-
-      // Get the earliest revision if any exist
       const existingRevisions = Array.isArray(revisionsArray) ? revisionsArray : [];
       const hasExistingRevisions = existingRevisions.length > 0;
 
       if (hasExistingRevisions) {
-        // Find the earliest revision (lowest ID)
         const earliestRevision = existingRevisions.reduce((earliest, current) =>
-          current.id < earliest.id ? current : earliest,
-          existingRevisions[0]
+          current.id < earliest.id ? current : earliest, existingRevisions[0]
         );
-
-        console.log('UPDATING EXISTING REVISION ID:', earliestRevision.id);
-
-        // Prepare update data - USE THE ACTUAL REVISION TYPE FROM SCT DATA
         const updateData: any = {
           revision_type: revisionInfo.salesCTData?.revision_type || revisionInfo.revisionType,
           revision_notes: data.notes || revisionInfo.revisionReason || '',
           is_completed: data.complete || false
         };
-
-        // Update the existing revision
-        await updateRevision({
-          revision_id: earliestRevision.id,
-          data: updateData
-        }).unwrap();
-
+        await updateRevision({ revision_id: earliestRevision.id, data: updateData }).unwrap();
         revisionId = earliestRevision.id;
-        console.log('Successfully updated revision');
-
       } else {
-        // Only create if truly no revisions exist
-        console.log('CREATING NEW REVISION - no existing revisions found');
-
-        // Prepare creation data - USE THE ACTUAL REVISION TYPE FROM SCT DATA
         const createData: any = {
           fab_id: fabId,
           revision_type: revisionInfo.salesCTData?.revision_type || revisionInfo.revisionType,
@@ -559,58 +453,103 @@ export function RevisionDetailsPage() {
           is_completed: data.complete || false,
           sales_ct_id: revisionInfo.salesCTId || null
         };
-
         const createResult = await createRevision(createData).unwrap();
         revisionId = createResult.id;
-        console.log('Created new revision with ID:', revisionId);
       }
-
-      // End the session when revision is marked complete
       if (data.complete) {
         await updateSession('end', new Date(), 'Revision completed and submitted');
       }
-
-      // Create FAB note for the revision
       if (data.notes) {
-        await createFabNote({
-          fab_id: fabId,
-          note: data.notes,
-          stage: 'revisions'
-        }).unwrap();
+        await createFabNote({ fab_id: fabId, note: data.notes, stage: 'revisions' }).unwrap();
       }
-
       toast.success("Revision submitted successfully");
       setShowSubmissionModal(false);
-
-      // Refresh data
       await refetchAllFiles();
-
-      // Navigate back to revisions list
       navigate('/job/revision');
-
     } catch (error: any) {
       console.error('Failed to submit revision:', error);
       toast.error(error?.data?.message || "Failed to submit revision. Please try again.");
     }
   };
 
+  // Prepare clickable links
+  const jobNameLink = fabData?.job_details?.id ? `/job/details/${fabData.job_details.id}` : '#';
+  const jobNumberLink = fabData?.job_details?.job_number
+    ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fabData.job_details.job_number}`
+    : '#';
+
+  // Loading state with skeletons
   if (isFabLoading || isDraftingLoading || isSctLoading || isRevisionsLoading) {
-    return <div>Loading...</div>;
+    return (
+      <Container className='lg:mx-0 max-w-full'>
+        <Toolbar className=''>
+          <div className="flex items-center justify-between w-full">
+            <div>
+              <ToolbarHeading
+                title={<Skeleton className="h-8 w-96" />}
+                description={<Skeleton className="h-4 w-80 mt-1" />}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-6 w-20 rounded-full" />
+            </div>
+          </div>
+        </Toolbar>
+        <div className="border-t grid grid-cols-1 lg:grid-cols-12 gap-3 items-start h-[calc(100vh-120px)] overflow-y-auto">
+          <div className="lg:col-span-3 w-full lg:w-[200px] 2xl:w-[286px] ultra:w-[500px] sticky top-0 self-start">
+            <Skeleton className="h-64 w-full" />
+          </div>
+          <div className="lg:col-span-9">
+            <Card className='my-4'>
+              <CardHeader><Skeleton className="h-6 w-48" /></CardHeader>
+              <CardContent><Skeleton className="h-96 w-full" /></CardContent>
+            </Card>
+          </div>
+        </div>
+      </Container>
+    );
   }
 
+  const statusInfo = getFabStatusInfo(fabData?.status_id);
+
+  // Sidebar sections – long format Job Details
   const sidebarSections = [
     {
       title: "Job Details",
       type: "details",
       items: [
-        { label: "Job Name", value: fabData?.job_details?.name || `Job ${fabData?.job_id}` },
-        { label: "Job Number", value: fabData?.job_details?.job_number || String(fabData?.job_id) },
-        { label: "Account Name", value: fabData?.account_name || "N/A" },
-        { label: "Area", value: fabData?.input_area || "Loading..." },
-        { label: "Material", value: `${fabData?.stone_type_name || ''} ${fabData?.stone_color_name || ''} - ${fabData?.stone_thickness_value || ''}` },
-        { label: "FAB Type", value: fabData?.fab_type || "Loading..." },
-        { label: "Sales Person", value: fabData?.sales_person_name || "N/A" },
+        { label: "Account Name", value: fabData?.account_name || '—' },
+        {
+          label: "Fab ID",
+          value: (
+            <Link to={`/sales/${fabData?.id}`} className="text-primary hover:underline">
+              FAB-{fabData?.id}
+            </Link>
+          ),
+        },
+        { label: "Area", value: fabData?.input_area || '—' },
+        {
+          label: "Material",
+          value: fabData?.stone_type_name
+            ? `${fabData.stone_type_name} - ${fabData.stone_color_name || ''} - ${fabData.stone_thickness_value || ''}`
+            : '—',
+        },
+        {
+          label: "Fab Type",
+          value: <span className="uppercase">{fabData?.fab_type || '—'}</span>,
+        },
+        { label: "Edge", value: fabData?.edge_name || '—' },
+        { label: "Total s.f.", value: fabData?.total_sqft?.toString() || '—' },
+        {
+          label: "Scheduled Date",
+          value: fabData?.templating_schedule_start_date
+            ? new Date(fabData.templating_schedule_start_date).toLocaleDateString()
+            : 'Not scheduled',
+        },
         { label: "Assigned to", value: fabData?.draft_data?.drafter_name || 'Unassigned' },
+        { label: "Sales Person", value: fabData?.sales_person_name || '—' },
+        { label: "SlabSmith Needed", value: fabData?.slab_smith_ag_needed ? 'Yes' : 'No' },
       ],
     },
     {
@@ -620,12 +559,13 @@ export function RevisionDetailsPage() {
         <div className="p-4 bg-yellow-50 border-l-4 border-yellow-500 mb-4">
           <h4 className="font-semibold text-yellow-800 mb-2">Revision Details</h4>
           <div className="flex items-center gap-2 mb-3">
-            <span className={`px-2 py-1 rounded text-xs font-medium ${revisionInfo.revisionType === 'cad' ? 'bg-blue-100 text-blue-800' :
+            <span className={`px-2 py-1 rounded text-xs font-medium ${
+              revisionInfo.revisionType === 'cad' ? 'bg-blue-100 text-blue-800' :
               revisionInfo.revisionType === 'client' ? 'bg-green-100 text-green-800' :
-                revisionInfo.revisionType === 'sales' ? 'bg-yellow-100 text-yellow-800' :
-                  revisionInfo.revisionType === 'template' ? 'bg-orange-100 text-orange-800' :
-                    'bg-gray-100 text-gray-800'
-              }`}>
+              revisionInfo.revisionType === 'sales' ? 'bg-yellow-100 text-yellow-800' :
+              revisionInfo.revisionType === 'template' ? 'bg-orange-100 text-orange-800' :
+              'bg-gray-100 text-gray-800'
+            }`}>
               {revisionInfo.revisionType.toUpperCase()}
             </span>
             <span className="px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800">
@@ -652,10 +592,8 @@ export function RevisionDetailsPage() {
           draft: { label: 'Draft', color: 'text-green-700' },
           general: { label: 'General', color: 'text-gray-700' }
         };
-
         const stage = note.stage || 'general';
         const config = stageConfig[stage] || stageConfig.general;
-
         return {
           id: note.id,
           avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
@@ -669,28 +607,39 @@ export function RevisionDetailsPage() {
 
   return (
     <>
-      <Container className='lg:mx-0'>
-        <div className='py-4'>
-          <div className='flex items-center gap-3'>
-            <h2 className='text-lg font-semibold'>FAB ID: {fabData?.id || 'Loading...'}</h2>
-            {(() => {
-              const statusInfo = getFabStatusInfo(fabData?.status_id);
-              return (
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
-                  {statusInfo.text}
-                </span>
-              );
-            })()}
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-              REVISION #{revisionInfo.revisionCount}
-            </span>
+      {/* Top toolbar with clickable job name/number and description + status badges */}
+      <Container className='lg:mx-0 max-w-full'>
+        <Toolbar className=''>
+          <div className="flex items-center justify-between w-full">
+            <ToolbarHeading
+              title={
+                <div className="text-2xl font-bold">
+                  <a href={jobNameLink} className="hover:underline">
+                    {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
+                  </a>
+                  {' - '}
+                  <a href={jobNumberLink} className="hover:underline">
+                    {fabData?.job_details?.job_number || fabData?.job_id}
+                  </a>
+                </div>
+              }
+              description="Revision Details"
+              />
+            <div className="flex items-center gap-2">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
+                {statusInfo.text}
+              </span>
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                REVISION #{revisionInfo.revisionCount}
+              </span>
+            </div>
           </div>
-          <p className='text-sm text-muted-foreground'>Update revision activity</p>
-        </div>
+        </Toolbar>
       </Container>
 
-      <div className=" border-t grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
-        <div className="lg:col-span-3 w-full lg:w-[200px]  2xl:w-[286px]  ultra:w-[500px]" >
+      {/* Scrollable area with sticky sidebar */}
+      <div className="border-t grid grid-cols-1 lg:grid-cols-12 gap-3 items-start h-[calc(100vh-120px)] overflow-y-auto">
+        <div className="lg:col-span-3 w-full lg:w-[200px] 2xl:w-[286px] ultra:w-[500px] sticky top-0 self-start">
           <GraySidebar
             sections={sidebarSections as any}
             jobId={fabData?.job_id}
@@ -722,18 +671,19 @@ export function RevisionDetailsPage() {
                       <p className="text-sm text-[#4B5563]">Update your revision activity here</p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${sessionStatus === 'idle' ? 'bg-gray-100 text-gray-800' :
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        sessionStatus === 'idle' ? 'bg-gray-100 text-gray-800' :
                         sessionStatus === 'drafting' ? 'bg-green-100 text-green-800' :
-                          sessionStatus === 'paused' ? 'bg-yellow-100 text-yellow-800' :
-                            sessionStatus === 'on_hold' ? 'bg-orange-100 text-orange-800' :
-                              sessionStatus === 'ended' ? 'bg-blue-100 text-blue-800' :
-                                'bg-gray-100 text-gray-800'
-                        }`}>
+                        sessionStatus === 'paused' ? 'bg-yellow-100 text-yellow-800' :
+                        sessionStatus === 'on_hold' ? 'bg-orange-100 text-orange-800' :
+                        sessionStatus === 'ended' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
                         {sessionStatus === 'idle' ? 'Ready to Start' :
-                          sessionStatus === 'drafting' ? 'Revision Active' :
-                            sessionStatus === 'paused' ? 'Paused' :
-                              sessionStatus === 'on_hold' ? 'On Hold' :
-                                sessionStatus === 'ended' ? 'Completed' : 'Unknown'}
+                         sessionStatus === 'drafting' ? 'Revision Active' :
+                         sessionStatus === 'paused' ? 'Paused' :
+                         sessionStatus === 'on_hold' ? 'On Hold' :
+                         sessionStatus === 'ended' ? 'Completed' : 'Unknown'}
                       </span>
                       {fabData?.status_id === 0 && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
@@ -770,8 +720,6 @@ export function RevisionDetailsPage() {
                   {/* File Upload Section */}
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold mb-4">Revision Files</h3>
-
-                    {/* File Design Input */}
                     {shouldShowUploadSection && (
                       <div className="mb-4">
                         <label className="text-sm font-medium text-gray-700 block mb-2">
@@ -833,7 +781,6 @@ export function RevisionDetailsPage() {
                       </Button>
                     </div>
                   )}
-
                 </CardContent>
               </Card>
 
@@ -861,7 +808,6 @@ export function RevisionDetailsPage() {
               </DialogTitle>
             </div>
           </DialogHeader>
-
           <RevisionForm
             onSubmit={handleSubmitRevision}
             onClose={() => setShowSubmissionModal(false)}

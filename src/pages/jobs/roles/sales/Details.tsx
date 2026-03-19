@@ -6,10 +6,23 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useGetFabByIdQuery } from '@/store/api/job';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, ArrowLeft, Pencil } from 'lucide-react';
+import { AlertCircle, Pencil } from 'lucide-react';
 import { FileGallery, type FileSource, type UnifiedFile } from '@/pages/jobs/components/FileGallery';
 import { FileViewer } from '../drafters/components';
 import { BackButton } from '@/components/common/BackButton';
+import GraySidebar from '@/pages/jobs/components/job-details.tsx/GraySidebar';
+import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+
+// Helper function to get FAB status display
+const getFabStatusInfo = (statusId: number | undefined) => {
+  if (statusId === 0) {
+    return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
+  } else if (statusId === 1) {
+    return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
+  } else {
+    return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
+  }
+};
 
 export function SalesDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -20,46 +33,51 @@ export function SalesDetailsPage() {
   const { data: response, isLoading, isError, error } = useGetFabByIdQuery(Number(id));
   const fab = (response as any)?.data ?? response;
 
-  // ── Job info rows ──────────────────────────────────────────────────────
-  const jobInfo = fab
+  // Prepare clickable links
+  const jobNameLink = fab?.job_details?.id ? `/job/details/${fab.job_details.id}` : '#';
+  const jobNumberLink = fab?.job_details?.job_number
+    ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fab.job_details.job_number}`
+    : '#';
+
+  // Build the fields for the Job Details card (exactly as required)
+  const jobDetailsFields = fab
     ? [
-      { label: 'FAB ID', value: String(fab.id) },
-      { label: 'FAB Type', value: fab.fab_type },
-      { label: 'Account', value: fab.account_name },
-      { label: 'Job name', value: fab.job_details?.name },
-      {
-        label: 'Job #',
-        value: (
-          <Link
-            to={`/job/details/${fab.job_details?.id}`}
-            className="text-primary hover:underline"
-          >
-            {fab.job_details?.job_number}
-          </Link>
-        ),
-      },
-      { label: 'Area (s)', value: fab.input_area },
-      { label: 'Stone type', value: fab.stone_type_name || 'N/A' },
-      { label: 'Stone color', value: fab.stone_color_name || 'N/A' },
-      { label: 'Stone thickness', value: fab.stone_thickness_value || 'N/A' },
-      { label: 'Edge', value: fab.edge_name || 'N/A' },
-      { label: 'Total square ft', value: String(fab.total_sqft) },
-      { label: 'Notes', value: fab.templating_notes?.join(', ') || 'N/A' },
-    ]
+        { label: 'Account', value: fab.account_name || '—' },
+        {
+          label: 'Fab ID',
+          value: (
+            <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">
+              FAB-{fab.id}
+            </Link>
+          ),
+        },
+        { label: 'Area', value: fab.input_area || '—' },
+        {
+          label: 'Material',
+          value: fab.stone_type_name
+            ? `${fab.stone_type_name} - ${fab.stone_color_name || ''} - ${fab.stone_thickness_value || ''}`
+            : '—',
+        },
+        {
+          label: 'Fab Type',
+          value: <span className="uppercase">{fab.fab_type || '—'}</span>,
+        },
+        { label: 'Edge', value: fab.edge_name || '—' },
+        { label: 'Total S.F', value: fab.total_sqft?.toString() || '—' },
+        { label: 'Sales Person', value: fab.sales_person_name || '—' },
+        {
+          label: 'Job Notes',
+          value: fab.job_details?.description || 'None',
+          fullWidth: true,
+        },
+      ]
     : [];
 
-  // ── Build file sources from actual API shape ───────────────────────────
-  //
-  // Confirmed from API response:
-  //   fab.draft_data.files       → drafting files
-  //   fab.slabsmith_data.files   → slabsmith files
-  //   fab.sales_ct_data.files    → sales CT files
-  //
+  // Build file sources from actual API shape
   const fileSources: FileSource[] = (() => {
     if (!fab) return [];
     const sources: FileSource[] = [];
 
-    // Helper to map a raw file array to UnifiedFile[]
     const mapFiles = (files: any[], stage: string, uploadedBy?: string): UnifiedFile[] =>
       (files ?? []).map((f): UnifiedFile => ({
         id: String(f.id),
@@ -73,71 +91,107 @@ export function SalesDetailsPage() {
         _raw: f,
       }));
 
-    // 1. Drafting files  →  fab.draft_data.files
-    const draftFiles = mapFiles(
-      fab.draft_data?.files ?? [],
-      'Drafting',
-      fab.draft_data?.drafter_name ?? undefined,
-    );
+    const draftFiles = mapFiles(fab.draft_data?.files ?? [], 'Drafting', fab.draft_data?.drafter_name);
     if (draftFiles.length > 0) sources.push({ kind: 'raw', data: draftFiles });
 
-    // 2. SlabSmith files  →  fab.slabsmith_data.files
-    const slabFiles = mapFiles(
-      fab.slabsmith_data?.files ?? [],
-      'SlabSmith',
-    );
+    const slabFiles = mapFiles(fab.slabsmith_data?.files ?? [], 'SlabSmith');
     if (slabFiles.length > 0) sources.push({ kind: 'raw', data: slabFiles });
 
-    // 3. Sales CT files  →  fab.sales_ct_data.files
-    const salesCtFiles = mapFiles(
-      fab.sales_ct_data?.files ?? [],
-      'Sales CT',
-    );
+    const salesCtFiles = mapFiles(fab.sales_ct_data?.files ?? [], 'Sales CT');
     if (salesCtFiles.length > 0) sources.push({ kind: 'raw', data: salesCtFiles });
 
-    // 4. Top-level files array (future-proofing)
     const topFiles = mapFiles(fab.files ?? [], 'General');
     if (topFiles.length > 0) sources.push({ kind: 'raw', data: topFiles });
 
     return sources;
   })();
 
-  const totalFileCount = fileSources.reduce(
-    (sum, s) => sum + (s.kind === 'raw' ? s.data.length : 0),
-    0,
-  );
+  const totalFileCount = fileSources.reduce((sum, s) => sum + (s.kind === 'raw' ? s.data.length : 0), 0);
 
-  // ── Handlers ───────────────────────────────────────────────────────────
+  // Prepare sidebar sections for FAB Notes
+  const sidebarSections = fab
+    ? [
+        {
+          title: 'FAB Notes',
+          type: 'notes',
+          notes: (fab.fab_notes || []).map((note: any) => {
+            const stageConfig: Record<string, { label: string; color: string }> = {
+              templating: { label: 'Templating', color: 'text-blue-700' },
+              pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
+              drafting: { label: 'Drafting', color: 'text-green-700' },
+              sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
+              slab_smith_request: { label: 'Slab Smith Request', color: 'text-red-700' },
+              cut_list: { label: 'Final Programming', color: 'text-purple-700' },
+              cutting: { label: 'Cutting', color: 'text-orange-700' },
+              revisions: { label: 'Revisions', color: 'text-purple-700' },
+              draft: { label: 'Draft', color: 'text-green-700' },
+              general: { label: 'General', color: 'text-gray-700' },
+            };
+            const stage = note.stage || 'general';
+            const config = stageConfig[stage] || stageConfig.general;
+            return {
+              id: note.id,
+              avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+              content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${note.note}`,
+              author: note.created_by_name || 'Unknown',
+              timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
+            };
+          }),
+        },
+      ]
+    : [];
+
   const handleFileClick = (file: UnifiedFile) => setActiveFile(file);
 
-  // ── Loading ────────────────────────────────────────────────────────────
+  // Loading state
   if (isLoading) {
     return (
       <Container className="border-t">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <Skeleton className="h-8 w-64" />
-            <Skeleton className="h-4 w-80 mt-2" />
+        <Toolbar>
+          <div className="flex items-center justify-between w-full">
+            <div>
+              <ToolbarHeading
+                title={<Skeleton className="h-8 w-96" />}
+                description={<Skeleton className="h-4 w-80 mt-1" />}
+              />
+            </div>
+            <Skeleton className="h-6 w-20 rounded-full" />
           </div>
-          <Skeleton className="h-10 w-24" />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          <Card className="lg:col-span-2 mt-6 pt-6">
-            <CardHeader><Skeleton className="h-6 w-48" /></CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 space-y-10">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i}>
-                    <Skeleton className="h-4 w-24 mb-1" />
-                    <Skeleton className="h-5 w-32" />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+        </Toolbar>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6">
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-40" />
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {[...Array(8)].map((_, i) => (
+                    <div key={i}>
+                      <Skeleton className="h-4 w-24 mb-1" />
+                      <Skeleton className="h-5 w-32" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="mt-6">
+              <CardHeader>
+                <Skeleton className="h-6 w-40" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-32 w-full" />
+              </CardContent>
+            </Card>
+            <div className="mt-4">
+              <Skeleton className="h-64 w-full" />
+            </div>
+          </div>
+
           <div className="border-l">
             <Card className="border-none py-6">
-              <CardHeader className="border-b pb-4 flex-col items-start">
+              <CardHeader className="border-b pb-4">
                 <Skeleton className="h-6 w-40" />
                 <Skeleton className="h-4 w-64 mt-2" />
               </CardHeader>
@@ -154,27 +208,25 @@ export function SalesDetailsPage() {
     );
   }
 
-  // ── Error ──────────────────────────────────────────────────────────────
+  // Error state
   if (isError) {
     return (
       <Container className="border-t">
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-semibold">FAB ID: Error</h1>
-        </div>
-        <Alert variant="destructive">
+        <Toolbar>
+          <ToolbarHeading title="Error loading FAB" description="Could not load sales details" />
+        </Toolbar>
+        <Alert variant="destructive" className="mt-6">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
-            {error
-              ? `Failed to load FAB data: ${JSON.stringify(error)}`
-              : 'Failed to load FAB data'}
+            {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : 'Failed to load FAB data'}
           </AlertDescription>
         </Alert>
       </Container>
     );
   }
 
-  // ── Full-screen file viewer ────────────────────────────────────────────
+  // Full-screen file viewer
   if (activeFile) {
     return (
       <div className="fixed inset-0 z-50 bg-white overflow-auto">
@@ -183,38 +235,51 @@ export function SalesDetailsPage() {
     );
   }
 
-  // ── Main render ────────────────────────────────────────────────────────
+  const statusInfo = getFabStatusInfo(fab?.status_id);
+
+  // Main render
   return (
     <Container className="border-t">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-semibold">FAB ID: {fab?.id}</h1>
-          <p className="text-sm text-muted-foreground">Review fabrication details</p>
+      {/* 🔹 TOP TOOLBAR with clickable job name/number + description + status badge */}
+      <Toolbar>
+        <div className="flex items-center justify-between w-full">
+          <ToolbarHeading
+            title={
+              <div className="text-2xl font-bold">
+                <a href={jobNameLink} className="hover:underline">
+                  {fab?.job_details?.name || `Job ${fab?.job_id}`}
+                </a>
+                {' - '}
+                <a href={jobNumberLink} className="hover:underline">
+                  {fab?.job_details?.job_number || fab?.job_id}
+                </a>
+              </div>
+            }
+            description="Fab Details Page"
+          />
+          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
+            {statusInfo.text}
+          </span>
         </div>
+      </Toolbar>
 
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-
-        {/* ── LEFT COLUMN ───────────────────────────────────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6">
+        {/* ── LEFT COLUMN (span 2) ───────────────────────────────────── */}
         <div className="lg:col-span-2 space-y-6">
-
-          {/* Job Information */}
-          <Card className="mt-6 pt-6">
+          {/* 🔹 JOB DETAILS CARD */}
+          <Card>
             <CardHeader>
-              <CardTitle className="text-[#111827] leading-[32px] text-2xl font-bold">
-                Job Information
-              </CardTitle>
+              <CardTitle className="text-[#111827] text-2xl font-bold">Job Details</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 space-y-10">
-                {jobInfo.map((item, index) => (
-                  <div key={index}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 text-sm">
+                {jobDetailsFields.map((field, index) => (
+                  <div key={index} className={field.fullWidth ? 'col-span-full' : ''}>
                     <p className="text-sm text-text-foreground font-normal uppercase tracking-wide">
-                      {item.label}
+                      {field.label}
                     </p>
-                    <p className="font-semibold text-text text-base leading-[28px]">
-                      {item.value}
+                    <p className="font-semibold text-text text-base leading-[24px] whitespace-pre-wrap">
+                      {field.value}
                     </p>
                   </div>
                 ))}
@@ -248,9 +313,12 @@ export function SalesDetailsPage() {
               />
             </CardContent>
           </Card>
+
+          {/* 🔹 GRAYSIDEBAR (FAB Notes) */}
+          <GraySidebar sections={sidebarSections as any} className="bg-transparent border-none pl-0" />
         </div>
 
-        {/* ── RIGHT COLUMN ──────────────────────────────────────────────── */}
+        {/* ── RIGHT COLUMN (span 1) ──────────────────────────────────── */}
         <div className="border-l">
           <Card className="border-none py-6">
             <CardHeader className="border-b pb-4 flex-col items-start">
@@ -266,14 +334,7 @@ export function SalesDetailsPage() {
                   <Pencil className="h-4 w-4" />
                   Edit FAB Details
                 </Button>
-                <BackButton label='back' className='w-full' />
-
-                {/* <Link to="/sales">
-                  <Button variant="outline" className="w-full flex items-center gap-2">
-                    <ArrowLeft className="h-4 w-4" />
-                    Back to All Fabs
-                  </Button>
-                </Link> */}
+                <BackButton label="Back" className="w-full" />
               </div>
             </CardContent>
           </Card>
