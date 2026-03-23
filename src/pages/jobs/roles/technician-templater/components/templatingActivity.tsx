@@ -19,7 +19,7 @@ import { Can } from '@/components/permission';
 
 const formSchema = z.object({
   is_completed: z.boolean().nullable(),
-  start_date: z.string().min(1, "Start date is required"),
+  start_date: z.string(),
   schedule_start_date: z.string(), // Added schedule_start_date
   duration: z.string().optional().refine(
     (val) => !val || /^\d+$/.test(val),
