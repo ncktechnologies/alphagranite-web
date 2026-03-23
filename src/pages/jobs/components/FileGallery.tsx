@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { formatBytes } from '@/hooks/use-file-upload';
-import { getFileStage, getStageBadge } from '@/utils/file-labeling';
+import { WORKFLOW_STAGES, getFileStage, getStageBadge } from '@/utils/file-labeling';
 import { Can } from '@/components/permission';
 import {
   FileTextIcon,
@@ -39,7 +39,13 @@ export interface UnifiedFile {
   size?: number;
   type?: string;           // MIME type or generic ('photo','video','document')
   url: string;
-  stage?: string;          // workflow stage label
+  // workflow stage label (human-friendly). Prefer `stage_name` when available.
+  stage?: string;
+  // workflow stage key (e.g. "final_programming")
+  stage_name?: string;
+  file_design?: string;
+  uploaded_by_name?: string;
+  // Legacy display field
   uploadedBy?: string;
   uploadedAt?: Date | string;
   // raw source data (preserved for callers)
@@ -117,8 +123,11 @@ const normaliseSource = (source: FileSource): UnifiedFile[] => {
         size: parseInt(f.file_size) || f.size || 0,
         type: getMimeType(f.name || f.file_name || '', f.file_type || f.type),
         url: f.file_url || f.url || '',
-        stage: f.stage,
-        uploadedBy: f.uploader_name || f.uploaded_by,
+        stage_name: f.stage_name ?? f.stage,
+        stage: f.stage_name ?? f.stage,
+        file_design: f.file_design,
+        uploaded_by_name: f.uploaded_by_name ?? f.uploader_name ?? f.uploaded_by,
+        uploadedBy: f.uploaded_by_name ?? f.uploader_name ?? f.uploaded_by,
         uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
         _raw: f,
       }));
@@ -133,34 +142,49 @@ const normaliseSource = (source: FileSource): UnifiedFile[] => {
               id: id.trim(), name: `${i + 1}.pdf`, file_type: 'application/pdf',
             }))
           : [];
-      return files.map((f: any): UnifiedFile => ({
+      return files.map((f: any): UnifiedFile => {
+        const stageLabel = getFileStage(f.filename || f.name, {
+          isDrafting: true,
+        });
+        return ({
         id: String(f.id),
         name: f.filename || f.name || `File_${f.id}`,
         size: parseInt(f.file_size) || parseInt(f.size) || 0,
         type: getMimeType(f.filename || f.name || '', f.file_type || f.mime_type),
         url: f.file_url || f.url || '',
-        stage: getFileStage(f.filename || f.name, { isDrafting: true })?.label,
-        uploadedBy: f.uploaded_by || f.uploader_name,
+        stage_name: f.stage_name ?? f.stage ?? stageLabel.stage,
+        stage: f.stage_name ?? f.stage ?? stageLabel.stage,
+        file_design: f.file_design,
+        uploaded_by_name: f.uploaded_by_name ?? f.uploader_name ?? f.uploaded_by,
+        uploadedBy: f.uploaded_by_name ?? f.uploader_name ?? f.uploaded_by,
         uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
         _raw: f,
-      }));
+        });
+      });
     }
 
     case 'slabsmith': {
       const s = source.data;
       if (!s) return [];
       const files: any[] = Array.isArray(s.files) ? s.files : [];
-      return files.map((f: any): UnifiedFile => ({
+      return files.map((f: any): UnifiedFile => {
+        const stage_name = f.stage_name ?? 'slab_smith';
+        const stageLabel = WORKFLOW_STAGES[stage_name];
+        return ({
         id: String(f.id),
         name: f.name || f.filename || `SlabSmith_${f.id}`,
         size: parseInt(f.file_size) || 0,
         type: getMimeType(f.name || '', f.file_type),
         url: f.file_url || f.url || '',
-        stage: 'SlabSmith',
-        uploadedBy: f.uploaded_by,
+        stage_name,
+        stage: stageLabel?.label ?? stage_name,
+        file_design: f.file_design,
+        uploaded_by_name: f.uploaded_by_name ?? f.uploader_name ?? f.uploaded_by,
+        uploadedBy: f.uploaded_by_name ?? f.uploader_name ?? f.uploaded_by,
         uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
         _raw: f,
-      }));
+        });
+      });
     }
 
     default:
@@ -217,7 +241,10 @@ function FileCard({
   onDelete?: (f: UnifiedFile) => void;
   deletePermissionSubject?: string;
 }) {
-  const stageObj = file.stage ? { label: file.stage } : getFileStage(file.name, { isDrafting: false });
+  const stageKey = file.stage_name;
+  const stageObj = stageKey && WORKFLOW_STAGES[stageKey]
+    ? WORKFLOW_STAGES[stageKey]
+    : getFileStage(file.name, { currentStage: stageKey, isDrafting: false });
   const badge = getStageBadge(stageObj);
 
   return (
@@ -249,7 +276,9 @@ function FileCard({
 
         <div className="flex items-center gap-2 text-xs text-gray-400">
           {file.size ? <span>{formatBytes(file.size)}</span> : null}
-          {file.uploadedBy && <span>· {file.uploadedBy}</span>}
+          {file.stage_name && <span>· {file.stage_name}</span>}
+          {file.file_design && <span>· {file.file_design}</span>}
+          {(file.uploaded_by_name ?? file.uploadedBy) && <span>· {file.uploaded_by_name ?? file.uploadedBy}</span>}
         </div>
 
         {file.uploadedAt && (
@@ -312,7 +341,10 @@ function FileRow({
   onDelete?: (f: UnifiedFile) => void;
   deletePermissionSubject?: string;
 }) {
-  const stageObj = file.stage ? { label: file.stage } : getFileStage(file.name, { isDrafting: false });
+  const stageKey = file.stage_name;
+  const stageObj = stageKey && WORKFLOW_STAGES[stageKey]
+    ? WORKFLOW_STAGES[stageKey]
+    : getFileStage(file.name, { currentStage: stageKey, isDrafting: false });
   const badge = getStageBadge(stageObj);
 
   return (
@@ -334,10 +366,20 @@ function FileRow({
 
       {/* Stage */}
       <td className="py-3 px-4">
-        {badge.label && (
+        {/* {badge.label && (
           <span className={cn('text-[10px] px-1.5 py-0.5 rounded font-medium', badge.className)}>
             {badge.label}
           </span>
+        )} */}
+        {file.stage_name && (
+          <div className="text-[10px] text-gray-400 mt-1">
+            {file.stage_name}
+          </div>
+        )}
+        {file.file_design && (
+          <div className="text-[10px] text-gray-400 mt-1">
+            Type: {file.file_design}
+          </div>
         )}
       </td>
 
@@ -348,7 +390,7 @@ function FileRow({
 
       {/* Uploaded by */}
       <td className="py-3 px-4 text-xs text-gray-500">
-        {file.uploadedBy ?? '—'}
+        {file.uploaded_by_name ?? file.uploadedBy ?? '—'}
       </td>
 
       {/* Date */}

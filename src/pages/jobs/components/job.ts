@@ -169,6 +169,9 @@ export interface UploadedFile {
   type: string;
   url?: string;
   stage?: any; // FileLabel from file-labeling utils
+  stage_name?: string;
+  file_design?: string;
+  uploaded_by_name?: string;
   uploadedAt?: Date;
   uploadedBy?: string;
 }
@@ -180,6 +183,9 @@ export interface FileViewerProps {
   onClose?: () => void;
   file: UploadedFile & {
     stage?: any; // FileLabel from file-labeling utils
+    stage_name?: string;
+    file_design?: string;
+    uploaded_by_name?: string;
     uploadedAt?: Date;
     uploadedBy?: string;
   };

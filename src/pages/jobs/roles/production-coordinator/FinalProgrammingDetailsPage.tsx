@@ -127,13 +127,16 @@ export function FinalProgrammingDetailsPage() {
     type: file.file_type || file.type || '',
     url: file.file_url || file.url,
     file_url: file.file_url || file.url,
+    stage_name: file.stage_name ?? file.stage,
     stage: getFileStage(file.name || file.file_name, {
       currentStage: 'final_programming',
       isDrafting: false,
     }),
     formattedSize: formatBytes(parseInt(file.file_size) || file.size || 0),
     uploadedAt: file.created_at ? new Date(file.created_at) : new Date(),
-    uploadedBy: file.uploaded_by || currentUser?.name || 'Unknown',
+    file_design: file.file_design,
+    uploaded_by_name: file.uploaded_by_name ?? file.uploader_name ?? file.uploaded_by ?? currentUser?.name ?? 'Unknown',
+    uploadedBy: file.uploaded_by_name ?? file.uploader_name ?? file.uploaded_by ?? currentUser?.name ?? 'Unknown',
   });
 
   // File click handler – used by UploadDocuments AND Documents
@@ -310,12 +313,15 @@ export function FinalProgrammingDetailsPage() {
   const shouldShowUploadSection = (isDrafting && !isPaused);
 
   // Determine if submission is allowed – session must be ended (not active/paused) and files must exist
-  const finalProgrammingFiles = fabData?.draft_data?.files?.filter((file: any) =>
-    file.stage === 'final_programming' ||
-    file.stage === 'cut_list' ||
-    (file.stage && file.stage.toLowerCase().includes('final_programming')) ||
-    (file.stage && file.stage.toLowerCase().includes('cut_list'))
-  ) || [];
+  const finalProgrammingFiles = fabData?.draft_data?.files?.filter((file: any) => {
+    const stageKey = file.stage_name ?? file.stage;
+    return (
+      stageKey === 'final_programming' ||
+      stageKey === 'cut_list' ||
+      (stageKey && stageKey.toLowerCase().includes('final_programming')) ||
+      (stageKey && stageKey.toLowerCase().includes('cut_list'))
+    );
+  }) || [];
 
   const hasFinalProgrammingFiles = finalProgrammingFiles.length > 0;
   const canOpenSubmit = hasFinalProgrammingFiles && !isPaused && isDrafting;
@@ -456,7 +462,7 @@ export function FinalProgrammingDetailsPage() {
                   </a>
                 </div>
               }
-              description={fabData?.job_details?.description || 'No description available'}
+              description={(fabData?.job_details as any)?.description || 'No description available'}
             />
             <div className="flex items-center gap-2">
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
@@ -607,12 +613,15 @@ export function FinalProgrammingDetailsPage() {
                       <Documents
                         draftingData={{
                           ...fabData.draft_data,
-                          files: fabData.draft_data.files.filter((file: any) =>
-                            file.stage === 'final_programming' ||
-                            file.stage === 'cut_list' ||
-                            (file.stage && file.stage.toLowerCase().includes('final_programming')) ||
-                            (file.stage && file.stage.toLowerCase().includes('cut_list'))
-                          ),
+                          files: fabData.draft_data.files.filter((file: any) => {
+                            const stageKey = file.stage_name ?? file.stage;
+                            return (
+                              stageKey === 'final_programming' ||
+                              stageKey === 'cut_list' ||
+                              (stageKey && stageKey.toLowerCase().includes('final_programming')) ||
+                              (stageKey && stageKey.toLowerCase().includes('cut_list'))
+                            );
+                          }),
                           file_ids: ""
                         }}
                         onFileClick={handleFileClick}

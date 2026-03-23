@@ -187,7 +187,9 @@ export function UploadDocuments({
       // Upload file
       const response = await addFilesToDrafting({
         drafting_id: draftingId,
+        // Drafting endpoint expects both `stage` and `stage_name`
         stage: stage,
+        stage_name: stage,
         file_design: fileDesign,
         files: [fileItem.file as File],
       }).unwrap();

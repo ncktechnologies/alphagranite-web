@@ -129,7 +129,7 @@ export function UploadDocuments({
       const response = await addFilesToSlabSmith({
         slabsmith_id: slabSmithId,
         files: [fileItem.file as File],
-        stage: stage,
+        stage_name: stage,
         file_design: fileDesign,
       }).unwrap();
       

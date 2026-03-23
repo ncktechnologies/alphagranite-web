@@ -24,6 +24,8 @@ interface UploadedFile {
   name: string;
   url?: string;
   file?: File; // Add the actual File object
+  stage_name?: string;
+  file_design?: string;
 }
 
 interface SubmissionModalProps {
@@ -120,12 +122,15 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
 
       if (filesToUpload.length > 0) {
         const fileObjects = filesToUpload.map(f => f.file as File);
+        const fileDesignToUpload = filesToUpload[0]?.file_design;
 
         try {
           console.log('Uploading files:', fileObjects);
           const response = await addFilesToSlabSmith({
             slabsmith_id: currentSlabSmithId,
-            files: fileObjects
+            files: fileObjects,
+            stage_name: 'slab_smith',
+            file_design: fileDesignToUpload,
           }).unwrap();
           console.log('File upload response:', response);
 

@@ -106,9 +106,12 @@ export function FinalProgrammingDetailsPage() {
       currentStage: 'final_programming',
       isDrafting: true,
     }),
+    stage_name: file.stage_name ?? file.stage,
     formattedSize: formatBytes(parseInt(file.file_size) || file.size || 0),
     uploadedAt: file.created_at ? new Date(file.created_at) : new Date(),
-    uploadedBy: file.uploaded_by || currentUser?.name || 'Unknown',
+    file_design: file.file_design,
+    uploaded_by_name: file.uploaded_by_name ?? file.uploader_name ?? file.uploaded_by ?? currentUser?.name ?? 'Unknown',
+    uploadedBy: file.uploaded_by_name ?? file.uploader_name ?? file.uploaded_by ?? currentUser?.name ?? 'Unknown',
   });
 
   // File click handler – used by UploadDocuments AND Documents
@@ -444,12 +447,15 @@ export function FinalProgrammingDetailsPage() {
                     <Documents
                       draftingData={{
                         ...fabData.draft_data,
-                        files: fabData.draft_data.files.filter((file: any) =>
-                          file.stage === 'final_programming' ||
-                          file.stage === 'cut_list' ||
-                          (file.stage && file.stage.toLowerCase().includes('final_programming')) ||
-                          (file.stage && file.stage.toLowerCase().includes('cut_list'))
-                        ),
+                        files: fabData.draft_data.files.filter((file: any) => {
+                          const stageKey = file.stage_name ?? file.stage;
+                          return (
+                            stageKey === 'final_programming' ||
+                            stageKey === 'cut_list' ||
+                            (stageKey && stageKey.toLowerCase().includes('final_programming')) ||
+                            (stageKey && stageKey.toLowerCase().includes('cut_list'))
+                          );
+                        }),
                       file_ids:""
 
                       }}

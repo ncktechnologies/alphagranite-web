@@ -157,6 +157,13 @@ export function FileViewer({ file, onClose }: FileViewerProps) {
               </div>
             </Card>
             <p className="text-sm text-center mt-2 font-medium text-text-foreground">{file.name}</p>
+            {(file.stage_name || file.file_design || file.uploaded_by_name) && (
+              <div className="text-xs text-gray-500 text-center mt-1 space-x-3">
+                {file.stage_name && <span>Stage: {file.stage_name}</span>}
+                {file.file_design && <span>Design: {file.file_design}</span>}
+                {file.uploaded_by_name && <span>By: {file.uploaded_by_name}</span>}
+              </div>
+            )}
 
             {/* Bottom Controls */}
             <div className="mt-4">

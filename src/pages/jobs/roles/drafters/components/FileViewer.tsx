@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { X, Download, ZoomIn, ZoomOut } from 'lucide-react';
 import { FileViewerProps } from '@/pages/jobs/components/job';
-import { getFileStage, getStageBadge } from '@/utils/file-labeling';
+import { WORKFLOW_STAGES, getFileStage, getStageBadge } from '@/utils/file-labeling';
 
 export const FileViewer = ({
   inline = false,
@@ -52,7 +52,10 @@ export const FileViewer = ({
   // Log for debugging
   console.log('[v0] FileViewer received:', { name: file.name, type: file.type, url: file.url, isPdf });
 
-  const stage = file.stage || getFileStage(file.name, { isDrafting: true });
+  const stageKey = file.stage_name ?? file.stage;
+  const stage = stageKey && WORKFLOW_STAGES[stageKey]
+    ? WORKFLOW_STAGES[stageKey]
+    : getFileStage(file.name, { currentStage: stageKey, isDrafting: true });
   const badge = getStageBadge(stage);
 
   return (
@@ -65,6 +68,13 @@ export const FileViewer = ({
             <span className={badge.className}>{badge.label}</span>
             <span className="text-sm text-gray-500">{formatFileSize(file.size)}</span>
           </div>
+          {(file.stage_name || file.file_design || file.uploaded_by_name) && (
+            <div className="mt-2 text-xs text-gray-500 space-x-2">
+              {file.stage_name && <span>Stage: {file.stage_name}</span>}
+              {file.file_design && <span>Design: {file.file_design}</span>}
+              {file.uploaded_by_name && <span>By: {file.uploaded_by_name}</span>}
+            </div>
+          )}
         </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="h-5 w-5" />

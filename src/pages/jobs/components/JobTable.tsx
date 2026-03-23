@@ -345,7 +345,7 @@ export const JobTable = ({
             accessorKey: "job_no",
             header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
             cell: ({ row }) => row.original.job_id ? (
-                <Link to={`/job/details/${row.original.job_id}`} target="_blank" className="text-xs text-blue-600 hover:underline">
+                <Link to={`https://alphagraniteaustin.moraware.net/sys/search?search=${row.original.job_id}`} target="_blank" className="text-xs text-blue-600 hover:underline">
                     {row.original.job_no}
                 </Link>
             ) : <span className="text-xs">{row.original.job_no}</span>,

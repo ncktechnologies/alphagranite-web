@@ -140,9 +140,12 @@ export function SlabSmithDetailsPage() {
       currentStage: 'slab_smith',
       isDrafting: true,
     }),
+    stage_name: file.stage_name ?? file.stage ?? 'slab_smith',
     formattedSize: formatBytes(parseInt(file.file_size) || file.size || 0),
     uploadedAt: file.created_at ? new Date(file.created_at) : new Date(),
-    uploadedBy: file.uploaded_by || currentUser?.name || 'Unknown',
+    file_design: file.file_design,
+    uploaded_by_name: file.uploaded_by_name ?? file.uploader_name ?? file.uploaded_by ?? currentUser?.name ?? 'Unknown',
+    uploadedBy: file.uploaded_by_name ?? file.uploader_name ?? file.uploaded_by ?? currentUser?.name ?? 'Unknown',
   });
 
   // -----------------------------------------------------------------
@@ -177,9 +180,11 @@ export function SlabSmithDetailsPage() {
       name: file.name,
       size: file.size,
       type: file.type,
+      stage_name: 'slab_smith',
+      file_design: fileDesign,
     }));
     setUploadedFileMetas(newFileMetas);
-  }, []);
+  }, [fileDesign]);
 
   // -----------------------------------------------------------------
   // Upload pending files to server

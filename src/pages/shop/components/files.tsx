@@ -21,7 +21,12 @@ interface FileMetadata {
   type: string;
   url: string;
   stage?: any; // FileLabel from file-labeling utils
-  uploadedBy?: string;
+  // workflow stage key (e.g. "final_programming")
+  stage_name?: string;
+  file_design?: string;
+  // Human readable name of uploader
+  uploaded_by_name?: string;
+  uploadedBy?: string; // legacy
   uploadedAt?: Date;
 }
 
@@ -67,11 +72,17 @@ export function Documents({
             size: parseInt(file.file_size) || parseInt(file.size) || 0,
             type: file.file_type || file.mime_type || 'application/octet-stream',
             url: file.file_url || file.url || '/images/app/upload-file.svg',
-            stage: getFileStage(file.filename || file.name, { 
-              isDrafting: true, 
-              currentStage: currentStage 
+            stage: getFileStage(file.filename || file.name, {
+              isDrafting: true,
+              currentStage: currentStage,
             }),
-            uploadedBy: '',
+            stage_name: file.stage_name ?? file.stage ?? getFileStage(file.filename || file.name, {
+              isDrafting: true,
+              currentStage: currentStage,
+            }).stage,
+            file_design: file.file_design ?? undefined,
+            uploaded_by_name: file.uploaded_by_name ?? file.uploader_name,
+            uploadedBy: file.uploaded_by_name ?? file.uploader_name ?? '',
             uploadedAt: file.created_at || file.uploaded_at ? new Date(file.created_at || file.uploaded_at) : new Date()
           }));
           allFiles.push(...actualFiles);
@@ -90,7 +101,7 @@ export function Documents({
             type: 'application/pdf',
             url: '/images/app/upload-file.svg',
             stage: currentStage ? WORKFLOW_STAGES[currentStage] : WORKFLOW_STAGES.drafting,
-            uploadedBy: '',
+            stage_name: currentStage ?? WORKFLOW_STAGES.drafting.stage,
             uploadedAt: new Date()
           }));
           allFiles.push(...mockFiles);
@@ -109,7 +120,10 @@ export function Documents({
         type: meta.type || 'application/octet-stream',
         url: meta.url || (meta.file ? URL.createObjectURL(meta.file) : '/images/app/upload-file.svg'),
         stage: meta.stage || getFileStage(meta.name, { isDrafting: true }),
-        uploadedBy: meta.uploadedBy || 'Current User',
+        stage_name: meta.stage_name ?? currentStage ?? undefined,
+        file_design: meta.file_design ?? undefined,
+        uploaded_by_name: meta.uploaded_by_name ?? meta.uploadedBy ?? 'Current User',
+        uploadedBy: meta.uploaded_by_name ?? meta.uploadedBy ?? 'Current User',
         uploadedAt: meta.uploadedAt || new Date()
       }));
       allFiles.push(...newFiles);
@@ -125,11 +139,14 @@ export function Documents({
             size: parseInt(file.file_size) || 0,
             type: file.file_type || 'application/octet-stream',
             url: file.file_url || '/images/app/upload-file.svg',
-            stage: getFileStage(file.name, { 
+            stage: getFileStage(file.name, {
               isDrafting: false,
-              currentStage: 'slab_smith'
+              currentStage: 'slab_smith',
             }),
-            uploadedBy: 'Slab Smith',
+            stage_name: file.stage_name ?? file.stage ?? 'slab_smith',
+            file_design: file.file_design ?? undefined,
+            uploaded_by_name: file.uploaded_by_name ?? file.uploader_name ?? '-',
+            uploadedBy: file.uploaded_by_name ?? file.uploader_name ?? '-',
             uploadedAt: file.created_at ? new Date(file.created_at) : new Date()
           }));
           allFiles.push(...slabSmithFiles);
@@ -189,7 +206,7 @@ export function Documents({
                         {formatBytes(file.size)}
                       </p>
                       {(() => {
-                        const stage = file.stage || getFileStage(file.name, { isDrafting: true });
+                        const stage = file.stage_name || getFileStage(file.name, { isDrafting: false });
                         const badge = getStageBadge(stage);
                         return (
                           <span className={badge.className}>
@@ -197,13 +214,24 @@ export function Documents({
                           </span>
                         );
                       })()}
-                                             
-                      {/* Additional file metadata if available */}
-                      {/* {file.uploadedBy && (
-                        <span className="text-xs text-gray-500">
-                          by {file.uploadedBy}
+
+                      {file.file_design && (
+                        <span className="text-xs text-muted-foreground">
+                          Design: {file.file_design}
+                        </span>
+                      )}
+
+                      {/* {file.stage_name && (
+                        <span className="text-xs text-muted-foreground">
+                          Stage: {file.stage_name}
                         </span>
                       )} */}
+
+                      {file.uploaded_by_name && (
+                        <span className="text-xs text-muted-foreground">
+                          By: {file.uploaded_by_name}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

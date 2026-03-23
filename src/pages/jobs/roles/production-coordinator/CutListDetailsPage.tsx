@@ -269,12 +269,15 @@ const CutListDetailsPage = () => {
                                     <Documents
                                         draftingData={{
                                             ...fabData?.draft_data,
-                                            files: fabData?.draft_data?.files?.filter((file: any) =>
-                                                file.stage === 'final_programming' ||
-                                                file.stage === 'cut_list' ||
-                                                (file.stage && file.stage.toLowerCase().includes('final_programming')) ||
-                                                (file.stage && file.stage.toLowerCase().includes('cut_list'))
-                                            ),
+                                            files: fabData?.draft_data?.files?.filter((file: any) => {
+                                                const stageKey = file.stage_name ?? file.stage;
+                                                return (
+                                                    stageKey === 'final_programming' ||
+                                                    stageKey === 'cut_list' ||
+                                                    (stageKey && stageKey.toLowerCase().includes('final_programming')) ||
+                                                    (stageKey && stageKey.toLowerCase().includes('cut_list'))
+                                                );
+                                            }),
                                             file_ids: ""
                                         }}
                                         onFileClick={handleFileClick}

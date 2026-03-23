@@ -78,7 +78,6 @@ export const JobsSection = () => {
     ...(searchQuery && { search: searchQuery }),
     ...(selectedStatus !== 'all' && { status_id: parseInt(selectedStatus) }),
   });
-
   const { data: accountsData } = useGetAccountsQuery({ limit: 1000 });
 
   const [deleteJob] = useDeleteJobMutation();
@@ -93,7 +92,7 @@ export const JobsSection = () => {
   // Transform API data to match table structure
   const jobs = useMemo(() => {
     if (!jobsData) return [];
-    return jobsData.map((job: any) => ({
+    return jobsData.data.map((job: any) => ({
       ...job,
       // Only transform what's necessary
       project_value: job.project_value || 'N/A',
@@ -319,7 +318,7 @@ export const JobsSection = () => {
   const table = useReactTable({
     columns,
     data: jobs,
-    pageCount: jobsData ? Math.ceil(jobsData.length / pagination.pageSize) : -1,
+    pageCount: jobsData?.total ? Math.ceil(jobsData.total / pagination.pageSize) : -1,
     getRowId: (row: ExtendedJob) => String(row.id),
     state: { pagination, sorting, rowSelection },
     columnResizeMode: 'onChange',
@@ -346,7 +345,7 @@ export const JobsSection = () => {
       />
       <DataGrid
         table={table}
-        recordCount={jobsData?.length || 0}
+        recordCount={jobsData?.total || 0}
         isLoading={isLoading}
         tableLayout={{
           columnsPinnable: true,

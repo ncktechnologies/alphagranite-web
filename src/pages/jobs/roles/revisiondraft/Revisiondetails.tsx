@@ -256,8 +256,14 @@ export function RevisionDetailsPage() {
         currentStage: 'revisions',
         isRevision: true
       }),
+      stage_name: file.stage_name ?? file.stage ?? getFileStage(file.name || file.file_name, {
+        currentStage: 'revisions',
+        isRevision: true
+      }).stage,
+      file_design: file.file_design,
       uploadedAt: file.created_at ? new Date(file.created_at) : new Date(),
-      uploadedBy: file.uploaded_by || currentUser?.name || 'Unknown',
+      uploaded_by_name: file.uploaded_by_name ?? file.uploader_name ?? file.uploaded_by ?? currentUser?.name ?? 'Unknown',
+      uploadedBy: file.uploaded_by_name ?? file.uploader_name ?? file.uploaded_by ?? currentUser?.name ?? 'Unknown',
       fromServer: true
     }));
     return files;
@@ -384,7 +390,10 @@ export function RevisionDetailsPage() {
       size: parseInt(file.file_size) || file.size || 0,
       formattedSize: formatBytes(parseInt(file.file_size) || file.size || 0),
       uploadedAt: file.created_at ? new Date(file.created_at) : new Date(),
-      uploadedBy: file.uploaded_by || currentUser?.name || 'Unknown'
+      stage_name: file.stage_name ?? file.stage,
+      file_design: file.file_design,
+      uploaded_by_name: file.uploaded_by_name ?? file.uploader_name ?? file.uploaded_by ?? currentUser?.name ?? 'Unknown',
+      uploadedBy: file.uploaded_by_name ?? file.uploader_name ?? file.uploaded_by ?? currentUser?.name ?? 'Unknown'
     };
     setActiveFile(enhancedFile);
     setViewMode('file');

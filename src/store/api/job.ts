@@ -755,6 +755,7 @@ export const jobApi = createApi({
                         }
                     };
                 },
+                transformResponse: (response: any) => response.data || response,
                 providesTags: ["Job"],
             }),
 
@@ -1437,14 +1438,21 @@ export const jobApi = createApi({
             }),
 
             // Add files to drafting
-            addFilesToDrafting: build.mutation<any, { drafting_id: number; files: File[]; stage?: string; file_design?: string }>({
-                query: ({ drafting_id, files, stage, file_design }) => {
+            addFilesToDrafting: build.mutation<any, { drafting_id: number; files: File[]; stage?: string; stage_name?: string; file_design?: string }>({
+                query: ({ drafting_id, files, stage, stage_name, file_design }) => {
                     const formData = new FormData();
                     files.forEach((file) => {
                         formData.append('files', file); // Changed from 'file' to 'files'
                     });
                     if (stage) {
                         formData.append('stage', stage);
+                    }
+                    // Drafting endpoint expects BOTH `stage` and `stage_name`
+                    // Fallback to `stage` if `stage_name` wasn't provided.
+                    if (stage_name) {
+                        formData.append('stage_name', stage_name);
+                    } else if (stage) {
+                        formData.append('stage_name', stage);
                     }
                     if (file_design) {
                         formData.append('file_design', file_design);
@@ -1471,14 +1479,14 @@ export const jobApi = createApi({
             }),
 
             // Add files to slab smith
-            addFilesToSlabSmith: build.mutation<any, { slabsmith_id: number; files: File[]; stage?: string; file_design?: string }>({
-                query: ({ slabsmith_id, files, stage, file_design }) => {
+            addFilesToSlabSmith: build.mutation<any, { slabsmith_id: number; files: File[]; stage_name?: string; file_design?: string }>({
+                query: ({ slabsmith_id, files, stage_name, file_design }) => {
                     const formData = new FormData();
                     files.forEach((file) => {
                         formData.append('files', file);
                     });
-                    if (stage) {
-                        formData.append('stage', stage);
+                    if (stage_name) {
+                        formData.append('stage_name', stage_name);
                     }
                     if (file_design) {
                         formData.append('file_design', file_design);
@@ -1792,14 +1800,14 @@ export const jobApi = createApi({
             }),
 
             // Add files to final programming
-            addFilesToFinalProgramming: build.mutation<any, { fp_id: number; files: File[]; stage?: string; file_design?: string }>({
-                query: ({ fp_id, files, stage, file_design }) => {
+            addFilesToFinalProgramming: build.mutation<any, { fp_id: number; files: File[]; stage_name?: string; file_design?: string }>({
+                query: ({ fp_id, files, stage_name, file_design }) => {
                     const formData = new FormData();
                     files.forEach((file) => {
                         formData.append('files', file);
                     });
-                    if (stage) {
-                        formData.append('stage', stage);
+                    if (stage_name) {
+                        formData.append('stage_name', stage_name);
                     }
                     if (file_design) {
                         formData.append('file_design', file_design);

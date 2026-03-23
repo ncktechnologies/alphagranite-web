@@ -225,7 +225,7 @@ const SlabSmithPage = () => {
                     isLoading={isLoading}
                     // onRowClick={handleRowClick}
                     // useBackendPagination={true}
-                    // totalRecords={data?.total || 0}
+                    totalRecords={data?.total || 0}
                     useBackendPagination={true}
                     tableState={tableState}
                     showSalesPersonFilter={false}

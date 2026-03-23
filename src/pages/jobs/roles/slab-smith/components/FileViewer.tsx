@@ -87,6 +87,13 @@ export const FileViewer = ({
         <div>
           <div className="text-xl font-bold">FAB ID: {file.id}</div>
           <p className="text-sm text-gray-600 mt-1">Viewing file: {file.name}</p>
+          {(file.stage_name || file.file_design || file.uploaded_by_name) && (
+            <div className="text-xs text-gray-500 mt-2 space-x-3">
+              {file.stage_name && <span>Stage: {file.stage_name}</span>}
+              {file.file_design && <span>Design: {file.file_design}</span>}
+              {file.uploaded_by_name && <span>By: {file.uploaded_by_name}</span>}
+            </div>
+          )}
         </div>
         {onClose && <CloseButton />}
       </div>
