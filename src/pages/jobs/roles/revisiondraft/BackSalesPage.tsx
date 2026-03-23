@@ -170,7 +170,7 @@ export function DraftRevisionPage() {
             <div className="">
                 <Container>
                     <Toolbar className=' '>
-                        <ToolbarHeading title="Revision queue" description="" />
+                        <ToolbarHeading title="Revision" description="" />
                     </Toolbar>
                     <div className="space-y-4 mt-4">
                         <Skeleton className="h-16 w-full" />
@@ -187,7 +187,7 @@ export function DraftRevisionPage() {
             <div className="">
                 <Container>
                     <Toolbar className=' '>
-                        <ToolbarHeading title="Revision queue" description="" />
+                        <ToolbarHeading title="Revision" description="" />
                     </Toolbar>
                     <Alert variant="destructive" className="mt-4">
                         <AlertCircle className="h-4 w-4" />
