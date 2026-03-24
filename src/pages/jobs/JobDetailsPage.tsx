@@ -69,24 +69,24 @@ export function JobDetailsPage() {
   // ── Job info rows ──────────────────────────────────────────────────────────
   const jobInfo = job
     ? [
-        { label: 'Job Number',    value: job.job_number },
-        { label: 'Job Name',      value: <a href={`https://alphagraniteaustin.moraware.net/sys/search?search=${job.job_number}`} className="hover:underline"> {job?.job_number}</a> },
-        { label: 'Account',       value: job.account_name || 'N/A' },
-        { label: 'Account Number',value: job.account_number || 'N/A' },
-        { label: 'Project Value', value: job.project_value ? `$${job.project_value.toLocaleString()}` : 'N/A' },
-        { label: 'Sales Person',  value: job.sales_person_name || 'N/A' },
-        { label: 'Priority',      value: job.priority || 'N/A' },
-        { label: 'Status',        value: getStatusText(job.status_id) },
-        { label: 'Created Date',  value: new Date(job.created_at).toLocaleDateString() },
-        { label: 'Note',          value: job.description || 'N/A' },
-      ]
+      { label: 'Job Number', value: job.job_number },
+      { label: 'Job Name', value: job.name },
+      { label: 'Account', value: job.account_name || 'N/A' },
+      { label: 'Account Number', value: job.account_number || 'N/A' },
+      { label: 'Project Value', value: job.project_value ? `$${job.project_value.toLocaleString()}` : 'N/A' },
+      { label: 'Sales Person', value: job.sales_person_name || 'N/A' },
+      { label: 'Priority', value: job.priority || 'N/A' },
+      { label: 'Status', value: getStatusText(job.status_id) },
+      { label: 'Created Date', value: new Date(job.created_at).toLocaleDateString() },
+      { label: 'Note', value: job.description || 'N/A' },
+    ]
     : [];
 
   // ── Handlers ───────────────────────────────────────────────────────────────
   const handleFileClick = (file: any) => {
     setActiveFile({
       ...file,
-      url:  file.url  || file.file_url,
+      url: file.url || file.file_url,
       name: file.name || file.file_name,
       type: file.type || 'application/octet-stream',
       size: file.size || 0,
@@ -111,6 +111,10 @@ export function JobDetailsPage() {
       setFileToDelete(null);
     }
   };
+  const jobNameLink = job?.id ? `/job/details/${job?.id}` : '#';
+  const jobNumberLink = job?.job_number
+    ? `https://alphagraniteaustin.moraware.net/sys/search?search=${job.job_number}`
+    : '#';
 
   // ── Loading ────────────────────────────────────────────────────────────────
   if (isLoading) {
@@ -190,7 +194,19 @@ export function JobDetailsPage() {
       <Container className="lg:mx-0">
         <Toolbar>
           <ToolbarHeading
-            title={`Job ${job?.job_number || 'Loading...'}: ${job?.name || ''}`}
+            // title={`Job ${job?.job_number || 'Loading...'}: ${job?.name || ''}`}
+            title={
+              <div className="text-2xl font-bold">
+                <a href={jobNameLink} className="hover:underline">
+                  {/* {fabData?.job_details?.name || `Job ${fabData?.job_id}`} */}
+                  {job?.name || ''}
+                </a>
+                {' - '}
+                <a href={jobNumberLink} className="hover:underline">
+                  {job?.job_number || 'Loading...'}
+                </a>
+              </div>
+            }
             description="View job details, FABs, and media files"
           />
           <ToolbarActions>
@@ -313,8 +329,8 @@ export function JobDetailsPage() {
                                 fab.status_id === 1
                                   ? 'default'
                                   : fab.status_id === 2
-                                  ? 'secondary'
-                                  : 'outline'
+                                    ? 'secondary'
+                                    : 'outline'
                               }
                             >
                               {getFabStatusText(fab.status_id)}
