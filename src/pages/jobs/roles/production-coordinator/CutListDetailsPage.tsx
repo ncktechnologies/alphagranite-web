@@ -251,7 +251,7 @@ const CutListDetailsPage = () => {
                                     </CardHeading>
                                     <CardToolbar>
                                         <Can action="update" on="Cut List">
-                                            <Button onClick={() => setShowScheduleModal(true)}>Schedule Cut List</Button>
+                                            <Button onClick={() => setShowScheduleModal(true)}>Schedule Cut</Button>
                                         </Can>
                                         <Button
                                             variant="outline"
