@@ -242,10 +242,21 @@ export function PreDraftDetailsPage() {
                 <div className="bg-[#FAFAFA] min-h-screen pt-12 pb-3">
                     <Card className="border-none bg-transparent">
                         <CardHeader className="border-b pb-4 flex-col items-start">
-                            <CardTitle className="text-text">Templating Review</CardTitle>
-                            <p className="text-sm text-text-foreground leading-[20px]">
-                                Review and approve completed template
-                            </p>
+                            {fab?.template_needed ? (
+                                <>
+                                    <CardTitle className="text-text">Templating Review</CardTitle>
+                                    <p className="text-sm text-text-foreground leading-[20px]">
+                                        Review and approve completed template
+                                    </p>
+                                </>
+                            ) : (
+                                <>
+                                    <CardTitle className="text-text">Predraft Review</CardTitle>
+                                    <p className="text-sm text-text-foreground leading-[20px]">
+                                        Review and approve completed Predraft
+                                    </p>
+                                </>
+                            )}
                         </CardHeader>
                         <CardContent>
                             <ReviewChecklistForm fabId={Number(id)} />
