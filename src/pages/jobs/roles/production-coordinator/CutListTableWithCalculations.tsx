@@ -83,11 +83,9 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
 
     const calculateCostOfStone = (): number => {
         if (fab.job_details?.project_value) {
-            const projectValue = parseFloat(fab.job_details.project_value.toString());
-            return projectValue * 0.6;
+            return parseFloat(fab.job_details.project_value.toString()) * 0.6;
         }
-        const costPerSqFt = 50;
-        return (fab.total_sqft || 0) * costPerSqFt;
+        return (fab.total_sqft || 0) * 50;
     };
 
     return {
@@ -141,6 +139,10 @@ interface CutListTableWithCalculationsProps {
     setPagination?: (pagination: { pageIndex: number; pageSize: number }) => void;
     searchQuery?: string;
     setSearchQuery?: (query: string) => void;
+    // ✅ searchType is now a controlled prop (owned by parent, sent to backend)
+    //    Falls back to local state if not provided
+    searchType?: 'fab_id' | 'job_number' | 'job_name';
+    setSearchType?: (type: 'fab_id' | 'job_number' | 'job_name') => void;
     dateFilter?: string;
     setDateFilter?: (filter: string) => void;
     fabTypeFilter?: string;
@@ -168,6 +170,8 @@ export const CutListTableWithCalculations = ({
     setPagination,
     searchQuery,
     setSearchQuery,
+    searchType,         // ✅ from parent
+    setSearchType,      // ✅ from parent
     dateFilter,
     setDateFilter,
     fabTypeFilter,
@@ -181,9 +185,11 @@ export const CutListTableWithCalculations = ({
 }: CutListTableWithCalculationsProps) => {
     const [toggleFabOnHold] = useToggleFabOnHoldMutation();
 
-    // ── Local state ───────────────────────────────────────────────────────────
+    // ── Local fallback state ──────────────────────────────────────────────────
     const [localPagination, setLocalPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 25 });
     const [localSearchQuery, setLocalSearchQuery] = useState('');
+    // ✅ Local fallback — only used when parent does NOT pass searchType prop
+    const [localSearchType, setLocalSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id');
     const [localDateFilter, setLocalDateFilter] = useState<string>('all');
     const [localFabTypeFilter, setLocalFabTypeFilter] = useState<string>('all');
     const [localSalesPersonFilter, setLocalSalesPersonFilter] = useState<string>('all');
@@ -196,14 +202,14 @@ export const CutListTableWithCalculations = ({
     const [optimisticUpdates, setOptimisticUpdates] = useState<Record<string, any>>({});
     const [sorting, setSorting] = useState<SortingState>([]);
 
-    // ── NEW: typed search state (matches JobTable) ────────────────────────────
-    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id');
-
-    // ── Effective values (prop overrides local) ───────────────────────────────
+    // ── Effective values — prop wins over local fallback ──────────────────────
     const effectivePagination = pagination || localPagination;
     const setEffectivePagination = setPagination || setLocalPagination;
     const effectiveSearchQuery = searchQuery !== undefined ? searchQuery : localSearchQuery;
     const setEffectiveSearchQuery = setSearchQuery || setLocalSearchQuery;
+    // ✅ If parent passes searchType use it; otherwise use local fallback
+    const effectiveSearchType = searchType !== undefined ? searchType : localSearchType;
+    const setEffectiveSearchType = setSearchType || setLocalSearchType;
     const effectiveDateFilter = dateFilter !== undefined ? dateFilter : localDateFilter;
     const setEffectiveDateFilter = setDateFilter || setLocalDateFilter;
     const effectiveFabTypeFilter = fabTypeFilter !== undefined ? fabTypeFilter : localFabTypeFilter;
@@ -217,36 +223,30 @@ export const CutListTableWithCalculations = ({
 
     // ── Derived data ──────────────────────────────────────────────────────────
     const calculatedCutLists = useMemo(() => fabs.map(calculateCutListData), [fabs]);
-
     const uniqueFabTypes = useMemo(() => [...fabTypes].sort(), [fabTypes]);
     const uniqueSalesPersons = useMemo(() => [...salesPersons].sort(), [salesPersons]);
 
-    // ── Filtered data ─────────────────────────────────────────────────────────
+    // ── Filtered data (client-side safety net — backend does the real filtering) ──
     const filteredData = useMemo(() => {
         if (!calculatedCutLists || !Array.isArray(calculatedCutLists)) return [];
 
         let result = calculatedCutLists;
 
-        // ── Typed text search (matches JobTable behaviour) ────────────────────
+        // ✅ Typed search — mirrors what backend receives via `type` + `search` params
         if (effectiveSearchQuery) {
             const q = effectiveSearchQuery.toLowerCase();
             result = result.filter((list) => {
-                if (searchType === 'fab_id') {
-                    return list.fab_id?.toLowerCase().includes(q);
-                } else if (searchType === 'job_number') {
-                    return list.job_no?.toLowerCase().includes(q);
-                } else if (searchType === 'job_name') {
-                    return list.job_name?.toLowerCase().includes(q);
-                }
+                if (effectiveSearchType === 'fab_id')     return list.fab_id?.toLowerCase().includes(q);
+                if (effectiveSearchType === 'job_number') return list.job_no?.toLowerCase().includes(q);
+                if (effectiveSearchType === 'job_name')   return list.job_name?.toLowerCase().includes(q);
                 return false;
             });
         }
 
-        // ── Date filter ───────────────────────────────────────────────────────
         if (effectiveDateFilter !== 'all') {
             result = result.filter((list) => {
                 if (effectiveDateFilter === 'unscheduled') return !list.install_date || list.install_date === '';
-                if (effectiveDateFilter === 'scheduled') return list.install_date && list.install_date !== '';
+                if (effectiveDateFilter === 'scheduled')   return list.install_date && list.install_date !== '';
                 if (!list.install_date) return false;
 
                 const installDate = new Date(list.install_date);
@@ -264,15 +264,14 @@ export const CutListTableWithCalculations = ({
 
                 const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
                 const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-
                 const startOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1);
                 const endOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0);
 
                 switch (effectiveDateFilter) {
-                    case 'today': return installDate.toDateString() === today.toDateString();
-                    case 'this_week': return installDate >= startOfWeek && installDate <= endOfWeek;
+                    case 'today':      return installDate.toDateString() === today.toDateString();
+                    case 'this_week':  return installDate >= startOfWeek && installDate <= endOfWeek;
                     case 'this_month': return installDate >= startOfMonth && installDate <= endOfMonth;
-                    case 'next_week': return installDate >= startOfNextWeek && installDate <= endOfNextWeek;
+                    case 'next_week':  return installDate >= startOfNextWeek && installDate <= endOfNextWeek;
                     case 'next_month': return installDate >= startOfNextMonth && installDate <= endOfNextMonth;
                     case 'custom':
                         if (effectiveDateRange?.from && effectiveDateRange?.to) {
@@ -287,12 +286,10 @@ export const CutListTableWithCalculations = ({
             });
         }
 
-        // ── Fab Type filter ───────────────────────────────────────────────────
         if (effectiveFabTypeFilter !== 'all') {
             result = result.filter((list) => list.fab_type === effectiveFabTypeFilter);
         }
 
-        // ── Sales Person filter ───────────────────────────────────────────────
         if (effectiveSalesPersonFilter !== 'all') {
             if (effectiveSalesPersonFilter === 'no_sales_person') {
                 result = result.filter((list) => !list.sales_person || list.sales_person === '');
@@ -305,7 +302,7 @@ export const CutListTableWithCalculations = ({
     }, [
         calculatedCutLists,
         effectiveSearchQuery,
-        searchType,               // ← added
+        effectiveSearchType, // ✅ in dependency array
         effectiveDateFilter,
         effectiveFabTypeFilter,
         effectiveSalesPersonFilter,
@@ -313,17 +310,9 @@ export const CutListTableWithCalculations = ({
     ]);
 
     // ── Handlers ──────────────────────────────────────────────────────────────
-    const handleRowClickInternal = (list: CalculatedCutListData) => {
-        if (onRowClick) {
-            onRowClick(list.fab_id);
-        } else {
-            navigate(`/job/cut-list/${list.id}`);
-        }
-    };
-
     const handleStageFilterChange = (stageValue: string) => {
         if (stageValue === 'all') return;
-        const selectedStage = Object.values(JOB_STAGES).find(stage => stage.stage === stageValue);
+        const selectedStage = Object.values(JOB_STAGES).find(s => s.stage === stageValue);
         if (selectedStage) navigate(selectedStage.route);
     };
 
@@ -346,11 +335,10 @@ export const CutListTableWithCalculations = ({
     };
 
     // ── Fab info helper ───────────────────────────────────────────────────────
-    const generateFabInfo = (list: CalculatedCutListData): { jobInfo: string[]; materialInfo: string[]; stoneInfo: string[] } => {
+    const generateFabInfo = (list: CalculatedCutListData) => {
         const jobInfo: string[] = [];
         const materialInfo: string[] = [];
         const stoneInfo: string[] = [];
-
         if (list.acct_name) jobInfo.push(list.acct_name);
         if (list.job_name) jobInfo.push(list.job_name);
         if (list.input_area) jobInfo.push(`Area: ${list.input_area}`);
@@ -358,7 +346,6 @@ export const CutListTableWithCalculations = ({
         if (list.stone_color_name) stoneInfo.push(list.stone_color_name);
         if (list.stone_thickness_value) stoneInfo.push(list.stone_thickness_value);
         if (list.edge_name) materialInfo.push(list.edge_name);
-
         return { jobInfo, materialInfo, stoneInfo };
     };
 
@@ -380,164 +367,81 @@ export const CutListTableWithCalculations = ({
             size: 120,
         },
         {
-            id: 'fab_type',
-            accessorKey: 'fab_type',
+            id: 'fab_type', accessorKey: 'fab_type',
             header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} />,
             cell: ({ row }) => <span className="text-sm uppercase">{row.original.fab_type}</span>,
         },
         {
-            id: 'fab_id',
-            accessorKey: 'fab_id',
+            id: 'fab_id', accessorKey: 'fab_id',
             header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
             cell: ({ row }) => <span className="text-sm">{row.original.fab_id}</span>,
         },
         {
-            id: 'job_name',
-            accessorKey: 'job_name',
+            id: 'job_name', accessorKey: 'job_name',
             header: ({ column }) => <DataGridColumnHeader title="JOB NAME" column={column} />,
-            cell: ({ row }) => (
-                <span className="text-sm truncate block max-w-[200px]">{row.original.job_name}</span>
-            ),
+            cell: ({ row }) => <span className="text-sm truncate block max-w-[200px]">{row.original.job_name}</span>,
         },
         {
-            id: 'job_no',
-            accessorKey: 'job_no',
+            id: 'job_no', accessorKey: 'job_no',
             header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
-            cell: ({ row }) =>
-                row.original.job_id ? (
-                    <Link
-                        to={`https://alphagraniteaustin.moraware.net/sys/search?search=${row.original.job_id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                    >
-                        {row.original.job_no}
-                    </Link>
-                ) : (
-                    <span className="text-sm">{row.original.job_no}</span>
-                ),
-        },
-         {
-            id: 'fab_info',
-            header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
-            cell: ({ row }) => {
-                const { jobInfo, materialInfo, stoneInfo } = generateFabInfo(row.original);
-                return (
-                    <div className="flex gap-4 text-xs max-w-[400px]">
-                        {jobInfo.length > 0 && (
-                            <div className="flex-1 min-w-0">
-                                <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>
-                                    {jobInfo.join(' - ')}
-                                </div>
-                                {stoneInfo.length > 0 && (
-                                    <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>
-                                        {stoneInfo.join(' - ')}
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                        {materialInfo.length > 0 && (
-                            <div className="flex-1 min-w-0">
-                                <div className="truncate text-gray-600" title={materialInfo.join(' - ')}>
-                                    {materialInfo.join(' - ')}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                );
-            },
-            size: 300,
+            cell: ({ row }) => row.original.job_id ? (
+                <Link
+                    to={`https://alphagraniteaustin.moraware.net/sys/search?search=${row.original.job_id}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                >
+                    {row.original.job_no}
+                </Link>
+            ) : <span className="text-sm">{row.original.job_no}</span>,
         },
         {
-            id: 'no_of_pcs',
-            accessorKey: 'no_of_pcs',
+            id: 'no_of_pcs', accessorKey: 'no_of_pcs',
             header: ({ column }) => <DataGridColumnHeader title="NO OF PCS" column={column} />,
-            cell: ({ row }) => (
-                <span className="text-sm block">{row.original.no_of_pcs.toLocaleString()}</span>
-            ),
+            cell: ({ row }) => <span className="text-sm block">{row.original.no_of_pcs.toLocaleString()}</span>,
         },
         {
-            id: 'total_sq_ft',
-            accessorKey: 'total_sq_ft',
+            id: 'total_sq_ft', accessorKey: 'total_sq_ft',
             header: ({ column }) => <DataGridColumnHeader title="TOTAL SQ FT" column={column} />,
-            cell: ({ row }) => (
-                <span className="text-sm block">
-                    {row.original.total_sq_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-            ),
+            cell: ({ row }) => <span className="text-sm block">{row.original.total_sq_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
         },
         {
-            id: 'wl_ln_ft',
-            accessorKey: 'wl_ln_ft',
+            id: 'wl_ln_ft', accessorKey: 'wl_ln_ft',
             header: ({ column }) => <DataGridColumnHeader title="WJ:LIN FT" column={column} />,
-            cell: ({ row }) => (
-                <span className="text-sm block">
-                    {row.original.wl_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-            ),
+            cell: ({ row }) => <span className="text-sm block">{row.original.wl_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
         },
         {
-            id: 'edging_ln_ft',
-            accessorKey: 'edging_ln_ft',
+            id: 'edging_ln_ft', accessorKey: 'edging_ln_ft',
             header: ({ column }) => <DataGridColumnHeader title="Edging: Lin ft" column={column} />,
-            cell: ({ row }) => (
-                <span className="text-sm block">
-                    {row.original.edging_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-            ),
+            cell: ({ row }) => <span className="text-sm block">{row.original.edging_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
         },
         {
-            id: 'cnc_ln_ft',
-            accessorKey: 'cnc_ln_ft',
+            id: 'cnc_ln_ft', accessorKey: 'cnc_ln_ft',
             header: ({ column }) => <DataGridColumnHeader title="CNC: LIN FT" column={column} />,
-            cell: ({ row }) => (
-                <span className="text-sm block">
-                    {row.original.cnc_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-            ),
+            cell: ({ row }) => <span className="text-sm block">{row.original.cnc_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
         },
         {
-            id: 'milter_ln_ft',
-            accessorKey: 'milter_ln_ft',
+            id: 'milter_ln_ft', accessorKey: 'milter_ln_ft',
             header: ({ column }) => <DataGridColumnHeader title="MITER:LIN FT" column={column} />,
-            cell: ({ row }) => (
-                <span className="text-sm block">
-                    {row.original.milter_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-            ),
+            cell: ({ row }) => <span className="text-sm block">{row.original.milter_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
         },
         {
-            id: 'saw_cut_lnft',
-            accessorKey: 'saw_cut_lnft',
+            id: 'saw_cut_lnft', accessorKey: 'saw_cut_lnft',
             header: ({ column }) => <DataGridColumnHeader title="SAW:LN FT" column={column} />,
-            cell: ({ row }) => (
-                <span className="text-sm text-text">{row.original.saw_cut_lnft?.toFixed(2) ?? '0.00'}</span>
-            ),
+            cell: ({ row }) => <span className="text-sm">{row.original.saw_cut_lnft?.toFixed(2) ?? '0.00'}</span>,
             enableSorting: true,
         },
         {
-            id: 'cost_of_stone',
-            accessorKey: 'cost_of_stone',
+            id: 'cost_of_stone', accessorKey: 'cost_of_stone',
             header: ({ column }) => <DataGridColumnHeader title="COST OF STONE" column={column} />,
-            cell: ({ row }) => (
-                <span className="text-sm block">
-                    ${row.original.cost_of_stone.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-            ),
+            cell: ({ row }) => <span className="text-sm block">${row.original.cost_of_stone.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
         },
         {
-            id: 'revenue',
-            accessorKey: 'revenue',
+            id: 'revenue', accessorKey: 'revenue',
             header: ({ column }) => <DataGridColumnHeader title="REVENUE" column={column} />,
-            cell: ({ row }) => (
-                <span className="text-sm block">
-                    ${row.original.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </span>
-            ),
+            cell: ({ row }) => <span className="text-sm block">${row.original.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
         },
         {
-            id: 'fp_completed',
-            accessorKey: 'fp_completed',
+            id: 'fp_completed', accessorKey: 'fp_completed',
             header: ({ column }) => <DataGridColumnHeader title="FP COMPLETED DATE" column={column} />,
             cell: ({ row }) => (
                 <span className="text-sm">
@@ -548,40 +452,55 @@ export const CutListTableWithCalculations = ({
             ),
         },
         {
-            id: 'cip',
-            accessorKey: 'cip',
+            id: 'cip', accessorKey: 'cip',
             header: ({ column }) => <DataGridColumnHeader title="GP" column={column} />,
             cell: ({ row }) => <span className="text-sm">{row.original.cip}</span>,
         },
         {
-            id: 'sales_person',
-            accessorKey: 'sales_person',
+            id: 'sales_person', accessorKey: 'sales_person',
             header: ({ column }) => <DataGridColumnHeader title="SALES PERSON" column={column} />,
             cell: ({ row }) => <span className="text-sm">{row.original.sales_person || 'N/A'}</span>,
         },
-       
         {
-            id: 'fab_notes',
-            accessorKey: 'fab_notes',
+            id: 'fab_info',
+            header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
+            cell: ({ row }) => {
+                const { jobInfo, materialInfo, stoneInfo } = generateFabInfo(row.original);
+                return (
+                    <div className="flex gap-4 text-xs max-w-[400px]">
+                        {jobInfo.length > 0 && (
+                            <div className="flex-1 min-w-0">
+                                <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>{jobInfo.join(' - ')}</div>
+                                {stoneInfo.length > 0 && (
+                                    <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>{stoneInfo.join(' - ')}</div>
+                                )}
+                            </div>
+                        )}
+                        {materialInfo.length > 0 && (
+                            <div className="flex-1 min-w-0">
+                                <div className="truncate text-gray-600" title={materialInfo.join(' - ')}>{materialInfo.join(' - ')}</div>
+                            </div>
+                        )}
+                    </div>
+                );
+            },
+            size: 300,
+        },
+        {
+            id: 'fab_notes', accessorKey: 'fab_notes',
             header: ({ column }) => <DataGridColumnHeader title="Cut List Notes" column={column} />,
             cell: ({ row }) => {
                 const fabNotes = Array.isArray(row.original.fab_notes)
                     ? row.original.fab_notes
-                    : Array.isArray(row.original.notes)
-                        ? row.original.notes
-                        : [];
-                const cuttingNotes = fabNotes.filter(note => note.stage === 'cut_list');
-
-                if (cuttingNotes.length === 0) {
-                    return <span className="text-xs text-gray-500 italic">No notes</span>;
-                }
-
-                const latestNote = cuttingNotes[0];
+                    : Array.isArray(row.original.notes) ? row.original.notes : [];
+                const cuttingNotes = fabNotes.filter(n => n.stage === 'cut_list');
+                if (cuttingNotes.length === 0) return <span className="text-xs text-gray-500 italic">No notes</span>;
+                const latest = cuttingNotes[0];
                 return (
-                    <div className="text-xs max-w-xs" title={latestNote.note}>
+                    <div className="text-xs max-w-xs" title={latest.note}>
                         <div className="font-medium text-orange-700 truncate">C:</div>
-                        <div className="truncate">{latestNote.note}</div>
-                        <div className="text-gray-500 text-xs">by {latestNote.created_by_name || 'Unknown'}</div>
+                        <div className="truncate">{latest.note}</div>
+                        <div className="text-gray-500 text-xs">by {latest.created_by_name || 'Unknown'}</div>
                     </div>
                 );
             },
@@ -592,61 +511,44 @@ export const CutListTableWithCalculations = ({
             id: 'on_hold',
             accessorKey: 'status_id',
             accessorFn: (row: CalculatedCutListData) => {
-                const fabId = row.fab_id;
-                if (optimisticUpdates[fabId] !== undefined) return optimisticUpdates[fabId];
+                if (optimisticUpdates[row.fab_id] !== undefined) return optimisticUpdates[row.fab_id];
                 return row.status_id === 0;
             },
             header: ({ column }) => <DataGridColumnHeader title="ON HOLD" column={column} />,
             cell: ({ row }) => {
                 const fabId = parseInt(row.original.fab_id);
-                const isLoading = loadingStates[fabId] || false;
-                const isChecked =
-                    optimisticUpdates[row.original.fab_id] !== undefined
-                        ? optimisticUpdates[row.original.fab_id]
-                        : row.original.status_id === 0;
-
+                const isLoadingRow = loadingStates[fabId] || false;
+                const isChecked = optimisticUpdates[row.original.fab_id] !== undefined
+                    ? optimisticUpdates[row.original.fab_id]
+                    : row.original.status_id === 0;
                 return (
                     <div className="flex justify-center items-center">
                         <Switch
-                            className={`data-[state=checked]:bg-red-600 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`data-[state=checked]:bg-red-600 ${isLoadingRow ? 'opacity-50 cursor-not-allowed' : ''}`}
                             checked={isChecked}
-                            disabled={isLoading}
+                            disabled={isLoadingRow}
                             onCheckedChange={async (checked) => {
-                                if (isLoading) return;
-
+                                if (isLoadingRow) return;
                                 const fabIdStr = row.original.fab_id;
                                 setOptimisticUpdates(prev => ({ ...prev, [fabIdStr]: checked }));
                                 setLoadingStates(prev => ({ ...prev, [fabId]: true }));
-
                                 try {
                                     await toggleFabOnHold({ fab_id: fabId, on_hold: checked }).unwrap();
                                     if (onToggleSuccess) onToggleSuccess();
                                     setTimeout(() => {
-                                        setOptimisticUpdates(prev => {
-                                            const newState = { ...prev };
-                                            delete newState[fabIdStr];
-                                            return newState;
-                                        });
+                                        setOptimisticUpdates(prev => { const s = { ...prev }; delete s[fabIdStr]; return s; });
                                     }, 500);
                                 } catch (error) {
                                     console.error('Failed to toggle on hold status:', error);
-                                    setOptimisticUpdates(prev => {
-                                        const newState = { ...prev };
-                                        delete newState[fabIdStr];
-                                        return newState;
-                                    });
+                                    setOptimisticUpdates(prev => { const s = { ...prev }; delete s[fabIdStr]; return s; });
                                 } finally {
-                                    setLoadingStates(prev => {
-                                        const newState = { ...prev };
-                                        delete newState[fabId];
-                                        return newState;
-                                    });
+                                    setLoadingStates(prev => { const s = { ...prev }; delete s[fabId]; return s; });
                                 }
                             }}
                             onClick={(e) => e.stopPropagation()}
                             aria-label="Toggle on hold"
                         />
-                        {isLoading && (
+                        {isLoadingRow && (
                             <div className="ml-2">
                                 <div className="h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
                             </div>
@@ -666,9 +568,8 @@ export const CutListTableWithCalculations = ({
         pageCount: Math.ceil(totalCount / effectivePagination.pageSize),
         state: { pagination: effectivePagination, sorting },
         onPaginationChange: (updater) => {
-            const newPagination =
-                typeof updater === 'function' ? updater(effectivePagination) : updater;
-            setEffectivePagination(newPagination);
+            const next = typeof updater === 'function' ? updater(effectivePagination) : updater;
+            setEffectivePagination(next);
         },
         onSortingChange: setSorting,
         getCoreRowModel: getCoreRowModel(),
@@ -677,9 +578,7 @@ export const CutListTableWithCalculations = ({
         manualFiltering: true,
         manualSorting: true,
         meta: {
-            getRowAttributes: (row: any) => ({
-                'data-fab-type': row.original.fab_type?.toLowerCase(),
-            }),
+            getRowAttributes: (row: any) => ({ 'data-fab-type': row.original.fab_type?.toLowerCase() }),
         },
     });
 
@@ -688,28 +587,27 @@ export const CutListTableWithCalculations = ({
         <>
             <DataGrid
                 table={table}
-                recordCount={filteredData.length}
+                recordCount={totalCount}
                 isLoading={isLoading}
                 groupByDate={true}
                 dateKey="shop_date_schedule"
-                tableLayout={{
-                    columnsPinnable: true,
-                    columnsMovable: true,
-                    columnsVisibility: true,
-                    cellBorder: true,
-                }}
+                tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, cellBorder: true }}
             >
                 <Card>
                     <CardHeader className="py-3.5 border-b">
                         <CardHeading>
                             <div className="flex items-center gap-2.5 flex-wrap">
 
-                                {/* ── Typed Search (matches JobTable) ───────────────── */}
+                                {/* ── Typed Search ─────────────────────────────────────────────────────
+                                    The Select value (effectiveSearchType) is lifted to the parent and
+                                    included in buildQueryParams as `params.type` so the backend
+                                    knows which field to search against.
+                                ─────────────────────────────────────────────────────────────────────── */}
                                 <div className="relative flex items-center">
                                     <Select
-                                        value={searchType}
+                                        value={effectiveSearchType}
                                         onValueChange={(v) =>
-                                            setSearchType(v as 'fab_id' | 'job_number' | 'job_name')
+                                            setEffectiveSearchType(v as 'fab_id' | 'job_number' | 'job_name')
                                         }
                                     >
                                         <SelectTrigger className="w-[140px] h-[34px] rounded-e-none border-r-0">
@@ -724,7 +622,7 @@ export const CutListTableWithCalculations = ({
                                     <div className="relative">
                                         <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
                                         <Input
-                                            placeholder={`Search by ${searchType.replace(/_/g, ' ')}`}
+                                            placeholder={`Search by ${effectiveSearchType.replace(/_/g, ' ')}`}
                                             value={effectiveSearchQuery}
                                             onChange={(e) => setEffectiveSearchQuery(e.target.value)}
                                             className="ps-9 w-[230px] h-[34px] rounded-s-none"
@@ -789,47 +687,22 @@ export const CutListTableWithCalculations = ({
                                                     <CalendarDays className="h-4 w-4 mr-2" />
                                                     {effectiveDateRange?.from ? (
                                                         effectiveDateRange.to ? (
-                                                            <>
-                                                                {format(effectiveDateRange.from, 'MMM dd')} -{' '}
-                                                                {format(effectiveDateRange.to, 'MMM dd, yyyy')}
-                                                            </>
-                                                        ) : (
-                                                            format(effectiveDateRange.from, 'MMM dd, yyyy')
-                                                        )
-                                                    ) : (
-                                                        <span>Pick dates</span>
-                                                    )}
+                                                            <>{format(effectiveDateRange.from, 'MMM dd')} - {format(effectiveDateRange.to, 'MMM dd, yyyy')}</>
+                                                        ) : format(effectiveDateRange.from, 'MMM dd, yyyy')
+                                                    ) : <span>Pick dates</span>}
                                                 </Button>
                                             </PopoverTrigger>
                                             <PopoverContent className="w-auto p-0" align="start">
                                                 <Calendar
-                                                    initialFocus
-                                                    mode="range"
+                                                    initialFocus mode="range"
                                                     defaultMonth={tempDateRange?.from || new Date()}
                                                     selected={tempDateRange}
                                                     onSelect={setTempDateRange}
                                                     numberOfMonths={2}
                                                 />
                                                 <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            setTempDateRange(undefined);
-                                                            setEffectiveDateRange(undefined);
-                                                        }}
-                                                    >
-                                                        Reset
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            setEffectiveDateRange(tempDateRange);
-                                                            setIsDatePickerOpen(false);
-                                                        }}
-                                                    >
-                                                        Apply
-                                                    </Button>
+                                                    <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setEffectiveDateRange(undefined); }}>Reset</Button>
+                                                    <Button size="sm" onClick={() => { setEffectiveDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
                                                 </div>
                                             </PopoverContent>
                                         </Popover>
@@ -845,9 +718,7 @@ export const CutListTableWithCalculations = ({
                                         <SelectItem value="all">All Sales Persons</SelectItem>
                                         <SelectItem value="no_sales_person">No Sales Person</SelectItem>
                                         {uniqueSalesPersons.map((person) => (
-                                            <SelectItem key={person || 'N/A'} value={person || ''}>
-                                                {person || 'N/A'}
-                                            </SelectItem>
+                                            <SelectItem key={person || 'N/A'} value={person || ''}>{person || 'N/A'}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -861,9 +732,7 @@ export const CutListTableWithCalculations = ({
                                         <SelectContent className="w-48">
                                             <SelectItem value="all">All Stages</SelectItem>
                                             {Object.values(JOB_STAGES).map((stage) => (
-                                                <SelectItem key={stage.stage} value={stage.stage}>
-                                                    {stage.title}
-                                                </SelectItem>
+                                                <SelectItem key={stage.stage} value={stage.stage}>{stage.title}</SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
@@ -881,10 +750,7 @@ export const CutListTableWithCalculations = ({
                     <CardTable>
                         <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-300px)]">
                             <DataGridTable />
-                            <ScrollBar
-                                orientation="horizontal"
-                                className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500"
-                            />
+                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
                         </ScrollArea>
                     </CardTable>
 

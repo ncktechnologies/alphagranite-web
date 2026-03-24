@@ -462,7 +462,7 @@ export function FinalProgrammingDetailsPage() {
                   </a>
                 </div>
               }
-              description={(fabData?.job_details as any)?.description || 'No description available'}
+              // description={(fabData?.job_details as any)?.description || 'No description available'}
             />
             <div className="flex items-center gap-2">
               <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
