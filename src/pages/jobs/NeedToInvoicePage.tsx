@@ -115,7 +115,7 @@ export const NeedToInvoicePage = () => {
   // Transform API data to match table structure
   const jobs = useMemo(() => {
     if (!jobsData) return [];
-    return jobsData.map((job: any) => ({
+    return jobsData?.data.map((job: any) => ({
       ...job,
       // Only transform what's necessary
       project_value: job.project_value || 'N/A',
@@ -130,7 +130,7 @@ export const NeedToInvoicePage = () => {
   // Transform invoiced jobs data
   const invoicedJobs = useMemo(() => {
     if (!invoicedJobsData) return [];
-    return invoicedJobsData.map((job: any) => ({
+    return invoicedJobsData.data.map((job: any) => ({
       ...job,
       // Only transform what's necessary
       project_value: job.project_value || 'N/A',
@@ -420,7 +420,7 @@ export const NeedToInvoicePage = () => {
   const needToInvoiceTable = useReactTable({
     columns: needToInvoiceColumns,
     data: jobs,
-    pageCount: jobsData ? Math.ceil(jobsData.length / pagination.pageSize) : -1,
+    pageCount: jobsData ? Math.ceil(jobsData.total / pagination.pageSize) : -1,
     getRowId: (row: ExtendedJob) => String(row.id),
     state: { pagination, sorting, rowSelection },
     columnResizeMode: 'onChange',
@@ -524,7 +524,7 @@ export const NeedToInvoicePage = () => {
         <TabsContent value="need-to-invoice" className="mt-0 border-0 p-0">
           <DataGrid
             table={needToInvoiceTable}
-            recordCount={jobsData?.length || 0}
+            recordCount={jobsData?.total || 0}
             isLoading={isLoading}
             tableLayout={{
               columnsPinnable: true,
@@ -591,7 +591,7 @@ export const NeedToInvoicePage = () => {
         <TabsContent value="invoiced" className="mt-0 border-0 p-0">
           <DataGrid
             table={invoicedTable}
-            recordCount={invoicedJobsData?.length || 0}
+            recordCount={invoicedJobsData?.total || 0}
             isLoading={isInvoicedLoading}
             tableLayout={{
               columnsPinnable: true,

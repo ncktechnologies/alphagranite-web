@@ -669,7 +669,7 @@ export const JobSalesTable = ({
             cell: ({ row }) => (
                 row.original.job_id ? (
                     <Link
-                        to={`https://alphagraniteaustin.moraware.net/sys/search?search=${row.original.job_id}`}
+                        to={`/job/details/${row.original.job_id}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs text-blue-600 hover:text-blue-800 hover:underline"

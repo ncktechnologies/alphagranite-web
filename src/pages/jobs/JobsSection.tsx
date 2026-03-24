@@ -318,7 +318,7 @@ export const JobsSection = () => {
   const table = useReactTable({
     columns,
     data: jobs,
-    pageCount: jobsData?.total ? Math.ceil(jobsData.total / pagination.pageSize) : -1,
+    pageCount: jobsData ? Math.ceil(jobsData.total / pagination.pageSize) : -1,
     getRowId: (row: ExtendedJob) => String(row.id),
     state: { pagination, sorting, rowSelection },
     columnResizeMode: 'onChange',

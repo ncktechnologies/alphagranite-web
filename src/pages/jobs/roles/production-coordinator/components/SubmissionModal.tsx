@@ -95,14 +95,14 @@ export function SubmissionModal({
     if (!fpId) {
       try {
         await updateFab({ id: fabId, data: { final_programming_needed: true } }).unwrap();
-        toast.info('Initializing final programming session...');
+        // toast.info('Initializing final programming session...');
       } catch (updateError) {
         console.error('Failed to update FAB for final programming:', updateError);
-        toast.error('Failed to initialize final programming session');
+        // toast.error('Failed to initialize final programming session');
         return;
       }
       fpId = drafting?.id ?? drafting?.data?.id;
-      if (!fpId) toast.warning('Proceeding without session ID - files may not be saved');
+      // if (!fpId) toast.warning('Proceeding without session ID - files may not be saved');
     }
 
     if (!isConfirmed) {

@@ -70,7 +70,7 @@ export function JobDetailsPage() {
   const jobInfo = job
     ? [
         { label: 'Job Number',    value: job.job_number },
-        { label: 'Job Name',      value: job.name },
+        { label: 'Job Name',      value: <a href={`https://alphagraniteaustin.moraware.net/sys/search?search=${job.job_number}`} className="hover:underline"> {job?.job_number}</a> },
         { label: 'Account',       value: job.account_name || 'N/A' },
         { label: 'Account Number',value: job.account_number || 'N/A' },
         { label: 'Project Value', value: job.project_value ? `$${job.project_value.toLocaleString()}` : 'N/A' },
