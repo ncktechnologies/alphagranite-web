@@ -22,7 +22,8 @@ const submissionSchema = z.object({
   totalSqft:    z.string().optional(),
   noOfPieces:   z.string().optional(),
   draftNotes:   z.string().optional(),
-  // new — mirrors UpdateFabIdModal fields
+  // new — mi\
+  // rrors UpdateFabIdModal fields
   wjLinFt:      z.string().optional(),
   edgingLinFt:  z.string().optional(),
   cncLinFt:     z.string().optional(),

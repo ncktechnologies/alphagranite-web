@@ -173,7 +173,7 @@ const CutListPage = () => {
                     setDateRange={setDateRange}
                     onAddNote={handleNoteSubmit}
                     onToggleSuccess={refetch}
-                    totalCount={fabsData.total}
+                    totalCount={fabsData?.total}
                 />
             </Container>
         </>
