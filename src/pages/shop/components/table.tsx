@@ -139,7 +139,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
     };
 
     const queryParams = useMemo(() => ({
-        current_stage: 'cut_list',
+        current_stage: 'cutting',
         skip: pagination.pageIndex * pagination.pageSize,
         limit: pagination.pageSize,
         ...(searchQuery && { search: searchQuery }),

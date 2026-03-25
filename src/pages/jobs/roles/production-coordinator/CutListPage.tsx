@@ -59,7 +59,7 @@ const CutListPage = () => {
     //       When searchQuery is set, `params.type` = searchType is sent to backend
     const buildQueryParams = useMemo(() => {
         const params: any = {
-            current_stage: 'cutting',
+            current_stage: 'cut_list',
             page: pagination.pageIndex + 1,
             per_page: pagination.pageSize,
         };
