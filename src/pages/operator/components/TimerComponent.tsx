@@ -117,7 +117,7 @@ export function OperatorTimerComponent({
             </div>
 
             {/* ── Timer display + controls ──────────────────────────────────── */}
-            <div className="flex flex-col gap-[24px] items-center px-[24px] py-[32px] w-full">
+            <div className="flex flex-col gap-[24px] items-center  py-[32px] w-full">
 
                 {/* Timer Display */}
                 <div

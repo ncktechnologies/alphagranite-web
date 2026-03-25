@@ -223,8 +223,8 @@ export function OperatorTaskDetails() {
                     <ToolbarHeading
                         title={
                             <div className="text-2xl font-bold">
-                                <span>FAB-{currentTask?.fab_id || 'N/A'}: {currentTask?.job_name || 'N/A'}</span>
-                                {' - '}
+                                <span>FAB-{currentTask?.fab_id || 'N/A'}: {currentTask?.job_name || 'N/A'}-{` #${currentTask?.job_number || currentTask?.fab_number || 'N/A'} `}</span>
+                                {/* {' - '} */}
                                 {/* <Badge variant={timerState === 'running' ? 'primary' : 'secondary'}>
                                     {timerState === 'running' ? 'In Progress'
                                         : timerState === 'paused' ? 'Paused'
@@ -232,7 +232,7 @@ export function OperatorTaskDetails() {
                                 </Badge> */}
                             </div>
                         }
-                        description={`Job #${currentTask?.job_number || currentTask?.fab_number || 'N/A'} `}
+                        // description={`Job #${currentTask?.job_number || currentTask?.fab_number || 'N/A'} `}
                     />
                     <ToolbarActions>
                         <BackButton />
@@ -255,13 +255,11 @@ export function OperatorTaskDetails() {
                             </CardHeading>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid grid-cols-2 md:grid-cols-3 space-y-10">
+                            <div className="grid grid-cols-2 md:grid-cols-4 space-y-10">
                                 {[
-                                    { label: 'FAB Number',         value: currentTask?.fab_id },
-                                    { label: 'Job Name',           value: currentTask?.job_name },
                                     { label: 'Account',            value: currentTask?.account_name },
                                     { label: 'Workstation',        value: currentTask?.workstation_name },
-                                    { label: 'Stage',              value: currentTask?.plan_name },
+                                    { label: 'Shop Activity',              value: currentTask?.plan_name },
                                     { label: 'Estimated Hours',    value: currentTask?.estimated_hours },
                                     // ✅ Scheduled start date shown from URL param
                                     {
@@ -294,16 +292,9 @@ export function OperatorTaskDetails() {
 
                     {/* Time Tracking */}
                     <Card className="my-4">
-                        <CardHeader>
-                            <CardHeading className="flex flex-col items-start py-4">
-                                <CardTitle className="text-[#111827] leading-[32px] text-2xl font-bold">
-                                    Time Tracking
-                                </CardTitle>
-                                <p className="text-sm text-[#4B5563]">Track your work time</p>
-                            </CardHeading>
-                        </CardHeader>
+                        
                         <CardContent className="space-y-4">
-                            {/* Timer — no Submit & End inside */}
+                           
                             <OperatorTimerComponent
                                 totalTime={totalTime}
                                 isRunning={timerState === 'running'}
@@ -323,7 +314,7 @@ export function OperatorTaskDetails() {
                                     className="w-full h-14 text-base gap-2 bg-red-600 hover:bg-red-700"
                                 >
                                     <CheckCircle2 className="w-5 h-5" />
-                                    Submit &amp; End Session
+                                    Submit and End Session
                                 </Button>
                             )}
                         </CardContent>
