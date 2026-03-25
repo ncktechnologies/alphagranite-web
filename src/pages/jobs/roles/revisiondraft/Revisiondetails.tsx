@@ -152,13 +152,13 @@ export function RevisionDetailsPage() {
   });
 
   // Get SCT data for revision info
-  const { data: sctData, isLoading: isSctLoading } = useGetSalesCTByFabIdQuery(fabId, {
+  const { data: sctData, isLoading: isSctLoading, refetch: refetchSct } = useGetSalesCTByFabIdQuery(fabId, {
     skip: !fabId,
     refetchOnMountOrArgChange: true,
   });
 
   // Get revisions data
-  const { data: revisionsData, isLoading: isRevisionsLoading } = useGetRevisionsByFabIdQuery(fabId, {
+  const { data: revisionsData, isLoading: isRevisionsLoading, refetch: refetchRevisions } = useGetRevisionsByFabIdQuery(fabId, {
     skip: !fabId,
     refetchOnMountOrArgChange: true,
   });
@@ -473,7 +473,16 @@ export function RevisionDetailsPage() {
       }
       toast.success("Revision submitted successfully");
       setShowSubmissionModal(false);
-      await refetchAllFiles();
+      
+      // CRITICAL: Refetch all data to ensure UI reflects the updated state
+      await Promise.all([
+        refetchFab(),
+        refetchDrafting(),
+        refetchSct(),
+        refetchRevisions(),
+        refetchSession()
+      ]);
+      
       navigate('/job/revision');
     } catch (error: any) {
       console.error('Failed to submit revision:', error);

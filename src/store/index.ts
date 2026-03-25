@@ -14,6 +14,7 @@ import { actionMenuApi } from "./api/actionMenu";
 import { jobApi } from "./api/job";
 import { workstationApi } from "./api/workstation";
 import { shopCutPlanningApi } from "./api/shopCutPlanning";
+import { operatorApi } from "./api/operator";
 
 
 const persistConfig = {
@@ -34,6 +35,8 @@ const rootReducer = combineReducers({
     [jobApi.reducerPath]: jobApi.reducer,
     [workstationApi.reducerPath]: workstationApi.reducer,
     [shopCutPlanningApi.reducerPath]: shopCutPlanningApi.reducer,
+    [operatorApi.reducerPath]: operatorApi.reducer,
+
 });
 
 export type RootState = ReturnType<typeof rootReducer>;
@@ -58,6 +61,8 @@ const store = configureStore({
                 jobApi.middleware,
                 workstationApi.middleware,
                 shopCutPlanningApi.middleware,
+                operatorApi.middleware,
+
             ),
 
 });

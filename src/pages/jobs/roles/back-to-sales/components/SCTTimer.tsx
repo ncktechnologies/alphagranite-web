@@ -1,72 +1,90 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 interface SCTTimerProps {
-    startTime: string | null;  // draft_completed_date
-    endTime: string | null;    // sct_completed_date or null
+  startTime: string | null;  // draft_completed_date (UTC ISO string without Z)
+  endTime: string | null;    // sct_completed_date or null
 }
 
 export const SCTTimer = ({ startTime, endTime }: SCTTimerProps) => {
-    const [duration, setDuration] = useState<string>('');
+  const [duration, setDuration] = useState<string>('');
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-    useEffect(() => {
-        const calculateDuration = () => {
-            if (!startTime) {
-                setDuration('Not started');
-                return;
-            }
+  // Parse an ISO string as UTC – append 'Z' if no timezone indicator
+  const parseUTCDate = (dateStr: string): number => {
+    const hasTimezone = /[Z+-]/i.test(dateStr);
+    const normalized = hasTimezone ? dateStr : `${dateStr}Z`;
+    return new Date(normalized).getTime();
+  };
 
-            const start = new Date(startTime).getTime();
-            const end = endTime ? new Date(endTime).getTime() : new Date().getTime();
+  useEffect(() => {
+    const calculateDuration = () => {
+      if (!startTime) {
+        setDuration('Not started');
+        return;
+      }
 
-            // Calculate difference in milliseconds
-            const diff = end - start;
+      try {
+        const start = parseUTCDate(startTime);
+        const end = endTime ? parseUTCDate(endTime) : Date.now(); // Date.now() is UTC ms
 
-            // Generate friendly duration string
-            if (diff < 0) {
-                setDuration('Pending');
-                return;
-            }
+        const diff = end - start;
 
-            const seconds = Math.floor(diff / 1000);
-            const minutes = Math.floor(seconds / 60);
-            const hours = Math.floor(minutes / 60);
-            const days = Math.floor(hours / 24);
-
-            if (days > 0) {
-                const remainingHours = hours % 24;
-                // Format: "1 day 8 hrs"
-                setDuration(`${days} day${days !== 1 ? 's' : ''} ${remainingHours} hr${remainingHours !== 1 ? 's' : ''}`);
-            } else {
-                const remainingMinutes = minutes % 60;
-                // Format: "18 hrs 22 min"
-                setDuration(`${hours} hr${hours !== 1 ? 's' : ''} ${remainingMinutes} min`);
-            }
-        };
-
-        // Initial calculation
-        calculateDuration();
-
-        // If not completed (endTime is null), update every minute
-        let interval: NodeJS.Timeout;
-        if (!endTime) {
-            interval = setInterval(calculateDuration, 60000); // Update every minute
+        if (diff < 0) {
+          setDuration('Pending');
+          return;
         }
 
-        return () => {
-            if (interval) clearInterval(interval);
-        };
-    }, [startTime, endTime]);
+        const seconds = Math.floor(diff / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
 
-    if (!startTime) return null;
+        if (days > 0) {
+          const remainingHours = hours % 24;
+          setDuration(
+            `${days} day${days !== 1 ? 's' : ''} ${
+              remainingHours > 0 ? `${remainingHours} hr${remainingHours !== 1 ? 's' : ''}` : ''
+            }`.trim()
+          );
+        } else if (hours > 0) {
+          const remainingMinutes = minutes % 60;
+          setDuration(
+            `${hours} hr${hours !== 1 ? 's' : ''} ${
+              remainingMinutes > 0 ? `${remainingMinutes} min` : ''
+            }`.trim()
+          );
+        } else {
+          setDuration(minutes > 0 ? `${minutes} min` : 'Just now');
+        }
+      } catch {
+        setDuration('Invalid date');
+      }
+    };
 
-    return (
-        <div className="bg-[#FF8D28] px-4 py-2 rounded-[6px] text-white flex flex-col items-center min-w-[120px]">
-            <span className="text-xs font-medium text-[#EEEEEE] uppercase tracking-wide">
-                Time in SCT
-            </span>
-            <p className="text-sm font-bold mt-0.5 whitespace-nowrap">
-                {duration}
-            </p>
-        </div>
-    );
+    calculateDuration();
+
+    if (!endTime) {
+      intervalRef.current = setInterval(calculateDuration, 60000);
+    }
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [startTime, endTime]);
+
+  if (!startTime) return null;
+
+  return (
+    <div className="bg-[#FF8D28] px-4 py-2 rounded-[6px] text-white flex flex-col items-center min-w-[120px]">
+      <span className="text-xs font-medium text-[#EEEEEE] uppercase tracking-wide">
+        Time in SCT
+      </span>
+      <p className="text-sm font-bold mt-0.5 whitespace-nowrap">
+        {duration}
+      </p>
+    </div>
+  );
 };

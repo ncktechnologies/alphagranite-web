@@ -62,6 +62,7 @@ import { FabDetailsPage } from '@/pages/shop/components/statusDetails';
 import { InstallCompletionPage } from '@/pages/jobs/roles/install-completion';
 import { ResurfacingStatusDetailsPage } from '@/pages/jobs/roles/resurfacing-completion/components/details';
 // import ShopCalendarPage from '@/pages/shop/calendarPage';
+import { OperatorDashboard, OperatorTaskDetails } from '@/pages/operator';
 
 export function AppRoutingSetup() {
   return (
@@ -443,6 +444,20 @@ export function AppRoutingSetup() {
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <MiterDetailsPage/>
               // </ProtectedRoute>
+            }
+          />
+          
+          {/* Operator Routes */}
+          <Route
+            path="/operator/dashboard"
+            element={
+              <OperatorDashboard />
+            }
+          />
+          <Route
+            path="/operator/task/:jobId"
+            element={
+              <OperatorTaskDetails />
             }
           />
         </Route>

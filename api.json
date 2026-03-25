@@ -1764,6 +1764,72 @@
         ]
       }
     },
+    "/files": {
+      "get": {
+        "tags": [
+          "Files"
+        ],
+        "summary": "Get All Files",
+        "description": "Get all files, optionally filtered by job_id, stage, or uploaded_by",
+        "operationId": "get_all_files_files_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "title": "Stage"
+            }
+          },
+          {
+            "name": "uploaded_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "title": "Uploaded By"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/roles": {
       "post": {
         "tags": [
@@ -3127,7 +3193,7 @@
           "Jobs"
         ],
         "summary": "Get Jobs",
-        "description": "Get list of jobs with optional filtering",
+        "description": "Get list of jobs with optional filtering and pagination metadata",
         "operationId": "get_jobs_api_v1_jobs_get",
         "security": [
           {
@@ -3289,11 +3355,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/JobResponse"
-                  },
-                  "title": "Response Get Jobs Api V1 Jobs Get"
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
                 }
               }
             }
@@ -3489,7 +3551,28 @@
           "content": {
             "multipart/form-data": {
               "schema": {
-                "$ref": "#/components/schemas/Body_upload_job_media_api_v1_jobs__job_id__upload_media_post"
+                "$ref": "#/components/schemas/Body_upload_job_media_api_v1_jobs__job_id__upload_media_post",
+                "type": "object",
+                "required": [
+                  "files",
+                  "stage_name",
+                  "file_design"
+                ],
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    }
+                  },
+                  "stage_name": {
+                    "type": "string"
+                  },
+                  "file_design": {
+                    "type": "string"
+                  }
+                }
               }
             }
           }
@@ -6332,10 +6415,520 @@
                   "type": "null"
                 }
               ],
-              "description": "Search by FAB ID, Job Name, or Job Number",
+              "description": "Search value",
               "title": "Search"
             },
-            "description": "Search by FAB ID, Job Name, or Job Number"
+            "description": "Search value"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Field to apply search to: fab_id, job_number, job_name",
+              "title": "Type"
+            },
+            "description": "Field to apply search to: fab_id, job_number, job_name"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/fabs/shop-est-completion": {
+      "get": {
+        "tags": [
+          "Fabs"
+        ],
+        "summary": "Get Fabs With Shop Est Completion",
+        "description": "Get list of FABs that have a shop_est_completion_date set, with full FAB details.",
+        "operationId": "get_fabs_with_shop_est_completion_api_v1_fabs_shop_est_completion_get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of records to skip",
+              "default": 0,
+              "title": "Skip"
+            },
+            "description": "Number of records to skip"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Number of records to return",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Number of records to return"
+          },
+          {
+            "name": "job_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by job ID",
+              "title": "Job Id"
+            },
+            "description": "Filter by job ID"
+          },
+          {
+            "name": "fab_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by fab type",
+              "title": "Fab Type"
+            },
+            "description": "Filter by fab type"
+          },
+          {
+            "name": "sales_person_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by sales person ID",
+              "title": "Sales Person Id"
+            },
+            "description": "Filter by sales person ID"
+          },
+          {
+            "name": "templater_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by templater/technician ID",
+              "title": "Templater Id"
+            },
+            "description": "Filter by templater/technician ID"
+          },
+          {
+            "name": "status_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by status ID",
+              "title": "Status Id"
+            },
+            "description": "Filter by status ID"
+          },
+          {
+            "name": "current_stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by current stage",
+              "title": "Current Stage"
+            },
+            "description": "Filter by current stage"
+          },
+          {
+            "name": "next_stage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by next stage",
+              "title": "Next Stage"
+            },
+            "description": "Filter by next stage"
+          },
+          {
+            "name": "schedule_start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter FABs scheduled on or after this date (YYYY-MM-DD)",
+              "title": "Schedule Start Date"
+            },
+            "description": "Filter FABs scheduled on or after this date (YYYY-MM-DD)"
+          },
+          {
+            "name": "schedule_due_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter FABs scheduled on or before this date (YYYY-MM-DD)",
+              "title": "Schedule Due Date"
+            },
+            "description": "Filter FABs scheduled on or before this date (YYYY-MM-DD)"
+          },
+          {
+            "name": "schedule_status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by schedule status: scheduled or unscheduled",
+              "title": "Schedule Status"
+            },
+            "description": "Filter by schedule status: scheduled or unscheduled"
+          },
+          {
+            "name": "date_filter",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Predefined date filter: today, this_week, last_week, this_month, last_month, next_week, next_month",
+              "title": "Date Filter"
+            },
+            "description": "Predefined date filter: today, this_week, last_week, this_month, last_month, next_week, next_month"
+          },
+          {
+            "name": "shop_date_start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by shop_date_schedule on or after this date (YYYY-MM-DD)",
+              "title": "Shop Date Start"
+            },
+            "description": "Filter by shop_date_schedule on or after this date (YYYY-MM-DD)"
+          },
+          {
+            "name": "shop_date_end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by shop_date_schedule on or before this date (YYYY-MM-DD)",
+              "title": "Shop Date End"
+            },
+            "description": "Filter by shop_date_schedule on or before this date (YYYY-MM-DD)"
+          },
+          {
+            "name": "template_completed_start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by template_completed_date on or after this date (YYYY-MM-DD)",
+              "title": "Template Completed Start"
+            },
+            "description": "Filter by template_completed_date on or after this date (YYYY-MM-DD)"
+          },
+          {
+            "name": "template_completed_end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by template_completed_date on or before this date (YYYY-MM-DD)",
+              "title": "Template Completed End"
+            },
+            "description": "Filter by template_completed_date on or before this date (YYYY-MM-DD)"
+          },
+          {
+            "name": "predraft_completed_start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by predraft_completed_date on or after this date (YYYY-MM-DD)",
+              "title": "Predraft Completed Start"
+            },
+            "description": "Filter by predraft_completed_date on or after this date (YYYY-MM-DD)"
+          },
+          {
+            "name": "predraft_completed_end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by predraft_completed_date on or before this date (YYYY-MM-DD)",
+              "title": "Predraft Completed End"
+            },
+            "description": "Filter by predraft_completed_date on or before this date (YYYY-MM-DD)"
+          },
+          {
+            "name": "draft_completed_start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by draft_completed_date on or after this date (YYYY-MM-DD)",
+              "title": "Draft Completed Start"
+            },
+            "description": "Filter by draft_completed_date on or after this date (YYYY-MM-DD)"
+          },
+          {
+            "name": "draft_completed_end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by draft_completed_date on or before this date (YYYY-MM-DD)",
+              "title": "Draft Completed End"
+            },
+            "description": "Filter by draft_completed_date on or before this date (YYYY-MM-DD)"
+          },
+          {
+            "name": "sct_completed_start",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by sct_completed_date on or after this date (YYYY-MM-DD)",
+              "title": "Sct Completed Start"
+            },
+            "description": "Filter by sct_completed_date on or after this date (YYYY-MM-DD)"
+          },
+          {
+            "name": "sct_completed_end",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Filter by sct_completed_date on or before this date (YYYY-MM-DD)",
+              "title": "Sct Completed End"
+            },
+            "description": "Filter by sct_completed_date on or before this date (YYYY-MM-DD)"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search value",
+              "title": "Search"
+            },
+            "description": "Search value"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Field to apply search to: fab_id, job_number, job_name",
+              "title": "Type"
+            },
+            "description": "Field to apply search to: fab_id, job_number, job_name"
           }
         ],
         "responses": {
@@ -9492,7 +10085,7 @@
           "SlabSmith & Sales CT"
         ],
         "summary": "Get Pending Slabsmith Fab Ids",
-        "description": "Get FABs where:\n- current_stage is sales_ct (SCT)\n- slab_smith_ag_needed is true\n- slabsmith_completed_date is null\nOptional search by FAB ID or Job Number.",
+        "description": "Get FABs where:\n- current_stage is sales_ct (SCT)\n- slab_smith_ag_needed or slab_smith_cust_needed is true\n- slabsmith_completed_date is null\nOptional search by FAB ID or Job Number.",
         "operationId": "get_pending_slabsmith_fab_ids_api_v1_stages_slabsmith_pending_get",
         "parameters": [
           {
@@ -12751,6 +13344,685 @@
         ]
       }
     },
+    "/api/v1/operators/{operator_id}/workstations": {
+      "get": {
+        "tags": [
+          "Operators",
+          "Operators"
+        ],
+        "summary": "Get Workstations By Operator",
+        "description": "Get all workstations assigned to a specific operator.",
+        "operationId": "get_workstations_by_operator_api_v1_operators__operator_id__workstations_get",
+        "parameters": [
+          {
+            "name": "operator_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Operator Id"
+            }
+          },
+          {
+            "name": "status_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status Id"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/operators/{operator_id}/workstations/{workstation_id}/tasks": {
+      "get": {
+        "tags": [
+          "Operators",
+          "Operators"
+        ],
+        "summary": "Get Workstation Tasks By Operator",
+        "description": "Return all tasks assigned to an operator under a selected workstation, filtered by calendar window.",
+        "operationId": "get_workstation_tasks_by_operator_api_v1_operators__operator_id__workstations__workstation_id__tasks_get",
+        "parameters": [
+          {
+            "name": "operator_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Operator Id"
+            }
+          },
+          {
+            "name": "workstation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Workstation Id"
+            }
+          },
+          {
+            "name": "view",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "day",
+              "title": "View"
+            }
+          },
+          {
+            "name": "date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Date"
+            }
+          },
+          {
+            "name": "active_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Active Only"
+            }
+          },
+          {
+            "name": "group_by_day",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Group By Day"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/operators/{operator_id}/workstations/{workstation_id}/tasks/active": {
+      "get": {
+        "tags": [
+          "Operators",
+          "Operators"
+        ],
+        "summary": "Get Active Workstation Task By Operator",
+        "description": "Return the operator's currently active task for the selected workstation.",
+        "operationId": "get_active_workstation_task_by_operator_api_v1_operators__operator_id__workstations__workstation_id__tasks_active_get",
+        "parameters": [
+          {
+            "name": "operator_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Operator Id"
+            }
+          },
+          {
+            "name": "workstation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Workstation Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/operators/me/tasks": {
+      "get": {
+        "tags": [
+          "Operators",
+          "Operators"
+        ],
+        "summary": "Get Current Operator Tasks",
+        "description": "Return tasks assigned to the currently logged-in operator for day/week/month calendar views.",
+        "operationId": "get_current_operator_tasks_api_v1_operators_me_tasks_get",
+        "parameters": [
+          {
+            "name": "view",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "week",
+              "title": "View"
+            }
+          },
+          {
+            "name": "reference_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Reference Date"
+            }
+          },
+          {
+            "name": "active_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Active Only"
+            }
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/operators/me/jobs/{job_id}/timer/action": {
+      "post": {
+        "tags": [
+          "Operators",
+          "Operators"
+        ],
+        "summary": "Manage Current Operator Job Timer",
+        "description": "Start, pause, resume, or stop a timer for the current operator on a job.",
+        "operationId": "manage_current_operator_job_timer_api_v1_operators_me_jobs__job_id__timer_action_post",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OperatorJobTimerActionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/operators/me/jobs/{job_id}/timer": {
+      "get": {
+        "tags": [
+          "Operators",
+          "Operators"
+        ],
+        "summary": "Get Current Operator Job Timer State",
+        "description": "Get current timer state for the logged-in operator on a job.",
+        "operationId": "get_current_operator_job_timer_state_api_v1_operators_me_jobs__job_id__timer_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/operators/me/jobs/{job_id}/timer/history": {
+      "get": {
+        "tags": [
+          "Operators",
+          "Operators"
+        ],
+        "summary": "Get Current Operator Job Timer History",
+        "description": "Get timer session and event history for the logged-in operator on a job.",
+        "operationId": "get_current_operator_job_timer_history_api_v1_operators_me_jobs__job_id__timer_history_get",
+        "parameters": [
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/operators/{operator_id}/jobs/{job_id}/upload": {
+      "post": {
+        "tags": [
+          "Operators",
+          "Operators"
+        ],
+        "summary": "Upload Operator Job Qa File",
+        "description": "Upload a QA file for a specific operator and job.",
+        "operationId": "upload_operator_job_qa_file_api_v1_operators__operator_id__jobs__job_id__upload_post",
+        "parameters": [
+          {
+            "name": "operator_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Operator Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_operator_job_qa_file_api_v1_operators__operator_id__jobs__job_id__upload_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/operators/{operator_id}/jobs/{job_id}/files/{file_id}/view": {
+      "get": {
+        "tags": [
+          "Operators",
+          "Operators"
+        ],
+        "summary": "View Operator Job Document",
+        "description": "Securely stream PDF/image files for operator in-browser viewing.",
+        "operationId": "view_operator_job_document_api_v1_operators__operator_id__jobs__job_id__files__file_id__view_get",
+        "parameters": [
+          {
+            "name": "operator_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Operator Id"
+            }
+          },
+          {
+            "name": "job_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Job Id"
+            }
+          },
+          {
+            "name": "file_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "File Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/planning-section": {
       "post": {
         "tags": [
@@ -13068,6 +14340,22 @@
         "description": "Get all workstations with optional filters",
         "operationId": "get_all_workstations_api_v1_workstation_get",
         "parameters": [
+          {
+            "name": "operator_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Operator Id"
+            }
+          },
           {
             "name": "status_id",
             "in": "query",
@@ -16515,6 +17803,10 @@
             "type": "string",
             "title": "Stage Name"
           },
+          "job_id": {
+            "type": "integer",
+            "title": "Job Id"
+          },
           "directory": {
             "type": "string",
             "title": "Directory",
@@ -16555,6 +17847,52 @@
           "file_design"
         ],
         "title": "Body_upload_job_media_api_v1_jobs__job_id__upload_media_post"
+      },
+      "Body_upload_operator_job_qa_file_api_v1_operators__operator_id__jobs__job_id__upload_post": {
+        "properties": {
+          "file": {
+            "type": "string",
+            "contentMediaType": "application/octet-stream",
+            "title": "File"
+          },
+          "file_design": {
+            "type": "string",
+            "title": "File Design",
+            "default": "qa"
+          },
+          "stage_name": {
+            "type": "string",
+            "title": "Stage Name",
+            "default": "qa"
+          },
+          "file_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Type"
+          },
+          "directory": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Directory"
+          }
+        },
+        "type": "object",
+        "required": [
+          "file"
+        ],
+        "title": "Body_upload_operator_job_qa_file_api_v1_operators__operator_id__jobs__job_id__upload_post"
       },
       "BulkEmployeeActivateRequest": {
         "properties": {
@@ -18438,6 +19776,17 @@
               }
             ],
             "title": "Fab Type"
+          },
+          "sequence": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sequence"
           },
           "workstation_id": {
             "anyOf": [
@@ -21386,6 +22735,54 @@
         },
         "type": "object",
         "title": "MarkInvoicedRequest"
+      },
+      "OperatorJobTimerActionRequest": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "title": "Action",
+            "description": "start, pause, resume, stop"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "timestamp": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Timestamp"
+          },
+          "workstation_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Workstation Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "OperatorJobTimerActionRequest"
       },
       "PasswordChangeRequest": {
         "properties": {
