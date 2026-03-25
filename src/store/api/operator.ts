@@ -30,8 +30,8 @@ export interface OperatorTask {
     scheduled_end_time?: string;
     status?: string;
     is_active?: boolean;
-    scheduled_start_date:string;
-    actual_end_date:string
+    scheduled_start_date: string;
+    actual_end_date: string
 }
 
 export interface TimerState {
@@ -127,11 +127,11 @@ export const operatorApi = createApi({
             providesTags: ['Task'],
             transformResponse: (response: any) => response.data || response,
         }),
-        getCurrentOperatorTasksById: builder.query<OperatorTask[], { id?: number, operator_id:number, workstation_id:number }>({
-            query: ({ id, operator_id, workstation_id}) => ({
+        getCurrentOperatorTasksById: builder.query<OperatorTask[], { id?: number, operator_id: number, workstation_id: number }>({
+            query: ({ id, operator_id, workstation_id }) => ({
                 url: `/api/v1/operators/${operator_id}/workstations/${workstation_id}/tasks/${id}`,
                 method: 'GET',
-                params: { id}
+                params: { id }
             }),
             providesTags: ['Task'],
             transformResponse: (response: any) => response.data || response,
@@ -170,10 +170,10 @@ export const operatorApi = createApi({
             providesTags: (_result, _error, { job_id }) => [{ type: 'Timer', id: job_id }],
             transformResponse: (response: any) => response.data || response,
         }),
-        updateOperatorTask: builder.mutation<ShopCutPlanSuccessResponse<OperatorTask>, { task_id: number; data: OperatorTask }>({
-            query: ({ task_id, data }) => ({
-                url: `/api/v1/shop/plans/${task_id}`,
-                method: "put",
+        updateOperatorTask: builder.mutation<ShopCutPlanSuccessResponse<OperatorTask>, { operator_id: number; workstation_id: number; task_id: number; data: OperatorTask }>({
+            query: ({ operator_id, workstation_id, task_id, data }) => ({
+                url: `/api/v1/operators/${operator_id}/workstations/${workstation_id}/tasks/${task_id}`,
+                method: "patch",
                 data,
             }),
             invalidatesTags: (_result, _error, { task_id }) => [

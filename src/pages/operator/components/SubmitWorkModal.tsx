@@ -33,7 +33,6 @@ const submitWorkSchema = z.object({
 
 type SubmitWorkFormData = z.infer<typeof submitWorkSchema>;
 
-// ── Exported type so OperatorTaskDetails can reference it ─────────────────────
 export interface SubmitWorkData {
     work_percentage: number;
     notes?:          string;
@@ -48,6 +47,8 @@ interface SubmitWorkModalProps {
     estimatedHours?:        number;
     actualHours?:           number;
     taskId?:                number;
+    operatorId?:            number;      // ✅ new
+    workstationId?:         number;      // ✅ new
     fabId?:                 number;
     jobId?:                 number;
 }
@@ -60,6 +61,8 @@ export function SubmitWorkModal({
     estimatedHours,
     actualHours = 0,
     taskId,
+    operatorId,
+    workstationId,
     fabId,
     jobId,
 }: SubmitWorkModalProps) {
@@ -78,7 +81,6 @@ export function SubmitWorkModal({
     const workPct = form.watch('work_percentage');
     const isCompleted = form.watch('is_completed');
 
-    // Auto-tick is_completed when percentage hits 100
     const handlePercentageChange = (val: number) => {
         form.setValue('work_percentage', val);
         if (val === 100) form.setValue('is_completed', true);
@@ -89,10 +91,12 @@ export function SubmitWorkModal({
         try {
             const now = new Date().toISOString();
 
-            // Update the operator task record with actual dates + completion data
-            if (taskId) {
+            // ✅ Use the corrected endpoint with operator_id & workstation_id
+            if (taskId && operatorId && workstationId) {
                 await updateOperatorTask({
-                    task_id: taskId,
+                    operator_id:    operatorId,
+                    workstation_id: workstationId,
+                    task_id:        taskId,
                     data: {
                         actual_end_date:  now,
                         work_percentage:  values.work_percentage,
@@ -102,7 +106,6 @@ export function SubmitWorkModal({
                 }).unwrap();
             }
 
-            // Then call parent handler (which stops the timer on the server)
             await onSubmit({
                 work_percentage: values.work_percentage,
                 notes:           values.notes,
@@ -146,7 +149,7 @@ export function SubmitWorkModal({
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 p-1 pt-4">
 
-                        {/* ── Time summary ──────────────────────────────────── */}
+                        {/* Time summary */}
                         {estimatedHours && (
                             <div className="bg-gray-50 rounded-lg p-4 flex justify-between text-sm">
                                 <div>
@@ -167,7 +170,7 @@ export function SubmitWorkModal({
                             </div>
                         )}
 
-                        {/* ── Work percentage ───────────────────────────────── */}
+                        {/* Work percentage */}
                         <FormField
                             control={form.control}
                             name="work_percentage"
@@ -194,7 +197,6 @@ export function SubmitWorkModal({
                                                 <span>50%</span>
                                                 <span>100%</span>
                                             </div>
-                                            {/* Quick-pick */}
                                             <div className="grid grid-cols-5 gap-2">
                                                 {[25, 50, 75, 90, 100].map((val) => (
                                                     <button
@@ -218,7 +220,7 @@ export function SubmitWorkModal({
                             )}
                         />
 
-                        {/* ── Notes ─────────────────────────────────────────── */}
+                        {/* Notes */}
                         <FormField
                             control={form.control}
                             name="notes"
@@ -237,7 +239,7 @@ export function SubmitWorkModal({
                             )}
                         />
 
-                        {/* ── Mark as completed ─────────────────────────────── */}
+                        {/* Mark as completed */}
                         <FormField
                             control={form.control}
                             name="is_completed"
@@ -258,7 +260,7 @@ export function SubmitWorkModal({
                             )}
                         />
 
-                        {/* ── Actions ───────────────────────────────────────── */}
+                        {/* Actions */}
                         <div className="flex justify-end gap-3 pt-4 border-t">
                             <Button
                                 type="button"
@@ -279,7 +281,7 @@ export function SubmitWorkModal({
                                         Submitting...
                                     </span>
                                 ) : (
-                                    isCompleted ? 'Complete &amp; End' : 'Submit &amp; End'
+                                    isCompleted ? 'Complete & End' : 'Submit & End'
                                 )}
                             </Button>
                         </div>

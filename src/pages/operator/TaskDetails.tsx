@@ -31,20 +31,17 @@ export function OperatorTaskDetails() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
 
-    // ✅ All three IDs come from the calendar via URL params
-    const taskId         = Number(searchParams.get('task_id')) || 0;
-    const workstationId  = Number(searchParams.get('workstation_id')) || 0;
+    const taskId = Number(searchParams.get('task_id')) || 0;
+    const workstationId = Number(searchParams.get('workstation_id')) || 0;
     const scheduledStartDate = searchParams.get('scheduled_start_date');
 
     const currentUser = useSelector((s: any) => s.user.user);
-    // operator_id is the current user's employee id
     const operatorId = currentUser?.employee_id || currentUser?.id || 0;
 
     const [timerState, setTimerState] = useState<'idle' | 'running' | 'paused' | 'stopped'>('idle');
     const [totalTime, setTotalTime] = useState(0);
     const [serverSynced, setServerSynced] = useState(false);
 
-    // ── Two separate modals ───────────────────────────────────────────────────
     const [showWorkPercentageModal, setShowWorkPercentageModal] = useState(false);
     const [showSubmitModal, setShowSubmitModal] = useState(false);
 
@@ -52,14 +49,12 @@ export function OperatorTaskDetails() {
     const [showUploadDialog, setShowUploadDialog] = useState(false);
     const [activeFile, setActiveFile] = useState<any | null>(null);
 
-    // ✅ Fetch only this specific task using operator_id + workstation_id + task_id
     const { data: taskData, isLoading: isTasksLoading } =
         useGetCurrentOperatorTasksByIdQuery(
             { id: taskId, operator_id: operatorId, workstation_id: workstationId },
             { skip: !taskId || !operatorId || !workstationId }
         );
 
-    // taskData may be a single object or wrapped — normalise to a single task
     const currentTask: any = Array.isArray(taskData)
         ? taskData[0]
         : (taskData as any)?.data
@@ -68,15 +63,21 @@ export function OperatorTaskDetails() {
                 : (taskData as any).data
             : taskData ?? null;
 
-    // Get timer state
+    // Initialize workPercentage from the task data
+    useEffect(() => {
+        if (currentTask?.work_percentage !== undefined) {
+            setWorkPercentage(currentTask.work_percentage);
+        }
+    }, [currentTask]);
+
     const { data: timerData, isLoading: isTimerLoading, refetch: refetchTimer } =
         useGetTimerStateQuery(
-            { job_id: currentTask?.job_id || 0, scheduled_start_date: scheduledStartDate ?? undefined },
+            { job_id: currentTask?.business_job.id || 0, scheduled_start_date: scheduledStartDate ?? undefined },
             { skip: !currentTask }
         );
 
     const { data: timerHistory } = useGetTimerHistoryQuery(
-        { job_id: currentTask?.job_id || 0 },
+        { job_id: currentTask?.business_job?.id || 0 },
         { skip: !currentTask }
     );
 
@@ -90,12 +91,10 @@ export function OperatorTaskDetails() {
         }
     }, [timerData]);
 
-    // ── Handlers ──────────────────────────────────────────────────────────────
-
     const handleStart = async () => {
         try {
             await manageTimer({
-                job_id: currentTask?.job_id || 0,
+                job_id: currentTask?.business_job?.id || 0,
                 data: {
                     action: 'start',
                     timestamp: new Date().toISOString(),
@@ -112,12 +111,10 @@ export function OperatorTaskDetails() {
         }
     };
 
-    // Pause: pause the timer on the server, then open the work % modal.
-    // Toast only fires AFTER the user submits the work % modal.
     const handlePause = async () => {
         try {
             await manageTimer({
-                job_id: currentTask?.job_id || 0,
+                job_id: currentTask?.business_job?.id || 0,
                 data: {
                     action: 'pause',
                     timestamp: new Date().toISOString(),
@@ -129,7 +126,6 @@ export function OperatorTaskDetails() {
             setServerSynced(false);
             await refetchTimer();
 
-            // Open work percentage modal — toast fires inside modal after submission
             setShowWorkPercentageModal(true);
         } catch (error: any) {
             console.error('Failed to pause timer:', error);
@@ -137,7 +133,6 @@ export function OperatorTaskDetails() {
         }
     };
 
-    // Called when the work % modal is submitted
     const handleWorkPercentageSaved = (percentage: number) => {
         setWorkPercentage(percentage);
         setShowWorkPercentageModal(false);
@@ -147,7 +142,7 @@ export function OperatorTaskDetails() {
     const handleResume = async () => {
         try {
             await manageTimer({
-                job_id: currentTask?.job_id || 0,
+                job_id: currentTask?.business_job?.id || 0,
                 data: {
                     action: 'resume',
                     timestamp: new Date().toISOString(),
@@ -167,7 +162,7 @@ export function OperatorTaskDetails() {
     const handleSubmitWork = async (data: SubmitWorkData) => {
         try {
             await manageTimer({
-                job_id: currentTask?.job_id || 0,
+                job_id: currentTask?.business_job?.id || 0,
                 data: {
                     action: 'stop',
                     timestamp: new Date().toISOString(),
@@ -195,7 +190,6 @@ export function OperatorTaskDetails() {
         });
     };
 
-    // ── Loading ───────────────────────────────────────────────────────────────
     if (isTasksLoading || isTimerLoading) {
         return (
             <Container className="border-t">
@@ -224,15 +218,8 @@ export function OperatorTaskDetails() {
                         title={
                             <div className="text-2xl font-bold">
                                 <span>FAB-{currentTask?.fab_id || 'N/A'}: {currentTask?.job_name || 'N/A'}-{` #${currentTask?.job_number || currentTask?.fab_number || 'N/A'} `}</span>
-                                {/* {' - '} */}
-                                {/* <Badge variant={timerState === 'running' ? 'primary' : 'secondary'}>
-                                    {timerState === 'running' ? 'In Progress'
-                                        : timerState === 'paused' ? 'Paused'
-                                        : 'Not Started'}
-                                </Badge> */}
                             </div>
                         }
-                        // description={`Job #${currentTask?.job_number || currentTask?.fab_number || 'N/A'} `}
                     />
                     <ToolbarActions>
                         <BackButton />
@@ -241,10 +228,7 @@ export function OperatorTaskDetails() {
             </Container>
 
             <div className="border-t grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-                {/* LEFT COLUMN */}
                 <Container className="lg:col-span-8">
-
-                    {/* Task Information */}
                     <Card className="my-4">
                         <CardHeader>
                             <CardHeading className="flex flex-col items-start py-4">
@@ -257,11 +241,10 @@ export function OperatorTaskDetails() {
                         <CardContent>
                             <div className="grid grid-cols-2 md:grid-cols-4 space-y-10">
                                 {[
-                                    { label: 'Account',            value: currentTask?.account_name },
-                                    { label: 'Workstation',        value: currentTask?.workstation_name },
-                                    { label: 'Shop Activity',              value: currentTask?.plan_name },
-                                    { label: 'Estimated Hours',    value: currentTask?.estimated_hours },
-                                    // ✅ Scheduled start date shown from URL param
+                                    { label: 'Account', value: currentTask?.account_name },
+                                    { label: 'Workstation', value: currentTask?.workstation_name },
+                                    { label: 'Shop Activity', value: currentTask?.plan_name },
+                                    { label: 'Estimated Hours', value: currentTask?.estimated_hours },
                                     {
                                         label: 'Scheduled Start',
                                         value: scheduledStartDate
@@ -290,11 +273,8 @@ export function OperatorTaskDetails() {
                         </CardContent>
                     </Card>
 
-                    {/* Time Tracking */}
                     <Card className="my-4">
-                        
                         <CardContent className="space-y-4">
-                           
                             <OperatorTimerComponent
                                 totalTime={totalTime}
                                 isRunning={timerState === 'running'}
@@ -306,8 +286,6 @@ export function OperatorTaskDetails() {
                                 onTimeUpdate={setTotalTime}
                             />
 
-                            {/* ✅ Submit & End lives HERE — outside the timer box,
-                                only visible when paused or stopped */}
                             {(timerState === 'paused' || timerState === 'stopped' || timerState === 'running') && (
                                 <Button
                                     onClick={() => setShowSubmitModal(true)}
@@ -320,7 +298,6 @@ export function OperatorTaskDetails() {
                         </CardContent>
                     </Card>
 
-                    {/* QA Documentation */}
                     <Card className="my-4">
                         <CardHeader>
                             <CardHeading className="flex flex-col items-start py-4">
@@ -344,7 +321,6 @@ export function OperatorTaskDetails() {
                     </Card>
                 </Container>
 
-                {/* RIGHT COLUMN */}
                 <div className="lg:col-span-4 w-full lg:w-[300px] xl:w-[350px]">
                     <div className="border-l">
                         <Card className="border-none py-6">
@@ -363,10 +339,10 @@ export function OperatorTaskDetails() {
                                                 <div className="flex items-center gap-3">
                                                     <div className={cn(
                                                         "w-2 h-2 rounded-full",
-                                                        entry.action === 'start'  ? 'bg-green-500' :
-                                                        entry.action === 'pause'  ? 'bg-yellow-500' :
-                                                        entry.action === 'resume' ? 'bg-blue-500' :
-                                                        'bg-red-500'
+                                                        entry.action === 'start' ? 'bg-green-500' :
+                                                            entry.action === 'pause' ? 'bg-yellow-500' :
+                                                                entry.action === 'resume' ? 'bg-blue-500' :
+                                                                    'bg-red-500'
                                                     )} />
                                                     <span className="text-sm font-medium capitalize">
                                                         {entry.action}
@@ -389,15 +365,18 @@ export function OperatorTaskDetails() {
                 </div>
             </div>
 
-            {/* ── Work Percentage Modal (on Pause) ───────────────────────────── */}
+            {/* Work Percentage Modal */}
             <WorkPercentageModal
                 open={showWorkPercentageModal}
                 currentPercentage={workPercentage}
                 onSave={handleWorkPercentageSaved}
                 onClose={() => setShowWorkPercentageModal(false)}
+                operatorId={operatorId}
+                workstationId={workstationId}
+                taskId={currentTask?.task_id || taskId}
             />
 
-            {/* ── Submit & End Modal ─────────────────────────────────────────── */}
+            {/* Submit Work Modal */}
             <SubmitWorkModal
                 open={showSubmitModal}
                 onOpenChange={setShowSubmitModal}
@@ -405,12 +384,13 @@ export function OperatorTaskDetails() {
                 currentWorkPercentage={workPercentage}
                 estimatedHours={currentTask?.estimated_hours}
                 actualHours={totalTime / 3600}
-                taskId={currentTask?.task_id}
+                taskId={currentTask?.task_id || taskId}
+                operatorId={operatorId}
+                workstationId={workstationId}
                 fabId={currentTask?.fab_id}
-                jobId={currentTask?.job_id}
+                jobId={currentTask?.business_job.id}
             />
 
-            {/* ── Upload Dialog ──────────────────────────────────────────────── */}
             <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
@@ -419,7 +399,7 @@ export function OperatorTaskDetails() {
                         </DialogTitle>
                     </DialogHeader>
                     <OperatorMediaUpload
-                        jobId={currentTask?.job_id || 0}
+                        jobId={currentTask?.business_job.id || 0}
                         onUploadComplete={() => {
                             setShowUploadDialog(false);
                             toast.success('QA files uploaded successfully');
