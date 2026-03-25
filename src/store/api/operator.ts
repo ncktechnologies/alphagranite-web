@@ -178,7 +178,7 @@ export const operatorApi = createApi({
             }),
             invalidatesTags: (_result, _error, { task_id }) => [
                 { type: "Task", id: task_id },
-                "OperatorTask",
+                "Task",
             ],
         }),
         // Upload QA files for operator task
