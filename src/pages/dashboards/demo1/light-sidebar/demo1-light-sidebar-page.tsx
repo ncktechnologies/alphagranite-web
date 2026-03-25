@@ -27,6 +27,8 @@ import {
 } from '@/components/ui/select';
 import { Link } from 'react-router';
 import { Can } from '@/components/permission';
+import { useSelector } from 'react-redux';
+import { OperatorDashboard } from '@/pages/operator';
 export function Demo1LightSidebarPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<DateRange | undefined>({
@@ -39,6 +41,15 @@ export function Demo1LightSidebarPage() {
   const [timePeriod, setTimePeriod] = useState('all');
   const isSuperAdmin = useIsSuperAdmin();
 
+
+  // ✅ Check roles array from backend response
+  const currentUser = useSelector((s: any) => s.user.user);
+  const userRoles = currentUser?.roles || [];
+  const isOperator = userRoles.some((r: any) =>
+    r.name?.toLowerCase() === 'operator'
+  );
+
+  console.log(isOperator)
   const handleDateRangeApply = () => {
     setDate(tempDateRange); // Save the temporary date range to the main state
     setIsOpen(false); // Close the popover
@@ -54,7 +65,9 @@ export function Demo1LightSidebarPage() {
 
   const defaultStartDate = new Date(); // Default start date fallback
   const isUserSuperAdmin = useIsSuperAdmin();
-
+  if (isOperator) {
+    return <OperatorDashboard />;
+  }
   return (
     <Fragment>
       <Container>
@@ -97,9 +110,9 @@ export function Demo1LightSidebarPage() {
       </Container>
       <Container>
         {/* Super admins see the full admin dashboard, regular users see role-based dashboard */}
-        {isSuperAdmin ? 
-          <Demo1LightSidebarContent timePeriod={timePeriod} /> 
-          : 
+        {isSuperAdmin ?
+          <Demo1LightSidebarContent timePeriod={timePeriod} />
+          :
           <RoleBasedDashboard />
         }
       </Container>

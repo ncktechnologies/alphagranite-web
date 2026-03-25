@@ -103,11 +103,11 @@ export const MENU_SIDEBAR: MenuConfig = [
 
         ],
   },
-  {
-    title: 'Operator',
-    icon: 'shop.svg',
-    path: '/operator/dashboard',
-  },
+  // {
+  //   title: 'Operator',
+  //   icon: 'shop.svg',
+  //   path: '/operator/dashboard',
+  // },
   {
     title: 'Settings',
     icon: 'settings.svg',

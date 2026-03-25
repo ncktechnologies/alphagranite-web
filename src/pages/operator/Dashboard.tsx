@@ -18,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { WorkstationToggle } from './components/WorkstationToggle';
 import { useGetCurrentOperatorTasksQuery, useGetOperatorWorkstationsQuery } from '@/store/api/operator';
 import { useSelector } from 'react-redux';
+import { useAllPermissions, useIsSuperAdmin } from '@/hooks/use-permission';
 
 // ── Layout constants ──────────────────────────────────────────────────────────
 const DAY_START_HOUR = 7;
@@ -57,6 +58,9 @@ const setHoursLocal = (date: Date, hours: number) => {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function OperatorDashboard() {
+     const permissions = useAllPermissions();
+      const isSuperAdmin = useIsSuperAdmin();
+    
     const navigate  = useNavigate();
     const currentUser = useSelector((s: any) => s.user.user);
     const currentEmployeeId = currentUser?.employee_id || currentUser?.id;

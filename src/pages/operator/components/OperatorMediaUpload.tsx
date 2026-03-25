@@ -179,8 +179,8 @@ export function OperatorMediaUpload({ jobId, onUploadComplete, onClose }: Operat
               <SelectValue placeholder="Select stage" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="templating">Templating</SelectItem>
-              <SelectItem value="drafting">Drafting</SelectItem>
+              <SelectItem value="cutting">Cutting</SelectItem>
+              <SelectItem value="Edging">Edging</SelectItem>
               <SelectItem value="programming">Programming</SelectItem>
               <SelectItem value="final_programming">Final Programming</SelectItem>
               <SelectItem value="sales_ct">Sales Check</SelectItem>

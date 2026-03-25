@@ -17,6 +17,7 @@ interface FirstTimeLoginResponse {
 
 export const useFirstTimeLogin = () => {
   const [login] = useLoginMutation();
+  // ✅ Always fetch profile after login so roles/permissions are complete
   const [getProfile] = useLazyGetProfileQuery();
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -26,30 +27,32 @@ export const useFirstTimeLogin = () => {
     setIsLoading(true);
     try {
       const res = await login({ username, password }).unwrap() as FirstTimeLoginResponse;
-      
-      // Check if it's a first-time login
+
+      // ── First-time login ───────────────────────────────────────────────────
       if (res?.data?.first_time) {
-        // Store the token for the change password flow
         localStorage.setItem('token', res.data.access_token);
-        // Return indicator for popup instead of showing toast
         return { isFirstTime: true, accessToken: res.data.access_token };
       }
-      
-      // Regular login flow
-      toast.success("User login successfully");
+
+      // ── Regular login ──────────────────────────────────────────────────────
+      // 1. Store token first so the profile request is authenticated
       localStorage.setItem('token', res.data.access_token);
+
+      // ✅ 2. Fetch the full profile — includes complete roles[] and permissions
+      //       so the dashboard role check is accurate on the very first render
       const profileData = await getProfile().unwrap();
-    console.log(profileData, "testing")
+
+      // ✅ 3. Dispatch profile data (not the login response user object)
       dispatch(
         setCredentials({
           admin: profileData,
           access_token: res.data.access_token,
-          permissions: profileData?.action_permissions || [], // Pass permissions to Redux
+          permissions: profileData?.action_permissions || profileData?.permissions || [],
         })
       );
-      
-      // Redirect to dashboard
-      navigate('/dashboard');
+
+      toast.success('User login successfully');
+      navigate('/');
       return { isFirstTime: false };
     } catch (error) {
       console.error('Login error:', error);

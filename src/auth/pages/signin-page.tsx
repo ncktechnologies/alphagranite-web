@@ -14,7 +14,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-// import { Icons } from '@/components/common/icons';
 import { getSigninSchema, type SigninSchemaType } from '../forms/signin-schema';
 import { LoaderCircleIcon } from 'lucide-react';
 import { useLoginMutation, useLazyGetProfileQuery } from '@/store/api/auth';
@@ -29,16 +28,16 @@ export function SignInPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // const { login } = useAuth();
   const [passwordVisible, setPasswordVisible] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showFirstTimeLoginPopup, setShowFirstTimeLoginPopup] = useState(false);
-  const [login, { isLoading }] = useLoginMutation();
 
+  const [login] = useLoginMutation();
+  // ✅ Always available so we can fetch the full profile after any login
+  const [getProfile] = useLazyGetProfileQuery();
 
-  // Check for success message from password reset or error messages
   useEffect(() => {
     const pwdReset = searchParams.get('pwd_reset');
     const errorParam = searchParams.get('error');
@@ -53,26 +52,16 @@ export function SignInPage() {
     if (errorParam) {
       switch (errorParam) {
         case 'auth_callback_failed':
-          setError(
-            errorDescription || 'Authentication failed. Please try again.',
-          );
+          setError(errorDescription || 'Authentication failed. Please try again.');
           break;
         case 'auth_callback_error':
-          setError(
-            errorDescription ||
-            'An error occurred during authentication. Please try again.',
-          );
+          setError(errorDescription || 'An error occurred during authentication. Please try again.');
           break;
         case 'auth_token_error':
-          setError(
-            errorDescription ||
-            'Failed to set authentication session. Please try again.',
-          );
+          setError(errorDescription || 'Failed to set authentication session. Please try again.');
           break;
         default:
-          setError(
-            errorDescription || 'Authentication error. Please try again.',
-          );
+          setError(errorDescription || 'Authentication error. Please try again.');
           break;
       }
     }
@@ -87,21 +76,17 @@ export function SignInPage() {
     },
   });
 
-  // Function to extract error message from API response
   const getErrorMessage = (error: any): string => {
     if (error?.data?.detail) {
       if (Array.isArray(error.data.detail)) {
-        // Handle array of validation errors
         return error.data.detail.map((err: any) => err.message || JSON.stringify(err)).join(', ');
       } else if (typeof error.data.detail === 'string') {
-        // Handle string error message
-        return error.data.detail.message;
+        return error.data.detail;
       } else {
-        // Handle object error message
-        return error.data.detail.message;
+        return error.data.detail.message || JSON.stringify(error.data.detail);
       }
     }
-    return  'Invalid username or password';
+    return 'Invalid username or password';
   };
 
   async function onSubmit(values: SigninSchemaType) {
@@ -109,55 +94,57 @@ export function SignInPage() {
       setIsProcessing(true);
       setError(null);
 
-      console.log('Attempting to sign in with username:', values.username);
-
-      // Simple validation
       if (!values.username.trim() || !values.password) {
         setError('Username and password are required');
-        setIsProcessing(false);
         return;
       }
 
-      const res: LoginResponse = await login({ username: values.username, password: values.password }).unwrap();
-      
-      // Check if it's a first-time login (based on the response structure you provided)
+      const res: LoginResponse = await login({
+        username: values.username,
+        password: values.password,
+      }).unwrap();
+
+      // ── First-time login ─────────────────────────────────────────────────
       if (res?.success === true && res?.data?.first_time === true && res?.data?.access_token) {
-        // Store the token for the change password flow
         localStorage.setItem('token', res.data.access_token);
-        // Show popup instead of toast
         setShowFirstTimeLoginPopup(true);
-        setIsProcessing(false);
         return;
       }
-      console.log(res)
-      // Regular login flow
+
+      // ── Regular login ────────────────────────────────────────────────────
       if (res?.data?.access_token) {
-        toast.success("User login successfully");
+        // 1. Store token first so the profile request is authenticated
         localStorage.setItem('token', res.data.access_token);
-        
-        // Store refresh token if available
         if (res?.data?.refresh_token) {
           localStorage.setItem('refresh_token', res.data.refresh_token);
         }
+
+        // ✅ 2. Always fetch the full profile — this includes the complete
+        //       `roles` array and `permissions` that the login response
+        //       may not include or may have stale data for.
+        const profileData = await getProfile().unwrap();
+
+        // ✅ 3. Dispatch the PROFILE data (not res.data.user) so roles are
+        //       guaranteed to be up-to-date before the dashboard renders.
         dispatch(
           setCredentials({
-            admin: res.data.user,
+            admin: profileData,
             access_token: res.data.access_token,
-            permissions: res.data.action_permissions || res.data.permissions || [], // Pass permissions to Redux
+            permissions: profileData?.action_permissions || profileData?.permissions || [],
           })
         );
-        
+
+        toast.success('User login successfully');
+
         const nextPath = searchParams.get('next') || '/';
-        // Use navigate for navigation
-        navigate(nextPath || '/');
+        navigate(nextPath);
       } else {
         setError('Login failed. Please try again.');
-        setIsProcessing(false);
       }
     } catch (err: any) {
       console.error('Unexpected sign-in error:', err);
-      const errorMessage = getErrorMessage(err);
-      setError(errorMessage);
+      setError(getErrorMessage(err));
+    } finally {
       setIsProcessing(false);
     }
   }
@@ -169,31 +156,18 @@ export function SignInPage() {
 
   return (
     <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="block w-full space-y-5"
-      >
-
-
+      <form onSubmit={form.handleSubmit(onSubmit)} className="block w-full space-y-5">
 
         {error && (
-          <Alert
-            variant="destructive"
-            appearance="light"
-            onClose={() => setError(null)}
-          >
-            <AlertIcon>
-              <AlertCircle />
-            </AlertIcon>
+          <Alert variant="destructive" appearance="light" onClose={() => setError(null)}>
+            <AlertIcon><AlertCircle /></AlertIcon>
             <AlertTitle>{error}</AlertTitle>
           </Alert>
         )}
 
         {successMessage && (
           <Alert appearance="light" onClose={() => setSuccessMessage(null)}>
-            <AlertIcon>
-              <Check />
-            </AlertIcon>
+            <AlertIcon><Check /></AlertIcon>
             <AlertTitle>{successMessage}</AlertTitle>
           </Alert>
         )}
@@ -223,7 +197,7 @@ export function SignInPage() {
               <div className="relative">
                 <Input
                   placeholder="******************"
-                  type={passwordVisible ? 'text' : 'password'} // Toggle input type
+                  type={passwordVisible ? 'text' : 'password'}
                   {...field}
                 />
                 <Button
@@ -233,18 +207,16 @@ export function SignInPage() {
                   onClick={() => setPasswordVisible(!passwordVisible)}
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                 >
-                  {passwordVisible ? (
-                    <EyeOff className="text-muted-foreground" />
-                  ) : (
-                    <Eye className="text-muted-foreground" />
-                  )}
+                  {passwordVisible
+                    ? <EyeOff className="text-muted-foreground" />
+                    : <Eye className="text-muted-foreground" />
+                  }
                 </Button>
               </div>
               <FormMessage />
             </FormItem>
           )}
         />
-
 
         <Button type="submit" className="w-full" disabled={isProcessing}>
           {isProcessing ? (
@@ -255,50 +227,30 @@ export function SignInPage() {
             'Sign In'
           )}
         </Button>
-        <div className="flex items-center justify-center">
 
-          <span className='text-text '>
-            Forgot Password?
-          </span>
-          <Link
-            to="/auth/forgot-password"
-            className="text-sm text-primary pl-2 hover:underline"
-          >
+        <div className="flex items-center justify-center">
+          <span className="text-text">Forgot Password?</span>
+          <Link to="/auth/forgot-password" className="text-sm text-primary pl-2 hover:underline">
             Reset Password
           </Link>
-
         </div>
+
         <FormField
           control={form.control}
           name="rememberMe"
           render={({ field }) => (
-            <FormItem className="flex flex-col space-y-2 justify-center">
-
-            </FormItem>
+            <FormItem className="flex flex-col space-y-2 justify-center" />
           )}
         />
-
-        {/* <div className="text-center text-sm text-muted-foreground">
-          Don't have an account?{' '}
-          <Link
-            to="/auth/signup"
-            className="text-sm font-semibold text-foreground hover:text-primary"
-          >
-            Sign Up
-          </Link>
-        </div> */}
       </form>
 
-      <Popup 
+      <Popup
         isOpen={showFirstTimeLoginPopup}
         title="First Time Login"
         description="Please change your default password to continue."
       >
         <div className="flex flex-col items-center mt-4">
-          <Button
-            className="px-8"
-            onClick={handleFirstTimeLoginRedirect}
-          >
+          <Button className="px-8" onClick={handleFirstTimeLoginRedirect}>
             Change Password
           </Button>
         </div>
