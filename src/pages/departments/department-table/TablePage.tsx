@@ -52,7 +52,7 @@ export function DepartmentDetailsPage() {
                         description={department.description || 'No description available'} 
                     />
                     <ToolbarActions>
-                        <BackButton fallbackUrl="/departments" />
+                        <BackButton />
                     </ToolbarActions>
                 </Toolbar>
                 <DepartmentTable employees={department.users || []} />

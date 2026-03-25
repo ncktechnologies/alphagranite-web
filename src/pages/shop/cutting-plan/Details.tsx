@@ -94,7 +94,7 @@ const jobInfo = [
                 <Toolbar className=' '>
                     {/* <ToolbarHeading title="FAB ID: 4456" description="Update templating activity" /> */}
                     <ToolbarActions>
-                        <BackButton fallbackUrl="/shop/cutting-plan" />
+                        <BackButton />
                     </ToolbarActions>
                 </Toolbar>
             </Container>

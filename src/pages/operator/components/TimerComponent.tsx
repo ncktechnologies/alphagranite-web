@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Play, Pause, Circle, CheckCircle2, RotateCcw } from 'lucide-react';
+import { Play, Pause, Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface TimerComponentProps {
@@ -12,7 +12,6 @@ interface TimerComponentProps {
     onStart: () => void;
     onPause: () => void;
     onResume: () => void;
-    onSubmitAndEnd: () => void;
     onTimeUpdate?: (time: number) => void;
     disabled?: boolean;
     className?: string;
@@ -26,7 +25,6 @@ export function OperatorTimerComponent({
     onStart,
     onPause,
     onResume,
-    onSubmitAndEnd,
     onTimeUpdate,
     disabled = false,
     className = '',
@@ -160,10 +158,10 @@ export function OperatorTimerComponent({
                     </div>
                 )}
 
-                {/* ── Control Buttons — styled like FunctionalTimer ─────────── */}
+                {/* ── Control Buttons ───────────────────────────────────────── */}
                 <div className="flex gap-[12px] items-center flex-wrap justify-center">
 
-                    {/* Not started */}
+                    {/* Not started → Start */}
                     {!isRunning && !isPaused && (
                         <button
                             onClick={onStart}
@@ -177,9 +175,10 @@ export function OperatorTimerComponent({
                         </button>
                     )}
 
-                    {/* Running */}
-                    {isRunning && (
+                    {/* Running → Pause + On Hold */}
+                    {isRunning && !isPaused && (
                         <>
+                            {/* Pause — temporarily stop the clock */}
                             <button
                                 onClick={onPause}
                                 disabled={disabled}
@@ -191,24 +190,9 @@ export function OperatorTimerComponent({
                                 </p>
                             </button>
 
+                            {/* On Hold — also pauses but signals a hold state */}
                             <button
-                                onClick={onSubmitAndEnd}
-                                disabled={disabled}
-                                className="bg-[#d32f2f] disabled:opacity-50 flex gap-[8px] h-[40px] items-center justify-center px-[16px] py-[3px] rounded-[6px] cursor-pointer hover:bg-[#b71c1c] transition-colors"
-                            >
-                                <CheckCircle2 className="size-[24px] text-white" />
-                                <p className="font-semibold leading-[16px] text-[16px] text-white tracking-[-0.32px] whitespace-nowrap">
-                                    Submit & End
-                                </p>
-                            </button>
-                        </>
-                    )}
-
-                    {/* Paused */}
-                    {isPaused && (
-                        <>
-                            <button
-                                onClick={onResume}
+                                onClick={onPause}
                                 disabled={disabled}
                                 className="border-2 border-[#d32f2f] bg-white disabled:opacity-50 flex gap-[8px] h-[40px] items-center justify-center px-[16px] py-[3px] rounded-[6px] cursor-pointer hover:bg-[#fff5f5] transition-colors"
                             >
@@ -217,18 +201,21 @@ export function OperatorTimerComponent({
                                     On Hold
                                 </p>
                             </button>
-
-                            <button
-                                onClick={onSubmitAndEnd}
-                                disabled={disabled}
-                                className="bg-[#d32f2f] disabled:opacity-50 flex gap-[8px] h-[40px] items-center justify-center px-[16px] py-[3px] rounded-[6px] cursor-pointer hover:bg-[#b71c1c] transition-colors"
-                            >
-                                <CheckCircle2 className="size-[24px] text-white" />
-                                <p className="font-semibold leading-[16px] text-[16px] text-white tracking-[-0.32px] whitespace-nowrap">
-                                    Submit & End
-                                </p>
-                            </button>
                         </>
+                    )}
+
+                    {/* Paused → Resume only */}
+                    {isPaused && (
+                        <button
+                            onClick={onResume}
+                            disabled={disabled}
+                            className="bg-[#7a9705] disabled:opacity-50 flex gap-[8px] h-[40px] items-center justify-center px-[16px] py-[3px] rounded-[6px] cursor-pointer hover:bg-[#6a8505] transition-colors"
+                        >
+                            <Play className="size-[24px] text-white fill-white" />
+                            <p className="font-semibold leading-[16px] text-[16px] text-white tracking-[-0.32px] whitespace-nowrap">
+                                Resume
+                            </p>
+                        </button>
                     )}
                 </div>
             </div>

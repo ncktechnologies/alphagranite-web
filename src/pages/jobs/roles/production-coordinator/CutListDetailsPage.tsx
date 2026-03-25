@@ -203,7 +203,7 @@ const CutListDetailsPage = () => {
                         </div>
                     </div>
                     <ToolbarActions>
-                        <BackButton fallbackUrl="/job/cut-list" />
+                        <BackButton  />
                     </ToolbarActions>
                 </Toolbar>
             </Container>

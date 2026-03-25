@@ -210,7 +210,7 @@ export function JobDetailsPage() {
             description="View job details, FABs, and media files"
           />
           <ToolbarActions>
-            <BackButton fallbackUrl="/create-jobs" />
+            <BackButton  />
           </ToolbarActions>
         </Toolbar>
       </Container>

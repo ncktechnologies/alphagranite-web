@@ -30,6 +30,8 @@ export interface OperatorTask {
     scheduled_end_time?: string;
     status?: string;
     is_active?: boolean;
+    scheduled_start_date:string;
+    actual_end_date:string
 }
 
 export interface TimerState {
@@ -125,6 +127,15 @@ export const operatorApi = createApi({
             providesTags: ['Task'],
             transformResponse: (response: any) => response.data || response,
         }),
+        getCurrentOperatorTasksById: builder.query<OperatorTask[], { id?: number, operator_id:number, workstation_id:number }>({
+            query: ({ id, operator_id, workstation_id}) => ({
+                url: `/api/v1/operators/${operator_id}/workstations/${workstation_id}/tasks/${id}`,
+                method: 'GET',
+                params: { id}
+            }),
+            providesTags: ['Task'],
+            transformResponse: (response: any) => response.data || response,
+        }),
 
         // Manage timer (start, pause, resume, stop)
         manageTimer: builder.mutation<TimerState, { job_id: number; data: OperatorJobTimerActionRequest }>({
@@ -216,6 +227,7 @@ export const {
     useGetOperatorTasksQuery,
     useGetActiveTaskQuery,
     useGetCurrentOperatorTasksQuery,
+    useGetCurrentOperatorTasksByIdQuery,
     useManageTimerMutation,
     useGetTimerStateQuery,
     useGetTimerHistoryQuery,

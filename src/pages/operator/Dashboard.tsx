@@ -18,7 +18,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { WorkstationToggle } from './components/WorkstationToggle';
 import { useGetCurrentOperatorTasksQuery, useGetOperatorWorkstationsQuery } from '@/store/api/operator';
 import { useSelector } from 'react-redux';
-import { useAllPermissions, useIsSuperAdmin } from '@/hooks/use-permission';
 
 // ── Layout constants ──────────────────────────────────────────────────────────
 const DAY_START_HOUR = 7;
@@ -58,9 +57,6 @@ const setHoursLocal = (date: Date, hours: number) => {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 export function OperatorDashboard() {
-     const permissions = useAllPermissions();
-      const isSuperAdmin = useIsSuperAdmin();
-    
     const navigate  = useNavigate();
     const currentUser = useSelector((s: any) => s.user.user);
     const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
@@ -146,9 +142,9 @@ export function OperatorDashboard() {
     // ── Event click — pass scheduled_start_date in URL params ─────────────────
     const handleEventClick = useCallback((task: any) => {
         const params = new URLSearchParams();
-        if (task.scheduled_start_date) {
-            params.set('scheduled_start_date', task.scheduled_start_date);
-        }
+        if (task.task_id)              params.set('task_id',              String(task.task_id));
+        if (task.workstation_id)       params.set('workstation_id',       String(task.workstation_id));
+        if (task.scheduled_start_date) params.set('scheduled_start_date', task.scheduled_start_date);
         navigate(`/operator/task/${task.job_id}?${params.toString()}`);
     }, [navigate]);
 
@@ -196,6 +192,13 @@ export function OperatorDashboard() {
     // ── Render a single event card ────────────────────────────────────────────
     const renderEventCard = useCallback((event: any) => {
         const { bg, border, text } = getColorForFab(event.fab_id || event.id);
+        // Format time range from scheduled dates
+        const startTime = event.scheduled_start_date
+            ? format(new Date(event.scheduled_start_date), 'h:mma')
+            : null;
+        const endTime = event.scheduled_end_date
+            ? format(new Date(event.scheduled_end_date), 'h:mma')
+            : null;
 
         return (
             <div
@@ -211,16 +214,52 @@ export function OperatorDashboard() {
                 }}
                 onClick={(e) => { e.stopPropagation(); handleEventClick(event); }}
             >
-                <div className="px-2 py-1 h-full flex flex-col justify-center overflow-hidden gap-0.5">
-                    <p className="text-[12px] font-semibold truncate leading-tight" style={{ color: text }}>
-                        FAB-{event.fab_number || event.fab_id}
-                    </p>
-                    {event._height > 28 && (
-                        <p className="text-[10px] truncate leading-tight" style={{ color: text, opacity: 0.75 }}>
-                            {event.account_name || event.plan_name || ''}
+                <div className="px-2 py-1 h-full flex flex-col justify-start overflow-hidden gap-0.5">
+                    {/* FAB ID + job name on same line */}
+                    <div className="flex items-center gap-1">
+                        <p className="text-[12px] font-bold truncate leading-tight shrink-0" style={{ color: text }}>
+                            FAB-{event.fab_id}
+                        </p>
+                        {event.job_name && (
+                            <p className="text-[11px] font-medium truncate leading-tight" style={{ color: text, opacity: 0.85 }}>
+                                · {event.job_name}
+                            </p>
+                        )}
+                    </div>
+
+                    {/* Account name */}
+                    {event._height > 30 && event.account_name && (
+                        <p className="text-[10px] truncate leading-tight" style={{ color: text, opacity: 0.7 }}>
+                            {event.account_name}
                         </p>
                     )}
-                    {event._height > 44 && event.work_percentage > 0 && (
+
+                    {/* Workstation + stage */}
+                    {event._height > 44 && (
+                        <div className="flex items-center gap-1.5">
+                            {event.workstation_name && (
+                                <span className="text-[9px] font-semibold px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.5)', color: text }}>
+                                    {event.workstation_name}
+                                </span>
+                            )}
+                            {event.planning_section_name && (
+                                <span className="text-[9px] truncate" style={{ color: text, opacity: 0.65 }}>
+                                    {event.planning_section_name}
+                                </span>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Time range */}
+                    {event._height > 58 && startTime && (
+                        <p className="text-[9px] leading-tight" style={{ color: text, opacity: 0.6 }}>
+                            {startTime}{endTime ? ` – ${endTime}` : ''}
+                            {event.estimated_hours ? ` · ${event.estimated_hours}h` : ''}
+                        </p>
+                    )}
+
+                    {/* Work percentage bar */}
+                    {event._height > 68 && event.work_percentage > 0 && (
                         <div className="flex items-center gap-1 mt-0.5">
                             <div className="flex-1 bg-white/50 rounded-full h-1">
                                 <div

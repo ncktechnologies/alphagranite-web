@@ -10,13 +10,12 @@ import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 
 import { OperatorTimerComponent } from './components/TimerComponent';
-import { WorkPercentageModal } from './components/WorkPercentageModal';
 import { SubmitWorkModal, type SubmitWorkData } from './components/SubmitWorkModal';
 import {
     useGetTimerStateQuery,
     useManageTimerMutation,
     useGetTimerHistoryQuery,
-    useGetCurrentOperatorTasksQuery
+    useGetCurrentOperatorTasksByIdQuery,
 } from '@/store/api/operator';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { OperatorMediaUpload } from './components/OperatorMediaUpload';
@@ -25,45 +24,51 @@ import { BackButton } from '@/components/common/BackButton';
 import { Badge } from '@/components/ui/badge';
 import { FileViewer } from '../jobs/roles/drafters/components';
 import { cn } from '@/lib/utils';
+import { WorkPercentageModal } from './components/WorkPercentageModal';
 
 export function OperatorTaskDetails() {
     const { jobId } = useParams<{ jobId: string }>();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const taskId = jobId ? Number(jobId) : 0;
 
-    // ✅ scheduled_start_date passed from the dashboard via URL params
+    // ✅ All three IDs come from the calendar via URL params
+    const taskId         = Number(searchParams.get('task_id')) || 0;
+    const workstationId  = Number(searchParams.get('workstation_id')) || 0;
     const scheduledStartDate = searchParams.get('scheduled_start_date');
 
     const currentUser = useSelector((s: any) => s.user.user);
-    const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
+    // operator_id is the current user's employee id
+    const operatorId = currentUser?.employee_id || currentUser?.id || 0;
 
     const [timerState, setTimerState] = useState<'idle' | 'running' | 'paused' | 'stopped'>('idle');
     const [totalTime, setTotalTime] = useState(0);
     const [serverSynced, setServerSynced] = useState(false);
 
     // ── Two separate modals ───────────────────────────────────────────────────
-    // 1. WorkPercentageModal — shown on Pause, only records % and keeps timer paused
     const [showWorkPercentageModal, setShowWorkPercentageModal] = useState(false);
-    // 2. SubmitWorkModal — shown on "Submit & End Session", ends the session
     const [showSubmitModal, setShowSubmitModal] = useState(false);
 
     const [workPercentage, setWorkPercentage] = useState(0);
     const [showUploadDialog, setShowUploadDialog] = useState(false);
     const [activeFile, setActiveFile] = useState<any | null>(null);
 
-    const { data: tasksData, isLoading: isTasksLoading } =
-        useGetCurrentOperatorTasksQuery(
-            { view: 'day', reference_date: new Date().toISOString().split('T')[0] },
-            { skip: !currentEmployeeId }
+    // ✅ Fetch only this specific task using operator_id + workstation_id + task_id
+    const { data: taskData, isLoading: isTasksLoading } =
+        useGetCurrentOperatorTasksByIdQuery(
+            { id: taskId, operator_id: operatorId, workstation_id: workstationId },
+            { skip: !taskId || !operatorId || !workstationId }
         );
 
-    const currentTask = tasksData
-        ? (Array.isArray(tasksData) ? tasksData : (tasksData as any)?.data || [])
-            .find((task: any) => task.job_id === taskId || task.fab_id === taskId)
-        : null;
+    // taskData may be a single object or wrapped — normalise to a single task
+    const currentTask: any = Array.isArray(taskData)
+        ? taskData[0]
+        : (taskData as any)?.data
+            ? Array.isArray((taskData as any).data)
+                ? (taskData as any).data[0]
+                : (taskData as any).data
+            : taskData ?? null;
 
-    // Get timer state — include scheduled_start_date so the backend can find the right session
+    // Get timer state
     const { data: timerData, isLoading: isTimerLoading, refetch: refetchTimer } =
         useGetTimerStateQuery(
             { job_id: currentTask?.job_id || 0, scheduled_start_date: scheduledStartDate ?? undefined },
@@ -220,17 +225,17 @@ export function OperatorTaskDetails() {
                             <div className="text-2xl font-bold">
                                 <span>FAB-{currentTask?.fab_id || 'N/A'}: {currentTask?.job_name || 'N/A'}</span>
                                 {' - '}
-                                <Badge variant={timerState === 'running' ? 'primary' : 'secondary'}>
+                                {/* <Badge variant={timerState === 'running' ? 'primary' : 'secondary'}>
                                     {timerState === 'running' ? 'In Progress'
                                         : timerState === 'paused' ? 'Paused'
                                         : 'Not Started'}
-                                </Badge>
+                                </Badge> */}
                             </div>
                         }
-                        description={`Job #${currentTask?.job_number || currentTask?.fab_number || 'N/A'} • ${currentTask?.account_name || 'N/A'}`}
+                        description={`Job #${currentTask?.job_number || currentTask?.fab_number || 'N/A'} `}
                     />
                     <ToolbarActions>
-                        <BackButton fallbackUrl="/operator/dashboard" />
+                        <BackButton />
                     </ToolbarActions>
                 </Toolbar>
             </Container>
@@ -256,7 +261,7 @@ export function OperatorTaskDetails() {
                                     { label: 'Job Name',           value: currentTask?.job_name },
                                     { label: 'Account',            value: currentTask?.account_name },
                                     { label: 'Workstation',        value: currentTask?.workstation_name },
-                                    { label: 'Stage',              value: currentTask?.current_stage || currentTask?.planning_section_name },
+                                    { label: 'Stage',              value: currentTask?.plan_name },
                                     { label: 'Estimated Hours',    value: currentTask?.estimated_hours },
                                     // ✅ Scheduled start date shown from URL param
                                     {
@@ -269,8 +274,8 @@ export function OperatorTaskDetails() {
                                     },
                                     {
                                         label: 'Scheduled End',
-                                        value: currentTask?.scheduled_end_date
-                                            ? format(new Date(currentTask.scheduled_end_date), 'MMM d, yyyy h:mm a')
+                                        value: currentTask?.est_workstation_comp_date
+                                            ? format(new Date(currentTask.est_workstation_comp_date), 'MMM d, yyyy h:mm a')
                                             : null,
                                     },
                                 ].map((item, idx) => (
