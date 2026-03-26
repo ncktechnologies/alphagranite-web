@@ -81,7 +81,7 @@ function DataGridColumnHeader<TData, TValue>({
     return (
       <div
         className={cn(
-          'text-accent-foreground font-normal inline-flex min-h-8 items-center gap-1.5 text-xs leading-tight [&_svg]:size-3 [&_svg]:opacity-60 break-words whitespace-normal text-left',
+          'text-accent-foreground font-normal inline-flex  items-center gap-1.5 text-xs leading-tight [&_svg]:size-3 [&_svg]:opacity-60 break-words whitespace-normal text-left',
           className,
         )}
       >
@@ -102,7 +102,7 @@ function DataGridColumnHeader<TData, TValue>({
       <Button
         variant="ghost"
         className={cn(
-          'text-[#7C8689] leading-[15px] ultra:text-[15px] rounded-md font-normal -ms-2 p-0 min-h-7 hover:bg-secondary/5 data-[state=open]:bg-secondary/5 hover:text-foreground data-[state=open]:text-foreground max-w-full text-left break-words whitespace-normal',
+          'text-[#7C8689] leading-[15px] ultra:text-[15px] rounded-md font-normal h-full -ms-2 p-0  hover:bg-secondary/5 data-[state=open]:bg-secondary/5 hover:text-foreground data-[state=open]:text-foreground max-w-full text-left break-words whitespace-normal',
           className,
         )}
         disabled={isLoading || recordCount === 0}
@@ -155,7 +155,7 @@ function DataGridColumnHeader<TData, TValue>({
 
   const headerControls = () => {
     return (
-      <div className="flex items-center h-8 gap-1.5 justify-between min-w-0 w-full">
+      <div className="flex items-center h-auto gap-1.5 justify-between min-w-0 w-full">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <div className="min-w-0 flex-1"> {/* Wrapper for proper sizing */}

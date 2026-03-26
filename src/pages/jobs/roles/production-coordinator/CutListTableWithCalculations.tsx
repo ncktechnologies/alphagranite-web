@@ -103,7 +103,7 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
         edging_ln_ft: fabWithExtraFields.edging_linft || 0,
         cnc_ln_ft: fabWithExtraFields.cnc_linft || 0,
         milter_ln_ft: fabWithExtraFields.miter_linft || 0,
-        saw_cut_lnft: fabWithExtraFields.saw_cut_linft || 0,
+        saw_cut_lnft: fabWithExtraFields.saw_cut_lnft || 0,
         cost_of_stone: calculateCostOfStone(),
         revenue: fabWithExtraFields.revenue || 0,
         fp_completed: fabWithExtraFields.final_programming_complete ? 'Yes' : 'No',
@@ -411,7 +411,7 @@ export const CutListTableWithCalculations = ({
         },
         {
             id: 'edging_ln_ft', accessorKey: 'edging_ln_ft',
-            header: ({ column }) => <DataGridColumnHeader title="Edging: Lin ft" column={column} />,
+            header: ({ column }) => <DataGridColumnHeader title="EDGING: LIN FT" column={column} />,
             cell: ({ row }) => <span className="text-sm block">{row.original.edging_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
         },
         {
@@ -426,7 +426,7 @@ export const CutListTableWithCalculations = ({
         },
         {
             id: 'saw_cut_lnft', accessorKey: 'saw_cut_lnft',
-            header: ({ column }) => <DataGridColumnHeader title="SAW:LN FT" column={column} />,
+            header: ({ column }) => <DataGridColumnHeader title="SAW:LIN FT" column={column} />,
             cell: ({ row }) => <span className="text-sm">{row.original.saw_cut_lnft?.toFixed(2) ?? '0.00'}</span>,
             enableSorting: true,
         },

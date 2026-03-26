@@ -43,7 +43,7 @@ const updateFabSchema = z.object({
 
 type UpdateFabData = z.infer<typeof updateFabSchema>;
 
-// Helper function to format date as YYYY-MM-DD
+// Helper functions for dates
 const formatDate = (date: Date | undefined): string => {
   if (!date) return "";
   const year = date.getFullYear();
@@ -52,7 +52,6 @@ const formatDate = (date: Date | undefined): string => {
   return `${year}-${month}-${day}`;
 };
 
-// Helper function to parse date string to Date object (handles timezone correctly)
 const parseDateString = (dateString: string | undefined): Date | undefined => {
   if (!dateString) return undefined;
   const parts = dateString.split('-');
@@ -94,27 +93,28 @@ export function UpdateFabIdModal({
       sawCutLnft: "",
       shopDate: "",
       installationDate: "",
-      revisionComplete: undefined,
+      revisionComplete: false,
     },
   });
 
+  // Populate form when modal opens: use cutListData if available, otherwise fallback to fabData
   useEffect(() => {
-    if (cutListData?.data) {
-      const data = cutListData.data;
+    if (open && fabData) {
+      const cutData = cutListData?.data;
       form.reset({
-        pieces: data.no_of_pieces?.toString() || "",
-        totalSqFt: data.total_sqft?.toString() || "",
-        wjLinFt: data.wj_linft?.toString() || "",
-        edgingLinFt: data.edging_linft?.toString() || "",
-        cncLinFt: data.cnc_linft?.toString() || "",
-        miterLinFt: data.miter_linft?.toString() || "",
-        sawCutLnft: data.saw_cut_lnft?.toString() || "",
-        shopDate: data.shop_date_schedule || "",
-        installationDate: data.installation_date || "",
-        revisionComplete: data.revision_complete === true,
+        pieces: cutData?.no_of_pieces?.toString() ?? fabData.no_of_pieces?.toString() ?? "",
+        totalSqFt: cutData?.total_sqft?.toString() ?? fabData.total_sqft?.toString() ?? "",
+        wjLinFt: cutData?.wj_linft?.toString() ?? fabData.wj_linft?.toString() ?? "",
+        edgingLinFt: cutData?.edging_linft?.toString() ?? fabData.edging_linft?.toString() ?? "",
+        cncLinFt: cutData?.cnc_linft?.toString() ?? fabData.cnc_linft?.toString() ?? "",
+        miterLinFt: cutData?.miter_linft?.toString() ?? fabData.miter_linft?.toString() ?? "",
+        sawCutLnft: cutData?.saw_cut_lnft?.toString() ?? fabData.saw_cut_lnft?.toString() ?? "", // fallback to fabData
+        shopDate: cutData?.shop_date_schedule ?? fabData.shop_date_schedule ?? "",
+        installationDate: cutData?.installation_date ?? fabData.installation_date ?? "",
+        revisionComplete: cutData?.revision_complete === true || fabData.revision_complete === true,
       });
     }
-  }, [cutListData, form]);
+  }, [open, cutListData, fabData, form]);
 
   const jobInfo = [
     { label: "Job #", value: fabData?.job_details?.job_number || '-' },
@@ -130,7 +130,6 @@ export function UpdateFabIdModal({
   const onSubmit = async (values: UpdateFabData) => {
     setIsSubmitting(true);
     try {
-      // Always update all schedule fields first
       const requestData = {
         fab_id: fabData?.id,
         no_of_pieces: values.pieces ? parseInt(values.pieces) : undefined,
@@ -153,7 +152,6 @@ export function UpdateFabIdModal({
         data: cleanedData
       }).unwrap();
 
-      // If revision_complete is checked, fire that update too
       if (values.revisionComplete) {
         await updateCutList({
           fab_id: fabData?.id,
@@ -171,19 +169,20 @@ export function UpdateFabIdModal({
       setIsSubmitting(false);
     }
   };
-  const fabBgMap: Record<string, string> = {
-  "standard": "bg-[#9eeb47]",
-  "fab only": "bg-[#5bd1d7]",
-  "cust redo": "bg-[#f0bf4c]",
-  "resurface": "bg-[#d094ea]",
-  "fast track": "bg-[#f59794]",
-  "ag redo": "bg-[#f5cc94]",
-};
 
-const fabTypeKey = fabData?.fab_type
-  ?.toLowerCase()
-  ?.replace(/_/g, " ")
-  ?.trim();
+  const fabBgMap: Record<string, string> = {
+    "standard": "bg-[#9eeb47]",
+    "fab only": "bg-[#5bd1d7]",
+    "cust redo": "bg-[#f0bf4c]",
+    "resurface": "bg-[#d094ea]",
+    "fast track": "bg-[#f59794]",
+    "ag redo": "bg-[#f5cc94]",
+  };
+
+  const fabTypeKey = fabData?.fab_type
+    ?.toLowerCase()
+    ?.replace(/_/g, " ")
+    ?.trim();
 
   if (isCutListLoading) {
     return (
@@ -371,7 +370,7 @@ const fabTypeKey = fabData?.fab_type
                       <FormLabel>Confirmed</FormLabel>
                       <FormControl>
                         <Checkbox
-                          checked={field.value || false}
+                          checked={field.value === true}
                           onCheckedChange={field.onChange}
                         />
                       </FormControl>

@@ -632,7 +632,7 @@ export const JobTable = ({
         {
             id: 'final_programming_completed',
             accessorKey: 'final_programming_completed',
-            header: ({ column }) => <DataGridColumnHeader title="FINAL PROGRAMMING COMPLETED" column={column} />,
+            header: ({ column }) => <DataGridColumnHeader title="FINAL PROGRAMMING COMPLETED" column={column}  />,
             cell: ({ row }) => <span className="text-xs">{row.original.final_programming_completed || '-'}</span>,
             size: 150,
             enableSorting: true,
