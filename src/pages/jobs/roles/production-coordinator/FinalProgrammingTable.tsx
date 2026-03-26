@@ -47,14 +47,14 @@ export const FinalProgrammingTable = ({
         pagination,
         sorting,
         searchQuery,
-        dateFilter,
-        fabTypeFilter,
-        dateRange,
-        setPagination,
-        setSorting,
         setSearchQuery,
+        searchType,
+        setSearchType,
+        dateFilter,
         setDateFilter,
+        fabTypeFilter,
         setFabTypeFilter,
+        dateRange,
         setDateRange,
     } = tableState;
 
@@ -220,24 +220,37 @@ export const FinalProgrammingTable = ({
                 <CardHeader className="py-3.5 border-b">
                     <CardHeading>
                         <div className="flex items-center gap-2.5 flex-wrap">
-                            <div className="relative">
-                                <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
-                                <Input
-                                    placeholder="Search Jobs..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="ps-9 w-[230px] h-[34px]"
-                                />
-                                {searchQuery && (
-                                    <Button
-                                        mode="icon"
-                                        variant="ghost"
-                                        className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                                        onClick={() => setSearchQuery('')}
-                                    >
-                                        <X />
-                                    </Button>
-                                )}
+                            {/* Search input with type selector */}
+                            <div className="relative flex items-center">
+                                <Select value={searchType || 'fab_id'} onValueChange={(v) => setSearchType?.(v as 'fab_id' | 'job_number' | 'job_name')}>
+                                    <SelectTrigger className="w-[140px] h-[34px] rounded-e-none border-r-0">
+                                        <SelectValue placeholder="Search by" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="fab_id">FAB ID</SelectItem>
+                                        <SelectItem value="job_number">Job Number</SelectItem>
+                                        <SelectItem value="job_name">Job Name</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <div className="relative">
+                                    <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                                    <Input
+                                        placeholder={`Search by ${searchType?.replace('_', ' ') || 'fab id'}`}
+                                        value={searchQuery || ''}
+                                        onChange={(e) => setSearchQuery?.(e.target.value)}
+                                        className="ps-9 w-[230px] h-[34px] rounded-s-none"
+                                    />
+                                    {searchQuery && (
+                                        <Button
+                                            mode="icon"
+                                            variant="ghost"
+                                            className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                                            onClick={() => setSearchQuery?.('')}
+                                        >
+                                            <X />
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
 
                             <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>

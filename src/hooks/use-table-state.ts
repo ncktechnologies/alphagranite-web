@@ -6,6 +6,7 @@ export interface TableState {
   pagination: PaginationState;
   sorting: SortingState;
   searchQuery: string;
+  searchType?: 'fab_id' | 'job_number' | 'job_name';
   dateFilter: string;
   fabTypeFilter: string;
   scheduleFilter?: string;
@@ -73,6 +74,7 @@ export function useTableState(options: UseTableStateOptions) {
       pagination: defaultPagination,
       sorting: [],
       searchQuery: '',
+      searchType: 'fab_id' as const,
       dateFilter: defaultDateFilter,
       fabTypeFilter: 'all',
       scheduleFilter: defaultScheduleFilter,
@@ -128,6 +130,13 @@ export function useTableState(options: UseTableStateOptions) {
     }));
   }, []);
 
+  const setSearchType = useCallback((value: 'fab_id' | 'job_number' | 'job_name') => {
+    setState((prev) => ({
+      ...prev,
+      searchType: value,
+    }));
+  }, []);
+
   const setDateFilter = useCallback((value: string) => {
     setState((prev) => ({
       ...prev,
@@ -179,6 +188,7 @@ export function useTableState(options: UseTableStateOptions) {
       pagination: defaultPagination,
       sorting: [],
       searchQuery: '',
+      searchType: 'fab_id' as const,
       dateFilter: defaultDateFilter,
       fabTypeFilter: 'all',
       scheduleFilter: defaultScheduleFilter,
@@ -199,6 +209,7 @@ export function useTableState(options: UseTableStateOptions) {
     pagination: state.pagination,
     sorting: state.sorting,
     searchQuery: state.searchQuery,
+    searchType: state.searchType,
     dateFilter: state.dateFilter,
     fabTypeFilter: state.fabTypeFilter,
     scheduleFilter: state.scheduleFilter,
@@ -209,6 +220,7 @@ export function useTableState(options: UseTableStateOptions) {
     setPagination,
     setSorting,
     setSearchQuery,
+    setSearchType,
     setDateFilter,
     setFabTypeFilter,
     setScheduleFilter,

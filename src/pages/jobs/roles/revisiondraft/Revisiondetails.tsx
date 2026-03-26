@@ -641,7 +641,7 @@ export function RevisionDetailsPage() {
                     {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
                   </a>
                   {' - '}
-                  <a href={jobNumberLink} className="hover:underline">
+                  <a href={jobNumberLink} className="hover:underline" target="_blank">
                     {fabData?.job_details?.job_number || fabData?.job_id}
                   </a>
                 </div>
@@ -742,33 +742,6 @@ export function RevisionDetailsPage() {
 
                   {/* File Upload Section */}
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-4">Revision Files</h3>
-                    {shouldShowUploadSection && (
-                      <div className="mb-4">
-                        <label className="text-sm font-medium text-gray-700 block mb-2">
-                          File Type *
-                        </label>
-                        <Select
-                          value={fileDesign}
-                          onValueChange={(value) => setFileDesign(value)}
-                          disabled={hasEnded || isOnHold || isPaused}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select file type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Block Drawing">Block Drawing</SelectItem>
-                            <SelectItem value="Layout">Layout</SelectItem>
-                            <SelectItem value="SS Layout">SS Layout</SelectItem>
-                            <SelectItem value="Shop Drawing">Shop Drawing</SelectItem>
-                            <SelectItem value="Photo / Media">Photo / Media</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          File type is required before uploading files
-                        </p>
-                      </div>
-                    )}
 
                     {shouldShowUploadSection ? (
                       <div className="space-y-4">
@@ -792,7 +765,7 @@ export function RevisionDetailsPage() {
                         {/* File Display */}
                         <Documents
                           onFileClick={handleFileClick}
-                          draftingData={draftingData || fabData?.draft_data}
+                          draftingData={fabData?.draft_data}
                           draftingId={draftingData?.id || fabData?.draft_data?.id}
                           showDeleteButton={!hasEnded && !isOnHold}
                         />

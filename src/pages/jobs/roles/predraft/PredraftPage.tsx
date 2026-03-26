@@ -122,7 +122,9 @@ export function PredraftPage() {
         if (tableState.searchQuery) {
             params.search = tableState.searchQuery;
         }
-
+        if (tableState.searchType) {
+            params.type = tableState.searchType;
+        }
         if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') {
             params.fab_type = tableState.fabTypeFilter;
         }
@@ -163,6 +165,7 @@ export function PredraftPage() {
         tableState.salesPersonFilter,
         tableState.dateFilter,
         tableState.dateRange,
+        tableState.searchType
     ]);
 
     // Fetch data with backend pagination and filtering

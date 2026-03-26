@@ -3,8 +3,8 @@ import { useLocation, Link, useNavigate } from 'react-router';
 import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
 import { Container } from '@/components/common/container';
-import { useGetFabsQuery, Fab, useGetFabsInSlabSmithPendingQuery} from '@/store/api/job';
-import { useGetSalesPersonsQuery} from '@/store/api/employee';
+import { useGetFabsQuery, Fab, useGetFabsInSlabSmithPendingQuery } from '@/store/api/job';
+import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
 import { useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -121,7 +121,9 @@ const SlabSmithPage = () => {
         if (tableState.searchQuery) {
             params.search = tableState.searchQuery;
         }
-
+        if (tableState.searchType) {
+            params.type = tableState.searchType;
+        }
         if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') {
             params.fab_type = tableState.fabTypeFilter;
         }
@@ -161,7 +163,8 @@ const SlabSmithPage = () => {
         tableState.fabTypeFilter,
         tableState.salesPersonFilter,
         tableState.dateFilter,
-        tableState.dateRange,
+        tableState.dateRange, 
+        tableState.searchType, 
     ]);
 
     // Fetch data with backend pagination and filtering

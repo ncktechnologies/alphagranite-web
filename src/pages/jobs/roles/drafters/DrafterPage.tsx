@@ -102,7 +102,9 @@ const DrafterPage = () => {
         if (tableState.searchQuery) {
             params.search = tableState.searchQuery;
         }
-
+        if (tableState.searchType) {
+            params.type = tableState.searchType;
+        }
         if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') {
             params.fab_type = tableState.fabTypeFilter;
         }
@@ -143,6 +145,8 @@ const DrafterPage = () => {
         tableState.salesPersonFilter,
         tableState.dateFilter,
         tableState.dateRange,
+        tableState.searchQuery,
+
     ]);
 
     // Fetch data with backend pagination and filtering

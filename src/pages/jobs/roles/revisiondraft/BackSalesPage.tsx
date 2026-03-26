@@ -110,7 +110,10 @@ export function DraftRevisionPage() {
         };
 
         if (tableState.searchQuery) {
-            params.search = tableState.searchQuery;
+            params.search = tableState.searchQuery; 
+        }
+        if(tableState.searchType){
+             params.type = tableState.searchType; 
         }
 
         if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') {
@@ -153,6 +156,7 @@ export function DraftRevisionPage() {
         tableState.salesPersonFilter,
         tableState.dateFilter,
         tableState.dateRange,
+        tableState.searchType
     ]);
 
     // Fetch data with backend pagination and filtering

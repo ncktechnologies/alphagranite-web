@@ -553,7 +553,7 @@ export function SlabSmithDetailsPage() {
                     {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
                   </a>
                   {' - '}
-                  <a href={jobNumberLink} className="hover:underline">
+                  <a href={jobNumberLink} className="hover:underline" target="_blank">
                     {fabData?.job_details?.job_number || fabData?.job_id}
                   </a>
                 </div>

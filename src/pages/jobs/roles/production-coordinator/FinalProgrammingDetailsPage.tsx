@@ -13,7 +13,7 @@ import {
   useManageFinalProgrammingSessionMutation,
   useToggleFabOnHoldMutation,
   useCreateFabNoteMutation,
-  useAddFilesToFinalProgrammingMutation,
+  useAddFilesToDraftingMutation,
   useCompleteFinalProgrammingMutation,
   useDeleteFileFromDraftingMutation
 } from '@/store/api/job';
@@ -78,7 +78,7 @@ export function FinalProgrammingDetailsPage() {
   const [manageFinalProgrammingSession] = useManageFinalProgrammingSessionMutation();
   const [toggleFabOnHold] = useToggleFabOnHoldMutation();
   const [createFabNote] = useCreateFabNoteMutation();
-  const [addFilesToFinalProgramming] = useAddFilesToFinalProgrammingMutation();
+  const [addFilesToFinalProgramming] = useAddFilesToDraftingMutation();
   const [completeFinalProgramming] = useCompleteFinalProgrammingMutation();
   const [deleteFileFromDraft] = useDeleteFileFromDraftingMutation();
 
@@ -458,7 +458,7 @@ export function FinalProgrammingDetailsPage() {
                     {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
                   </a>
                   {' - '}
-                  <a href={jobNumberLink} className="hover:underline">
+                  <a href={jobNumberLink} className="hover:underline" target="_blank">
                     {fabData?.job_details?.job_number || fabData?.job_id}
                   </a>
                 </div>

@@ -106,7 +106,7 @@ export function ResurfacingPage() {
         defaultDateFilter: 'all',
         persistState: false,
     });
-     // Calculate skip value for pagination
+    // Calculate skip value for pagination
     const skip = tableState.pagination.pageIndex * tableState.pagination.pageSize;
 
     const queryParams = useMemo(() => {
@@ -120,7 +120,9 @@ export function ResurfacingPage() {
             params.search = tableState.searchQuery;
             params.type = (tableState as any).searchType || 'fab_id'; // Add search type
         }
-
+        if (tableState.searchType) {
+            params.type = tableState.searchType;
+        }
         if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') {
             params.fab_type = tableState.fabTypeFilter;
         }
@@ -161,6 +163,7 @@ export function ResurfacingPage() {
         tableState.salesPersonFilter,
         tableState.dateFilter,
         tableState.dateRange,
+        tableState.searchType,
     ]);
 
     // Fetch data with backend pagination and filtering

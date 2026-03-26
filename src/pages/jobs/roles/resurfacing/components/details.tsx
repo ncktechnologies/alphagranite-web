@@ -190,7 +190,7 @@ export function ResurfacingDetailsPage() {
                   {fab?.job_details?.name || `Job ${fab?.job_id}`}
                 </a>
                 {' - '}
-                <a href={jobNumberLink} className="hover:underline">
+                <a href={jobNumberLink} className="hover:underline" target="_blank">
                   {fab?.job_details?.job_number || fab?.job_id}
                 </a>
               </div>

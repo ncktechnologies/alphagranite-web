@@ -54,8 +54,8 @@ export function UniversalUploadModal({
 
   return (
     <div className="space-y-4">
-      {/* Trigger Button - only render if not in controlled mode */}
-      {!controlledOpen && (
+      {/* Trigger Button - only render in uncontrolled mode (no open prop provided) */}
+      {controlledOpen === undefined && (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             {trigger || (
@@ -87,8 +87,8 @@ export function UniversalUploadModal({
         </Dialog>
       )}
       
-      {/* Render dialog directly for controlled mode */}
-      {controlledOpen && (
+      {/* Render dialog directly for controlled mode (when open prop is provided) */}
+      {controlledOpen !== undefined && (
         <Dialog open={controlledOpen} onOpenChange={controlledOnOpenChange}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>

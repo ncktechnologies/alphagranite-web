@@ -202,7 +202,7 @@ export function JobDetailsPage() {
                   {job?.name || ''}
                 </a>
                 {' - '}
-                <a href={jobNumberLink} className="hover:underline">
+                <a href={jobNumberLink} className="hover:underline" target="_blank">
                   {job?.job_number || 'Loading...'}
                 </a>
               </div>

@@ -15,6 +15,7 @@ import { Drafting, useDeleteFileMutation } from '@/store/api/job';
 import { Can } from '@/components/permission';
 import { getFileStage, getStageBadge, WORKFLOW_STAGES } from '@/utils/file-labeling';
 import { toast } from 'sonner';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface FileMetadata {
   id: string;
@@ -62,6 +63,8 @@ export function Documents({
   slabsmithData,
   showDeleteButton = true
 }: UploadBoxProps) {
+  const { t } = useTranslation();
+  
   // Use useMemo to compute files instead of useState/useEffect
   const files = useMemo(() => {
     const allFiles: FileMetadata[] = [];
@@ -201,7 +204,7 @@ export function Documents({
   if (files.length === 0) {
     return (
       <div className="border-none">
-        <p className="text-muted-foreground text-sm py-4">No files uploaded.</p>
+        <p className="text-muted-foreground text-sm py-4">{t('FILES.NO_FILES')}</p>
       </div>
     );
   }

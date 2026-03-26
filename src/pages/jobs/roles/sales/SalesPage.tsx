@@ -120,7 +120,9 @@ export function SalesPage() {
             params.search = tableState.searchQuery;
             params.type = (tableState as any).searchType || 'fab_id'; // Add search type
         }
-
+        if (tableState.searchType) {
+            params.type = tableState.searchType;
+        }
         if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') {
             params.fab_type = tableState.fabTypeFilter;
         }
@@ -160,6 +162,7 @@ export function SalesPage() {
         tableState.salesPersonFilter,
         tableState.dateFilter,
         tableState.dateRange,
+        tableState.searchType,
     ]);
     const { data, isLoading, error, isError } = useGetFabsQuery(queryParams);
 
@@ -222,7 +225,7 @@ export function SalesPage() {
                         <Can action="update" on="Jobs">
                             <Link to="/create-jobs">
                                 <Button className="">
-                                    <Eye/>
+                                    <Eye />
                                     View Jobs
                                 </Button>
                             </Link>
