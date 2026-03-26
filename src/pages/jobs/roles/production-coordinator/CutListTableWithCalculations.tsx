@@ -386,13 +386,49 @@ export const CutListTableWithCalculations = ({
             header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
             cell: ({ row }) => row.original.job_id ? (
                 <Link
-                    to={`https://alphagraniteaustin.moraware.net/sys/search?search=${row.original.job_id}`}
+                    to={`/job/details/${row.original.job_id}`}
                     target="_blank" rel="noopener noreferrer"
                     className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
                 >
                     {row.original.job_no}
                 </Link>
             ) : <span className="text-sm">{row.original.job_no}</span>,
+        },
+          {
+            id: 'fab_info',
+            header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
+            cell: ({ row }) => {
+                const { jobInfo, materialInfo, stoneInfo } = generateFabInfo(row.original);
+                return (
+                    <div className="flex gap-4 text-xs max-w-[400px]">
+                        {jobInfo.length > 0 && (
+                            <div className="flex-1 min-w-0">
+                                <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>{jobInfo.join(' - ')}</div>
+                                {stoneInfo.length > 0 && (
+                                    <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>{stoneInfo.join(' - ')}</div>
+                                )}
+                            </div>
+                        )}
+                        {materialInfo.length > 0 && (
+                            <div className="flex-1 min-w-0">
+                                <div className="truncate text-gray-600" title={materialInfo.join(' - ')}>{materialInfo.join(' - ')}</div>
+                            </div>
+                        )}
+                    </div>
+                );
+            },
+            size: 300,
+        },
+          {
+            id: 'fp_completed', accessorKey: 'fp_completed',
+            header: ({ column }) => <DataGridColumnHeader title="FP COMPLETED DATE" column={column} />,
+            cell: ({ row }) => (
+                <span className="text-sm">
+                    {row.original.final_programming_completed_date
+                        ? new Date(row.original.final_programming_completed_date).toLocaleDateString()
+                        : 'Not Completed'}
+                </span>
+            ),
         },
         {
             id: 'no_of_pcs', accessorKey: 'no_of_pcs',
@@ -440,17 +476,7 @@ export const CutListTableWithCalculations = ({
             header: ({ column }) => <DataGridColumnHeader title="REVENUE" column={column} />,
             cell: ({ row }) => <span className="text-sm block">${row.original.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
         },
-        {
-            id: 'fp_completed', accessorKey: 'fp_completed',
-            header: ({ column }) => <DataGridColumnHeader title="FP COMPLETED DATE" column={column} />,
-            cell: ({ row }) => (
-                <span className="text-sm">
-                    {row.original.final_programming_completed_date
-                        ? new Date(row.original.final_programming_completed_date).toLocaleDateString()
-                        : 'Not Completed'}
-                </span>
-            ),
-        },
+      
         {
             id: 'cip', accessorKey: 'cip',
             header: ({ column }) => <DataGridColumnHeader title="GP" column={column} />,
@@ -461,31 +487,7 @@ export const CutListTableWithCalculations = ({
             header: ({ column }) => <DataGridColumnHeader title="SALES PERSON" column={column} />,
             cell: ({ row }) => <span className="text-sm">{row.original.sales_person || 'N/A'}</span>,
         },
-        {
-            id: 'fab_info',
-            header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
-            cell: ({ row }) => {
-                const { jobInfo, materialInfo, stoneInfo } = generateFabInfo(row.original);
-                return (
-                    <div className="flex gap-4 text-xs max-w-[400px]">
-                        {jobInfo.length > 0 && (
-                            <div className="flex-1 min-w-0">
-                                <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>{jobInfo.join(' - ')}</div>
-                                {stoneInfo.length > 0 && (
-                                    <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>{stoneInfo.join(' - ')}</div>
-                                )}
-                            </div>
-                        )}
-                        {materialInfo.length > 0 && (
-                            <div className="flex-1 min-w-0">
-                                <div className="truncate text-gray-600" title={materialInfo.join(' - ')}>{materialInfo.join(' - ')}</div>
-                            </div>
-                        )}
-                    </div>
-                );
-            },
-            size: 300,
-        },
+      
         {
             id: 'fab_notes', accessorKey: 'fab_notes',
             header: ({ column }) => <DataGridColumnHeader title="Cut List Notes" column={column} />,
