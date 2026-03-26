@@ -289,14 +289,8 @@ const JobFormSheet = ({
     }
   };
 
-  // Handle account selection
-  // const handleAccountSelect = (accountId: string) => {
-  //   form.setValue("account_id", accountId);
-  //   setAccountPopoverOpen(false); // Close popover when account is selected
-  // };
-
   const handleAccountSelect = (accountId: string) => {
-    form.setValue("account_id", accountId, { shouldValidate: true }); // ✅ trigger validation
+    form.setValue("account_id", accountId, { shouldValidate: true });
     setAccountPopoverOpen(false);
   };
 
@@ -380,7 +374,6 @@ const JobFormSheet = ({
 
             <SheetBody className="flex-1 overflow-y-auto">
               <ScrollArea className="h-full">
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Job Name */}
                   <FormField
@@ -529,8 +522,7 @@ const JobFormSheet = ({
                                   ? "Loading..."
                                   : field.value
                                     ? accountsData?.find(
-                                      (a) =>
-                                        String(a.id) === field.value
+                                      (a) => String(a.id) === field.value
                                     )?.name
                                     : "Select account"}
                                 <Search className="h-4 w-4 opacity-50" />
@@ -539,154 +531,167 @@ const JobFormSheet = ({
                           </PopoverTrigger>
 
                           <PopoverContent
-                            className="w-[--radix-popover-trigger-width] p-2"
+                            className="w-[--radix-popover-trigger-width] p-0"
+                            side="bottom"
                             align="start"
+                            sideOffset={5}
+                            collisionPadding={20}
                             onInteractOutside={handleAccountPopoverClose}
                             onEscapeKeyDown={handleAccountPopoverClose}
+                            style={{ maxHeight: 'min(400px, calc(100vh - 200px))' }}
                           >
-                            {/* Show either create account form or account list */}
-                            {showCreateAccountForm ? (
-                              <div className="space-y-3">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={resetCreateAccountForm}
-                                    className="h-6 w-6 p-0"
-                                  >
-                                    <ArrowLeft className="h-4 w-4" />
-                                  </Button>
-                                  <Label className="text-sm font-medium">Create New Account</Label>
-                                </div>
-
-                                <div className="space-y-2">
-                                  <div>
-                                    <Label className="text-xs">Account Name *</Label>
-                                    <Input
-                                      value={newAccountName}
-                                      onChange={(e) => {
-                                        setNewAccountName(e.target.value);
-                                        // Update persisted data
-                                        persistAccountDataRef.current.newAccountName = e.target.value;
-                                      }}
-                                      placeholder="Enter account name"
-                                      required
-                                    />
-                                  </div>
-
-                                  <div>
-                                    <Label className="text-xs">Account Number</Label>
-                                    <Input
-                                      value={newAccountData.account_number}
-                                      onChange={(e) => {
-                                        setNewAccountData(prev => ({ ...prev, account_number: e.target.value }));
-                                        persistAccountDataRef.current.accountData.account_number = e.target.value;
-                                      }}
-                                      placeholder="Optional"
-                                    />
-                                  </div>
-
-                                  <div>
-                                    <Label className="text-xs">Contact Person</Label>
-                                    <Input
-                                      value={newAccountData.contact_person}
-                                      onChange={(e) => {
-                                        setNewAccountData(prev => ({ ...prev, contact_person: e.target.value }));
-                                        persistAccountDataRef.current.accountData.contact_person = e.target.value;
-                                      }}
-                                      placeholder="Optional"
-                                    />
-                                  </div>
-
-                                  <div>
-                                    <Label className="text-xs">Email</Label>
-                                    <Input
-                                      type="email"
-                                      value={newAccountData.email}
-                                      onChange={(e) => {
-                                        setNewAccountData(prev => ({ ...prev, email: e.target.value }));
-                                        persistAccountDataRef.current.accountData.email = e.target.value;
-                                      }}
-                                      placeholder="Optional"
-                                    />
-                                  </div>
-
-                                  <div>
-                                    <Label className="text-xs">Phone</Label>
-                                    <Input
-                                      value={newAccountData.phone}
-                                      onChange={(e) => {
-                                        setNewAccountData(prev => ({ ...prev, phone: e.target.value }));
-                                        persistAccountDataRef.current.accountData.phone = e.target.value;
-                                      }}
-                                      placeholder="Optional"
-                                    />
-                                  </div>
-
-                                  <div className="flex justify-end gap-2 pt-2">
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      type="button"
-                                      onClick={resetCreateAccountForm}
-                                    >
-                                      Cancel
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      type="button"
-                                      onClick={handleAddAccount}
-                                    >
-                                      Create Account
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="space-y-2">
-                                <div className="flex justify-between items-center">
-                                  <span className="text-sm font-medium">Accounts</span>
-                                  {!isViewMode && (
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      type="button"
-                                      onClick={() => {
-                                        setShowCreateAccountForm(true);
-                                        persistAccountDataRef.current.showCreateForm = true;
-                                      }}
-                                    >
-                                      <Plus className="w-3 h-3 mr-1" />
-                                      Add
-                                    </Button>
-                                  )}
-                                </div>
-
-                                <Input
-                                  placeholder="Search account..."
-                                  value={accountSearch}
-                                  onChange={(e) => {
-                                    setAccountSearch(e.target.value);
-                                    persistAccountDataRef.current.search = e.target.value;
-                                  }}
-                                  autoFocus
-                                />
-
-                                <div className="max-h-48 overflow-y-auto">
-                                  {filteredAccounts.map((account) => (
-                                    <div
-                                      key={account.id}
-                                      className="px-3 py-2 text-sm hover:bg-muted rounded cursor-pointer"
-                                      onClick={() => handleAccountSelect(String(account.id))}
-                                    >
-                                      {account.name}
+                            <ScrollArea className="h-full max-h-[400px] overflow-y-auto">
+                              <div className="p-2">
+                                {/* Show either create account form or account list */}
+                                {showCreateAccountForm ? (
+                                  <div className="space-y-3">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={resetCreateAccountForm}
+                                        className="h-6 w-6 p-0"
+                                      >
+                                        <ArrowLeft className="h-4 w-4" />
+                                      </Button>
+                                      <Label className="text-sm font-medium">Create New Account</Label>
                                     </div>
-                                  ))}
-                                </div>
+
+                                    <div className="space-y-2">
+                                      <div>
+                                        <Label className="text-xs">Account Name *</Label>
+                                        <Input
+                                          value={newAccountName}
+                                          onChange={(e) => {
+                                            setNewAccountName(e.target.value);
+                                            persistAccountDataRef.current.newAccountName = e.target.value;
+                                          }}
+                                          placeholder="Enter account name"
+                                          required
+                                        />
+                                      </div>
+
+                                      <div>
+                                        <Label className="text-xs">Account Number</Label>
+                                        <Input
+                                          value={newAccountData.account_number}
+                                          onChange={(e) => {
+                                            setNewAccountData(prev => ({ ...prev, account_number: e.target.value }));
+                                            persistAccountDataRef.current.accountData.account_number = e.target.value;
+                                          }}
+                                          placeholder="Optional"
+                                        />
+                                      </div>
+
+                                      <div>
+                                        <Label className="text-xs">Contact Person</Label>
+                                        <Input
+                                          value={newAccountData.contact_person}
+                                          onChange={(e) => {
+                                            setNewAccountData(prev => ({ ...prev, contact_person: e.target.value }));
+                                            persistAccountDataRef.current.accountData.contact_person = e.target.value;
+                                          }}
+                                          placeholder="Optional"
+                                        />
+                                      </div>
+
+                                      <div>
+                                        <Label className="text-xs">Email</Label>
+                                        <Input
+                                          type="email"
+                                          value={newAccountData.email}
+                                          onChange={(e) => {
+                                            setNewAccountData(prev => ({ ...prev, email: e.target.value }));
+                                            persistAccountDataRef.current.accountData.email = e.target.value;
+                                          }}
+                                          placeholder="Optional"
+                                        />
+                                      </div>
+
+                                      <div>
+                                        <Label className="text-xs">Phone</Label>
+                                        <Input
+                                          value={newAccountData.phone}
+                                          onChange={(e) => {
+                                            setNewAccountData(prev => ({ ...prev, phone: e.target.value }));
+                                            persistAccountDataRef.current.accountData.phone = e.target.value;
+                                          }}
+                                          placeholder="Optional"
+                                        />
+                                      </div>
+
+                                      <div className="flex justify-end gap-2 pt-2">
+                                        <Button
+                                          variant="outline"
+                                          size="sm"
+                                          type="button"
+                                          onClick={resetCreateAccountForm}
+                                        >
+                                          Cancel
+                                        </Button>
+                                        <Button
+                                          size="sm"
+                                          type="button"
+                                          onClick={handleAddAccount}
+                                        >
+                                          Create Account
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between items-center">
+                                      <span className="text-sm font-medium">Accounts</span>
+                                      {!isViewMode && (
+                                        <Button
+                                          size="sm"
+                                          variant="ghost"
+                                          type="button"
+                                          onClick={() => {
+                                            setShowCreateAccountForm(true);
+                                            persistAccountDataRef.current.showCreateForm = true;
+                                          }}
+                                        >
+                                          <Plus className="w-3 h-3 mr-1" />
+                                          Add
+                                        </Button>
+                                      )}
+                                    </div>
+
+                                    <Input
+                                      placeholder="Search account..."
+                                      value={accountSearch}
+                                      onChange={(e) => {
+                                        setAccountSearch(e.target.value);
+                                        persistAccountDataRef.current.search = e.target.value;
+                                      }}
+                                      autoFocus
+                                    />
+
+                                    <div className="space-y-1">
+                                      {filteredAccounts.map((account) => (
+                                        <div
+                                          key={account.id}
+                                          className="px-3 py-2 text-sm hover:bg-muted rounded cursor-pointer"
+                                          onClick={() => handleAccountSelect(String(account.id))}
+                                        >
+                                          {account.name}
+                                        </div>
+                                      ))}
+                                      {filteredAccounts.length === 0 && (
+                                        <div className="px-3 py-2 text-sm text-muted-foreground text-center">
+                                          No accounts found
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
                               </div>
-                            )}
+                            </ScrollArea>
                           </PopoverContent>
                         </Popover>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />
@@ -712,7 +717,6 @@ const JobFormSheet = ({
                   />
                 </div>
               </ScrollArea>
-
             </SheetBody>
 
             <SheetFooter className="flex justify-end gap-3 pt-4">
