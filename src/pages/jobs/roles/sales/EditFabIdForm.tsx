@@ -45,151 +45,151 @@ import { useGetSalesPersonsQuery } from '@/store/api/employee';
 
 // Custom Currency Input Component
 interface CurrencyInputProps {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
+    value: string;
+    onChange: (value: string) => void;
+    placeholder?: string;
 }
 
 const CurrencyInput = ({ value, onChange, placeholder, ...props }: CurrencyInputProps & React.InputHTMLAttributes<HTMLInputElement>) => {
-  const inputRef = useRef<HTMLInputElement>(null);
-  
-  // Format number with commas and dollar sign
-  const formatCurrency = useCallback((val: string): string => {
-    if (!val || val === '0') return '$0';
-    
-    // Remove any non-numeric characters except decimal point
-    const numericString = val.replace(/[^0-9.]/g, '');
-    
-    // Parse as float
-    const num = parseFloat(numericString);
-    
-    if (isNaN(num)) return '$0';
-    
-    // Format with commas
-    return '$' + num.toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
-  }, []);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-  const [displayValue, setDisplayValue] = useState<string>(() => {
-    if (value && value !== '0') {
-      const num = parseFloat(value);
-      return isNaN(num) ? '$0' : formatCurrency(value);
-    }
-    return '$0';
-  });
+    // Format number with commas and dollar sign
+    const formatCurrency = useCallback((val: string): string => {
+        if (!val || val === '0') return '$0';
 
-  const [isFocused, setIsFocused] = useState(false);
+        // Remove any non-numeric characters except decimal point
+        const numericString = val.replace(/[^0-9.]/g, '');
 
-  // Update display value when value prop changes
-  useEffect(() => {
-    if (!isFocused) {
-      if (value && value !== '0') {
-        const num = parseFloat(value);
-        if (!isNaN(num) && num > 0) {
-          setDisplayValue(formatCurrency(value));
-        } else {
-          setDisplayValue('$0');
+        // Parse as float
+        const num = parseFloat(numericString);
+
+        if (isNaN(num)) return '$0';
+
+        // Format with commas
+        return '$' + num.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }, []);
+
+    const [displayValue, setDisplayValue] = useState<string>(() => {
+        if (value && value !== '0') {
+            const num = parseFloat(value);
+            return isNaN(num) ? '$0' : formatCurrency(value);
         }
-      } else {
-        setDisplayValue('$0');
-      }
-    }
-  }, [value, isFocused, formatCurrency]);
+        return '$0';
+    });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const input = e.target.value;
-    
-    // Allow only numbers and decimal point
-    const sanitized = input.replace(/[^0-9.]/g, '');
-    
-    // Ensure only one decimal point
-    const parts = sanitized.split('.');
-    let finalValue = parts[0];
-    if (parts.length > 1) {
-      finalValue = parts[0] + '.' + parts.slice(1).join('').substring(0, 2);
-    }
-    
-    // Update form value (raw number without formatting)
-    onChange(finalValue || '');
-    
-    // Update display value with formatting
-    if (finalValue) {
-      const num = parseFloat(finalValue);
-      if (!isNaN(num)) {
-        setDisplayValue(formatCurrency(finalValue));
-      } else {
-        setDisplayValue('$0');
-      }
-    } else {
-      setDisplayValue('$0');
-    }
-  };
+    const [isFocused, setIsFocused] = useState(false);
 
-  const handleFocus = () => {
-    setIsFocused(true);
-    // When focused, show raw number without formatting for editing
-    if (value && value !== '0') {
-      setDisplayValue(value);
-    } else {
-      setDisplayValue('');
-    }
-  };
+    // Update display value when value prop changes
+    useEffect(() => {
+        if (!isFocused) {
+            if (value && value !== '0') {
+                const num = parseFloat(value);
+                if (!isNaN(num) && num > 0) {
+                    setDisplayValue(formatCurrency(value));
+                } else {
+                    setDisplayValue('$0');
+                }
+            } else {
+                setDisplayValue('$0');
+            }
+        }
+    }, [value, isFocused, formatCurrency]);
 
-  const handleBlur = () => {
-    setIsFocused(false);
-    // When blurred, format with dollar sign and commas
-    if (value) {
-      const num = parseFloat(value);
-      if (!isNaN(num) && num > 0) {
-        setDisplayValue(formatCurrency(value));
-      } else {
-        setDisplayValue('$0');
-        onChange('0');
-      }
-    } else {
-      setDisplayValue('$0');
-      onChange('0');
-    }
-  };
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const input = e.target.value;
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    // Allow: backspace, delete, tab, escape, enter, decimal point, numbers
-    if (
-      [46, 8, 9, 27, 13, 110, 190].includes(e.keyCode) ||
-      // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-      (e.keyCode === 65 && (e.ctrlKey || e.metaKey)) ||
-      (e.keyCode === 67 && (e.ctrlKey || e.metaKey)) ||
-      (e.keyCode === 86 && (e.ctrlKey || e.metaKey)) ||
-      (e.keyCode === 88 && (e.ctrlKey || e.metaKey)) ||
-      // Allow: home, end, left, right
-      (e.keyCode >= 35 && e.keyCode <= 39) ||
-      // Allow: numbers on keypad
-      (e.keyCode >= 96 && e.keyCode <= 105)
-    ) {
-      return;
-    }
-    
-    // Ensure it's a number
-    if ((e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
-      e.preventDefault();
-    }
-  };
+        // Allow only numbers and decimal point
+        const sanitized = input.replace(/[^0-9.]/g, '');
 
-  return (
-    <Input
-      {...props}
-      ref={inputRef}
-      value={displayValue}
-      onChange={handleChange}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
-      onKeyDown={handleKeyDown}
-      className="font-mono"
-      placeholder={placeholder}
-    />
-  );
+        // Ensure only one decimal point
+        const parts = sanitized.split('.');
+        let finalValue = parts[0];
+        if (parts.length > 1) {
+            finalValue = parts[0] + '.' + parts.slice(1).join('').substring(0, 2);
+        }
+
+        // Update form value (raw number without formatting)
+        onChange(finalValue || '');
+
+        // Update display value with formatting
+        if (finalValue) {
+            const num = parseFloat(finalValue);
+            if (!isNaN(num)) {
+                setDisplayValue(formatCurrency(finalValue));
+            } else {
+                setDisplayValue('$0');
+            }
+        } else {
+            setDisplayValue('$0');
+        }
+    };
+
+    const handleFocus = () => {
+        setIsFocused(true);
+        // When focused, show raw number without formatting for editing
+        if (value && value !== '0') {
+            setDisplayValue(value);
+        } else {
+            setDisplayValue('');
+        }
+    };
+
+    const handleBlur = () => {
+        setIsFocused(false);
+        // When blurred, format with dollar sign and commas
+        if (value) {
+            const num = parseFloat(value);
+            if (!isNaN(num) && num > 0) {
+                setDisplayValue(formatCurrency(value));
+            } else {
+                setDisplayValue('$0');
+                onChange('0');
+            }
+        } else {
+            setDisplayValue('$0');
+            onChange('0');
+        }
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        // Allow: backspace, delete, tab, escape, enter, decimal point, numbers
+        if (
+            [46, 8, 9, 27, 13, 110, 190].includes(e.keyCode) ||
+            // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+            (e.keyCode === 65 && (e.ctrlKey || e.metaKey)) ||
+            (e.keyCode === 67 && (e.ctrlKey || e.metaKey)) ||
+            (e.keyCode === 86 && (e.ctrlKey || e.metaKey)) ||
+            (e.keyCode === 88 && (e.ctrlKey || e.metaKey)) ||
+            // Allow: home, end, left, right
+            (e.keyCode >= 35 && e.keyCode <= 39) ||
+            // Allow: numbers on keypad
+            (e.keyCode >= 96 && e.keyCode <= 105)
+        ) {
+            return;
+        }
+
+        // Ensure it's a number
+        if ((e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
+            e.preventDefault();
+        }
+    };
+
+    return (
+        <Input
+            {...props}
+            ref={inputRef}
+            value={displayValue}
+            onChange={handleChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            className="font-mono"
+            placeholder={placeholder}
+        />
+    );
 };
 
 // Update the Zod schema
@@ -205,12 +205,12 @@ const fabIdFormSchema = z.object({
     edge: z.string().min(1, 'Edge is required'),
     totalSqFt: z.string().min(1, 'Total Sq Ft is required'),
     revenue: z.string().min(1, 'Revenue is required')
-      .refine((val) => {
-        const num = parseFloat(val);
-        return !isNaN(num) && num >= 0;
-      }, { message: 'Revenue must be a valid number' }),
+        .refine((val) => {
+            const num = parseFloat(val);
+            return !isNaN(num) && num >= 0;
+        }, { message: 'Revenue must be a valid number' }),
     cost_of_stone: z.string().optional()
-      .refine((val) => val === '' || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), { message: 'Cost of Stone must be a valid number' }),
+        .refine((val) => val === '' || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), { message: 'Cost of Stone must be a valid number' }),
     selectedSalesPerson: z.string().min(1, 'Sales Person is required'),
     notes: z.string().optional(),
     templateNotNeeded: z.boolean(),
@@ -234,6 +234,7 @@ const EditFabIdForm = () => {
     const [hasInitialDataLoaded, setHasInitialDataLoaded] = useState(false);
     const [isLoadingFormData, setIsLoadingFormData] = useState(false);
     const lastProcessedJobRef = useRef<{ name: string; number: string } | null>(null);
+
 
     // API hooks for dropdown data
     const {
@@ -315,6 +316,11 @@ const EditFabIdForm = () => {
     const [newEdge, setNewEdge] = useState('');
     const hasAttemptedLoadRef = useRef(false);
 
+    const [stoneColorPopoverOpen, setStoneColorPopoverOpen] = useState(false);
+    const [stoneColorSearch, setStoneColorSearch] = useState('');
+    const [showAddStoneColor, setShowAddStoneColor] = useState(false);
+    const [newStoneColor, setNewStoneColor] = useState('');
+
     const form = useForm<FabIdFormData>({
         resolver: zodResolver(fabIdFormSchema),
         defaultValues: {
@@ -366,12 +372,12 @@ const EditFabIdForm = () => {
     const isEffectiveJobsLoading = selectedAccountId ? isAccountJobsLoading : isLoadingJobs;
 
     // Extract unique sales persons to avoid duplicate key error
-    const salesPersons = Array.isArray(salesPersonsData) 
+    const salesPersons = Array.isArray(salesPersonsData)
         ? salesPersonsData.filter((person: any, index: number, self: any[]) =>
-            index === self.findIndex((p: any) => 
+            index === self.findIndex((p: any) =>
                 p.name === person.name // Filter by unique name to avoid duplicates
             )
-          )
+        )
         : [];
 
     // Filter functions
@@ -437,9 +443,9 @@ const EditFabIdForm = () => {
 
         if (selectedJob) {
             // Check if this is the same job we just processed to prevent infinite loops
-            const isSameJob = lastProcessedJobRef.current?.name === selectedJob.name && 
-                             lastProcessedJobRef.current?.number === selectedJob.job_number;
-            
+            const isSameJob = lastProcessedJobRef.current?.name === selectedJob.name &&
+                lastProcessedJobRef.current?.number === selectedJob.job_number;
+
             if (isSameJob) {
                 return;
             }
@@ -451,22 +457,22 @@ const EditFabIdForm = () => {
             if (selectedJob.name && selectedJob.name !== jobNameValue) {
                 updates.push({ field: 'jobName', value: selectedJob.name });
             }
-            
+
             if (selectedJob.job_number && selectedJob.job_number !== jobNumberValue) {
                 updates.push({ field: 'jobNumber', value: selectedJob.job_number });
             }
 
             // Sync sales person - this is critical!
             if (selectedJob.sales_person_id) {
-                const salesPersonForJob = salesPersons.find((person: any) => 
+                const salesPersonForJob = salesPersons.find((person: any) =>
                     person.id === selectedJob.sales_person_id
                 );
-                
+
                 if (salesPersonForJob) {
                     // Always set sales person when job has one, regardless of current value
-                    updates.push({ 
-                        field: 'selectedSalesPerson', 
-                        value: salesPersonForJob.name 
+                    updates.push({
+                        field: 'selectedSalesPerson',
+                        value: salesPersonForJob.name
                     });
                 }
             }
@@ -474,12 +480,12 @@ const EditFabIdForm = () => {
             // Apply all updates at once
             if (updates.length > 0) {
                 updates.forEach(({ field, value }) => {
-                    form.setValue(field, value, { 
+                    form.setValue(field, value, {
                         shouldValidate: false,
-                        shouldDirty: true 
+                        shouldDirty: true
                     });
                 });
-                
+
                 // Store reference to prevent reprocessing
                 lastProcessedJobRef.current = {
                     name: selectedJob.name,
@@ -489,7 +495,7 @@ const EditFabIdForm = () => {
         } else {
             // No matching job found - clear the reference
             lastProcessedJobRef.current = null;
-            
+
             // If we have one field populated but can't find the job, clear the other field
             // This prevents stale data
             if (jobNameValue && !jobNumberValue) {
@@ -505,15 +511,15 @@ const EditFabIdForm = () => {
         if (!hasInitialDataLoaded || !accountValue || !lastProcessedJobRef.current) return;
 
         const currentAccount = accountsData?.find((account: any) => account.name === accountValue);
-        
+
         if (currentAccount) {
             // Check if the last processed job belongs to the current account
-            const jobForCurrentAccount = effectiveJobsData?.find((job: any) => 
-                (job.name === lastProcessedJobRef.current?.name || 
-                 job.job_number === lastProcessedJobRef.current?.number) &&
+            const jobForCurrentAccount = effectiveJobsData?.find((job: any) =>
+                (job.name === lastProcessedJobRef.current?.name ||
+                    job.job_number === lastProcessedJobRef.current?.number) &&
                 job.account_id === currentAccount.id
             );
-            
+
             // If the job doesn't belong to the current account, clear it
             if (!jobForCurrentAccount) {
                 form.setValue('jobName', '');
@@ -535,19 +541,19 @@ const EditFabIdForm = () => {
     useEffect(() => {
         const loadFormData = async () => {
             console.log('Checking if should load form data...');
-            
+
             // Only attempt to load once using ref to prevent multiple attempts
             if (existingFab && !isLoadingFab && !hasInitialDataLoaded && !hasAttemptedLoadRef.current) {
                 hasAttemptedLoadRef.current = true;
                 setIsLoadingFormData(true);
-                
+
                 setTimeout(async () => {
                     try {
                         console.log('Loading form data from existing FAB:', existingFab);
-                        
+
                         // Type assertion to bypass strict typing
                         const fabData: any = existingFab;
-                        
+
                         // Prepare form data
                         const formData = {
                             fabType: fabData.fab_type || '',
@@ -580,10 +586,10 @@ const EditFabIdForm = () => {
                         }
 
                         console.log('Prepared form data:', formData);
-                        
+
                         // Reset form with data
                         form.reset(formData);
-                        
+
                         // Set last processed job reference
                         if (formData.jobName && formData.jobNumber) {
                             lastProcessedJobRef.current = {
@@ -591,7 +597,7 @@ const EditFabIdForm = () => {
                                 number: formData.jobNumber
                             };
                         }
-                        
+
                         setHasInitialDataLoaded(true);
                     } catch (error) {
                         console.error('Error loading form data:', error);
@@ -650,11 +656,25 @@ const EditFabIdForm = () => {
             }
         }
     };
+    const handleAddStoneColor = async () => {
+        if (newStoneColor.trim()) {
+            try {
+                await createStoneColor({ name: newStoneColor.trim() }).unwrap();
+                setNewStoneColor('');
+                setShowAddStoneColor(false);
+                setStoneColorPopoverOpen(false);
+                toast.success('Stone color added successfully');
+            } catch (error: any) {
+                console.error('Failed to add stone color:', error);
+                toast.error('Failed to add stone color');
+            }
+        }
+    };
 
     // Update job select handlers to set both fields
     const handleJobNameChange = (value: string) => {
         form.setValue('jobName', value);
-        
+
         // Try to find the corresponding job number
         const selectedJob = effectiveJobsData.find((job: any) => job.name === value);
         if (selectedJob && selectedJob.job_number) {
@@ -664,7 +684,7 @@ const EditFabIdForm = () => {
 
     const handleJobNumberChange = (value: string) => {
         form.setValue('jobNumber', value);
-        
+
         // Try to find the corresponding job name
         const selectedJob = effectiveJobsData.find((job: any) => job.job_number === value);
         if (selectedJob && selectedJob.name) {
@@ -757,9 +777,9 @@ const EditFabIdForm = () => {
 
         } catch (err: any) {
             console.error('Submission error:', err);
-            
+
             let errorMessage = 'An unexpected error occurred. Please try again.';
-            
+
             if (err?.status === 'FETCH_ERROR') {
                 errorMessage = 'Network error: Unable to connect to the server.';
             } else if (err?.data?.message) {
@@ -767,7 +787,7 @@ const EditFabIdForm = () => {
             } else if (err?.message) {
                 errorMessage = err.message;
             }
-            
+
             setError(errorMessage);
             toast.error('Failed to update FAB ID. ' + errorMessage);
         } finally {
@@ -1118,9 +1138,9 @@ const EditFabIdForm = () => {
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>Stone Type *</FormLabel>
-                                                        <Select 
-                                                            onValueChange={field.onChange} 
-                                                            value={field.value} 
+                                                        <Select
+                                                            onValueChange={field.onChange}
+                                                            value={field.value}
                                                             disabled={isLoadingStoneTypes}
                                                         >
                                                             <FormControl>
@@ -1153,29 +1173,102 @@ const EditFabIdForm = () => {
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>Stone Color *</FormLabel>
-                                                        <Select 
-                                                            onValueChange={field.onChange} 
-                                                            value={field.value} 
-                                                            disabled={isLoadingStoneColors}
-                                                        >
-                                                            <FormControl>
-                                                                <SelectTrigger>
-                                                                    <SelectValue placeholder={isLoadingStoneColors ? 'Loading...' : 'Select stone color'} />
-                                                                </SelectTrigger>
-                                                            </FormControl>
-                                                            <SelectContent>
-                                                                {stoneColors.map((color: string) => (
-                                                                    <SelectItem key={color} value={color}>
-                                                                        {color}
-                                                                    </SelectItem>
-                                                                ))}
-                                                                {stoneColors.length === 0 && (
-                                                                    <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                                                        No stone colors found
+                                                        <Popover open={stoneColorPopoverOpen} onOpenChange={setStoneColorPopoverOpen}>
+                                                            <PopoverTrigger asChild>
+                                                                <FormControl>
+                                                                    <Button
+                                                                        variant="outline"
+                                                                        className="w-full justify-between h-[48px] px-4 text-sm border-input shadow-xs shadow-black/5"
+                                                                        disabled={isLoadingStoneColors}
+                                                                    >
+                                                                        <span className={!field.value ? "text-muted-foreground" : ""}>
+                                                                            {isLoadingStoneColors ? 'Loading...' : (field.value || "Select stone color")}
+                                                                        </span>
+                                                                        <ChevronDown className="h-4 w-4 opacity-60" />
+                                                                    </Button>
+                                                                </FormControl>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                                                <div className="p-2">
+                                                                    <div className="flex items-center justify-between mb-2">
+                                                                        <span className="text-sm font-medium">Stone Colors</span>
+                                                                        <Popover open={showAddStoneColor} onOpenChange={setShowAddStoneColor}>
+                                                                            <PopoverTrigger asChild>
+                                                                                <Button variant="ghost" size="sm" className="h-7 px-2">
+                                                                                    <Plus className="w-3 h-3 mr-1" />
+                                                                                    Add
+                                                                                </Button>
+                                                                            </PopoverTrigger>
+                                                                            <PopoverContent className="w-80" align="end">
+                                                                                <div className="space-y-3">
+                                                                                    <div>
+                                                                                        <Label htmlFor="newStoneColor">Stone Color Name</Label>
+                                                                                        <Input
+                                                                                            id="newStoneColor"
+                                                                                            placeholder="Enter stone color"
+                                                                                            value={newStoneColor}
+                                                                                            onChange={(e) => setNewStoneColor(e.target.value)}
+                                                                                        />
+                                                                                    </div>
+                                                                                    <div className="flex justify-end gap-2">
+                                                                                        <Button
+                                                                                            variant="outline"
+                                                                                            size="sm"
+                                                                                            type="button"
+                                                                                            onClick={() => setShowAddStoneColor(false)}
+                                                                                        >
+                                                                                            Cancel
+                                                                                        </Button>
+                                                                                        <Button
+                                                                                            size="sm"
+                                                                                            type="button"
+                                                                                            onClick={handleAddStoneColor}
+                                                                                        >
+                                                                                            Add
+                                                                                        </Button>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </PopoverContent>
+                                                                        </Popover>
                                                                     </div>
-                                                                )}
-                                                            </SelectContent>
-                                                        </Select>
+                                                                    <div className="relative mb-2">
+                                                                        <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
+                                                                        <Input
+                                                                            placeholder="Search stone color"
+                                                                            className="pl-8"
+                                                                            value={stoneColorSearch}
+                                                                            onChange={(e) => setStoneColorSearch(e.target.value)}
+                                                                        />
+                                                                    </div>
+                                                                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                                                                        {stoneColors
+                                                                            .filter((color: string) =>
+                                                                                color.toLowerCase().includes(stoneColorSearch.toLowerCase())
+                                                                            )
+                                                                            .map((color: string) => (
+                                                                                <div
+                                                                                    key={color}
+                                                                                    className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
+                                                                                    onClick={() => {
+                                                                                        field.onChange(color);
+                                                                                        setStoneColorSearch('');
+                                                                                        setStoneColorPopoverOpen(false);
+                                                                                    }}
+                                                                                >
+                                                                                    {color}
+                                                                                </div>
+                                                                            ))}
+                                                                        {stoneColors.filter((color: string) =>
+                                                                            color.toLowerCase().includes(stoneColorSearch.toLowerCase())
+                                                                        ).length === 0 && (
+                                                                                <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                                                                    {isLoadingStoneColors ? 'Loading stone colors...' : 'No stone colors found'}
+                                                                                </div>
+                                                                            )}
+                                                                    </div>
+                                                                </div>
+                                                            </PopoverContent>
+                                                        </Popover>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}
@@ -1382,7 +1475,7 @@ const EditFabIdForm = () => {
                                                 )}
                                             />
 
-                                             {/* Revenue */}
+                                            {/* Revenue */}
                                             <FormField
                                                 control={form.control}
                                                 name="revenue"
@@ -1431,9 +1524,9 @@ const EditFabIdForm = () => {
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>Select Sales Person *</FormLabel>
-                                                        <Select 
-                                                            onValueChange={field.onChange} 
-                                                            value={field.value} 
+                                                        <Select
+                                                            onValueChange={field.onChange}
+                                                            value={field.value}
                                                             disabled={isLoadingSalesPersons}
                                                         >
                                                             <FormControl>
@@ -1586,7 +1679,7 @@ const EditFabIdForm = () => {
                                     <CardFooter className='flex justify-between items-center'>
                                         <Link to="/sales" className="flex flex-nowrap items-center gap-2 text-sm text-primary underline">
                                             <ArrowLeft className="w-4 h-4" />
-                                           Back to Fabs
+                                            Back to Fabs
                                         </Link>
                                         <div className="flex items-center justify-end gap-3">
                                             <Link to="/sales">

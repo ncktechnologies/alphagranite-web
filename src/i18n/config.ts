@@ -1,6 +1,7 @@
 import { toAbsoluteUrl } from '@/lib/helpers';
 import arMessages from './messages/ar.json';
 import enMessages from './messages/en.json';
+import esMessages from './messages/es.json';
 import frMessages from './messages/fr.json';
 import zhMessages from './messages/zh.json';
 import { type Language } from './types';
@@ -8,6 +9,7 @@ import { type Language } from './types';
 const I18N_MESSAGES = {
   en: enMessages,
   ar: arMessages,
+  es: esMessages,
   fr: frMessages,
   zh: zhMessages,
 };
@@ -21,6 +23,13 @@ const I18N_LANGUAGES: Language[] = [
     direction: 'ltr',
     flag: toAbsoluteUrl('/media/flags/united-states.svg'),
     messages: I18N_MESSAGES.en,
+  },
+  {
+    label: 'Español',
+    code: 'es',
+    direction: 'ltr',
+    flag: toAbsoluteUrl('/media/flags/spain.svg'),
+    messages: I18N_MESSAGES.es,
   },
   {
     label: 'Arabic (Saudi)',

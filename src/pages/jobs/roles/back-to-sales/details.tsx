@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Container } from '@/components/common/container';
 import { Card, CardContent, CardHeader, CardHeading, CardTitle, CardToolbar } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { FileViewer } from '../drafters/components';
@@ -13,6 +13,8 @@ import { Badge } from '@/components/ui/badge';
 import {
     useUpdateSCTReviewMutation,
     useGetSalesCTByFabIdQuery,
+    useDeleteFileFromDraftingMutation,
+    useAddFilesToDraftingMutation
 } from '@/store/api/job';
 import { SCTTimer } from './components/SCTTimer';
 import { useSCTService } from './components/SCTService';
@@ -22,6 +24,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/auth/context/auth-context';
 import { Can } from '@/components/permission';
 import { Skeleton } from '@/components/ui/skeleton';
+import { UniversalUploadModal } from '@/components/universal-upload';
 
 // Helper function to get all fab notes (unfiltered)
 const getAllFabNotes = (fabNotes: any[]) => {
@@ -53,6 +56,7 @@ const DraftReviewDetailsPage = () => {
     const [showMarkAsCompleteModal, setShowMarkAsCompleteModal] = useState(false);
     const [viewMode, setViewMode] = useState<ViewMode>('activity');
     const [activeFile, setActiveFile] = useState<any | null>(null);
+    const [showUploadModal, setShowUploadModal] = useState(false);
 
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -65,7 +69,8 @@ const DraftReviewDetailsPage = () => {
     const {
         data: fabData,
         isLoading: isFabLoading,
-        isError: isFabError
+        isError: isFabError,
+        refetch: refetchFab
     } = useGetFabByIdQuery(fabId!, {
         skip: !fabId,
         refetchOnMountOrArgChange: false
@@ -88,22 +93,51 @@ const DraftReviewDetailsPage = () => {
         skip: shouldSkipSCT
     });
 
-    const handleFileClick = (file: any) => {
-        setActiveFile(file);
-        setViewMode('file');
-    };
-
-    const handleSubmitDraft = useCallback((submissionData: any) => {
-        setShowSubmissionModal(false);
-        // Handle submission logic
-    }, []);
-
     const currentUserName = user
         ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || 'Unknown User'
         : 'Unknown User';
 
     const fabSalesPerson = fabData?.sales_person_name || 'N/A';
     const draftData = (fabData as any)?.draft_data;
+
+    // Delete mutation
+    const [deleteFileFromDrafting] = useDeleteFileFromDraftingMutation();
+    const [addFilesToDrafting] = useAddFilesToDraftingMutation();
+
+    // Check if upload should be disabled (timer not started or paused)
+    const draftCompletedDate = draftData?.drafter_end_date;
+    const sctCompletedDate = fabData?.sct_completed_date;
+    const isUploadDisabled = !draftCompletedDate || !!sctCompletedDate;
+
+    const handleFileClick = (file: any) => {
+        setActiveFile(file);
+        setViewMode('file');
+    };
+
+    // Handle file deletion
+    const handleDeleteFile = async (fileId: string) => {
+        if (!draftData?.id) {
+            toast.error('Drafting ID not available');
+            return;
+        }
+        
+        try {
+            await deleteFileFromDrafting({
+                drafting_id: draftData.id,
+                file_id: fileId,
+            }).unwrap();
+            toast.success('File deleted successfully');
+            refetchFab(); // Refresh FAB data to show updated files
+        } catch (error) {
+            console.error('Failed to delete file:', error);
+            toast.error('Failed to delete file');
+        }
+    };
+
+    const handleSubmitDraft = useCallback((submissionData: any) => {
+        setShowSubmissionModal(false);
+        // Handle submission logic
+    }, []);
 
     const slabSmithNeeded = fabData?.slab_smith_ag_needed;
     const isSlabSmithActivityComplete = !!fabData?.slabsmith_completed_date;
@@ -264,7 +298,6 @@ const DraftReviewDetailsPage = () => {
                                     </a>
                                 </div>
                             }
-                            description={fabData?.job_details?.description || 'No description available'}
                         />
                         <div className="flex items-center gap-2">
                             <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
@@ -350,11 +383,28 @@ const DraftReviewDetailsPage = () => {
                                     />
                                 </CardHeader>
                                 <CardContent className="">
-                                    <h2 className='font-semibold text-sm py-3'>Uploaded files</h2>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h2 className='font-semibold text-sm'>Uploaded files</h2>
+                                        <Can action="create" on="Drafting">
+                                            <Button
+                                                variant="dashed"
+                                                size="sm"
+                                                onClick={() => setShowUploadModal(true)}
+                                                disabled={isUploadDisabled}
+                                                className="flex items-center gap-2"
+                                            >
+                                                <Plus className="w-4 h-4" />
+                                                Add Files
+                                            </Button>
+                                        </Can>
+                                    </div>
                                     <Documents
                                         onFileClick={handleFileClick}
                                         draftingData={draftData}
-                                        slabsmithData={fabData?.slabsmith_data}
+                                        slabsmithData={(fabData as any)?.slabsmith_data}
+                                        onDeleteFile={handleDeleteFile}
+                                        draftingId={draftData?.id}
+                                        showDeleteButton={!isUploadDisabled}
                                     />
                                 </CardContent>
                             </Card>
@@ -362,6 +412,34 @@ const DraftReviewDetailsPage = () => {
                     )}
                 </Container>
             </div>
+
+            {/* Upload Modal */}
+            <UniversalUploadModal
+              open={showUploadModal}
+              onOpenChange={setShowUploadModal}
+              title="Upload SCT Files"
+              entityId={draftData?.id}
+              uploadMutation={addFilesToDrafting}
+              stages={[
+                  { value: 'sales_ct', label: 'Sales CT' },
+              ]}
+              fileTypes={[
+                  { value: 'block_drawing', label: 'Block Drawing' },
+                  { value: 'layout', label: 'Layout' },
+                  { value: 'ss_layout', label: 'SS Layout' },
+                  { value: 'shop_drawing', label: 'Shop Drawing' },
+                  { value: 'photo_media', label: 'Photo/Media' },
+              ]}
+              additionalParams={{
+                  drafting_id: draftData?.id,
+                  stage_name: 'sales_ct',
+              }}
+              onUploadComplete={() => {
+                  toast.success('Files uploaded successfully');
+                  refetchFab(); // Refresh FAB data to show new files
+                  setShowUploadModal(false);
+              }}
+            />
 
             {/* Modals */}
             {showSubmissionModal && fabData && (

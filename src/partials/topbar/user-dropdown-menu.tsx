@@ -201,7 +201,32 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
         </DropdownMenuItem> */}
 
         {/* Language Submenu with Radio Group */}
-       
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="flex items-center gap-2">
+            <Globe />
+            {currenLanguage.label}
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="w-48">
+            <DropdownMenuRadioGroup
+              value={currenLanguage.code}
+              onValueChange={(code) => {
+                const selectedLang = I18N_LANGUAGES.find(lang => lang.code === code);
+                if (selectedLang) handleLanguage(selectedLang);
+              }}
+            >
+              {I18N_LANGUAGES.map((lang) => (
+                <DropdownMenuRadioItem
+                  key={lang.code}
+                  value={lang.code}
+                  className="flex items-center gap-2"
+                >
+                  <img src={lang.flag} alt={lang.label} className="w-4 h-4" />
+                  {lang.label}
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
 
         {/* Footer */}
         {/* <DropdownMenuItem

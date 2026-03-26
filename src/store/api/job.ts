@@ -1833,6 +1833,15 @@ export const jobApi = createApi({
                 invalidatesTags: ["Fab"],
             }),
 
+            // Universal delete file - works with just file_id
+            deleteFile: build.mutation<any, { file_id: string }>({
+                query: ({ file_id }) => ({
+                    url: `/files/${file_id}`,
+                    method: "DELETE"
+                }),
+                invalidatesTags: ["Drafting"],
+            }),
+
             // Update final programming
             updateFinalProgramming: build.mutation<any, { fp_id: number; data: any }>({
                 query: ({ fp_id, data }) => ({
@@ -2129,6 +2138,7 @@ export const {
     useSubmitDraftingForReviewMutation,
     useAddFilesToDraftingMutation,
     useDeleteFileFromDraftingMutation,
+    useDeleteFileMutation, 
     useGetStagesQuery,
     // Sales CT hooks
     useCreateSalesCTMutation,

@@ -19,11 +19,12 @@ import {
   useGetSalesCTByFabIdQuery,
   useGetRevisionsByFabIdQuery,
   useCreateRevisionMutation,
-  useUpdateRevisionMutation
+  useUpdateRevisionMutation,
+  useAddFilesToDraftingMutation
 } from '@/store/api/job';
 import { TimeTrackingComponent } from './components/TimeTrackingComponent';
 import { useSelector } from 'react-redux';
-import { X } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { Can } from '@/components/permission';
 import { useTabClosingWarning } from '@/hooks';
 import { BackButton } from '@/components/common/BackButton';
@@ -41,12 +42,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { FileViewer, UploadDocuments } from '../drafters/components';
+import { FileViewer } from '../drafters/components';
 import { SessionHistory } from '../drafters/components/SessionHistory';
 import { RevisionForm } from './components';
+import { Documents } from '@/pages/shop/components/files';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import { UniversalUploadModal } from '@/components/universal-upload';
 
 // Helper function to format timestamp without 'Z'
 const formatTimestamp = (date: Date) => {
@@ -173,6 +176,7 @@ export function RevisionDetailsPage() {
   const [toggleFabOnHold] = useToggleFabOnHoldMutation();
   const [createFabNote] = useCreateFabNoteMutation();
   const [deleteDraftingFile] = useDeleteFileFromDraftingMutation();
+  const [addFilesToDrafting] = useAddFilesToDraftingMutation();
   const [createRevision] = useCreateRevisionMutation();
   const [updateRevision] = useUpdateRevisionMutation();
 
@@ -191,6 +195,7 @@ export function RevisionDetailsPage() {
   const [activeFile, setActiveFile] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [fileDesign, setFileDesign] = useState<string>('');
 
   const isDrafting = sessionStatus === 'drafting';
@@ -766,16 +771,32 @@ export function RevisionDetailsPage() {
                     )}
 
                     {shouldShowUploadSection ? (
-                      <UploadDocuments
-                        onFileClick={handleFileClick}
-                        disabled={hasEnded || isOnHold || isPaused}
-                        enhancedFiles={allFilesForDisplay}
-                        draftingId={draftingData?.id || fabData?.draft_data?.id}
-                        refetchFiles={refetchAllFiles}
-                        stage="revision"
-                        fileDesign={fileDesign}
-                        onUploadComplete={() => setFileDesign('')}
-                      />
+                      <div className="space-y-4">
+                        {/* Upload Button */}
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-sm">Uploaded files</h3>
+                          <Can action="create" on="Drafting">
+                            <Button
+                              variant="dashed"
+                              size="sm"
+                              onClick={() => setShowUploadModal(true)}
+                              disabled={hasEnded || isOnHold || isPaused}
+                              className="flex items-center gap-2"
+                            >
+                              <Plus className="w-4 h-4" />
+                              Add Files
+                            </Button>
+                          </Can>
+                        </div>
+                        
+                        {/* File Display */}
+                        <Documents
+                          onFileClick={handleFileClick}
+                          draftingData={draftingData || fabData?.draft_data}
+                          draftingId={draftingData?.id || fabData?.draft_data?.id}
+                          showDeleteButton={!hasEnded && !isOnHold}
+                        />
+                      </div>
                     ) : (
                       <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
                         <p className="text-gray-500">Start the timer to enable file uploads</p>
@@ -803,6 +824,35 @@ export function RevisionDetailsPage() {
               </Card>
 
               <SessionHistory fabId={fabId} />
+
+              {/* Universal Upload Modal */}
+              <UniversalUploadModal
+                open={showUploadModal}
+                onOpenChange={setShowUploadModal}
+                title="Upload Revision Files"
+                entityId={draftingData?.id || fabData?.draft_data?.id}
+                uploadMutation={addFilesToDrafting}
+                stages={[
+                  { value: 'revision', label: 'Revision' },
+                ]}
+                fileTypes={[
+                  { value: 'block_drawing', label: 'Block Drawing' },
+                  { value: 'layout', label: 'Layout' },
+                  { value: 'ss_layout', label: 'SS Layout' },
+                  { value: 'shop_drawing', label: 'Shop Drawing' },
+                  { value: 'photo_media', label: 'Photo / Media' },
+                ]}
+                additionalParams={{
+                  drafting_id: draftingData?.id || fabData?.draft_data?.id,
+                  stage_name: 'revision',
+                }}
+                onUploadComplete={() => {
+                  toast.success('Files uploaded successfully');
+                  refetchAllFiles();
+                  setShowUploadModal(false);
+                  setFileDesign('');
+                }}
+              />
             </>
           )}
         </Container>

@@ -14,15 +14,16 @@ import {
   useGetCurrentDraftingSessionQuery,
   useToggleFabOnHoldMutation,
   useCreateFabNoteMutation,
-  useDeleteFileFromDraftingMutation
+  useDeleteFileFromDraftingMutation,
+  useAddFilesToDraftingMutation
 } from '@/store/api/job';
 import { TimeTrackingComponent } from './components/TimeTrackingComponent';
-import { UploadDocuments } from './components/fileUploads';
+import { Documents } from '@/pages/shop/components/files';
 import { FileViewer } from './components/FileViewer';
 import { SubmissionModal } from './components/SubmissionModal';
 import { SessionHistory } from './components/SessionHistory';
 import { useSelector } from 'react-redux';
-import { X } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { Can } from '@/components/permission';
 import { useTabClosingWarning } from '@/hooks';
 import { BackButton } from '@/components/common/BackButton';
@@ -38,6 +39,7 @@ import {
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import { UniversalUploadModal } from '@/components/universal-upload';
 
 // Helper function to format timestamp without 'Z'
 const formatTimestamp = (date: Date) => {
@@ -88,6 +90,7 @@ export function DrafterDetailsPage() {
   const [toggleFabOnHold] = useToggleFabOnHoldMutation();
   const [createFabNote] = useCreateFabNoteMutation();
   const [deleteDraftingFile] = useDeleteFileFromDraftingMutation();
+  const [addFilesToDrafting] = useAddFilesToDraftingMutation();
 
   // Use draft_data from FAB response for displaying existing files
   const draftData = fabData?.draft_data;
@@ -104,6 +107,7 @@ export function DrafterDetailsPage() {
   const [activeFile, setActiveFile] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [fileDesign, setFileDesign] = useState<string>(''); // File design input
 
   // Initialize session state from server data
@@ -351,7 +355,7 @@ export function DrafterDetailsPage() {
     setViewMode('file');
   };
 
-  const handleDeleteFile = async (fileId: number) => {
+  const handleDeleteFile = async (fileId: string) => {
     if (!window.confirm('Are you sure you want to delete this file?')) {
       return;
     }
@@ -364,15 +368,17 @@ export function DrafterDetailsPage() {
     try {
       await deleteDraftingFile({
         drafting_id: draftingId,
-        file_id: String(fileId)
+        file_id: fileId
       }).unwrap();
 
       // Refresh data
-      await refetchAllFiles();
+      await refetchFab();
+      await refetchDrafting();
 
       toast.success('File deleted successfully');
     } catch (error) {
       console.error('Failed to delete file:', error);
+      toast.error('Failed to delete file');
     }
   };
 
@@ -670,10 +676,9 @@ export function DrafterDetailsPage() {
 
                   {/* File Upload Section - Using Final Programming style UI */}
                   <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-4">Files</h3>
 
                     {/* File Design Input */}
-                    {shouldShowUploadSection && (
+                    {/* {shouldShowUploadSection && (
                       <div className="mb-4">
                         <label className="text-sm font-medium text-gray-700 block mb-2">
                           File Type *
@@ -698,19 +703,36 @@ export function DrafterDetailsPage() {
                           File type is required before uploading files
                         </p>
                       </div>
-                    )}
+                    )} */}
 
                     {shouldShowUploadSection ? (
-                      <UploadDocuments
-                        onFileClick={handleFileClick}
-                        disabled={hasEnded || isOnHold || isPaused}
-                        enhancedFiles={allFilesForDisplay}
-                        draftingId={draftingData?.id || fabData?.draft_data?.id}
-                        refetchFiles={refetchAllFiles}
-                        stage="drafting"
-                        fileDesign={fileDesign}
-                        onUploadComplete={() => setFileDesign('')}
-                      />
+                      <div className="space-y-4">
+                        {/* Upload Button */}
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-sm">Uploaded files</h3>
+                          <Can action="create" on="Drafting">
+                            <Button
+                              variant="dashed"
+                              size="sm"
+                              onClick={() => setShowUploadModal(true)}
+                              disabled={hasEnded || isOnHold || isPaused}
+                              className="flex items-center gap-2"
+                            >
+                              <Plus className="w-4 h-4" />
+                              Add Files
+                            </Button>
+                          </Can>
+                        </div>
+                        
+                        {/* File Display */}
+                        <Documents
+                          onFileClick={handleFileClick}
+                          draftingData={fabData?.draft_data}
+                          // onDeleteFile={handleDeleteFile}
+                          draftingId={draftingData?.id || fabData?.draft_data?.id}
+                          showDeleteButton={!hasEnded && !isOnHold}
+                        />
+                      </div>
                     ) : (
                       <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
                         <p className="text-gray-500">Start the timer to enable file uploads</p>
@@ -747,10 +769,7 @@ export function DrafterDetailsPage() {
         {showSubmissionModal && (
           <SubmissionModal
             open={showSubmissionModal}
-            onClose={(success?: boolean) => {
-              setShowSubmissionModal(false);
-              if (success) onSubmitModal();
-            }}
+            onClose={() => setShowSubmissionModal(false)}
             drafting={draftingData}
             uploadedFiles={filesForSubmission}
             fabId={fabId}
@@ -758,6 +777,36 @@ export function DrafterDetailsPage() {
             fabData={fabData}
           />
         )}
+
+        {/* Upload Modal */}
+        <UniversalUploadModal
+          open={showUploadModal}
+          onOpenChange={setShowUploadModal}
+          title="Upload Drafting Files"
+          entityId={draftingData?.id || fabData?.draft_data?.id}
+          uploadMutation={addFilesToDrafting}
+          stages={[
+            { value: 'drafting', label: 'Drafting' },
+            { value: 'pre_draft_review', label: 'Pre-Draft Review' },
+            { value: 'revision', label: 'Revision' },
+          ]}
+          fileTypes={[
+            { value: 'block_drawing', label: 'Block Drawing' },
+            { value: 'layout', label: 'Layout' },
+            { value: 'ss_layout', label: 'SS Layout' },
+            { value: 'shop_drawing', label: 'Shop Drawing' },
+          ]}
+          additionalParams={{
+            drafting_id: draftingData?.id || fabData?.draft_data?.id,
+            stage_name: 'drafting',
+          }}
+          onUploadComplete={() => {
+            toast.success('Files uploaded successfully');
+            refetchFab();
+            refetchDrafting();
+            setShowUploadModal(false);
+          }}
+        />
       </div>
     </>
   );

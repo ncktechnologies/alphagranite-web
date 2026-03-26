@@ -174,7 +174,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
       </CardHeader>
 
       {isExpanded && (
-        <CardContent className="pt-5 space-y-5">
+        <CardContent className="pt-5 space-y-5 grid grid-cols-3 gap-4">
           {/* FAB ID */}
           <div>
             <Label className="text-[13px] text-[#4b545d]">FAB ID *</Label>
@@ -232,40 +232,40 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
           </div>
 
           {/* Time */}
-          <div>
-            <div className="flex items-center gap-2 mb-3">
+          {/* <div> */}
+          {/* <div className="flex items-center gap-2 mb-3">
               <Clock className="h-4 w-4 text-[#7a9705]" />
               <Label className="text-[13px] text-[#4b545d]">Scheduled Time *</Label>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-[12px] text-[#7c8689] mb-1">Start</p>
-                <Select value={entry.start_time} onValueChange={value => onUpdate({ start_time: value })}>
-                  <SelectTrigger className="h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
-                    <SelectValue placeholder="Select start" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    {TIME_SLOTS.map(slot => (
-                      <SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <p className="text-[12px] text-[#7c8689] mb-1">End</p>
-                <Select value={entry.end_time} onValueChange={value => onUpdate({ end_time: value })}>
-                  <SelectTrigger className="h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
-                    <SelectValue placeholder="Select end" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60">
-                    {TIME_SLOTS.filter(slot => !entry.start_time || slot.value > entry.start_time).map(slot => (
-                      <SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            </div> */}
+          {/* <div className=""> */}
+          <div>
+            <Label className="text-[13px] text-[#4b545d]">Start</Label>
+            <Select value={entry.start_time} onValueChange={value => onUpdate({ start_time: value })}>
+              <SelectTrigger className="h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                <SelectValue placeholder="Select start" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                {TIME_SLOTS.map(slot => (
+                  <SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
+          <div>
+            <Label className="text-[13px] text-[#4b545d]">End</Label>
+            <Select value={entry.end_time} onValueChange={value => onUpdate({ end_time: value })}>
+              <SelectTrigger className="h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                <SelectValue placeholder="Select end" />
+              </SelectTrigger>
+              <SelectContent className="max-h-60">
+                {TIME_SLOTS.filter(slot => !entry.start_time || slot.value > entry.start_time).map(slot => (
+                  <SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {/* </div> */}
+          {/* </div> */}
 
           {/* Planning Section */}
           <div>

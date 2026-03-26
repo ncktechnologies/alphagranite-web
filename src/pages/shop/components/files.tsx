@@ -9,10 +9,12 @@ import {
   HeadphonesIcon,
   VideoIcon,
   X,
+  Eye,
 } from 'lucide-react';
-import { Drafting } from '@/store/api/job';
+import { Drafting, useDeleteFileMutation } from '@/store/api/job';
 import { Can } from '@/components/permission';
 import { getFileStage, getStageBadge, WORKFLOW_STAGES } from '@/utils/file-labeling';
+import { toast } from 'sonner';
 
 interface FileMetadata {
   id: string;
@@ -38,6 +40,7 @@ interface UploadBoxProps {
   uploadedFileMetas?: any[];
   currentStage?: string; // Current workflow stage for context
   slabsmithData?: any; // SlabSmith data containing files
+  showDeleteButton?: boolean; // Control delete button visibility
 }
 
 // Helper function to compare if two objects have the same files data
@@ -56,7 +59,8 @@ export function Documents({
   draftingId, 
   uploadedFileMetas = [],
   currentStage,
-  slabsmithData
+  slabsmithData,
+  showDeleteButton = true
 }: UploadBoxProps) {
   // Use useMemo to compute files instead of useState/useEffect
   const files = useMemo(() => {
@@ -175,6 +179,24 @@ export function Documents({
     if (onFileClick) onFileClick(file);
   }, [onFileClick]);
 
+  // Universal delete handler - just needs file_id
+  const [deleteFile] = useDeleteFileMutation();
+  
+  const handleDeleteInternal = useCallback(async (fileId: string) => {
+    try {
+      await deleteFile({ file_id: fileId }).unwrap();
+      toast.success('File deleted successfully');
+      
+      // Call parent callback if provided
+      if (onDeleteFile) {
+        onDeleteFile(fileId);
+      }
+    } catch (error) {
+      console.error('Failed to delete file:', error);
+      // toast.error('Failed to delete file');
+    }
+  }, [deleteFile, onDeleteFile]);
+
   // If no files, show a message
   if (files.length === 0) {
     return (
@@ -186,91 +208,118 @@ export function Documents({
 
   return (
     <div className="border-none">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {files.map((file) => (
-            <div
-              key={file.id}
-              className={cn(
-                'relative rounded-lg border p-4 transition-colors border-muted-foreground/25 hover:border-muted-foreground/50'
-              )}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex flex-col items-center gap-3">
-                  <div className="size-8 flex items-center justify-center rounded">
-                    {getFileIcon(file)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[14px] text-black font-bold flex-1">{file.name}</p>
-                    <div className="flex flex-wrap items-center gap-2 mt-1">
-                      <p className="text-xs text-muted-foreground">
-                        {formatBytes(file.size)}
-                      </p>
-                      {(() => {
-                        const stage = file.stage_name || getFileStage(file.name, { isDrafting: false });
-                        const badge = getStageBadge(stage);
-                        return (
-                          <span className={badge.className}>
-                            {badge.label}
-                          </span>
-                        );
-                      })()}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {files.map((file) => (
+          <div
+            key={file.id}
+            className={cn(
+              'relative rounded-lg border p-4 transition-colors border-muted-foreground/25 hover:border-muted-foreground/50'
+            )}
+          >
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex flex-col items-center gap-3 w-full">
+                <div className="size-8 flex items-center justify-center  rounded">
+                  {getFileIcon(file)}
+                </div>
+                <div className="flex-1 min-w-0 w-full">
+                  <p className="text-[14px] text-black font-bold flex-1 truncate" title={file.name}>
+                    {file.name}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <p className="text-xs text-muted-foreground">
+                      {formatBytes(file.size)}
+                    </p>
+                    {(() => {
+  // Determine stage key from file metadata
+  const stageKey = file.stage_name || getFileStage(file.name, { isDrafting: false }).stage;
+  
+  if (!stageKey) {
+    // No stage information available – return null to show nothing
+    return null;
+  }
+  
+  // Try to get the badge from the mapping
+  const badge = getStageBadge(stageKey as any);
+  
+  // Use badge label if available, otherwise format the stageKey as a readable label
+  const label = badge?.label || stageKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+  // Use badge className if available, otherwise a default badge style
+  const className = badge?.className || 'bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded';
+  
+  return (
+    <span className={className}>
+      {label}
+    </span>
+  );
+})()}
 
-                      {file.file_design && (
-                        <span className="text-xs text-muted-foreground">
-                          Design: {file.file_design}
-                        </span>
-                      )}
+                    {file.file_design && (
+                      <span className="text-xs text-muted-foreground bg-gray-100 px-2 py-0.5 rounded">
+                         {file.file_design}
+                      </span>
+                    )}
 
-                      {/* {file.stage_name && (
-                        <span className="text-xs text-muted-foreground">
-                          Stage: {file.stage_name}
-                        </span>
-                      )} */}
-
-                      {file.uploaded_by_name && (
-                        <span className="text-xs text-muted-foreground">
-                          By: {file.uploaded_by_name}
-                        </span>
-                      )}
-                    </div>
+                    {file.uploaded_by_name && (
+                      <span className="text-xs text-muted-foreground bg-blue-50 px-2 py-0.5 rounded">
+                         {file.uploaded_by_name}
+                      </span>
+                    )}
                   </div>
                 </div>
+              </div>
 
+              {showDeleteButton && (
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="size-6 text-muted-foreground hover:text-destructive"
+                  className="size-6 text-muted-foreground hover:text-destructive shrink-0"
                   onClick={(e) => {
                     e.stopPropagation();
-                    if (onDeleteFile && draftingId) {
-                      onDeleteFile(file.id);
-                    }
+                    handleDeleteInternal(file.id);
                   }}
-                  disabled={!onDeleteFile || !draftingId}
                 >
-                  {onDeleteFile && draftingId ? (
+                  <Can action="delete" on="Drafting">
+                    <X className="size-3" />
+                  </Can>
+                </Button>
+              )}
+            </div>
+
+              <div className="flex items-center gap-1">
+                {/* View/Eye Icon Button */}
+                <Button
+                  onClick={() => handleViewFile(file)}
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  title="View file"
+                >
+                  <Eye className="w-4 h-4 text-blue-500" />
+                </Button>
+
+               
+                {/* {showDeleteButton && onDeleteFile && draftingId && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-6 text-muted-foreground hover:text-destructive shrink-0"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onDeleteFile && draftingId) {
+                        onDeleteFile(file.id);
+                      }
+                    }}
+                    disabled={!onDeleteFile || !draftingId}
+                  >
                     <Can action="delete" on="Drafting">
                       <X className="size-3" />
                     </Can>
-                  ) : (
-                    <X className="size-3 opacity-30" />
-                  )}
-                </Button>
+                  </Button>
+                )} */}
               </div>
-
-              <div>
-                <Button
-                  onClick={() => handleViewFile(file)}
-                  variant="inverse"
-                  size="sm"
-                  className="text-sm font-semibold text-center text-primary underline absolute bottom-3 right-3"
-                >
-                  View File
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

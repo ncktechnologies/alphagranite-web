@@ -12,15 +12,21 @@ export const TimeDisplay = ({ startTime, endTime, totalTime }: TimeDisplayProps)
         return formatForDisplay(date, 'DISPLAY_WITH_TIME')
     }
 
-    const formatDuration = (seconds?: number) => {
-        if (!seconds) return '00:00:00'
-        const hours = Math.floor(seconds / 3600)
-        const minutes = Math.floor((seconds % 3600) / 60)
-        const secs = seconds % 60
-        return `${hours.toString().padStart(2, '0')}:${minutes
-            .toString()
-            .padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-    }
+    const formatDuration = (seconds: number) => {
+        if (seconds < 0) seconds = 0;
+        const days = Math.floor(seconds / (24 * 3600));
+        const remainingSeconds = seconds % (24 * 3600);
+        const hours = Math.floor(remainingSeconds / 3600);
+        const minutes = Math.floor((remainingSeconds % 3600) / 60);
+        const secs = remainingSeconds % 60;
+
+        const pad = (n: number) => n.toString().padStart(2, '0');
+
+        if (days > 0) {
+            return `${days}d ${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
+        }
+        return `${pad(hours)}:${pad(minutes)}:${pad(secs)}`;
+    };
 
     return (
         <div className="flex items-center justify-between gap-10 w-full">
@@ -32,12 +38,12 @@ export const TimeDisplay = ({ startTime, endTime, totalTime }: TimeDisplayProps)
                         <img src="/images/app/clock.svg" alt="" />
                     </div>
                 </div>
-                 <div>
-                <span className="text-sm text-text-foreground">Start time & Date:</span>
-                <p className="text-[16px] text-text font-semibold">
-                    {formatTime(startTime)}
-                </p>
-            </div>
+                <div>
+                    <span className="text-sm text-text-foreground">Start time & Date:</span>
+                    <p className="text-[16px] text-text font-semibold">
+                        {formatTime(startTime)}
+                    </p>
+                </div>
             </div>
 
 

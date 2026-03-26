@@ -21,9 +21,8 @@ import { TimeTrackingComponent } from './components/TimeTrackingComponent';
 import { SubmissionModal } from './components/SubmissionModal';
 import { useSelector } from 'react-redux';
 import { UploadedFileMeta } from '@/types/uploads';
-import { X } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { Can } from '@/components/permission';
-import { UploadDocuments } from '../drafters/components';
 import { Documents } from '@/pages/shop/components/files';
 import { FileWithPreview } from '@/hooks/use-file-upload';
 import { getFileStage } from '@/utils/file-labeling';
@@ -39,6 +38,7 @@ import {
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import { UniversalUploadModal } from '@/components/universal-upload';
 
 const formatBytes = (bytes: number, decimals = 2) => {
   if (bytes === 0) return '0 Bytes';
@@ -100,6 +100,7 @@ export function FinalProgrammingDetailsPage() {
   const [activeFile, setActiveFile] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   // Sync with session API
   useEffect(() => {
@@ -580,16 +581,32 @@ export function FinalProgrammingDetailsPage() {
                     )}
 
                     {shouldShowUploadSection ? (
-                      <UploadDocuments
-                        onFilesChange={handleFilesChange}
-                        onFileClick={handleFileClick}
-                        draftingId={fabData?.draft_data?.id}
-                        refetchFiles={refetchFab}
-                        stage="final_programming"
-                        fileDesign={fileDesign}
-                        onUploadComplete={() => setFileDesign('')}
-                        disabled={!isDrafting && isPaused}
-                      />
+                      <div className="space-y-4">
+                        {/* Upload Button */}
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-sm">Uploaded files</h3>
+                          <Can action="create" on="FinalProgramming">
+                            <Button
+                              variant="dashed"
+                              size="sm"
+                              onClick={() => setShowUploadModal(true)}
+                              disabled={!isDrafting || isPaused || hasEnded}
+                              className="flex items-center gap-2"
+                            >
+                              <Plus className="w-4 h-4" />
+                              Add Files
+                            </Button>
+                          </Can>
+                        </div>
+                        
+                        {/* File Display */}
+                        <Documents
+                          onFileClick={handleFileClick}
+                          draftingData={fabData?.draft_data}
+                          draftingId={fabData?.draft_data?.id}
+                          showDeleteButton={!hasEnded && !isPaused}
+                        />
+                      </div>
                     ) : (
                       <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
                         {isPaused ? (
@@ -606,30 +623,7 @@ export function FinalProgrammingDetailsPage() {
                     )}
                   </div>
 
-                  {/* Display uploaded files from server */}
-                  {fabData?.draft_data?.files && fabData.draft_data.files.length > 0 && viewMode === 'activity' && (
-                    <div className="mt-6 pt-4 border-t border-gray-200">
-                      <h3 className="text-lg font-semibold mb-4 text-gray-900">Uploaded Files</h3>
-                      <Documents
-                        draftingData={{
-                          ...fabData.draft_data,
-                          files: fabData.draft_data.files.filter((file: any) => {
-                            const stageKey = file.stage_name ?? file.stage;
-                            return (
-                              stageKey === 'final_programming' ||
-                              stageKey === 'cut_list' ||
-                              (stageKey && stageKey.toLowerCase().includes('final_programming')) ||
-                              (stageKey && stageKey.toLowerCase().includes('cut_list'))
-                            );
-                          }),
-                          file_ids: ""
-                        }}
-                        onFileClick={handleFileClick}
-                        onDeleteFile={(fileId: string) => handleDeleteFile(Number(fileId))}
-                        draftingId={fabData?.draft_data?.id}
-                      />
-                    </div>
-                  )}
+                  {/* Display uploaded files from server - REMOVED, now shown above */}
                 </CardContent>
                 <div className="flex justify-end p-6 pt-0 gap-2 items-center">
                   <BackButton fallbackUrl="/job/final-programming" label='Cancel' />
@@ -656,13 +650,42 @@ export function FinalProgrammingDetailsPage() {
                   }
                 }}
                 drafting={fpSessionData?.data}
-                uploadedFiles={uploadedFileMetas.map(meta => ({ ...meta }))}
-                draftStart={draftStart}
-                draftEnd={draftEnd}
-                totalTime={totalTime}
+                uploadedFiles={uploadedFileMetas.map((meta) => ({
+                  ...meta,
+                  stage_name: 'final_programming',
+                }))}
                 fabId={fabId}
                 userId={currentEmployeeId}
-                fabData={fabData}
+              />
+
+              {/* Universal Upload Modal */}
+              <UniversalUploadModal
+                open={showUploadModal}
+                onOpenChange={setShowUploadModal}
+                title="Upload Final Programming Files"
+                entityId={fabData?.draft_data?.id}
+                uploadMutation={addFilesToFinalProgramming}
+                stages={[
+                  { value: 'cut_list', label: 'Cut List' },
+                  { value: 'final_programming', label: 'Final Programming' },
+                ]}
+                fileTypes={[
+                  { value: 'block_drawing', label: 'Block Drawing' },
+                  { value: 'layout', label: 'Layout' },
+                  { value: 'ss_layout', label: 'SS Layout' },
+                  { value: 'shop_drawing', label: 'Shop Drawing' },
+                  { value: 'photo_media', label: 'Photo / Media' },
+                ]}
+                additionalParams={{
+                  drafting_id: fabData?.draft_data?.id,
+                  stage_name: 'final_programming',
+                }}
+                onUploadComplete={() => {
+                  toast.success('Files uploaded successfully');
+                  refetchFab();
+                  setShowUploadModal(false);
+                  setFileDesign('');
+                }}
               />
             </>
           )}

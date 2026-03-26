@@ -35,6 +35,7 @@ import {
 import { useGetSalesPersonsQuery } from "@/store/api/employee";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 // =======================
 // Schema with proper transformation
@@ -357,7 +358,7 @@ const JobFormSheet = ({
       setIsSheetOpen(false);
       onSubmitSuccess?.();
     } catch (err: any) {
-      toast.error(err?.data?.message || "Failed to save job");
+      console.error(err?.data?.message || "Failed to save job");
     }
   }
 
@@ -378,336 +379,340 @@ const JobFormSheet = ({
             </SheetHeader>
 
             <SheetBody className="flex-1 overflow-y-auto">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Job Name */}
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Job Name *</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={isViewMode} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <ScrollArea className="h-full">
 
-                {/* Job Number */}
-                <FormField
-                  control={form.control}
-                  name="job_number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Job Number *</FormLabel>
-                      <FormControl>
-                        <Input {...field} disabled={isViewMode} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Project Value */}
-                <FormField
-                  control={form.control}
-                  name="project_value"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Project Value *</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          disabled={isViewMode}
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Square Footage */}
-                <FormField
-                  control={form.control}
-                  name="sq_ft"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Square Footage *</FormLabel>
-                      <FormControl>
-                        <Input
-                          {...field}
-                          disabled={isViewMode}
-                          placeholder="Enter square footage"
-                          value={field.value || ""}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Sales Person */}
-                <FormField
-                  control={form.control}
-                  name="sales_person_id"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Sales Person *</FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                        disabled={isViewMode || salesPersonsLoading}
-                      >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Job Name */}
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Job Name *</FormLabel>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue
-                              placeholder={
-                                salesPersonsLoading
-                                  ? "Loading sales persons..."
-                                  : "Select Sales Person"
-                              }
-                            >
-                              {salesPersonsLoading
-                                ? "Loading..."
-                                : field.value
-                                  ? salesPersons.find(
-                                    (sp) => String(sp.id) === field.value
-                                  )?.name
-                                  : "Select Sales Person"}
-                            </SelectValue>
-                          </SelectTrigger>
+                          <Input {...field} disabled={isViewMode} />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                        <SelectContent>
-                          {salesPersons.map((salesPerson) => (
-                            <SelectItem
-                              key={salesPerson.id}
-                              value={String(salesPerson.id)}
-                            >
-                              {salesPerson.name}
-                            </SelectItem>
-                          ))}
+                  {/* Job Number */}
+                  <FormField
+                    control={form.control}
+                    name="job_number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Job Number *</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={isViewMode} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                          {!salesPersonsLoading && salesPersons.length === 0 && (
-                            <div className="px-2 py-1.5 text-sm text-muted-foreground text-center">
-                              No sales persons available
-                            </div>
-                          )}
-                        </SelectContent>
-                      </Select>
+                  {/* Project Value */}
+                  <FormField
+                    control={form.control}
+                    name="project_value"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Project Value *</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            disabled={isViewMode}
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                  {/* Square Footage */}
+                  <FormField
+                    control={form.control}
+                    name="sq_ft"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Square Footage *</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            disabled={isViewMode}
+                            placeholder="Enter square footage"
+                            value={field.value || ""}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                {/* Account Selector */}
-                <FormField
-                  control={form.control}
-                  name="account_id"
-                  render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                      <FormLabel>Account *</FormLabel>
-                      <Popover
-                        open={accountPopoverOpen}
-                        onOpenChange={setAccountPopoverOpen}
-                      >
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className="w-full h-10 px-3 justify-between font-normal"
-                              disabled={isViewMode || accountsLoading}
-                              type="button"
-                            >
-                              {accountsLoading
-                                ? "Loading..."
-                                : field.value
-                                  ? accountsData?.find(
-                                    (a) =>
-                                      String(a.id) === field.value
-                                  )?.name
-                                  : "Select account"}
-                              <Search className="h-4 w-4 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-
-                        <PopoverContent
-                          className="w-[--radix-popover-trigger-width] p-2"
-                          align="start"
-                          onInteractOutside={handleAccountPopoverClose}
-                          onEscapeKeyDown={handleAccountPopoverClose}
+                  {/* Sales Person */}
+                  <FormField
+                    control={form.control}
+                    name="sales_person_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Sales Person *</FormLabel>
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={isViewMode || salesPersonsLoading}
                         >
-                          {/* Show either create account form or account list */}
-                          {showCreateAccountForm ? (
-                            <div className="space-y-3">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={resetCreateAccountForm}
-                                  className="h-6 w-6 p-0"
-                                >
-                                  <ArrowLeft className="h-4 w-4" />
-                                </Button>
-                                <Label className="text-sm font-medium">Create New Account</Label>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue
+                                placeholder={
+                                  salesPersonsLoading
+                                    ? "Loading sales persons..."
+                                    : "Select Sales Person"
+                                }
+                              >
+                                {salesPersonsLoading
+                                  ? "Loading..."
+                                  : field.value
+                                    ? salesPersons.find(
+                                      (sp) => String(sp.id) === field.value
+                                    )?.name
+                                    : "Select Sales Person"}
+                              </SelectValue>
+                            </SelectTrigger>
+                          </FormControl>
+
+                          <SelectContent>
+                            {salesPersons.map((salesPerson) => (
+                              <SelectItem
+                                key={salesPerson.id}
+                                value={String(salesPerson.id)}
+                              >
+                                {salesPerson.name}
+                              </SelectItem>
+                            ))}
+
+                            {!salesPersonsLoading && salesPersons.length === 0 && (
+                              <div className="px-2 py-1.5 text-sm text-muted-foreground text-center">
+                                No sales persons available
                               </div>
+                            )}
+                          </SelectContent>
+                        </Select>
 
-                              <div className="space-y-2">
-                                <div>
-                                  <Label className="text-xs">Account Name *</Label>
-                                  <Input
-                                    value={newAccountName}
-                                    onChange={(e) => {
-                                      setNewAccountName(e.target.value);
-                                      // Update persisted data
-                                      persistAccountDataRef.current.newAccountName = e.target.value;
-                                    }}
-                                    placeholder="Enter account name"
-                                    required
-                                  />
-                                </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                                <div>
-                                  <Label className="text-xs">Account Number</Label>
-                                  <Input
-                                    value={newAccountData.account_number}
-                                    onChange={(e) => {
-                                      setNewAccountData(prev => ({ ...prev, account_number: e.target.value }));
-                                      persistAccountDataRef.current.accountData.account_number = e.target.value;
-                                    }}
-                                    placeholder="Optional"
-                                  />
-                                </div>
+                  {/* Account Selector */}
+                  <FormField
+                    control={form.control}
+                    name="account_id"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Account *</FormLabel>
+                        <Popover
+                          open={accountPopoverOpen}
+                          onOpenChange={setAccountPopoverOpen}
+                        >
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                className="w-full h-10 px-3 justify-between font-normal"
+                                disabled={isViewMode || accountsLoading}
+                                type="button"
+                              >
+                                {accountsLoading
+                                  ? "Loading..."
+                                  : field.value
+                                    ? accountsData?.find(
+                                      (a) =>
+                                        String(a.id) === field.value
+                                    )?.name
+                                    : "Select account"}
+                                <Search className="h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
 
-                                <div>
-                                  <Label className="text-xs">Contact Person</Label>
-                                  <Input
-                                    value={newAccountData.contact_person}
-                                    onChange={(e) => {
-                                      setNewAccountData(prev => ({ ...prev, contact_person: e.target.value }));
-                                      persistAccountDataRef.current.accountData.contact_person = e.target.value;
-                                    }}
-                                    placeholder="Optional"
-                                  />
-                                </div>
-
-                                <div>
-                                  <Label className="text-xs">Email</Label>
-                                  <Input
-                                    type="email"
-                                    value={newAccountData.email}
-                                    onChange={(e) => {
-                                      setNewAccountData(prev => ({ ...prev, email: e.target.value }));
-                                      persistAccountDataRef.current.accountData.email = e.target.value;
-                                    }}
-                                    placeholder="Optional"
-                                  />
-                                </div>
-
-                                <div>
-                                  <Label className="text-xs">Phone</Label>
-                                  <Input
-                                    value={newAccountData.phone}
-                                    onChange={(e) => {
-                                      setNewAccountData(prev => ({ ...prev, phone: e.target.value }));
-                                      persistAccountDataRef.current.accountData.phone = e.target.value;
-                                    }}
-                                    placeholder="Optional"
-                                  />
-                                </div>
-
-                                <div className="flex justify-end gap-2 pt-2">
+                          <PopoverContent
+                            className="w-[--radix-popover-trigger-width] p-2"
+                            align="start"
+                            onInteractOutside={handleAccountPopoverClose}
+                            onEscapeKeyDown={handleAccountPopoverClose}
+                          >
+                            {/* Show either create account form or account list */}
+                            {showCreateAccountForm ? (
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2 mb-2">
                                   <Button
-                                    variant="outline"
-                                    size="sm"
-                                    type="button"
-                                    onClick={resetCreateAccountForm}
-                                  >
-                                    Cancel
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    type="button"
-                                    onClick={handleAddAccount}
-                                  >
-                                    Create Account
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="space-y-2">
-                              <div className="flex justify-between items-center">
-                                <span className="text-sm font-medium">Accounts</span>
-                                {!isViewMode && (
-                                  <Button
-                                    size="sm"
                                     variant="ghost"
-                                    type="button"
-                                    onClick={() => {
-                                      setShowCreateAccountForm(true);
-                                      persistAccountDataRef.current.showCreateForm = true;
-                                    }}
+                                    size="sm"
+                                    onClick={resetCreateAccountForm}
+                                    className="h-6 w-6 p-0"
                                   >
-                                    <Plus className="w-3 h-3 mr-1" />
-                                    Add
+                                    <ArrowLeft className="h-4 w-4" />
                                   </Button>
-                                )}
-                              </div>
+                                  <Label className="text-sm font-medium">Create New Account</Label>
+                                </div>
 
-                              <Input
-                                placeholder="Search account..."
-                                value={accountSearch}
-                                onChange={(e) => {
-                                  setAccountSearch(e.target.value);
-                                  persistAccountDataRef.current.search = e.target.value;
-                                }}
-                                autoFocus
-                              />
-
-                              <div className="max-h-48 overflow-y-auto">
-                                {filteredAccounts.map((account) => (
-                                  <div
-                                    key={account.id}
-                                    className="px-3 py-2 text-sm hover:bg-muted rounded cursor-pointer"
-                                    onClick={() => handleAccountSelect(String(account.id))}
-                                  >
-                                    {account.name}
+                                <div className="space-y-2">
+                                  <div>
+                                    <Label className="text-xs">Account Name *</Label>
+                                    <Input
+                                      value={newAccountName}
+                                      onChange={(e) => {
+                                        setNewAccountName(e.target.value);
+                                        // Update persisted data
+                                        persistAccountDataRef.current.newAccountName = e.target.value;
+                                      }}
+                                      placeholder="Enter account name"
+                                      required
+                                    />
                                   </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </PopoverContent>
-                      </Popover>
-                    </FormItem>
-                  )}
-                />
 
-                {/* Notes */}
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem className="md:col-span-2">
-                      <FormLabel>Notes</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          {...field}
-                          rows={3}
-                          disabled={isViewMode}
-                          placeholder="Add notes about this job..."
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                                  <div>
+                                    <Label className="text-xs">Account Number</Label>
+                                    <Input
+                                      value={newAccountData.account_number}
+                                      onChange={(e) => {
+                                        setNewAccountData(prev => ({ ...prev, account_number: e.target.value }));
+                                        persistAccountDataRef.current.accountData.account_number = e.target.value;
+                                      }}
+                                      placeholder="Optional"
+                                    />
+                                  </div>
+
+                                  <div>
+                                    <Label className="text-xs">Contact Person</Label>
+                                    <Input
+                                      value={newAccountData.contact_person}
+                                      onChange={(e) => {
+                                        setNewAccountData(prev => ({ ...prev, contact_person: e.target.value }));
+                                        persistAccountDataRef.current.accountData.contact_person = e.target.value;
+                                      }}
+                                      placeholder="Optional"
+                                    />
+                                  </div>
+
+                                  <div>
+                                    <Label className="text-xs">Email</Label>
+                                    <Input
+                                      type="email"
+                                      value={newAccountData.email}
+                                      onChange={(e) => {
+                                        setNewAccountData(prev => ({ ...prev, email: e.target.value }));
+                                        persistAccountDataRef.current.accountData.email = e.target.value;
+                                      }}
+                                      placeholder="Optional"
+                                    />
+                                  </div>
+
+                                  <div>
+                                    <Label className="text-xs">Phone</Label>
+                                    <Input
+                                      value={newAccountData.phone}
+                                      onChange={(e) => {
+                                        setNewAccountData(prev => ({ ...prev, phone: e.target.value }));
+                                        persistAccountDataRef.current.accountData.phone = e.target.value;
+                                      }}
+                                      placeholder="Optional"
+                                    />
+                                  </div>
+
+                                  <div className="flex justify-end gap-2 pt-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      type="button"
+                                      onClick={resetCreateAccountForm}
+                                    >
+                                      Cancel
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      type="button"
+                                      onClick={handleAddAccount}
+                                    >
+                                      Create Account
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-sm font-medium">Accounts</span>
+                                  {!isViewMode && (
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      type="button"
+                                      onClick={() => {
+                                        setShowCreateAccountForm(true);
+                                        persistAccountDataRef.current.showCreateForm = true;
+                                      }}
+                                    >
+                                      <Plus className="w-3 h-3 mr-1" />
+                                      Add
+                                    </Button>
+                                  )}
+                                </div>
+
+                                <Input
+                                  placeholder="Search account..."
+                                  value={accountSearch}
+                                  onChange={(e) => {
+                                    setAccountSearch(e.target.value);
+                                    persistAccountDataRef.current.search = e.target.value;
+                                  }}
+                                  autoFocus
+                                />
+
+                                <div className="max-h-48 overflow-y-auto">
+                                  {filteredAccounts.map((account) => (
+                                    <div
+                                      key={account.id}
+                                      className="px-3 py-2 text-sm hover:bg-muted rounded cursor-pointer"
+                                      onClick={() => handleAccountSelect(String(account.id))}
+                                    >
+                                      {account.name}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </PopoverContent>
+                        </Popover>
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Notes */}
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-2">
+                        <FormLabel>Notes</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            {...field}
+                            rows={3}
+                            disabled={isViewMode}
+                            placeholder="Add notes about this job..."
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </ScrollArea>
+
             </SheetBody>
 
             <SheetFooter className="flex justify-end gap-3 pt-4">

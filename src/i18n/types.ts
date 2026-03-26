@@ -1,6 +1,6 @@
 import { type MessageFormatElement } from 'react-intl';
 
-export type LanguageCode = 'en' | 'fr' | 'ar' | 'zh';
+export type LanguageCode = 'en' | 'fr' | 'ar' | 'zh' | 'es';
 
 export type LanguageDirection = 'ltr' | 'rtl';
 

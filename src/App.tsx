@@ -9,6 +9,7 @@ import { QueryProvider } from './providers/query-provider';
 import { SettingsProvider } from './providers/settings-provider';
 import { ThemeProvider } from './providers/theme-provider';
 import { TooltipsProvider } from './providers/tooltips-provider';
+import { I18nProvider } from './providers/i18n-provider';
 import ReduxProvider from './hoc/redux-providor';
 import { PermissionManager } from '@/components/PermissionManager';
 
@@ -20,8 +21,9 @@ export function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <ReduxProvider>
-        <SettingsProvider>
-          <ThemeProvider>
+        <I18nProvider>
+          <SettingsProvider>
+            <ThemeProvider>
               <HelmetProvider>
                 <TooltipsProvider>
                   <QueryProvider>
@@ -35,8 +37,9 @@ export function App() {
                   </QueryProvider>
                 </TooltipsProvider>
               </HelmetProvider>
-          </ThemeProvider>
-        </SettingsProvider>
+            </ThemeProvider>
+          </SettingsProvider>
+        </I18nProvider>
       </ReduxProvider>
     </QueryClientProvider>
   );

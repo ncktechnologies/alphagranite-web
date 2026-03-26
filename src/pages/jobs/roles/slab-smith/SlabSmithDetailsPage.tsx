@@ -20,14 +20,13 @@ import {
   useCreateFabNoteMutation,
 } from '@/store/api/job';
 import { TimeTrackingComponent } from './components/TimeTrackingComponent';
-import { UploadDocuments } from './components/fileUploads';
 import { FileViewer } from './components/FileViewer';
 import { Documents } from '@/pages/shop/components/files';
 import { SubmissionModal } from './components/SubmissionModal';
 import { useSelector } from 'react-redux';
 import { FileWithPreview } from '@/hooks/use-file-upload';
 import { UploadedFileMeta } from '@/types/uploads';
-import { X } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 import { Can } from '@/components/permission';
 import { getFileStage } from '@/utils/file-labeling';
 import { BackButton } from '@/components/common/BackButton';
@@ -41,6 +40,7 @@ import {
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
+import { UniversalUploadModal } from '@/components/universal-upload';
 
 const formatBytes = (bytes: number, decimals = 2) => {
   if (bytes === 0) return '0 Bytes';
@@ -124,6 +124,7 @@ export function SlabSmithDetailsPage() {
   const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
 
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   // -----------------------------------------------------------------
   // Helper: Normalise any file object for FileViewer
@@ -676,45 +677,35 @@ export function SlabSmithDetailsPage() {
                   <div className="mb-6">
                     <h3 className="text-lg font-semibold mb-4">Files</h3>
 
-                    {/* File Design Input */}
-                    {shouldShowUploadSection && (
-                      <div className="mb-4">
-                        <label className="text-sm font-medium text-gray-700 block mb-2">
-                          File Type *
-                        </label>
-                        <Select
-                          value={fileDesign}
-                          onValueChange={(value) => setFileDesign(value)}
-                          disabled={!isDrafting}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select file type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Block Drawing">Block Drawing</SelectItem>
-                            <SelectItem value="Layout">Layout</SelectItem>
-                            <SelectItem value="SS Layout">SS Layout</SelectItem>
-                            <SelectItem value="Shop Drawing">Shop Drawing</SelectItem>
-                            <SelectItem value="Photo / Media">Photo / Media</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          File type is required before uploading files
-                        </p>
-                      </div>
-                    )}
+                
 
                     {shouldShowUploadSection ? (
-                      <UploadDocuments
-                        onFilesChange={handleFilesChange}
-                        onFileClick={handleFileClick}
-                        slabSmithId={slabSmithData?.id}
-                        refetchFiles={refetchFab}
-                        stage="slab_smith"
-                        fileDesign={fileDesign}
-                        onUploadComplete={() => setFileDesign('')}
-                        disabled={!isDrafting}
-                      />
+                      <div className="space-y-4">
+                        {/* Upload Button */}
+                        <div className="flex items-center justify-between">
+                          <h3 className="font-semibold text-sm">Uploaded files</h3>
+                          <Can action="create" on="SlabSmith">
+                            <Button
+                              variant="dashed"
+                              size="sm"
+                              onClick={() => setShowUploadModal(true)}
+                              disabled={!isDrafting || isPaused || hasEnded}
+                              className="flex items-center gap-2"
+                            >
+                              <Plus className="w-4 h-4" />
+                              Add Files
+                            </Button>
+                          </Can>
+                        </div>
+                        
+                        {/* File Display */}
+                        <Documents
+                          onFileClick={handleFileClick}
+                          slabsmithData={fabData?.slabsmith_data}
+                          draftingId={slabSmithData?.id}
+                          showDeleteButton={!hasEnded && !isPaused}
+                        />
+                      </div>
                     ) : (
                       <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
                         {isPaused ? (
@@ -731,19 +722,8 @@ export function SlabSmithDetailsPage() {
                     )}
                   </div>
 
-                  {/* Server‑uploaded files */}
-                  {(fabData as any)?.slabsmith_data?.files &&
-                    (fabData as any).slabsmith_data.files.length > 0 && (
-                      <div className="mt-6 pt-4 border-t border-gray-200">
-                        <h3 className="text-lg font-semibold mb-4 text-gray-900">Uploaded Files from Slabsmith</h3>
-                        <Documents
-                          slabsmithData={(fabData as any)?.slabsmith_data}
-                          onFileClick={handleFileClick}
-                          onDeleteFile={(fileId: string) => handleDeleteFile(Number(fileId))}
-                          draftingId={slabSmithData?.id}
-                        />
-                      </div>
-                    )}
+                  {/* Server-uploaded files - REMOVED, now shown above */}
+
                 </CardContent>
 
                 <div className="flex justify-end p-6 pt-0 gap-2 items-center">
@@ -762,6 +742,37 @@ export function SlabSmithDetailsPage() {
           )}
 
           {/* Submission Modal */}
+
+          {/* Universal Upload Modal */}
+          <UniversalUploadModal
+            open={showUploadModal}
+            onOpenChange={setShowUploadModal}
+            title="Upload SlabSmith Files"
+            entityId={slabSmithData?.id}
+            uploadMutation={addFilesToSlabSmith}
+            stages={[
+              { value: 'slab_smith', label: 'Slab Smith' },
+            ]}
+            fileTypes={[
+              { value: 'block_drawing', label: 'Block Drawing' },
+              { value: 'layout', label: 'Layout' },
+              { value: 'ss_layout', label: 'SS Layout' },
+              { value: 'shop_drawing', label: 'Shop Drawing' },
+              { value: 'photo_media', label: 'Photo / Media' },
+            ]}
+            additionalParams={{
+              slab_smith_id: slabSmithData?.id,
+              stage_name: 'slab_smith',
+            }}
+            onUploadComplete={() => {
+              toast.success('Files uploaded successfully');
+              refetchFab();
+              refetchSlabSmith();
+              setShowUploadModal(false);
+              setFileDesign('');
+            }}
+          />
+
           <SubmissionModal
             open={showSubmissionModal}
             onClose={(success?: boolean) => {

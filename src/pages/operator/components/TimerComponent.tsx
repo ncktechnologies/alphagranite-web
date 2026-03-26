@@ -32,24 +32,22 @@ export function OperatorTimerComponent({
     const [displayTime, setDisplayTime] = useState(totalTime);
     const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
 
-    // ── Format time — 3-digit hours like FunctionalTimer ─────────────────────
+    // Format time with days when needed
     const formatTime = (seconds: number) => {
-        const hours   = Math.floor(seconds / 3600);
-        const minutes = Math.floor((seconds % 3600) / 60);
-        const secs    = seconds % 60;
-        return {
-            hours:   hours.toString().padStart(3, '0'),
-            minutes: minutes.toString().padStart(2, '0'),
-            seconds: secs.toString().padStart(2, '0'),
-        };
+        const days = Math.floor(seconds / (24 * 3600));
+        const remainingSeconds = seconds % (24 * 3600);
+        const hours = Math.floor(remainingSeconds / 3600);
+        const minutes = Math.floor((remainingSeconds % 3600) / 60);
+        const secs = remainingSeconds % 60;
+        return { days, hours, minutes, seconds: secs };
     };
 
-    // ── Progress bar (from OperatorTimerComponent) ────────────────────────────
+    // Progress bar (from OperatorTimerComponent)
     const timeUsedPercentage = estimatedHours
         ? Math.min((displayTime / (estimatedHours * 3600)) * 100, 100)
         : 0;
 
-    // ── Timer tick (from OperatorTimerComponent) ──────────────────────────────
+    // Timer tick
     useEffect(() => {
         if (isRunning && !isPaused) {
             const id = setInterval(() => {
@@ -71,14 +69,14 @@ export function OperatorTimerComponent({
         };
     }, [isRunning, isPaused, onTimeUpdate]);
 
-    // ── Sync with server time ─────────────────────────────────────────────────
+    // Sync with server time
     useEffect(() => {
         setDisplayTime(totalTime);
     }, [totalTime]);
 
     const time = formatTime(displayTime);
 
-    // ── Status helpers ────────────────────────────────────────────────────────
+    // Status helpers
     const getStatusText = () => {
         if (isRunning)       return 'In Progress';
         if (isPaused)        return 'Paused';
@@ -100,7 +98,7 @@ export function OperatorTimerComponent({
             )}
             data-name="Timer"
         >
-            {/* ── Header ───────────────────────────────────────────────────── */}
+            {/* Header */}
             <div className="relative shrink-0 w-full" data-name="item">
                 <div aria-hidden="true" className="absolute border-[#f0f1f6] border-b border-solid inset-0 pointer-events-none" />
                 <div className="flex flex-row items-center size-full">
@@ -116,8 +114,8 @@ export function OperatorTimerComponent({
                 </div>
             </div>
 
-            {/* ── Timer display + controls ──────────────────────────────────── */}
-            <div className="flex flex-col gap-[24px] items-center  py-[32px] w-full">
+            {/* Timer display + controls */}
+            <div className="flex flex-col gap-[24px] items-center py-[32px] w-full">
 
                 {/* Timer Display */}
                 <div
@@ -129,11 +127,18 @@ export function OperatorTimerComponent({
                         style={{ fontFamily: "'Spline Sans Mono', monospace" }}
                         data-name="countdown"
                     >
-                        <p className="relative shrink-0">{time.hours}</p>
+                        {time.days > 0 ? (
+                            <>
+                                <p className="relative shrink-0">{time.days}d</p>
+                                <p className="relative shrink-0">{time.hours.toString().padStart(2, '0')}</p>
+                            </>
+                        ) : (
+                            <p className="relative shrink-0">{time.hours.toString().padStart(3, '0')}</p>
+                        )}
                         <p className="relative shrink-0">:</p>
-                        <p className="relative shrink-0">{time.minutes}</p>
+                        <p className="relative shrink-0">{time.minutes.toString().padStart(2, '0')}</p>
                         <p className="relative shrink-0">:</p>
-                        <p className="relative shrink-0">{time.seconds}</p>
+                        <p className="relative shrink-0">{time.seconds.toString().padStart(2, '0')}</p>
                     </div>
                 </div>
 
@@ -158,7 +163,7 @@ export function OperatorTimerComponent({
                     </div>
                 )}
 
-                {/* ── Control Buttons ───────────────────────────────────────── */}
+                {/* Control Buttons */}
                 <div className="flex gap-[12px] items-center flex-wrap justify-center">
 
                     {/* Not started → Start */}
@@ -178,7 +183,6 @@ export function OperatorTimerComponent({
                     {/* Running → Pause + On Hold */}
                     {isRunning && !isPaused && (
                         <>
-                            {/* Pause — temporarily stop the clock */}
                             <button
                                 onClick={onPause}
                                 disabled={disabled}
@@ -190,7 +194,6 @@ export function OperatorTimerComponent({
                                 </p>
                             </button>
 
-                            {/* On Hold — also pauses but signals a hold state */}
                             <button
                                 onClick={onPause}
                                 disabled={disabled}

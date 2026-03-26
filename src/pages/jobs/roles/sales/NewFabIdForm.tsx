@@ -179,6 +179,11 @@ const NewFabIdForm = () => {
   // New item states
   const [newThickness, setNewThickness] = useState('');
 
+  const [stoneColorPopoverOpen, setStoneColorPopoverOpen] = useState(false);
+  const [stoneColorSearch, setStoneColorSearch] = useState('');
+  const [showAddStoneColor, setShowAddStoneColor] = useState(false);
+  const [newStoneColor, setNewStoneColor] = useState('');
+
   const handlePopupClose = () => {
     setShowPopover(false);
     navigate('/job');
@@ -211,25 +216,25 @@ const NewFabIdForm = () => {
   });
 
   // Auto-check all checkboxes when FAB type is resurfacing
-const fabTypeValue = form.watch('fabType');
+  const fabTypeValue = form.watch('fabType');
 
-useEffect(() => {
-  if (fabTypeValue?.toLowerCase() === 'resurface') {
-    form.setValue('templateNotNeeded', true);
-    form.setValue('draftNotNeeded', true);
-    form.setValue('slabSmithCustNotNeeded', true);
-    form.setValue('sctNotNeeded', true);
-    form.setValue('slabSmithAGNotNeeded', true);
-    form.setValue('finalProgrammingNotNeeded', true);
-  } else {
-    form.setValue('templateNotNeeded', false);
-    form.setValue('draftNotNeeded', false);
-    form.setValue('slabSmithCustNotNeeded', false);
-    form.setValue('sctNotNeeded', false);
-    form.setValue('slabSmithAGNotNeeded', false);
-    form.setValue('finalProgrammingNotNeeded', false);
-  }
-}, [fabTypeValue, form]);
+  useEffect(() => {
+    if (fabTypeValue?.toLowerCase() === 'resurface') {
+      form.setValue('templateNotNeeded', true);
+      form.setValue('draftNotNeeded', true);
+      form.setValue('slabSmithCustNotNeeded', true);
+      form.setValue('sctNotNeeded', true);
+      form.setValue('slabSmithAGNotNeeded', true);
+      form.setValue('finalProgrammingNotNeeded', true);
+    } else {
+      form.setValue('templateNotNeeded', false);
+      form.setValue('draftNotNeeded', false);
+      form.setValue('slabSmithCustNotNeeded', false);
+      form.setValue('sctNotNeeded', false);
+      form.setValue('slabSmithAGNotNeeded', false);
+      form.setValue('finalProgrammingNotNeeded', false);
+    }
+  }, [fabTypeValue, form]);
 
   // Watch for account changes
   const accountValue = form.watch('account');
@@ -473,6 +478,26 @@ useEffect(() => {
           toast.error(`Failed to add stone type: ${error.data.message}`);
         } else {
           toast.error('Failed to add stone type');
+        }
+      }
+    }
+  };
+  const handleAddStoneColor = async () => {
+    if (newStoneColor.trim()) {
+      try {
+        await createStoneColor({ name: newStoneColor.trim() }).unwrap();
+        setNewStoneColor('');
+        setShowAddStoneColor(false);
+        setStoneColorPopoverOpen(false);
+        toast.success('Stone color added successfully');
+      } catch (error: any) {
+        console.error('Failed to add stone color:', error);
+        if (error?.status === 'FETCH_ERROR') {
+          toast.error('Network error: Unable to add stone color. Please check your connection.');
+        } else if (error?.data?.message) {
+          toast.error(`Failed to add stone color: ${error.data.message}`);
+        } else {
+          toast.error('Failed to add stone color');
         }
       }
     }
@@ -1061,26 +1086,98 @@ useEffect(() => {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Stone Color *</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingStoneColors}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder={isLoadingStoneColors ? 'Loading...' : 'Select stone color'} />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {isStoneColorsError ? (
-                                    <div className="px-3 py-2 text-sm text-red-500">
-                                      Failed to load stone colors: Server error occurred
+                              <Popover open={stoneColorPopoverOpen} onOpenChange={setStoneColorPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <Button
+                                      variant="outline"
+                                      className="w-full justify-between h-[48px] px-4 text-sm border-input shadow-xs shadow-black/5"
+                                      disabled={isLoadingStoneColors}
+                                    >
+                                      <span className={!field.value ? "text-muted-foreground" : ""}>
+                                        {isLoadingStoneColors ? 'Loading...' : (field.value || "Select stone color")}
+                                      </span>
+                                      <ChevronDown className="h-4 w-4 opacity-60" />
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                  <div className="p-2">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-sm font-medium">Stone Colors</span>
+                                      <Popover open={showAddStoneColor} onOpenChange={setShowAddStoneColor}>
+                                        <PopoverTrigger asChild>
+                                          <Button variant="ghost" size="sm" className="h-7 px-2">
+                                            <Plus className="w-3 h-3 mr-1" />
+                                            Add
+                                          </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-80" align="end">
+                                          <div className="space-y-3">
+                                            <div>
+                                              <Label htmlFor="newStoneColor">Stone Color Name</Label>
+                                              <Input
+                                                id="newStoneColor"
+                                                placeholder="Enter stone color"
+                                                value={newStoneColor}
+                                                onChange={(e) => setNewStoneColor(e.target.value)}
+                                              />
+                                            </div>
+                                            <div className="flex justify-end gap-2">
+                                              <Button variant="outline" type='button' size="sm" onClick={() => setShowAddStoneColor(false)}>
+                                                Cancel
+                                              </Button>
+                                              <Button size="sm" type='button' onClick={handleAddStoneColor}>
+                                                Add
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </PopoverContent>
+                                      </Popover>
                                     </div>
-                                  ) : (
-                                    stoneColors.map((color: string) => (
-                                      <SelectItem key={color} value={color}>
-                                        {color}
-                                      </SelectItem>
-                                    ))
-                                  )}
-                                </SelectContent>
-                              </Select>
+                                    <div className="relative mb-2">
+                                      <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
+                                      <Input
+                                        placeholder="Search stone color"
+                                        className="pl-8"
+                                        value={stoneColorSearch}
+                                        onChange={(e) => setStoneColorSearch(e.target.value)}
+                                      />
+                                    </div>
+                                    {isStoneColorsError && (
+                                      <div className="px-3 py-2 text-sm text-red-500 text-center">
+                                        Failed to load stone colors: Server error occurred
+                                      </div>
+                                    )}
+                                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                                      {stoneColors
+                                        .filter((color: string) =>
+                                          color.toLowerCase().includes(stoneColorSearch.toLowerCase())
+                                        )
+                                        .map((color: string) => (
+                                          <div
+                                            key={color}
+                                            className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
+                                            onClick={() => {
+                                              field.onChange(color);
+                                              setStoneColorSearch('');
+                                              setStoneColorPopoverOpen(false);
+                                            }}
+                                          >
+                                            {color}
+                                          </div>
+                                        ))}
+                                      {stoneColors.filter((color: string) =>
+                                        color.toLowerCase().includes(stoneColorSearch.toLowerCase())
+                                      ).length === 0 && !isStoneColorsError && (
+                                          <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                            {isLoadingStoneColors ? 'Loading stone colors...' : 'No stone colors found'}
+                                          </div>
+                                        )}
+                                    </div>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
                               <FormMessage />
                             </FormItem>
                           )}
