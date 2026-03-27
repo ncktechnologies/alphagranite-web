@@ -228,7 +228,7 @@ export function JobDetailsPage() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-3 space-y-10">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {jobInfo.map((item, index) => (
                   <div key={index}>
                     <p className="text-sm text-text-foreground font-normal uppercase tracking-wide">
@@ -321,19 +321,19 @@ export function JobDetailsPage() {
                         <div>
                           <h4 className="font-semibold">{fab.fab_type}</h4>
                           <p className="text-sm text-gray-600">
-                            {fab.total_sqft} sq ft · {fab.stone_type_name || 'N/A'} · {fab.stone_color_name || 'N/A'}
+                            {fab.total_sqft} sq ft · {fab.stone_type_name || 'N/A'} · {fab.stone_color_name || 'N/A'} . {fab.input_area || 'N/A'}
                           </p>
                           <div className="flex items-center space-x-2 mt-1">
                             <Badge
-                              variant={
-                                fab.status_id === 1
-                                  ? 'default'
-                                  : fab.status_id === 2
-                                    ? 'secondary'
-                                    : 'outline'
-                              }
+                              // variant={
+                              //   fab.status_id === 1
+                              //     ? 'default'
+                              //     : fab.status_id === 2
+                              //       ? 'secondary'
+                              //       : 'outline'
+                              // }
                             >
-                              {getFabStatusText(fab.status_id)}
+                              {fab.current_stage}
                             </Badge>
                           </div>
                         </div>
@@ -462,6 +462,7 @@ export function JobDetailsPage() {
         title="Delete File"
         description={`Are you sure you want to delete "${fileToDelete?.name}"? This action cannot be undone.`}
         centered
+        className='h-auto '
       >
         <div className="flex justify-end space-x-3 my-3">
           <Button
@@ -470,7 +471,7 @@ export function JobDetailsPage() {
               setDeleteConfirmationOpen(false);
               setFileToDelete(null);
             }}
-            className="w-[124px]"
+            className="w-[200px]"
           >
             Cancel
           </Button>

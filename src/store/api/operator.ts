@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { axiosBaseQuery } from "@/services/axiosBaseQuery";
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { ShopCutPlanSuccessResponse } from "./shopCutPlanning";
@@ -213,7 +212,7 @@ export const operatorApi = createApi({
             job_id: number;
         }>({
             query: ({ operator_id, job_id }) => ({
-                url: `/api/v1/operators/${operator_id}/jobs/${job_id}/files`,
+                url: `/api/v1/operators/${operator_id}/files`,
                 method: 'GET'
             }),
             providesTags: (_result, _error, { job_id }) => [{ type: 'Task', id: job_id }],

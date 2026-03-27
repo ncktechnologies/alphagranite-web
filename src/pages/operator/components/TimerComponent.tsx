@@ -14,6 +14,7 @@ interface TimerComponentProps {
     onTimeUpdate?: (time: number) => void;
     disabled?: boolean;
     className?: string;
+    hideControls?: boolean; // new prop
 }
 
 export function OperatorTimerComponent({
@@ -27,6 +28,7 @@ export function OperatorTimerComponent({
     onTimeUpdate,
     disabled = false,
     className = '',
+    hideControls = false,
 }: TimerComponentProps) {
     const [displayTime, setDisplayTime] = useState(totalTime);
     const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
@@ -172,56 +174,58 @@ export function OperatorTimerComponent({
                     </div>
                 )}
 
-                {/* Control Buttons */}
-                <div className="content-stretch flex gap-[12px] items-center relative shrink-0 flex-wrap justify-center">
-                    {/* Not started → Start */}
-                    {!isRunning && !isPaused && (
-                        <button
-                            onClick={onStart}
-                            disabled={disabled}
-                            className="bg-[#7a9705] disabled:opacity-50 content-stretch flex gap-[8px] items-center justify-center px-[24px] py-[16px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[#6a8505] transition-colors"
-                        >
-                            <Play className="relative shrink-0 size-[24px] text-white fill-white" />
-                            <p className="font-['Proxima_Nova:Semibold',sans-serif] leading-[16px] not-italic relative shrink-0 text-white text-[16px] tracking-[-0.32px] whitespace-nowrap">Start</p>
-                        </button>
-                    )}
-
-                    {/* Running → On Hold + Pause */}
-                    {isRunning && !isPaused && (
-                        <>
+                {/* Control Buttons - only render if hideControls is false */}
+                {!hideControls && (
+                    <div className="content-stretch flex gap-[12px] items-center relative shrink-0 flex-wrap justify-center">
+                        {/* Not started → Start */}
+                        {!isRunning && !isPaused && (
                             <button
-                                onClick={onPause}
+                                onClick={onStart}
                                 disabled={disabled}
-                                className="disabled:opacity-50 content-stretch flex gap-[8px] items-center justify-center px-[24px] py-[16px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[#fff5f5] transition-colors"
+                                className="bg-[#7a9705] disabled:opacity-50 content-stretch flex gap-[8px] items-center justify-center px-[24px] py-[16px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[#6a8505] transition-colors"
                             >
-                                <div aria-hidden="true" className="absolute border border-[#ef4444] border-solid inset-0 pointer-events-none rounded-[6px]" />
-                                <Square className="relative shrink-0 size-[24px] text-[#ef4444]" />
-                                <p className="font-['Proxima_Nova:Semibold',sans-serif] leading-[16px] not-italic relative shrink-0 text-[#ef4444] text-[16px] tracking-[-0.32px] whitespace-nowrap">On Hold</p>
+                                <Play className="relative shrink-0 size-[24px] text-white fill-white" />
+                                <p className="font-['Proxima_Nova:Semibold',sans-serif] leading-[16px] not-italic relative shrink-0 text-white text-[16px] tracking-[-0.32px] whitespace-nowrap">Start</p>
                             </button>
-                            
-                            <button
-                                onClick={onPause}
-                                disabled={disabled}
-                                className="bg-[#f5cd4b] disabled:opacity-50 content-stretch flex gap-[8px] items-center justify-center px-[24px] py-[16px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[#f0c520] transition-colors"
-                            >
-                                <Pause className="relative shrink-0 size-[24px] text-black fill-black" />
-                                <p className="font-['Proxima_Nova:Semibold',sans-serif] leading-[16px] not-italic relative shrink-0 text-[16px] text-black tracking-[-0.32px] whitespace-nowrap">Pause</p>
-                            </button>
-                        </>
-                    )}
+                        )}
 
-                    {/* Paused → Resume */}
-                    {isPaused && (
-                        <button
-                            onClick={onResume}
-                            disabled={disabled}
-                            className="bg-[#7a9705] disabled:opacity-50 content-stretch flex gap-[8px] items-center justify-center px-[24px] py-[16px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[#6a8505] transition-colors"
-                        >
-                            <Play className="relative shrink-0 size-[24px] text-white fill-white" />
-                            <p className="font-['Proxima_Nova:Semibold',sans-serif] leading-[16px] not-italic relative shrink-0 text-white text-[16px] tracking-[-0.32px] whitespace-nowrap">Resume</p>
-                        </button>
-                    )}
-                </div>
+                        {/* Running → On Hold + Pause */}
+                        {isRunning && !isPaused && (
+                            <>
+                                <button
+                                    onClick={onPause}
+                                    disabled={disabled}
+                                    className="disabled:opacity-50 content-stretch flex gap-[8px] items-center justify-center px-[24px] py-[16px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[#fff5f5] transition-colors"
+                                >
+                                    <div aria-hidden="true" className="absolute border border-[#ef4444] border-solid inset-0 pointer-events-none rounded-[6px]" />
+                                    <Square className="relative shrink-0 size-[24px] text-[#ef4444]" />
+                                    <p className="font-['Proxima_Nova:Semibold',sans-serif] leading-[16px] not-italic relative shrink-0 text-[#ef4444] text-[16px] tracking-[-0.32px] whitespace-nowrap">On Hold</p>
+                                </button>
+                                
+                                <button
+                                    onClick={onPause}
+                                    disabled={disabled}
+                                    className="bg-[#f5cd4b] disabled:opacity-50 content-stretch flex gap-[8px] items-center justify-center px-[24px] py-[16px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[#f0c520] transition-colors"
+                                >
+                                    <Pause className="relative shrink-0 size-[24px] text-black fill-black" />
+                                    <p className="font-['Proxima_Nova:Semibold',sans-serif] leading-[16px] not-italic relative shrink-0 text-[16px] text-black tracking-[-0.32px] whitespace-nowrap">Pause</p>
+                                </button>
+                            </>
+                        )}
+
+                        {/* Paused → Resume */}
+                        {isPaused && (
+                            <button
+                                onClick={onResume}
+                                disabled={disabled}
+                                className="bg-[#7a9705] disabled:opacity-50 content-stretch flex gap-[8px] items-center justify-center px-[24px] py-[16px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[#6a8505] transition-colors"
+                            >
+                                <Play className="relative shrink-0 size-[24px] text-white fill-white" />
+                                <p className="font-['Proxima_Nova:Semibold',sans-serif] leading-[16px] not-italic relative shrink-0 text-white text-[16px] tracking-[-0.32px] whitespace-nowrap">Resume</p>
+                            </button>
+                        )}
+                    </div>
+                )}
             </div>
         </div>
     );

@@ -188,8 +188,9 @@ export const axiosBaseQuery =
       }
 
       try {
+         const finalUrl = url.startsWith('http') ? url : `${baseUrl}${url}`;
         const response = await instance({
-          url: `${baseUrl}${url}`,
+          url: finalUrl,
           method,
           data,
           params,

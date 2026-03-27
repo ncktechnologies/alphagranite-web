@@ -651,8 +651,8 @@ export interface JobMediaFile {
     uploaded_by: number;
     uploader_name: string;
     created_at: string;
-    stage_name:string;
-    file_design:string;
+    stage_name: string;
+    file_design: string;
 }
 
 export interface JobMediaUploadResponse {
@@ -1836,10 +1836,10 @@ export const jobApi = createApi({
             // Universal delete file - works with just file_id
             deleteFile: build.mutation<any, { file_id: string }>({
                 query: ({ file_id }) => ({
-                    url: `/files/${file_id}`,
-                    method: "put"
+                    url: `https://api.ag.easybusiness.ng/files/${file_id}`, // absolute URL
+                    method: "DELETE",
                 }),
-                invalidatesTags: ["Drafting"],
+                invalidatesTags: ["Drafting", "Fab"],
             }),
 
             // Update final programming
@@ -1924,7 +1924,7 @@ export const jobApi = createApi({
                 providesTags: (_result, _error, { job_id }) => [{ type: "Job", id: job_id }],
             }),
 
-            uploadJobMedia: build.mutation<JobMediaUploadResponse[], { job_id: number; files: File[], stage_name:string, file_design:string }>({
+            uploadJobMedia: build.mutation<JobMediaUploadResponse[], { job_id: number; files: File[], stage_name: string, file_design: string }>({
                 query: ({ job_id, files, stage_name, file_design }) => {
                     const formData = new FormData();
                     files.forEach((file) => {
@@ -2138,7 +2138,7 @@ export const {
     useSubmitDraftingForReviewMutation,
     useAddFilesToDraftingMutation,
     useDeleteFileFromDraftingMutation,
-    useDeleteFileMutation, 
+    useDeleteFileMutation,
     useGetStagesQuery,
     // Sales CT hooks
     useCreateSalesCTMutation,

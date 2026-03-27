@@ -34,6 +34,7 @@ import { useGetWorkstationsQuery, useGetWorkStationByPlanningSectionsQuery } fro
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { BackButton } from '@/components/common/BackButton';
 import { usePlanSections } from '@/hooks/usePlanningSection';
+import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants & Helpers
@@ -82,6 +83,13 @@ const formatDate = (d: Date | undefined): string => {
 const parseTimeFromISO = (isoStr: string | undefined): string => {
     if (!isoStr) return '';
     try { return format(new Date(isoStr), 'HH:mm'); } catch { return ''; }
+};
+
+// Helper for FAB status display
+const getFabStatusInfo = (statusId: number | undefined) => {
+    if (statusId === 0) return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
+    if (statusId === 1) return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
+    return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -145,7 +153,7 @@ const ShopEstDateField: React.FC<{ value: string | undefined; fabId: number; onS
         return (
             <div className="space-y-2">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide font-normal">Shop Est. Completion</p>
-                <DateTimePicker mode="date" value={editedDate} onChange={d => setEditedDate(d)} minDate={new Date(new Date().setDate(new Date().getDate() - 1))}/>
+                <DateTimePicker mode="date" value={editedDate} onChange={d => setEditedDate(d)} minDate={new Date(new Date().setDate(new Date().getDate() - 1))} />
                 <div className="flex gap-2">
                     <Button size="sm" className="flex-1 h-8 text-xs" onClick={handleSave} disabled={isSaving}>
                         {isSaving ? <LoaderCircle className="h-3 w-3 animate-spin" /> : 'Save'}
@@ -561,14 +569,21 @@ const FabDetailsPage: React.FC = () => {
         }
     };
 
+    // Prepare clickable links
+    const jobNameLink = fab?.job_details?.id ? `/job/details/${fab.job_details.id}` : '#';
+    const jobNumberLink = fab?.job_details?.job_number
+        ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fab.job_details.job_number}`
+        : '#';
+    const statusInfo = getFabStatusInfo(fab?.status_id);
+
     if (isLoading) {
         return (
-            <Container className="border-t">
-                <div className="mb-6">
-                    <Skeleton className="h-8 w-64" />
-                    <Skeleton className="h-4 w-80 mt-2" />
+            <div className="flex flex-col min-h-screen">
+                <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+                    <Skeleton className="h-8 w-72 mb-1" />
+                    <Skeleton className="h-4 w-48" />
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6 px-4 sm:px-6 lg:px-8">
                     <div className="lg:col-span-2 space-y-6">
                         <Card><CardHeader><Skeleton className="h-6 w-40" /></CardHeader><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
                         <div className="grid grid-cols-3 gap-4">
@@ -577,31 +592,43 @@ const FabDetailsPage: React.FC = () => {
                     </div>
                     <Skeleton className="h-[600px] w-full" />
                 </div>
-            </Container>
+            </div>
         );
     }
 
     if (isError) {
         return (
-            <Container className="border-t">
-                <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>Failed to load FAB details. {error && 'Please try again later.'}</AlertDescription>
-                </Alert>
-            </Container>
+            <div className="flex flex-col min-h-screen">
+                <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+                    <ToolbarHeading title="Error loading FAB" description="Could not load Fab details" />
+                </div>
+                <div className="p-6">
+                    <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>
+                            {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : 'Failed to load FAB data'}
+                        </AlertDescription>
+                    </Alert>
+                </div>
+            </div>
         );
     }
 
     if (!fab) {
         return (
-            <Container className="border-t">
-                <Alert>
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Not Found</AlertTitle>
-                    <AlertDescription>FAB record not found.</AlertDescription>
-                </Alert>
-            </Container>
+            <div className="flex flex-col min-h-screen">
+                <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+                    <ToolbarHeading title="Not Found" description="FAB record not found" />
+                </div>
+                <div className="p-6">
+                    <Alert>
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Not Found</AlertTitle>
+                        <AlertDescription>FAB record not found.</AlertDescription>
+                    </Alert>
+                </div>
+            </div>
         );
     }
 
@@ -632,17 +659,43 @@ const FabDetailsPage: React.FC = () => {
     ];
 
     return (
-        <Container className="border-t">
-            <div className="flex items-center justify-between mb-6">
-                <div>
-                    <h1 className="text-2xl font-semibold">FAB ID: {fab?.id}</h1>
-                    <p className="text-sm text-muted-foreground">Review Plan Activity</p>
+        <div className="flex flex-col min-h-screen bg-gray-50">
+            {/* Sticky toolbar */}
+            <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+                <div className="px-3 sm:px-4 lg:px-6">
+                    <Toolbar className="py-2 sm:py-3">
+                        <div className="flex items-center justify-between w-full gap-2 flex-wrap">
+                            <ToolbarHeading
+                                title={
+                                    <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
+                                        <a href={jobNameLink} className="hover:underline">
+                                            {fab?.job_details?.name || `Job ${fab?.job_id}`}
+                                        </a>
+                                        <span className="mx-1 text-gray-400">·</span>
+                                        <a
+                                            href={jobNumberLink}
+                                            className="hover:underline text-gray-600"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
+                                            {fab?.job_details?.job_number || fab?.job_id}
+                                        </a>
+                                    </div>
+                                }
+                            // description="Fab Details"
+                            />
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
+                                    {statusInfo.text}
+                                </span>
+                                <BackButton />
+                            </div>
+                        </div>
+                    </Toolbar>
                 </div>
-                <BackButton label='back' />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6 px-4 sm:px-6 lg:px-8">
                 {/* ── LEFT 2/3 ── */}
                 <div className="lg:col-span-2 space-y-6">
 
@@ -650,7 +703,8 @@ const FabDetailsPage: React.FC = () => {
                     <Card>
                         <CardHeader><CardTitle>Fab details</CardTitle></CardHeader>
                         <CardContent>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-y-6 gap-x-4">
+                            {/* Adjusted grid to 4 columns on large screens to match typical dense layout */}
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-6 gap-x-4">
                                 {jobInfo.map((item, i) => (
                                     <InfoRow key={i} label={item.label} value={item.value} />
                                 ))}
@@ -689,6 +743,8 @@ const FabDetailsPage: React.FC = () => {
                     </Card>
 
                     {/* FAB Notes */}
+
+                    {/* FAB Notes - GraySidebar style, collapsible */}
                     <Card>
                         <Collapsible open={fabNotesOpen} onOpenChange={setFabNotesOpen}>
                             <CollapsibleTrigger asChild>
@@ -741,15 +797,31 @@ const FabDetailsPage: React.FC = () => {
                                     {fabNotes.length === 0 ? (
                                         <p className="text-sm text-muted-foreground text-center py-4">No notes yet.</p>
                                     ) : (
-                                        <div className="space-y-2">
+                                        <div className="space-y-4">
                                             {fabNotes.map((note: any, i: number) => {
                                                 const cfg = noteStageConfig[note.stage || 'general'] || noteStageConfig.general;
+                                                const avatar = note.created_by_name?.charAt(0).toUpperCase() || 'U';
+                                                const author = note.created_by_name || 'Unknown';
+                                                const timestamp = note.created_at
+                                                    ? new Date(note.created_at).toLocaleDateString()
+                                                    : 'Unknown date';
                                                 return (
-                                                    <div key={i} className="text-sm p-3 bg-muted rounded">
-                                                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${cfg.color} bg-background mr-2`}>
-                                                            {cfg.label}
-                                                        </span>
-                                                        <span className="text-muted-foreground">{note.note || '—'}</span>
+                                                    <div key={note.id || i} className="flex gap-3">
+                                                        <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
+                                                            {avatar}
+                                                        </div>
+                                                        <div className="flex-1 space-y-1">
+                                                            <div className="flex items-center gap-2 flex-wrap">
+                                                                <span className="text-sm font-medium text-gray-900">{author}</span>
+                                                                <span className="text-xs text-gray-500">{timestamp}</span>
+                                                            </div>
+                                                            <div className="text-sm text-gray-700">
+                                                                <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${cfg.color} bg-gray-100 mr-2`}>
+                                                                    {cfg.label}
+                                                                </span>
+                                                                <span className="text-muted-foreground">{note.note || '—'}</span>
+                                                            </div>
+                                                        </div>
                                                     </div>
                                                 );
                                             })}
@@ -816,7 +888,7 @@ const FabDetailsPage: React.FC = () => {
                     </Card>
                 </div>
             </div>
-        </Container>
+        </div>
     );
 };
 
