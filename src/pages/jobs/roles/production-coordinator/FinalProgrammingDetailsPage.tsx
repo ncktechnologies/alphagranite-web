@@ -11,7 +11,6 @@ import { Separator } from '@/components/ui/separator';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { Documents } from '@/pages/shop/components/files';
-import { FileViewer } from '../slab-smith/components';
 import { TimeTrackingComponent } from './components/TimeTrackingComponent';
 import { SubmissionModal } from './components/SubmissionModal';
 import { UniversalUploadModal } from '@/components/universal-upload';
@@ -33,6 +32,7 @@ import {
 import { UploadedFileMeta } from '@/types/uploads';
 import { FileWithPreview } from '@/hooks/use-file-upload';
 import { getFileStage } from '@/utils/file-labeling';
+import { FileViewer } from '../drafters/components';
 
 // Helper functions
 const formatBytes = (bytes: number, decimals = 2) => {
@@ -136,6 +136,11 @@ export function FinalProgrammingDetailsPage() {
 
   // Time tracking handlers
   const handleStart = useCallback(async (startTime: Date) => {
+    const hasDraftingAssignment = fabData?.draft_data?.id;
+    if (!hasDraftingAssignment) {
+      toast.error('Cannot start final programming session - no drafting history found');
+      return;
+    }
     try {
       await manageFinalProgrammingSession({
         fab_id: fabId,

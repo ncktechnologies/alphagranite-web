@@ -45,7 +45,13 @@ export interface ShopPlanRow {
     job_no: string;
     job_name: string;
     job_id?: number;
-    fab_info: string;
+    // Fields for structured fab info
+    acct_name?: string;
+    stone_type_name?: string;
+    stone_color_name?: string;
+    stone_thickness?: string;
+    edge_name?: string;
+    input_area?: string;
     pieces: number;
     total_sq_ft: number;
     wl_ln_ft: number;
@@ -183,67 +189,72 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
 
     const totalRecords = fabsData?.total || 0;
 
-   const planRows: ShopPlanRow[] = useMemo(() => {
-    const rows: ShopPlanRow[] = [];
-    fabs.forEach((fab: any) => {
-        const plans = fab.plans || [];
-        const cutPlans = plans.filter((plan: any) => plan.planning_section_id === 7);
+    const planRows: ShopPlanRow[] = useMemo(() => {
+        const rows: ShopPlanRow[] = [];
+        fabs.forEach((fab: any) => {
+            const plans = fab.plans || [];
+            const cutPlans = plans.filter((plan: any) => plan.planning_section_id === 7);
 
-        // Base row with fields from the main fab object
-        const baseRow = {
-            fab_id: String(fab.id),
-            fab_type: fab.fab_type || 'N/A',
-            job_no: fab.job_number || 'N/A',
-            job_name: fab.job_name || 'N/A',
-            job_id: fab.job_id,                     // Add job_id for the link
-            fab_info: `${fab.job_name || ''} - ${fab.stone_type_name || ''} - ${fab.stone_color_name || ''}`.trim() || 'N/A',
-            pieces: fab.no_of_pieces || 0,
-            total_sq_ft: fab.total_sqft || 0,
-            wl_ln_ft: fab.wj_linft || 0,
-            sl_ln_ft: fab.saw_cut_lnft || 0,
-            edging_ln_ft: fab.edging_linft || 0,
-            cnc_ln_ft: fab.cnc_linft || 0,
-            milter_ln_ft: fab.miter_linft || 0,
-            // Compute total cut linear feet if not provided directly
-            total_cut_ln_ft: (fab.wj_linft || 0) + (fab.saw_cut_lnft || 0),
-            percent_complete: 0, // Not in response, default to 0
-            shop_office_date_scheduled: fab.shop_date_schedule
-                ? format(new Date(fab.shop_date_schedule), 'MM/dd/yyyy')
-                : undefined,
-        };
+            // Base row with fields from the main fab object
+            const baseRow = {
+                fab_id: String(fab.id),
+                fab_type: fab.fab_type || 'N/A',
+                job_no: fab.job_number || 'N/A',
+                job_name: fab.job_name || 'N/A',
+                job_id: fab.job_id,
+                // Additional fields for structured fab info
+                acct_name: fab.account_name || fab.acct_name || '',
+                stone_type_name: fab.stone_type_name || '',
+                stone_color_name: fab.stone_color_name || '',
+                stone_thickness: fab.stone_thickness_value || '',
+                edge_name: fab.edge_name || '',
+                input_area: fab.input_area || '',
+                pieces: fab.no_of_pieces || 0,
+                total_sq_ft: fab.total_sqft || 0,
+                wl_ln_ft: fab.wj_linft || 0,
+                sl_ln_ft: fab.saw_cut_lnft || 0,
+                edging_ln_ft: fab.edging_linft || 0,
+                cnc_ln_ft: fab.cnc_linft || 0,
+                milter_ln_ft: fab.miter_linft || 0,
+                total_cut_ln_ft: (fab.wj_linft || 0) + (fab.saw_cut_lnft || 0),
+                percent_complete: 0,
+                shop_office_date_scheduled: fab.shop_date_schedule
+                    ? format(new Date(fab.shop_date_schedule), 'MM/dd/yyyy')
+                    : undefined,
+            };
 
-        if (cutPlans.length > 0) {
-            cutPlans.forEach((plan: any) => {
-                const scheduledDate = plan.scheduled_start_date || plan.scheduled_start || null;
-                const isValidDate = scheduledDate && typeof scheduledDate === 'string' && scheduledDate.trim().length > 0;
-                const dateGroup = isValidDate ? scheduledDate.split('T')[0] : 'unscheduled';
+            if (cutPlans.length > 0) {
+                cutPlans.forEach((plan: any) => {
+                    const scheduledDate = plan.scheduled_start_date || plan.scheduled_start || null;
+                    const isValidDate = scheduledDate && typeof scheduledDate === 'string' && scheduledDate.trim().length > 0;
+                    const dateGroup = isValidDate ? scheduledDate.split('T')[0] : 'unscheduled';
 
+                    rows.push({
+                        ...baseRow,
+                        plan_id: plan.id,
+                        workstation_name: plan.workstation_name || '-',
+                        operator_name: plan.operator_name || '-',
+                        estimated_hours: plan.estimated_hours || 0,
+                        scheduled_start_date: isValidDate ? scheduledDate : undefined,
+                        plan_notes: plan.notes,
+                        date_group: dateGroup,
+                    });
+                });
+            } else {
                 rows.push({
                     ...baseRow,
-                    plan_id: plan.id,
-                    workstation_name: plan.workstation_name || '-',
-                    operator_name: plan.operator_name || '-',
-                    estimated_hours: plan.estimated_hours || 0,
-                    scheduled_start_date: isValidDate ? scheduledDate : undefined,
-                    plan_notes: plan.notes,
-                    date_group: dateGroup,
+                    plan_id: 0,
+                    workstation_name: '-',
+                    operator_name: '-',
+                    estimated_hours: 0,
+                    scheduled_start_date: undefined,
+                    plan_notes: null,
+                    date_group: 'unscheduled',
                 });
-            });
-        } else {
-            rows.push({
-                ...baseRow,
-                plan_id: 0,
-                workstation_name: '-',
-                operator_name: '-',
-                estimated_hours: 0,
-                scheduled_start_date: undefined,
-                plan_notes: null,
-                date_group: 'unscheduled',
-            });
-        }
-    });
-    return rows;
-}, [fabs]);
+            }
+        });
+        return rows;
+    }, [fabs]);
 
     const filteredRows = useMemo(() => {
         let result = planRows;
@@ -252,7 +263,8 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             result = result.filter(r =>
                 r.job_no.toLowerCase().includes(q) ||
                 r.fab_id.toLowerCase().includes(q) ||
-                r.fab_info.toLowerCase().includes(q) ||
+                r.acct_name?.toLowerCase().includes(q) ||
+                r.job_name?.toLowerCase().includes(q) ||
                 r.workstation_name.toLowerCase().includes(q) ||
                 r.operator_name.toLowerCase().includes(q)
             );
@@ -290,7 +302,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             .sort((a, b) => {
                 if (a === 'unscheduled') return -1;
                 if (b === 'unscheduled') return 1;
-                return a.localeCompare(b); // ISO date strings sort correctly
+                return a.localeCompare(b);
             })
             .forEach(k => { sorted[k] = groups[k]; });
         return sorted;
@@ -317,6 +329,23 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
 
     const handleFabIdClick = (fabId: string) => navigate("/sales/" + fabId);
 
+    // Helper to generate structured fab info (same as JobTable)
+    const generateFabInfo = (row: ShopPlanRow) => {
+        const jobInfo = [];
+        const materialInfo = [];
+        const stoneInfo = [];
+
+        if (row.acct_name) jobInfo.push(row.acct_name);
+        if (row.job_name) jobInfo.push(row.job_name);
+        if (row.input_area) materialInfo.push(`Area: ${row.input_area}`);
+        if (row.stone_type_name) stoneInfo.push(row.stone_type_name);
+        if (row.stone_color_name) stoneInfo.push(row.stone_color_name);
+        if (row.stone_thickness) stoneInfo.push(row.stone_thickness);
+        if (row.edge_name) materialInfo.push(row.edge_name);
+
+        return { jobInfo, materialInfo, stoneInfo };
+    };
+
     const columns = useMemo<ColumnDef<ShopPlanRow>[]>(() => [
         {
             id: 'actions',
@@ -332,17 +361,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             enableSorting: false,
             size: 50,
         },
-        // {
-        //     id: 'month',
-        //     accessorFn: r => r.scheduled_start_date,
-        //     header: ({ column }) => <DataGridColumnHeader title="MONTH" column={column} />,
-        //     cell: ({ row }) => {
-        //         const date = row.original.scheduled_start_date;
-        //         return <span className="text-sm text-text font-medium">{date ? format(new Date(date), 'MMM yyyy') : '-'}</span>;
-        //     },
-        //     enableSorting: true,
-        //     size: 200,
-        // },
         {
             id: 'shop_cut_date_scheduled',
             accessorFn: r => r.scheduled_start_date,
@@ -393,7 +411,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                 row.original.job_id ? (
                     <Link
                         to={`/job/details/${row.original.job_id}`}
-                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
                     >
@@ -408,11 +425,38 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
         },
         {
             id: 'fab_info',
-            accessorFn: r => r.fab_info,
+            accessorFn: r => `${r.acct_name} ${r.job_name} ${r.stone_type_name}`,
             header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-text">{row.original.fab_info}</span>,
-            enableSorting: true,
-            size: 500,
+            cell: ({ row }) => {
+                const { jobInfo, materialInfo, stoneInfo } = generateFabInfo(row.original);
+                return (
+                    <div className="flex gap-4 text-xs max-w-[400px]">
+                        {jobInfo.length > 0 && (
+                            <div className="flex-1 min-w-0">
+                                <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>
+                                    {jobInfo.join(' - ')}
+                                </div>
+                                {stoneInfo.length > 0 && (
+                                    <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>
+                                        {stoneInfo.join(' - ')}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {materialInfo.length > 0 && (
+                            <div className="flex-1 min-w-0">
+                                {materialInfo.map((info, idx) => (
+                                    <div key={idx} className="truncate text-gray-600">
+                                        {info}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 400,
         },
         {
             id: 'pieces',
@@ -470,36 +514,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             cell: ({ row }) => <span className="text-sm text-text">{row.original.total_cut_ln_ft.toFixed(2)}</span>,
             enableSorting: true,
         },
-        // {
-        //     id: 'percent_complete',
-        //     accessorFn: r => r.percent_complete,
-        //     header: ({ column }) => <DataGridColumnHeader title="% COMPLETE" column={column} />,
-        //     cell: ({ row }) => <span className="text-sm text-text">{row.original.percent_complete.toFixed(2)}%</span>,
-        //     enableSorting: true,
-        // },
-        // {
-        //     id: 'workstation',
-        //     accessorFn: r => r.workstation_name,
-        //     header: ({ column }) => <DataGridColumnHeader title="WORKSTATION" column={column} />,
-        //     cell: ({ row }) => <span className="text-sm text-text">{row.original.workstation_name}</span>,
-        //     enableSorting: true,
-        //     size: 150,
-        // },
-        // {
-        //     id: 'operator',
-        //     accessorFn: r => r.operator_name,
-        //     header: ({ column }) => <DataGridColumnHeader title="OPERATOR" column={column} />,
-        //     cell: ({ row }) => <span className="text-sm text-text">{row.original.operator_name}</span>,
-        //     enableSorting: true,
-        //     size: 150,
-        // },
-        // {
-        //     id: 'hours_scheduled',
-        //     accessorFn: r => r.estimated_hours,
-        //     header: ({ column }) => <DataGridColumnHeader title="HOURS SCHEDULED" column={column} />,
-        //     cell: ({ row }) => <span className="text-sm text-text">{row.original.estimated_hours.toFixed(1)}</span>,
-        //     enableSorting: true,
-        // },
         {
             id: 'notes',
             accessorFn: r => r.plan_notes,
@@ -610,7 +624,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Types</SelectItem>
-                                    
                                     {fabTypes.map((type) => (
                                         <SelectItem key={type} value={type}>
                                             {type}
@@ -657,7 +670,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                                                     {table.getVisibleFlatColumns().map(column => {
                                                         const colId = column.id;
                                                         const cls = "px-4 py-2 text-sm font-semibold border-r border-border";
-                                                        if (colId === 'month') return <td key={colId} className={cls}>Total</td>;
                                                         if (colId === 'pieces') return <td key={colId} className={cls}>{overallTotals.pieces}</td>;
                                                         if (colId === 'total_sq_ft') return <td key={colId} className={cls}>{overallTotals.sqft.toFixed(2)}</td>;
                                                         if (colId === 'wl_ln_ft') return <td key={colId} className={cls}>{overallTotals.wl.toFixed(2)}</td>;
@@ -684,7 +696,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                                                             {table.getVisibleFlatColumns().map(column => {
                                                                 const colId = column.id;
                                                                 const cls = "px-4 py-2 text-sm border-r border-border";
-                                                                if (colId === 'month' || colId === 'actions') return <td key={colId} className={cls}>Total</td>;
                                                                 if (colId === 'pieces') return <td key={colId} className={cls}>{groupTotals.pieces}</td>;
                                                                 if (colId === 'total_sq_ft') return <td key={colId} className={cls}>{groupTotals.total_sq_ft.toFixed(2)}</td>;
                                                                 if (colId === 'wl_ln_ft') return <td key={colId} className={cls}>{groupTotals.wl_ln_ft.toFixed(2)}</td>;
@@ -702,9 +713,6 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                                                             return (
                                                                 <tr key={tableRow.id} className="border-b border-border" data-fab-type={row.fab_type.toLowerCase()}>
                                                                     {tableRow.getVisibleCells().map(cell => {
-                                                                        if (cell.column.id === 'month') {
-                                                                            return <td key={cell.id} className="px-4 py-2 text-sm border-r border-border"></td>;
-                                                                        }
                                                                         const isLongText = cell.column.id === 'fab_info' || cell.column.id === 'notes';
                                                                         return (
                                                                             <td

@@ -248,7 +248,6 @@ export const NeedToInvoicePage = () => {
       cell: ({ row }) => (
         <Link
           to={`/job/details/${row.original.id}`}
-          target="_blank"
           rel="noopener noreferrer"
           className="text-sm text-primary hover:underline"
         >

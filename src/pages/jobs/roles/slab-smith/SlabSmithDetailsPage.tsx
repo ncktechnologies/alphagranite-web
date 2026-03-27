@@ -20,7 +20,6 @@ import {
   useCreateFabNoteMutation,
 } from '@/store/api/job';
 import { TimeTrackingComponent } from './components/TimeTrackingComponent';
-import { FileViewer } from './components/FileViewer';
 import { Documents } from '@/pages/shop/components/files';
 import { SubmissionModal } from './components/SubmissionModal';
 import { useSelector } from 'react-redux';
@@ -32,6 +31,7 @@ import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UniversalUploadModal } from '@/components/universal-upload';
+import { FileViewer } from '../drafters/components';
 
 const formatBytes = (bytes: number, decimals = 2) => {
   if (bytes === 0) return '0 Bytes';
@@ -581,7 +581,7 @@ export function SlabSmithDetailsPage() {
           { value: 'photo_media', label: 'Photo / Media' },
         ]}
         additionalParams={{
-          slab_smith_id: slabSmithData?.id,
+          slabsmith_id: slabSmithData?.id,
           stage_name: 'slab_smith',
         }}
         onUploadComplete={() => {

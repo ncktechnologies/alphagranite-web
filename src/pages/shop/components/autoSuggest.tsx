@@ -26,11 +26,11 @@ import { usePlanSections } from '@/hooks/usePlanningSection';
 
 // ── Field-to-keyword mapping ──────────────────────────────────────────────────
 const FAB_STAGE_FIELDS: { keyword: string; field: string; label: string }[] = [
-  { keyword: 'cut', field: 'total_sqft',    label: 'Cut'    },
-  { keyword: 'wj',  field: 'wj_linft',      label: 'WJ'     },
-  { keyword: 'edg', field: 'edging_linft',  label: 'Edging' },
-  { keyword: 'mit', field: 'miter_linft',   label: 'Miter'  },
-  { keyword: 'cnc', field: 'cnc_linft',     label: 'CNC'    },
+  { keyword: 'cut', field: 'total_sqft', label: 'Cut' },
+  { keyword: 'wj', field: 'wj_linft', label: 'WJ' },
+  { keyword: 'edg', field: 'edging_linft', label: 'Edging' },
+  { keyword: 'mit', field: 'miter_linft', label: 'Miter' },
+  { keyword: 'cnc', field: 'cnc_linft', label: 'CNC' },
 ];
 
 // ── Touchup keyword — identifies the "touchup" planning section ───────────────
@@ -83,8 +83,8 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
     workstationData?.workstations || (Array.isArray(workstationData) ? workstationData : []);
 
   const selectedWorkstation = workstationsForSection.find(w => String(w.id) === entry.workstation_id);
-  const allowedOperatorIds  = selectedWorkstation?.operator_ids?.map(String) || [];
-  const filteredEmployees   = allowedOperatorIds.length > 0
+  const allowedOperatorIds = selectedWorkstation?.operator_ids?.map(String) || [];
+  const filteredEmployees = allowedOperatorIds.length > 0
     ? employees.filter(emp => allowedOperatorIds.includes(String(emp.id)))
     : [];
 
@@ -104,18 +104,18 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
   };
 
   const stageName = getStageName();
-  const hasSlot   = !!(entry.date && entry.start_time && entry.end_time);
+  const hasSlot = !!(entry.date && entry.start_time && entry.end_time);
 
   return (
     <Card className="border border-[#ecedf0] rounded-[12px] overflow-hidden">
       {/* ── Card header ─────────────────────────────────────────────────────── */}
       <CardHeader
-        className="pb-3 border-b border-[#ecedf0] cursor-pointer select-none"
+        className="pb-3 border-b border-[#ecedf0] cursor-pointer select-none px-4"
         onClick={onToggleExpand}
       >
-        <div className="flex items-center justify-between gap-2">
-          {/* Left: chevron + title + badge + collapsed time */}
-          <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="flex items-center gap-2 w-full">
+          {/* Left — takes all available space, truncates internally */}
+          <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
             <ChevronDown
               className={cn(
                 'h-5 w-5 text-[#7c8689] transition-transform shrink-0',
@@ -136,24 +136,20 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
               </span>
             )}
             {!isExpanded && hasSlot && (
-              <span className="text-xs text-[#7c8689] shrink-0 ml-1">
+              <span className="text-xs text-[#7c8689] shrink-0 hidden sm:inline">
                 {format(entry.date!, 'MMM d')} · {format(new Date(`1970-01-01T${entry.start_time}`), 'hh:mm a')}–{format(new Date(`1970-01-01T${entry.end_time}`), 'hh:mm a')}
               </span>
             )}
           </div>
 
-          {/* ── Right: sequence + remove ────────────────────────────────────── */}
-          {/*
-            Sequence is optional for touchup — show a placeholder that accepts no value.
-            For regular stages, show the dropdown with numeric options.
-          */}
+          {/* Right — fixed width, never shrinks, pushed to far right by flex-1 on left */}
           <div
-            className="flex items-center gap-2 shrink-0"
+            className="flex items-center gap-2 ml-auto pl-4 shrink-0"
             onClick={e => e.stopPropagation()}
           >
             {!entry.isTouchup ? (
               <Select value={entry.sequence} onValueChange={value => onUpdate({ sequence: value })}>
-                <SelectTrigger className="h-7 w-[90px] text-[13px] border-[#e2e4ed] rounded-[4px]">
+                <SelectTrigger className="h-7 w-auto text-[13px] border-[#e2e4ed] rounded-[4px] font-bold">
                   <SelectValue placeholder="Seq" />
                 </SelectTrigger>
                 <SelectContent>
@@ -163,17 +159,15 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
                 </SelectContent>
               </Select>
             ) : (
-              /* Touchup has no sequence requirement — show a muted label instead */
               <span className="text-[12px] text-[#b0b7bc] px-2 py-1 rounded border border-dashed border-[#e2e4ed]">
                 Last
               </span>
             )}
 
-            {/* Remove button — always shown (touchup can be removed too) */}
             <button
               type="button"
               onClick={onRemove}
-              className="h-7 w-7 rounded-[6px] border border-[#e2e4ed] flex items-center justify-center hover:bg-red-50 transition-colors"
+              className="h-7 w-7 rounded-[6px] border border-[#e2e4ed] flex items-center justify-center hover:bg-red-50 transition-colors shrink-0"
             >
               <X className="h-4 w-4 text-red-500" />
             </button>
@@ -233,10 +227,10 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
                 <SelectTrigger className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[14px]">
                   <SelectValue
                     placeholder={
-                      isLoadingWorkstations       ? 'Loading…' :
-                      !entry.planning_section_id  ? 'Select a section first' :
-                      workstationsForSection.length === 0 ? 'None for this section' :
-                      'Select workstation'
+                      isLoadingWorkstations ? 'Loading…' :
+                        !entry.planning_section_id ? 'Select a section first' :
+                          workstationsForSection.length === 0 ? 'None for this section' :
+                            'Select workstation'
                     }
                   />
                 </SelectTrigger>
@@ -261,9 +255,9 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
                 <SelectTrigger className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[14px]">
                   <SelectValue
                     placeholder={
-                      !entry.workstation_id           ? 'Select workstation first' :
-                      filteredEmployees.length === 0  ? 'No operators assigned'    :
-                      'Select operator'
+                      !entry.workstation_id ? 'Select workstation first' :
+                        filteredEmployees.length === 0 ? 'No operators assigned' :
+                          'Select operator'
                     }
                   />
                 </SelectTrigger>
@@ -337,7 +331,7 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
               <div className="flex flex-wrap gap-2">
                 {proposals.map((proposal: any, pIdx: number) => {
                   const start = new Date(proposal.start || proposal.scheduled_start);
-                  const end   = new Date(proposal.end   || proposal.scheduled_end);
+                  const end = new Date(proposal.end || proposal.scheduled_end);
                   const isActive =
                     entry.start_time === format(start, 'HH:mm') &&
                     entry.date && format(entry.date, 'yyyy-MM-dd') === format(start, 'yyyy-MM-dd');
@@ -413,18 +407,18 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     fab_id?: string;
     isTouchup?: boolean;
   }): AutoPlanEntry => ({
-    fab_id:              opts?.fab_id ?? effectivePrefillFabId ?? '',
-    workstation_id:      '',
-    operator_id:         '',
-    notes:               '',
-    estimated_hours:     '',
-    start_time:          '',
-    end_time:            '',
+    fab_id: opts?.fab_id ?? effectivePrefillFabId ?? '',
+    workstation_id: '',
+    operator_id: '',
+    notes: '',
+    estimated_hours: '',
+    start_time: '',
+    end_time: '',
     planning_section_id: opts?.section_id !== undefined ? String(opts.section_id) : undefined,
-    stageName:           opts?.stageName || '',
-    date:                opts?.date || propSelectedDate || undefined,
-    sequence:            '',      // no default — user picks or touchup uses none
-    isTouchup:           opts?.isTouchup || false,
+    stageName: opts?.stageName || '',
+    date: opts?.date || propSelectedDate || undefined,
+    sequence: '',      // no default — user picks or touchup uses none
+    isTouchup: opts?.isTouchup || false,
   });
 
   const [entries, setEntries] = useState<AutoPlanEntry[]>([emptyEntry()]);
@@ -436,8 +430,8 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     [nonTouchupCount]
   );
 
-  const [createShopPlan,           { isLoading }]              = useCreateShopPlansMutation();
-  const [updateShopPlan]                                        = useUpdateShopPlanMutation();
+  const [createShopPlan, { isLoading }] = useCreateShopPlansMutation();
+  const [updateShopPlan] = useUpdateShopPlanMutation();
   const [createShopPlansSuggestion, { isLoading: isAutoScheduling }] = useCreateShopSuggestionMutation();
 
   const { data: planningSectionsData } = useGetPlanningSectionsQuery();
@@ -449,7 +443,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
 
   const { data: allFabsData, isLoading: isLoadingFabs } =
-    useGetFabsQuery({ limit: 1000, current_stage: 'cutting' });
+    useGetFabsQuery({ limit: 1000, current_stage: 'shop' });
 
   const fabOptions = useMemo(() => {
     const fabs = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
@@ -460,7 +454,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   }, [allFabsData]);
 
   const selectedFabId = entries[0]?.fab_id;
-  const selectedFab   = useMemo(() => {
+  const selectedFab = useMemo(() => {
     if (!allFabsData || !selectedFabId) return null;
     const fabs = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
     return fabs.find((fab: any) => String(fab.id) === selectedFabId) || null;
@@ -498,21 +492,21 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     const regularEntries: AutoPlanEntry[] = activeStages.length === 0
       ? [emptyEntry({ fab_id: String(selectedFab.id) })]
       : activeStages.map((s, i) => ({
-          ...emptyEntry({ section_id: s.section_id, stageName: s.label, fab_id: String(selectedFab.id) }),
-          sequence: String(i + 1),
-        }));
+        ...emptyEntry({ section_id: s.section_id, stageName: s.label, fab_id: String(selectedFab.id) }),
+        sequence: String(i + 1),
+      }));
 
     // ── Append touchup as the last entry if the section exists ────────────
     const touchupEntry: AutoPlanEntry | null = touchupSection
       ? {
-          ...emptyEntry({
-            section_id: touchupSection.id,
-            stageName:  touchupSection.name || touchupSection.plan_name || touchupSection.title || 'Touchup',
-            fab_id:     String(selectedFab.id),
-            isTouchup:  true,
-          }),
-          sequence: '', // no sequence for touchup
-        }
+        ...emptyEntry({
+          section_id: touchupSection.id,
+          stageName: touchupSection.name || touchupSection.plan_name || touchupSection.title || 'Touchup',
+          fab_id: String(selectedFab.id),
+          isTouchup: true,
+        }),
+        sequence: '', // no sequence for touchup
+      }
       : null;
 
     setEntries(touchupEntry ? [...regularEntries, touchupEntry] : regularEntries);
@@ -525,23 +519,23 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     if (!selectedEvent || !employeesLoaded) return;
     const ev: any = selectedEvent;
     const startDate = new Date(ev.scheduled_start_date);
-    const endTime   = ev.estimated_hours
+    const endTime = ev.estimated_hours
       ? format(new Date(startDate.getTime() + ev.estimated_hours * 3_600_000), 'HH:mm')
       : '';
     setEntries([{
-      id:                  ev.id,
-      fab_id:              String(ev.fab_id ?? ''),
-      workstation_id:      String(ev.workstation_id ?? ''),
-      operator_id:         String(ev.operator_id ?? ''),
-      notes:               ev.notes ?? '',
-      estimated_hours:     String(ev.estimated_hours ?? ''),
-      start_time:          format(startDate, 'HH:mm'),
-      end_time:            endTime,
+      id: ev.id,
+      fab_id: String(ev.fab_id ?? ''),
+      workstation_id: String(ev.workstation_id ?? ''),
+      operator_id: String(ev.operator_id ?? ''),
+      notes: ev.notes ?? '',
+      estimated_hours: String(ev.estimated_hours ?? ''),
+      start_time: format(startDate, 'HH:mm'),
+      end_time: endTime,
       planning_section_id: ev.planning_section_id != null ? String(ev.planning_section_id) : undefined,
-      stageName:           ev.stage_name || '',
-      date:                startDate,
-      sequence:            ev.sequence != null ? String(ev.sequence) : '',
-      isTouchup:           false,
+      stageName: ev.stage_name || '',
+      date: startDate,
+      sequence: ev.sequence != null ? String(ev.sequence) : '',
+      isTouchup: false,
     }]);
     setExpandedCards({ 0: true }); // expand the single edit card
   }, [selectedEvent, employeesLoaded]);
@@ -549,7 +543,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   // ── Entry helpers ─────────────────────────────────────────────────────────
   const addEntry = () => {
     setEntries(prev => {
-      const hasTouchup  = prev.some(e => e.isTouchup);
+      const hasTouchup = prev.some(e => e.isTouchup);
       const touchupEntry = hasTouchup ? prev[prev.length - 1] : null;
       const regularEntries = hasTouchup ? prev.slice(0, -1) : prev;
 
@@ -589,11 +583,11 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
 
   const applyProposal = (entryIdx: number, proposal: { start: string; end: string }) => {
     const start = new Date(proposal.start);
-    const end   = new Date(proposal.end);
+    const end = new Date(proposal.end);
     updateEntry(entryIdx, {
-      date:       start,
+      date: start,
       start_time: format(start, 'HH:mm'),
-      end_time:   format(end,   'HH:mm'),
+      end_time: format(end, 'HH:mm'),
     });
   };
 
@@ -603,10 +597,10 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     for (const entry of entries) {
-      if (!entry.fab_id)       { toast.error('FAB ID is required');     return; }
-      if (!entry.operator_id)  { toast.error('Operator is required');   return; }
-      if (!entry.workstation_id){ toast.error('Workstation is required'); return; }
-      if (!entry.planning_section_id){ toast.error('Planning section is required'); return; }
+      if (!entry.fab_id) { toast.error('FAB ID is required'); return; }
+      if (!entry.operator_id) { toast.error('Operator is required'); return; }
+      if (!entry.workstation_id) { toast.error('Workstation is required'); return; }
+      if (!entry.planning_section_id) { toast.error('Planning section is required'); return; }
       if (!entry.estimated_hours || parseFloat(entry.estimated_hours) <= 0) {
         toast.error('Estimated hours is required'); return;
       }
@@ -630,21 +624,21 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       for (const fabId in groups) {
         let totalEst = 0;
         const stages = groups[fabId].map((entry, idx) => {
-          const d     = format(entry.date!, 'yyyy-MM-dd');
+          const d = format(entry.date!, 'yyyy-MM-dd');
           const start = entry.start_time ? `${d}T${entry.start_time}:00` : `${d}T00:00:00`;
-          const end   = entry.end_time   ? `${d}T${entry.end_time}:00`   : undefined;
-          const hrs   = parseFloat(entry.estimated_hours) || 0;
+          const end = entry.end_time ? `${d}T${entry.end_time}:00` : undefined;
+          const hrs = parseFloat(entry.estimated_hours) || 0;
           totalEst += hrs;
           return {
-            workstation_id:      Number(entry.workstation_id),
+            workstation_id: Number(entry.workstation_id),
             planning_section_id: Number(entry.planning_section_id) || (planningSections[0]?.id ?? 0),
-            operator_ids:        [Number(entry.operator_id)],
-            estimated_hours:     hrs,
-            scheduled_start:     start,
+            operator_ids: [Number(entry.operator_id)],
+            estimated_hours: hrs,
+            scheduled_start: start,
             ...(end && { scheduled_end: end }),
-            notes:               entry.notes || undefined,
+            notes: entry.notes || undefined,
             // Touchup gets sequence after all other stages; regular entries use their value
-            sequence:            entry.isTouchup
+            sequence: entry.isTouchup
               ? groups[fabId].length  // always last
               : (Number(entry.sequence) || idx + 1),
           };
@@ -653,22 +647,22 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       }
 
       for (const entry of updates) {
-        const d     = format(entry.date!, 'yyyy-MM-dd');
+        const d = format(entry.date!, 'yyyy-MM-dd');
         const start = entry.start_time ? `${d}T${entry.start_time}:00` : `${d}T00:00:00`;
-        const end   = entry.end_time   ? `${d}T${entry.end_time}:00`   : undefined;
-        const hrs   = parseFloat(entry.estimated_hours) || 0;
+        const end = entry.end_time ? `${d}T${entry.end_time}:00` : undefined;
+        const hrs = parseFloat(entry.estimated_hours) || 0;
         await updateShopPlan({
           plan_id: Number(entry.id),
           data: {
             stage: {
-              workstation_id:      Number(entry.workstation_id),
+              workstation_id: Number(entry.workstation_id),
               planning_section_id: Number(entry.planning_section_id) || (planningSections[0]?.id ?? 0),
-              operator_ids:        [Number(entry.operator_id)],
-              estimated_hours:     hrs,
-              scheduled_start:     start,
+              operator_ids: [Number(entry.operator_id)],
+              estimated_hours: hrs,
+              scheduled_start: start,
               ...(end && { scheduled_end: end }),
-              notes:               entry.notes || undefined,
-              sequence:            entry.isTouchup ? 999 : (Number(entry.sequence) || 1),
+              notes: entry.notes || undefined,
+              sequence: entry.isTouchup ? 999 : (Number(entry.sequence) || 1),
             },
           },
         } as any).unwrap();
@@ -685,9 +679,9 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   // ── Auto-populate ─────────────────────────────────────────────────────────
   const handleAutoPopulate = async () => {
     for (const entry of entries) {
-      if (!entry.operator_id)       { toast.error('Please select an operator for each stage');        return; }
-      if (!entry.workstation_id)    { toast.error('Please select a workstation for each stage');      return; }
-      if (!entry.planning_section_id){ toast.error('Please select a planning section for each stage'); return; }
+      if (!entry.operator_id) { toast.error('Please select an operator for each stage'); return; }
+      if (!entry.workstation_id) { toast.error('Please select a workstation for each stage'); return; }
+      if (!entry.planning_section_id) { toast.error('Please select a planning section for each stage'); return; }
       if (!entry.estimated_hours || parseFloat(entry.estimated_hours) <= 0) {
         toast.error('Estimated hours is required for each stage'); return;
       }
@@ -697,13 +691,13 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       const payload = {
         requests: entries.map(entry => ({
           planning_section_id: Number(entry.planning_section_id),
-          operator_id:         Number(entry.operator_id),
-          workstation_id:      Number(entry.workstation_id),
-          estimated_hours:     parseFloat(entry.estimated_hours),
+          operator_id: Number(entry.operator_id),
+          workstation_id: Number(entry.workstation_id),
+          estimated_hours: parseFloat(entry.estimated_hours),
         })),
-        start_from:               new Date().toISOString(),
-        slot_minutes:             30,
-        search_horizon_days:      30,
+        start_from: new Date().toISOString(),
+        slot_minutes: 30,
+        search_horizon_days: 30,
         max_proposals_per_request: 3,
       };
 
@@ -723,7 +717,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
         const first = newProposals[idx]?.[0];
         if (!first) return entry;
         const start = new Date(first.start);
-        const end   = new Date(first.end);
+        const end = new Date(first.end);
         return { ...entry, date: start, start_time: format(start, 'HH:mm'), end_time: format(end, 'HH:mm') };
       }));
 
@@ -798,15 +792,15 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
               <CardContent className="pt-5">
                 <div className="grid grid-cols-3 gap-4">
                   {[
-                    { label: 'Job No',         val: selectedFab.job_details?.job_number },
-                    { label: 'Job Name',        val: selectedFab.job_details?.name       },
-                    { label: 'Account Name',    val: selectedFab.account_name            },
-                    { label: 'No. of Pieces',   val: selectedFab.no_of_pieces || 0       },
-                    { label: 'Total Sq Ft',     val: selectedFab.total_sqft?.toFixed(2)  || '0.00' },
-                    { label: 'WJ LinFt',        val: selectedFab.wj_linft?.toFixed(2)    || '0.00' },
-                    { label: 'Edging LinFt',    val: selectedFab.edging_linft?.toFixed(2)|| '0.00' },
-                    { label: 'CNC LinFt',       val: selectedFab.cnc_linft?.toFixed(2)   || '0.00' },
-                    { label: 'Miter LinFt',     val: selectedFab.miter_linft?.toFixed(2) || '0.00' },
+                    { label: 'Job No', val: selectedFab.job_details?.job_number },
+                    { label: 'Job Name', val: selectedFab.job_details?.name },
+                    { label: 'Account Name', val: selectedFab.account_name },
+                    { label: 'No. of Pieces', val: selectedFab.no_of_pieces || 0 },
+                    { label: 'Total Sq Ft', val: selectedFab.total_sqft?.toFixed(2) || '0.00' },
+                    { label: 'WJ LinFt', val: selectedFab.wj_linft?.toFixed(2) || '0.00' },
+                    { label: 'Edging LinFt', val: selectedFab.edging_linft?.toFixed(2) || '0.00' },
+                    { label: 'CNC LinFt', val: selectedFab.cnc_linft?.toFixed(2) || '0.00' },
+                    { label: 'Miter LinFt', val: selectedFab.miter_linft?.toFixed(2) || '0.00' },
                   ].map(({ label, val }) => (
                     <div key={label}>
                       <Label className="text-[13px] text-[#7c8689]">{label}</Label>
@@ -817,7 +811,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   {FAB_STAGE_FIELDS.map(s => {
-                    const val    = selectedFab?.[s.field];
+                    const val = selectedFab?.[s.field];
                     const active = typeof val === 'number' && val > 0;
                     return (
                       <span

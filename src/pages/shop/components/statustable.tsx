@@ -310,7 +310,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     const [noteDialogFabId, setNoteDialogFabId] = useState<string | null>(null);
 
     const queryParams = useMemo(() => ({
-        current_stage: 'cut_list',
+        current_stage: 'shop',
         skip: (currentPage - 1) * itemsPerPage,
         limit: itemsPerPage,
         ...(searchQuery && { search: searchQuery }),
@@ -417,7 +417,6 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 miter_progress: buildProgress(2),
                 cnc_progress: buildProgress(1),
                 touchup_progress: buildProgress(6),
-                // Use estimated_completion_date from API
                 estimated_completion_date: fab.estimated_completion_date,
                 cut_date_scheduled: (fab.plans || []).find((p: any) => p.planning_section_id === 7)?.scheduled_start_date,
                 install_date: fab.installation_date,
@@ -543,390 +542,411 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     }, [filteredData]);
 
     // ------------------ Column Definitions ------------------
-const columns = useMemo<ColumnDef<ShopStatusRow>[]>(() => [
-    // Expander
-    {
-        id: 'expander',
-        header: () => null,
-        cell: ({ row }) => {
-            if (row.original.type === 'fab' && row.original.subRows.length > 0) {
+    const columns = useMemo<ColumnDef<ShopStatusRow>[]>(() => [
+        // Expander
+        {
+            id: 'expander',
+            header: () => null,
+            cell: ({ row }) => {
+                if (row.original.type === 'fab' && row.original.subRows.length > 0) {
+                    return (
+                        <button
+                            onClick={(e) => { e.stopPropagation(); row.toggleExpanded(); }}
+                            className="p-1 hover:bg-gray-100 rounded"
+                        >
+                            {row.getIsExpanded()
+                                ? <ChevronDown className="h-4 w-4" />
+                                : <ChevronRightIcon className="h-4 w-4" />}
+                        </button>
+                    );
+                }
+                return <div className="w-6" />;
+            },
+            size: 36,
+        },
+        // Actions
+        {
+            id: 'actions',
+            header: () => null,
+            cell: ({ row }) => {
+                if (row.original.type !== 'fab') return null;
                 return (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); row.toggleExpanded(); }}
-                        className="p-1 hover:bg-gray-100 rounded"
-                    >
-                        {row.getIsExpanded()
-                            ? <ChevronDown className="h-4 w-4" />
-                            : <ChevronRightIcon className="h-4 w-4" />}
-                    </button>
+                    <ActionsCell
+                        fabId={row.original.data.fab_id}
+                        onAddNote={(id) => setNoteDialogFabId(id)}
+                    />
                 );
-            }
-            return <div className="w-6" />;
+            },
+            size: 48,
         },
-        size: 36,
-    },
-    // Actions
-    {
-        id: 'actions',
-        header: () => null,
-        cell: ({ row }) => {
-            if (row.original.type !== 'fab') return null;
-            return (
-                <ActionsCell
-                    fabId={row.original.data.fab_id}
-                    onAddNote={(id) => setNoteDialogFabId(id)}
-                />
-            );
+        // Est. Completion Date
+        {
+            id: 'estimated_completion_date',
+            accessorFn: (r) => r.type === 'fab' ? r.data.estimated_completion_date : null,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="EST. COMPLETION DATE" column={column} className="text-[#7c8689] text-[15px] font-normal" />
+            ),
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    const date = row.original.data.estimated_completion_date;
+                    return (
+                        <span className="text-sm text-[#4b545d]">
+                            {date ? format(new Date(date), 'MM/dd/yyyy') : '-'}
+                        </span>
+                    );
+                }
+                if (row.original.type === 'plan') {
+                    return (
+                        <span className="text-xs text-gray-500 pl-4">
+                            {row.original.plan.plan_name} · {row.original.plan.workstation_name} · {row.original.plan.operator_name}
+                        </span>
+                    );
+                }
+                return null;
+            },
+            enableSorting: true,
+            size: 230,
         },
-        size: 48,
-    },
-    // Est. Completion Date — now uses estimated_completion_date
-    {
-        id: 'estimated_completion_date',
-        accessorFn: (r) => r.type === 'fab' ? r.data.estimated_completion_date : null,
-        header: ({ column }) => (
-            <DataGridColumnHeader title="EST. COMPLETION DATE" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-        ),
-        cell: ({ row }) => {
-            if (row.original.type === 'fab') {
-                const date = row.original.data.estimated_completion_date;
-                return (
-                    <span className="text-sm text-[#4b545d]">
-                        {date ? format(new Date(date), 'MM/dd/yyyy') : '-'}
-                    </span>
-                );
-            }
-            if (row.original.type === 'plan') {
-                return (
-                    <span className="text-xs text-gray-500 pl-4">
-                        {row.original.plan.plan_name} · {row.original.plan.workstation_name} · {row.original.plan.operator_name}
-                    </span>
-                );
-            }
-            return null;
+        // Cut Date Scheduled
+        {
+            id: 'cut_date_scheduled',
+            accessorFn: (r) => r.type === 'fab' ? r.data.cut_date_scheduled : null,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="CUT DATE SCHEDULED" column={column} className="text-[#7c8689] text-[15px] font-normal" />
+            ),
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    const date = row.original.data.shop_date_schedule;
+                    return <span className="text-sm text-[#4b545d]">{date ? format(new Date(date), 'MM/dd/yyyy') : '-'}</span>;
+                }
+                if (row.original.type === 'plan') {
+                    const date = row.original.plan.scheduled_start_date;
+                    return <span className="text-xs text-gray-500 pl-4">{date ? format(new Date(date), 'MM/dd/yyyy') : '-'}</span>;
+                }
+                return null;
+            },
+            enableSorting: true,
+            size: 160,
         },
-        enableSorting: true,
-        size: 230,
-    },
-    // Cut Date Scheduled
-    {
-        id: 'cut_date_scheduled',
-        accessorFn: (r) => r.type === 'fab' ? r.data.cut_date_scheduled : null,
-        header: ({ column }) => (
-            <DataGridColumnHeader title="CUT DATE SCHEDULED" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-        ),
-        cell: ({ row }) => {
-            if (row.original.type === 'fab') {
-                const date = row.original.data.shop_date_schedule;
-                return <span className="text-sm text-[#4b545d]">{date ? format(new Date(date), 'MM/dd/yyyy') : '-'}</span>;
-            }
-            if (row.original.type === 'plan') {
-                const date = row.original.plan.scheduled_start_date;
-                return <span className="text-xs text-gray-500 pl-4">{date ? format(new Date(date), 'MM/dd/yyyy') : '-'}</span>;
-            }
-            return null;
+        // Install Date
+        {
+            id: 'install_date',
+            accessorFn: (r) => r.type === 'fab' ? r.data.install_date : null,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="INSTALL DATE" column={column} className="text-[#7c8689] text-[15px] font-normal" />
+            ),
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    const date = row.original.data.install_date;
+                    return <span className="text-sm text-[#4b545d]">{date ? format(new Date(date), 'MM/dd/yyyy') : '-'}</span>;
+                }
+                return null;
+            },
+            enableSorting: true,
+            size: 130,
         },
-        enableSorting: true,
-        size: 160,
-    },
-    // Install Date
-    {
-        id: 'install_date',
-        accessorFn: (r) => r.type === 'fab' ? r.data.install_date : null,
-        header: ({ column }) => (
-            <DataGridColumnHeader title="INSTALL DATE" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-        ),
-        cell: ({ row }) => {
-            if (row.original.type === 'fab') {
-                const date = row.original.data.install_date;
-                return <span className="text-sm text-[#4b545d]">{date ? format(new Date(date), 'MM/dd/yyyy') : '-'}</span>;
-            }
-            return null;
+        // FAB Type
+        {
+            id: 'fab_type',
+            accessorFn: (r) => r.type === 'fab' ? r.data.fab_type : null,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="FAB TYPE" column={column} className="text-[#7c8689] text-[15px] font-normal" />
+            ),
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    return <span className="text-sm text-[#4b545d] whitespace-nowrap">{row.original.data.fab_type}</span>;
+                }
+                return null;
+            },
+            enableSorting: true,
+            size: 130,
         },
-        enableSorting: true,
-        size: 130,
-    },
-    // FAB Type
-    {
-        id: 'fab_type',
-        accessorFn: (r) => r.type === 'fab' ? r.data.fab_type : null,
-        header: ({ column }) => (
-            <DataGridColumnHeader title="FAB TYPE" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-        ),
-        cell: ({ row }) => {
-            if (row.original.type === 'fab') {
-                return <span className="text-sm text-[#4b545d] whitespace-nowrap">{row.original.data.fab_type}</span>;
-            }
-            return null;
+        // FAB ID
+        {
+            id: 'fab_id',
+            accessorFn: (r) => r.type === 'fab' ? r.data.fab_id : null,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="FAB ID" column={column} className="text-[#7c8689] text-[15px] font-normal" />
+            ),
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    return (
+                        <Link to={`/sales/${row.original.data.fab_id}`} className="text-sm text-[#4b545d] hover:underline cursor-pointer">
+                            {row.original.data.fab_id}
+                        </Link>
+                    );
+                }
+                return null;
+            },
+            enableSorting: true,
+            size: 100,
         },
-        enableSorting: true,
-        size: 130,
-    },
-    // FAB ID
-    {
-        id: 'fab_id',
-        accessorFn: (r) => r.type === 'fab' ? r.data.fab_id : null,
-        header: ({ column }) => (
-            <DataGridColumnHeader title="FAB ID" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-        ),
-        cell: ({ row }) => {
-            if (row.original.type === 'fab') {
-                return (
-                    <Link to={`/sales/${row.original.data.fab_id}`} className="text-sm text-[#4b545d] hover:underline cursor-pointer">
-                        {row.original.data.fab_id}
-                    </Link>
-                );
-            }
-            return null;
+        // Job No
+        {
+            id: 'job_no',
+            accessorFn: (r) => r.type === 'fab' ? r.data.job_no : null,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="JOB NO" column={column} className="text-[#7c8689] text-[15px] font-normal" />
+            ),
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    return row.original.data.job_id ? (
+                        <Link
+                            to={`/job/details/${row.original.data.job_id}`}
+                            rel="noopener noreferrer"
+                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                            {row.original.data.job_no}
+                        </Link>
+                    ) : (
+                        <span className="text-sm text-[#4b545d]">{row.original.data.job_no}</span>
+                    );
+                }
+                return null;
+            },
+            enableSorting: true,
+            size: 100,
         },
-        enableSorting: true,
-        size: 100,
-    },
-    // Job No
-    {
-        id: 'job_no',
-        accessorFn: (r) => r.type === 'fab' ? r.data.job_no : null,
-        header: ({ column }) => (
-            <DataGridColumnHeader title="JOB NO" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-        ),
-        cell: ({ row }) => {
-            if (row.original.type === 'fab') {
-                return row.original.data.job_id ? (
-                    <Link
-                        to={`/job/details/${row.original.data.job_id}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                    >
-                        {row.original.data.job_no}
-                    </Link>
-                ) : (
-                    <span className="text-sm text-[#4b545d]">{row.original.data.job_no}</span>
-                );
-            }
-            return null;
+        // FAB INFO (updated to match JobTable layout)
+        {
+            id: 'fab_info',
+            header: ({ column }) => (
+                <DataGridColumnHeader title="FAB INFO" column={column} className="text-[#7c8689] text-[15px] font-normal" />
+            ),
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    const f = row.original.data;
+                    const jobInfo = [f.acct_name, f.job_name].filter(Boolean);
+                    const stoneInfo = [f.stone_type_name, f.stone_color_name, f.stone_thickness_value].filter(Boolean);
+                    const materialInfo = [
+                        f.input_area ? `Area: ${f.input_area}` : '',
+                        f.edge_name || '',
+                    ].filter(Boolean);
+
+                    return (
+                        <div className="flex gap-4 text-xs max-w-[400px]">
+                            {(jobInfo.length > 0 || stoneInfo.length > 0) && (
+                                <div className="flex-1 min-w-0">
+                                    {jobInfo.length > 0 && (
+                                        <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>
+                                            {jobInfo.join(' - ')}
+                                        </div>
+                                    )}
+                                    {stoneInfo.length > 0 && (
+                                        <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>
+                                            {stoneInfo.join(' - ')}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            {materialInfo.length > 0 && (
+                                <div className="flex-1 min-w-0">
+                                    {materialInfo.map((info, idx) => (
+                                        <div key={idx} className="truncate text-gray-600">
+                                            {info}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    );
+                }
+                if (row.original.type === 'plan') {
+                    return (
+                        <span className="text-xs text-gray-400 pl-4">
+                            Estimated hrs: {row.original.plan.estimated_hours}h
+                        </span>
+                    );
+                }
+                return null;
+            },
+            size: 400,
         },
-        enableSorting: true,
-        size: 100,
-    },
-    // FAB Info
-    {
-        id: 'fab_info',
-        header: ({ column }) => (
-            <DataGridColumnHeader title="FAB INFO" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-        ),
-        cell: ({ row }) => {
-            if (row.original.type === 'fab') {
-                const f = row.original.data;
-                const jobParts = [f.acct_name, f.job_name, f.input_area ? `Area: ${f.input_area}` : ''].filter(Boolean);
-                const stoneParts = [f.stone_type_name, f.stone_color_name, f.stone_thickness_value, f.edge_name].filter(Boolean);
-                return (
-                    <div className="flex flex-col gap-1 text-xs max-w-[360px]">
-                        {jobParts.length > 0 && (
-                            <div className="truncate text-gray-600" title={jobParts.join(' - ')}>{jobParts.join(' - ')}</div>
-                        )}
-                        {stoneParts.length > 0 && (
-                            <div className="truncate text-gray-500" title={stoneParts.join(' - ')}>{stoneParts.join(' - ')}</div>
-                        )}
-                    </div>
-                );
-            }
-            if (row.original.type === 'plan') {
-                return (
-                    <span className="text-xs text-gray-400 pl-4">
-                        Estimated hrs: {row.original.plan.estimated_hours}h
-                    </span>
-                );
-            }
-            return null;
+        // Pieces
+        {
+            id: 'pieces',
+            accessorFn: (r) => r.type === 'fab' ? r.data.pieces : null,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="NO. OF PIECES" column={column} className="text-[#7c8689] text-[15px] font-normal" />
+            ),
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    return <span className="text-sm text-[#4b545d]">{row.original.data.pieces}</span>;
+                }
+                return null;
+            },
+            enableSorting: true,
+            size: 130,
         },
-        size: 360,
-    },
-    // Pieces
-    {
-        id: 'pieces',
-        accessorFn: (r) => r.type === 'fab' ? r.data.pieces : null,
-        header: ({ column }) => (
-            <DataGridColumnHeader title="NO. OF PIECES" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-        ),
-        cell: ({ row }) => {
-            if (row.original.type === 'fab') {
-                return <span className="text-sm text-[#4b545d]">{row.original.data.pieces}</span>;
-            }
-            return null;
+        // Total Sq Ft
+        {
+            id: 'total_sq_ft',
+            accessorFn: (r) => r.type === 'fab' ? r.data.total_sq_ft : null,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="TOTAL SQ FT" column={column} className="text-[#7c8689] text-[15px] font-normal" />
+            ),
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    return <span className="text-sm text-[#4b545d]">{row.original.data.total_sq_ft.toFixed(1)}</span>;
+                }
+                return null;
+            },
+            enableSorting: true,
+            size: 120,
         },
-        enableSorting: true,
-        size: 130,
-    },
-    // Total Sq Ft
-    {
-        id: 'total_sq_ft',
-        accessorFn: (r) => r.type === 'fab' ? r.data.total_sq_ft : null,
-        header: ({ column }) => (
-            <DataGridColumnHeader title="TOTAL SQ FT" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-        ),
-        cell: ({ row }) => {
-            if (row.original.type === 'fab') {
-                return <span className="text-sm text-[#4b545d]">{row.original.data.total_sq_ft.toFixed(1)}</span>;
-            }
-            return null;
+        // ---- Stage columns: FAB rows show stacked value and %; plan rows show full progress bar ----
+        {
+            id: 'cut',
+            header: ({ column }) => (
+                <DataGridColumnHeader title="CUT" column={column} className="text-[#7c8689] text-[15px] font-normal" />
+            ),
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    const p = row.original.data.cut_progress;
+                    return (
+                        <div className="flex flex-col items-start leading-tight">
+                            <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span>
+                            <span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span>
+                        </div>
+                    );
+                }
+                if (row.original.type === 'plan' && row.original.plan.planning_section_id === 7) {
+                    return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                }
+                return null;
+            },
+            size: 130,
         },
-        enableSorting: true,
-        size: 120,
-    },
-    // ---- Stage columns: FAB rows show stacked value and %; plan rows show full progress bar ----
-    {
-        id: 'cut',
-        header: ({ column }) => (
-            <DataGridColumnHeader title="CUT" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-        ),
-        cell: ({ row }) => {
-            if (row.original.type === 'fab') {
-                const p = row.original.data.cut_progress;
-                return (
-                    <div className="flex flex-col items-start leading-tight">
-                        <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span>
-                        <span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span>
-                    </div>
-                );
-            }
-            if (row.original.type === 'plan' && row.original.plan.planning_section_id === 7) {
-                return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
-            }
-            return null;
+        {
+            id: 'wj',
+            header: ({ column }) => (
+                <DataGridColumnHeader title="WJ" column={column} className="text-[#7c8689] text-[15px] font-normal" />
+            ),
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    const p = row.original.data.wj_progress;
+                    return (
+                        <div className="flex flex-col items-start leading-tight">
+                            <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span>
+                            <span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span>
+                        </div>
+                    );
+                }
+                if (row.original.type === 'plan' && row.original.plan.planning_section_id === 8) {
+                    return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                }
+                return null;
+            },
+            size: 130,
         },
-        size: 130,
-    },
-    {
-        id: 'wj',
-        header: ({ column }) => (
-            <DataGridColumnHeader title="WJ" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-        ),
-        cell: ({ row }) => {
-            if (row.original.type === 'fab') {
-                const p = row.original.data.wj_progress;
-                return (
-                    <div className="flex flex-col items-start leading-tight">
-                        <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span>
-                        <span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span>
-                    </div>
-                );
-            }
-            if (row.original.type === 'plan' && row.original.plan.planning_section_id === 8) {
-                return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
-            }
-            return null;
+        {
+            id: 'edging',
+            header: ({ column }) => (
+                <DataGridColumnHeader title="EDGING" column={column} className="text-[#7c8689] text-[15px] font-normal" />
+            ),
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    const p = row.original.data.edging_progress;
+                    return (
+                        <div className="flex flex-col items-start leading-tight">
+                            <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span>
+                            <span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span>
+                        </div>
+                    );
+                }
+                if (row.original.type === 'plan' && row.original.plan.planning_section_id === 9) {
+                    return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                }
+                return null;
+            },
+            size: 130,
         },
-        size: 130,
-    },
-    {
-        id: 'edging',
-        header: ({ column }) => (
-            <DataGridColumnHeader title="EDGING" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-        ),
-        cell: ({ row }) => {
-            if (row.original.type === 'fab') {
-                const p = row.original.data.edging_progress;
-                return (
-                    <div className="flex flex-col items-start leading-tight">
-                        <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span>
-                        <span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span>
-                    </div>
-                );
-            }
-            if (row.original.type === 'plan' && row.original.plan.planning_section_id === 9) {
-                return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
-            }
-            return null;
+        {
+            id: 'miter',
+            header: ({ column }) => (
+                <DataGridColumnHeader title="MITER" column={column} className="text-[#7c8689] text-[15px] font-normal" />
+            ),
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    const p = row.original.data.miter_progress;
+                    return (
+                        <div className="flex flex-col items-start leading-tight">
+                            <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span>
+                            <span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span>
+                        </div>
+                    );
+                }
+                if (row.original.type === 'plan' && row.original.plan.planning_section_id === 2) {
+                    return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                }
+                return null;
+            },
+            size: 130,
         },
-        size: 130,
-    },
-    {
-        id: 'miter',
-        header: ({ column }) => (
-            <DataGridColumnHeader title="MITER" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-        ),
-        cell: ({ row }) => {
-            if (row.original.type === 'fab') {
-                const p = row.original.data.miter_progress;
-                return (
-                    <div className="flex flex-col items-start leading-tight">
-                        <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span>
-                        <span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span>
-                    </div>
-                );
-            }
-            if (row.original.type === 'plan' && row.original.plan.planning_section_id === 2) {
-                return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
-            }
-            return null;
+        {
+            id: 'cnc',
+            header: ({ column }) => (
+                <DataGridColumnHeader title="CNC" column={column} className="text-[#7c8689] text-[15px] font-normal" />
+            ),
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    const p = row.original.data.cnc_progress;
+                    return (
+                        <div className="flex flex-col items-start leading-tight">
+                            <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span>
+                            <span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span>
+                        </div>
+                    );
+                }
+                if (row.original.type === 'plan' && row.original.plan.planning_section_id === 1) {
+                    return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                }
+                return null;
+            },
+            size: 130,
         },
-        size: 130,
-    },
-    {
-        id: 'cnc',
-        header: ({ column }) => (
-            <DataGridColumnHeader title="CNC" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-        ),
-        cell: ({ row }) => {
-            if (row.original.type === 'fab') {
-                const p = row.original.data.cnc_progress;
-                return (
-                    <div className="flex flex-col items-start leading-tight">
-                        <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span>
-                        <span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span>
-                    </div>
-                );
-            }
-            if (row.original.type === 'plan' && row.original.plan.planning_section_id === 1) {
-                return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
-            }
-            return null;
+        {
+            id: 'touchup',
+            header: ({ column }) => (
+                <DataGridColumnHeader title="TOUCHUP QA" column={column} className="text-[#7c8689] text-[15px] font-normal" />
+            ),
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    const p = row.original.data.touchup_progress;
+                    return (
+                        <div className="flex flex-col items-start leading-tight">
+                            <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span>
+                            <span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span>
+                        </div>
+                    );
+                }
+                if (row.original.type === 'plan' && row.original.plan.planning_section_id === 6) {
+                    return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
+                }
+                return null;
+            },
+            size: 130,
         },
-        size: 130,
-    },
-    {
-        id: 'touchup',
-        header: ({ column }) => (
-            <DataGridColumnHeader title="TOUCHUP QA" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-        ),
-        cell: ({ row }) => {
-            if (row.original.type === 'fab') {
-                const p = row.original.data.touchup_progress;
-                return (
-                    <div className="flex flex-col items-start leading-tight">
-                        <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span>
-                        <span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span>
-                    </div>
-                );
-            }
-            if (row.original.type === 'plan' && row.original.plan.planning_section_id === 6) {
-                return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
-            }
-            return null;
+        // % Complete
+        {
+            id: 'percent_complete',
+            accessorFn: (r) => r.type === 'fab' ? r.data.percent_complete : null,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="% COMPLETE" column={column} className="text-[#7c8689] text-[15px] font-normal" />
+            ),
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') {
+                    return <span className="text-sm text-[#4b545d]">{row.original.data.percent_complete.toFixed(2)}%</span>;
+                }
+                if (row.original.type === 'plan') {
+                    return <span className="text-xs text-gray-500">{row.original.stage_percent.toFixed(1)}%</span>;
+                }
+                return null;
+            },
+            enableSorting: true,
+            size: 120,
         },
-        size: 130,
-    },
-    // % Complete
-    {
-        id: 'percent_complete',
-        accessorFn: (r) => r.type === 'fab' ? r.data.percent_complete : null,
-        header: ({ column }) => (
-            <DataGridColumnHeader title="% COMPLETE" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-        ),
-        cell: ({ row }) => {
-            if (row.original.type === 'fab') {
-                return <span className="text-sm text-[#4b545d]">{row.original.data.percent_complete.toFixed(2)}%</span>;
-            }
-            if (row.original.type === 'plan') {
-                return <span className="text-xs text-gray-500">{row.original.stage_percent.toFixed(1)}%</span>;
-            }
-            return null;
-        },
-        enableSorting: true,
-        size: 120,
-    },
-], []);
+    ], []);
 
     // ------------------ Table Instance ------------------
     const table = useReactTable({
@@ -990,7 +1010,7 @@ const columns = useMemo<ColumnDef<ShopStatusRow>[]>(() => [
                 const td = (content: React.ReactNode) => (
                     <td key={id} className="px-4 py-2 text-sm font-semibold text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0">
                         {content}
-                    </td>
+                     </td>
                 );
                 if (id === 'expander' || id === 'actions') return <td key={id} className="px-4 py-2 border-r border-[#e2e4ed]" />;
                 if (id === 'estimated_completion_date') return td(label);
@@ -1002,7 +1022,7 @@ const columns = useMemo<ColumnDef<ShopStatusRow>[]>(() => [
                 if (id === 'cnc') return td(`${totals.cnc.toFixed(1)} LF`);
                 return <td key={id} className="px-4 py-2 border-r border-[#e2e4ed] last:border-r-0" />;
             })}
-        </tr>
+         </tr>
     );
 
     const isLoading = isApiLoading || externalLoading;
@@ -1155,7 +1175,7 @@ const columns = useMemo<ColumnDef<ShopStatusRow>[]>(() => [
                                                             : flexRender(header.column.columnDef.header, header.getContext())}
                                                     </th>
                                                 ))}
-                                            </tr>
+                                             </tr>
                                         ))}
                                     </thead>
 
@@ -1175,8 +1195,8 @@ const columns = useMemo<ColumnDef<ShopStatusRow>[]>(() => [
                                                             colSpan={table.getVisibleFlatColumns().length}
                                                         >
                                                             {group.dateDisplay}
-                                                        </td>
-                                                    </tr>
+                                                         </td>
+                                                     </tr>
 
                                                     {/* Group totals row */}
                                                     {renderTotalsRow('', groupTotal)}
@@ -1218,10 +1238,10 @@ const columns = useMemo<ColumnDef<ShopStatusRow>[]>(() => [
                                                                                 style={cellStyle}
                                                                             >
                                                                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                                            </td>
+                                                                             </td>
                                                                         );
                                                                     })}
-                                                                </tr>
+                                                                 </tr>
 
                                                                 {/* Child plan rows — only shown when expanded */}
                                                                 {parentRow.getIsExpanded() &&
@@ -1236,9 +1256,9 @@ const columns = useMemo<ColumnDef<ShopStatusRow>[]>(() => [
                                                                                     className="px-4 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
                                                                                 >
                                                                                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                                                </td>
+                                                                                 </td>
                                                                             ))}
-                                                                        </tr>
+                                                                         </tr>
                                                                     ))
                                                                 }
                                                             </React.Fragment>
@@ -1255,8 +1275,8 @@ const columns = useMemo<ColumnDef<ShopStatusRow>[]>(() => [
                                                     className="px-4 py-12 text-center text-sm text-[#7c8689]"
                                                 >
                                                     No records found.
-                                                </td>
-                                            </tr>
+                                                 </td>
+                                             </tr>
                                         )}
                                     </tbody>
                                 </table>

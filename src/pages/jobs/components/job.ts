@@ -34,6 +34,7 @@ export interface IJob {
   template_needed?: string; // Add template_not_needed field
   review_completed?: string;
   templating_schedule_start_date?: string;
+  templating_actual_end_date?:string;
   sales_person_name?: string; // Add sales person name field
   on_hold?: boolean; // Add on hold field
   notes_count?: number; // Number of notes for this FAB

@@ -46,7 +46,13 @@ export interface ShopPlanRow {
     job_no: string;
     job_name: string;
     job_id?: number;
-    fab_info: string;
+    // Additional fields for structured fab info
+    acct_name?: string;
+    input_area?: string;
+    stone_type_name?: string;
+    stone_color_name?: string;
+    stone_thickness_value?: string;
+    edge_name?: string;
     pieces: number;
     total_sq_ft: number;
     wl_ln_ft: number;
@@ -139,7 +145,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
     };
 
     const queryParams = useMemo(() => ({
-        current_stage: 'cutting',
+        current_stage: 'shop',
         skip: pagination.pageIndex * pagination.pageSize,
         limit: pagination.pageSize,
         ...(searchQuery && { search: searchQuery }),
@@ -201,7 +207,13 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                 job_no: fab.job_details?.job_number || 'N/A',
                 job_id: fab.job_details?.id || undefined,
                 job_name: fab.job_details?.name || 'N/A',
-                fab_info: `${fab.job_details?.name || ''} - ${fab.stone_type_name || ''} - ${fab.stone_color_name || ''}`.trim(),
+                // Additional fields for structured fab info
+                acct_name: fab.account_name || fab.acct_name || '',
+                input_area: fab.input_area || '',
+                stone_type_name: fab.stone_type_name || '',
+                stone_color_name: fab.stone_color_name || '',
+                stone_thickness_value: fab.stone_thickness_value || '',
+                edge_name: fab.edge_name || '',
                 pieces: fab.no_of_pieces || 0,
                 total_sq_ft: fab.total_sqft || 0,
                 wl_ln_ft: fab.wj_linft || 0,
@@ -318,17 +330,6 @@ const ShopTable: React.FC<ShopTableProps> = () => {
             enableSorting: false,
             size: 50,
         },
-        // {
-        //     id: 'month',
-        //     accessorFn: r => r.scheduled_start_date,
-        //     header: ({ column }) => <DataGridColumnHeader title="MONTH" column={column} />,
-        //     cell: ({ row }) => {
-        //         const date = row.original.scheduled_start_date;
-        //         return <span className="text-sm text-text font-medium">{date ? format(new Date(date), 'MMM yyyy') : '-'}</span>;
-        //     },
-        //     enableSorting: true,
-        //     size: 200,
-        // },
         {
             id: 'shop_cut_date_scheduled',
             accessorFn: r => r.scheduled_start_date,
@@ -379,7 +380,6 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                 row.original.job_id ? (
                     <Link
                         to={`/job/details/${row.original.job_id}`}
-                        target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
                     >
@@ -392,13 +392,49 @@ const ShopTable: React.FC<ShopTableProps> = () => {
             enableSorting: true,
             size: 100,
         },
+        // Updated FAB INFO column with structured layout
         {
             id: 'fab_info',
-            accessorFn: r => r.fab_info,
             header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-text">{row.original.fab_info}</span>,
-            enableSorting: true,
-            size: 500,
+            cell: ({ row }) => {
+                const f = row.original;
+                const jobInfo = [f.acct_name, f.job_name].filter(Boolean);
+                const stoneInfo = [f.stone_type_name, f.stone_color_name, f.stone_thickness_value].filter(Boolean);
+                const materialInfo = [
+                    f.input_area ? `Area: ${f.input_area}` : '',
+                    f.edge_name || '',
+                ].filter(Boolean);
+
+                return (
+                    <div className="flex gap-4 text-xs max-w-[400px]">
+                        {(jobInfo.length > 0 || stoneInfo.length > 0) && (
+                            <div className="flex-1 min-w-0">
+                                {jobInfo.length > 0 && (
+                                    <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>
+                                        {jobInfo.join(' - ')}
+                                    </div>
+                                )}
+                                {stoneInfo.length > 0 && (
+                                    <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>
+                                        {stoneInfo.join(' - ')}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                        {materialInfo.length > 0 && (
+                            <div className="flex-1 min-w-0">
+                                {materialInfo.map((info, idx) => (
+                                    <div key={idx} className="truncate text-gray-600">
+                                        {info}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 400,
         },
         {
             id: 'pieces',
@@ -418,7 +454,6 @@ const ShopTable: React.FC<ShopTableProps> = () => {
             id: 'wl_ln_ft',
             accessorFn: r => r.wl_ln_ft,
             header: ({ column }) => <DataGridColumnHeader title="WJ:LN FT" column={column} />,
-            // cell: ({ row }) => <span className="text-sm text-text">{row.original.wl_ln_ft.toFixed(2)}</span>,
             cell: ({ row }) => (
                 <PlanSectionCell
                     value={row.original.wl_ln_ft.toFixed(2)}
@@ -677,7 +712,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                                                             {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                                         </th>
                                                     ))}
-                                                </tr>
+                                                 </tr>
                                             ))}
                                         </thead>
                                         <tbody>

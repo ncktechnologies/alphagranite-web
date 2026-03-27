@@ -99,6 +99,7 @@ export interface Fab {
     // Templating schedule fields
     templating_schedule_start_date?: string;
     templating_schedule_due_date?: string;
+    templating_actual_end_date?: string;
     technician_name?: string;
     drafter_name?: string;
     drafter_id?: number;

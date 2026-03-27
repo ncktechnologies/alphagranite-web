@@ -128,8 +128,8 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
         className="pb-3 border-b border-[#ecedf0] cursor-pointer select-none"
         onClick={onToggleExpand}
       >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div className="flex items-center gap-2 w-full">
+          <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
             <ChevronDown
               className={cn('h-4 w-4 text-[#7c8689] transition-transform shrink-0', !isExpanded && '-rotate-90')}
             />
@@ -148,9 +148,9 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
             )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center gap-2 shrink-0 ml-auto pl-4 " onClick={e => e.stopPropagation()}>
             <Select value={entry.sequence} onValueChange={value => onUpdate({ sequence: value })}>
-              <SelectTrigger className="h-7 w-auto text-xs border-[#e2e4ed] rounded-[4px]">
+              <SelectTrigger className="h-7 w-auto text-[13px] border-[#e2e4ed] rounded-[4px] font-bold">
                 <SelectValue placeholder="Seq" />
               </SelectTrigger>
               <SelectContent>
@@ -348,7 +348,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
           </div>
 
           {/* Notes */}
-          <div>
+          <div className='col-span-2'>
             <Label className="text-[13px] text-[#4b545d]">Description / Notes</Label>
             <Textarea
               placeholder="Add any notes about this plan..."

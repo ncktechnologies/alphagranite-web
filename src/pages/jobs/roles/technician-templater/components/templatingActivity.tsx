@@ -6,8 +6,6 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, CheckCircle2, Circle } from "lucide-react";
-import { format } from "date-fns";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -20,7 +18,7 @@ import { Can } from '@/components/permission';
 const formSchema = z.object({
   is_completed: z.boolean().nullable(),
   start_date: z.string(),
-  schedule_start_date: z.string(), // Added schedule_start_date
+  schedule_start_date: z.string(),
   duration: z.string().optional().refine(
     (val) => !val || /^\d+$/.test(val),
     { message: "Duration must be in days (numbers only)" }
@@ -43,112 +41,12 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
   const [updateTemplating] = useUpdateTemplatingMutation();
   const [createFabNote] = useCreateFabNoteMutation();
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    setIsSubmitting(true);
-
-    try {
-      const id = fabId;
-      if (!id) {
-        throw new Error("FAB ID is missing");
-      }
-
-      // Create fab note if notes exist
-      if (values.notes && values.notes.trim()) {
-        try {
-          await createFabNote({
-            fab_id: Number(id),
-            note: values.notes.trim(),
-            stage: "templating"
-          }).unwrap();
-        } catch (noteError) {
-          console.error("Error creating fab note:", noteError);
-          // Don't prevent submission if note creation fails
-        }
-      }
-
-      // Get the templating ID from the templating data
-      const templatingId = templatingData?.data?.id;
-      if (!templatingId) {
-        throw new Error("Templating record not found. Please schedule templating first.");
-      }
-
-      // Prepare update data
-      const updateData: any = {
-        templating_id: templatingId
-      };
-
-      // Add notes if provided
-      if (values.notes) {
-        updateData.notes = [values.notes];
-      }
-
-      // Add actual start date if provided
-      if (values.start_date) {
-        updateData.actual_end_date = new Date(values.start_date).toISOString();
-      }
-
-      // Add scheduled start date if provided
-      if (values.schedule_start_date) {
-        updateData.schedule_start_date = new Date(values.schedule_start_date).toISOString();
-      }
-
-      // Add duration if provided
-      if (values.duration) {
-        updateData.duration = values.duration;
-      }
-
-      // Add square footage if provided
-      if (values.square_ft) {
-        updateData.total_sqft = values.square_ft;
-      }
-
-      // Add completion status if provided
-      if (values.is_completed !== null) {
-        updateData.is_completed = values.is_completed;
-      }
-
-      // Only submit if status is completed
-      if (values.is_completed === true) {
-        // First update the templating record with all data
-        await updateTemplating(updateData).unwrap();
-
-        // Then complete templating
-        const response = await completeTemplating({
-          templating_id: templatingId,
-          actual_sqft: values.square_ft || "",
-          notes: values.notes ? [values.notes] : []
-        }).unwrap();
-
-        toast.success(response?.message || "Templating completed successfully!");
-      } else {
-        // When not completed, update the templating record with all relevant data
-        const response = await updateTemplating(updateData).unwrap();
-
-        toast.success(response?.message || "Templating activity saved successfully!");
-      }
-
-      navigate('/job/templating');
-    } catch (error: any) {
-      console.error("Failed to complete templating:", error);
-      const errorMessage = error?.data?.message || error?.message || "Failed to complete templating. Please try again.";
-      toast.error(errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  // Fetch templating record by FAB ID
-  const { data: templatingData, isLoading: isTemplatingLoading } = useGetTemplatingByFabIdQuery(
-    Number(fabId),
-    { skip: !fabId }
-  );
-
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       is_completed: null,
       start_date: "",
-      schedule_start_date: "", // Added default
+      schedule_start_date: "",
       duration: "",
       notes: "",
       square_ft: '',
@@ -156,13 +54,17 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
     },
   });
 
-  // Watch form values
   const statusValue = form.watch("is_completed");
 
+  // Fetch templating record by FAB ID
+  const { data: templatingData, isLoading: isTemplatingLoading } = useGetTemplatingByFabIdQuery(
+    Number(fabId),
+    { skip: !fabId }
+  );
+
+  // Populate form with existing data
   useEffect(() => {
-    // Populate form with templating data when it's available
     if (templatingData?.data) {
-      // Prepare values for the form
       const formValues: Partial<z.infer<typeof formSchema>> = {
         is_completed: templatingData.data.is_completed || null,
         start_date: templatingData.data.end_date
@@ -175,15 +77,69 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
         notes: "",
         square_ft: templatingData.data.total_sqft?.toString() || '',
       };
-     
-
-      // Use reset with { keepDefaultValues: false } to prevent infinite loop
       form.reset(formValues, { keepDefaultValues: false });
     }
     if (revenue && !form.getValues('revenue')) {
       form.setValue('revenue', String(revenue));
     }
-  }, [templatingData, revenue]);
+  }, [templatingData, revenue, form]);
+
+  // Helper to parse YYYY-MM-DD string into a local Date object
+  const parseLocalDate = (dateString: string) => {
+    if (!dateString) return undefined;
+    const [y, m, d] = dateString.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  };
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsSubmitting(true);
+    try {
+      const id = fabId;
+      if (!id) throw new Error("FAB ID is missing");
+
+      // Create fab note if notes exist
+      if (values.notes && values.notes.trim()) {
+        await createFabNote({
+          fab_id: Number(id),
+          note: values.notes.trim(),
+          stage: "templating"
+        }).unwrap();
+      }
+
+      const templatingId = templatingData?.data?.id;
+      if (!templatingId) throw new Error("Templating record not found. Please schedule templating first.");
+
+      const updateData: any = { templating_id: templatingId };
+
+      if (values.notes) updateData.notes = [values.notes];
+      if (values.start_date) updateData.actual_end_date = new Date(values.start_date).toISOString();
+      if (values.schedule_start_date) updateData.schedule_start_date = new Date(values.schedule_start_date).toISOString();
+      if (values.duration) updateData.duration = values.duration;
+      if (values.square_ft) updateData.total_sqft = values.square_ft;
+      if (values.is_completed !== null) updateData.is_completed = values.is_completed;
+
+      if (values.is_completed === true) {
+        await updateTemplating(updateData).unwrap();
+        const response = await completeTemplating({
+          templating_id: templatingId,
+          actual_sqft: values.square_ft || "",
+          notes: values.notes ? [values.notes] : []
+        }).unwrap();
+        toast.success(response?.message || "Templating completed successfully!");
+      } else {
+        const response = await updateTemplating(updateData).unwrap();
+        toast.success(response?.message || "Templating activity saved successfully!");
+      }
+
+      navigate('/job/templating');
+    } catch (error: any) {
+      console.error("Failed to save templating:", error);
+      const errorMessage = error?.data?.message || error?.message || "Failed to save. Please try again.";
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   if (isTemplatingLoading) {
     return <div>Loading...</div>;
@@ -192,19 +148,14 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
   return (
     <>
       <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className=" space-y-6"
-        >
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* Status */}
           <FormField
             control={form.control}
             name="is_completed"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="block mb-2 font-medium">
-                  Status
-                </FormLabel>
+                <FormLabel className="block mb-2 font-medium">Status</FormLabel>
                 <div className="flex items-center gap-8">
                   <div className="flex items-center gap-2">
                     <Checkbox
@@ -216,14 +167,10 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
                         }
                       }}
                     />
-                    <label
-                      htmlFor="completed"
-                      className="font-medium text-sm cursor-pointer"
-                    >
+                    <label htmlFor="completed" className="font-medium text-sm cursor-pointer">
                       Completed
                     </label>
                   </div>
-
                   <div className="flex items-center gap-2">
                     <Checkbox
                       id="not-completed"
@@ -234,10 +181,7 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
                         }
                       }}
                     />
-                    <label
-                      htmlFor="not-completed"
-                      className="font-medium text-sm cursor-pointer"
-                    >
+                    <label htmlFor="not-completed" className="font-medium text-sm cursor-pointer">
                       Not completed
                     </label>
                   </div>
@@ -248,7 +192,7 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
 
           {/* Editable Info */}
           <div className="grid grid-cols-2 gap-6">
-            {/* Scheduled Date - Now Editable */}
+            {/* Scheduled Date */}
             <FormField
               control={form.control}
               name="schedule_start_date"
@@ -258,15 +202,13 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
                   <FormControl>
                     <DateTimePicker
                       mode="date"
-                      value={field.value ? (() => {
-                        // Parse YYYY-MM-DD string in local timezone
-                        const [y, m, d] = field.value.split('-').map(Number);
-                        return new Date(y, m - 1, d);
-                      })() : undefined}
+                      value={parseLocalDate(field.value)}
                       onChange={(date) => {
                         if (!date) return field.onChange("");
-                        const formatted = date.toISOString().split('T')[0];
-                        field.onChange(formatted);
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        field.onChange(`${year}-${month}-${day}`);
                       }}
                       placeholder="Select scheduled date"
                       minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
@@ -277,17 +219,7 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
               )}
             />
 
-            {/* <FormField
-              control={form.control}
-              name="duration"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Duration</FormLabel>
-                  <Input placeholder="146" {...field} />
-                </FormItem>
-              )}
-            /> */}
-
+            {/* Completed Date */}
             <FormField
               control={form.control}
               name="start_date"
@@ -297,66 +229,38 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
                   <FormControl>
                     <DateTimePicker
                       mode="date"
-                      value={field.value ? (() => {
-                        // Parse YYYY-MM-DD string in local timezone
-                        const [y, m, d] = field.value.split('-').map(Number);
-                        return new Date(y, m - 1, d);
-                      })() : undefined}
+                      value={parseLocalDate(field.value)}
                       onChange={(date) => {
-                        if (date) {
-                          const year = date.getFullYear();
-                          const month = String(date.getMonth() + 1).padStart(2, '0');
-                          const day = String(date.getDate()).padStart(2, '0');
-                          const formatted = `${year}-${month}-${day}`;
-                          field.onChange(formatted);
-                        } else {
-                          field.onChange("");
-                        }
+                        if (!date) return field.onChange("");
+                        const year = date.getFullYear();
+                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                        const day = String(date.getDate()).padStart(2, '0');
+                        field.onChange(`${year}-${month}-${day}`);
                       }}
                       placeholder="Select complete date"
                       minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
+                      disabled={statusValue !== true}  // 👈 Disable unless Completed is checked
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-             {/* <FormField
-              control={form.control}
-              name="revenue"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Revenue</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      placeholder="Enter revenue amount"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            /> */}
           </div>
 
-          <div>
-            <FormField
-              control={form.control}
-              name="square_ft"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Square Ft</FormLabel>
-                  <Input placeholder="146" {...field} />
-                </FormItem>
-              )}
-            />
-          </div>
+          {/* Square Ft */}
+          <FormField
+            control={form.control}
+            name="square_ft"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Square Ft</FormLabel>
+                <Input placeholder="146" {...field} />
+              </FormItem>
+            )}
+          />
 
-         
-
+          {/* Notes */}
           <FormField
             control={form.control}
             name="notes"
@@ -371,6 +275,7 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
             )}
           />
 
+          {/* Buttons */}
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => navigate('/job/templating')}>
               Cancel
@@ -384,7 +289,7 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
         </form>
       </Form>
 
-      {/* Modal */}
+      {/* Modal – unchanged */}
       <Dialog open={openModal} onOpenChange={setOpenModal}>
         <DialogContent>
           <DialogHeader>

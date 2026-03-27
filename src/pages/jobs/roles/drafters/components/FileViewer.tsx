@@ -55,7 +55,7 @@ export const FileViewer = ({
   const stageKey = file.stage_name ?? file.stage;
   const stage = stageKey && WORKFLOW_STAGES[stageKey]
     ? WORKFLOW_STAGES[stageKey]
-    : getFileStage(file.name, { currentStage: stageKey, isDrafting: true });
+    : getFileStage(file.name, { currentStage: stageKey, isDrafting: false });
   const badge = getStageBadge(stage);
 
   return (
@@ -71,7 +71,7 @@ export const FileViewer = ({
           {(file.stage_name || file.file_design || file.uploaded_by_name) && (
             <div className="mt-2 text-xs text-gray-500 space-x-2">
               {file.stage_name && <span>Stage: {file.stage_name}</span>}
-              {file.file_design && <span>Design: {file.file_design}</span>}
+              {file.file_design && <span>Type: {file.file_design}</span>}
               {file.uploaded_by_name && <span>By: {file.uploaded_by_name}</span>}
             </div>
           )}
