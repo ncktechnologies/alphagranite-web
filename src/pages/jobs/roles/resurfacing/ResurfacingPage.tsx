@@ -30,37 +30,35 @@ const formatDate = (dateString?: string): string => {
 
 // Transform Fab data to match IJob interface
 const transformFabToJob = (fab: Fab): IJob => {
-    return {
+     return {
         id: fab.id,
         fab_type: fab.fab_type,
-        fab_id: String(fab.id),
+        fab_id: String(fab.id), // Using fab.id as fab_id since there's no fab_id in Fab type
         job_name: `${fab.job_details?.name}`,
         job_no: String(fab.job_details?.job_number),
-        date: fab.shop_date_schedule || '',
-        current_stage: fab.current_stage,
-        sales_person_name: fab.sales_person_name || '',
+        // date: fab.created_at, // Using created_at as date
+        current_stage: fab.current_stage, // Add current_stage
         // Optional fields with default values
-        acct_name: '',
-        template_received: fab.template_received ? 'Yes' : 'No',
-        template_needed: fab.template_needed ? 'No' : 'Yes',
-        // no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
-        total_sq_ft: String(fab.total_sqft || "-"),
-        revenue: fab.job_details?.project_value || "-",
-        gp: "-",
+        template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
+        template_received: '',
+        templater: fab.technician_name || '-',
+        acct_name: fab.account_name || '',
+        input_area: fab.input_area || '',
+        no_of_pieces: '',
+        total_sq_ft: String(fab.total_sqft),
+        revenue: '',
         revised: '',
         sct_completed: '',
         draft_completed: '',
-        review_completed: fab.current_stage === 'completed' ? 'Yes' : 'No',
-        template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
-        templater: fab.technician_name || '-',
+        gp: '',
         stone_type_name: fab.stone_type_name || '',
         stone_color_name: fab.stone_color_name || '',
         stone_thickness_value: fab.stone_thickness_value || '',
         edge_name: fab.edge_name || '',
         fab_notes: fab.fab_notes || [],
         job_id: fab.job_id,
-        on_hold: fab.on_hold,
         status_id: fab.status_id,
+        on_hold: fab.on_hold,
     };
 };
 
