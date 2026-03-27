@@ -9,21 +9,16 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+import { BackButton } from '@/components/common/BackButton';
 
 // Helper function to get all fab notes (unfiltered)
-const getAllFabNotes = (fabNotes: any[]) => {
-    return fabNotes || [];
-};
+const getAllFabNotes = (fabNotes: any[]) => fabNotes || [];
 
 // Helper function to get FAB status display
 const getFabStatusInfo = (statusId: number | undefined) => {
-    if (statusId === 0) {
-        return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
-    } else if (statusId === 1) {
-        return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
-    } else {
-        return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
-    }
+    if (statusId === 0) return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
+    if (statusId === 1) return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
+    return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
 };
 
 export function PreDraftDetailsPage() {
@@ -36,222 +31,186 @@ export function PreDraftDetailsPage() {
         ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fab.job_details.job_number}`
         : '#';
 
-    // Build the fields for the Job Details card (exactly as required)
-    const jobDetailsFields = fab
+    // Build sidebar sections
+    const sidebarSections = fab
         ? [
-            { label: 'Account', value: fab.account_name || '—' },
             {
-                label: 'Fab ID',
-                value: (
-                    <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">
-                        FAB-{fab.id}
-                    </Link>
-                ),
+                title: "Job Details",
+                type: "details",
+                items: [
+                    { label: "Account", value: fab.account_name || '—' },
+                    {
+                        label: "Fab ID",
+                        value: (
+                            <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">
+                                FAB-{fab.id}
+                            </Link>
+                        ),
+                    },
+                    { label: "Area", value: fab.input_area || '—' },
+                    {
+                        label: "Material",
+                        value: fab.stone_type_name
+                            ? `${fab.stone_type_name} - ${fab.stone_color_name || ''} - ${fab.stone_thickness_value || ''}`
+                            : '—',
+                    },
+                    { label: "Fab Type", value: <span className="uppercase">{fab.fab_type || '—'}</span> },
+                    { label: "Edge", value: fab.edge_name || '—' },
+                    { label: "Total S.F", value: fab.total_sqft?.toString() || '—' },
+                    { label: "Sales Person", value: fab.sales_person_name || '—' },
+                    {
+                        label: "Job Notes",
+                        value: fab.job_details?.description || 'None',
+                        // Full width handled automatically by GraySidebar
+                    },
+                ],
             },
-            { label: 'Area', value: fab.input_area || '—' },
             {
-                label: 'Material',
-                value: fab.stone_type_name
-                    ? `${fab.stone_type_name} - ${fab.stone_color_name || ''} - ${fab.stone_thickness_value || ''}`
-                    : '—',
-            },
-            {
-                label: 'Fab Type',
-                value: <span className="uppercase">{fab.fab_type || '—'}</span>,
-            },
-            { label: 'Edge', value: fab.edge_name || '—' },
-            { label: 'Total S.F', value: fab.total_sqft?.toString() || '—' },
-            { label: 'Sales Person', value: fab.sales_person_name || '—' },
-            {
-                label: 'Job Notes',
-                value: fab.job_details?.description || 'None',
-                fullWidth: true,
-            },
+                title: "FAB Notes",
+                type: "notes",
+                notes: getAllFabNotes(fab.fab_notes || []).map(note => {
+                    const stageConfig: Record<string, { label: string; color: string }> = {
+                        templating: { label: 'Templating', color: 'text-blue-700' },
+                        pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
+                        drafting: { label: 'Drafting', color: 'text-green-700' },
+                        sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
+                        slab_smith_request: { label: 'Slab Smith Request', color: 'text-red-700' },
+                        cut_list: { label: 'Final Programming', color: 'text-purple-700' },
+                        cutting: { label: 'Cutting', color: 'text-orange-700' },
+                        revisions: { label: 'Revisions', color: 'text-purple-700' },
+                        draft: { label: 'Draft', color: 'text-green-700' },
+                        general: { label: 'General', color: 'text-gray-700' }
+                    };
+                    const stage = note.stage || 'general';
+                    const config = stageConfig[stage] || stageConfig.general;
+                    return {
+                        id: note.id,
+                        avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+                        content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${note.note}`,
+                        author: note.created_by_name || 'Unknown',
+                        timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+                    };
+                })
+            }
         ]
         : [];
 
-    const sidebarSections = [
-        {
-            title: "FAB Notes",
-            type: "notes",
-            notes: getAllFabNotes(fab?.fab_notes || []).map(note => {
-                const stageConfig: Record<string, { label: string; color: string }> = {
-                    templating: { label: 'Templating', color: 'text-blue-700' },
-                    pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
-                    drafting: { label: 'Drafting', color: 'text-green-700' },
-                    sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
-                    slab_smith_request: { label: 'Slab Smith Request', color: 'text-red-700' },
-                    cut_list: { label: 'Final Programming', color: 'text-purple-700' },
-                    cutting: { label: 'Cutting', color: 'text-orange-700' },
-                    revisions: { label: 'Revisions', color: 'text-purple-700' },
-                    draft: { label: 'Draft', color: 'text-green-700' },
-                    general: { label: 'General', color: 'text-gray-700' }
-                };
-
-                const stage = note.stage || 'general';
-                const config = stageConfig[stage] || stageConfig.general;
-
-                return {
-                    id: note.id,
-                    avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
-                    content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${note.note}`,
-                    author: note.created_by_name || 'Unknown',
-                    timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
-                };
-            })
-        }
-    ];
-
+    // Loading skeleton (mirrors drafter details)
     if (isLoading) {
         return (
-            <Container className="border-t">
-                <Toolbar>
-                    <div className="flex items-center justify-between w-full">
-                        <div>
-                            <ToolbarHeading
-                                title={<Skeleton className="h-8 w-96" />}
-                                description={<Skeleton className="h-4 w-80 mt-1" />}
-                            />
-                        </div>
-                        <div className="flex gap-2">
-                            <Skeleton className="h-6 w-20 rounded-full" />
-                            <Skeleton className="h-6 w-24 rounded-full" />
-                        </div>
+            <div className="flex flex-col min-h-screen">
+                <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+                    <Skeleton className="h-8 w-72 mb-1" />
+                    <Skeleton className="h-4 w-48" />
+                </div>
+                <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+                    <div className="w-full lg:w-[220px] xl:w-[260px] shrink-0 border-r">
+                        <Skeleton className="h-full min-h-[300px] w-full" />
                     </div>
-                </Toolbar>
-
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6">
-                    <div className="lg:col-span-2">
-                        <Card>
-                            <CardHeader>
-                                <Skeleton className="h-6 w-40" />
-                            </CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                    {[...Array(8)].map((_, i) => (
-                                        <div key={i}>
-                                            <Skeleton className="h-4 w-24 mb-1" />
-                                            <Skeleton className="h-5 w-32" />
-                                        </div>
-                                    ))}
-                                </div>
-                            </CardContent>
-                        </Card>
-                        <div className="mt-4">
-                            <Skeleton className="h-64 w-full" />
-                        </div>
-                    </div>
-
-                    <div className="bg-[#FAFAFA] min-h-screen pt-12 pb-3">
-                        <Card className="border-none bg-transparent">
-                            <CardHeader className="border-b pb-4 flex-col items-start">
-                                <Skeleton className="h-6 w-40" />
-                                <Skeleton className="h-4 w-64 mt-2" />
-                            </CardHeader>
-                            <CardContent>
-                                <Skeleton className="h-96 w-full" />
-                            </CardContent>
-                        </Card>
+                    <div className="flex-1 p-4 sm:p-6 space-y-4">
+                        <Skeleton className="h-24 w-full rounded-xl" />
+                        <Skeleton className="h-96 w-full rounded-xl" />
                     </div>
                 </div>
-            </Container>
+            </div>
         );
     }
 
-    if (isError) {
+    if (isError || !fab) {
         return (
-            <Container className="border-t">
-                <Toolbar>
+            <div className="flex flex-col min-h-screen">
+                <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
                     <ToolbarHeading title="Error loading FAB" description="Could not load pre-draft details" />
-                </Toolbar>
-                <Alert variant="destructive" className="mt-6">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>
-                        {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : "Failed to load FAB data"}
-                    </AlertDescription>
-                </Alert>
-            </Container>
+                </div>
+                <div className="p-6">
+                    <Alert variant="destructive">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>
+                            {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : "Failed to load FAB data"}
+                        </AlertDescription>
+                    </Alert>
+                </div>
+            </div>
         );
     }
 
-    const statusInfo = getFabStatusInfo(fab?.status_id);
+    const statusInfo = getFabStatusInfo(fab.status_id);
+    const isTemplatingCompleted = fab.templating_schedule_end_date ? true : false; // adjust logic as needed
 
     return (
-        <Container className="border-t">
-            {/* 🔹 TOP TOOLBAR with clickable job name/number + description + status badges */}
-            <Toolbar>
-                <div className="flex items-center justify-between w-full">
-                    <ToolbarHeading
-                        title={
-                            <div className="text-2xl font-bold">
-                                <a href={jobNameLink} className="hover:underline">
-                                    {fab?.job_details?.name || `Job ${fab?.job_id}`}
-                                </a>
-                                {' - '}
-                                <a href={jobNumberLink} className="hover:underline" target="_blank">
-                                    {fab?.job_details?.job_number || fab?.job_id}
-                                </a>
-                            </div>
-                        }
-                        description={fab?.job_details?.description || 'No description available'}
-                    />
-                    <div className="flex items-center gap-2">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
-                            {statusInfo.text}
-                        </span>
-                        <Badge className="text-[#0BC33F] bg-[#0BC33F]/20 rounded-[50px] h-[30px] font-medium text-[14px] px-2">
-                            Templating completed
-                        </Badge>
-                    </div>
-                </div>
-            </Toolbar>
-
-            {/* Main grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6">
-                {/* LEFT COLUMN (span 2) */}
-                <div className="lg:col-span-2">
-                    {/* 🔹 JOB DETAILS CARD */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-[#111827] text-2xl font-bold">Job Details</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 text-sm">
-                                {jobDetailsFields.map((field, index) => (
-                                    <div key={index} className={field.fullWidth ? 'col-span-full' : ''}>
-                                        <p className="text-sm text-text-foreground font-normal uppercase tracking-wide">
-                                            {field.label}
-                                        </p>
-                                        <p className="font-semibold text-text text-base leading-[24px] whitespace-pre-wrap">
-                                            {field.value}
-                                        </p>
+        <div className="flex flex-col min-h-screen bg-gray-50">
+            {/* Sticky toolbar */}
+            <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+                <div className="px-3 sm:px-4 lg:px-6">
+                    <Toolbar className="py-2 sm:py-3">
+                        <div className="flex items-center justify-between w-full gap-2 flex-wrap">
+                            <ToolbarHeading
+                                title={
+                                    <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
+                                        <a href={jobNameLink} className="hover:underline">
+                                            {fab?.job_details?.name || `Job ${fab?.job_id}`}
+                                        </a>
+                                        <span className="mx-1 text-gray-400">·</span>
+                                        <a
+                                            href={jobNumberLink}
+                                            className="hover:underline text-gray-600"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
+                                            {fab?.job_details?.job_number || fab?.job_id}
+                                        </a>
                                     </div>
-                                ))}
+                                }
+                                description="Pre-Draft Review"
+                            />
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
+                                    {statusInfo.text}
+                                </span>
+                                {isTemplatingCompleted && (
+                                    <Badge className="text-[#0BC33F] bg-[#0BC33F]/20 rounded-[50px] h-[30px] font-medium text-[14px] px-2">
+                                        Templating completed
+                                    </Badge>
+                                )}
+                                <BackButton />
                             </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* 🔹 GRAYSIDEBAR (FAB Notes) */}
-                    <div className="mt-4">
-                        <GraySidebar sections={sidebarSections as any} className="bg-transparent border-none pl-0" />
-                    </div>
+                        </div>
+                    </Toolbar>
                 </div>
+            </div>
 
-                {/* RIGHT COLUMN (span 1) - Templating Review */}
-                <div className="bg-[#FAFAFA] min-h-screen pt-12 pb-3">
+            {/* Main two‑column layout */}
+            <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+                {/* Sticky sidebar */}
+                <aside
+                    className={[
+                        'w-full bg-white border-b',
+                        'lg:w-[220px] xl:w-[260px] lg:shrink-0',
+                        'lg:sticky lg:top-[50px]',
+                        'lg:self-start',
+                        'lg:max-h-[calc(100vh-50px)]',
+                        'lg:overflow-y-auto',
+                        'lg:border-b-0 lg:border-r',
+                    ].join(' ')}
+                >
+                    <GraySidebar sections={sidebarSections as any} jobId={fab?.job_id} />
+                </aside>
+
+                {/* Main content */}
+                <main className="flex-1 min-w-0 p-3 sm:p-4 lg:p-5 space-y-4">
                     <Card className="border-none bg-transparent">
                         <CardHeader className="border-b pb-4 flex-col items-start">
                             {fab?.template_needed ? (
                                 <>
-                                    <CardTitle className="text-text">Templating Review</CardTitle>
+                                    <CardTitle className="text-text text-lg sm:text-xl">Templating Review</CardTitle>
                                     <p className="text-sm text-text-foreground leading-[20px]">
                                         Review and approve completed template
                                     </p>
                                 </>
                             ) : (
                                 <>
-                                    <CardTitle className="text-text">Predraft Review</CardTitle>
+                                    <CardTitle className="text-text text-lg sm:text-xl">Predraft Review</CardTitle>
                                     <p className="text-sm text-text-foreground leading-[20px]">
                                         Review and approve completed Predraft
                                     </p>
@@ -262,8 +221,8 @@ export function PreDraftDetailsPage() {
                             <ReviewChecklistForm fabId={Number(id)} />
                         </CardContent>
                     </Card>
-                </div>
+                </main>
             </div>
-        </Container>
+        </div>
     );
 }

@@ -138,7 +138,7 @@ export const DraftReviewDetailsPage = () => {
     if (isFabLoading) {
         return (
             <div className="flex flex-col min-h-screen">
-                <div className="sticky top-0 z-20 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+                <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
                     <Skeleton className="h-8 w-72 mb-1" />
                     <Skeleton className="h-4 w-48" />
                 </div>
@@ -242,7 +242,7 @@ export const DraftReviewDetailsPage = () => {
     return (
         <div className="flex flex-col min-h-screen bg-gray-50">
             {/* Sticky toolbar */}
-            <div className="sticky top-0 z-20 bg-white border-b shadow-sm">
+            <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
                 <div className="px-3 sm:px-4 lg:px-6">
                     <Toolbar className="py-2 sm:py-3">
                         <div className="flex items-center justify-between w-full gap-2 flex-wrap">

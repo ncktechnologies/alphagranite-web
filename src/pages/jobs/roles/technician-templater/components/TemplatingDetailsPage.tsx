@@ -8,23 +8,17 @@ import { useParams, Link } from 'react-router';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { Fab } from '@/store/api/job';
 import { formatDate } from '../TechnicianPage';
+import { BackButton } from '@/components/common/BackButton';
 
 // Helper function to get all fab notes (unfiltered)
-const getAllFabNotes = (fabNotes: any[]) => {
-  return fabNotes || [];
-};
+const getAllFabNotes = (fabNotes: any[]) => fabNotes || [];
 
 // Helper function to get FAB status display
 const getFabStatusInfo = (statusId: number | undefined) => {
-  if (statusId === 0) {
-    return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
-  } else if (statusId === 1) {
-    return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
-  } else {
-    return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
-  }
+  if (statusId === 0) return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
+  if (statusId === 1) return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
+  return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
 };
 
 export function TemplatingDetailsPage() {
@@ -78,7 +72,7 @@ export function TemplatingDetailsPage() {
         { label: "Sales Person", value: fab.sales_person_name || '—' },
         {
           label: "SlabSmith Needed",
-          value: fab.slabsmith_data ? 'Yes' : 'No', // adjust if field name differs
+          value: fab.slabsmith_data ? 'Yes' : 'No',
         },
       ],
     },
@@ -134,167 +128,142 @@ export function TemplatingDetailsPage() {
     }
   ];
 
+  // Loading skeleton
   if (isLoading) {
     return (
-      <Container className='lg:mx-0 max-w-full'>
-        <Toolbar className=''>
-          <div className="flex items-center justify-between w-full">
-            <div>
-              <ToolbarHeading
-                title={<Skeleton className="h-8 w-96" />}
-                description={<Skeleton className="h-4 w-80 mt-1" />}
-              />
-            </div>
-            <Skeleton className="h-6 w-20 rounded-full" />
-          </div>
-        </Toolbar>
-        <div className="border-t flex flex-col lg:flex-row gap-3 xl:gap-4 items-start max-w-full">
-          <div className="w-full lg:w-[250px] xl:w-[286px] ultra:w-[500px] lg:flex-shrink-0">
-            <Skeleton className="h-64 w-full" />
-            <Skeleton className="h-24 w-full mt-3" />
-          </div>
-          <div className="lg:flex-1 min-w-0">
-            <Container className='mx-0 max-w-full px-0'>
-              <div className='max-w-6xl w-full mx-auto lg:mr-auto'>
-                <Card className='my-4'>
-                  <CardHeader className='flex flex-col items-start py-4'>
-                    <Skeleton className="h-6 w-48" />
-                    <Skeleton className="h-4 w-64 mt-2" />
-                  </CardHeader>
-                </Card>
-                <Card>
-                  <CardContent>
-                    <Skeleton className="h-96 w-full" />
-                  </CardContent>
-                </Card>
-              </div>
-            </Container>
-          </div>
+      <div className="flex flex-col min-h-screen">
+        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+          <Skeleton className="h-8 w-72 mb-1" />
+          <Skeleton className="h-4 w-48" />
         </div>
-      </Container>
-    );
-  }
-
-  if (isError) {
-    return (
-      <Container className='lg:mx-0 max-w-full'>
-        <Toolbar className=''>
-          <ToolbarHeading title="Error loading FAB" description="Could not load templating details" />
-        </Toolbar>
-        <div className="border-t flex flex-col lg:flex-row gap-3 xl:gap-4 items-start max-w-full">
-          <div className="w-full lg:w-[250px] xl:w-[286px] ultra:w-[500px] lg:flex-shrink-0">
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>
-                {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : "Failed to load FAB data"}
-              </AlertDescription>
-            </Alert>
+        <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+          <div className="w-full lg:w-[220px] xl:w-[260px] shrink-0 border-r p-4 space-y-4">
+            <Skeleton className="h-64 w-full rounded-xl" />
+            <Skeleton className="h-32 w-full rounded-xl" />
           </div>
-          <div className="lg:flex-1 min-w-0">
-            <Container className='mx-0 max-w-full px-0'>
-              <div className='max-w-6xl w-full mx-auto lg:mr-auto'>
-                <Card className='my-4'>
-                  <CardHeader className='flex flex-col items-start py-4'>
-                    <CardTitle className='text-[#111827]'>Template activity</CardTitle>
-                    <p className="text-base text-[#4B5563]">
-                      Update your templating activity here
-                    </p>
-                  </CardHeader>
-                </Card>
-                <Card>
-                  <CardContent>
-                    <TemplatingActivityForm fabId={id} />
-                  </CardContent>
-                </Card>
-              </div>
-            </Container>
+          <div className="flex-1 p-4 sm:p-6 space-y-4">
+            <Skeleton className="h-24 w-full max-w-2xl rounded-xl" />
+            <Skeleton className="h-96 w-full max-w-2xl rounded-xl" />
           </div>
-        </div>
-      </Container>
-    );
-  }
-
-  const statusInfo = getFabStatusInfo(fab?.status_id);
-
-  return (
-    <>
-      <Container className='lg:mx-0 max-w-full'>
-        <Toolbar className=''>
-          <div className="flex items-center justify-between w-full">
-            <ToolbarHeading
-              title={
-                <div className="text-2xl font-bold">
-                  <a href={jobNameLink} className="hover:underline">
-                    {fab?.job_details?.name || `Job ${fab?.job_id}`}
-                  </a>
-                  {' - '}
-                  <a href={jobNumberLink} className="hover:underline" target="_blank">
-                    {fab?.job_details?.job_number || fab?.job_id}
-                  </a>
-                </div>
-              }
-              // description={fab?.job_details?.description || 'No description available'}
-            />
-            <div className="flex items-center gap-2">
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
-                {statusInfo.text}
-              </span>
-            </div>
-          </div>
-        </Toolbar>
-      </Container>
-
-      {/* Main layout: sidebar + content */}
-      <div className="border-t flex flex-col lg:flex-row gap-3 xl:gap-4 items-start max-w-full">
-        {/* Sidebar - fixed width */}
-        <div className="w-full lg:w-[250px] xl:w-[286px] ultra:w-[500px] lg:flex-shrink-0">
-          <GraySidebar
-            sections={sidebarSections as any}
-            jobId={fab?.job_id}
-          />
-          <div className="bg-text w-full py-4 px-6 shadow-sm mt-3">
-            <h3 className="font-semibold text-white text-lg mb-5">Progress Timeline</h3>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-              <p className="text-base text-white">Scheduled date</p>
-            </div>
-            <p className="text-xs text-white ml-4 mt-1">
-              {fab?.templating_schedule_start_date
-                ? new Date(fab.templating_schedule_start_date).toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true
-                  })
-                : 'Not scheduled'}
-            </p>
-          </div>
-        </div>
-
-        {/* Main content - flexible */}
-        <div className="lg:flex-1 min-w-0">
-          <Container className='mx-0 max-w-full px-0'>
-            <div className='max-w-6xl w-full mx-auto lg:mr-auto'>
-              <Card className='my-4'>
-                <CardHeader className='flex flex-col items-start py-4'>
-                  <CardTitle className='text-[#111827]'>Template activity</CardTitle>
-                  <p className="text-base text-[#4B5563]">
-                    Update your templating activity here
-                  </p>
-                </CardHeader>
-              </Card>
-              <Card>
-                <CardContent>
-                  <TemplatingActivityForm fabId={id} revenue={fab?.revenue} />
-                </CardContent>
-              </Card>
-            </div>
-          </Container>
         </div>
       </div>
-    </>
+    );
+  }
+
+  // Error state
+  if (isError || !fab) {
+    return (
+      <div className="flex flex-col min-h-screen">
+        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+          <ToolbarHeading title="Error loading FAB" description="Could not load templating details" />
+        </div>
+        <div className="p-6">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>
+              {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : "Failed to load FAB data"}
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
+    );
+  }
+
+  const statusInfo = getFabStatusInfo(fab.status_id);
+
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      {/* Sticky toolbar */}
+      <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+        <div className="px-3 sm:px-4 lg:px-6">
+          <Toolbar className="py-2 sm:py-3">
+            <div className="flex items-center justify-between w-full gap-2 flex-wrap">
+              <ToolbarHeading
+                title={
+                  <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
+                    <a href={jobNameLink} className="hover:underline">
+                      {fab?.job_details?.name || `Job ${fab?.job_id}`}
+                    </a>
+                    <span className="mx-1 text-gray-400">·</span>
+                    <a
+                      href={jobNumberLink}
+                      className="hover:underline text-gray-600"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {fab?.job_details?.job_number || fab?.job_id}
+                    </a>
+                  </div>
+                }
+                description="Templating Details"
+              />
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
+                  {statusInfo.text}
+                </span>
+                <BackButton />
+              </div>
+            </div>
+          </Toolbar>
+        </div>
+      </div>
+
+      {/* Main two‑column layout */}
+      <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+        {/* Sticky sidebar */}
+        <aside
+          className={[
+            'w-full bg-white border-b',
+            'lg:w-[220px] xl:w-[260px] lg:shrink-0',
+            'lg:sticky lg:top-[50px]',
+            'lg:self-start',
+            'lg:max-h-[calc(100vh-50px)]',
+            'lg:overflow-y-auto',
+            'lg:border-b-0 lg:border-r',
+          ].join(' ')}
+        >
+          <div className="p-3 sm:p-4 space-y-4">
+            <GraySidebar sections={sidebarSections as any} jobId={fab?.job_id} />
+            {/* Progress Timeline (original component) */}
+            <div className="bg-text w-full py-4 px-6 shadow-sm rounded-md">
+              <h3 className="font-semibold text-white text-lg mb-5">Progress Timeline</h3>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                <p className="text-base text-white">Scheduled date</p>
+              </div>
+              <p className="text-xs text-white ml-4 mt-1">
+                {fab?.templating_schedule_start_date
+                  ? new Date(fab.templating_schedule_start_date).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      hour12: true
+                    })
+                  : 'Not scheduled'}
+              </p>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main content */}
+        <main className="flex-1 min-w-0 p-3 sm:p-4 lg:p-5 space-y-4">
+          <Card>
+            <CardHeader className="py-3 px-4 sm:px-5">
+              <CardTitle className="text-sm sm:text-base">Template activity</CardTitle>
+              <p className="text-xs text-gray-500 mt-0.5">Update your templating activity here</p>
+            </CardHeader>
+          </Card>
+
+          <Card>
+            <CardContent className="p-3 sm:p-4 lg:p-5">
+              <TemplatingActivityForm fabId={id} revenue={fab?.revenue} />
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    </div>
   );
 }

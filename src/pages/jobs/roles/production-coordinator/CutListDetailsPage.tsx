@@ -159,7 +159,7 @@ export function CutListDetailsPage() {
     return (
       <div className="flex flex-col min-h-screen">
         {/* sticky toolbar skeleton */}
-        <div className="sticky top-0 z-20 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
           <Skeleton className="h-8 w-72 mb-1" />
           <Skeleton className="h-4 w-48" />
         </div>

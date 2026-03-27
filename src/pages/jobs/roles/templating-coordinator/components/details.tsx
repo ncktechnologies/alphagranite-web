@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import GraySidebar from '@/pages/jobs/components/job-details.tsx/GraySidebar';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+import { BackButton } from '@/components/common/BackButton';
 
 // Helper function to get all fab notes (unfiltered)
 const getAllFabNotes = (fabNotes: any[]) => {
@@ -105,20 +106,12 @@ export function FabIdDetailsPage() {
   // Loading state
   if (isLoading) {
     return (
-      <Container className="border-t">
-        <Toolbar>
-          <div className="flex items-center justify-between w-full">
-            <div>
-              <ToolbarHeading
-                title={<Skeleton className="h-8 w-96" />}
-                description={<Skeleton className="h-4 w-80 mt-1" />}
-              />
-            </div>
-            <Skeleton className="h-6 w-20 rounded-full" />
-          </div>
-        </Toolbar>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6">
+      <div className="flex flex-col min-h-screen">
+        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+          <Skeleton className="h-8 w-72 mb-1" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6 px-4 sm:px-6 lg:px-8">
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
@@ -156,65 +149,74 @@ export function FabIdDetailsPage() {
             </Card>
           </div>
         </div>
-      </Container>
+      </div>
     );
   }
 
   // Error state
   if (isError) {
     return (
-      <Container className="border-t">
-        <Toolbar>
+      <div className="flex flex-col min-h-screen">
+        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
           <ToolbarHeading title="Error loading FAB" description="Could not load fabrication details" />
-        </Toolbar>
-        <Alert variant="destructive" className="mt-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : 'Failed to load FAB data'}
-          </AlertDescription>
-        </Alert>
-      </Container>
+        </div>
+        <div className="p-6">
+          <Alert variant="destructive" className="mt-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>
+              {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : 'Failed to load FAB data'}
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
     );
   }
 
-  return (
-    <Container className="">
-      {/* 🔹 TOP TOOLBAR with clickable job name/number (no blue, underline on hover) + description + status badge */}
-      <Toolbar>
-        <div className="flex items-center justify-between w-full">
-          <ToolbarHeading
-            title={
-              <div className="text-2xl font-bold">
-                <a href={jobNameLink} className="hover:underline">
-                  {fab?.job_details?.name || `Job ${fab?.job_id}`}
-                </a>
-                {' - '}
-                <a href={jobNumberLink} className="hover:underline" target="_blank">
-                  {fab?.job_details?.job_number || fab?.job_id}
-                </a>
-              </div>
-            }
-            description={fab?.job_details?.description || 'No description available'}
-          />
-          <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              {
-                0: 'bg-red-100 text-red-800',
-                1: 'bg-green-100 text-green-800',
-              }[fab?.status_id] || 'bg-gray-100 text-gray-800'
-            }`}
-          >
-            {{
-              0: 'ON HOLD',
-              1: 'ACTIVE',
-            }[fab?.status_id] || 'LOADING'}
-          </span>
-        </div>
-      </Toolbar>
+  const statusInfo = {
+    className: fab.status_id === 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800',
+    text: fab.status_id === 0 ? 'ON HOLD' : 'ACTIVE',
+  };
 
-      {/* Main grid: left column (Job Details + Notes) and right column (Review) */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6">
+  return (
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      {/* 🔹 STICKY TOOLBAR – updated to match drafter details pattern */}
+      <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+        <div className="px-3 sm:px-4 lg:px-6">
+          <Toolbar className="py-2 sm:py-3">
+            <div className="flex items-center justify-between w-full gap-2 flex-wrap">
+              <ToolbarHeading
+                title={
+                  <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
+                    <a href={jobNameLink} className="hover:underline">
+                      {fab?.job_details?.name || `Job ${fab?.job_id}`}
+                    </a>
+                    <span className="mx-1 text-gray-400">·</span>
+                    <a
+                      href={jobNumberLink}
+                      className="hover:underline text-gray-600"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {fab?.job_details?.job_number || fab?.job_id}
+                    </a>
+                  </div>
+                }
+                description="Fabrication Details"
+              />
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
+                  {statusInfo.text}
+                </span>
+                <BackButton />
+              </div>
+            </div>
+          </Toolbar>
+        </div>
+      </div>
+
+      {/* Main grid: left column (Job Details + Notes) and right column (Review) – unchanged */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6 px-4 sm:px-6 lg:px-8">
         {/* LEFT COLUMN (span 2) */}
         <div className="lg:col-span-2">
           {/* 🔹 JOB DETAILS CARD */}
@@ -223,7 +225,6 @@ export function FabIdDetailsPage() {
               <CardTitle className="text-[#111827] text-2xl font-bold">Job Details</CardTitle>
             </CardHeader>
             <CardContent>
-              {/* Responsive grid: 1 column on smallest, 2 on sm, 3 on lg, 4 on xl */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 text-sm">
                 {jobDetailsFields.map((field, index) => (
                   <div key={index} className={field.fullWidth ? 'col-span-full' : ''}>
@@ -258,6 +259,6 @@ export function FabIdDetailsPage() {
           </Card>
         </div>
       </div>
-    </Container>
+    </div>
   );
 }

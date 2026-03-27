@@ -15,13 +15,9 @@ import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 
 // Helper function to get FAB status display
 const getFabStatusInfo = (statusId: number | undefined) => {
-  if (statusId === 0) {
-    return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
-  } else if (statusId === 1) {
-    return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
-  } else {
-    return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
-  }
+  if (statusId === 0) return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
+  if (statusId === 1) return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
+  return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
 };
 
 export function SalesDetailsPage() {
@@ -29,7 +25,6 @@ export function SalesDetailsPage() {
   const navigate = useNavigate();
   const [activeFile, setActiveFile] = useState<UnifiedFile | null>(null);
 
-  // API returns { success, message, data: FabData } — unwrap either shape
   const { data: response, isLoading, isError, error } = useGetFabByIdQuery(Number(id));
   const fab = (response as any)?.data ?? response;
 
@@ -38,40 +33,6 @@ export function SalesDetailsPage() {
   const jobNumberLink = fab?.job_details?.job_number
     ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fab.job_details.job_number}`
     : '#';
-
-  // Build the fields for the Job Details card (exactly as required)
-  const jobDetailsFields = fab
-    ? [
-        { label: 'Account', value: fab.account_name || '—' },
-        {
-          label: 'Fab ID',
-          value: (
-            <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">
-              FAB-{fab.id}
-            </Link>
-          ),
-        },
-        { label: 'Area', value: fab.input_area || '—' },
-        {
-          label: 'Material',
-          value: fab.stone_type_name
-            ? `${fab.stone_type_name} - ${fab.stone_color_name || ''} - ${fab.stone_thickness_value || ''}`
-            : '—',
-        },
-        {
-          label: 'Fab Type',
-          value: <span className="uppercase">{fab.fab_type || '—'}</span>,
-        },
-        { label: 'Edge', value: fab.edge_name || '—' },
-        { label: 'Total S.F', value: fab.total_sqft?.toString() || '—' },
-        { label: 'Sales Person', value: fab.sales_person_name || '—' },
-        {
-          label: 'Job Notes',
-          value: fab.job_details?.description || 'None',
-          fullWidth: true,
-        },
-      ]
-    : [];
 
   // Build file sources from actual API shape
   const fileSources: FileSource[] = (() => {
@@ -108,9 +69,40 @@ export function SalesDetailsPage() {
 
   const totalFileCount = fileSources.reduce((sum, s) => sum + (s.kind === 'raw' ? s.data.length : 0), 0);
 
-  // Prepare sidebar sections for FAB Notes
+  // Prepare sidebar sections (Job Details + FAB Notes)
   const sidebarSections = fab
     ? [
+        {
+          title: 'Job Details',
+          type: 'details',
+          items: [
+            { label: 'Account', value: fab.account_name || '—' },
+            {
+              label: 'Fab ID',
+              value: (
+                <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">
+                  FAB-{fab.id}
+                </Link>
+              ),
+            },
+            { label: 'Area', value: fab.input_area || '—' },
+            {
+              label: 'Material',
+              value: fab.stone_type_name
+                ? `${fab.stone_type_name} - ${fab.stone_color_name || ''} - ${fab.stone_thickness_value || ''}`
+                : '—',
+            },
+            { label: 'Fab Type', value: <span className="uppercase">{fab.fab_type || '—'}</span> },
+            { label: 'Edge', value: fab.edge_name || '—' },
+            { label: 'Total S.F', value: fab.total_sqft?.toString() || '—' },
+            { label: 'Sales Person', value: fab.sales_person_name || '—' },
+            {
+              label: 'Job Notes',
+              value: fab.job_details?.description || 'None',
+              // Make it full width by custom styling (optional – GraySidebar will render normally)
+            },
+          ],
+        },
         {
           title: 'FAB Notes',
           type: 'notes',
@@ -143,86 +135,44 @@ export function SalesDetailsPage() {
 
   const handleFileClick = (file: UnifiedFile) => setActiveFile(file);
 
-  // Loading state
+  // Loading skeleton (mirror drafter details structure)
   if (isLoading) {
     return (
-      <Container className="border-t">
-        <Toolbar>
-          <div className="flex items-center justify-between w-full">
-            <div>
-              <ToolbarHeading
-                title={<Skeleton className="h-8 w-96" />}
-                description={<Skeleton className="h-4 w-80 mt-1" />}
-              />
-            </div>
-            <Skeleton className="h-6 w-20 rounded-full" />
+      <div className="flex flex-col min-h-screen">
+        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+          <Skeleton className="h-8 w-72 mb-1" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+          <div className="w-full lg:w-[220px] xl:w-[260px] shrink-0 border-r">
+            <Skeleton className="h-full min-h-[300px] w-full" />
           </div>
-        </Toolbar>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6">
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-40" />
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {[...Array(8)].map((_, i) => (
-                    <div key={i}>
-                      <Skeleton className="h-4 w-24 mb-1" />
-                      <Skeleton className="h-5 w-32" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="mt-6">
-              <CardHeader>
-                <Skeleton className="h-6 w-40" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-32 w-full" />
-              </CardContent>
-            </Card>
-            <div className="mt-4">
-              <Skeleton className="h-64 w-full" />
-            </div>
-          </div>
-
-          <div className="border-l">
-            <Card className="border-none py-6">
-              <CardHeader className="border-b pb-4">
-                <Skeleton className="h-6 w-40" />
-                <Skeleton className="h-4 w-64 mt-2" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-              </CardContent>
-            </Card>
+          <div className="flex-1 p-4 sm:p-6 space-y-4">
+            <Skeleton className="h-24 w-full rounded-xl" />
+            <Skeleton className="h-96 w-full rounded-xl" />
           </div>
         </div>
-      </Container>
+      </div>
     );
   }
 
   // Error state
-  if (isError) {
+  if (isError || !fab) {
     return (
-      <Container className="border-t">
-        <Toolbar>
+      <div className="flex flex-col min-h-screen">
+        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
           <ToolbarHeading title="Error loading FAB" description="Could not load sales details" />
-        </Toolbar>
-        <Alert variant="destructive" className="mt-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : 'Failed to load FAB data'}
-          </AlertDescription>
-        </Alert>
-      </Container>
+        </div>
+        <div className="p-6">
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>
+              {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : 'Failed to load FAB data'}
+            </AlertDescription>
+          </Alert>
+        </div>
+      </div>
     );
   }
 
@@ -235,59 +185,65 @@ export function SalesDetailsPage() {
     );
   }
 
-  const statusInfo = getFabStatusInfo(fab?.status_id);
+  const statusInfo = getFabStatusInfo(fab.status_id);
 
-  // Main render
   return (
-    <Container className="border-t">
-      {/* 🔹 TOP TOOLBAR with clickable job name/number + description + status badge */}
-      <Toolbar>
-        <div className="flex items-center justify-between w-full">
-          <ToolbarHeading
-            title={
-              <div className="text-2xl font-bold">
-                <a href={jobNameLink} className="hover:underline">
-                  {fab?.job_details?.name || `Job ${fab?.job_id}`}
-                </a>
-                {' - '}
-                <a href={jobNumberLink} className="hover:underline" target="_blank">
-                  {fab?.job_details?.job_number || fab?.job_id}
-                </a>
-              </div>
-            }
-            description="Fab Details Page"
-          />
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
-            {statusInfo.text}
-          </span>
-        </div>
-      </Toolbar>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6">
-        {/* ── LEFT COLUMN (span 2) ───────────────────────────────────── */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* 🔹 JOB DETAILS CARD */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-[#111827] text-2xl font-bold">Job Details</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 text-sm">
-                {jobDetailsFields.map((field, index) => (
-                  <div key={index} className={field.fullWidth ? 'col-span-full' : ''}>
-                    <p className="text-sm text-text-foreground font-normal uppercase tracking-wide">
-                      {field.label}
-                    </p>
-                    <p className="font-semibold text-text text-base leading-[24px] whitespace-pre-wrap">
-                      {field.value}
-                    </p>
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      {/* Sticky toolbar */}
+      <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+        <div className="px-3 sm:px-4 lg:px-6">
+          <Toolbar className="py-2 sm:py-3">
+            <div className="flex items-center justify-between w-full gap-2 flex-wrap">
+              <ToolbarHeading
+                title={
+                  <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
+                    <a href={jobNameLink} className="hover:underline">
+                      {fab?.job_details?.name || `Job ${fab?.job_id}`}
+                    </a>
+                    <span className="mx-1 text-gray-400">·</span>
+                    <a
+                      href={jobNumberLink}
+                      className="hover:underline text-gray-600"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {fab?.job_details?.job_number || fab?.job_id}
+                    </a>
                   </div>
-                ))}
+                }
+                description="Fab Details"
+              />
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
+                  {statusInfo.text}
+                </span>
+                <BackButton />
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </Toolbar>
+        </div>
+      </div>
 
-          {/* FAB Files */}
+      {/* Main two‑column layout */}
+      <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+        {/* Sticky sidebar (GraySidebar) */}
+        <aside
+          className={[
+            'w-full bg-white border-b',
+            'lg:w-[220px] xl:w-[260px] lg:shrink-0',
+            'lg:sticky lg:top-[50px]',
+            'lg:self-start',
+            'lg:max-h-[calc(100vh-50px)]',
+            'lg:overflow-y-auto',
+            'lg:border-b-0 lg:border-r',
+          ].join(' ')}
+        >
+          <GraySidebar sections={sidebarSections as any} jobId={fab?.job_id} />
+        </aside>
+
+        {/* Main content */}
+        <main className="flex-1 min-w-0 p-3 sm:p-4 lg:p-5 space-y-4">
+          {/* FAB Files Card */}
           <Card>
             <CardHeader>
               <CardHeading className="flex flex-col items-start py-4">
@@ -303,6 +259,16 @@ export function SalesDetailsPage() {
                   Drafting, SlabSmith, and all other files for this fabrication
                 </p>
               </CardHeading>
+              <div className="space-y-4">
+                <Button
+                  onClick={() => navigate(`/sales/edit/${id}`)}
+                  className="w-full flex items-center gap-2"
+                >
+                  <Pencil className="h-4 w-4" />
+                  Edit FAB Details
+                </Button>
+                {/* <BackButton label="Back" className="w-full" /> */}
+              </div>
             </CardHeader>
             <CardContent>
               <FileGallery
@@ -314,32 +280,10 @@ export function SalesDetailsPage() {
             </CardContent>
           </Card>
 
-          {/* 🔹 GRAYSIDEBAR (FAB Notes) */}
-          <GraySidebar sections={sidebarSections as any} className="bg-transparent border-none pl-0" />
-        </div>
-
-        {/* ── RIGHT COLUMN (span 1) ──────────────────────────────────── */}
-        <div className="border-l">
-          <Card className="border-none py-6">
-            <CardHeader className="border-b pb-4 flex-col items-start">
-              <CardTitle className="font-semibold text-text">Actions</CardTitle>
-              <p className="text-sm text-text-foreground">Available actions for this FAB</p>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <Button
-                  onClick={() => navigate(`/sales/edit/${id}`)}
-                  className="w-full flex items-center gap-2"
-                >
-                  <Pencil className="h-4 w-4" />
-                  Edit FAB Details
-                </Button>
-                <BackButton label="Back" className="w-full" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+          {/* Actions Card */}
+         
+        </main>
       </div>
-    </Container>
+    </div>
   );
 }
