@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardHeading, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -25,14 +26,15 @@ import { FileViewer } from '../jobs/roles/drafters/components';
 import { FileGallery, type UnifiedFile } from '@/pages/jobs/components/FileGallery';
 import { WorkPercentageModal } from './components/WorkPercentageModal';
 
-// Helper function for status display
-const getStatusInfo = (statusId: number | undefined) => {
-    if (statusId === 0) return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
-    if (statusId === 1) return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
-    return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
+// Helper for status display
+const getStatusInfo = (statusId: number | undefined, t: any) => {
+    if (statusId === 0) return { className: 'bg-red-100 text-red-800', text: t('JOB.STATUS.ON_HOLD') };
+    if (statusId === 1) return { className: 'bg-green-100 text-green-800', text: t('JOB.STATUS.ACTIVE') };
+    return { className: 'bg-gray-100 text-gray-800', text: t('JOB.STATUS.LOADING') };
 };
 
 export function OperatorTaskDetails() {
+    const { t, translateStage, translateFileType, translateFileLabel } = useTranslation();
     const { jobId } = useParams<{ jobId: string }>();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -117,16 +119,16 @@ export function OperatorTaskDetails() {
                 data: {
                     action: 'start',
                     timestamp: new Date().toISOString(),
-                    note: 'Timer started from operator dashboard'
+                    note: t('OPERATOR.TIMER.START_NOTE', 'Timer started from operator dashboard')
                 }
             }).unwrap();
             setTimerState('running');
             setServerSynced(false);
             await refetchTimer();
-            toast.success('Timer started successfully');
+            toast.success(t('OPERATOR.TIMER.START_SUCCESS', 'Timer started successfully'));
         } catch (error: any) {
             console.error('Failed to start timer:', error);
-            toast.error(error?.data?.message || 'Failed to start timer');
+            toast.error(error?.data?.message || t('OPERATOR.TIMER.START_FAILED', 'Failed to start timer'));
         }
     };
 
@@ -137,7 +139,7 @@ export function OperatorTaskDetails() {
                 data: {
                     action: 'pause',
                     timestamp: new Date().toISOString(),
-                    note: 'Timer paused'
+                    note: t('OPERATOR.TIMER.PAUSE_NOTE', 'Timer paused')
                 }
             }).unwrap();
 
@@ -148,14 +150,14 @@ export function OperatorTaskDetails() {
             setShowWorkPercentageModal(true);
         } catch (error: any) {
             console.error('Failed to pause timer:', error);
-            toast.error(error?.data?.message || 'Failed to pause timer');
+            toast.error(error?.data?.message || t('OPERATOR.TIMER.PAUSE_FAILED', 'Failed to pause timer'));
         }
     };
 
     const handleWorkPercentageSaved = (percentage: number) => {
         setWorkPercentage(percentage);
         setShowWorkPercentageModal(false);
-        toast.success('Timer paused');
+        toast.success(t('OPERATOR.TIMER.PAUSED', 'Timer paused'));
     };
 
     const handleResume = async () => {
@@ -165,16 +167,16 @@ export function OperatorTaskDetails() {
                 data: {
                     action: 'resume',
                     timestamp: new Date().toISOString(),
-                    note: 'Timer resumed'
+                    note: t('OPERATOR.TIMER.RESUME_NOTE', 'Timer resumed')
                 }
             }).unwrap();
             setTimerState('running');
             setServerSynced(false);
             await refetchTimer();
-            toast.success('Timer resumed');
+            toast.success(t('OPERATOR.TIMER.RESUME_SUCCESS', 'Timer resumed'));
         } catch (error: any) {
             console.error('Failed to resume timer:', error);
-            toast.error(error?.data?.message || 'Failed to resume timer');
+            toast.error(error?.data?.message || t('OPERATOR.TIMER.RESUME_FAILED', 'Failed to resume timer'));
         }
     };
 
@@ -185,17 +187,17 @@ export function OperatorTaskDetails() {
                 data: {
                     action: 'stop',
                     timestamp: new Date().toISOString(),
-                    note: `Work submitted - ${data.work_percentage}% complete. ${data.notes || ''}`,
+                    note: `${t('OPERATOR.SUBMIT_WORK_NOTE', 'Work submitted')} - ${data.work_percentage}% ${t('OPERATOR.COMPLETE', 'complete')}. ${data.notes || ''}`,
                 }
             }).unwrap();
             setTimerState('stopped');
             setServerSynced(false);
             await refetchTimer();
-            toast.success('Work submitted successfully!');
+            toast.success(t('OPERATOR.SUBMIT_WORK_SUCCESS', 'Work submitted successfully!'));
             setTimeout(() => navigate('/operator/dashboard'), 2000);
         } catch (error: any) {
             console.error('Failed to submit work:', error);
-            toast.error(error?.data?.message || 'Failed to submit work');
+            toast.error(error?.data?.message || t('OPERATOR.SUBMIT_WORK_FAILED', 'Failed to submit work'));
         }
     };
 
@@ -210,31 +212,31 @@ export function OperatorTaskDetails() {
     const jobNumberLink = jobNumber
         ? `https://alphagraniteaustin.moraware.net/sys/search?search=${jobNumber}`
         : '#';
-    const statusInfo = getStatusInfo(currentTask?.fab_status_id);
+    const statusInfo = getStatusInfo(currentTask?.fab_status_id, t);
 
-    // Task information fields
+    // Task information fields – labels translated
     const taskInfo = [
-        { label: 'Account Name', value: currentTask?.account_name || '—' },
-        { label: 'Job Name', value: currentTask?.job_name || '—' },
+        { label: t('LABEL.ACCOUNT_NAME'), value: currentTask?.account_name || '—' },
+        { label: t('LABEL.JOB_NAME'), value: currentTask?.job_name || '—' },
         {
-            label: 'Fab ID',
+            label: t('JOB.FAB_ID'),
             value: currentTask?.fab_id ? <Link to={`/sales/${currentTask.fab_id}`} className="text-primary hover:underline">FAB-{currentTask.fab_id}</Link> : '—',
         },
-        { label: 'Fab Type', value: <span className="uppercase">{currentTask?.fab_type || '—'}</span> },
-        { label: 'Area', value: currentTask?.area || '—' },
-        { label: 'No. Of Pieces', value: currentTask?.piece_count || currentTask?.no_of_pieces || '—' },
-        { label: 'Total Sq. ft.', value: currentTask?.total_sqft || '—' },
-        { label: 'Stone Type', value: currentTask?.stone_type || '—' },
-        { label: 'Stone Color', value: currentTask?.stone_color || '—' },
-        { label: 'Stone Thickness', value: currentTask?.stone_thickness || '—' },
-        { label: 'Edge', value: currentTask?.edge || '—' },
-        { label: '% Complete', value: workPercentage ? `${workPercentage}%` : (currentTask?.work_percentage ? `${currentTask.work_percentage}%` : '—') },
-        { label: 'Est. Job Comp Date', value: currentTask?.estimated_completion ? format(new Date(currentTask.estimated_completion), 'MMM d') : '—' },
-        { label: 'Workstation', value: currentTask?.workstation_name || '—' },
-        { label: 'Employee', value: currentUser?.first_name ? `${currentUser.first_name} ${currentUser.last_name}`.trim() : currentUser?.email || '—' },
-        { label: 'Run Time', value: formatTimeDisplay(totalTime) },
+        { label: t('JOB.FAB_TYPE'), value: <span className="uppercase">{currentTask?.fab_type || '—'}</span> },
+        { label: t('JOB.AREA'), value: currentTask?.area || '—' },
+        { label: t('LABEL.NO_OF_PIECES'), value: currentTask?.piece_count || currentTask?.no_of_pieces || '—' },
+        { label: t('LABEL.TOTAL_SQ_FT'), value: currentTask?.total_sqft || '—' },
+        { label: t('LABEL.STONE_TYPE'), value: currentTask?.stone_type || '—' },
+        { label: t('LABEL.STONE_COLOR'), value: currentTask?.stone_color || '—' },
+        { label: t('LABEL.STONE_THICKNESS'), value: currentTask?.stone_thickness || '—' },
+        { label: t('LABEL.EDGE'), value: currentTask?.edge || '—' },
+        { label: t('LABEL.PERCENT_COMPLETE'), value: workPercentage ? `${workPercentage}%` : (currentTask?.work_percentage ? `${currentTask.work_percentage}%` : '—') },
+        { label: t('LABEL.EST_JOB_COMP_DATE'), value: currentTask?.estimated_completion ? format(new Date(currentTask.estimated_completion), 'MMM d') : '—' },
+        { label: t('OPERATOR.WORKSTATION'), value: currentTask?.workstation_name || '—' },
+        { label: t('LABEL.EMPLOYEE'), value: currentUser?.first_name ? `${currentUser.first_name} ${currentUser.last_name}`.trim() : currentUser?.email || '—' },
+        { label: t('OPERATOR.RUN_TIME'), value: formatTimeDisplay(totalTime) },
         {
-            label: 'Est. Workstation Comp Date & Time',
+            label: t('OPERATOR.EST_WORKSTATION_COMP'),
             value: currentTask?.est_workstation_comp_date
                 ? format(new Date(currentTask.est_workstation_comp_date), 'MMM d, h:mm a')
                 : (currentTask?.scheduled_end_date ? format(new Date(currentTask.scheduled_end_date), 'MMM d, h:mm a') : '—')
@@ -296,7 +298,7 @@ export function OperatorTaskDetails() {
                                         </a>
                                     </div>
                                 }
-                                description="Operator Task Details"
+                                description={t('OPERATOR.TASK_DETAILS_TITLE')}
                             />
                             <div className="flex items-center gap-2 flex-shrink-0">
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
@@ -337,9 +339,9 @@ export function OperatorTaskDetails() {
                         isRunning={timerState === 'running'}
                         isPaused={timerState === 'paused'}
                         estimatedHours={currentTask?.estimated_hours}
-                        onStart={() => { }} // dummy
-                        onPause={() => { }} // dummy
-                        onResume={() => { }} // dummy
+                        onStart={() => {}}
+                        onPause={() => {}}
+                        onResume={() => {}}
                         onTimeUpdate={setTotalTime}
                         hideControls={true}
                     />
@@ -348,15 +350,15 @@ export function OperatorTaskDetails() {
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <div>
-                                <CardTitle className="text-lg font-semibold">QA Documentation</CardTitle>
-                                <p className="text-sm text-muted-foreground">Uploaded photos and files</p>
+                                <CardTitle className="text-lg font-semibold">{t('QA.DOCUMENTATION')}</CardTitle>
+                                <p className="text-sm text-muted-foreground">{t('QA.DOCUMENTATION_DESCRIPTION')}</p>
                             </div>
                             <Button
                                 onClick={() => setShowUploadDialog(true)}
                                 variant="outline"
                                 size="sm"
                             >
-                                <Camera className="h-4 w-4 mr-2" /> Upload Files
+                                <Camera className="h-4 w-4 mr-2" /> {t('QA.UPLOAD_FILES')}
                             </Button>
                         </CardHeader>
                         <CardContent>
@@ -369,20 +371,19 @@ export function OperatorTaskDetails() {
                                 <FileGallery
                                     sources={[{ kind: 'raw', data: qaFiles }]}
                                     onFileClick={handleFileClick}
-                                    // defaultLayout="grid"
-                                    emptyMessage="No QA files uploaded yet."
+                                    emptyMessage={t('QA.NO_FILES')}
                                 />
                             )}
                         </CardContent>
                     </Card>
                 </div>
 
-                {/* Right column (4 columns) – Timer Controls only */}
+                {/* Right column (4 columns) – Timer Controls */}
                 <div className="lg:col-span-4">
                     <Card className="border-l shadow-sm">
                         <CardHeader className="border-b pb-4">
-                            <CardTitle className="text-lg font-semibold">Timer Controls</CardTitle>
-                            <p className="text-sm text-muted-foreground">Start, pause, or resume your work session</p>
+                            <CardTitle className="text-lg font-semibold">{t('TIMER.CONTROLS')}</CardTitle>
+                            <p className="text-sm text-muted-foreground">{t('TIMER.CONTROLS_DESCRIPTION')}</p>
                         </CardHeader>
                         <CardContent className="space-y-4 pt-6">
                             {/* Start button (idle state) */}
@@ -392,7 +393,7 @@ export function OperatorTaskDetails() {
                                     className="w-full gap-2 bg-[#7a9705] hover:bg-[#6a8505] text-white"
                                     size="lg"
                                 >
-                                    <Play className="h-5 w-5" /> Start Work
+                                    <Play className="h-5 w-5" /> {t('OPERATOR.START_WORK')}
                                 </Button>
                             )}
 
@@ -405,14 +406,14 @@ export function OperatorTaskDetails() {
                                         className="w-full gap-2 border-[#ef4444] text-[#ef4444] hover:bg-red-50"
                                         size="lg"
                                     >
-                                        <Square className="h-5 w-5" /> On Hold
+                                        <Square className="h-5 w-5" /> {t('OPERATOR.ON_HOLD')}
                                     </Button>
                                     <Button
                                         onClick={handlePause}
                                         className="w-full gap-2 bg-[#f5cd4b] hover:bg-[#f0c520] text-black"
                                         size="lg"
                                     >
-                                        <Pause className="h-5 w-5" /> Pause
+                                        <Pause className="h-5 w-5" /> {t('OPERATOR.PAUSE')}
                                     </Button>
                                 </>
                             )}
@@ -424,7 +425,7 @@ export function OperatorTaskDetails() {
                                     className="w-full gap-2 bg-[#7a9705] hover:bg-[#6a8505] text-white"
                                     size="lg"
                                 >
-                                    <Play className="h-5 w-5" /> Resume
+                                    <Play className="h-5 w-5" /> {t('OPERATOR.RESUME')}
                                 </Button>
                             )}
 
@@ -435,20 +436,20 @@ export function OperatorTaskDetails() {
                                     className="w-full gap-2 bg-red-600 hover:bg-red-700 text-white"
                                     size="lg"
                                 >
-                                    <CheckCircle2 className="h-5 w-5" /> Submit and End Session
+                                    <CheckCircle2 className="h-5 w-5" /> {t('OPERATOR.SUBMIT_END_SESSION')}
                                 </Button>
                             )}
                         </CardContent>
                     </Card>
-                    {/* QA Documentation Card (optional, could also be here or left column) */}
+                    {/* Extra QA card (optional) */}
                     <Card className="mt-6">
                         <CardHeader>
-                            <CardTitle className="text-lg font-semibold">QA Documentation</CardTitle>
-                            <p className="text-sm text-muted-foreground">Upload photos and files</p>
+                            <CardTitle className="text-lg font-semibold">{t('QA.DOCUMENTATION')}</CardTitle>
+                            <p className="text-sm text-muted-foreground">{t('QA.DOCUMENTATION_DESCRIPTION')}</p>
                         </CardHeader>
                         <CardContent>
                             <Button onClick={() => setShowUploadDialog(true)} variant="outline" className="w-full">
-                                <Camera className="h-4 w-4 mr-2" /> Upload QA Files
+                                <Camera className="h-4 w-4 mr-2" /> {t('QA.UPLOAD_FILES')}
                             </Button>
                         </CardContent>
                     </Card>
@@ -484,7 +485,7 @@ export function OperatorTaskDetails() {
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
-                            Upload QA Files for FAB-{currentTask?.fab_id || taskId}
+                            {t('UPLOAD.QA.TITLE')} {currentTask?.fab_id ? `FAB-${currentTask.fab_id}` : ''}
                         </DialogTitle>
                     </DialogHeader>
                     <OperatorMediaUpload
@@ -492,7 +493,7 @@ export function OperatorTaskDetails() {
                         onUploadComplete={() => {
                             setShowUploadDialog(false);
                             refetchQaFiles();
-                            toast.success('QA files uploaded successfully');
+                            toast.success(t('UPLOAD.SUCCESS', 'Files uploaded successfully'));
                         }}
                         onClose={() => setShowUploadDialog(false)}
                     />

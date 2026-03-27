@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from '@/hooks/useTranslation';
 import { ChevronLeft, ChevronRight, Clock, MapPin, FileText, Rows3, Columns3 } from 'lucide-react';
 import {
     format,
@@ -19,16 +20,14 @@ import { WorkstationToggle } from './components/WorkstationToggle';
 import { useGetCurrentOperatorTasksQuery, useGetOperatorWorkstationsQuery } from '@/store/api/operator';
 import { useSelector } from 'react-redux';
 
-// ── Layout constants ──────────────────────────────────────────────────────────
+// Layout constants
 const DAY_START_HOUR = 7;
 const DAY_END_HOUR   = 19;
 const TOTAL_HOURS    = DAY_END_HOUR - DAY_START_HOUR;
-
-// X-axis = time  (each hour column)
-const HOUR_WIDTH  = 120; // px per hour on the X axis
-const ROW_HEIGHT  = 80;  // px per day row on the Y axis
-const TIME_LABEL_HEIGHT = 40; // header row showing hour labels
-const DATE_LABEL_WIDTH  = 80; // left column showing date labels
+const HOUR_WIDTH  = 120;
+const ROW_HEIGHT  = 80;
+const TIME_LABEL_HEIGHT = 40;
+const DATE_LABEL_WIDTH  = 80;
 
 const COLOR_CYCLE = [
     { bg: '#d5e7ff', border: '#70a5f8', text: '#2563eb' },
@@ -54,9 +53,8 @@ const setHoursLocal = (date: Date, hours: number) => {
     return d;
 };
 
-// ── Component ─────────────────────────────────────────────────────────────────
-
 export function OperatorDashboard() {
+    const { t } = useTranslation();
     const navigate  = useNavigate();
     const currentUser = useSelector((s: any) => s.user.user);
     const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
@@ -77,7 +75,7 @@ export function OperatorDashboard() {
             { skip: !currentEmployeeId }
         );
 
-    // ── Display days ──────────────────────────────────────────────────────────
+    // Display days
     const displayDays = useMemo(() => {
         if (viewMode === 'day') return [currentDate];
         if (viewMode === 'week') {
@@ -97,7 +95,7 @@ export function OperatorDashboard() {
         return weeks;
     }, [currentDate, viewMode]);
 
-    // ── Events grouped by day ─────────────────────────────────────────────────
+    // Events grouped by day
     const eventsByDay = useMemo(() => {
         const grouped: Record<string, any[]> = {};
         const allDays = viewMode === 'month' ? monthWeeks.flat() : displayDays;
@@ -126,7 +124,7 @@ export function OperatorDashboard() {
         return grouped;
     }, [tasksData, displayDays, monthWeeks, viewMode, selectedWorkstation]);
 
-    // ── Navigation ────────────────────────────────────────────────────────────
+    // Navigation
     const handlePrevious = () => {
         if (viewMode === 'day')   setCurrentDate(addDays(currentDate, -1));
         else if (viewMode === 'week') setCurrentDate(addDays(currentDate, -7));
@@ -139,7 +137,6 @@ export function OperatorDashboard() {
         else setCurrentDate(addMonths(currentDate, 1));
     };
 
-    // ── Event click — pass scheduled_start_date in URL params ─────────────────
     const handleEventClick = useCallback((task: any) => {
         const params = new URLSearchParams();
         if (task.task_id)              params.set('task_id',              String(task.task_id));
@@ -148,8 +145,7 @@ export function OperatorDashboard() {
         navigate(`/operator/task/${task.job_id}?${params.toString()}`);
     }, [navigate]);
 
-    // ── Compute event position on X axis (time) ───────────────────────────────
-    // Each event sits in the row for its day (Y) and is placed by start time (X).
+    // Event positioning for day/week view
     const getEventsWithXPositions = useCallback((events: any[]) => {
         if (!events.length) return [];
 
@@ -157,7 +153,6 @@ export function OperatorDashboard() {
             (a, b) => new Date(a.scheduled_start_date).getTime() - new Date(b.scheduled_start_date).getTime()
         );
 
-        // Overlap detection on the time axis — assign vertical sub-lanes within the row
         const ranges = sorted.map((ev) => {
             const s = new Date(ev.scheduled_start_date).getTime();
             const e = s + (ev.estimated_hours || 1) * 3_600_000;
@@ -177,10 +172,8 @@ export function OperatorDashboard() {
         return sorted.map((ev, i) => {
             const start   = new Date(ev.scheduled_start_date);
             const startH  = start.getHours() + start.getMinutes() / 60;
-            // X = distance from DAY_START_HOUR along time axis
             const left    = Math.max(0, (startH - DAY_START_HOUR) * HOUR_WIDTH);
             const width   = Math.max(HOUR_WIDTH * 0.5, (ev.estimated_hours || 1) * HOUR_WIDTH);
-            // Within a row, overlapping events stack vertically using sub-lanes
             const laneH   = ROW_HEIGHT / maxLane;
             const top     = lanes[i] * laneH;
             const height  = laneH - 4;
@@ -189,10 +182,8 @@ export function OperatorDashboard() {
         });
     }, []);
 
-    // ── Render a single event card ────────────────────────────────────────────
     const renderEventCard = useCallback((event: any) => {
         const { bg, border, text } = getColorForFab(event.fab_id || event.id);
-        // Format time range from scheduled dates
         const startTime = event.scheduled_start_date
             ? format(new Date(event.scheduled_start_date), 'h:mma')
             : null;
@@ -215,7 +206,6 @@ export function OperatorDashboard() {
                 onClick={(e) => { e.stopPropagation(); handleEventClick(event); }}
             >
                 <div className="px-2 py-1 h-full flex flex-col justify-start overflow-hidden gap-0.5">
-                    {/* FAB ID + job name on same line */}
                     <div className="flex items-center gap-1">
                         <p className="text-[12px] font-bold truncate leading-tight shrink-0" style={{ color: text }}>
                             FAB-{event.fab_id}
@@ -227,14 +217,12 @@ export function OperatorDashboard() {
                         )}
                     </div>
 
-                    {/* Account name */}
                     {event._height > 30 && event.account_name && (
                         <p className="text-[10px] truncate leading-tight" style={{ color: text, opacity: 0.7 }}>
                             {event.account_name}
                         </p>
                     )}
 
-                    {/* Workstation + stage */}
                     {event._height > 44 && (
                         <div className="flex items-center gap-1.5">
                             {event.workstation_name && (
@@ -250,7 +238,6 @@ export function OperatorDashboard() {
                         </div>
                     )}
 
-                    {/* Time range */}
                     {event._height > 58 && startTime && (
                         <p className="text-[9px] leading-tight" style={{ color: text, opacity: 0.6 }}>
                             {startTime}{endTime ? ` – ${endTime}` : ''}
@@ -258,7 +245,6 @@ export function OperatorDashboard() {
                         </p>
                     )}
 
-                    {/* Work percentage bar */}
                     {event._height > 68 && event.work_percentage > 0 && (
                         <div className="flex items-center gap-1 mt-0.5">
                             <div className="flex-1 bg-white/50 rounded-full h-1">
@@ -277,7 +263,7 @@ export function OperatorDashboard() {
         );
     }, [handleEventClick]);
 
-    // ── Calendar label ────────────────────────────────────────────────────────
+    // Calendar label
     const calLabel =
         viewMode === 'day'
             ? format(currentDate, 'EEEE, MMMM d, yyyy')
@@ -285,7 +271,13 @@ export function OperatorDashboard() {
                 ? `${format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d')} – ${format(addDays(startOfWeek(currentDate, { weekStartsOn: 1 }), 6), 'MMM d, yyyy')}`
                 : format(currentDate, 'MMMM yyyy');
 
-    // ── Loading ───────────────────────────────────────────────────────────────
+    // Stats
+    const totalTasksCount = Object.values(eventsByDay).reduce((acc, evs) => acc + evs.length, 0);
+    const activeJobsCount = Object.values(eventsByDay).flat().filter((e: any) => e.estimated_hours).length;
+    const workstationCount = selectedWorkstation ? 1 : (workstationsData as any)?.data?.length || 0;
+
+    const gridWidth = DATE_LABEL_WIDTH + TOTAL_HOURS * HOUR_WIDTH;
+
     if (isTasksLoading) {
         return (
             <div className="bg-white min-h-screen">
@@ -303,16 +295,15 @@ export function OperatorDashboard() {
         );
     }
 
-    // ── Total grid width for horizontal scroll ────────────────────────────────
-    const gridWidth = DATE_LABEL_WIDTH + TOTAL_HOURS * HOUR_WIDTH;
-
     return (
         <div className="bg-white min-h-screen">
-            {/* ── Header ───────────────────────────────────────────────────── */}
+            {/* Header */}
             <div className="border-b border-[#dfdfdf]">
                 <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
                     <div className="flex flex-col gap-2">
-                        <p className="text-[28px] leading-[32px] text-black font-semibold">My Schedule</p>
+                        <p className="text-[28px] leading-[32px] text-black font-semibold">
+                            {t('OPERATOR.MY_SCHEDULE')}
+                        </p>
                         <p className="text-[20px] leading-[24px] text-[#4a4d59] font-semibold">{calLabel}</p>
                     </div>
 
@@ -334,7 +325,7 @@ export function OperatorDashboard() {
                             className="h-[44px] px-6 rounded-[8px] text-[14px] font-semibold text-white"
                             style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
                         >
-                            Today
+                            {t('COMMON.TODAY')}
                         </button>
 
                         {/* View toggle */}
@@ -351,7 +342,7 @@ export function OperatorDashboard() {
                                 >
                                     {mode === 'day' && <Columns3 className="w-4 h-4" />}
                                     {mode === 'week' && <Rows3 className="w-4 h-4" />}
-                                    {mode.charAt(0).toUpperCase() + mode.slice(1)}
+                                    {t(`CALENDAR.VIEW.${mode.toUpperCase()}`)}
                                 </button>
                             ))}
                         </div>
@@ -369,20 +360,18 @@ export function OperatorDashboard() {
                     />
                 )}
 
-                {/* ── Calendar grid ─────────────────────────────────────────── */}
+                {/* Calendar grid */}
                 <div className="bg-white border border-[#e2e4ed] rounded-[8px] overflow-auto">
 
-                    {/* ── Day / Week view — Y = dates, X = time ──────────────── */}
+                    {/* Day / Week view */}
                     {(viewMode === 'day' || viewMode === 'week') && (
                         <div style={{ minWidth: gridWidth }}>
                             {/* Time header row */}
                             <div className="flex sticky top-0 z-10 bg-[#f9fafb] border-b border-[#e2e4ed]">
-                                {/* Corner cell */}
                                 <div
                                     className="flex-shrink-0 border-r border-[#e2e4ed]"
                                     style={{ width: DATE_LABEL_WIDTH, height: TIME_LABEL_HEIGHT }}
                                 />
-                                {/* Hour labels along X axis */}
                                 {Array.from({ length: TOTAL_HOURS }, (_, i) => DAY_START_HOUR + i).map((hour) => (
                                     <div
                                         key={hour}
@@ -407,7 +396,6 @@ export function OperatorDashboard() {
                                         className="flex border-b border-[#e2e4ed] last:border-b-0"
                                         style={{ height: ROW_HEIGHT }}
                                     >
-                                        {/* Date label (Y axis) */}
                                         <div
                                             className={`flex-shrink-0 flex flex-col items-center justify-center border-r border-[#e2e4ed] px-2 ${
                                                 isToday ? 'bg-[#f0f4e8]' : 'bg-[#f9fafb]'
@@ -422,12 +410,10 @@ export function OperatorDashboard() {
                                             </span>
                                         </div>
 
-                                        {/* Time cells + events */}
                                         <div
                                             className="relative flex-1"
                                             style={{ height: ROW_HEIGHT }}
                                         >
-                                            {/* Vertical hour grid lines */}
                                             {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
                                                 <div
                                                     key={i}
@@ -435,8 +421,6 @@ export function OperatorDashboard() {
                                                     style={{ left: i * HOUR_WIDTH }}
                                                 />
                                             ))}
-
-                                            {/* Events positioned on X axis by time */}
                                             {eventsWithPositions.map((event: any) => renderEventCard(event))}
                                         </div>
                                     </div>
@@ -445,12 +429,12 @@ export function OperatorDashboard() {
                         </div>
                     )}
 
-                    {/* ── Month view (unchanged grid layout) ─────────────────── */}
+                    {/* Month view */}
                     {viewMode === 'month' && (
                         <div className="grid grid-cols-7 gap-px bg-[#e2e4ed]">
-                            {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
+                            {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day) => (
                                 <div key={day} className="bg-[#f9fafb] py-2 text-center text-[13px] font-semibold text-[#4b545d]">
-                                    {day}
+                                    {t(`CALENDAR.DAYS.${day}`)}
                                 </div>
                             ))}
                             {monthWeeks.map((week, weekIdx) => (
@@ -505,7 +489,7 @@ export function OperatorDashboard() {
                                                     })}
                                                     {events.length > 3 && (
                                                         <div className="text-[10px] text-[#7c8689] pl-2">
-                                                            +{events.length - 3} more
+                                                            {t('COMMON.MORE_COUNT', { count: events.length - 3 })}
                                                         </div>
                                                     )}
                                                 </div>
@@ -518,17 +502,15 @@ export function OperatorDashboard() {
                     )}
                 </div>
 
-                {/* ── Quick stats ───────────────────────────────────────────── */}
+                {/* Quick stats */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6">
                     <div className="flex items-center gap-3 p-4 rounded-[8px] border border-[#e2e4ed] bg-white">
                         <div className="h-10 w-10 rounded-[6px] bg-[#d5e7ff] flex items-center justify-center">
                             <FileText className="w-5 h-5 text-[#2563eb]" />
                         </div>
                         <div>
-                            <p className="text-[13px] text-[#4b545d]">Total Tasks</p>
-                            <p className="text-2xl font-semibold text-black">
-                                {Object.values(eventsByDay).reduce((acc, evs) => acc + evs.length, 0)}
-                            </p>
+                            <p className="text-[13px] text-[#4b545d]">{t('OPERATOR.TOTAL_TASKS')}</p>
+                            <p className="text-2xl font-semibold text-black">{totalTasksCount}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3 p-4 rounded-[8px] border border-[#e2e4ed] bg-white">
@@ -536,10 +518,8 @@ export function OperatorDashboard() {
                             <Clock className="w-5 h-5 text-[#16a34a]" />
                         </div>
                         <div>
-                            <p className="text-[13px] text-[#4b545d]">Active Jobs</p>
-                            <p className="text-2xl font-semibold text-black">
-                                {Object.values(eventsByDay).flat().filter((e: any) => e.estimated_hours).length}
-                            </p>
+                            <p className="text-[13px] text-[#4b545d]">{t('OPERATOR.ACTIVE_JOBS')}</p>
+                            <p className="text-2xl font-semibold text-black">{activeJobsCount}</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-3 p-4 rounded-[8px] border border-[#e2e4ed] bg-white">
@@ -547,10 +527,8 @@ export function OperatorDashboard() {
                             <MapPin className="w-5 h-5 text-[#7c3aed]" />
                         </div>
                         <div>
-                            <p className="text-[13px] text-[#4b545d]">Workstations</p>
-                            <p className="text-2xl font-semibold text-black">
-                                {selectedWorkstation ? 1 : (workstationsData as any)?.data?.length || 0}
-                            </p>
+                            <p className="text-[13px] text-[#4b545d]">{t('OPERATOR.WORKSTATIONS')}</p>
+                            <p className="text-2xl font-semibold text-black">{workstationCount}</p>
                         </div>
                     </div>
                 </div>
