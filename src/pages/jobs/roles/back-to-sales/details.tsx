@@ -1,60 +1,46 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Container } from '@/components/common/container';
-import { Card, CardContent, CardHeader, CardHeading, CardTitle, CardToolbar } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { X, Plus } from 'lucide-react';
+import { toast } from 'sonner';
+
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
-import { FileViewer } from '../drafters/components';
 import { Documents } from '@/pages/shop/components/files';
+import { FileViewer } from '../drafters/components';
 import { RevisionModal } from './components/SubmissionModal';
 import { MarkAsCompleteModal } from './components/MarkAsCompleteModal';
 import { Badge } from '@/components/ui/badge';
+import { SCTTimer } from './components/SCTTimer';
+import { useSCTService } from './components/SCTService';
+import { UniversalUploadModal } from '@/components/universal-upload';
+import { BackButton } from '@/components/common/BackButton';
+import { Can } from '@/components/permission';
+import { Skeleton } from '@/components/ui/skeleton';
+
 import {
     useUpdateSCTReviewMutation,
     useGetSalesCTByFabIdQuery,
     useDeleteFileFromDraftingMutation,
-    useAddFilesToDraftingMutation
+    useAddFilesToDraftingMutation,
+    useGetFabByIdQuery,
 } from '@/store/api/job';
-import { SCTTimer } from './components/SCTTimer';
-import { useSCTService } from './components/SCTService';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { useGetFabByIdQuery } from '@/store/api/job';
-import { toast } from 'sonner';
 import { useAuth } from '@/auth/context/auth-context';
-import { Can } from '@/components/permission';
-import { Skeleton } from '@/components/ui/skeleton';
-import { UniversalUploadModal } from '@/components/universal-upload';
 
-// Helper function to get all fab notes (unfiltered)
-const getAllFabNotes = (fabNotes: any[]) => {
-    return fabNotes || [];
-};
+// Helper functions
+const getAllFabNotes = (fabNotes: any[]) => fabNotes || [];
 
-// Helper function to get FAB status display
 const getFabStatusInfo = (statusId: number | undefined) => {
-    if (statusId === 0) {
-        return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
-    } else if (statusId === 1) {
-        return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
-    } else {
-        return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
-    }
+    if (statusId === 0) return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
+    if (statusId === 1) return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
+    return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
 };
 
-const LoadingSpinner = () => (
-    <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-    </div>
-);
-
-const DraftReviewDetailsPage = () => {
-    console.log(`📄 DraftReviewDetailsPage rendering`);
-
-    type ViewMode = 'activity' | 'file';
+export const DraftReviewDetailsPage = () => {
     const [showSubmissionModal, setShowSubmissionModal] = useState(false);
     const [showMarkAsCompleteModal, setShowMarkAsCompleteModal] = useState(false);
-    const [viewMode, setViewMode] = useState<ViewMode>('activity');
+    const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
     const [activeFile, setActiveFile] = useState<any | null>(null);
     const [showUploadModal, setShowUploadModal] = useState(false);
 
@@ -66,32 +52,19 @@ const DraftReviewDetailsPage = () => {
     const fabId = id ? parseInt(id, 10) : null;
 
     // Fetch FAB data
-    const {
-        data: fabData,
-        isLoading: isFabLoading,
-        isError: isFabError,
-        refetch: refetchFab
-    } = useGetFabByIdQuery(fabId!, {
+    const { data: fabData, isLoading: isFabLoading, isError: isFabError, refetch: refetchFab } = useGetFabByIdQuery(fabId!, {
         skip: !fabId,
-        refetchOnMountOrArgChange: false
+        refetchOnMountOrArgChange: false,
     });
 
     const fabDataLoadedRef = useRef(false);
     useEffect(() => {
-        if (fabData && !isFabLoading) {
-            fabDataLoadedRef.current = true;
-        }
+        if (fabData && !isFabLoading) fabDataLoadedRef.current = true;
     }, [fabData, isFabLoading]);
 
-    // Use SCT service
+    // SCT service
     const shouldSkipSCT = !fabId || isFabLoading || !fabDataLoadedRef.current;
-    const {
-        sctData,
-        handleUpdateSCTReview,
-    } = useSCTService({
-        fabId: fabId!,
-        skip: shouldSkipSCT
-    });
+    const { sctData, handleUpdateSCTReview } = useSCTService({ fabId: fabId!, skip: shouldSkipSCT });
 
     const currentUserName = user
         ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || 'Unknown User'
@@ -100,11 +73,11 @@ const DraftReviewDetailsPage = () => {
     const fabSalesPerson = fabData?.sales_person_name || 'N/A';
     const draftData = (fabData as any)?.draft_data;
 
-    // Delete mutation
+    // Mutations
     const [deleteFileFromDrafting] = useDeleteFileFromDraftingMutation();
     const [addFilesToDrafting] = useAddFilesToDraftingMutation();
 
-    // Check if upload should be disabled (timer not started or paused)
+    // Upload disabled when drafting not completed or SCT already completed
     const draftCompletedDate = draftData?.drafter_end_date;
     const sctCompletedDate = fabData?.sct_completed_date;
     const isUploadDisabled = !draftCompletedDate || !!sctCompletedDate;
@@ -114,20 +87,15 @@ const DraftReviewDetailsPage = () => {
         setViewMode('file');
     };
 
-    // Handle file deletion
     const handleDeleteFile = async (fileId: string) => {
         if (!draftData?.id) {
             toast.error('Drafting ID not available');
             return;
         }
-        
         try {
-            await deleteFileFromDrafting({
-                drafting_id: draftData.id,
-                file_id: fileId,
-            }).unwrap();
+            await deleteFileFromDrafting({ drafting_id: draftData.id, file_id: fileId }).unwrap();
             toast.success('File deleted successfully');
-            refetchFab(); // Refresh FAB data to show updated files
+            refetchFab();
         } catch (error) {
             console.error('Failed to delete file:', error);
             toast.error('Failed to delete file');
@@ -136,7 +104,7 @@ const DraftReviewDetailsPage = () => {
 
     const handleSubmitDraft = useCallback((submissionData: any) => {
         setShowSubmissionModal(false);
-        // Handle submission logic
+        // Submission logic handled by modal
     }, []);
 
     const slabSmithNeeded = fabData?.slab_smith_ag_needed;
@@ -151,7 +119,7 @@ const DraftReviewDetailsPage = () => {
                 slab_smith_used: isSlabSmithActivityComplete,
                 notes: data.notes || "",
                 slab_smith_approved: data.slabSmithApproved,
-                block_drawing_approved: data.blockDrawingApproved
+                block_drawing_approved: data.blockDrawingApproved,
             });
             setShowMarkAsCompleteModal(false);
             navigate('/job/draft-review');
@@ -160,39 +128,30 @@ const DraftReviewDetailsPage = () => {
         }
     }, [fabId, handleUpdateSCTReview, navigate]);
 
-    // Prepare clickable links
+    // Prepare links
     const jobNameLink = fabData?.job_details?.id ? `/job/details/${fabData.job_details.id}` : '#';
     const jobNumberLink = fabData?.job_details?.job_number
         ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fabData.job_details.job_number}`
         : '#';
 
-    // Loading state with skeletons (optional; keep original spinner if preferred)
+    // Loading skeleton (mirror draft details)
     if (isFabLoading) {
         return (
-            <Container className='lg:mx-0 max-w-full'>
-                <Toolbar className=''>
-                    <div className="flex items-center justify-between w-full">
-                        <div>
-                            <ToolbarHeading
-                                title={<Skeleton className="h-8 w-96" />}
-                                description={<Skeleton className="h-4 w-80 mt-1" />}
-                            />
-                        </div>
-                        <Skeleton className="h-6 w-20 rounded-full" />
+            <div className="flex flex-col min-h-screen">
+                <div className="sticky top-0 z-20 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+                    <Skeleton className="h-8 w-72 mb-1" />
+                    <Skeleton className="h-4 w-48" />
+                </div>
+                <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+                    <div className="w-full lg:w-[220px] xl:w-[260px] shrink-0 border-r">
+                        <Skeleton className="h-full min-h-[300px] w-full" />
                     </div>
-                </Toolbar>
-                <div className="border-t grid grid-cols-1 lg:grid-cols-12 gap-3 items-start h-[calc(100vh-120px)] overflow-y-auto">
-                    <div className="lg:col-span-3 w-full lg:w-[250px] xl:w-[300px] ultra:w-[400px] sticky top-0 self-start">
-                        <Skeleton className="h-64 w-full" />
-                    </div>
-                    <div className="lg:col-span-9">
-                        <Card className='my-4'>
-                            <CardHeader><Skeleton className="h-6 w-48" /></CardHeader>
-                            <CardContent><Skeleton className="h-96 w-full" /></CardContent>
-                        </Card>
+                    <div className="flex-1 p-4 sm:p-6 space-y-4">
+                        <Skeleton className="h-24 w-full rounded-xl" />
+                        <Skeleton className="h-96 w-full rounded-xl" />
                     </div>
                 </div>
-            </Container>
+            </div>
         );
     }
 
@@ -202,7 +161,7 @@ const DraftReviewDetailsPage = () => {
 
     const statusInfo = getFabStatusInfo(fabData?.status_id);
 
-    // Sidebar sections – Job Details with long format fields
+    // Sidebar sections
     const sidebarSections = [
         {
             title: "Job Details",
@@ -281,48 +240,71 @@ const DraftReviewDetailsPage = () => {
     ];
 
     return (
-        <>
-            {/* Top toolbar with clickable job name/number and status badge */}
-            <Container className='lg:mx-0 max-w-full'>
-                <Toolbar className=''>
-                    <div className="flex items-center justify-between w-full">
-                        <ToolbarHeading
-                            title={
-                                <div className="text-2xl font-bold">
-                                    <a href={jobNameLink} className="hover:underline">
-                                        {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
-                                    </a>
-                                    {' - '}
-                                    <a href={jobNumberLink} className="hover:underline" target="_blank">
-                                        {fabData?.job_details?.job_number || fabData?.job_id}
-                                    </a>
-                                </div>
-                            }
-                        />
-                        <div className="flex items-center gap-2">
-                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
-                                {statusInfo.text}
-                            </span>
+        <div className="flex flex-col min-h-screen bg-gray-50">
+            {/* Sticky toolbar */}
+            <div className="sticky top-0 z-20 bg-white border-b shadow-sm">
+                <div className="px-3 sm:px-4 lg:px-6">
+                    <Toolbar className="py-2 sm:py-3">
+                        <div className="flex items-center justify-between w-full gap-2 flex-wrap">
+                            <ToolbarHeading
+                                title={
+                                    <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
+                                        <a href={jobNameLink} className="hover:underline">
+                                            {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
+                                        </a>
+                                        <span className="mx-1 text-gray-400">·</span>
+                                        <a
+                                            href={jobNumberLink}
+                                            className="hover:underline text-gray-600"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
+                                            {fabData?.job_details?.job_number || fabData?.job_id}
+                                        </a>
+                                    </div>
+                                }
+                                description="SCT Review Details"
+                            />
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
+                                    {statusInfo.text}
+                                </span>
+                                <BackButton />
+                            </div>
                         </div>
-                    </div>
-                </Toolbar>
-            </Container>
-
-            {/* Main area with sticky sidebar and scrollable content */}
-            <div className="border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0 items-start h-[calc(100vh-120px)] overflow-y-auto">
-                {/* Sticky sidebar */}
-                <div className="lg:col-span-3 w-full lg:w-[250px] xl:w-[300px] ultra:w-[400px] sticky top-0 self-start">
-                    <GraySidebar
-                        sections={sidebarSections as any}
-                        jobId={fabData?.job_id}
-                    />
+                    </Toolbar>
                 </div>
+            </div>
 
-                {/* Scrollable main content */}
-                <Container className="lg:col-span-9">
+            {/* Main two‑column layout */}
+            <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+                {/* Sticky sidebar */}
+                <aside
+                    className={[
+                        'w-full bg-white border-b',
+                        'lg:w-[220px] xl:w-[260px] lg:shrink-0',
+                        'lg:sticky lg:top-[50px]',
+                        'lg:self-start',
+                        'lg:max-h-[calc(100vh-50px)]',
+                        'lg:overflow-y-auto',
+                        'lg:border-b-0 lg:border-r',
+                    ].join(' ')}
+                >
+                    <GraySidebar sections={sidebarSections as any} jobId={fabData?.job_id} />
+                </aside>
+
+                {/* Main content */}
+                <main className="flex-1 min-w-0 p-3 sm:p-4 lg:p-5 space-y-4">
                     {viewMode === 'file' && activeFile ? (
-                        <div>
-                            <div className="flex justify-end">
+                        // File viewer
+                        <div className="bg-white rounded-xl border overflow-hidden">
+                            <div className="flex justify-between items-center p-4 bg-gray-50 border-b">
+                                <div>
+                                    <h3 className="font-semibold text-sm">{activeFile.name}</h3>
+                                    <p className="text-xs text-gray-500">
+                                        {activeFile.size ? `${Math.round(activeFile.size / 1024)} KB` : 'Unknown size'} · {activeFile.stage_name}
+                                    </p>
+                                </div>
                                 <Button
                                     variant="inverse"
                                     size="sm"
@@ -331,7 +313,7 @@ const DraftReviewDetailsPage = () => {
                                         setActiveFile(null);
                                     }}
                                 >
-                                    <X className="w-6 h-6" />
+                                    <X className="w-5 h-5" />
                                 </Button>
                             </div>
                             <FileViewer
@@ -343,16 +325,17 @@ const DraftReviewDetailsPage = () => {
                             />
                         </div>
                     ) : (
+                        // Activity mode
                         <>
-                            <Card className='my-4'>
-                                <CardHeader>
-                                    <CardHeading className='flex flex-col items-start py-4'>
-                                        <CardTitle>SCT activity</CardTitle>
-                                        <p className="text-sm text-[#4B5563]">
+                            <Card>
+                                <CardHeader className="py-3 px-4 sm:px-5">
+                                    <CardTitle className="text-sm sm:text-base">SCT activity
+                                        <p className="text-xs text-gray-500 mt-0.5">
                                             Review drafting work and mark as complete or create revision
                                         </p>
-                                    </CardHeading>
-                                    <CardToolbar className="flex items-center gap-2">
+                                    </CardTitle>
+
+                                    <div className="flex items-center gap-2 flex-wrap">
                                         {slabSmithNeeded && (
                                             <Badge variant={isSlabSmithActivityComplete ? "success" : "destructive"}>
                                                 {isSlabSmithActivityComplete ? "Slab Smith Complete" : "Slab Smith Incomplete"}
@@ -371,74 +354,75 @@ const DraftReviewDetailsPage = () => {
                                                 Create Revision
                                             </Button>
                                         </Can>
-                                    </CardToolbar>
+                                    </div>
                                 </CardHeader>
                             </Card>
 
                             <Card>
-                                <CardHeader className='py-5 border-b'>
+                                <CardContent className="p-3 sm:p-4 lg:p-5 space-y-5">
                                     <SCTTimer
                                         startTime={draftData?.drafter_end_date || null}
                                         endTime={fabData?.sct_completed_date || null}
                                     />
-                                </CardHeader>
-                                <CardContent className="">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <h2 className='font-semibold text-sm'>Uploaded files</h2>
-                                        <Can action="create" on="Drafting">
-                                            <Button
-                                                variant="dashed"
-                                                size="sm"
-                                                onClick={() => setShowUploadModal(true)}
-                                                disabled={isUploadDisabled}
-                                                className="flex items-center gap-2"
-                                            >
-                                                <Plus className="w-4 h-4" />
-                                                Add Files
-                                            </Button>
-                                        </Can>
+
+                                    {/* File section */}
+                                    <div>
+                                        <div className="flex items-center justify-between mb-3">
+                                            <h3 className="font-semibold text-sm">Uploaded files</h3>
+                                            <Can action="create" on="Drafting">
+                                                <Button
+                                                    variant="dashed"
+                                                    size="sm"
+                                                    onClick={() => setShowUploadModal(true)}
+                                                    disabled={isUploadDisabled}
+                                                    className="flex items-center gap-1.5 text-xs"
+                                                >
+                                                    <Plus className="w-3.5 h-3.5" />
+                                                    Add Files
+                                                </Button>
+                                            </Can>
+                                        </div>
+
+                                        <Documents
+                                            onFileClick={handleFileClick}
+                                            draftingData={draftData}
+                                            slabsmithData={(fabData as any)?.slabsmith_data}
+                                            onDeleteFile={handleDeleteFile}
+                                            draftingId={draftData?.id}
+                                            showDeleteButton={!isUploadDisabled}
+                                        />
                                     </div>
-                                    <Documents
-                                        onFileClick={handleFileClick}
-                                        draftingData={draftData}
-                                        slabsmithData={(fabData as any)?.slabsmith_data}
-                                        onDeleteFile={handleDeleteFile}
-                                        draftingId={draftData?.id}
-                                        showDeleteButton={!isUploadDisabled}
-                                    />
                                 </CardContent>
                             </Card>
                         </>
                     )}
-                </Container>
+                </main>
             </div>
 
             {/* Upload Modal */}
             <UniversalUploadModal
-              open={showUploadModal}
-              onOpenChange={setShowUploadModal}
-              title="Upload SCT Files"
-              entityId={draftData?.id}
-              uploadMutation={addFilesToDrafting}
-              stages={[
-                  { value: 'sales_ct', label: 'Sales CT' },
-              ]}
-              fileTypes={[
-                  { value: 'block_drawing', label: 'Block Drawing' },
-                  { value: 'layout', label: 'Layout' },
-                  { value: 'ss_layout', label: 'SS Layout' },
-                  { value: 'shop_drawing', label: 'Shop Drawing' },
-                  { value: 'photo_media', label: 'Photo/Media' },
-              ]}
-              additionalParams={{
-                  drafting_id: draftData?.id,
-                  stage_name: 'sales_ct',
-              }}
-              onUploadComplete={() => {
-                  toast.success('Files uploaded successfully');
-                  refetchFab(); // Refresh FAB data to show new files
-                  setShowUploadModal(false);
-              }}
+                open={showUploadModal}
+                onOpenChange={setShowUploadModal}
+                title="Upload SCT Files"
+                entityId={draftData?.id}
+                uploadMutation={addFilesToDrafting}
+                stages={[{ value: 'sales_ct', label: 'Sales CT' }]}
+                fileTypes={[
+                    { value: 'block_drawing', label: 'Block Drawing' },
+                    { value: 'layout', label: 'Layout' },
+                    { value: 'ss_layout', label: 'SS Layout' },
+                    { value: 'shop_drawing', label: 'Shop Drawing' },
+                    { value: 'photo_media', label: 'Photo/Media' },
+                ]}
+                additionalParams={{
+                    drafting_id: draftData?.id,
+                    stage_name: 'sales_ct',
+                }}
+                onUploadComplete={() => {
+                    toast.success('Files uploaded successfully');
+                    refetchFab();
+                    setShowUploadModal(false);
+                }}
             />
 
             {/* Modals */}
@@ -465,8 +449,6 @@ const DraftReviewDetailsPage = () => {
                 isSlabSmithActivityComplete={isSlabSmithActivityComplete}
                 fabId={fabData.id}
             />
-        </>
+        </div>
     );
 };
-
-export { DraftReviewDetailsPage };

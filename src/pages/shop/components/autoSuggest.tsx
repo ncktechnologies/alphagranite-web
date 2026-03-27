@@ -24,18 +24,19 @@ import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetFabsQuery } from '@/store/api/job';
 import { usePlanSections } from '@/hooks/usePlanningSection';
 
-
-// Field-to-keyword mapping — only field names and search keywords are coupled here,
-// never raw IDs. IDs are resolved at runtime from the API via usePlanSections.
+// ── Field-to-keyword mapping ──────────────────────────────────────────────────
 const FAB_STAGE_FIELDS: { keyword: string; field: string; label: string }[] = [
-  { keyword: 'cut', field: 'total_sqft', label: 'Cut' },
-  { keyword: 'wj', field: 'wj_linft', label: 'WJ' },
-  { keyword: 'edg', field: 'edging_linft', label: 'Edging' },
-  { keyword: 'mit', field: 'miter_linft', label: 'Miter' },
-  { keyword: 'cnc', field: 'cnc_linft', label: 'CNC' },
+  { keyword: 'cut', field: 'total_sqft',    label: 'Cut'    },
+  { keyword: 'wj',  field: 'wj_linft',      label: 'WJ'     },
+  { keyword: 'edg', field: 'edging_linft',  label: 'Edging' },
+  { keyword: 'mit', field: 'miter_linft',   label: 'Miter'  },
+  { keyword: 'cnc', field: 'cnc_linft',     label: 'CNC'    },
 ];
 
-// ── Entry type ────────────────────────────────────────────────────────────
+// ── Touchup keyword — identifies the "touchup" planning section ───────────────
+const TOUCHUP_KEYWORD = 'touch';
+
+// ── Entry type ────────────────────────────────────────────────────────────────
 interface AutoPlanEntry {
   id?: number;
   fab_id: string;
@@ -49,18 +50,19 @@ interface AutoPlanEntry {
   stageName: string;
   date?: Date;
   sequence: string;
+  isTouchup?: boolean; // ← flag to pin this entry last
 }
 
-// ── AutoPlanEntryCard ─────────────────────────────────────────────────────
+// ── AutoPlanEntryCard ─────────────────────────────────────────────────────────
 interface AutoPlanEntryCardProps {
   entry: AutoPlanEntry;
-  idx: number;
-  total: number;
+  idx: number;           // visual position (0-based)
+  totalNonTouchup: number;
   employees: any[];
   planningSections: any[];
   proposals: any[];
   isExpanded: boolean;
-  sequenceOptions: number[]; // ← dynamic, passed from parent
+  sequenceOptions: number[];
   onToggleExpand: () => void;
   onUpdate: (patch: Partial<AutoPlanEntry>) => void;
   onRemove: () => void;
@@ -68,18 +70,21 @@ interface AutoPlanEntryCardProps {
 }
 
 const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
-  entry, idx, total, employees, planningSections, proposals,
+  entry, idx, totalNonTouchup, employees, planningSections, proposals,
   isExpanded, sequenceOptions, onToggleExpand, onUpdate, onRemove, onApplyProposal,
 }) => {
-  const { data: workstationData, isLoading: isLoadingWorkstations } = useGetWorkStationByPlanningSectionsQuery(
-    entry.planning_section_id ? Number(entry.planning_section_id) : 0,
-    { skip: !entry.planning_section_id }
-  );
-  const workstationsForSection: any[] = workstationData?.workstations || (Array.isArray(workstationData) ? workstationData : []);
+  const { data: workstationData, isLoading: isLoadingWorkstations } =
+    useGetWorkStationByPlanningSectionsQuery(
+      entry.planning_section_id ? Number(entry.planning_section_id) : 0,
+      { skip: !entry.planning_section_id }
+    );
+
+  const workstationsForSection: any[] =
+    workstationData?.workstations || (Array.isArray(workstationData) ? workstationData : []);
 
   const selectedWorkstation = workstationsForSection.find(w => String(w.id) === entry.workstation_id);
-  const allowedOperatorIds = selectedWorkstation?.operator_ids?.map(String) || [];
-  const filteredEmployees = allowedOperatorIds.length > 0
+  const allowedOperatorIds  = selectedWorkstation?.operator_ids?.map(String) || [];
+  const filteredEmployees   = allowedOperatorIds.length > 0
     ? employees.filter(emp => allowedOperatorIds.includes(String(emp.id)))
     : [];
 
@@ -99,69 +104,90 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
   };
 
   const stageName = getStageName();
-  const hasSlot = !!(entry.date && entry.start_time && entry.end_time);
+  const hasSlot   = !!(entry.date && entry.start_time && entry.end_time);
 
   return (
     <Card className="border border-[#ecedf0] rounded-[12px] overflow-hidden">
-      {/* Header */}
+      {/* ── Card header ─────────────────────────────────────────────────────── */}
       <CardHeader
         className="pb-3 border-b border-[#ecedf0] cursor-pointer select-none"
         onClick={onToggleExpand}
       >
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
+          {/* Left: chevron + title + badge + collapsed time */}
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <ChevronDown
-              className={cn('h-4 w-4 text-[#7c8689] transition-transform shrink-0', !isExpanded && '-rotate-90')}
+              className={cn(
+                'h-5 w-5 text-[#7c8689] transition-transform shrink-0',
+                !isExpanded && '-rotate-90'
+              )}
             />
             <CardTitle className="text-[15px] text-[#4b545d] font-semibold truncate">
               {stageName || `Plan Section ${idx + 1}`}
             </CardTitle>
             {stageName && (
-              <span className="px-2 py-0.5 rounded-full bg-[#f0f4e8] border border-[#9cc15e] text-[#5a7a00] text-xs font-semibold shrink-0">
+              <span className={cn(
+                'px-2 py-0.5 rounded-full text-xs font-semibold shrink-0 border',
+                entry.isTouchup
+                  ? 'bg-orange-50 border-orange-300 text-orange-700'
+                  : 'bg-[#f0f4e8] border-[#9cc15e] text-[#5a7a00]'
+              )}>
                 {stageName}
               </span>
             )}
             {!isExpanded && hasSlot && (
-              <span className="text-xs text-[#7c8689] shrink-0">
+              <span className="text-xs text-[#7c8689] shrink-0 ml-1">
                 {format(entry.date!, 'MMM d')} · {format(new Date(`1970-01-01T${entry.start_time}`), 'hh:mm a')}–{format(new Date(`1970-01-01T${entry.end_time}`), 'hh:mm a')}
               </span>
             )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
-            {/* Sequence — always visible, uses dynamic options (min 3) */}
-            <Select value={entry.sequence} onValueChange={value => onUpdate({ sequence: value })}>
-              <SelectTrigger className="h-7 w-auto text-xs border-[#e2e4ed] rounded-[4px]">
-                <SelectValue placeholder="Seq" />
-              </SelectTrigger>
-              <SelectContent>
-                {sequenceOptions.map(num => (
-                  <SelectItem key={num} value={String(num)}>Seq: {num}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Remove — only shown when more than one stage */}
-            {total > 1 && (
-              <button
-                type="button"
-                onClick={onRemove}
-                className="h-7 w-7 rounded-[6px] border border-[#e2e4ed] flex items-center justify-center hover:bg-red-50 transition-colors"
-              >
-                <X className="h-4 w-4 text-red-500" />
-              </button>
+          {/* ── Right: sequence + remove ────────────────────────────────────── */}
+          {/*
+            Sequence is optional for touchup — show a placeholder that accepts no value.
+            For regular stages, show the dropdown with numeric options.
+          */}
+          <div
+            className="flex items-center gap-2 shrink-0"
+            onClick={e => e.stopPropagation()}
+          >
+            {!entry.isTouchup ? (
+              <Select value={entry.sequence} onValueChange={value => onUpdate({ sequence: value })}>
+                <SelectTrigger className="h-7 w-[90px] text-[13px] border-[#e2e4ed] rounded-[4px]">
+                  <SelectValue placeholder="Seq" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sequenceOptions.map(num => (
+                    <SelectItem key={num} value={String(num)}>Seq: {num}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              /* Touchup has no sequence requirement — show a muted label instead */
+              <span className="text-[12px] text-[#b0b7bc] px-2 py-1 rounded border border-dashed border-[#e2e4ed]">
+                Last
+              </span>
             )}
+
+            {/* Remove button — always shown (touchup can be removed too) */}
+            <button
+              type="button"
+              onClick={onRemove}
+              className="h-7 w-7 rounded-[6px] border border-[#e2e4ed] flex items-center justify-center hover:bg-red-50 transition-colors"
+            >
+              <X className="h-4 w-4 text-red-500" />
+            </button>
           </div>
         </div>
       </CardHeader>
 
-      {/* Body */}
+      {/* ── Card body ───────────────────────────────────────────────────────── */}
       {isExpanded && (
         <CardContent className="pt-5 space-y-5">
-          {/* Planning Section + Est. Hours */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Planning Section + Est. Hours — 3 cells wide */}
+          <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label className="text-[13px] text-[#4b545d] font-semibold">Shop Activity</Label>
+              <Label className="text-[14px] text-[#4b545d] font-semibold">Shop Activity</Label>
               <Select
                 value={entry.planning_section_id}
                 onValueChange={value => {
@@ -170,7 +196,7 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
                   onUpdate({ planning_section_id: value, stageName: name, workstation_id: '', operator_id: '' });
                 }}
               >
-                <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                <SelectTrigger className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[14px]">
                   <SelectValue placeholder="Select section" />
                 </SelectTrigger>
                 <SelectContent>
@@ -182,8 +208,9 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
                 </SelectContent>
               </Select>
             </div>
+
             <div>
-              <Label className="text-[13px] text-[#4b545d] font-semibold">Est. Hours *</Label>
+              <Label className="text-[14px] text-[#4b545d] font-semibold">Est. Hours *</Label>
               <Input
                 type="number"
                 min="0.5"
@@ -191,87 +218,86 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
                 placeholder="e.g. 2.5"
                 value={entry.estimated_hours}
                 onChange={e => onUpdate({ estimated_hours: e.target.value })}
-                className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]"
+                className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[14px]"
               />
+            </div>
+
+            {/* Workstation occupies the 3rd cell in this row */}
+            <div>
+              <Label className="text-[14px] text-[#4b545d] font-semibold">Workstation *</Label>
+              <Select
+                value={entry.workstation_id}
+                onValueChange={value => onUpdate({ workstation_id: value, operator_id: '' })}
+                disabled={!entry.planning_section_id || isLoadingWorkstations}
+              >
+                <SelectTrigger className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[14px]">
+                  <SelectValue
+                    placeholder={
+                      isLoadingWorkstations       ? 'Loading…' :
+                      !entry.planning_section_id  ? 'Select a section first' :
+                      workstationsForSection.length === 0 ? 'None for this section' :
+                      'Select workstation'
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {workstationsForSection.map((ws: any) => (
+                    <SelectItem key={ws.id} value={String(ws.id)}>{ws.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          {/* Workstation */}
-          <div>
-            <Label className="text-[13px] text-[#4b545d] font-semibold">Workstation *</Label>
-            <Select
-              value={entry.workstation_id}
-              onValueChange={value => onUpdate({ workstation_id: value, operator_id: '' })}
-              disabled={!entry.planning_section_id || isLoadingWorkstations}
-            >
-              <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
-                <SelectValue
-                  placeholder={
-                    isLoadingWorkstations ? 'Loading workstations…' :
-                      !entry.planning_section_id ? 'Select a section first' :
-                        workstationsForSection.length === 0 ? 'No workstations for this section' :
-                          'Select workstation'
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {workstationsForSection.map((ws: any) => (
-                  <SelectItem key={ws.id} value={String(ws.id)}>{ws.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Operator */}
-          <div>
-            <Label className="text-[13px] text-[#4b545d] font-semibold">Operator *</Label>
-            <Select
-              value={entry.operator_id}
-              onValueChange={value => onUpdate({ operator_id: value })}
-              disabled={!entry.workstation_id}
-            >
-              <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
-                <SelectValue
-                  placeholder={
-                    !entry.workstation_id ? 'Select a workstation first' :
-                      filteredEmployees.length === 0 ? 'No operators assigned to this workstation' :
-                        'Select operator'
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {filteredEmployees.length === 0 ? (
-                  <div className="px-3 py-2 text-sm text-muted-foreground">
-                    No operators assigned to this workstation
-                  </div>
-                ) : (
-                  filteredEmployees.map((emp: any) => (
-                    <SelectItem key={emp.id} value={String(emp.id)}>
-                      {`${emp.first_name || emp.name || ''} ${emp.last_name || ''}`.trim() || emp.email}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Date + Time */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Operator + Date + Time — 3 cells */}
+          <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label className="text-[13px] text-[#4b545d] font-semibold">Date</Label>
+              <Label className="text-[14px] text-[#4b545d] font-semibold">Operator *</Label>
+              <Select
+                value={entry.operator_id}
+                onValueChange={value => onUpdate({ operator_id: value })}
+                disabled={!entry.workstation_id}
+              >
+                <SelectTrigger className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[14px]">
+                  <SelectValue
+                    placeholder={
+                      !entry.workstation_id           ? 'Select workstation first' :
+                      filteredEmployees.length === 0  ? 'No operators assigned'    :
+                      'Select operator'
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredEmployees.length === 0 ? (
+                    <div className="px-3 py-2 text-sm text-muted-foreground">
+                      No operators assigned to this workstation
+                    </div>
+                  ) : (
+                    filteredEmployees.map((emp: any) => (
+                      <SelectItem key={emp.id} value={String(emp.id)}>
+                        {`${emp.first_name || emp.name || ''} ${emp.last_name || ''}`.trim() || emp.email}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-[14px] text-[#4b545d] font-semibold">Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <button
                     type="button"
                     className={cn(
-                      'mt-2 w-full h-[42px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[13px] flex items-center gap-2',
+                      'mt-2 w-full h-[44px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[14px] flex items-center gap-2',
                       !entry.date && 'text-muted-foreground'
                     )}
                   >
                     <Calendar className="h-4 w-4 text-[#7a9705]" />
                     {entry.date
                       ? format(entry.date, 'MMM d, yyyy')
-                      : <span className="text-[#b0b7bc]">Auto-filled by schedule</span>}
+                      : <span className="text-[#b0b7bc]">Auto-filled</span>}
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -280,22 +306,22 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
                     selected={entry.date}
                     onSelect={date => date && onUpdate({ date })}
                     initialFocus
-                    disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-
+                    disabled={date => date < new Date(new Date().setHours(0, 0, 0, 0))}
                   />
                 </PopoverContent>
               </Popover>
             </div>
+
             <div>
-              <Label className="text-[13px] text-[#4b545d] font-semibold">Scheduled Time</Label>
+              <Label className="text-[14px] text-[#4b545d] font-semibold">Scheduled Time</Label>
               {entry.start_time && entry.end_time ? (
-                <div className="mt-2 h-[42px] flex items-center gap-2 px-3 rounded-[6px] bg-[#f0f4e8] border border-[#9cc15e]">
-                  <span className="text-sm font-semibold text-[#5a7a00]">
+                <div className="mt-2 h-[44px] flex items-center gap-2 px-3 rounded-[6px] bg-[#f0f4e8] border border-[#9cc15e]">
+                  <span className="text-[14px] font-semibold text-[#5a7a00]">
                     {format(new Date(`1970-01-01T${entry.start_time}`), 'hh:mm a')} – {format(new Date(`1970-01-01T${entry.end_time}`), 'hh:mm a')}
                   </span>
                 </div>
               ) : (
-                <div className="mt-2 h-[42px] flex items-center px-3 rounded-[6px] border border-dashed border-[#e2e4ed] text-[13px] text-[#b0b7bc]">
+                <div className="mt-2 h-[44px] flex items-center px-3 rounded-[6px] border border-dashed border-[#e2e4ed] text-[14px] text-[#b0b7bc]">
                   Auto-filled by schedule
                 </div>
               )}
@@ -305,13 +331,13 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
           {/* Proposals */}
           {proposals.length > 0 && (
             <div>
-              <Label className="text-[12px] text-[#7c8689] mb-2 block">
-                Available slots — click to apply a different slot
+              <Label className="text-[13px] text-[#7c8689] mb-2 block">
+                Available slots — click to apply
               </Label>
               <div className="flex flex-wrap gap-2">
                 {proposals.map((proposal: any, pIdx: number) => {
                   const start = new Date(proposal.start || proposal.scheduled_start);
-                  const end = new Date(proposal.end || proposal.scheduled_end);
+                  const end   = new Date(proposal.end   || proposal.scheduled_end);
                   const isActive =
                     entry.start_time === format(start, 'HH:mm') &&
                     entry.date && format(entry.date, 'yyyy-MM-dd') === format(start, 'yyyy-MM-dd');
@@ -321,7 +347,7 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
                       type="button"
                       onClick={() => onApplyProposal(proposal)}
                       className={cn(
-                        'px-3 py-1.5 rounded-[6px] border text-xs font-medium transition-colors',
+                        'px-3 py-1.5 rounded-[6px] border text-[13px] font-medium transition-colors',
                         isActive
                           ? 'bg-[#f0f4e8] border-[#9cc15e] text-[#5a7a00]'
                           : 'bg-white border-[#e2e4ed] text-[#4b545d] hover:border-[#9cc15e] hover:bg-[#f0f4e8]'
@@ -335,14 +361,14 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
             </div>
           )}
 
-          {/* Notes */}
+          {/* Notes — full width */}
           <div>
-            <Label className="text-[13px] text-[#4b545d] font-semibold">Description / Notes</Label>
+            <Label className="text-[14px] text-[#4b545d] font-semibold">Description / Notes</Label>
             <Textarea
               placeholder="Add any notes about this plan..."
               value={entry.notes}
               onChange={e => onUpdate({ notes: e.target.value })}
-              className="mt-2 min-h-[80px] border-[#e2e4ed] rounded-[6px] text-[13px]"
+              className="mt-2 min-h-[80px] border-[#e2e4ed] rounded-[6px] text-[14px]"
             />
           </div>
         </CardContent>
@@ -351,7 +377,7 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
   );
 };
 
-// ── Main Page ─────────────────────────────────────────────────────────────
+// ── Main Page ─────────────────────────────────────────────────────────────────
 interface CreateAutoPlanPageProps {
   onBack?: () => void;
   selectedDate?: Date | null;
@@ -377,41 +403,53 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   const effectivePrefillFabId = propPrefillFabId || urlFabId || '';
 
   const [proposals, setProposals] = useState<Record<number, any[]>>({});
+  // ── All cards collapsed by default ───────────────────────────────────────
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
 
-  const emptyEntry = (opts?: { date?: Date; section_id?: number; stageName?: string; fab_id?: string }): AutoPlanEntry => ({
-    fab_id: opts?.fab_id ?? effectivePrefillFabId ?? '',
-    workstation_id: '',
-    operator_id: '',
-    notes: '',
-    estimated_hours: '',
-    start_time: '',
-    end_time: '',
+  const emptyEntry = (opts?: {
+    date?: Date;
+    section_id?: number;
+    stageName?: string;
+    fab_id?: string;
+    isTouchup?: boolean;
+  }): AutoPlanEntry => ({
+    fab_id:              opts?.fab_id ?? effectivePrefillFabId ?? '',
+    workstation_id:      '',
+    operator_id:         '',
+    notes:               '',
+    estimated_hours:     '',
+    start_time:          '',
+    end_time:            '',
     planning_section_id: opts?.section_id !== undefined ? String(opts.section_id) : undefined,
-    stageName: opts?.stageName || '',
-    date: opts?.date || propSelectedDate || undefined,
-    sequence: '1',
+    stageName:           opts?.stageName || '',
+    date:                opts?.date || propSelectedDate || undefined,
+    sequence:            '',      // no default — user picks or touchup uses none
+    isTouchup:           opts?.isTouchup || false,
   });
 
   const [entries, setEntries] = useState<AutoPlanEntry[]>([emptyEntry()]);
 
-  // Minimum 3 options always shown; grows automatically if stages exceed 3
+  // Sequence options for non-touchup entries (minimum 3 shown)
+  const nonTouchupCount = entries.filter(e => !e.isTouchup).length;
   const sequenceOptions = useMemo(
-    () => Array.from({ length: Math.max(3, entries.length) }, (_, i) => i + 1),
-    [entries.length]
+    () => Array.from({ length: Math.max(3, nonTouchupCount) }, (_, i) => i + 1),
+    [nonTouchupCount]
   );
 
-  const [createShopPlan, { isLoading }] = useCreateShopPlansMutation();
-  const [updateShopPlan] = useUpdateShopPlanMutation();
+  const [createShopPlan,           { isLoading }]              = useCreateShopPlansMutation();
+  const [updateShopPlan]                                        = useUpdateShopPlanMutation();
   const [createShopPlansSuggestion, { isLoading: isAutoScheduling }] = useCreateShopSuggestionMutation();
 
   const { data: planningSectionsData } = useGetPlanningSectionsQuery();
-  const planningSections: any[] = planningSectionsData?.data || (Array.isArray(planningSectionsData) ? planningSectionsData : []);
+  const planningSections: any[] =
+    planningSectionsData?.data || (Array.isArray(planningSectionsData) ? planningSectionsData : []);
 
   const { data: employeesData } = useGetEmployeesQuery();
-  const employees: any[] = employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
+  const employees: any[] =
+    employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
 
-  const { data: allFabsData, isLoading: isLoadingFabs } = useGetFabsQuery({ limit: 1000, current_stage: 'cut_list' });
+  const { data: allFabsData, isLoading: isLoadingFabs } =
+    useGetFabsQuery({ limit: 1000, current_stage: 'cutting' });
 
   const fabOptions = useMemo(() => {
     const fabs = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
@@ -422,15 +460,22 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   }, [allFabsData]);
 
   const selectedFabId = entries[0]?.fab_id;
-  const selectedFab = useMemo(() => {
+  const selectedFab   = useMemo(() => {
     if (!allFabsData || !selectedFabId) return null;
     const fabs = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
     return fabs.find((fab: any) => String(fab.id) === selectedFabId) || null;
   }, [allFabsData, selectedFabId]);
 
   const { findSectionByKeyword } = usePlanSections();
-
   const employeesLoaded = employees.length > 0;
+
+  // ── Find touchup section once planning sections load ─────────────────────
+  const touchupSection = useMemo(
+    () => planningSections.find((ps: any) =>
+      (ps.name || ps.plan_name || ps.title || '').toLowerCase().includes(TOUCHUP_KEYWORD)
+    ),
+    [planningSections]
+  );
 
   function getActiveStagesFromFab(fab: any) {
     return FAB_STAGE_FIELDS
@@ -443,50 +488,89 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       );
   }
 
+  // ── When FAB changes, auto-build entries with touchup always last ─────────
   useEffect(() => {
     if (selectedEvent || !selectedFab) return;
-    const activeStages = getActiveStagesFromFab(selectedFab);
-    if (activeStages.length === 0) { setEntries([emptyEntry({ fab_id: String(selectedFab.id) })]); return; }
-    setEntries(activeStages.map((s, i) => ({
-      ...emptyEntry({ section_id: s.section_id, stageName: s.label, fab_id: String(selectedFab.id) }),
-      sequence: String(i + 1), // auto-number on fab selection
-    })));
-  }, [selectedFab, selectedEvent]);
 
+    const activeStages = getActiveStagesFromFab(selectedFab);
+
+    // Build regular stage entries (numbered 1…n)
+    const regularEntries: AutoPlanEntry[] = activeStages.length === 0
+      ? [emptyEntry({ fab_id: String(selectedFab.id) })]
+      : activeStages.map((s, i) => ({
+          ...emptyEntry({ section_id: s.section_id, stageName: s.label, fab_id: String(selectedFab.id) }),
+          sequence: String(i + 1),
+        }));
+
+    // ── Append touchup as the last entry if the section exists ────────────
+    const touchupEntry: AutoPlanEntry | null = touchupSection
+      ? {
+          ...emptyEntry({
+            section_id: touchupSection.id,
+            stageName:  touchupSection.name || touchupSection.plan_name || touchupSection.title || 'Touchup',
+            fab_id:     String(selectedFab.id),
+            isTouchup:  true,
+          }),
+          sequence: '', // no sequence for touchup
+        }
+      : null;
+
+    setEntries(touchupEntry ? [...regularEntries, touchupEntry] : regularEntries);
+    // Collapse all by default
+    setExpandedCards({});
+  }, [selectedFab, selectedEvent, touchupSection]);
+
+  // ── Editing an existing event ─────────────────────────────────────────────
   useEffect(() => {
     if (!selectedEvent || !employeesLoaded) return;
     const ev: any = selectedEvent;
     const startDate = new Date(ev.scheduled_start_date);
-    const endTime = ev.estimated_hours
-      ? format(new Date(startDate.getTime() + ev.estimated_hours * 3_600_000), 'HH:mm') : '';
+    const endTime   = ev.estimated_hours
+      ? format(new Date(startDate.getTime() + ev.estimated_hours * 3_600_000), 'HH:mm')
+      : '';
     setEntries([{
-      id: ev.id,
-      fab_id: String(ev.fab_id ?? ''),
-      workstation_id: String(ev.workstation_id ?? ''),
-      operator_id: String(ev.operator_id ?? ''),
-      notes: ev.notes ?? '',
-      estimated_hours: String(ev.estimated_hours ?? ''),
-      start_time: format(startDate, 'HH:mm'),
-      end_time: endTime,
+      id:                  ev.id,
+      fab_id:              String(ev.fab_id ?? ''),
+      workstation_id:      String(ev.workstation_id ?? ''),
+      operator_id:         String(ev.operator_id ?? ''),
+      notes:               ev.notes ?? '',
+      estimated_hours:     String(ev.estimated_hours ?? ''),
+      start_time:          format(startDate, 'HH:mm'),
+      end_time:            endTime,
       planning_section_id: ev.planning_section_id != null ? String(ev.planning_section_id) : undefined,
-      stageName: ev.stage_name || '',
-      date: startDate,
-      sequence: ev.sequence != null ? String(ev.sequence) : '1',
+      stageName:           ev.stage_name || '',
+      date:                startDate,
+      sequence:            ev.sequence != null ? String(ev.sequence) : '',
+      isTouchup:           false,
     }]);
+    setExpandedCards({ 0: true }); // expand the single edit card
   }, [selectedEvent, employeesLoaded]);
 
-  const addEntry = () => setEntries(p => {
-    const e = emptyEntry();
-    if (p[0]?.fab_id) e.fab_id = p[0].fab_id;
-    e.sequence = String(p.length + 1); // auto-assign next sequence
-    return [...p, e];
-  });
+  // ── Entry helpers ─────────────────────────────────────────────────────────
+  const addEntry = () => {
+    setEntries(prev => {
+      const hasTouchup  = prev.some(e => e.isTouchup);
+      const touchupEntry = hasTouchup ? prev[prev.length - 1] : null;
+      const regularEntries = hasTouchup ? prev.slice(0, -1) : prev;
+
+      const newEntry: AutoPlanEntry = {
+        ...emptyEntry({ fab_id: prev[0]?.fab_id }),
+        sequence: String(regularEntries.length + 1),
+      };
+
+      // Insert before touchup (or at end if no touchup)
+      return touchupEntry
+        ? [...regularEntries, newEntry, touchupEntry]
+        : [...regularEntries, newEntry];
+    });
+  };
 
   const removeEntry = (idx: number) => {
-    setEntries(p => {
-      const next = p.filter((_, i) => i !== idx);
-      // Re-number sequences to stay contiguous after removal
-      return next.map((e, i) => ({ ...e, sequence: String(i + 1) }));
+    setEntries(prev => {
+      const next = prev.filter((_, i) => i !== idx);
+      // Re-number non-touchup sequences
+      let seq = 1;
+      return next.map(e => e.isTouchup ? e : { ...e, sequence: String(seq++) });
     });
     setProposals(p => {
       const next = { ...p };
@@ -498,34 +582,44 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   const updateEntry = (idx: number, patch: Partial<AutoPlanEntry>) =>
     setEntries(p => p.map((e, i) => {
       if (i === idx) return { ...e, ...patch };
+      // Sync fab_id across all entries when changed on first card
       if (idx === 0 && patch.fab_id !== undefined) return { ...e, fab_id: patch.fab_id };
       return e;
     }));
 
   const applyProposal = (entryIdx: number, proposal: { start: string; end: string }) => {
     const start = new Date(proposal.start);
-    const end = new Date(proposal.end);
-    updateEntry(entryIdx, { date: start, start_time: format(start, 'HH:mm'), end_time: format(end, 'HH:mm') });
+    const end   = new Date(proposal.end);
+    updateEntry(entryIdx, {
+      date:       start,
+      start_time: format(start, 'HH:mm'),
+      end_time:   format(end,   'HH:mm'),
+    });
   };
 
   const handleBack = () => { if (onBack) onBack(); else navigate(-1); };
 
+  // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     for (const entry of entries) {
-      if (!entry.fab_id) { toast.error('FAB ID is required'); return; }
-      if (!entry.operator_id) { toast.error('Operator is required'); return; }
-      if (!entry.workstation_id) { toast.error('Workstation is required'); return; }
-      if (!entry.planning_section_id) { toast.error('Planning section is required'); return; }
+      if (!entry.fab_id)       { toast.error('FAB ID is required');     return; }
+      if (!entry.operator_id)  { toast.error('Operator is required');   return; }
+      if (!entry.workstation_id){ toast.error('Workstation is required'); return; }
+      if (!entry.planning_section_id){ toast.error('Planning section is required'); return; }
       if (!entry.estimated_hours || parseFloat(entry.estimated_hours) <= 0) {
         toast.error('Estimated hours is required'); return;
       }
-      if (!entry.date) { toast.error(`Date is required for ${entry.stageName || `Stage ${entries.indexOf(entry) + 1}`}`); return; }
+      if (!entry.date) {
+        toast.error(`Date is required for ${entry.stageName || `Stage ${entries.indexOf(entry) + 1}`}`);
+        return;
+      }
     }
 
     try {
       const groups: Record<string, AutoPlanEntry[]> = {};
       const updates: AutoPlanEntry[] = [];
+
       for (const entry of entries) {
         if (entry.id) { updates.push(entry); continue; }
         const key = String(entry.fab_id);
@@ -536,42 +630,45 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       for (const fabId in groups) {
         let totalEst = 0;
         const stages = groups[fabId].map((entry, idx) => {
-          const d = format(entry.date!, 'yyyy-MM-dd');
+          const d     = format(entry.date!, 'yyyy-MM-dd');
           const start = entry.start_time ? `${d}T${entry.start_time}:00` : `${d}T00:00:00`;
-          const end = entry.end_time ? `${d}T${entry.end_time}:00` : undefined;
-          const hrs = parseFloat(entry.estimated_hours) || 0;
+          const end   = entry.end_time   ? `${d}T${entry.end_time}:00`   : undefined;
+          const hrs   = parseFloat(entry.estimated_hours) || 0;
           totalEst += hrs;
           return {
-            workstation_id: Number(entry.workstation_id),
+            workstation_id:      Number(entry.workstation_id),
             planning_section_id: Number(entry.planning_section_id) || (planningSections[0]?.id ?? 0),
-            operator_ids: [Number(entry.operator_id)],
-            estimated_hours: hrs,
-            scheduled_start: start,
+            operator_ids:        [Number(entry.operator_id)],
+            estimated_hours:     hrs,
+            scheduled_start:     start,
             ...(end && { scheduled_end: end }),
-            notes: entry.notes || undefined,
-            sequence: Number(entry.sequence) || (idx + 1),
+            notes:               entry.notes || undefined,
+            // Touchup gets sequence after all other stages; regular entries use their value
+            sequence:            entry.isTouchup
+              ? groups[fabId].length  // always last
+              : (Number(entry.sequence) || idx + 1),
           };
         });
         await createShopPlan({ fab_id: Number(fabId), estimated_hours: totalEst, status_id: 1, stages } as any).unwrap();
       }
 
       for (const entry of updates) {
-        const d = format(entry.date!, 'yyyy-MM-dd');
+        const d     = format(entry.date!, 'yyyy-MM-dd');
         const start = entry.start_time ? `${d}T${entry.start_time}:00` : `${d}T00:00:00`;
-        const end = entry.end_time ? `${d}T${entry.end_time}:00` : undefined;
-        const hrs = parseFloat(entry.estimated_hours) || 0;
+        const end   = entry.end_time   ? `${d}T${entry.end_time}:00`   : undefined;
+        const hrs   = parseFloat(entry.estimated_hours) || 0;
         await updateShopPlan({
           plan_id: Number(entry.id),
           data: {
             stage: {
-              workstation_id: Number(entry.workstation_id),
+              workstation_id:      Number(entry.workstation_id),
               planning_section_id: Number(entry.planning_section_id) || (planningSections[0]?.id ?? 0),
-              operator_ids: [Number(entry.operator_id)],
-              estimated_hours: hrs,
-              scheduled_start: start,
+              operator_ids:        [Number(entry.operator_id)],
+              estimated_hours:     hrs,
+              scheduled_start:     start,
               ...(end && { scheduled_end: end }),
-              notes: entry.notes || undefined,
-              sequence: Number(entry.sequence) || 1,
+              notes:               entry.notes || undefined,
+              sequence:            entry.isTouchup ? 999 : (Number(entry.sequence) || 1),
             },
           },
         } as any).unwrap();
@@ -585,11 +682,12 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     }
   };
 
+  // ── Auto-populate ─────────────────────────────────────────────────────────
   const handleAutoPopulate = async () => {
     for (const entry of entries) {
-      if (!entry.operator_id) { toast.error('Please select an operator for each stage'); return; }
-      if (!entry.workstation_id) { toast.error('Please select a workstation for each stage'); return; }
-      if (!entry.planning_section_id) { toast.error('Please select a planning section for each stage'); return; }
+      if (!entry.operator_id)       { toast.error('Please select an operator for each stage');        return; }
+      if (!entry.workstation_id)    { toast.error('Please select a workstation for each stage');      return; }
+      if (!entry.planning_section_id){ toast.error('Please select a planning section for each stage'); return; }
       if (!entry.estimated_hours || parseFloat(entry.estimated_hours) <= 0) {
         toast.error('Estimated hours is required for each stage'); return;
       }
@@ -599,13 +697,13 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       const payload = {
         requests: entries.map(entry => ({
           planning_section_id: Number(entry.planning_section_id),
-          operator_id: Number(entry.operator_id),
-          workstation_id: Number(entry.workstation_id),
-          estimated_hours: parseFloat(entry.estimated_hours),
+          operator_id:         Number(entry.operator_id),
+          workstation_id:      Number(entry.workstation_id),
+          estimated_hours:     parseFloat(entry.estimated_hours),
         })),
-        start_from: new Date().toISOString(),
-        slot_minutes: 30,
-        search_horizon_days: 30,
+        start_from:               new Date().toISOString(),
+        slot_minutes:             30,
+        search_horizon_days:      30,
         max_proposals_per_request: 3,
       };
 
@@ -625,7 +723,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
         const first = newProposals[idx]?.[0];
         if (!first) return entry;
         const start = new Date(first.start);
-        const end = new Date(first.end);
+        const end   = new Date(first.end);
         return { ...entry, date: start, start_time: format(start, 'HH:mm'), end_time: format(end, 'HH:mm') };
       }));
 
@@ -637,6 +735,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
 
   const isEditing = !!selectedEvent;
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="bg-white min-h-screen">
       {/* Header */}
@@ -658,7 +757,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
           </div>
           {entries[0]?.fab_id && (
             <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2">
-              <span className="text-[13px] text-[#4a4d59]">FAB ID</span>
+              <span className="text-[14px] text-[#4a4d59]">FAB ID</span>
               <span className="text-[20px] text-[#7a9705] font-semibold">#{entries[0].fab_id}</span>
             </div>
           )}
@@ -666,18 +765,19 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       </div>
 
       {/* Content */}
-      <div className="px-10 py-8 max-w-4xl mx-auto">
+      <div className="px-10 py-8 max-w-5xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-6">
+
           {/* FAB selector */}
           <Card className="border border-[#ecedf0] rounded-[12px]">
             <CardContent className="pt-5">
-              <Label className="text-[13px] text-[#4b545d] font-semibold">FAB ID *</Label>
+              <Label className="text-[14px] text-[#4b545d] font-semibold">FAB ID *</Label>
               <Select
                 value={entries[0]?.fab_id || ''}
                 onValueChange={value => updateEntry(0, { fab_id: value })}
                 disabled={isLoadingFabs || (!!effectivePrefillFabId && !isEditing)}
               >
-                <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                <SelectTrigger className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[14px]">
                   <SelectValue placeholder={isLoadingFabs ? 'Loading FABs…' : 'Select FAB ID'} />
                 </SelectTrigger>
                 <SelectContent className="max-h-60">
@@ -689,41 +789,44 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
             </CardContent>
           </Card>
 
-          {/* FAB Details */}
+          {/* FAB Details — 3 cells per row */}
           {selectedFabId && selectedFab && (
             <Card className="border border-[#ecedf0] rounded-[12px]">
               <CardHeader className="pb-3 border-b border-[#ecedf0]">
                 <CardTitle className="text-[16px] text-[#4b545d] font-semibold">FAB Details</CardTitle>
               </CardHeader>
               <CardContent className="pt-5">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   {[
-                    { label: 'Job No', val: selectedFab.job_details?.job_number },
-                    { label: 'Job Name', val: selectedFab.job_details?.name },
-                    { label: 'Account Name', val: selectedFab.account_name },
-                    { label: 'No. of Pieces', val: selectedFab.no_of_pieces || 0 },
-                    { label: 'Total Sq Ft', val: selectedFab.total_sqft?.toFixed(2) || '0.00' },
-                    { label: 'WJ LinFt', val: selectedFab.wj_linft?.toFixed(2) || '0.00' },
-                    { label: 'Edging LinFt', val: selectedFab.edging_linft?.toFixed(2) || '0.00' },
-                    { label: 'CNC LinFt', val: selectedFab.cnc_linft?.toFixed(2) || '0.00' },
-                    { label: 'Miter LinFt', val: selectedFab.miter_linft?.toFixed(2) || '0.00' },
+                    { label: 'Job No',         val: selectedFab.job_details?.job_number },
+                    { label: 'Job Name',        val: selectedFab.job_details?.name       },
+                    { label: 'Account Name',    val: selectedFab.account_name            },
+                    { label: 'No. of Pieces',   val: selectedFab.no_of_pieces || 0       },
+                    { label: 'Total Sq Ft',     val: selectedFab.total_sqft?.toFixed(2)  || '0.00' },
+                    { label: 'WJ LinFt',        val: selectedFab.wj_linft?.toFixed(2)    || '0.00' },
+                    { label: 'Edging LinFt',    val: selectedFab.edging_linft?.toFixed(2)|| '0.00' },
+                    { label: 'CNC LinFt',       val: selectedFab.cnc_linft?.toFixed(2)   || '0.00' },
+                    { label: 'Miter LinFt',     val: selectedFab.miter_linft?.toFixed(2) || '0.00' },
                   ].map(({ label, val }) => (
                     <div key={label}>
-                      <Label className="text-xs text-[#7c8689]">{label}</Label>
-                      <p className="text-sm font-medium text-[#4b545d]">{val || '-'}</p>
+                      <Label className="text-[13px] text-[#7c8689]">{label}</Label>
+                      <p className="text-[14px] font-medium text-[#4b545d]">{val || '-'}</p>
                     </div>
                   ))}
                 </div>
+
                 <div className="mt-4 flex flex-wrap gap-2">
                   {FAB_STAGE_FIELDS.map(s => {
-                    const val = selectedFab?.[s.field];
+                    const val    = selectedFab?.[s.field];
                     const active = typeof val === 'number' && val > 0;
                     return (
                       <span
                         key={s.keyword}
                         className={cn(
-                          'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border',
-                          active ? 'bg-[#f0f4e8] border-[#9cc15e] text-[#5a7a00]' : 'bg-gray-50 border-[#e2e4ed] text-[#b0b7bc]'
+                          'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[13px] font-medium border',
+                          active
+                            ? 'bg-[#f0f4e8] border-[#9cc15e] text-[#5a7a00]'
+                            : 'bg-gray-50 border-[#e2e4ed] text-[#b0b7bc]'
                         )}
                       >
                         {s.label}
@@ -736,26 +839,28 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
             </Card>
           )}
 
-          {/* Plan entry cards */}
+          {/* Plan entry cards — all collapsed by default */}
           {entries.map((entry, idx) => (
             <AutoPlanEntryCard
               key={idx}
               entry={entry}
               idx={idx}
-              total={entries.length}
+              totalNonTouchup={nonTouchupCount}
               employees={employees}
               planningSections={planningSections}
               proposals={proposals[idx] || []}
-              isExpanded={expandedCards[idx] !== false}
+              isExpanded={expandedCards[idx] === true}   // ← collapsed unless explicitly opened
               sequenceOptions={sequenceOptions}
-              onToggleExpand={() => setExpandedCards(p => ({ ...p, [idx]: !(p[idx] !== false) }))}
+              onToggleExpand={() =>
+                setExpandedCards(p => ({ ...p, [idx]: !(p[idx] === true) }))
+              }
               onUpdate={patch => updateEntry(idx, patch)}
               onRemove={() => removeEntry(idx)}
               onApplyProposal={proposal => applyProposal(idx, proposal)}
             />
           ))}
 
-          {/* Add stage */}
+          {/* Add stage — inserts before touchup */}
           <button
             type="button"
             onClick={addEntry}

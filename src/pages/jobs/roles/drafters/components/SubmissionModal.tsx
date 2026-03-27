@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { Can } from '@/components/permission';
+import { useNavigate } from 'react-router';
 
 // Helper function to format timestamp without 'Z'
 const formatTimestamp = (date: Date) => {
@@ -69,6 +70,7 @@ export const SubmissionModal = ({
   const { data: employeesData } = useGetSalesPersonsQuery();
   const salesPersons = Array.isArray(employeesData) ? employeesData : [];
 
+  const navigate = useNavigate();
 
   // Function to extract session timing data
   const extractSessionData = (sessionResponse: any) => {
@@ -145,12 +147,12 @@ export const SubmissionModal = ({
     let draftingId = drafting?.id ?? drafting?.data?.id;
     
     if (!draftingId) {
-      toast.error('Drafting record does not exist. Please assign drafter first.');
+      console.error('Drafting record does not exist. Please assign drafter first.');
       return;
     }
 
     if (!isConfirmed) {
-      toast.error('Please confirm the drafting is completed by checking the box.');
+      console.error('Please confirm the drafting is completed by checking the box.');
       return;
     }
 
@@ -195,8 +197,8 @@ export const SubmissionModal = ({
       onClose(true);
     } catch (err: any) {
       console.error('Failed to submit drafting:', err);
-      toast.error(err?.data?.message || 'Failed to submit drafting');
       onClose(false);
+      navigate('/job/draft');
     } finally {
       setIsSubmitting(false);
     }

@@ -1,19 +1,31 @@
 import { useState, useEffect, useRef } from 'react';
 
 interface SCTTimerProps {
-  startTime: string | null;  // draft_completed_date (UTC ISO string without Z)
-  endTime: string | null;    // sct_completed_date or null
+  startTime: string | null;  // UTC timestamp without timezone
+  endTime: string | null;    // UTC timestamp or null
 }
 
 export const SCTTimer = ({ startTime, endTime }: SCTTimerProps) => {
   const [duration, setDuration] = useState<string>('');
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Parse an ISO string as UTC – append 'Z' if no timezone indicator
+  // Parse any ISO-like string as UTC (no local timezone interference)
   const parseUTCDate = (dateStr: string): number => {
-    const hasTimezone = /[Z+-]/i.test(dateStr);
-    const normalized = hasTimezone ? dateStr : `${dateStr}Z`;
-    return new Date(normalized).getTime();
+    if (!dateStr) return 0;
+    // If it's already a number (timestamp)
+    const asNumber = Number(dateStr);
+    if (!isNaN(asNumber)) return asNumber;
+    
+    // Remove 'Z' if present to avoid double processing
+    const cleanStr = dateStr.replace(/Z$/, '');
+    // Split into date and time parts (accept both 'T' or space)
+    const [datePart, timePart] = cleanStr.split(/[T ]/);
+    if (!datePart) return 0;
+    
+    const [year, month, day] = datePart.split('-').map(Number);
+    const [hour = 0, minute = 0, second = 0] = timePart ? timePart.split(':').map(Number) : [0,0,0];
+    
+    return Date.UTC(year, month - 1, day, hour, minute, second);
   };
 
   useEffect(() => {
@@ -42,21 +54,18 @@ export const SCTTimer = ({ startTime, endTime }: SCTTimerProps) => {
         if (days > 0) {
           const remainingHours = hours % 24;
           setDuration(
-            `${days} day${days !== 1 ? 's' : ''} ${
-              remainingHours > 0 ? `${remainingHours} hr${remainingHours !== 1 ? 's' : ''}` : ''
-            }`.trim()
+            `${days}d ${remainingHours > 0 ? `${remainingHours}h` : ''}`.trim()
           );
         } else if (hours > 0) {
           const remainingMinutes = minutes % 60;
           setDuration(
-            `${hours} hr${hours !== 1 ? 's' : ''} ${
-              remainingMinutes > 0 ? `${remainingMinutes} min` : ''
-            }`.trim()
+            `${hours}h ${remainingMinutes > 0 ? `${remainingMinutes}m` : ''}`.trim()
           );
         } else {
-          setDuration(minutes > 0 ? `${minutes} min` : 'Just now');
+          setDuration(minutes > 0 ? `${minutes}m` : 'Just now');
         }
-      } catch {
+      } catch (error) {
+        console.error('Error calculating SCT duration:', error);
         setDuration('Invalid date');
       }
     };
@@ -78,13 +87,13 @@ export const SCTTimer = ({ startTime, endTime }: SCTTimerProps) => {
   if (!startTime) return null;
 
   return (
-    <div className="bg-[#FF8D28] px-4 py-2 rounded-[6px] text-white flex flex-col items-center min-w-[120px]">
-      <span className="text-xs font-medium text-[#EEEEEE] uppercase tracking-wide">
-        Time in SCT
+    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-md border border-gray-200 w-auto max-w-64">
+      <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+        Time in SCT:
       </span>
-      <p className="text-sm font-bold mt-0.5 whitespace-nowrap">
+      <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">
         {duration}
-      </p>
+      </span>
     </div>
   );
 };

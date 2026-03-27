@@ -1837,7 +1837,7 @@ export const jobApi = createApi({
             deleteFile: build.mutation<any, { file_id: string }>({
                 query: ({ file_id }) => ({
                     url: `/files/${file_id}`,
-                    method: "DELETE"
+                    method: "put"
                 }),
                 invalidatesTags: ["Drafting"],
             }),

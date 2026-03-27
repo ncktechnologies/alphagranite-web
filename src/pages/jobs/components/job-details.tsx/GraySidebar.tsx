@@ -5,8 +5,8 @@ import { Link } from 'react-router-dom'
 interface SidebarSection {
     title?: string
     type?: 'details' | 'notes' | 'custom'
-    items?: { 
-        label: string; 
+    items?: {
+        label: string;
         value: React.ReactNode;
         link?: string;
         isLink?: boolean;
@@ -31,38 +31,38 @@ interface GraySidebarProps {
 }
 
 export default function GraySidebar({ sections, className = '', jobId }: GraySidebarProps) {
-    
+
     // Helper function to check if an item should be a link
     const shouldBeLink = (label: string, item: any) => {
         // If item explicitly specifies isLink, use that
         if (item.isLink !== undefined) return item.isLink
-        
+
         // Auto-detect based on label if jobId is available
-        if (jobId && (label.toLowerCase().includes('job name') || 
-                      label.toLowerCase().includes('job number') ||
-                      label.toLowerCase().includes('job id'))) {
+        if (jobId && (label.toLowerCase().includes('job name') ||
+            label.toLowerCase().includes('job number') ||
+            label.toLowerCase().includes('job id'))) {
             return true
         }
-        
+
         return false
     }
-    
+
     // Helper function to get link URL
     const getLinkUrl = (label: string, item: any) => {
         // If item explicitly provides link, use that
         if (item.link) return item.link
-        
+
         // Auto-generate link based on jobId
         if (jobId) {
             return `/job/details/${jobId}`
         }
-        
+
         return '#'
     }
 
     return (
-        <aside
-            className={`w-full border-r p-6 overflow-y-auto bg-[#FAFAFA] lg:h-screen ${className}`}
+        <div
+            className={`w-full border-r p-5 overflow-y-auto bg-[#FAFAFA]  ${className}`}
         >
             {sections.map((section, sectionIndex) => (
                 <section key={sectionIndex} className={`mt-3 mb-8 ${section.className || ''}`}>
@@ -77,7 +77,7 @@ export default function GraySidebar({ sections, className = '', jobId }: GraySid
                             )}
                             {section.items.map((item, index) => {
                                 const isLink = shouldBeLink(item.label, item)
-                                
+
                                 return (
                                     <div key={index}>
                                         <span className="font-medium text-text-foreground text-sm leading-[24px]">
@@ -85,7 +85,7 @@ export default function GraySidebar({ sections, className = '', jobId }: GraySid
                                         </span>
                                         {isLink ? (
                                             <p className="text-text text-bold text-base leading-[24px]">
-                                                <Link 
+                                                <Link
                                                     to={getLinkUrl(item.label, item)}
                                                     className="text-blue-600 hover:text-blue-800 hover:underline"
                                                 >
@@ -141,6 +141,6 @@ export default function GraySidebar({ sections, className = '', jobId }: GraySid
                     )}
                 </section>
             ))}
-        </aside>
+        </div>
     )
 }

@@ -108,7 +108,7 @@ export function DrafterDetailsPage() {
   const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [fileDesign, setFileDesign] = useState<string>(''); // File design input
+  const [fileDesign, setFileDesign] = useState<string>('');
 
   // Initialize session state from server data
   useEffect(() => {
@@ -121,7 +121,6 @@ export function DrafterDetailsPage() {
           setTotalTime(session.total_time_spent);
         }
 
-        // Map API field names to local state
         if (session.current_session_start_time) {
           setDraftStart(new Date(session.current_session_start_time));
         }
@@ -129,10 +128,9 @@ export function DrafterDetailsPage() {
         if (session.last_action_time && (session.status === 'ended' || session.status === 'on_hold')) {
           setDraftEnd(new Date(session.last_action_time));
         } else {
-          setDraftEnd(null); // Clear end time for active/paused sessions
+          setDraftEnd(null);
         }
       } else {
-        // No active session found
         setSessionStatus('idle');
         setTotalTime(0);
         setDraftStart(null);
@@ -141,18 +139,15 @@ export function DrafterDetailsPage() {
     }
   }, [sessionData, isSessionLoading]);
 
-  // Helper functions to check session state
   const isDrafting = sessionStatus === 'drafting';
   const isPaused = sessionStatus === 'paused';
   const isOnHold = sessionStatus === 'on_hold';
   const hasEnded = sessionStatus === 'ended';
 
-  // Tab closing warning - active when drafting but not paused or ended
   useTabClosingWarning({
     isActive: isDrafting && !isPaused,
     warningMessage: '⚠️ ACTIVE DRAFTING SESSION ⚠️\n\nYou have an active drafting session in progress. Closing this tab will pause your session and may result in lost work.\n\nPlease pause your session properly before leaving.',
     onBeforeUnload: async () => {
-      // Auto-pause the session when tab is closing
       if (isDrafting && fabId && currentEmployeeId) {
         try {
           await manageDraftingSession({
@@ -171,12 +166,10 @@ export function DrafterDetailsPage() {
     }
   });
 
-  // Extract existing files from draft_data
   const existingFilesFromServer = draftData?.files || [];
 
-  // All files for display - only from server (UploadDocuments handles new uploads internally)
   const allFilesForDisplay = useMemo(() => {
-    const files = existingFilesFromServer.map((file: any) => ({
+    return existingFilesFromServer.map((file: any) => ({
       id: file.id,
       name: file.name || file.file_name,
       size: parseInt(file.file_size) || file.size || 0,
@@ -197,20 +190,23 @@ export function DrafterDetailsPage() {
       uploadedBy: file.uploaded_by_name ?? file.uploader_name ?? file.uploaded_by ?? currentUser?.name ?? 'Unknown',
       fromServer: true
     }));
-
-    return files;
   }, [existingFilesFromServer, currentUser]);
 
-  // Session management functions
-  const createOrStartSession = async (action: 'start' | 'resume', startDate: Date, note?: string, sqftDrafted?: string, workPercentage?: string) => {
+  const createOrStartSession = async (
+    action: 'start' | 'resume',
+    startDate: Date,
+    note?: string,
+    sqftDrafted?: string,
+    workPercentage?: string
+  ) => {
     try {
       await manageDraftingSession({
         fab_id: fabId,
         data: {
-          action: action,
+          action,
           drafter_id: currentEmployeeId,
           timestamp: formatTimestamp(startDate),
-          note: note,
+          note,
           sqft_drafted: sqftDrafted,
           work_percentage_done: workPercentage
         }
@@ -230,22 +226,28 @@ export function DrafterDetailsPage() {
   };
 
   const actionPastTense: Record<string, string> = {
-    start: "started",
-    resume: "resumed",
-    pause: "paused",
-    on_hold: "placed on hold",
-    end: "ended",
+    start: 'started',
+    resume: 'resumed',
+    pause: 'paused',
+    on_hold: 'placed on hold',
+    end: 'ended',
   };
 
-  const updateSession = async (action: 'pause' | 'on_hold' | 'end', timestamp: Date, note?: string, sqftDrafted?: string, workPercentage?: string) => {
+  const updateSession = async (
+    action: 'pause' | 'on_hold' | 'end',
+    timestamp: Date,
+    note?: string,
+    sqftDrafted?: string,
+    workPercentage?: string
+  ) => {
     try {
       await manageDraftingSession({
         fab_id: fabId,
         data: {
-          action: action,
+          action,
           drafter_id: currentEmployeeId,
           timestamp: formatTimestamp(timestamp),
-          note: note,
+          note,
           sqft_drafted: sqftDrafted,
           work_percentage_done: workPercentage
         }
@@ -263,67 +265,45 @@ export function DrafterDetailsPage() {
     }
   };
 
-  // Time tracking handlers
   const handleStart = async (startDate: Date, data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
-    // Check if drafting exists before starting - check both drafting query and FAB data
     const hasDraftingAssignment = draftingData?.id || fabData?.draft_data?.id;
-
     if (!hasDraftingAssignment) {
       toast.error('Cannot start drafting session - no drafting assignment found');
       return;
     }
-
     try {
       await createOrStartSession('start', startDate, data?.note, data?.sqft_drafted, data?.work_percentage_done);
-    } catch (error) {
-      // Error handled in createOrStartSession
-    }
+    } catch (error) { }
   };
 
   const handlePause = async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     try {
       await updateSession('pause', new Date(), data?.note, data?.sqft_drafted, data?.work_percentage_done);
-    } catch (error) {
-      // Error handled in updateSession
-    }
+    } catch (error) { }
   };
 
   const handleResume = async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     try {
       await createOrStartSession('resume', new Date(), data?.note, data?.sqft_drafted, data?.work_percentage_done);
-    } catch (error) {
-      // Error handled in createOrStartSession
-    }
+    } catch (error) { }
   };
 
   const handleEnd = async (endDate: Date, data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     try {
       await updateSession('end', endDate, data?.note, data?.sqft_drafted, data?.work_percentage_done);
-    } catch (error) {
-      // Error handled in updateSession
-    }
+    } catch (error) { }
   };
 
   const handleOnHold = async (data?: { note?: string }) => {
     try {
-      // If there's an active session, pause it first
       if (isDrafting) {
         await updateSession('pause', new Date(), 'Pausing session before placing on hold');
       }
-
-      // Toggle the FAB hold status
-      const currentHoldStatus = fabData?.status_id === 0; // 0 = on hold
+      const currentHoldStatus = fabData?.status_id === 0;
       await toggleFabOnHold({ fab_id: fabId, on_hold: !currentHoldStatus }).unwrap();
-
-      // Create FAB note with drafting stage
       if (data?.note) {
-        await createFabNote({
-          fab_id: fabId,
-          note: data.note,
-          stage: 'drafting'
-        }).unwrap();
+        await createFabNote({ fab_id: fabId, note: data.note, stage: 'drafting' }).unwrap();
       }
-
       toast.success(`FAB ${!currentHoldStatus ? 'placed on hold' : 'released from hold'} successfully`);
       await refetchFab();
       await refetchSession();
@@ -333,12 +313,9 @@ export function DrafterDetailsPage() {
     }
   };
 
-  // File handling functions
   const handleFileClick = (file: any) => {
-    // Ensure we have all necessary properties for the file viewer
     const enhancedFile = {
       ...file,
-      // stage: getFileStage(file.name, { isDrafting: true }),
       url: file.file_url || file.url || file.fileUrl,
       name: file.name || file.file_name,
       type: file.file_type || file.type || '',
@@ -350,31 +327,18 @@ export function DrafterDetailsPage() {
       uploaded_by_name: file.uploaded_by_name ?? file.uploader_name ?? file.uploaded_by ?? currentUser?.name ?? 'Unknown',
       uploadedBy: file.uploaded_by_name ?? file.uploader_name ?? file.uploaded_by ?? currentUser?.name ?? 'Unknown'
     };
-
     setActiveFile(enhancedFile);
     setViewMode('file');
   };
 
   const handleDeleteFile = async (fileId: string) => {
-    if (!window.confirm('Are you sure you want to delete this file?')) {
-      return;
-    }
-
+    if (!window.confirm('Are you sure you want to delete this file?')) return;
     const draftingId = draftingData?.id || fabData?.draft_data?.id;
-    if (!draftingId) {
-      return;
-    }
-
+    if (!draftingId) return;
     try {
-      await deleteDraftingFile({
-        drafting_id: draftingId,
-        file_id: fileId
-      }).unwrap();
-
-      // Refresh data
+      await deleteDraftingFile({ drafting_id: draftingId, file_id: fileId }).unwrap();
       await refetchFab();
       await refetchDrafting();
-
       toast.success('File deleted successfully');
     } catch (error) {
       console.error('Failed to delete file:', error);
@@ -382,26 +346,17 @@ export function DrafterDetailsPage() {
     }
   };
 
-  // Combined refetch function
   const refetchAllFiles = useCallback(async () => {
     try {
-      await Promise.all([
-        refetchFab(),
-        refetchDrafting(),
-        refetchSession()
-      ]);
+      await Promise.all([refetchFab(), refetchDrafting(), refetchSession()]);
     } catch (error) {
       console.error('Failed to refetch files:', error);
     }
   }, [refetchFab, refetchDrafting, refetchSession]);
 
-  // Show upload section when timer is running, paused, OR when files have been uploaded (to maintain visibility after ending)
   const shouldShowUploadSection = (isDrafting || isPaused) || allFilesForDisplay.length > 0;
-
-  // Determine if submission is allowed
   const canOpenSubmit = isDrafting && totalTime > 0 && allFilesForDisplay.length > 0;
 
-  // Open submission modal directly (file upload happens in modal)
   const handleOpenSubmissionModal = async () => {
     setShowSubmissionModal(true);
   };
@@ -409,14 +364,11 @@ export function DrafterDetailsPage() {
   const onSubmitModal = async () => {
     try {
       await refetchAllFiles();
-
       setShowSubmissionModal(false);
-      // Clear all local state after successful submission
       setTotalTime(0);
       setDraftStart(null);
       setDraftEnd(null);
       setSessionStatus('idle');
-
       navigate('/job/draft');
     } catch (err) {
       console.error(err);
@@ -424,63 +376,61 @@ export function DrafterDetailsPage() {
     }
   };
 
-  // Prepare clickable links
   const jobNameLink = fabData?.job_details?.id ? `/job/details/${fabData.job_details.id}` : '#';
   const jobNumberLink = fabData?.job_details?.job_number
     ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fabData.job_details.job_number}`
     : '#';
 
-  // Sidebar sections – now includes all required Job Details fields
   const sidebarSections = fabData ? [
     {
-      title: "Job Details",
-      type: "details",
+      title: 'Job Details',
+      type: 'details',
       items: [
-        { label: "Account Name", value: fabData.account_name || '—' },
+        { label: 'Account Name', value: fabData.account_name || '—' },
         {
-          label: "Fab ID",
+          label: 'Fab ID',
           value: (
             <Link to={`/sales/${fabData.id}`} className="text-primary hover:underline">
               FAB-{fabData.id}
             </Link>
           ),
         },
-        { label: "Area", value: fabData.input_area || '—' },
+        { label: 'Area', value: fabData.input_area || '—' },
         {
-          label: "Material",
+          label: 'Material',
           value: fabData.stone_type_name
             ? `${fabData.stone_type_name} - ${fabData.stone_color_name || ''} - ${fabData.stone_thickness_value || ''}`
             : '—',
         },
-        { label: "Fab Type", value: <span className="uppercase">{fabData.fab_type || '—'}</span> },
-        { label: "Edge", value: fabData.edge_name || '—' },
-        { label: "Total s.f.", value: fabData.total_sqft?.toString() || '—' },
+        { label: 'Fab Type', value: <span className="uppercase">{fabData.fab_type || '—'}</span> },
+        { label: 'Edge', value: fabData.edge_name || '—' },
+        { label: 'Total s.f.', value: fabData.total_sqft?.toString() || '—' },
         {
-          label: "Scheduled Date",
+          label: 'Scheduled Date',
           value: fabData.templating_schedule_start_date
             ? new Date(fabData.templating_schedule_start_date).toLocaleDateString()
             : 'Not scheduled',
         },
-        { label: "Assigned to", value: fabData.draft_data?.drafter_name || 'Unassigned' },
-        { label: "Sales Person", value: fabData.sales_person_name || '—' },
-        { label: "SlabSmith Needed", value: fabData.slab_smith_ag_needed ? 'Yes' : 'No' },
+        { label: 'Assigned to', value: fabData.draft_data?.drafter_name || 'Unassigned' },
+        { label: 'Sales Person', value: fabData.sales_person_name || '—' },
+        { label: 'SlabSmith Needed', value: fabData.slab_smith_ag_needed ? 'Yes' : 'No' },
       ],
     },
     {
-      title: "Notes",
-      type: "notes",
+      title: 'Notes',
+      type: 'notes',
       notes: fabData?.notes?.map((note: string, index: number) => ({
         id: index,
-        avatar: "N",
+        avatar: 'N',
         content: note,
-        author: "",
-        timestamp: "",
+        author: '',
+        timestamp: '',
       })) || [],
     },
     {
-      title: "FAB Notes",
-      type: "notes",
-      notes: getAllFabNotes(fabData?.fab_notes || []).map(note => {
+      title: 'FAB Notes',
+      type: 'notes',
+      notes: getAllFabNotes(fabData?.fab_notes || []).map((note: any) => {
         const stageConfig: Record<string, { label: string; color: string }> = {
           templating: { label: 'Templating', color: 'text-blue-700' },
           pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
@@ -491,12 +441,10 @@ export function DrafterDetailsPage() {
           cutting: { label: 'Cutting', color: 'text-orange-700' },
           revisions: { label: 'Revisions', color: 'text-purple-700' },
           draft: { label: 'Draft', color: 'text-green-700' },
-          general: { label: 'General', color: 'text-gray-700' }
+          general: { label: 'General', color: 'text-gray-700' },
         };
-
         const stage = note.stage || 'general';
         const config = stageConfig[stage] || stageConfig.general;
-
         return {
           id: note.id,
           avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
@@ -508,7 +456,6 @@ export function DrafterDetailsPage() {
     }
   ] : [];
 
-  // Prepare enhanced file metadata for SubmissionModal
   const filesForSubmission: EnhancedFileMetadata[] = allFilesForDisplay.map(file => ({
     id: file.id!,
     name: file.name,
@@ -521,119 +468,140 @@ export function DrafterDetailsPage() {
     file: null
   }));
 
+  // ── Loading skeleton ──────────────────────────────────────────────────────
   if (isFabLoading || isDraftingLoading || isSessionLoading) {
     return (
-      <Container className='lg:mx-0 max-w-full'>
-        <Toolbar className=''>
-          <div className="flex items-center justify-between w-full">
-            <div>
-              <ToolbarHeading
-                title={<Skeleton className="h-8 w-96" />}
-                description={<Skeleton className="h-4 w-80 mt-1" />}
-              />
-            </div>
-            <Skeleton className="h-6 w-20 rounded-full" />
+      <div className="flex flex-col min-h-screen">
+        {/* sticky toolbar skeleton */}
+        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+          <Skeleton className="h-8 w-72 mb-1" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+
+        <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+          {/* sidebar skeleton */}
+          <div className="w-full lg:w-[220px] xl:w-[260px] shrink-0 border-r">
+            <Skeleton className="h-full min-h-[300px] w-full" />
           </div>
-        </Toolbar>
-        <div className="border-t flex flex-col lg:flex-row gap-3 xl:gap-4 items-start max-w-full">
-          <div className="w-full lg:w-[250px] xl:w-[286px] ultra:w-[500px] lg:flex-shrink-0">
-            <Skeleton className="h-64 w-full" />
-          </div>
-          <div className="lg:flex-1 min-w-0">
-            <Container className='mx-0 max-w-full px-0'>
-              <div className='max-w-6xl w-full mx-auto lg:mr-auto'>
-                <Card className='my-4'>
-                  <CardHeader className='flex flex-col items-start py-4'>
-                    <Skeleton className="h-6 w-48" />
-                    <Skeleton className="h-4 w-64 mt-2" />
-                  </CardHeader>
-                </Card>
-                <Card>
-                  <CardContent>
-                    <Skeleton className="h-96 w-full" />
-                  </CardContent>
-                </Card>
-              </div>
-            </Container>
+          {/* content skeleton */}
+          <div className="flex-1 p-4 sm:p-6 space-y-4">
+            <Skeleton className="h-24 w-full rounded-xl" />
+            <Skeleton className="h-96 w-full rounded-xl" />
           </div>
         </div>
-      </Container>
+      </div>
     );
   }
 
   const statusInfo = getFabStatusInfo(fabData?.status_id);
 
   return (
-    <>
-      {/* 🔹 TOP TOOLBAR with clickable job name/number + description + status badge */}
-      <Container className='lg:mx-0 max-w-full'>
-        <Toolbar className=''>
-          <div className="flex items-center justify-between w-full">
-            <ToolbarHeading
-              title={
-                <div className="text-2xl font-bold">
-                  <a href={jobNameLink} className="hover:underline">
-                    {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
-                  </a>
-                  {' - '}
-                  <a href={jobNumberLink} className="hover:underline" target="_blank">
-                    {fabData?.job_details?.job_number || fabData?.job_id}
-                  </a>
-                </div>
-              }
-              description="Drafting Details"
-            />
-            <div className="flex items-center gap-2">
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
-                {statusInfo.text}
-              </span>
-            </div>
-          </div>
-        </Toolbar>
-      </Container>
+    <div className="flex flex-col min-h-screen bg-gray-50">
 
-      <div className="border-t grid grid-cols-1 lg:grid-cols-12 gap-3 items-start">
-        <div className="lg:col-span-3 w-full lg:w-[200px] 2xl:w-[286px] ultra:w-[500px]">
+      {/* ── Sticky toolbar ──────────────────────────────────────────────────── */}
+      <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+        <div className="px-3 sm:px-4 lg:px-6">
+          <Toolbar className="py-2 sm:py-3">
+            <div className="flex items-center justify-between w-full gap-2 flex-wrap">
+              <ToolbarHeading
+                title={
+                  <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
+                    <a href={jobNameLink} className="hover:underline">
+                      {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
+                    </a>
+                    <span className="mx-1 text-gray-400">·</span>
+                    <a
+                      href={jobNumberLink}
+                      className="hover:underline text-gray-600"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {fabData?.job_details?.job_number || fabData?.job_id}
+                    </a>
+                  </div>
+                }
+                description="Drafting Details"
+              />
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
+                  {statusInfo.text}
+                </span>
+                <BackButton />
+
+              </div>
+            </div>
+          </Toolbar>
+        </div>
+      </div>
+
+
+      <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+
+        {/* ── Gray sidebar ──────────────────────────────────────────────────── */}
+        <aside
+          className={[
+            // Mobile: full width, normal flow
+            'w-full bg-white border-b',
+            // Desktop: fixed width, sticky, scrollable internally
+            'lg:w-[220px] xl:w-[260px] lg:shrink-0',
+            'lg:sticky lg:top-[50px]',               // ← adjust to toolbar height
+            'lg:self-start',
+            'lg:max-h-[calc(100vh-50px)]',           // ← same value
+            'lg:overflow-y-auto',
+            'lg:border-b-0 lg:border-r',
+          ].join(' ')}
+        >
           <GraySidebar
             sections={sidebarSections as any}
             jobId={fabData?.job_id}
           />
-        </div>
-        <Container className="lg:col-span-9 px-0 mx-0">
+        </aside>
+
+        {/* ── Main content ──────────────────────────────────────────────────── */}
+        <main className="flex-1 min-w-0 p-3 sm:p-4 lg:p-5 space-y-4">
+
           {viewMode === 'file' && activeFile ? (
-            <div>
-              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-t-lg">
+            // ── File viewer ─────────────────────────────────────────────────
+            <div className="bg-white rounded-xl border overflow-hidden">
+              <div className="flex justify-between items-center p-4 bg-gray-50 border-b">
                 <div>
-                  <h3 className="font-semibold">{activeFile.name}</h3>
-                  <p className="text-sm text-gray-500">
-                    {formatBytes(activeFile.size)} • {activeFile.stage?.label || activeFile.stage}
+                  <h3 className="font-semibold text-sm">{activeFile.name}</h3>
+                  <p className="text-xs text-gray-500">
+                    {formatBytes(activeFile.size)} · {activeFile.stage?.label || activeFile.stage}
                   </p>
                 </div>
-                <Button variant="inverse" size="sm" onClick={() => { setViewMode('activity'); setActiveFile(null); }}>
-                  <X className="w-6 h-6" />
+                <Button
+                  variant="inverse"
+                  size="sm"
+                  onClick={() => { setViewMode('activity'); setActiveFile(null); }}
+                >
+                  <X className="w-5 h-5" />
                 </Button>
               </div>
-              <FileViewer file={activeFile} onClose={() => { setActiveFile(null); setViewMode('activity'); }} />
+              <FileViewer
+                file={activeFile}
+                onClose={() => { setActiveFile(null); setViewMode('activity'); }}
+              />
             </div>
           ) : (
             <>
-              <Card className='my-4'>
-                <CardHeader className='flex flex-col items-start py-4'>
-                  <div className="flex items-center justify-between w-full">
+              {/* ── Session status card ────────────────────────────────────── */}
+              <Card>
+                <CardHeader className="py-3 px-4 sm:px-5">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div>
-                      <CardTitle>Drafting activity</CardTitle>
-                      <p className="text-sm text-[#4B5563]">Update your drafting activity here</p>
+                      <CardTitle className="text-sm sm:text-base">Drafting activity</CardTitle>
+                      <p className="text-xs text-gray-500 mt-0.5">Update your drafting activity here</p>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        {
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{
                           idle: 'bg-gray-100 text-gray-800',
                           drafting: 'bg-green-100 text-green-800',
                           paused: 'bg-yellow-100 text-yellow-800',
                           on_hold: 'bg-orange-100 text-orange-800',
                           ended: 'bg-blue-100 text-blue-800',
                         }[sessionStatus] || 'bg-gray-100 text-gray-800'
-                      }`}>
+                        }`}>
                         {{
                           idle: 'Ready to Start',
                           drafting: 'Drafting Active',
@@ -652,8 +620,9 @@ export function DrafterDetailsPage() {
                 </CardHeader>
               </Card>
 
+              {/* ── Time tracking + files ──────────────────────────────────── */}
               <Card>
-                <CardContent>
+                <CardContent className="p-3 sm:p-4 lg:p-5 space-y-5">
                   <TimeTrackingComponent
                     isDrafting={isDrafting}
                     isPaused={isPaused}
@@ -672,42 +641,12 @@ export function DrafterDetailsPage() {
                     uploadedFilesCount={allFilesForDisplay.length}
                   />
 
-                  <Separator className="my-6" />
+                  <Separator />
 
-                  {/* File Upload Section - Using Final Programming style UI */}
-                  <div className="mb-6">
-
-                    {/* File Design Input */}
-                    {/* {shouldShowUploadSection && (
-                      <div className="mb-4">
-                        <label className="text-sm font-medium text-gray-700 block mb-2">
-                          File Type *
-                        </label>
-                        <Select
-                          value={fileDesign}
-                          onValueChange={(value) => setFileDesign(value)}
-                          disabled={hasEnded || isOnHold || isPaused}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select file type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Block Drawing">Block Drawing</SelectItem>
-                            <SelectItem value="Layout">Layout</SelectItem>
-                            <SelectItem value="SS Layout">SS Layout</SelectItem>
-                            <SelectItem value="Shop Drawing">Shop Drawing</SelectItem>
-                            <SelectItem value="Photo / Media">Photo / Media</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          File type is required before uploading files
-                        </p>
-                      </div>
-                    )} */}
-
+                  {/* File upload section */}
+                  <div>
                     {shouldShowUploadSection ? (
-                      <div className="space-y-4">
-                        {/* Upload Button */}
+                      <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <h3 className="font-semibold text-sm">Uploaded files</h3>
                           <Can action="create" on="Drafting">
@@ -716,36 +655,31 @@ export function DrafterDetailsPage() {
                               size="sm"
                               onClick={() => setShowUploadModal(true)}
                               disabled={hasEnded || isOnHold || isPaused}
-                              className="flex items-center gap-2"
+                              className="flex items-center gap-1.5 text-xs"
                             >
-                              <Plus className="w-4 h-4" />
+                              <Plus className="w-3.5 h-3.5" />
                               Add Files
                             </Button>
                           </Can>
                         </div>
-                        
-                        {/* File Display */}
                         <Documents
                           onFileClick={handleFileClick}
                           draftingData={fabData?.draft_data}
-                          // onDeleteFile={handleDeleteFile}
                           draftingId={draftingData?.id || fabData?.draft_data?.id}
                           showDeleteButton={!hasEnded && !isOnHold}
                         />
                       </div>
                     ) : (
-                      <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                        <p className="text-gray-500">Start the timer to enable file uploads</p>
-                        <p className="text-sm text-gray-400 mt-2">
-                          Files will appear here once uploaded
-                        </p>
+                      <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+                        <p className="text-sm text-gray-500">Start the timer to enable file uploads</p>
+                        <p className="text-xs text-gray-400 mt-1">Files will appear here once uploaded</p>
                       </div>
                     )}
                   </div>
 
-                  {/* Submit Button */}
+                  {/* Submit button */}
                   {viewMode === 'activity' && (
-                    <div className="flex justify-end gap-3 mt-6">
+                    <div className="flex justify-end gap-2 pt-2">
                       <BackButton fallbackUrl="/job/draft" label="Cancel" />
                       <Can action="create" on="Drafting">
                         <Button
@@ -764,51 +698,51 @@ export function DrafterDetailsPage() {
               <SessionHistory fabId={fabId} />
             </>
           )}
-        </Container>
-
-        {showSubmissionModal && (
-          <SubmissionModal
-            open={showSubmissionModal}
-            onClose={() => setShowSubmissionModal(false)}
-            drafting={draftingData}
-            uploadedFiles={filesForSubmission}
-            fabId={fabId}
-            userId={currentEmployeeId}
-            fabData={fabData}
-          />
-        )}
-
-        {/* Upload Modal */}
-        <UniversalUploadModal
-          open={showUploadModal}
-          onOpenChange={setShowUploadModal}
-          title="Upload Drafting Files"
-          entityId={draftingData?.id || fabData?.draft_data?.id}
-          uploadMutation={addFilesToDrafting}
-          stages={[
-            { value: 'drafting', label: 'Drafting' },
-            { value: 'pre_draft_review', label: 'Pre-Draft Review' },
-            { value: 'revision', label: 'Revision' },
-          ]}
-          fileTypes={[
-            { value: 'block_drawing', label: 'Block Drawing' },
-            { value: 'layout', label: 'Layout' },
-            { value: 'ss_layout', label: 'SS Layout' },
-            { value: 'shop_drawing', label: 'Shop Drawing' },
-          ]}
-          additionalParams={{
-            drafting_id: draftingData?.id || fabData?.draft_data?.id,
-            stage_name: 'drafting',
-          }}
-          onUploadComplete={() => {
-            toast.success('Files uploaded successfully');
-            refetchFab();
-            refetchDrafting();
-            setShowUploadModal(false);
-          }}
-        />
+        </main>
       </div>
-    </>
+
+      {/* ── Modals ────────────────────────────────────────────────────────────── */}
+      {showSubmissionModal && (
+        <SubmissionModal
+          open={showSubmissionModal}
+          onClose={() => setShowSubmissionModal(false)}
+          drafting={draftingData}
+          uploadedFiles={filesForSubmission}
+          fabId={fabId}
+          userId={currentEmployeeId}
+          fabData={fabData}
+        />
+      )}
+
+      <UniversalUploadModal
+        open={showUploadModal}
+        onOpenChange={setShowUploadModal}
+        title="Upload Drafting Files"
+        entityId={draftingData?.id || fabData?.draft_data?.id}
+        uploadMutation={addFilesToDrafting}
+        stages={[
+          { value: 'drafting', label: 'Drafting' },
+          { value: 'pre_draft_review', label: 'Pre-Draft Review' },
+          { value: 'revision', label: 'Revision' },
+        ]}
+        fileTypes={[
+          { value: 'block_drawing', label: 'Block Drawing' },
+          { value: 'layout', label: 'Layout' },
+          { value: 'ss_layout', label: 'SS Layout' },
+          { value: 'shop_drawing', label: 'Shop Drawing' },
+        ]}
+        additionalParams={{
+          drafting_id: draftingData?.id || fabData?.draft_data?.id,
+          stage_name: 'drafting',
+        }}
+        onUploadComplete={() => {
+          toast.success('Files uploaded successfully');
+          refetchFab();
+          refetchDrafting();
+          setShowUploadModal(false);
+        }}
+      />
+    </div>
   );
 }
 

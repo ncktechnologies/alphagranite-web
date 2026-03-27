@@ -1,12 +1,24 @@
-// FinalProgrammingDetailsPage.tsx
-import React, { useCallback, useState, useEffect } from 'react';
-import { Container } from '@/components/common/container';
-import GraySidebar from '../../components/job-details.tsx/GraySidebar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useCallback, useState, useEffect, useMemo } from 'react';
+import { useNavigate, useParams } from 'react-router-dom'; // ← added useNavigate import
+import { Link } from 'react-router-dom';
+import { toast } from 'sonner';
+import { useSelector } from 'react-redux';
+import { X, Plus } from 'lucide-react';
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { useNavigate, useParams } from 'react-router';
-import { toast } from 'sonner';
+import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+import GraySidebar from '../../components/job-details.tsx/GraySidebar';
+import { Documents } from '@/pages/shop/components/files';
+import { FileViewer } from '../slab-smith/components';
+import { TimeTrackingComponent } from './components/TimeTrackingComponent';
+import { SubmissionModal } from './components/SubmissionModal';
+import { UniversalUploadModal } from '@/components/universal-upload';
+import { BackButton } from '@/components/common/BackButton';
+import { Can } from '@/components/permission';
+import { Skeleton } from '@/components/ui/skeleton';
+
 import {
   useGetFabByIdQuery,
   useGetFinalProgrammingSessionStatusQuery,
@@ -17,29 +29,12 @@ import {
   useCompleteFinalProgrammingMutation,
   useDeleteFileFromDraftingMutation
 } from '@/store/api/job';
-import { TimeTrackingComponent } from './components/TimeTrackingComponent';
-import { SubmissionModal } from './components/SubmissionModal';
-import { useSelector } from 'react-redux';
+
 import { UploadedFileMeta } from '@/types/uploads';
-import { X, Plus } from 'lucide-react';
-import { Can } from '@/components/permission';
-import { Documents } from '@/pages/shop/components/files';
 import { FileWithPreview } from '@/hooks/use-file-upload';
 import { getFileStage } from '@/utils/file-labeling';
-import { FileViewer } from '../slab-smith/components';
-import { BackButton } from '@/components/common/BackButton';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
-import { Link } from 'react-router-dom';
-import { Skeleton } from '@/components/ui/skeleton';
-import { UniversalUploadModal } from '@/components/universal-upload';
 
+// Helper functions
 const formatBytes = (bytes: number, decimals = 2) => {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -51,30 +46,24 @@ const formatBytes = (bytes: number, decimals = 2) => {
 
 const getAllFabNotes = (fabNotes: any[]) => fabNotes || [];
 
-// Helper function to get FAB status display
 const getFabStatusInfo = (statusId: number | undefined) => {
-  if (statusId === 0) {
-    return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
-  } else if (statusId === 1) {
-    return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
-  } else {
-    return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
-  }
+  if (statusId === 0) return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
+  if (statusId === 1) return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
+  return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
 };
 
 export function FinalProgrammingDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const fabId = id ? Number(id) : 0;
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // now defined
 
   const currentUser = useSelector((s: any) => s.user.user);
   const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
 
-  // Load fab and final programming session status
+  // API hooks
   const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, { skip: !fabId });
   const { data: fpSessionData, isLoading: isFPLoading, refetch: refetchFPSession } = useGetFinalProgrammingSessionStatusQuery(fabId, { skip: !fabId });
 
-  // Mutations
   const [manageFinalProgrammingSession] = useManageFinalProgrammingSessionMutation();
   const [toggleFabOnHold] = useToggleFabOnHoldMutation();
   const [createFabNote] = useCreateFabNoteMutation();
@@ -82,7 +71,7 @@ export function FinalProgrammingDetailsPage() {
   const [completeFinalProgramming] = useCompleteFinalProgrammingMutation();
   const [deleteFileFromDraft] = useDeleteFileFromDraftingMutation();
 
-  // Timer / Session State
+  // Timer state
   const [isDrafting, setIsDrafting] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [hasEnded, setHasEnded] = useState(false);
@@ -90,19 +79,16 @@ export function FinalProgrammingDetailsPage() {
   const [draftStart, setDraftStart] = useState<Date | null>(null);
   const [draftEnd, setDraftEnd] = useState<Date | null>(null);
 
-  // File State
+  // File state
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [uploadedFileMetas, setUploadedFileMetas] = useState<UploadedFileMeta[]>([]);
-  const [isUploadingDocuments, setIsUploadingDocuments] = useState(false);
-  const [fileDesign, setFileDesign] = useState<string>(''); // File design input
-
-  // View State – unified file viewer
+  const [fileDesign, setFileDesign] = useState<string>('');
   const [activeFile, setActiveFile] = useState<any | null>(null);
   const [viewMode, setViewMode] = useState<'activity' | 'file'>('activity');
   const [showSubmissionModal, setShowSubmissionModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
 
-  // Sync with session API
+  // Sync session data
   useEffect(() => {
     if (fpSessionData?.data) {
       const session = fpSessionData.data;
@@ -119,7 +105,10 @@ export function FinalProgrammingDetailsPage() {
     }
   }, [fpSessionData]);
 
-  // Helper: Normalize any file object for FileViewer
+  // Helper: should show upload section (mirror draft details)
+  const shouldShowUploadSection = (isDrafting && !isPaused) || (fabData?.draft_data?.files?.length > 0);
+
+  // Helper: enhance file for viewer
   const enhanceFileForViewer = (file: any) => ({
     ...file,
     id: file.id,
@@ -140,51 +129,35 @@ export function FinalProgrammingDetailsPage() {
     uploadedBy: file.uploaded_by_name ?? file.uploader_name ?? file.uploaded_by ?? currentUser?.name ?? 'Unknown',
   });
 
-  // File click handler – used by UploadDocuments AND Documents
   const handleFileClick = (file: any) => {
-    const enhanced = enhanceFileForViewer(file);
-    setActiveFile(enhanced);
+    setActiveFile(enhanceFileForViewer(file));
     setViewMode('file');
   };
 
-  // Handle time tracking events
+  // Time tracking handlers
   const handleStart = useCallback(async (startTime: Date) => {
-    if (fabId) {
-      try {
-        await manageFinalProgrammingSession({
-          fab_id: fabId,
-          data: {
-            action: 'start',
-            started_by: currentEmployeeId,
-            timestamp: startTime.toISOString(),
-          }
-        }).unwrap();
-
-        await refetchFPSession();
-        toast.success('Final programming session started');
-      } catch (error) {
-        console.error('Failed to start final programming session:', error);
-        toast.error('Failed to start final programming session');
-        return;
-      }
+    try {
+      await manageFinalProgrammingSession({
+        fab_id: fabId,
+        data: { action: 'start', started_by: currentEmployeeId, timestamp: startTime.toISOString() }
+      }).unwrap();
+      await refetchFPSession();
+      toast.success('Final programming session started');
+      setIsDrafting(true);
+      setIsPaused(false);
+      setHasEnded(false);
+      setDraftStart(startTime);
+    } catch (error) {
+      console.error('Failed to start session:', error);
+      toast.error('Failed to start session');
     }
-
-    setIsDrafting(true);
-    setIsPaused(false);
-    setHasEnded(false);
-    setDraftStart(startTime);
   }, [fabId, currentEmployeeId, manageFinalProgrammingSession, refetchFPSession]);
 
   const handlePause = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
     try {
       await manageFinalProgrammingSession({
         fab_id: fabId,
-        data: {
-          action: 'pause',
-          note: data?.note,
-          sqft_drafted: data?.sqft_drafted,
-          timestamp: new Date().toISOString(),
-        }
+        data: { action: 'pause', note: data?.note, sqft_drafted: data?.sqft_drafted, timestamp: new Date().toISOString() }
       }).unwrap();
       setIsPaused(true);
       await refetchFPSession();
@@ -199,12 +172,7 @@ export function FinalProgrammingDetailsPage() {
     try {
       await manageFinalProgrammingSession({
         fab_id: fabId,
-        data: {
-          action: 'resume',
-          note: data?.note,
-          sqft_drafted: data?.sqft_drafted,
-          timestamp: new Date().toISOString(),
-        }
+        data: { action: 'resume', note: data?.note, sqft_drafted: data?.sqft_drafted, timestamp: new Date().toISOString() }
       }).unwrap();
       setIsPaused(false);
       await refetchFPSession();
@@ -219,12 +187,8 @@ export function FinalProgrammingDetailsPage() {
     try {
       await manageFinalProgrammingSession({
         fab_id: fabId,
-        data: {
-          action: 'end',
-          timestamp: endDate.toISOString(),
-        }
+        data: { action: 'end', timestamp: endDate.toISOString() }
       }).unwrap();
-
       setIsDrafting(false);
       setIsPaused(false);
       setHasEnded(true);
@@ -239,28 +203,14 @@ export function FinalProgrammingDetailsPage() {
   const handleOnHold = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
     try {
       await toggleFabOnHold({ fab_id: fabId, on_hold: true }).unwrap();
-
       if (data?.note) {
-        await createFabNote({
-          fab_id: fabId,
-          note: data.note,
-          stage: 'final_programming'
-        }).unwrap();
+        await createFabNote({ fab_id: fabId, note: data.note, stage: 'final_programming' }).unwrap();
       }
-
-      // Pause the session if it's running
       await manageFinalProgrammingSession({
         fab_id: fabId,
-        data: {
-          action: 'pause',
-          note: data?.note ? `[On Hold] ${data.note}` : '[On Hold]',
-          sqft_drafted: data?.sqft_drafted,
-          timestamp: new Date().toISOString(),
-        }
+        data: { action: 'pause', note: data?.note ? `[On Hold] ${data.note}` : '[On Hold]', sqft_drafted: data?.sqft_drafted, timestamp: new Date().toISOString() }
       }).unwrap();
-
       setIsPaused(true);
-
       await refetchFPSession();
       await refetchFab();
       toast.success('Job placed on hold');
@@ -270,38 +220,14 @@ export function FinalProgrammingDetailsPage() {
     }
   }, [fabId, toggleFabOnHold, createFabNote, manageFinalProgrammingSession, refetchFPSession, refetchFab]);
 
-  // Local file selection (from UploadDocuments)
-  const handleFilesChange = useCallback(async (files: FileWithPreview[]) => {
-    if (!files || files.length === 0) {
-      setPendingFiles([]);
-      return;
-    }
-
-    const validFiles = files.filter((fileItem) => fileItem.file instanceof File);
-    if (validFiles.length === 0) {
-      setPendingFiles([]);
-      return;
-    }
-
-    const fileObjects = validFiles.map(f => f.file as File);
-    setPendingFiles(fileObjects);
-
-    const newFileMetas: UploadedFileMeta[] = fileObjects.map((file, index) => ({
-      id: `pending-${Date.now()}-${index}`,
-      name: file.name,
-      size: file.size,
-      type: file.type,
-    }));
-    setUploadedFileMetas(newFileMetas);
-  }, []);
-
+  // File deletion
   const handleDeleteFile = async (fileId: number) => {
     if (!fabData?.draft_data?.id) {
       toast.error('Drafting entry not found');
       return;
     }
     try {
-      await deleteFileFromDraft({ drafting_id: fabData?.draft_data?.id, file_id: String(fileId) }).unwrap();
+      await deleteFileFromDraft({ drafting_id: fabData.draft_data.id, file_id: String(fileId) }).unwrap();
       toast.success('File deleted successfully');
       refetchFab();
     } catch (error) {
@@ -310,69 +236,44 @@ export function FinalProgrammingDetailsPage() {
     }
   };
 
-  // Determine if upload section should be visible – show when timer is running/paused or files exist
-  const shouldShowUploadSection = (isDrafting && !isPaused);
-
-  // Determine if submission is allowed – session must be ended (not active/paused) and files must exist
-  const finalProgrammingFiles = fabData?.draft_data?.files?.filter((file: any) => {
-    const stageKey = file.stage_name ?? file.stage;
-    return (
-      stageKey === 'final_programming' ||
-      stageKey === 'cut_list' ||
-      (stageKey && stageKey.toLowerCase().includes('final_programming')) ||
-      (stageKey && stageKey.toLowerCase().includes('cut_list'))
-    );
-  }) || [];
+  // Compute files for final programming
+  const finalProgrammingFiles = useMemo(() => {
+    if (!fabData?.draft_data?.files) return [];
+    return fabData.draft_data.files.filter((file: any) => {
+      const stageKey = file.stage_name ?? file.stage;
+      return stageKey === 'final_programming' || stageKey === 'cut_list' || stageKey?.toLowerCase().includes('final_programming');
+    });
+  }, [fabData]);
 
   const hasFinalProgrammingFiles = finalProgrammingFiles.length > 0;
   const canOpenSubmit = hasFinalProgrammingFiles && !isPaused && isDrafting;
 
   const handleOpenSubmissionModal = async () => {
-    try {
-      setShowSubmissionModal(true);
-    } catch (error) {
-      console.error('Failed to prepare files for submission:', error);
-    }
+    setShowSubmissionModal(true);
   };
 
-  // Prepare clickable links
-  const jobNameLink = fabData?.job_details?.id ? `/job/details/${fabData.job_details.id}` : '#';
-  const jobNumberLink = fabData?.job_details?.job_number
-    ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fabData.job_details.job_number}`
-    : '#';
-
+  // Loading skeleton (mirror draft details)
   if (isFabLoading || isFPLoading) {
     return (
-      <Container className='lg:mx-0 max-w-full'>
-        <Toolbar className=''>
-          <div className="flex items-center justify-between w-full">
-            <div>
-              <ToolbarHeading
-                title={<Skeleton className="h-8 w-96" />}
-                description={<Skeleton className="h-4 w-80 mt-1" />}
-              />
-            </div>
-            <Skeleton className="h-6 w-20 rounded-full" />
+      <div className="flex flex-col min-h-screen">
+        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+          <Skeleton className="h-8 w-72 mb-1" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+          <div className="w-full lg:w-[220px] xl:w-[260px] shrink-0 border-r">
+            <Skeleton className="h-full min-h-[300px] w-full" />
           </div>
-        </Toolbar>
-        <div className="border-t grid grid-cols-1 lg:grid-cols-12 gap-3 items-start h-[calc(100vh-120px)] overflow-y-auto">
-          <div className="lg:col-span-3 w-full lg:w-[250px] xl:w-[300px] ultra:w-[400px] sticky top-0 self-start">
-            <Skeleton className="h-64 w-full" />
-          </div>
-          <div className="lg:col-span-9">
-            <Card className='my-4'>
-              <CardHeader><Skeleton className="h-6 w-48" /></CardHeader>
-              <CardContent><Skeleton className="h-96 w-full" /></CardContent>
-            </Card>
+          <div className="flex-1 p-4 sm:p-6 space-y-4">
+            <Skeleton className="h-24 w-full rounded-xl" />
+            <Skeleton className="h-96 w-full rounded-xl" />
           </div>
         </div>
-      </Container>
+      </div>
     );
   }
 
-  const statusInfo = getFabStatusInfo(fabData?.status_id);
-
-  // Sidebar data – long format Job Details
+  // Sidebar sections
   const sidebarSections = [
     {
       title: 'Job Details',
@@ -381,11 +282,7 @@ export function FinalProgrammingDetailsPage() {
         { label: "Account Name", value: fabData?.account_name || '—' },
         {
           label: "Fab ID",
-          value: (
-            <Link to={`/sales/${fabData?.id}`} className="text-primary hover:underline">
-              FAB-{fabData?.id}
-            </Link>
-          ),
+          value: <Link to={`/sales/${fabData?.id}`} className="text-primary hover:underline">FAB-{fabData?.id}</Link>,
         },
         { label: "Area", value: fabData?.input_area || '—' },
         {
@@ -394,10 +291,7 @@ export function FinalProgrammingDetailsPage() {
             ? `${fabData.stone_type_name} - ${fabData.stone_color_name || ''} - ${fabData.stone_thickness_value || ''}`
             : '—',
         },
-        {
-          label: "Fab Type",
-          value: <span className="uppercase">{fabData?.fab_type || '—'}</span>,
-        },
+        { label: "Fab Type", value: <span className="uppercase">{fabData?.fab_type || '—'}</span> },
         { label: "Edge", value: fabData?.edge_name || '—' },
         { label: "Total s.f.", value: fabData?.total_sqft?.toString() || '—' },
         {
@@ -421,7 +315,6 @@ export function FinalProgrammingDetailsPage() {
           drafting: { label: 'Drafting', color: 'text-green-700' },
           sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
           slab_smith_request: { label: 'Slab Smith Request', color: 'text-red-700' },
-          slab_smith: { label: 'Slabsmith', color: 'text-red-700' },
           cut_list: { label: 'Final Programming', color: 'text-purple-700' },
           cutting: { label: 'Cutting', color: 'text-orange-700' },
           revisions: { label: 'Revisions', color: 'text-purple-700' },
@@ -429,10 +322,8 @@ export function FinalProgrammingDetailsPage() {
           final_programming: { label: 'Final Programming', color: 'text-purple-700' },
           general: { label: 'General', color: 'text-gray-700' },
         };
-
         const stage = note.stage || 'general';
         const config = stageConfig[stage] || stageConfig.general;
-
         return {
           id: note.id,
           avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
@@ -444,53 +335,76 @@ export function FinalProgrammingDetailsPage() {
     },
   ];
 
-  // -------------------- RENDER – MAIN LAYOUT --------------------
+  const jobNameLink = fabData?.job_details?.id ? `/job/details/${fabData.job_details.id}` : '#';
+  const jobNumberLink = fabData?.job_details?.job_number
+    ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fabData.job_details.job_number}`
+    : '#';
+  const statusInfo = getFabStatusInfo(fabData?.status_id);
+
   return (
-    <>
-      {/* Top toolbar with clickable job name/number and description + status badge */}
-      <Container className='lg:mx-0 max-w-full'>
-        <Toolbar className=''>
-          <div className="flex items-center justify-between w-full">
-            <ToolbarHeading
-              title={
-                <div className="text-2xl font-bold">
-                  <a href={jobNameLink} className="hover:underline">
-                    {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
-                  </a>
-                  {' - '}
-                  <a href={jobNumberLink} className="hover:underline" target="_blank">
-                    {fabData?.job_details?.job_number || fabData?.job_id}
-                  </a>
-                </div>
-              }
-              // description={(fabData?.job_details as any)?.description || 'No description available'}
-            />
-            <div className="flex items-center gap-2">
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
-                {statusInfo.text}
-              </span>
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      {/* Sticky toolbar */}
+      <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+        <div className="px-3 sm:px-4 lg:px-6">
+          <Toolbar className="py-2 sm:py-3">
+            <div className="flex items-center justify-between w-full gap-2 flex-wrap">
+              <ToolbarHeading
+                title={
+                  <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
+                    <a href={jobNameLink} className="hover:underline">
+                      {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
+                    </a>
+                    <span className="mx-1 text-gray-400">·</span>
+                    <a
+                      href={jobNumberLink}
+                      className="hover:underline text-gray-600"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {fabData?.job_details?.job_number || fabData?.job_id}
+                    </a>
+                  </div>
+                }
+                description="Final Programming Details"
+              />
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
+                  {statusInfo.text}
+                </span>
+                <BackButton />
+              </div>
             </div>
-          </div>
-        </Toolbar>
-      </Container>
-
-      {/* Main grid with sticky sidebar and scrollable content */}
-      <div className="border-t grid grid-cols-1 lg:grid-cols-12 xl:gap-6 ultra:gap-0 items-start h-[calc(100vh-120px)] overflow-y-auto">
-        {/* Sticky sidebar */}
-        <div className="lg:col-span-3 w-full lg:w-[250px] xl:w-[300px] ultra:w-[400px] sticky top-0 self-start">
-          <GraySidebar sections={sidebarSections as any} jobId={fabData?.job_id} />
+          </Toolbar>
         </div>
+      </div>
 
-        {/* Main content – toggles between file viewer and activity UI */}
-        <Container className="lg:col-span-9">
+      {/* Main two‑column layout */}
+      <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+        {/* Sticky sidebar */}
+        <aside
+          className={[
+            'w-full bg-white border-b',
+            'lg:w-[220px] xl:w-[260px] lg:shrink-0',
+            'lg:sticky lg:top-[50px]',
+            'lg:self-start',
+            'lg:max-h-[calc(100vh-50px)]',
+            'lg:overflow-y-auto',
+            'lg:border-b-0 lg:border-r',
+          ].join(' ')}
+        >
+          <GraySidebar sections={sidebarSections as any} jobId={fabData?.job_id} />
+        </aside>
+
+        {/* Main content */}
+        <main className="flex-1 min-w-0 p-3 sm:p-4 lg:p-5 space-y-4">
           {viewMode === 'file' && activeFile ? (
-            // -------------------- FILE VIEWER MODE (sidebar stays visible) --------------------
-            <div>
-              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-t-lg">
+            // File viewer
+            <div className="bg-white rounded-xl border overflow-hidden">
+              <div className="flex justify-between items-center p-4 bg-gray-50 border-b">
                 <div>
-                  <h3 className="font-semibold">{activeFile.name}</h3>
-                  <p className="text-sm text-gray-500">
-                    {activeFile.formattedSize} • {activeFile.stage?.label || activeFile.stage}
+                  <h3 className="font-semibold text-sm">{activeFile.name}</h3>
+                  <p className="text-xs text-gray-500">
+                    {activeFile.formattedSize} · {activeFile.stage?.label || activeFile.stage}
                   </p>
                 </div>
                 <Button
@@ -501,37 +415,29 @@ export function FinalProgrammingDetailsPage() {
                     setActiveFile(null);
                   }}
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5" />
                 </Button>
               </div>
               <FileViewer
                 file={activeFile}
                 onClose={() => {
-                  setActiveFile(null);
                   setViewMode('activity');
+                  setActiveFile(null);
                 }}
               />
             </div>
           ) : (
-            // -------------------- ACTIVITY MODE (timer, uploads, etc.) --------------------
+            // Activity mode
             <>
-              {/* Removed the old header (FAB-... and status badges) because it's now in the toolbar */}
-
-              <Separator className="my-6" />
-
-              <Card className="my-4">
-                <CardHeader className="flex flex-col items-start py-4">
-                  <div className="flex items-center justify-between w-full">
-                    <div>
-                      <CardTitle>Final Programming Activity</CardTitle>
-                      <p className="text-sm text-[#4B5563]">Update your final programming activity here</p>
-                    </div>
-                  </div>
+              <Card>
+                <CardHeader className="py-3 px-4 sm:px-5 block">
+                  <CardTitle className="text-sm sm:text-base">Final Programming Activity</CardTitle>
+                  <CardDescription className="text-xs text-gray-500 mt-0.5">Update your final programming activity here</CardDescription>
                 </CardHeader>
               </Card>
 
               <Card>
-                <CardContent>
+                <CardContent className="p-3 sm:p-4 lg:p-5 space-y-5">
                   <TimeTrackingComponent
                     isDrafting={isDrafting}
                     isPaused={isPaused}
@@ -544,154 +450,109 @@ export function FinalProgrammingDetailsPage() {
                     onTimeUpdate={setTotalTime}
                     hasEnded={hasEnded}
                     sessionData={fpSessionData}
-                    isFabOnHold={fabData?.on_hold}
+                    isFabOnHold={fabData?.status_id === 0}
                   />
 
-                  <Separator className="my-3" />
+                  <Separator />
 
-                  <div className="mb-6">
-                    <h3 className="text-lg font-semibold mb-4">Files</h3>
-
-                    {/* File Design Input */}
-                    {shouldShowUploadSection && (
-                      <div className="mb-4">
-                        <label className="text-sm font-medium text-gray-700 block mb-2">
-                          File Type *
-                        </label>
-                        <Select
-                          value={fileDesign}
-                          onValueChange={(value) => setFileDesign(value)}
-                          disabled={!isDrafting && isPaused}
+                  {/* File section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-sm">Uploaded files</h3>
+                      <Can action="create" on="FinalProgramming">
+                        <Button
+                          variant="dashed"
+                          size="sm"
+                          onClick={() => setShowUploadModal(true)}
+                          disabled={!isDrafting || isPaused || hasEnded}
+                          className="flex items-center gap-1.5 text-xs"
                         >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Select file Type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Block Drawing">Block Drawing</SelectItem>
-                            <SelectItem value="Layout">Layout</SelectItem>
-                            <SelectItem value="SS Layout">SS Layout</SelectItem>
-                            <SelectItem value="Shop Drawing">Shop Drawing</SelectItem>
-                            <SelectItem value="Photo / Media">Photo / Media</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <p className="text-xs text-muted-foreground mt-1">
-                          File type is required before uploading files
-                        </p>
-                      </div>
-                    )}
+                          <Plus className="w-3.5 h-3.5" />
+                          Add Files
+                        </Button>
+                      </Can>
+                    </div>
 
                     {shouldShowUploadSection ? (
-                      <div className="space-y-4">
-                        {/* Upload Button */}
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-sm">Uploaded files</h3>
-                          <Can action="create" on="FinalProgramming">
-                            <Button
-                              variant="dashed"
-                              size="sm"
-                              onClick={() => setShowUploadModal(true)}
-                              disabled={!isDrafting || isPaused || hasEnded}
-                              className="flex items-center gap-2"
-                            >
-                              <Plus className="w-4 h-4" />
-                              Add Files
-                            </Button>
-                          </Can>
-                        </div>
-                        
-                        {/* File Display */}
-                        <Documents
-                          onFileClick={handleFileClick}
-                          draftingData={fabData?.draft_data}
-                          draftingId={fabData?.draft_data?.id}
-                          showDeleteButton={!hasEnded && !isPaused}
-                        />
-                      </div>
+                      <Documents
+                        onFileClick={handleFileClick}
+                        draftingData={fabData?.draft_data}
+                        draftingId={fabData?.draft_data?.id}
+                        showDeleteButton={!hasEnded && !isPaused}
+                      />
                     ) : (
-                      <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                        {isPaused ? (
-                          <p className="text-gray-500">Session is paused. Please resume to enable file uploads</p>
-                        ) : (
-                          <>
-                            <p className="text-gray-500">Start the timer to enable file uploads</p>
-                            <p className="text-sm text-gray-400 mt-2">
-                              Files will appear here once uploaded
-                            </p>
-                          </>
-                        )}
+                      <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+                        <p className="text-sm text-gray-500">Start the timer to enable file uploads</p>
+                        <p className="text-xs text-gray-400 mt-1">Files will appear here once uploaded</p>
                       </div>
                     )}
                   </div>
 
-                  {/* Display uploaded files from server - REMOVED, now shown above */}
+                  {/* Submit button */}
+                  <div className="flex justify-end gap-2 pt-2">
+                    <BackButton fallbackUrl="/job/final-programming" label="Cancel" />
+                    <Can action="create" on="Final Programming">
+                      <Button
+                        onClick={handleOpenSubmissionModal}
+                        className="bg-green-600 hover:bg-green-700"
+                        disabled={!canOpenSubmit}
+                      >
+                        Submit Final Programming Work
+                      </Button>
+                    </Can>
+                  </div>
                 </CardContent>
-                <div className="flex justify-end p-6 pt-0 gap-2 items-center">
-                  <BackButton fallbackUrl="/job/final-programming" label='Cancel' />
-                  <Can action="create" on="Final Programming">
-                    <Button
-                      onClick={handleOpenSubmissionModal}
-                      disabled={!canOpenSubmit}
-                      className="bg-green-600 hover:bg-green-700"
-                      size="lg"
-                    >
-                      Submit Final Programming Work
-                    </Button>
-                  </Can>
-                </div>
               </Card>
-
-              <SubmissionModal
-                open={showSubmissionModal}
-                onClose={(success?: boolean) => {
-                  setShowSubmissionModal(false);
-                  if (success) {
-                    handleEnd(new Date());
-                    navigate('/job/final-programming');
-                  }
-                }}
-                drafting={fpSessionData?.data}
-                uploadedFiles={uploadedFileMetas.map((meta) => ({
-                  ...meta,
-                  stage_name: 'final_programming',
-                }))}
-                fabId={fabId}
-                userId={currentEmployeeId}
-              />
-
-              {/* Universal Upload Modal */}
-              <UniversalUploadModal
-                open={showUploadModal}
-                onOpenChange={setShowUploadModal}
-                title="Upload Final Programming Files"
-                entityId={fabData?.draft_data?.id}
-                uploadMutation={addFilesToFinalProgramming}
-                stages={[
-                  { value: 'cut_list', label: 'Cut List' },
-                  { value: 'final_programming', label: 'Final Programming' },
-                ]}
-                fileTypes={[
-                  { value: 'block_drawing', label: 'Block Drawing' },
-                  { value: 'layout', label: 'Layout' },
-                  { value: 'ss_layout', label: 'SS Layout' },
-                  { value: 'shop_drawing', label: 'Shop Drawing' },
-                  { value: 'photo_media', label: 'Photo / Media' },
-                ]}
-                additionalParams={{
-                  drafting_id: fabData?.draft_data?.id,
-                  stage_name: 'final_programming',
-                }}
-                onUploadComplete={() => {
-                  toast.success('Files uploaded successfully');
-                  refetchFab();
-                  setShowUploadModal(false);
-                  setFileDesign('');
-                }}
-              />
             </>
           )}
-        </Container>
+        </main>
       </div>
-    </>
+
+      {/* Modals */}
+      <SubmissionModal
+        open={showSubmissionModal}
+        onClose={(success?: boolean) => {
+          setShowSubmissionModal(false);
+          if (success) {
+            handleEnd(new Date());
+            navigate('/job/final-programming');
+          }
+        }}
+        drafting={fpSessionData?.data}
+        uploadedFiles={uploadedFileMetas.map((meta) => ({ ...meta, stage_name: 'final_programming' }))}
+        fabId={fabId}
+        userId={currentEmployeeId}
+      />
+
+      <UniversalUploadModal
+        open={showUploadModal}
+        onOpenChange={setShowUploadModal}
+        title="Upload Final Programming Files"
+        entityId={fabData?.draft_data?.id}
+        uploadMutation={addFilesToFinalProgramming}
+        stages={[
+          { value: 'cut_list', label: 'Cut List' },
+          { value: 'final_programming', label: 'Final Programming' },
+        ]}
+        fileTypes={[
+          { value: 'block_drawing', label: 'Block Drawing' },
+          { value: 'layout', label: 'Layout' },
+          { value: 'ss_layout', label: 'SS Layout' },
+          { value: 'shop_drawing', label: 'Shop Drawing' },
+          { value: 'photo_media', label: 'Photo / Media' },
+        ]}
+        additionalParams={{
+          drafting_id: fabData?.draft_data?.id,
+          stage_name: 'final_programming',
+        }}
+        onUploadComplete={() => {
+          toast.success('Files uploaded successfully');
+          refetchFab();
+          setShowUploadModal(false);
+          setFileDesign('');
+        }}
+      />
+    </div>
   );
 }
 

@@ -1,6 +1,4 @@
-'use client';
-
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useCallback, useState, useEffect, useRef, useMemo } from 'react';
 import { Container } from '@/components/common/container';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,28 +49,16 @@ import { Link } from 'react-router-dom';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UniversalUploadModal } from '@/components/universal-upload';
 
-// Helper function to format timestamp without 'Z'
-const formatTimestamp = (date: Date) => {
-  return date.toISOString().replace('Z', '');
-};
+// Helper functions
+const formatTimestamp = (date: Date) => date.toISOString().replace('Z', '');
+const getAllFabNotes = (fabNotes: any[]) => fabNotes || [];
 
-// Helper function to get all fab notes (unfiltered)
-const getAllFabNotes = (fabNotes: any[]) => {
-  return fabNotes || [];
-};
-
-// Helper function to get FAB status display
 const getFabStatusInfo = (statusId: number | undefined) => {
-  if (statusId === 0) {
-    return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
-  } else if (statusId === 1) {
-    return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
-  } else {
-    return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
-  }
+  if (statusId === 0) return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
+  if (statusId === 1) return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
+  return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
 };
 
-// Helper function for formatting bytes
 const formatBytes = (bytes: number, decimals = 2) => {
   if (bytes === 0) return '0 Bytes';
   const k = 1024;
@@ -82,8 +68,23 @@ const formatBytes = (bytes: number, decimals = 2) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 };
 
-// Get revision info from SCT data
-const getRevisionInfo = (fabData: any, sctData: any) => {
+// Improved revision info extraction using both SCT and revisions data
+const getRevisionInfo = (fabData: any, sctData: any, revisionsData: any) => {
+  // First try to get from revisions table (most accurate)
+  const revisionsArray = Array.isArray(revisionsData) ? revisionsData : (revisionsData as any)?.data || [];
+  const latestRevision = revisionsArray.length > 0 ? revisionsArray[0] : null;
+
+  if (latestRevision) {
+    return {
+      revisionType: latestRevision.revision_type || 'general',
+      revisionReason: latestRevision.revision_notes || 'No revision reason provided',
+      revisionCount: revisionsArray.length,
+      salesCTId: latestRevision.sales_ct_id,
+      salesCTData: latestRevision,
+    };
+  }
+
+  // Fallback to SCT data if no revision exists
   const salesCTData = fabData?.sales_ct_data || sctData;
   if (!salesCTData) {
     return {
@@ -91,32 +92,30 @@ const getRevisionInfo = (fabData: any, sctData: any) => {
       revisionReason: 'No revision reason provided',
       revisionCount: 0,
       salesCTId: null,
-      salesCTData: null
+      salesCTData: null,
     };
   }
+
   let revisionType = 'general';
   const revisionTypeFromSCT = salesCTData?.revision_type;
   if (revisionTypeFromSCT) {
-    if (revisionTypeFromSCT.toLowerCase().includes('cad')) {
-      revisionType = 'cad';
-    } else if (revisionTypeFromSCT.toLowerCase().includes('client')) {
-      revisionType = 'client';
-    } else if (revisionTypeFromSCT.toLowerCase().includes('sales')) {
-      revisionType = 'sales';
-    } else if (revisionTypeFromSCT.toLowerCase().includes('template')) {
-      revisionType = 'template';
-    } else {
-      revisionType = revisionTypeFromSCT.toLowerCase();
-    }
+    if (revisionTypeFromSCT.toLowerCase().includes('cad')) revisionType = 'cad';
+    else if (revisionTypeFromSCT.toLowerCase().includes('client')) revisionType = 'client';
+    else if (revisionTypeFromSCT.toLowerCase().includes('sales')) revisionType = 'sales';
+    else if (revisionTypeFromSCT.toLowerCase().includes('template')) revisionType = 'template';
+    else revisionType = revisionTypeFromSCT.toLowerCase();
   }
+
   const revisionCount = salesCTData?.current_revision_count || 0;
   let revisionReason = 'No revision reason provided';
+
   const fabNotes = fabData?.fab_notes || [];
   const revisionNote = fabNotes.find((note: any) =>
     note.stage === 'sales_ct' ||
     note.note?.includes('[REVISION REQUEST]') ||
     note.note?.includes('revision')
   );
+
   if (salesCTData?.revision_reason) {
     revisionReason = salesCTData.revision_reason;
   } else if (revisionNote?.note) {
@@ -126,12 +125,13 @@ const getRevisionInfo = (fabData: any, sctData: any) => {
   } else if (salesCTData?.sales_ct_notes) {
     revisionReason = salesCTData.sales_ct_notes;
   }
+
   return {
     revisionType,
     revisionReason,
     revisionCount,
     salesCTId: salesCTData?.id,
-    salesCTData: salesCTData
+    salesCTData,
   };
 };
 
@@ -143,30 +143,23 @@ export function RevisionDetailsPage() {
   const currentUser = useSelector((s: any) => s.user.user);
   const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
 
-  // Load fab & drafting data
+  // API queries
   const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, {
     skip: !fabId,
     refetchOnMountOrArgChange: true,
   });
-
   const { data: draftingData, isLoading: isDraftingLoading, refetch: refetchDrafting } = useGetDraftingByFabIdQuery(fabId, {
     skip: !fabId,
     refetchOnMountOrArgChange: true,
   });
-
-  // Get SCT data for revision info
   const { data: sctData, isLoading: isSctLoading, refetch: refetchSct } = useGetSalesCTByFabIdQuery(fabId, {
     skip: !fabId,
     refetchOnMountOrArgChange: true,
   });
-
-  // Get revisions data
   const { data: revisionsData, isLoading: isRevisionsLoading, refetch: refetchRevisions } = useGetRevisionsByFabIdQuery(fabId, {
     skip: !fabId,
     refetchOnMountOrArgChange: true,
   });
-
-  // Get current session state
   const { data: sessionData, isLoading: isSessionLoading, refetch: refetchSession } = useGetCurrentDraftingSessionQuery(fabId, {
     skip: !fabId,
     refetchOnMountOrArgChange: true,
@@ -181,13 +174,12 @@ export function RevisionDetailsPage() {
   const [updateRevision] = useUpdateRevisionMutation();
 
   const draftData = fabData?.draft_data;
-
   const revisionInfo = useMemo(() =>
-    getRevisionInfo(fabData, sctData),
-    [fabData, sctData]
+    getRevisionInfo(fabData, sctData, revisionsData),
+    [fabData, sctData, revisionsData]
   );
 
-  // Local UI state
+  // Local state
   const [totalTime, setTotalTime] = useState<number>(0);
   const [draftStart, setDraftStart] = useState<Date | null>(null);
   const [draftEnd, setDraftEnd] = useState<Date | null>(null);
@@ -203,6 +195,7 @@ export function RevisionDetailsPage() {
   const isOnHold = sessionStatus === 'on_hold';
   const hasEnded = sessionStatus === 'ended';
 
+  // Sync session data
   useEffect(() => {
     if (sessionData && !isSessionLoading) {
       const session = sessionData?.data;
@@ -248,9 +241,8 @@ export function RevisionDetailsPage() {
   });
 
   const existingFilesFromServer = draftData?.files || [];
-
   const allFilesForDisplay = useMemo(() => {
-    const files = existingFilesFromServer.map((file: any) => ({
+    return existingFilesFromServer.map((file: any) => ({
       id: file.id,
       name: file.name || file.file_name,
       size: parseInt(file.file_size) || file.size || 0,
@@ -271,18 +263,18 @@ export function RevisionDetailsPage() {
       uploadedBy: file.uploaded_by_name ?? file.uploader_name ?? file.uploaded_by ?? currentUser?.name ?? 'Unknown',
       fromServer: true
     }));
-    return files;
   }, [existingFilesFromServer, currentUser]);
 
+  // Session management functions (unchanged but ensure is_revision flag)
   const createOrStartSession = async (action: 'start' | 'resume', startDate: Date, note?: string, sqftDrafted?: string, workPercentage?: string) => {
     try {
       await manageDraftingSession({
         fab_id: fabId,
         data: {
-          action: action,
+          action,
           drafter_id: currentEmployeeId,
           timestamp: formatTimestamp(startDate),
-          note: note,
+          note,
           sqft_drafted: sqftDrafted,
           work_percentage_done: workPercentage,
           is_revision: true
@@ -313,10 +305,10 @@ export function RevisionDetailsPage() {
       await manageDraftingSession({
         fab_id: fabId,
         data: {
-          action: action,
+          action,
           drafter_id: currentEmployeeId,
           timestamp: formatTimestamp(timestamp),
-          note: note,
+          note,
           sqft_drafted: sqftDrafted,
           work_percentage_done: workPercentage,
           is_revision: true
@@ -370,11 +362,7 @@ export function RevisionDetailsPage() {
       const currentHoldStatus = fabData?.status_id === 0;
       await toggleFabOnHold({ fab_id: fabId, on_hold: !currentHoldStatus }).unwrap();
       if (data?.note) {
-        await createFabNote({
-          fab_id: fabId,
-          note: data.note,
-          stage: 'revisions'
-        }).unwrap();
+        await createFabNote({ fab_id: fabId, note: data.note, stage: 'revisions' }).unwrap();
       }
       toast.success(`FAB ${!currentHoldStatus ? 'placed on hold' : 'released from hold'} successfully`);
       await refetchFab();
@@ -409,10 +397,7 @@ export function RevisionDetailsPage() {
     const draftingId = draftingData?.id || fabData?.draft_data?.id;
     if (!draftingId) return;
     try {
-      await deleteDraftingFile({
-        drafting_id: draftingId,
-        file_id: String(fileId)
-      }).unwrap();
+      await deleteDraftingFile({ drafting_id: draftingId, file_id: String(fileId) }).unwrap();
       await refetchAllFiles();
       toast.success('File deleted successfully');
     } catch (error) {
@@ -423,11 +408,11 @@ export function RevisionDetailsPage() {
 
   const refetchAllFiles = useCallback(async () => {
     try {
-      await Promise.all([refetchFab(), refetchDrafting(), refetchSession()]);
+      await Promise.all([refetchFab(), refetchDrafting(), refetchSession(), refetchSct(), refetchRevisions()]);
     } catch (error) {
       console.error('Failed to refetch files:', error);
     }
-  }, [refetchFab, refetchDrafting, refetchSession]);
+  }, [refetchFab, refetchDrafting, refetchSession, refetchSct, refetchRevisions]);
 
   const shouldShowUploadSection = (isDrafting || isPaused) || allFilesForDisplay.length > 0;
   const canOpenSubmit = isDrafting && allFilesForDisplay.length > 0;
@@ -448,16 +433,15 @@ export function RevisionDetailsPage() {
       const hasExistingRevisions = existingRevisions.length > 0;
 
       if (hasExistingRevisions) {
-        const earliestRevision = existingRevisions.reduce((earliest, current) =>
-          current.id < earliest.id ? current : earliest, existingRevisions[0]
-        );
+        // Update the earliest (or latest?) – for simplicity, update the most recent
+        const latestRevision = existingRevisions[existingRevisions.length - 1];
         const updateData: any = {
           revision_type: revisionInfo.salesCTData?.revision_type || revisionInfo.revisionType,
           revision_notes: data.notes || revisionInfo.revisionReason || '',
           is_completed: data.complete || false
         };
-        await updateRevision({ revision_id: earliestRevision.id, data: updateData }).unwrap();
-        revisionId = earliestRevision.id;
+        await updateRevision({ revision_id: latestRevision.id, data: updateData }).unwrap();
+        revisionId = latestRevision.id;
       } else {
         const createData: any = {
           fab_id: fabId,
@@ -470,23 +454,24 @@ export function RevisionDetailsPage() {
         const createResult = await createRevision(createData).unwrap();
         revisionId = createResult.id;
       }
+
+      // If marked as complete, end the session
       if (data.complete) {
         await updateSession('end', new Date(), 'Revision completed and submitted');
+        // Immediately set local state to ended to reflect in UI
+        setSessionStatus('ended');
+        setDraftEnd(new Date());
       }
+
       if (data.notes) {
         await createFabNote({ fab_id: fabId, note: data.notes, stage: 'revisions' }).unwrap();
       }
+
       toast.success("Revision submitted successfully");
       setShowSubmissionModal(false);
       
-      // CRITICAL: Refetch all data to ensure UI reflects the updated state
-      await Promise.all([
-        refetchFab(),
-        refetchDrafting(),
-        refetchSct(),
-        refetchRevisions(),
-        refetchSession()
-      ]);
+      // Refetch all data to ensure UI consistency
+      await refetchAllFiles();
       
       navigate('/job/revision');
     } catch (error: any) {
@@ -495,48 +480,36 @@ export function RevisionDetailsPage() {
     }
   };
 
-  // Prepare clickable links
+  // Prepare links
   const jobNameLink = fabData?.job_details?.id ? `/job/details/${fabData.job_details.id}` : '#';
   const jobNumberLink = fabData?.job_details?.job_number
     ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fabData.job_details.job_number}`
     : '#';
 
-  // Loading state with skeletons
+  // Loading skeleton (mirror draft details)
   if (isFabLoading || isDraftingLoading || isSctLoading || isRevisionsLoading) {
     return (
-      <Container className='lg:mx-0 max-w-full'>
-        <Toolbar className=''>
-          <div className="flex items-center justify-between w-full">
-            <div>
-              <ToolbarHeading
-                title={<Skeleton className="h-8 w-96" />}
-                description={<Skeleton className="h-4 w-80 mt-1" />}
-              />
-            </div>
-            <div className="flex gap-2">
-              <Skeleton className="h-6 w-20 rounded-full" />
-              <Skeleton className="h-6 w-20 rounded-full" />
-            </div>
+      <div className="flex flex-col min-h-screen">
+        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+          <Skeleton className="h-8 w-72 mb-1" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+          <div className="w-full lg:w-[220px] xl:w-[260px] shrink-0 border-r">
+            <Skeleton className="h-full min-h-[300px] w-full" />
           </div>
-        </Toolbar>
-        <div className="border-t grid grid-cols-1 lg:grid-cols-12 gap-3 items-start h-[calc(100vh-120px)] overflow-y-auto">
-          <div className="lg:col-span-3 w-full lg:w-[200px] 2xl:w-[286px] ultra:w-[500px] sticky top-0 self-start">
-            <Skeleton className="h-64 w-full" />
-          </div>
-          <div className="lg:col-span-9">
-            <Card className='my-4'>
-              <CardHeader><Skeleton className="h-6 w-48" /></CardHeader>
-              <CardContent><Skeleton className="h-96 w-full" /></CardContent>
-            </Card>
+          <div className="flex-1 p-4 sm:p-6 space-y-4">
+            <Skeleton className="h-24 w-full rounded-xl" />
+            <Skeleton className="h-96 w-full rounded-xl" />
           </div>
         </div>
-      </Container>
+      </div>
     );
   }
 
   const statusInfo = getFabStatusInfo(fabData?.status_id);
 
-  // Sidebar sections – long format Job Details
+  // Sidebar sections
   const sidebarSections = [
     {
       title: "Job Details",
@@ -558,10 +531,7 @@ export function RevisionDetailsPage() {
             ? `${fabData.stone_type_name} - ${fabData.stone_color_name || ''} - ${fabData.stone_thickness_value || ''}`
             : '—',
         },
-        {
-          label: "Fab Type",
-          value: <span className="uppercase">{fabData?.fab_type || '—'}</span>,
-        },
+        { label: "Fab Type", value: <span className="uppercase">{fabData?.fab_type || '—'}</span> },
         { label: "Edge", value: fabData?.edge_name || '—' },
         { label: "Total s.f.", value: fabData?.total_sqft?.toString() || '—' },
         {
@@ -629,71 +599,98 @@ export function RevisionDetailsPage() {
   ];
 
   return (
-    <>
-      {/* Top toolbar with clickable job name/number and description + status badges */}
-      <Container className='lg:mx-0 max-w-full'>
-        <Toolbar className=''>
-          <div className="flex items-center justify-between w-full">
-            <ToolbarHeading
-              title={
-                <div className="text-2xl font-bold">
-                  <a href={jobNameLink} className="hover:underline">
-                    {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
-                  </a>
-                  {' - '}
-                  <a href={jobNumberLink} className="hover:underline" target="_blank">
-                    {fabData?.job_details?.job_number || fabData?.job_id}
-                  </a>
-                </div>
-              }
-              description="Revision Details"
+    <div className="flex flex-col min-h-screen bg-gray-50">
+      {/* Sticky toolbar */}
+      <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
+        <div className="px-3 sm:px-4 lg:px-6">
+          <Toolbar className="py-2 sm:py-3">
+            <div className="flex items-center justify-between w-full gap-2 flex-wrap">
+              <ToolbarHeading
+                title={
+                  <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
+                    <a href={jobNameLink} className="hover:underline">
+                      {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
+                    </a>
+                    <span className="mx-1 text-gray-400">·</span>
+                    <a
+                      href={jobNumberLink}
+                      className="hover:underline text-gray-600"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {fabData?.job_details?.job_number || fabData?.job_id}
+                    </a>
+                  </div>
+                }
+                description="Revision Details"
               />
-            <div className="flex items-center gap-2">
-              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
-                {statusInfo.text}
-              </span>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
-                REVISION #{revisionInfo.revisionCount}
-              </span>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
+                  {statusInfo.text}
+                </span>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                  REVISION #{revisionInfo.revisionCount}
+                </span>
+                <BackButton />
+              </div>
             </div>
-          </div>
-        </Toolbar>
-      </Container>
-
-      {/* Scrollable area with sticky sidebar */}
-      <div className="border-t grid grid-cols-1 lg:grid-cols-12 gap-3 items-start h-[calc(100vh-120px)] overflow-y-auto">
-        <div className="lg:col-span-3 w-full lg:w-[200px] 2xl:w-[286px] ultra:w-[500px] sticky top-0 self-start">
-          <GraySidebar
-            sections={sidebarSections as any}
-            jobId={fabData?.job_id}
-          />
+          </Toolbar>
         </div>
-        <Container className="lg:col-span-9 px-0 mx-0">
+      </div>
+
+      {/* Main two‑column layout */}
+      <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+        {/* Sticky sidebar */}
+        <aside
+          className={[
+            'w-full bg-white border-b',
+            'lg:w-[220px] xl:w-[260px] lg:shrink-0',
+            'lg:sticky lg:top-[50px]',
+            'lg:self-start',
+            'lg:max-h-[calc(100vh-50px)]',
+            'lg:overflow-y-auto',
+            'lg:border-b-0 lg:border-r',
+          ].join(' ')}
+        >
+          <GraySidebar sections={sidebarSections as any} jobId={fabData?.job_id} />
+        </aside>
+
+        {/* Main content */}
+        <main className="flex-1 min-w-0 p-3 sm:p-4 lg:p-5 space-y-4">
           {viewMode === 'file' && activeFile ? (
-            <div>
-              <div className="flex justify-between items-center p-4 bg-gray-50 rounded-t-lg">
+            // File viewer
+            <div className="bg-white rounded-xl border overflow-hidden">
+              <div className="flex justify-between items-center p-4 bg-gray-50 border-b">
                 <div>
-                  <h3 className="font-semibold">{activeFile.name}</h3>
-                  <p className="text-sm text-gray-500">
-                    {formatBytes(activeFile.size)} • {activeFile.stage?.label || activeFile.stage}
+                  <h3 className="font-semibold text-sm">{activeFile.name}</h3>
+                  <p className="text-xs text-gray-500">
+                    {activeFile.formattedSize} · {activeFile.stage?.label || activeFile.stage}
                   </p>
                 </div>
-                <Button variant="inverse" size="sm" onClick={() => { setViewMode('activity'); setActiveFile(null); }}>
-                  <X className="w-6 h-6" />
+                <Button
+                  variant="inverse"
+                  size="sm"
+                  onClick={() => { setViewMode('activity'); setActiveFile(null); }}
+                >
+                  <X className="w-5 h-5" />
                 </Button>
               </div>
-              <FileViewer file={activeFile} onClose={() => { setActiveFile(null); setViewMode('activity'); }} />
+              <FileViewer
+                file={activeFile}
+                onClose={() => { setActiveFile(null); setViewMode('activity'); }}
+              />
             </div>
           ) : (
+            // Activity mode
             <>
-              <Card className='my-4'>
-                <CardHeader className='flex flex-col items-start py-4'>
-                  <div className="flex items-center justify-between w-full">
+              <Card>
+                <CardHeader className="py-3 px-4 sm:px-5">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div>
-                      <CardTitle>Revision activity</CardTitle>
-                      <p className="text-sm text-[#4B5563]">Update your revision activity here</p>
+                      <CardTitle className="text-sm sm:text-base">Revision activity</CardTitle>
+                      <p className="text-xs text-gray-500 mt-0.5">Update your revision activity here</p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         sessionStatus === 'idle' ? 'bg-gray-100 text-gray-800' :
                         sessionStatus === 'drafting' ? 'bg-green-100 text-green-800' :
@@ -719,7 +716,7 @@ export function RevisionDetailsPage() {
               </Card>
 
               <Card>
-                <CardContent>
+                <CardContent className="p-3 sm:p-4 lg:p-5 space-y-5">
                   <TimeTrackingComponent
                     isDrafting={isDrafting}
                     isPaused={isPaused}
@@ -738,52 +735,45 @@ export function RevisionDetailsPage() {
                     uploadedFilesCount={allFilesForDisplay.length}
                   />
 
-                  <Separator className="my-6" />
+                  <Separator />
 
-                  {/* File Upload Section */}
-                  <div className="mb-6">
+                  {/* File section */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="font-semibold text-sm">Uploaded files</h3>
+                      <Can action="create" on="Drafting">
+                        <Button
+                          variant="dashed"
+                          size="sm"
+                          onClick={() => setShowUploadModal(true)}
+                          disabled={hasEnded || isOnHold || isPaused}
+                          className="flex items-center gap-1.5 text-xs"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Add Files
+                        </Button>
+                      </Can>
+                    </div>
 
                     {shouldShowUploadSection ? (
-                      <div className="space-y-4">
-                        {/* Upload Button */}
-                        <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-sm">Uploaded files</h3>
-                          <Can action="create" on="Drafting">
-                            <Button
-                              variant="dashed"
-                              size="sm"
-                              onClick={() => setShowUploadModal(true)}
-                              disabled={hasEnded || isOnHold || isPaused}
-                              className="flex items-center gap-2"
-                            >
-                              <Plus className="w-4 h-4" />
-                              Add Files
-                            </Button>
-                          </Can>
-                        </div>
-                        
-                        {/* File Display */}
-                        <Documents
-                          onFileClick={handleFileClick}
-                          draftingData={fabData?.draft_data}
-                          draftingId={draftingData?.id || fabData?.draft_data?.id}
-                          showDeleteButton={!hasEnded && !isOnHold}
-                        />
-                      </div>
+                      <Documents
+                        onFileClick={handleFileClick}
+                        draftingData={fabData?.draft_data}
+                        draftingId={draftingData?.id || fabData?.draft_data?.id}
+                        showDeleteButton={!hasEnded && !isOnHold}
+                      />
                     ) : (
-                      <div className="text-center py-8 border-2 border-dashed border-gray-300 rounded-lg">
-                        <p className="text-gray-500">Start the timer to enable file uploads</p>
-                        <p className="text-sm text-gray-400 mt-2">
-                          Files will appear here once uploaded
-                        </p>
+                      <div className="text-center py-8 border-2 border-dashed border-gray-200 rounded-lg">
+                        <p className="text-sm text-gray-500">Start the timer to enable file uploads</p>
+                        <p className="text-xs text-gray-400 mt-1">Files will appear here once uploaded</p>
                       </div>
                     )}
                   </div>
 
-                  {/* Submit Button */}
-                  {viewMode === 'activity' && (
-                    <div className="flex justify-end gap-3 mt-6">
-                      <BackButton fallbackUrl="/job/revision" label='Cancel' />
+                  {/* Submit button */}
+                  <div className="flex justify-end gap-2 pt-2">
+                    <BackButton fallbackUrl="/job/revision" label="Cancel" />
+                    <Can action="create" on="Drafting">
                       <Button
                         onClick={() => setShowSubmissionModal(true)}
                         className="bg-purple-600 hover:bg-purple-700"
@@ -791,47 +781,18 @@ export function RevisionDetailsPage() {
                       >
                         Submit revision
                       </Button>
-                    </div>
-                  )}
+                    </Can>
+                  </div>
                 </CardContent>
               </Card>
 
               <SessionHistory fabId={fabId} />
-
-              {/* Universal Upload Modal */}
-              <UniversalUploadModal
-                open={showUploadModal}
-                onOpenChange={setShowUploadModal}
-                title="Upload Revision Files"
-                entityId={draftingData?.id || fabData?.draft_data?.id}
-                uploadMutation={addFilesToDrafting}
-                stages={[
-                  { value: 'revision', label: 'Revision' },
-                ]}
-                fileTypes={[
-                  { value: 'block_drawing', label: 'Block Drawing' },
-                  { value: 'layout', label: 'Layout' },
-                  { value: 'ss_layout', label: 'SS Layout' },
-                  { value: 'shop_drawing', label: 'Shop Drawing' },
-                  { value: 'photo_media', label: 'Photo / Media' },
-                ]}
-                additionalParams={{
-                  drafting_id: draftingData?.id || fabData?.draft_data?.id,
-                  stage_name: 'revision',
-                }}
-                onUploadComplete={() => {
-                  toast.success('Files uploaded successfully');
-                  refetchAllFiles();
-                  setShowUploadModal(false);
-                  setFileDesign('');
-                }}
-              />
             </>
           )}
-        </Container>
+        </main>
       </div>
 
-      {/* Dialog for Revision Submission */}
+      {/* Modals */}
       <Dialog open={showSubmissionModal} onOpenChange={setShowSubmissionModal}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -862,7 +823,35 @@ export function RevisionDetailsPage() {
           />
         </DialogContent>
       </Dialog>
-    </>
+
+      <UniversalUploadModal
+        open={showUploadModal}
+        onOpenChange={setShowUploadModal}
+        title="Upload Revision Files"
+        entityId={draftingData?.id || fabData?.draft_data?.id}
+        uploadMutation={addFilesToDrafting}
+        stages={[
+          { value: 'revision', label: 'Revision' },
+        ]}
+        fileTypes={[
+          { value: 'block_drawing', label: 'Block Drawing' },
+          { value: 'layout', label: 'Layout' },
+          { value: 'ss_layout', label: 'SS Layout' },
+          { value: 'shop_drawing', label: 'Shop Drawing' },
+          { value: 'photo_media', label: 'Photo / Media' },
+        ]}
+        additionalParams={{
+          drafting_id: draftingData?.id || fabData?.draft_data?.id,
+          stage_name: 'revision',
+        }}
+        onUploadComplete={() => {
+          toast.success('Files uploaded successfully');
+          refetchAllFiles();
+          setShowUploadModal(false);
+          setFileDesign('');
+        }}
+      />
+    </div>
   );
 }
 

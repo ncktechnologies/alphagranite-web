@@ -183,68 +183,67 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
 
     const totalRecords = fabsData?.total || 0;
 
-    const planRows: ShopPlanRow[] = useMemo(() => {
-        const rows: ShopPlanRow[] = [];
-        fabs.forEach((fab: any) => {
-            const plans = fab.plans || [];
-            const cutPlans = plans.filter((plan: any) => plan.planning_section_id === 7);
+   const planRows: ShopPlanRow[] = useMemo(() => {
+    const rows: ShopPlanRow[] = [];
+    fabs.forEach((fab: any) => {
+        const plans = fab.plans || [];
+        const cutPlans = plans.filter((plan: any) => plan.planning_section_id === 7);
 
-            const baseRow = {
-                fab_id: String(fab.id),
-                fab_type: fab.fab_type || 'N/A',
-                job_no: fab?.job_number || 'N/A',
-                job_name: fab.job_details?.name || 'N/A',
-                fab_info: `${fab.job_details?.name || ''} - ${fab.stone_type_name || ''} - ${fab.stone_color_name || ''}`.trim(),
-                pieces: fab.no_of_pieces || 0,
-                total_sq_ft: fab.total_sqft || 0,
-                wl_ln_ft: fab.wj_linft || 0,
-                sl_ln_ft: fab.saw_cut_lnft || 0,
-                edging_ln_ft: fab.edging_linft || 0,
-                cnc_ln_ft: fab.cnc_linft || 0,
-                milter_ln_ft: fab.miter_linft || 0,
-                total_cut_ln_ft: fab.total_cut_lnft || 0,
-                percent_complete: fab.percent_complete || 0,
-            };
+        // Base row with fields from the main fab object
+        const baseRow = {
+            fab_id: String(fab.id),
+            fab_type: fab.fab_type || 'N/A',
+            job_no: fab.job_number || 'N/A',
+            job_name: fab.job_name || 'N/A',
+            job_id: fab.job_id,                     // Add job_id for the link
+            fab_info: `${fab.job_name || ''} - ${fab.stone_type_name || ''} - ${fab.stone_color_name || ''}`.trim() || 'N/A',
+            pieces: fab.no_of_pieces || 0,
+            total_sq_ft: fab.total_sqft || 0,
+            wl_ln_ft: fab.wj_linft || 0,
+            sl_ln_ft: fab.saw_cut_lnft || 0,
+            edging_ln_ft: fab.edging_linft || 0,
+            cnc_ln_ft: fab.cnc_linft || 0,
+            milter_ln_ft: fab.miter_linft || 0,
+            // Compute total cut linear feet if not provided directly
+            total_cut_ln_ft: (fab.wj_linft || 0) + (fab.saw_cut_lnft || 0),
+            percent_complete: 0, // Not in response, default to 0
+            shop_office_date_scheduled: fab.shop_date_schedule
+                ? format(new Date(fab.shop_date_schedule), 'MM/dd/yyyy')
+                : undefined,
+        };
 
-            if (cutPlans.length > 0) {
-                cutPlans.forEach((plan: any) => {
-                    // Robustly get scheduled date — handle null, undefined, empty string
-                    const scheduledDate = plan.scheduled_start_date || plan.scheduled_start || null;
-                    const isValidDate = scheduledDate && typeof scheduledDate === 'string' && scheduledDate.trim().length > 0;
-                    const dateGroup = isValidDate ? scheduledDate.split('T')[0] : 'unscheduled';
+        if (cutPlans.length > 0) {
+            cutPlans.forEach((plan: any) => {
+                const scheduledDate = plan.scheduled_start_date || plan.scheduled_start || null;
+                const isValidDate = scheduledDate && typeof scheduledDate === 'string' && scheduledDate.trim().length > 0;
+                const dateGroup = isValidDate ? scheduledDate.split('T')[0] : 'unscheduled';
 
-                    rows.push({
-                        ...baseRow,
-                        plan_id: plan.id,
-                        workstation_name: plan.workstation_name || '-',
-                        operator_name: plan.operator_name || '-',
-                        estimated_hours: plan.estimated_hours || 0,
-                        scheduled_start_date: isValidDate ? scheduledDate : undefined,
-                        plan_notes: plan.notes,
-                        date_group: dateGroup,
-                        shop_office_date_scheduled: fab.shop_date_schedule
-                            ? format(new Date(fab.shop_date_schedule), 'MM/dd/yyyy')
-                            : undefined,
-                    });
-                });
-            } else {
                 rows.push({
                     ...baseRow,
-                    plan_id: 0,
-                    workstation_name: '-',
-                    operator_name: '-',
-                    estimated_hours: 0,
-                    scheduled_start_date: undefined,
-                    plan_notes: null,
-                    date_group: 'unscheduled',
-                    shop_office_date_scheduled: fab.shop_date_schedule
-                        ? format(new Date(fab.shop_date_schedule), 'MM/dd/yyyy')
-                        : undefined,
+                    plan_id: plan.id,
+                    workstation_name: plan.workstation_name || '-',
+                    operator_name: plan.operator_name || '-',
+                    estimated_hours: plan.estimated_hours || 0,
+                    scheduled_start_date: isValidDate ? scheduledDate : undefined,
+                    plan_notes: plan.notes,
+                    date_group: dateGroup,
                 });
-            }
-        });
-        return rows;
-    }, [fabs]);
+            });
+        } else {
+            rows.push({
+                ...baseRow,
+                plan_id: 0,
+                workstation_name: '-',
+                operator_name: '-',
+                estimated_hours: 0,
+                scheduled_start_date: undefined,
+                plan_notes: null,
+                date_group: 'unscheduled',
+            });
+        }
+    });
+    return rows;
+}, [fabs]);
 
     const filteredRows = useMemo(() => {
         let result = planRows;

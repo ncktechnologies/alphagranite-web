@@ -233,7 +233,7 @@ export function AfterDraftSalesPage() {
                 showSalesPersonFilter={true}
                 showScheduleFilter={false} // Remove separate schedule filter
                 salesPersons={salesPersons}
-                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'slabsmith_used', 'slabsmith_status', 'sct_notes', 'sct_completed', 'revenue', 'sales_person_name', 'draft_revision_notes', 'revised', 'on_hold']}
+                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info',  'total_sq_ft', 'slabsmith_used', 'slabsmith_status', 'sct_notes', 'sct_completed', 'revenue', 'sales_person_name', 'draft_revision_notes', 'revised', 'on_hold']}
             />
         </Container>
     );
