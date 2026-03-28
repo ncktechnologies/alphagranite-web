@@ -2,7 +2,7 @@ import { Container } from '@/components/common/container';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import GraySidebar from '@/pages/jobs/components/job-details.tsx/GraySidebar';
-import { Link, useParams } from 'react-router';
+import { Link, useLocation, useParams } from 'react-router';
 import { useGetFabByIdQuery } from '@/store/api/job';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -24,8 +24,11 @@ const getFabStatusInfo = (statusId: number | undefined) => {
 };
 
 export function InstallSchedulingDetailsPage() {
+    const location = useLocation();
+
     const { id } = useParams<{ id: string }>();
     const { data: fab, isLoading, isError, error } = useGetFabByIdQuery(Number(id));
+    const isCompletionRoute = location.pathname.includes('install-completion');
 
     // Prepare clickable links
     const jobNameLink = fab?.job_details?.id ? `/job/details/${fab.job_details.id}` : '#';
@@ -260,7 +263,7 @@ export function InstallSchedulingDetailsPage() {
                             <p className="text-sm text-text-foreground">Review and approve install scheduling details</p>
                         </CardHeader>
                         <CardContent>
-                            <InstallChecklistForm fabId={fab.id} />
+                            <InstallChecklistForm fabId={fab.id} showCompletionFields={isCompletionRoute} />
                         </CardContent>
                     </Card>
                 </main>

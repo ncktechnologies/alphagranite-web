@@ -31,6 +31,7 @@ import {
   useCreateInstallSchedulingMutation,
   useUpdateInstallSchedulingMutation,
   useGetInstallSchedulingByFabIdQuery,
+  useUpdateFabStageMutation,
 } from "@/store/api/job";
 import { Can } from "@/components/permission";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
@@ -65,15 +66,17 @@ const installChecklistSchema = z.object({
   fab_notes: z.string().optional(),
   installer_id: z.string().optional(),
   scheduled_install_date: z.string().optional(),
+  scheduled_end_date: z.string().optional(),
 });
 
 type InstallChecklistData = z.infer<typeof installChecklistSchema>;
 
 interface InstallChecklistFormProps {
   fabId?: number;
+  showCompletionFields?: boolean; // New prop to control visibility of completion fields
 }
 
-export function InstallChecklistForm({ fabId }: InstallChecklistFormProps) {
+export function InstallChecklistForm({ fabId, showCompletionFields = false }: InstallChecklistFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
@@ -85,6 +88,7 @@ export function InstallChecklistForm({ fabId }: InstallChecklistFormProps) {
   const [createFabNote] = useCreateFabNoteMutation();
   const [createInstallScheduling] = useCreateInstallSchedulingMutation();
   const [updateInstallScheduling] = useUpdateInstallSchedulingMutation();
+  const [updateFabStage] = useUpdateFabStageMutation();
 
   // Queries
   const { data: fabData } = useGetFabByIdQuery(fabId || 0, { skip: !fabId });
@@ -100,8 +104,12 @@ export function InstallChecklistForm({ fabId }: InstallChecklistFormProps) {
       fab_notes: "",
       installer_id: "",
       scheduled_install_date: "",
+      scheduled_end_date: "",
     },
   });
+
+  // Watch install_completed to conditionally enable scheduled_end_date
+  const installCompleted = form.watch("install_completed");
 
   // Pre-fill form when fabData / installData loads
   useEffect(() => {
@@ -117,6 +125,9 @@ export function InstallChecklistForm({ fabId }: InstallChecklistFormProps) {
         scheduled_install_date: install?.scheduled_install_date
           ? install.scheduled_install_date.split("T")[0]
           : "",
+        scheduled_end_date: install?.scheduled_end_date
+          ? install.scheduled_end_date.split("T")[0]
+          : "",
       });
     }
   }, [fabData, installData, form]);
@@ -131,8 +142,9 @@ export function InstallChecklistForm({ fabId }: InstallChecklistFormProps) {
     const hasInstallDate = !!values.scheduled_install_date;
     const hasInstaller = !!values.installer_id;
     const isCompleted = values.install_completed;
+    const hasEndDate = !!values.scheduled_end_date;
 
-    if (!hasNotes && !hasInstallDate && !hasInstaller && !isCompleted) {
+    if (!hasNotes && !hasInstallDate && !hasInstaller && !isCompleted && !hasEndDate) {
       toast.warning("No changes to save.");
       return;
     }
@@ -159,10 +171,9 @@ export function InstallChecklistForm({ fabId }: InstallChecklistFormProps) {
       }
 
       // 2. Ensure an install scheduling record exists
-      let installId =
-        installData?.data?.id ?? installData?.id;
+      let installId = installData?.data?.id ?? installData?.id;
 
-      if ((hasInstallDate || hasInstaller || isCompleted) && !installId) {
+      if ((hasInstallDate || hasInstaller || isCompleted || hasEndDate) && !installId) {
         try {
           const createResponse = await createInstallScheduling({
             fab_id: fabId,
@@ -176,14 +187,13 @@ export function InstallChecklistForm({ fabId }: InstallChecklistFormProps) {
           }
         } catch (createError) {
           console.error("Error creating install record:", createError);
-        //   toast.error("Failed to initialise install record");
           setIsSubmitting(false);
           return;
         }
       }
 
       // 3. Build the install scheduling payload
-      if (installId && (hasInstallDate || hasInstaller || isCompleted)) {
+      if (installId && (hasInstallDate || hasInstaller || isCompleted || hasEndDate)) {
         try {
           const payload: Record<string, unknown> = {};
 
@@ -192,16 +202,19 @@ export function InstallChecklistForm({ fabId }: InstallChecklistFormProps) {
           }
 
           if (hasInstallDate) {
-            payload.scheduled_install_date = 
-            // new Date(
-              values.scheduled_install_date!
-            // );
+            payload.scheduled_install_date = values.scheduled_install_date;
+          }
+
+          if (hasEndDate) {
+            payload.scheduled_end_date = values.scheduled_end_date;
           }
 
           if (isCompleted) {
             payload.is_completed = true;
-            // scheduled_end_date = now (the moment the user marks complete)
-            payload.scheduled_end_date = formatDate(new Date());;
+            // If no end date provided, set to now (optional)
+            if (!hasEndDate) {
+              payload.scheduled_end_date = formatDate(new Date());
+            }
           } else {
             payload.is_completed = false;
           }
@@ -214,26 +227,36 @@ export function InstallChecklistForm({ fabId }: InstallChecklistFormProps) {
           someSuccess = true;
         } catch (updateError) {
           console.error("Error updating install scheduling:", updateError);
-        //   toast.error("Failed to save install scheduling");
           setIsSubmitting(false);
           return;
         }
       }
 
-      // 4. Final feedback
-      if (someSuccess) {
-        if (isCompleted) {
-          toast.success("Install checklist completed and saved!");
-          navigate("/job/install-scheduling");
-        } else {
-          toast.success("Changes saved successfully");
+      // 4. If a scheduled_install_date was provided, move FAB stage to "install_completion" (if not already there)
+      if (hasInstallDate && fabData?.data?.current_stage !== "install_completion") {
+        try {
+          await updateFabStage({
+            fab_id: fabId,
+            data: { current_stage: "install_completion" },
+          }).unwrap();
+          someSuccess = true;
+        } catch (stageError) {
+          console.error("Error updating FAB stage:", stageError);
+          // Don't block the whole operation, just warn
+          toast.warning("Install date saved, but failed to update stage automatically.");
         }
+      }
+
+      // 5. Final feedback
+      if (someSuccess) {
+        toast.success(isCompleted ? "Install checklist completed and saved!" : "Changes saved successfully");
+        navigate(-1); // Go back to previous page
       } else {
         toast.warning("No data was saved");
       }
     } catch (error) {
       console.error("Unexpected error:", error);
-    //   toast.error("An unexpected error occurred");
+      toast.error("An unexpected error occurred");
     } finally {
       setIsSubmitting(false);
     }
@@ -243,24 +266,26 @@ export function InstallChecklistForm({ fabId }: InstallChecklistFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Can action="update" on="Pre-draft Review">
-          {/* Install completed checkbox */}
-          <FormField
-            control={form.control}
-            name="install_completed"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center space-x-3">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <FormLabel className="text-base font-semibold text-text">
-                  Install completed
-                </FormLabel>
-              </FormItem>
-            )}
-          />
+          {/* Install completed checkbox - only shown when showCompletionFields is true */}
+          {showCompletionFields && (
+            <FormField
+              control={form.control}
+              name="install_completed"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center space-x-3">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormLabel className="text-base font-semibold text-text">
+                    Install completed
+                  </FormLabel>
+                </FormItem>
+              )}
+            />
+          )}
 
           {/* Installer dropdown */}
           <FormField
@@ -311,6 +336,25 @@ export function InstallChecklistForm({ fabId }: InstallChecklistFormProps) {
             )}
           />
 
+          {/* Scheduled end date - only shown when showCompletionFields is true and install_completed is true */}
+          {showCompletionFields && installCompleted && (
+            <FormField
+              control={form.control}
+              name="scheduled_end_date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Install Completed date</FormLabel>
+                  <DateTimePicker
+                    mode="date"
+                    value={parseDateString(field.value)}
+                    onChange={(date) => field.onChange(formatDate(date))}
+                  />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
           {/* Notes field */}
           <FormField
             control={form.control}
@@ -354,7 +398,7 @@ export function InstallChecklistForm({ fabId }: InstallChecklistFormProps) {
             variant="outline"
             type="button"
             className="w-full text-secondary font-bold py-6 text-base"
-            onClick={() => navigate("/job/install")}
+            onClick={() => navigate(-1)}
           >
             Cancel
           </Button>

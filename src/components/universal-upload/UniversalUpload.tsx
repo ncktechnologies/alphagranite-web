@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,80 +11,60 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from '@/hooks/useTranslation';
 
-// Types for the universal upload component
 export interface UploadEndpoint {
-  mutationHook: () => any; // The RTK Query mutation hook
-  endpointName: string; // Name of the endpoint to call
+  mutationHook: () => any;
+  endpointName: string;
 }
 
 export interface StageOption {
   value: string;
-  label?: string; // Optional custom label (will use translation if not provided)
+  label?: string;
 }
 
 export interface FileTypeOption {
   value: string;
-  label?: string; // Optional custom label (will use translation if not provided)
+  label?: string;
 }
 
 export interface UniversalUploadProps {
   // Required identifiers
   jobId?: number;
-  entityId?: number | string; // For other entities like operator_id, drafting_id, etc.
-  
+  entityId?: number | string;
+
   // Upload configuration
-  uploadMutation: any; // The actual mutation function from useMutation
-  stages: StageOption[]; // Available stages to choose from
-  fileTypes: FileTypeOption[]; // Available file types
-  additionalParams?: Record<string, any>; // Any additional parameters needed
-  
+  uploadMutation: any;
+  stages: StageOption[];
+  fileTypes: FileTypeOption[];
+  additionalParams?: Record<string, any>;
+
   // Callbacks
   onUploadComplete?: () => void;
   onClose?: () => void;
-  
+
   // Customization
-  title?: string; // Custom title (uses default if not provided)
-  accept?: Record<string, string[]>; // Accepted file types
-  maxSizeMB?: number; // Max file size in MB
-  multiple?: boolean; // Allow multiple files
-  showStageSelect?: boolean; // Show stage selector
-  showFileTypeSelect?: boolean; // Show file type selector
+  title?: string;
+  accept?: Record<string, string[]>;
+  maxSizeMB?: number;
+  multiple?: boolean;
+  showStageSelect?: boolean;
+  showFileTypeSelect?: boolean;
+  defaultStage?: string;          // default stage value (used when dropdown hidden or preselected)
+  defaultFileType?: string;       // default file type value (used when dropdown hidden or preselected)
 }
 
 interface FileWithPreview extends File {
   preview?: string;
 }
 
-/**
- * Universal Upload Component
- * 
- * A reusable upload component that works across all parts of the application.
- * Supports jobs, operators, drafting, revision, and any other upload scenario.
- * 
- * Features:
- * - Drag & drop support
- * - Multiple file upload
- * - Progress tracking
- * - Full i18n support (English/Spanish)
- * - Configurable stages and file types
- * - Customizable for different use cases
- */
 export function UniversalUpload({
-  // Required identifiers
   jobId,
   entityId,
-  
-  // Upload configuration
   uploadMutation,
   stages,
   fileTypes,
   additionalParams = {},
-  
-  // Callbacks
   onUploadComplete,
   onClose,
-  
-  // Customization
   title,
   accept = {
     'image/*': ['.jpeg', '.jpg', '.png', '.gif', '.webp'],
@@ -97,19 +77,40 @@ export function UniversalUpload({
   multiple = true,
   showStageSelect = true,
   showFileTypeSelect = true,
+  defaultStage,
+  defaultFileType,
 }: UniversalUploadProps) {
   const [files, setFiles] = useState<FileWithPreview[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [selectedStage, setSelectedStage] = useState<string>('');
-  const [selectedFileDesign, setSelectedFileDesign] = useState<string>('');
+  // Initialize with default values if provided (useful when dropdowns are shown)
+  const [selectedStage, setSelectedStage] = useState<string>(defaultStage || '');
+  const [selectedFileDesign, setSelectedFileDesign] = useState<string>(defaultFileType || '');
 
   const { t, translateStage, translateFileType, translateFileLabel } = useTranslation();
+
+  // When dropdowns are hidden, we still use the defaults (if any) in the upload.
+  // The state variables may still be set, but the UI won't show the dropdowns.
+  // The effective stage/file type for upload:
+  const effectiveStage = showStageSelect ? selectedStage : (defaultStage || '');
+  const effectiveFileType = showFileTypeSelect ? selectedFileDesign : (defaultFileType || '');
+
+  // Update selected stage if defaultStage changes (rare, but ensures consistency)
+  useEffect(() => {
+    if (defaultStage !== undefined && selectedStage === '') {
+      setSelectedStage(defaultStage);
+    }
+  }, [defaultStage, selectedStage]);
+
+  useEffect(() => {
+    if (defaultFileType !== undefined && selectedFileDesign === '') {
+      setSelectedFileDesign(defaultFileType);
+    }
+  }, [defaultFileType, selectedFileDesign]);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const filesWithPreview = acceptedFiles.map(file => {
       const fileWithPreview = file as FileWithPreview;
-      // Create preview for images
       if (file.type.startsWith('image/')) {
         fileWithPreview.preview = URL.createObjectURL(file);
       }
@@ -160,12 +161,11 @@ export function UniversalUpload({
       return;
     }
 
-    // Validate required fields
+    // Validate required fields only when dropdown is shown and no default (or user hasn't selected)
     if (showStageSelect && !selectedStage) {
       toast.error(t('VALIDATION.STAGE_REQUIRED'));
       return;
     }
-
     if (showFileTypeSelect && !selectedFileDesign) {
       toast.error(t('VALIDATION.FILE_TYPE_REQUIRED'));
       return;
@@ -190,12 +190,14 @@ export function UniversalUpload({
       const uploadData: any = {
         files,
         ...(jobId && { job_id: jobId }),
-        ...(entityId && { 
-          operator_id: entityId, // Default for operator
-          ...additionalParams // Override with any custom params
+        ...(entityId && {
+          operator_id: entityId,
+          ...additionalParams
         }),
-        ...(showStageSelect && { stage_name: selectedStage }),
-        ...(showFileTypeSelect && { file_design: selectedFileDesign }),
+        // Send stage_name if we have an effective value (from selection or default)
+        ...(effectiveStage && { stage_name: effectiveStage }),
+        // Send file_design if we have an effective value
+        ...(effectiveFileType && { file_design: effectiveFileType }),
       };
 
       await uploadMutation(uploadData).unwrap();
@@ -213,13 +215,12 @@ export function UniversalUpload({
         }
       });
 
-      // Reset selections after successful upload
-      setSelectedStage('');
-      setSelectedFileDesign('');
+      // Reset selections after successful upload (but keep defaults for next upload)
+      if (showStageSelect) setSelectedStage(defaultStage || '');
+      if (showFileTypeSelect) setSelectedFileDesign(defaultFileType || '');
 
       onUploadComplete?.();
       onClose?.();
-
     } catch (error) {
       console.error('Upload failed:', error);
       toast.error(t('UPLOAD.FAILED'));
@@ -363,9 +364,9 @@ export function UniversalUpload({
           <Button
             onClick={handleUpload}
             disabled={
-              files.length === 0 || 
-              uploading || 
-              (showStageSelect && !selectedStage) || 
+              files.length === 0 ||
+              uploading ||
+              (showStageSelect && !selectedStage) ||
               (showFileTypeSelect && !selectedFileDesign)
             }
           >
