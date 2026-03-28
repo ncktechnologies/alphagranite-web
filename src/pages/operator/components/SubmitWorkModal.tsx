@@ -133,7 +133,7 @@ export function SubmitWorkModal({
                 <DialogHeader>
                     <div className="border-b pb-3">
                         <DialogTitle className="text-[15px] font-semibold">
-                            Submit &amp; End Session
+                            Complete
                             {fabId && (
                                 <span className="ml-3 text-sm font-normal text-gray-500">
                                     FAB-{fabId}

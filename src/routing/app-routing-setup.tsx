@@ -336,6 +336,15 @@ export function AppRoutingSetup() {
             }
           />
           <Route
+            path="/job/install-completion/:id"
+            element={
+              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
+                <InstallSchedulingDetailsPage/>
+                
+              // </ProtectedRoute>
+            }
+          />
+          <Route
             path="/shop"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>

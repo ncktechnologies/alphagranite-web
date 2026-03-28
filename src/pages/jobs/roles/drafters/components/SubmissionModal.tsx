@@ -195,10 +195,10 @@ export const SubmissionModal = ({
 
       toast.success('Draft submitted successfully');
       onClose(true);
+      navigate('/job/draft');
     } catch (err: any) {
       console.error('Failed to submit drafting:', err);
       onClose(false);
-      navigate('/job/draft');
     } finally {
       setIsSubmitting(false);
     }

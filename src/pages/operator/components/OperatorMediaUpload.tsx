@@ -44,6 +44,10 @@ export function OperatorMediaUpload({ jobId, onUploadComplete, onClose }: Operat
       uploadMutation={uploadQa}
       stages={stages}
       fileTypes={fileTypes}
+      defaultStage='qa'
+      defaultFileType='media '
+      showFileTypeSelect={false}
+      showStageSelect={false}
       additionalParams={{
         operator_id: operatorId,
       }}

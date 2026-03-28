@@ -2,7 +2,7 @@ import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
-import { useGetFabsCompletionQuery, Fab } from '@/store/api/job';
+import { useGetFabsCompletionQuery, Fab, useGetFabsQuery } from '@/store/api/job';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
 import { useMemo } from 'react';
@@ -117,7 +117,7 @@ export function InstallCompletionPage() {
     }, [salesPersonsData]);
     // Use independent table state for predraft table
     const tableState = useTableState({
-        tableId: 'predraft-table',
+        tableId: 'install-table',
         defaultPagination: { pageIndex: 0, pageSize: 25 },
         defaultDateFilter: 'all',
         persistState: false,
@@ -131,7 +131,7 @@ export function InstallCompletionPage() {
         const params: any = {
             skip,
             limit: tableState.pagination.pageSize,
-            // current_stage: 'install_scheduling', // Pre-draft review stage
+            current_stage: 'install_completion', // Pre-draft review stage
         };
 
         if (tableState.searchQuery) {
@@ -185,7 +185,7 @@ export function InstallCompletionPage() {
     ]);
 
     // Fetch data with backend pagination and filtering
-    const { data, isLoading, isFetching, isError, error } = useGetFabsCompletionQuery(queryParams);
+    const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
 
 
     const handleDetails = (id: string) => {
@@ -231,7 +231,7 @@ export function InstallCompletionPage() {
 
             <JobTable
                 jobs={jobsData}
-                path="install-scheduling"
+                path="install-completion"
                 isLoading={isLoading}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}

@@ -118,7 +118,7 @@ export const operatorApi = createApi({
 
         // Get current logged-in operator's tasks
         getCurrentOperatorTasks: builder.query<OperatorTask[], { view?: string; reference_date?: string; active_only?: boolean }>({
-            query: ({ view = 'week', reference_date, active_only = false }) => ({
+            query: ({ view = 'week', reference_date, active_only = true }) => ({
                 url: '/api/v1/operators/me/tasks',
                 method: 'GET',
                 params: { view, reference_date, active_only }
