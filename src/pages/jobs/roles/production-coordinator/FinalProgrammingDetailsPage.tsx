@@ -135,28 +135,30 @@ export function FinalProgrammingDetailsPage() {
   };
 
   // Time tracking handlers
-  const handleStart = useCallback(async (startTime: Date) => {
-    const hasDraftingAssignment = fabData?.draft_data?.id;
-    if (!hasDraftingAssignment) {
-      toast.error('Cannot start final programming session - no drafting history found');
-      return;
-    }
-    try {
-      await manageFinalProgrammingSession({
-        fab_id: fabId,
-        data: { action: 'start', started_by: currentEmployeeId, timestamp: startTime.toISOString() }
-      }).unwrap();
-      await refetchFPSession();
-      toast.success('Final programming session started');
-      setIsDrafting(true);
-      setIsPaused(false);
-      setHasEnded(false);
-      setDraftStart(startTime);
-    } catch (error) {
-      console.error('Failed to start session:', error);
-      toast.error('Failed to start session');
-    }
-  }, [fabId, currentEmployeeId, manageFinalProgrammingSession, refetchFPSession]);
+ const handleStart = useCallback(async (startTime: Date) => {
+  // Read the latest fabData directly
+  const hasDraftingAssignment = fabData?.draft_data?.id;
+  console.log('Attempting to start session with drafting assignment:', hasDraftingAssignment);
+  if (!hasDraftingAssignment) {
+    toast.error('Cannot start final programming session - no drafting history found');
+    return;
+  }
+  try {
+    await manageFinalProgrammingSession({
+      fab_id: fabId,
+      data: { action: 'start', started_by: currentEmployeeId, timestamp: startTime.toISOString() }
+    }).unwrap();
+    await refetchFPSession();
+    toast.success('Final programming session started');
+    setIsDrafting(true);
+    setIsPaused(false);
+    setHasEnded(false);
+    setDraftStart(startTime);
+  } catch (error) {
+    console.error('Failed to start session:', error);
+    toast.error('Failed to start session');
+  }
+}, [fabData, fabId, currentEmployeeId, manageFinalProgrammingSession, refetchFPSession]);
 
   const handlePause = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
     try {

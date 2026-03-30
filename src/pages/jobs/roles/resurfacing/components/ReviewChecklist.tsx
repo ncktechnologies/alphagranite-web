@@ -246,7 +246,21 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
               </FormItem>
             )}
           /> */}
-
+          <FormField
+            control={form.control}
+            name="shop_date_schedule"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Shop date schedule</FormLabel>
+                <DateTimePicker
+                  mode="date"
+                  value={parseDateString(field.value)}
+                  onChange={(date) => field.onChange(formatDate(date))}
+                />
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           {/* Notes field */}
           <FormField
             control={form.control}
@@ -267,21 +281,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
           />
 
           {/* Shop date schedule */}
-          <FormField
-            control={form.control}
-            name="shop_date_schedule"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Shop date schedule</FormLabel>
-                <DateTimePicker
-                  mode="date"
-                  value={parseDateString(field.value)}
-                  onChange={(date) => field.onChange(formatDate(date))}
-                />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+
         </Can>
 
         <Separator className="my-4" />
