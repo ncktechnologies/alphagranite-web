@@ -33,15 +33,15 @@ import {
 
 // ── Schema ────────────────────────────────────────────────────────────────────
 const updateFabSchema = z.object({
-  pieces:          z.string().optional(),
-  totalSqFt:       z.string().optional(),
-  wjLinFt:         z.string().optional(),
-  edgingLinFt:     z.string().optional(),
-  cncLinFt:        z.string().optional(),
-  miterLinFt:      z.string().optional(),
-  sawCutLnft:      z.string().optional(),
-  shopDate:        z.string().optional(),
-  installationDate:z.string().optional(),
+  pieces: z.string().optional(),
+  totalSqFt: z.string().optional(),
+  wjLinFt: z.string().optional(),
+  edgingLinFt: z.string().optional(),
+  cncLinFt: z.string().optional(),
+  miterLinFt: z.string().optional(),
+  sawCutLnft: z.string().optional(),
+  shopDate: z.string().optional(),
+  installationDate: z.string().optional(),
   // ✅ renamed from revisionComplete → cutlistComplete
   cutlistComplete: z.boolean().optional(),
 });
@@ -51,9 +51,9 @@ type UpdateFabData = z.infer<typeof updateFabSchema>;
 // ── Date helpers ──────────────────────────────────────────────────────────────
 const formatDate = (date: Date | undefined): string => {
   if (!date) return "";
-  const year  = date.getFullYear();
+  const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day   = String(date.getDate()).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 };
 
@@ -73,9 +73,9 @@ export function UpdateFabIdModal({
   onClose,
   fabData,
 }: {
-  open:     boolean;
-  onClose:  () => void;
-  fabData:  any;
+  open: boolean;
+  onClose: () => void;
+  fabData: any;
 }) {
   const { data: cutListData, isLoading: isCutListLoading } = useGetCutListDetailsQuery(
     fabData?.id,
@@ -85,20 +85,20 @@ export function UpdateFabIdModal({
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [updateCutListSchedule] = useUpdateCutListScheduleMutation();
-  const [updateCutList]         = useUpdateCutListMutation();
+  const [updateCutList] = useUpdateCutListMutation();
 
   const form = useForm<UpdateFabData>({
     resolver: zodResolver(updateFabSchema),
     defaultValues: {
-      pieces:          "",
-      totalSqFt:       "",
-      wjLinFt:         "",
-      edgingLinFt:     "",
-      cncLinFt:        "",
-      miterLinFt:      "",
-      sawCutLnft:      "",
-      shopDate:        "",
-      installationDate:"",
+      pieces: "",
+      totalSqFt: "",
+      wjLinFt: "",
+      edgingLinFt: "",
+      cncLinFt: "",
+      miterLinFt: "",
+      sawCutLnft: "",
+      shopDate: "",
+      installationDate: "",
       cutlistComplete: false,
     },
   });
@@ -112,30 +112,30 @@ export function UpdateFabIdModal({
     const cutData = cutListData?.data;
 
     form.reset({
-      pieces:          (cutData?.no_of_pieces   ?? fabData.no_of_pieces   ?? "").toString() || "",
-      totalSqFt:       (cutData?.total_sqft      ?? fabData.total_sqft      ?? "").toString() || "",
-      wjLinFt:         (cutData?.wj_linft        ?? fabData.wj_linft        ?? "").toString() || "",
-      edgingLinFt:     (cutData?.edging_linft    ?? fabData.edging_linft    ?? "").toString() || "",
-      cncLinFt:        (cutData?.cnc_linft       ?? fabData.cnc_linft       ?? "").toString() || "",
-      miterLinFt:      (cutData?.miter_linft     ?? fabData.miter_linft     ?? "").toString() || "",
-      sawCutLnft:      (cutData?.saw_cut_lnft    ?? fabData.saw_cut_lnft    ?? "").toString() || "",
-      shopDate:         cutData?.shop_date_schedule  ?? fabData.shop_date_schedule  ?? "",
-      installationDate: cutData?.installation_date   ?? fabData.installation_date   ?? "",
+      pieces: (cutData?.no_of_pieces ?? fabData.no_of_pieces ?? "").toString() || "",
+      totalSqFt: (cutData?.total_sqft ?? fabData.total_sqft ?? "").toString() || "",
+      wjLinFt: (cutData?.wj_linft ?? fabData.wj_linft ?? "").toString() || "",
+      edgingLinFt: (cutData?.edging_linft ?? fabData.edging_linft ?? "").toString() || "",
+      cncLinFt: (cutData?.cnc_linft ?? fabData.cnc_linft ?? "").toString() || "",
+      miterLinFt: (cutData?.miter_linft ?? fabData.miter_linft ?? "").toString() || "",
+      sawCutLnft: (cutData?.saw_cut_lnft ?? fabData.saw_cut_lnft ?? "").toString() || "",
+      shopDate: cutData?.shop_date_schedule ?? fabData.shop_date_schedule ?? "",
+      installationDate: cutData?.installation_date ?? fabData.installation_date ?? "",
       // ✅ read cutlist_complete from backend; fall back to fabData field
-      cutlistComplete:  cutData?.cutlist_complete === true || fabData?.cutlist_complete === true,
+      cutlistComplete: cutData?.cutlist_complete === true || fabData?.cutlist_complete === true,
     });
   }, [open, cutListData, fabData, form]);
 
   // ── Job info display ──────────────────────────────────────────────────────
   const jobInfo = [
-    { label: "Job #",            value: fabData?.job_details?.job_number  || "-" },
-    { label: "FAB type",         value: fabData?.fab_type                 || "-" },
-    { label: "Account",          value: fabData?.job_details?.name        || "-" },
-    { label: "Area (s)",         value: fabData?.input_area               || "-" },
-    { label: "Stone type",       value: fabData?.stone_type_name          || "-" },
-    { label: "Stone color",      value: fabData?.stone_color_name         || "-" },
-    { label: "Stone thickness",  value: fabData?.stone_thickness_value    || "-" },
-    { label: "Edge",             value: fabData?.edge_name                || "-" },
+    { label: "Job #", value: fabData?.job_details?.job_number || "-" },
+    { label: "FAB type", value: fabData?.fab_type || "-" },
+    { label: "Account", value: fabData?.job_details?.name || "-" },
+    { label: "Area (s)", value: fabData?.input_area || "-" },
+    { label: "Stone type", value: fabData?.stone_type_name || "-" },
+    { label: "Stone color", value: fabData?.stone_color_name || "-" },
+    { label: "Stone thickness", value: fabData?.stone_thickness_value || "-" },
+    { label: "Edge", value: fabData?.edge_name || "-" },
   ];
 
   // ── Submit ────────────────────────────────────────────────────────────────
@@ -144,16 +144,16 @@ export function UpdateFabIdModal({
     try {
       // Build schedule payload — only include defined values
       const requestData: Record<string, any> = {
-        fab_id:             fabData?.id,
-        no_of_pieces:       values.pieces        ? parseInt(values.pieces)        : undefined,
-        total_sqft:         values.totalSqFt     ? parseFloat(values.totalSqFt)   : undefined,
-        wj_linft:           values.wjLinFt       ? parseFloat(values.wjLinFt)     : undefined,
-        edging_linft:       values.edgingLinFt   ? parseFloat(values.edgingLinFt) : undefined,
-        cnc_linft:          values.cncLinFt      ? parseFloat(values.cncLinFt)    : undefined,
-        miter_linft:        values.miterLinFt    ? parseFloat(values.miterLinFt)  : undefined,
-        saw_cut_lnft:       values.sawCutLnft    ? parseFloat(values.sawCutLnft)  : undefined,
-        shop_date_schedule: values.shopDate      || null,
-        installation_date:  values.installationDate || null,
+        fab_id: fabData?.id,
+        no_of_pieces: values.pieces ? parseInt(values.pieces) : undefined,
+        total_sqft: values.totalSqFt ? parseFloat(values.totalSqFt) : undefined,
+        wj_linft: values.wjLinFt ? parseFloat(values.wjLinFt) : undefined,
+        edging_linft: values.edgingLinFt ? parseFloat(values.edgingLinFt) : undefined,
+        cnc_linft: values.cncLinFt ? parseFloat(values.cncLinFt) : undefined,
+        miter_linft: values.miterLinFt ? parseFloat(values.miterLinFt) : undefined,
+        saw_cut_lnft: values.sawCutLnft ? parseFloat(values.sawCutLnft) : undefined,
+        shop_date_schedule: values.shopDate || null,
+        installation_date: values.installationDate || null,
       };
 
       const cleanedData = Object.fromEntries(
@@ -162,14 +162,14 @@ export function UpdateFabIdModal({
 
       await updateCutListSchedule({
         fab_id: fabData?.id,
-        data:   cleanedData,
+        data: cleanedData,
       }).unwrap();
 
       // ✅ Send cutlist_complete (not revision_complete) to backend
       if (values.cutlistComplete) {
         await updateCutList({
           fab_id: fabData?.id,
-          data:   { cutlist_complete: true },
+          data: { cutlist_complete: true },
         }).unwrap();
       }
 
@@ -190,12 +190,12 @@ export function UpdateFabIdModal({
 
   // ── FAB type background colour ────────────────────────────────────────────
   const fabBgMap: Record<string, string> = {
-    "standard":   "bg-[#9eeb47]",
-    "fab only":   "bg-[#5bd1d7]",
-    "cust redo":  "bg-[#f0bf4c]",
-    "resurface":  "bg-[#d094ea]",
+    "standard": "bg-[#9eeb47]",
+    "fab only": "bg-[#5bd1d7]",
+    "cust redo": "bg-[#f0bf4c]",
+    "resurface": "bg-[#d094ea]",
     "fast track": "bg-[#f59794]",
-    "ag redo":    "bg-[#f5cc94]",
+    "ag redo": "bg-[#f5cc94]",
   };
 
   const fabTypeKey = fabData?.fab_type
@@ -357,6 +357,7 @@ export function UpdateFabIdModal({
                         mode="date"
                         value={parseDateString(field.value)}
                         onChange={(date) => field.onChange(formatDate(date))}
+                        minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
                       />
                       <FormMessage />
                     </FormItem>

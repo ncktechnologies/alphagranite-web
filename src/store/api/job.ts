@@ -973,6 +973,9 @@ export const jobApi = createApi({
                             ...(queryParams.next_stage && { next_stage: queryParams.next_stage }),
                             // Search filter
                             ...(queryParams.search && { search: queryParams.search }),
+                             // Search type filter (fab_id, job_number, job_name)
+                            ...(queryParams.type && { type: queryParams.type }),
+
                             // Schedule date filters
                             ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
                             ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
@@ -1068,6 +1071,8 @@ export const jobApi = createApi({
                             // Search filter
                             ...(queryParams.search && { search: queryParams.search }),
                             // Schedule date filters
+                             // Search type filter (fab_id, job_number, job_name)
+                            ...(queryParams.type && { type: queryParams.type }),
                             ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
                             ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
                             ...(queryParams.schedule_status && { schedule_status: queryParams.schedule_status }),

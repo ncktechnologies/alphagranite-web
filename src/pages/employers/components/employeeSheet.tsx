@@ -27,7 +27,7 @@ import { toast } from "sonner";
 const employeeSchema = z.object({
   first_name: z.string().min(1, "First name is required"),
   last_name: z.string().min(1, "Last name is required"),
-  email: z.string().email("Please enter a valid email address").optional().or(z.string().length(0)),
+  email: z.string().email("Please enter a valid email address").min(1, "Emailis required"),
   department: z.string().min(1, "Please select a department"),
   home_address: z.string().optional(),
   phone: z.string().optional().refine(
@@ -176,7 +176,7 @@ const EmployeeFormSheet = ({
     } catch (error: any) {
       const errorMessage = error?.data?.detail || error?.data?.message ||
         `Failed to ${isEditMode ? 'update' : 'create'} employee`;
-      toast.error(errorMessage);
+      // toast.error(Error: {typeof error === 'string' ? errorMessage: JSON.stringify(errorMessage)});
     }
   }
 

@@ -11,6 +11,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
+import { CurrentStageProvider } from '../sales/action';
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
@@ -115,7 +116,7 @@ const SlabSmithPage = () => {
         const params: any = {
             skip,
             limit: tableState.pagination.pageSize,
-            current_stage: 'slab_smith_request',
+            current_stage: '',
         };
 
         if (tableState.searchQuery) {
@@ -163,8 +164,8 @@ const SlabSmithPage = () => {
         tableState.fabTypeFilter,
         tableState.salesPersonFilter,
         tableState.dateFilter,
-        tableState.dateRange, 
-        tableState.searchType, 
+        tableState.dateRange,
+        tableState.searchType,
     ]);
 
     // Fetch data with backend pagination and filtering
@@ -222,20 +223,32 @@ const SlabSmithPage = () => {
                 <Toolbar className=' '>
                     <ToolbarHeading title="SlabSmith" description="View and manage slab smith requests" />
                 </Toolbar>
-                <JobTable
-                    jobs={jobsData}
-                    path='slab-smith'
-                    isLoading={isLoading}
-                    // onRowClick={handleRowClick}
-                    // useBackendPagination={true}
-                    totalRecords={data?.total || 0}
-                    useBackendPagination={true}
-                    tableState={tableState}
-                    showSalesPersonFilter={false}
-                    showScheduleFilter={false} // Remove separate schedule filter
-                    salesPersons={salesPersons}
-                    visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'slabsmith_completed', 'slabsmith_notes', 'drafter', 'slabsmith_clock_complete', 'on_hold']}
-                />
+                <CurrentStageProvider
+                    value={{
+                        currentStage: 'slab_smith_request', // the stage for this page
+                        openCurrentStageView: (fabId, jobName) => {
+                            // optional: implement if you want to open a modal for current stage view
+                            // For now, it's a no-op
+                            console.log('openCurrentStageView called', fabId, jobName);
+                        }
+                    }}
+                >
+                    <JobTable
+                        jobs={jobsData}
+                        path='slab-smith'
+                        isLoading={isLoading}
+                        // onRowClick={handleRowClick}
+                        // useBackendPagination={true}
+                        totalRecords={data?.total || 0}
+                        useBackendPagination={true}
+                        tableState={tableState}
+                        showSalesPersonFilter={false}
+                        showScheduleFilter={false} // Remove separate schedule filter
+                        salesPersons={salesPersons}
+                        visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'slabsmith_completed', 'slabsmith_notes', 'drafter', 'slabsmith_clock_complete', 'on_hold']}
+                    />
+                </CurrentStageProvider>
+
             </Container>
         </div>
     );

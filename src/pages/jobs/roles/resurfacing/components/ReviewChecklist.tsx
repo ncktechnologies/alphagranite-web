@@ -90,6 +90,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
       shop_date_schedule: '',
     },
   });
+  const isCompleted = form.watch("resurface_completed");
 
   // Pre-fill form when fabData loads
   useEffect(() => {
@@ -103,6 +104,12 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
       });
     }
   }, [fabData, form]);
+
+  useEffect(() => {
+    if (!isCompleted) {
+      form.setValue("shop_date_schedule", "");
+    }
+  }, [isCompleted, form]);
 
   const onSubmit = async (values: ReviewChecklistData) => {
     // Guard: fabId must be present
@@ -229,7 +236,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <Can action="update" on="Pre-draft Review">
           {/* Resurface completed checkbox */}
-          {/* <FormField
+          <FormField
             control={form.control}
             name="resurface_completed"
             render={({ field }) => (
@@ -241,11 +248,11 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                   />
                 </FormControl>
                 <FormLabel className="text-base font-semibold text-text">
-                  Resurface completed
+                  Resurface review completed
                 </FormLabel>
               </FormItem>
             )}
-          /> */}
+          />
           <FormField
             control={form.control}
             name="shop_date_schedule"
@@ -256,6 +263,8 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                   mode="date"
                   value={parseDateString(field.value)}
                   onChange={(date) => field.onChange(formatDate(date))}
+                  disabled={!isCompleted}
+                  minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
                 />
                 <FormMessage />
               </FormItem>

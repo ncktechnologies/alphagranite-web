@@ -18,6 +18,7 @@ import { IJob } from '@/pages/jobs/components/job';
 
 // Create a context to manage the current stage view state at a higher level
 interface CurrentStageContextType {
+  currentStage: string | null;
   openCurrentStageView: (fabId: string, jobName: string) => void;
 }
 
@@ -27,13 +28,11 @@ const CurrentStageContext = createContext<CurrentStageContextType | null>(null);
 export const CurrentStageProvider = CurrentStageContext.Provider;
 
 // Hook to access the current stage context
-// export const useCurrentStage = () => {
-//   const context = useContext(CurrentStageContext);
-//   if (!context) {
-//     throw new Error('useCurrentStage must be used within a CurrentStageProvider');
-//   }
-//   return context;
-// };
+export const useCurrentStage = () => {
+  const context = useContext(CurrentStageContext);
+  return context; // might be null
+};
+
 
 // import { MoveStageModal } from './components/MoveStageModal';
 
@@ -62,13 +61,15 @@ function ActionsCell({ row, onView }: ActionsCellProps) {
   const handleAddNote = () => {
     setIsNotesModalOpen(true);
   };
+  const context = useCurrentStage();
+  const currentStage = context?.currentStage ?? undefined;
 
   const handleNoteSubmit = async (note: string, fabId: string, stage?: string) => {
     try {
       await createFabNote({
         fab_id: parseInt(fabId),
         note,
-        stage
+        stage:currentStage
       }).unwrap();
     } catch (error) {
       console.error('Error creating note:', error);

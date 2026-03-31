@@ -184,6 +184,12 @@ const NewFabIdForm = () => {
   const [showAddStoneColor, setShowAddStoneColor] = useState(false);
   const [newStoneColor, setNewStoneColor] = useState('');
 
+  const [edgePopoverOpen, setEdgePopoverOpen] = useState(false);
+  const [edgeSearch, setEdgeSearch] = useState('');
+  const [showAddEdge, setShowAddEdge] = useState(false);
+  const [newEdge, setNewEdge] = useState('');
+
+
   const handlePopupClose = () => {
     setShowPopover(false);
     navigate('/job');
@@ -502,7 +508,30 @@ const NewFabIdForm = () => {
       }
     }
   };
-
+  const handleAddEdge = async () => {
+    if (newEdge.trim()) {
+      try {
+        await createEdge({ name: newEdge.trim() }).unwrap();
+        setNewEdge('');
+        setShowAddEdge(false);
+        setEdgePopoverOpen(false);
+        toast.success('Edge added successfully');
+      } catch (error: any) {
+        console.error('Failed to add edge:', error);
+        if (error?.status === 'FETCH_ERROR') {
+          toast.error('Network error: Unable to add edge. Please check your connection.');
+        } else if (error?.data?.message) {
+          toast.error(`Failed to add edge: ${error.data.message}`);
+        } else {
+          toast.error('Failed to add edge');
+        }
+      }
+    }
+  };
+  // Filter edges based on search
+  const filteredEdges = edgeOptions.filter(edge =>
+    edge.toLowerCase().includes(edgeSearch.toLowerCase())
+  );
   const onSubmit = async (values: FabIdFormData) => {
     try {
       setIsSubmitting(true);
@@ -1288,26 +1317,92 @@ const NewFabIdForm = () => {
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel>Edge *</FormLabel>
-                              <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingEdges}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder={isLoadingEdges ? 'Loading...' : 'Select edge'} />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {isEdgesError ? (
-                                    <div className="px-3 py-2 text-sm text-red-500">
-                                      Failed to load edges: Server error occurred
+                              <Popover open={edgePopoverOpen} onOpenChange={setEdgePopoverOpen}>
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <Button
+                                      variant="outline"
+                                      className="w-full justify-between h-[48px] px-4 text-sm border-input shadow-xs shadow-black/5"
+                                      disabled={isLoadingEdges}
+                                    >
+                                      <span className={!field.value ? "text-muted-foreground" : ""}>
+                                        {isLoadingEdges ? 'Loading...' : (field.value || "Select edge")}
+                                      </span>
+                                      <ChevronDown className="h-4 w-4 opacity-60" />
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                                  <div className="p-2">
+                                    <div className="flex items-center justify-between mb-2">
+                                      <span className="text-sm font-medium">Edges</span>
+                                      <Popover open={showAddEdge} onOpenChange={setShowAddEdge}>
+                                        <PopoverTrigger asChild>
+                                          <Button variant="ghost" size="sm" className="h-7 px-2">
+                                            <Plus className="w-3 h-3 mr-1" />
+                                            Add
+                                          </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-80" align="end">
+                                          <div className="space-y-3">
+                                            <div>
+                                              <Label htmlFor="newEdge">Edge Name</Label>
+                                              <Input
+                                                id="newEdge"
+                                                placeholder="Enter edge name"
+                                                value={newEdge}
+                                                onChange={(e) => setNewEdge(e.target.value)}
+                                              />
+                                            </div>
+                                            <div className="flex justify-end gap-2">
+                                              <Button variant="outline" size="sm" onClick={() => setShowAddEdge(false)}>
+                                                Cancel
+                                              </Button>
+                                              <Button size="sm" onClick={handleAddEdge}>
+                                                Add
+                                              </Button>
+                                            </div>
+                                          </div>
+                                        </PopoverContent>
+                                      </Popover>
                                     </div>
-                                  ) : (
-                                    edgeOptions.map((edge: string) => (
-                                      <SelectItem key={edge} value={edge}>
-                                        {edge}
-                                      </SelectItem>
-                                    ))
-                                  )}
-                                </SelectContent>
-                              </Select>
+                                    <div className="relative mb-2">
+                                      <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
+                                      <Input
+                                        placeholder="Search edge"
+                                        className="pl-8"
+                                        value={edgeSearch}
+                                        onChange={(e) => setEdgeSearch(e.target.value)}
+                                      />
+                                    </div>
+                                    {isEdgesError && (
+                                      <div className="px-3 py-2 text-sm text-red-500 text-center">
+                                        Failed to load edges: Server error occurred
+                                      </div>
+                                    )}
+                                    <div className="space-y-1 max-h-48 overflow-y-auto">
+                                      {filteredEdges.map((edge) => (
+                                        <div
+                                          key={edge}
+                                          className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
+                                          onClick={() => {
+                                            field.onChange(edge);
+                                            setEdgeSearch('');
+                                            setEdgePopoverOpen(false);
+                                          }}
+                                        >
+                                          {edge}
+                                        </div>
+                                      ))}
+                                      {filteredEdges.length === 0 && !isEdgesError && (
+                                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                          {isLoadingEdges ? 'Loading edges...' : 'No edges found'}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </PopoverContent>
+                              </Popover>
                               <FormMessage />
                             </FormItem>
                           )}
