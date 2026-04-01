@@ -281,7 +281,7 @@ export function TemplatingPage() {
 
             <Tabs defaultValue="all" className="mt-4">
                 <TabsList className=" bg-transparent p-2 border  flex flex-wrap gap-1">
-                    <TabsTrigger value="all">
+                    {/* <TabsTrigger value="all">
                         <span className="flex items-center gap-2">
                             FabId
                             <span className=" bg-[#E1FCE9] text-base px-[6px] text-text rounded-[50px]" >
@@ -291,7 +291,7 @@ export function TemplatingPage() {
                     </TabsTrigger>
                     <div className='pl-5 text-[#4B5675] text-[14px]'>
                         Total SQ. FT: {totalSqFt}
-                    </div>
+                    </div> */}
                 </TabsList>
 
                 <TabsContent value="all" className="mt-4">

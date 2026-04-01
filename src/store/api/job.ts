@@ -1842,7 +1842,7 @@ export const jobApi = createApi({
             // Universal delete file - works with just file_id
             deleteFile: build.mutation<any, { file_id: string }>({
                 query: ({ file_id }) => ({
-                    url: `https://api.ag.easybusiness.ng/files/${file_id}`, // absolute URL
+                    url: `${baseUrl}/files/${file_id}`,
                     method: "DELETE",
                 }),
                 invalidatesTags: ["Drafting", "Fab"],

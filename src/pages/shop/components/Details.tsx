@@ -7,10 +7,11 @@ interface RoleDetailsViewProps {
   role: Station;
   onEdit: (role: Station) => void;
   onDelete: (role: Station) => void;
+  onStatusChange?: () => void;
 
 }
 
-export const StationDetailsView = ({ role, onEdit, onDelete }: RoleDetailsViewProps) => {
+export const StationDetailsView = ({ role, onEdit, onDelete, onStatusChange }: RoleDetailsViewProps) => {
   // Get planning section name from the role data
   const rawRole = role as any;
   const planningSectionName = rawRole.planning_section_name || 'Not assigned';
@@ -18,7 +19,7 @@ export const StationDetailsView = ({ role, onEdit, onDelete }: RoleDetailsViewPr
   
   return (
     <div className="space-y-2">
-      <StationHeader role={role} onEdit={onEdit} OnDelete={onDelete} />      
+      <StationHeader role={role} onEdit={onEdit} OnDelete={onDelete} onStatusChange={onStatusChange} />      
       {/* <UsersSection /> */}
       <div className="grid grid-cols-2 gap-[14px] rounded-[8px] bg-[#FAFAFA] p-8 space-y-10">
         <div>

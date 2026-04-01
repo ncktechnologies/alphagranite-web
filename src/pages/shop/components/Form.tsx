@@ -59,12 +59,13 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
     
     console.log('Planning Sections:', planningSections, 'isLoading:', isPlanningSectionsLoading);
 
-    const form = useForm<WorkstationFormType>({
+    const form = useForm<WorkstationFormType & { planning_section_id?: string }>({
         resolver: zodResolver(workstationSchema),
         defaultValues: {
             workstationName: '',
             other: '',
             operator_ids: [],
+            planning_section_id: undefined,
         },
     });
 
@@ -74,28 +75,27 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
             const rawRole = role as any;
             
             // Get the original operator IDs from the raw role data
-            const operatorIds = rawRole.operator_ids || []; // This should be the original IDs
+            const operatorIds = rawRole.operator_ids || [];
             
             console.log('Operator IDs from role:', operatorIds);
+            console.log('Planning section ID from role:', rawRole.planning_section_id);
             
             form.reset({
                 workstationName: role.workstationName || '',
                 other: role.other || '',
-                operator_ids: operatorIds.map(String), // Convert IDs to strings for the form
+                operator_ids: operatorIds.map(String),
+                planning_section_id: rawRole.planning_section_id ? String(rawRole.planning_section_id) : undefined,
             });
             
             // Set selected users using the operator IDs (as strings)
             setSelectedUsers(operatorIds.map(String));
             
-            // Attempt to populate planning section if present on role
-            const ps = rawRole.planning_section_id ?? rawRole.planningSectionId ?? undefined;
-            console.log('Planning section ID from role:', ps);
-            console.log('Setting planningSectionId to:', ps !== undefined ? Number(ps) : undefined);
-            
-            // Use a small delay to ensure state updates properly
-            setTimeout(() => {
-                setPlanningSectionId(ps !== undefined ? Number(ps) : undefined);
-            }, 0);
+            // Set planning section - ensure it's set immediately and synchronously
+            const psId = rawRole.planning_section_id !== undefined && rawRole.planning_section_id !== null 
+                ? Number(rawRole.planning_section_id) 
+                : undefined;
+            setPlanningSectionId(psId);
+            console.log('Set planningSectionId to:', psId);
         } else if (mode === 'new') {
             form.reset({
                 workstationName: '',
@@ -177,24 +177,36 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
 
                 {/* Planning Section Select */}
                 <FormItem>
-                    <FormLabel>Shop Activity.</FormLabel>
+                    <FormLabel>Shop Activity *</FormLabel>
                     <FormControl>
-                        <Select value={planningSectionId !== undefined ? String(planningSectionId) : ''} onValueChange={(v) => {
-                            console.log('Select changed to:', v);
-                            setPlanningSectionId(v ? Number(v) : undefined);
-                        }}>
+                        <Select 
+                            value={planningSectionId !== undefined ? String(planningSectionId) : ''} 
+                            onValueChange={(v) => {
+                                console.log('Select changed to:', v);
+                                setPlanningSectionId(v ? Number(v) : undefined);
+                            }}
+                        >
                             <SelectTrigger>
-                                <SelectValue placeholder={isPlanningSectionsLoading ? 'Loading sections...' : planningSectionId !== undefined ? `Selected: ${planningSectionId}` : 'Select planning section'} />
+                                <SelectValue placeholder={isPlanningSectionsLoading ? 'Loading sections...' : 'Select shop activity'} />
                             </SelectTrigger>
                             <SelectContent>
                                 {planningSections.map((ps: any) => (
-                                    <SelectItem key={ps.id} value={String(ps.id)}>{ps.plan_name}</SelectItem>
+                                    <SelectItem key={ps.id} value={String(ps.id)}>
+                                        {ps.name || ps.plan_name}
+                                    </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </FormControl>
+                    {planningSectionId && (() => {
+                        const foundSection = planningSections.find((ps: any) => ps.id === planningSectionId);
+                        return (
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Selected: {foundSection?.name || foundSection?.plan_name}
+                            </p>
+                        );
+                    })()}
                 </FormItem>
-
 
                 {/* <FormField
                     control={form.control}

@@ -1,122 +1,186 @@
 import { SHOP_NAV } from '@/config/menu.config';
 import { Station, ViewMode } from '@/config/types';
-import React, { Fragment, useEffect, useMemo, useState } from 'react'
+import React, { Fragment, useMemo, useState, useEffect } from 'react'
 import { WorkStationForm } from '../components/Form';
 import { StationDetailsView } from '../components/Details';
-import { PageMenu } from '@/pages/settings/page-menu';
 import { Container } from '@/components/common/container';
 import { StationList } from '../components/StationList';
-import { Toolbar, ToolbarActions, ToolbarBreadcrumbs, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+import { Toolbar, ToolbarBreadcrumbs, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { useGetWorkstationsQuery } from '@/store/api';
-import { useGetEmployeesQuery } from '@/store/api/employee';
-import { useGetPlanningSectionsQuery } from '@/store/api/workstation';
+import { useGetAllPlanningSectionsQuery, useToggleWorkstationStatusMutation, useDeletePlanningSectionMutation, useTogglePlanningSectionStatusMutation, useUpdatePlanningSectionMutation } from '@/store/api/workstation';
+import { PlanningSectionManager } from './components/PlanningSectionManager';
+import { toast } from 'sonner';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ActivityDetailsView } from './components/ActivityDetailsView';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { X, Check } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 
 function SettingsPage() {
     const [viewMode, setViewMode] = useState<ViewMode>('details');
     const [selectedRole, setSelectedRole] = useState<Station | null>(null);
-    
+    const [activeTab, setActiveTab] = useState<'workstations' | 'activities'>('workstations');
+    const [selectedActivityId, setSelectedActivityId] = useState<number | null>(null);
+    const [editingSectionId, setEditingSectionId] = useState<number | null>(null);
+    const [editingName, setEditingName] = useState('');
+    const [editingDescription, setEditingDescription] = useState('');
+    const [editingStatusId, setEditingStatusId] = useState<number>(1);
+
     // Fetch workstations from API
     const { data: workstationsData, isLoading, isError, refetch } = useGetWorkstationsQuery();
-    
-    // Fetch employees to map operator IDs to names
-    const { data: employeesData } = useGetEmployeesQuery();
-    const employees: any[] = employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
-    
-    // Fetch planning sections to map section IDs to names
-    const { data: planningSectionsData } = useGetPlanningSectionsQuery();
-    const planningSections: any[] = planningSectionsData?.data || (Array.isArray(planningSectionsData) ? planningSectionsData : []);
-    
-    console.log(workstationsData?.data, 'KSKSKKS')
-    
-    // Convert API data to Station format
+
+    // Fetch all planning sections (including inactive)
+    const { data: planningSectionsData, refetch: refetchPlanningSections } = useGetAllPlanningSectionsQuery();
+    const planningSections: any[] = (planningSectionsData && Array.isArray(planningSectionsData) ? planningSectionsData : []) || [];
+
+    // Toggle workstation status mutation
+    const [toggleWorkstationStatus] = useToggleWorkstationStatusMutation();
+    const [deletePlanningSection] = useDeletePlanningSectionMutation();
+    const [togglePlanningSectionStatus] = useTogglePlanningSectionStatusMutation();
+    const [updatePlanningSection] = useUpdatePlanningSectionMutation();
+
+    // Convert API data to Station format (now using enriched API response)
     const workstations: Station[] = useMemo(() => {
         if (!workstationsData) return [];
-        
+
         return workstationsData.data.map((ws: any) => {
-            // Handle operator_ids safely - could be string, array, or number
-            let operatorArray: string[] = [];
-            let rawOperatorIds: any[] = []; // Keep track of original IDs
-            
-            if (ws.operator_ids && Array.isArray(ws.operator_ids)) {
-                rawOperatorIds = ws.operator_ids; // Store original IDs
-                // Map employee IDs to names for display
-                operatorArray = ws.operator_ids.map((empId: number) => {
-                    const emp = employees.find(e => e.id === empId);
-                    if (emp) {
-                        return `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.email || `ID: ${empId}`;
-                    }
-                    return `ID: ${empId}`;
-                });
-            } else if (ws.operator_ids && typeof ws.operator_ids === 'string') {
-                rawOperatorIds = ws.operator_ids.split(',').map(Number);
-                operatorArray = ws.operator_ids.split(',');
-            } else if (ws.operator_ids && typeof ws.operator_ids === 'number') {
-                rawOperatorIds = [ws.operator_ids];
-                const emp = employees.find(e => e.id === ws.operator_ids);
-                operatorArray = [emp ? `${emp.first_name || ''} ${emp.last_name || ''}`.trim() : `ID: ${ws.operator_ids}`];
-            }
-            
-            // Get planning section name
-            let planningSectionName = 'Not assigned';
-            if (ws.planning_section_id) {
-                const section = planningSections.find(ps => ps.id === ws.planning_section_id);
-                planningSectionName = section?.plan_name || section?.name || `Section ${ws.planning_section_id}`;
-            }
-            
+            // Extract operator names directly from the operators array
+            const operatorNames: string[] = ws.operators?.map((op: any) => op.name) || [];
+
             return {
                 id: ws.id.toString(),
                 workstationName: ws.name,
-                description: ws.curremt_stage,
-                status: (ws.status_id === 1) ? 'Active' : 'Inactive',
-                members: operatorArray.length,
+                description: ws.planning_section_name || 'Not assigned',
+                status: (ws.status_id === 1 || ws.is_active) ? 'Active' : 'Inactive',
+                members: operatorNames.length,
                 avatars: [],
                 machine: ws.machines || '',
-                operators: operatorArray,
+                operators: operatorNames,
                 other: ws.machine_statuses || '',
-                // Add the raw operator_ids for the form to use
-                operator_ids: rawOperatorIds as any,
-                // Add planning_section_id and name for display
                 planning_section_id: ws.planning_section_id,
-                planning_section_name: planningSectionName
+                planning_section_name: ws.planning_section_name,
+                operator_ids: ws.operators?.map((op: any) => op.id) || [],
             } as Station;
         });
-    }, [workstationsData, employees, planningSections]);
-    
+    }, [workstationsData]);
+
+    // Auto-select first workstation when in workstations tab
     useEffect(() => {
-        if (workstations.length > 0 && !selectedRole && viewMode !== 'new' && viewMode !== 'edit') {
+        if (activeTab === 'workstations' && workstations.length > 0 && !selectedRole && viewMode !== 'new' && viewMode !== 'edit') {
             setSelectedRole(workstations[0]);
             setViewMode('details');
         }
-    }, [workstations, selectedRole, viewMode]);
-    
-    const handleRoleSelect = (role: Station) => {
-        setSelectedRole(role);
-        setViewMode('details');
-    };
+    }, [activeTab, workstations, selectedRole, viewMode]);
+
+    // Auto-select first activity when in activities tab
+    useEffect(() => {
+        if (activeTab === 'activities' && planningSections.length > 0 && selectedActivityId === null) {
+            setSelectedActivityId(planningSections[0].id);
+        }
+    }, [activeTab, planningSections, selectedActivityId]);
+
+  
+
+
 
     const handleNewRole = () => {
         setViewMode('new');
         setSelectedRole(null);
     };
 
+    const handleRoleSelect = (role: Station) => {
+        setSelectedRole(role);
+        setViewMode('details');
+    };
+
     const handleEditRole = (role: Station) => {
         setSelectedRole(role);
         setViewMode('edit');
     };
-    
+
+    const handleToggleWorkstationStatus = async (role: Station) => {
+        const newStatusId = role.status === 'Active' ? 0 : 1;
+        const action = newStatusId === 1 ? 'activate' : 'deactivate';
+
+        try {
+            await toggleWorkstationStatus({
+                id: parseInt(role.id),
+                status_id: newStatusId
+            }).unwrap();
+
+            toast.success(`Workstation ${action}d successfully`);
+            refetch();
+        } catch (error) {
+            console.error('Failed to toggle workstation status:', error);
+            toast.error(`Failed to ${action} workstation`);
+        }
+    };
+
     const handleCloseForm = () => {
         if (viewMode === 'new') {
-            // When closing new mode, go to details of first role
-            if (workstations.length > 0) {
-                setSelectedRole(workstations[0]);
-                setViewMode('details');
-            } else {
-                setViewMode('list');
-            }
+            setViewMode('list');
+            setSelectedRole(null);
         } else if (viewMode === 'edit') {
-            // When closing edit mode, go to details of the role being edited
-            setViewMode('details');
+            setViewMode('list');
+            setSelectedRole(null);
         }
+    };
+
+    const handleToggleActivityStatus = async (id: number) => {
+        const section = planningSections.find(s => s.id === id);
+        if (!section) return;
+        
+        const newStatusId = section.status_id === 1 ? 0 : 1;
+        const action = newStatusId === 1 ? 'activate' : 'deactivate';
+        
+        try {
+            await togglePlanningSectionStatus({ id, status_id: newStatusId }).unwrap();
+            toast.success(`Shop activity ${action}d successfully`);
+            refetchPlanningSections();
+        } catch (error) {
+            console.error('Failed to toggle activity status:', error);
+            toast.error(`Failed to ${action} shop activity`);
+        }
+    };
+
+    const handleEditActivity = (section: any) => {
+        setEditingSectionId(section.id);
+        setEditingName(section.plan_name);
+        setEditingDescription(section.plan_description || '');
+        setEditingStatusId(section.status_id || 1);
+    };
+
+    const handleSaveEdit = async () => {
+        if (!editingSectionId || !editingName.trim()) return;
+        
+        try {
+            await updatePlanningSection({
+                id: editingSectionId,
+                data: {
+                    plan_name: editingName.trim(),
+                    plan_description: editingDescription.trim() || undefined,
+                    status_id: editingStatusId,
+                },
+            }).unwrap();
+            
+            toast.success('Shop activity updated successfully');
+            setEditingSectionId(null);
+            setEditingName('');
+            setEditingDescription('');
+            refetchPlanningSections();
+        } catch (error) {
+            console.error('Failed to update:', error);
+            toast.error('Failed to update shop activity');
+        }
+    };
+
+    const handleCancelEdit = () => {
+        setEditingSectionId(null);
+        setEditingName('');
+        setEditingDescription('');
     };
 
     const renderRightContent = () => {
@@ -127,7 +191,7 @@ function SettingsPage() {
                 </div>
             );
         }
-        
+
         if (isError) {
             return (
                 <div className="flex items-center justify-center h-64 text-red-500">
@@ -137,7 +201,7 @@ function SettingsPage() {
         }
 
         if (viewMode === 'details' && selectedRole) {
-            return <StationDetailsView role={selectedRole} onEdit={handleEditRole} onDelete={() => {}} />;
+            return <StationDetailsView role={selectedRole} onEdit={handleEditRole} onDelete={() => {}} onStatusChange={refetch} />;
         }
 
         if (viewMode === 'new' || viewMode === 'edit') {
@@ -146,47 +210,149 @@ function SettingsPage() {
                     mode={viewMode}
                     role={selectedRole}
                     onCancel={handleCloseForm}
-                //   onSave={handleSaveRole}
                 />
             );
         }
 
+        // List view - no selection
         return (
             <div className="flex items-center justify-center h-64 text-gray-500">
-                No workstations available. Create a new workstation to get started.
+                Select a workstation from the list to view details
             </div>
         );
     };
-    
+
     return (
         <Fragment>
-            {/* <PageMenu /> */}
-
             <Container>
-                <Toolbar className=' lex flex-col items-start'>
+                <Toolbar className='flex flex-col items-start'>
                     <ToolbarBreadcrumbs
                         menu={SHOP_NAV}
                         rootTitle="Shop"
-                        rootPath="/"
+                        rootPath="/shop"
                     />
 
-                    <ToolbarHeading title="Shop settings" description="" />
-
-
+                    <ToolbarHeading title="Shop Settings" description="Manage workstations and shop activities" />
                 </Toolbar>
-                <div className="flex h-full gap-6 mt-4">
-                    <StationList
-                        roles={workstations}
-                        selectedRole={selectedRole}
-                        onRoleSelect={handleRoleSelect}
-                        onNewRole={handleNewRole}
-                    />
 
-                    {/* Right Content Area */}
-                    <div className="flex-1 pl-6">
-                        {renderRightContent()}
-                    </div>
-                </div>
+                {/* Tab Navigation */}
+                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="mt-4">
+                    <TabsList className="mb-4">
+                        <TabsTrigger value="workstations">Workstations</TabsTrigger>
+                        <TabsTrigger value="activities">Shop Activities</TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="workstations" className="mt-0">
+                        <div className="flex h-full gap-6">
+                            <div className="w-80 pr-6 border-r overflow-y-auto">
+                                <StationList
+                                    roles={workstations}
+                                    selectedRole={selectedRole}
+                                    onRoleSelect={handleRoleSelect}
+                                    onNewRole={handleNewRole}
+                                    onToggleStatus={handleToggleWorkstationStatus}
+                                />
+                            </div>
+
+                            {/* Right Content Area */}
+                            <div className="flex-1 pl-6 overflow-y-auto">
+                                {renderRightContent()}
+                            </div>
+                        </div>
+                    </TabsContent>
+
+                    <TabsContent value="activities" className="mt-0">
+                        <div className="flex h-full gap-6">
+                            <div className="w-80 pr-6 border-r overflow-y-auto">
+                                {/* Activity cards list */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <h3 className="text-lg font-semibold text-gray-800">Shop Activities</h3>
+                                    </div>
+                                    <PlanningSectionManager
+                                        planningSections={planningSections}
+                                        onRefresh={refetchPlanningSections}
+                                        selectedActivityId={selectedActivityId}
+                                        onSelectActivity={setSelectedActivityId}
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Right Content Area for Details */}
+                            <div className="flex-1 pl-6 overflow-y-auto">
+                                {selectedActivityId ? (
+                                    editingSectionId === selectedActivityId ? (
+                                        // Edit Mode
+                                        <Card>
+                                            <CardContent className="p-6">
+                                                <div className="space-y-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <h3 className="text-lg font-semibold">Edit Activity</h3>
+                                                        <div className="flex gap-2">
+                                                            <Button size="sm" variant="ghost" onClick={handleCancelEdit}>
+                                                                <X className="w-4 h-4" />
+                                                            </Button>
+                                                            <Button size="sm" onClick={handleSaveEdit} className="bg-green-600 hover:bg-green-700">
+                                                                <Check className="w-4 h-4" /> Save
+                                                            </Button>
+                                                        </div>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <Label>Activity Name</Label>
+                                                        <Input
+                                                            value={editingName}
+                                                            onChange={(e) => setEditingName(e.target.value)}
+                                                        />
+                                                        <Label>Description</Label>
+                                                        <Textarea
+                                                            value={editingDescription}
+                                                            onChange={(e) => setEditingDescription(e.target.value)}
+                                                            rows={3}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ) : (
+                                        // View Mode
+                                        <ActivityDetailsView
+                                            activity={planningSections.find(s => s.id === selectedActivityId)!}
+                                            onEdit={() => {
+                                                const section = planningSections.find(s => s.id === selectedActivityId);
+                                                if (section) handleEditActivity(section);
+                                            }}
+                                            onDelete={async () => {
+                                                const section = planningSections.find(s => s.id === selectedActivityId);
+                                                if (!section) return;
+                                                
+                                                if (!confirm(`Are you sure you want to delete "${section.plan_name}"?`)) {
+                                                    return;
+                                                }
+                                                
+                                                try {
+                                                    await deletePlanningSection(section.id).unwrap();
+                                                    toast.success('Shop activity deleted successfully');
+                                                    setSelectedActivityId(null);
+                                                    refetchPlanningSections();
+                                                } catch (error) {
+                                                    console.error('Failed to delete:', error);
+                                                    toast.error('Failed to delete shop activity');
+                                                }
+                                            }}
+                                            onToggleStatus={() => handleToggleActivityStatus(selectedActivityId!)}
+                                        />
+                                    )
+                                ) : (
+                                    <div className="flex items-center justify-center h-64 text-gray-500">
+                                        Select an activity from the list to view details
+                                    </div>
+                                )}
+                            </div>
+
+                        </div>
+                    </TabsContent>
+
+                </Tabs>
             </Container>
         </Fragment>
     )
