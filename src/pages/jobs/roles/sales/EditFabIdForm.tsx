@@ -1610,22 +1610,6 @@ const EditFabIdForm = () => {
 
                                             <FormField
                                                 control={form.control}
-                                                name="sctNotNeeded"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                                        <FormControl>
-                                                            <Checkbox
-                                                                checked={field.value}
-                                                                onCheckedChange={field.onChange}
-                                                            />
-                                                        </FormControl>
-                                                        <FormLabel className="font-normal">SCT not needed</FormLabel>
-                                                    </FormItem>
-                                                )}
-                                            />
-
-                                            <FormField
-                                                control={form.control}
                                                 name="slabSmithAGNotNeeded"
                                                 render={({ field }) => (
                                                     <FormItem className="flex flex-row items-center space-x-3 space-y-0">
@@ -1639,7 +1623,21 @@ const EditFabIdForm = () => {
                                                     </FormItem>
                                                 )}
                                             />
-
+                                            <FormField
+                                                control={form.control}
+                                                name="sctNotNeeded"
+                                                render={({ field }) => (
+                                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                                        <FormControl>
+                                                            <Checkbox
+                                                                checked={field.value}
+                                                                onCheckedChange={field.onChange}
+                                                            />
+                                                        </FormControl>
+                                                        <FormLabel className="font-normal">SCT not needed</FormLabel>
+                                                    </FormItem>
+                                                )}
+                                            />
                                             <FormField
                                                 control={form.control}
                                                 name="finalProgrammingNotNeeded"

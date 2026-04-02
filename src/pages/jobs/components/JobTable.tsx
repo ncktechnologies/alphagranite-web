@@ -26,7 +26,7 @@ import { DataGridTable } from '@/components/ui/data-grid-table';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { CalendarDays, Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { IJob } from './job';
 import { exportTableToCSV } from '@/lib/exportToCsv';
@@ -1098,7 +1098,7 @@ export const JobTable = ({
                                         <SelectItem value="last_month">Last Month</SelectItem>
                                         <SelectItem value="next_week">Next Week</SelectItem>
                                         <SelectItem value="next_month">Next Month</SelectItem>
-                                        <SelectItem value="all">All</SelectItem>
+                                        <SelectItem value="all">All Date</SelectItem>
                                         <SelectItem value="custom">Custom</SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -1140,6 +1140,7 @@ export const JobTable = ({
                                         <SelectValue placeholder="Schedule Status" />
                                     </SelectTrigger>
                                     <SelectContent>
+                                        <SelectLabel>Schedule Status</SelectLabel>
                                         <SelectItem value="all">All</SelectItem>
                                         <SelectItem value="scheduled">Scheduled</SelectItem>
                                         <SelectItem value="unscheduled">Unscheduled</SelectItem>
@@ -1216,7 +1217,7 @@ export const JobTable = ({
                 </CardHeader>
 
                 <CardTable>
-                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-300px)]">
+                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)]">
                         <DataGridTable />
                         <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
                     </ScrollArea>

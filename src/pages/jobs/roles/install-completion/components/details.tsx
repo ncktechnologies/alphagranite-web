@@ -84,7 +84,7 @@ export function InstallSchedulingDetailsPage() {
                         ? new Date(fab.templating_schedule_start_date).toLocaleDateString()
                         : 'Not scheduled',
                 },
-                { label: "Assigned to", value: fab.draft_data?.drafter_name || 'Unassigned' },
+                { label: "Drafter Assigned", value: fab.draft_data?.drafter_name || 'Unassigned' },
                 { label: "Sales Person", value: fab.sales_person_name || '—' },
                 { label: "SlabSmith Needed", value: fab.slab_smith_ag_needed ? 'Yes' : 'No' },
             ],

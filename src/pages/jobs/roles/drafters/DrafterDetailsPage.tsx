@@ -411,7 +411,7 @@ export function DrafterDetailsPage() {
             ? new Date(fabData.templating_schedule_start_date).toLocaleDateString()
             : 'Not scheduled',
         },
-        { label: 'Assigned to', value: fabData.draft_data?.drafter_name || 'Unassigned' },
+        { label: 'Drafter Assigned', value: fabData.draft_data?.drafter_name || 'Unassigned' },
         { label: 'Sales Person', value: fabData.sales_person_name || '—' },
         { label: 'SlabSmith Needed', value: fabData.slab_smith_ag_needed ? 'Yes' : 'No' },
       ],
@@ -722,7 +722,6 @@ export function DrafterDetailsPage() {
         uploadMutation={addFilesToDrafting}
         stages={[
           { value: 'drafting', label: 'Drafting' },
-          { value: 'pre_draft_review', label: 'Pre-Draft Review' },
           { value: 'revision', label: 'Revision' },
         ]}
         fileTypes={[

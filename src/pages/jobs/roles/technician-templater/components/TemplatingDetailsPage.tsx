@@ -67,7 +67,7 @@ export function TemplatingDetailsPage() {
             : 'Not scheduled',
         },
         {
-          label: "Assigned to",
+          label: "Technician Assigned",
           value: fab.technician_name || 'Unassigned',
         },
         { label: "Sales Person", value: fab.sales_person_name || '—' },

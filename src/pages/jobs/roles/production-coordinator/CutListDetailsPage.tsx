@@ -93,7 +93,7 @@ export function CutListDetailsPage() {
               ? new Date(fabData.templating_schedule_start_date).toLocaleDateString()
               : 'Not scheduled',
           },
-          { label: 'Assigned to', value: draftData?.drafter_name || 'Unassigned' },
+          { label: 'Drafter Assigned', value: draftData?.drafter_name || 'Unassigned' },
           { label: 'Sales Person', value: fabData.sales_person_name || '—' },
           { label: 'SlabSmith Needed', value: fabData.slab_smith_ag_needed ? 'Yes' : 'No' },
         ],

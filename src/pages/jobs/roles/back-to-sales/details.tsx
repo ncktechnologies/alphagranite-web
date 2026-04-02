@@ -192,7 +192,7 @@ export const DraftReviewDetailsPage = () => {
                         ? new Date(fabData.templating_schedule_start_date).toLocaleDateString()
                         : 'Not scheduled',
                 },
-                { label: "Assigned to", value: fabData.draft_data?.drafter_name || 'Unassigned' },
+                { label: "Drafter Assigned", value: fabData.draft_data?.drafter_name || 'Unassigned' },
                 { label: "Sales Person", value: fabData.sales_person_name || '—' },
                 { label: "SlabSmith Needed", value: fabData.slab_smith_ag_needed ? 'Yes' : 'No' },
             ],
@@ -374,7 +374,7 @@ export const DraftReviewDetailsPage = () => {
                                                     variant="dashed"
                                                     size="sm"
                                                     onClick={() => setShowUploadModal(true)}
-                                                    disabled={isUploadDisabled}
+                                                    // disabled={isUploadDisabled}
                                                     className="flex items-center gap-1.5 text-xs"
                                                 >
                                                     <Plus className="w-3.5 h-3.5" />
@@ -406,7 +406,7 @@ export const DraftReviewDetailsPage = () => {
                 title="Upload SCT Files"
                 entityId={draftData?.id}
                 uploadMutation={addFilesToDrafting}
-                stages={[{ value: 'sales_ct', label: 'Sales CT' }]}
+                stages={[{ value: 'sales_ct', label: 'SCT' }]}
                 fileTypes={[
                     { value: 'block_drawing', label: 'Block Drawing' },
                     { value: 'layout', label: 'Layout' },

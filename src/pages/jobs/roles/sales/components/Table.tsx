@@ -1782,12 +1782,9 @@ export const JobSalesTable = ({
                     </CardHeader>
 
                     <CardTable>
-                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-300px)]">
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)]">
                             <DataGridTable />
-                            <ScrollBar
-                                orientation="horizontal"
-                                className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500"
-                            />
+                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500 sticky bottom-0" />
                         </ScrollArea>
                     </CardTable>
 
