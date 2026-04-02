@@ -31,6 +31,7 @@ import {
   useGetAccountsQuery,
   useGetStoneTypesQuery,
   useGetStoneColorsQuery,
+  useGetStoneColorsByStoneTypeQuery,
   useGetStoneThicknessesQuery,
   useGetEdgesQuery,
   useCreateFabMutation,
@@ -64,7 +65,7 @@ const fabIdFormSchema = z.object({
   cost_of_stone: z.string().optional()
     .refine((val) => val === '' || !isNaN(parseFloat(val)), { message: 'Cost of Stone must be a number' }),
   selectedSalesPerson: z.string().min(1, 'Sales Person is required'),
-  notes: z.string().optional(), // Keep as string
+  notes: z.string().optional(),
   templateNotNeeded: z.boolean(),
   draftNotNeeded: z.boolean(),
   slabSmithCustNotNeeded: z.boolean(),
@@ -87,13 +88,12 @@ const NewFabIdForm = () => {
   const firstFieldRef = useRef<HTMLButtonElement>(null);
   const lastProcessedJobRef = useRef<{ name: string; number: string } | null>(null);
 
-
   // Focus first field when form opens
   useEffect(() => {
     if (firstFieldRef.current) {
       setTimeout(() => {
         firstFieldRef.current?.focus();
-      }, 100); // Small delay to ensure DOM is ready
+      }, 100);
     }
   }, []);
 
@@ -176,7 +176,6 @@ const NewFabIdForm = () => {
   const [newStoneType, setNewStoneType] = useState('');
   const [stoneTypePopoverOpen, setStoneTypePopoverOpen] = useState(false);
   const [stoneTypeSearch, setStoneTypeSearch] = useState('');
-  // New item states
   const [newThickness, setNewThickness] = useState('');
 
   const [stoneColorPopoverOpen, setStoneColorPopoverOpen] = useState(false);
@@ -188,7 +187,6 @@ const NewFabIdForm = () => {
   const [edgeSearch, setEdgeSearch] = useState('');
   const [showAddEdge, setShowAddEdge] = useState(false);
   const [newEdge, setNewEdge] = useState('');
-
 
   const handlePopupClose = () => {
     setShowPopover(false);
@@ -209,7 +207,7 @@ const NewFabIdForm = () => {
       edge: '',
       totalSqFt: '',
       revenue: '',
-      cost_of_stone: '', // Added default value for new field
+      cost_of_stone: '',
       selectedSalesPerson: '',
       notes: '',
       templateNotNeeded: false,
@@ -220,6 +218,28 @@ const NewFabIdForm = () => {
       finalProgrammingNotNeeded: false,
     },
   });
+
+  // Watch for stone type changes and fetch filtered colors
+  // FIX: Only one declaration - removed duplicate later
+  const stoneTypeValue = form.watch('stoneType');
+  const selectedStoneType = stoneTypesData?.find((type: any) => type.name === stoneTypeValue);
+  const selectedStoneTypeId = selectedStoneType?.id;
+
+  // Fetch stone colors filtered by selected stone type
+  const {
+    data: filteredStoneColorsData,
+    isLoading: isLoadingFilteredStoneColors,
+    isError: isFilteredStoneColorsError,
+    error: filteredStoneColorsError
+  } = useGetStoneColorsByStoneTypeQuery(
+    { stone_type_id: selectedStoneTypeId!, limit: 1000 },
+    { skip: !selectedStoneTypeId }
+  );
+
+  // Use filtered colors when stone type is selected, otherwise use all colors
+  const effectiveStoneColorsData = selectedStoneTypeId ? filteredStoneColorsData : stoneColorsData;
+  const isEffectiveStoneColorsLoading = selectedStoneTypeId ? isLoadingFilteredStoneColors : isLoadingStoneColors;
+  const isEffectiveStoneColorsError = selectedStoneTypeId ? isFilteredStoneColorsError : isStoneColorsError;
 
   // Auto-check all checkboxes when FAB type is resurfacing
   const fabTypeValue = form.watch('fabType');
@@ -248,6 +268,13 @@ const NewFabIdForm = () => {
   // Get the selected account ID
   const selectedAccount = accountsData?.find((account: any) => account.name === accountValue);
   const selectedAccountId = selectedAccount?.id;
+
+  // Reset stone color search when stone type changes
+  useEffect(() => {
+    setStoneColorSearch('');
+    // Also reset the selected stone color value when stone type changes
+    form.setValue('stoneColor', '', { shouldValidate: false });
+  }, [selectedStoneTypeId, form]);
 
   // Watch for job name and number changes
   const jobNameValue = form.watch('jobName');
@@ -278,11 +305,10 @@ const NewFabIdForm = () => {
 
   const salesPersons = Array.isArray(salesPersonsData) ? salesPersonsData : [];
 
-  // Filter jobs for job dropdowns - use account-specific jobs when available
+  // Filter jobs for job dropdowns
   const jobNames = (!isEffectiveJobsError && Array.isArray(effectiveJobsData) ? effectiveJobsData : []).map((job: any) => job.name);
   const jobNumbers = (!isEffectiveJobsError && Array.isArray(effectiveJobsData) ? effectiveJobsData : []).map((job: any) => job.job_number);
 
-  // Filter jobs directly from effectiveJobsData to maintain job IDs for unique keys
   const filteredJobs = (!isEffectiveJobsError && Array.isArray(effectiveJobsData) ? effectiveJobsData : []).filter((job: any) =>
     job.name?.toLowerCase().includes(jobNameSearch.toLowerCase())
   );
@@ -291,103 +317,65 @@ const NewFabIdForm = () => {
     job.job_number?.toLowerCase().includes(jobNumberSearch.toLowerCase())
   );
 
-  // ========== AUTO-POPULATION LOGIC ==========
-
+  // Auto-population logic
   useEffect(() => {
     if (!effectiveJobsData || !Array.isArray(effectiveJobsData) || salesPersons.length === 0) return;
 
-    // Skip if neither job field has a value
     if (!jobNameValue && !jobNumberValue) {
       lastProcessedJobRef.current = null;
       return;
     }
 
-    // Find selected job - we need to be careful about how we match
     let selectedJob = null;
 
-    // FIRST: Try to find a job that matches BOTH current job name and number
-    // This handles the case where user selects a job that should have both fields populated
     if (jobNameValue || jobNumberValue) {
       selectedJob = effectiveJobsData.find((job: any) => {
-        // Check if job matches current selection criteria
         const nameMatches = jobNameValue ? job.name === jobNameValue : true;
         const numberMatches = jobNumberValue ? job.job_number === jobNumberValue : true;
         return nameMatches && numberMatches;
       });
     }
 
-    // SECOND: If no exact match, try to find by job name only
     if (!selectedJob && jobNameValue) {
       selectedJob = effectiveJobsData.find((job: any) => job.name === jobNameValue);
     }
 
-    // THIRD: If still no match, try to find by job number only
     if (!selectedJob && jobNumberValue) {
       selectedJob = effectiveJobsData.find((job: any) => job.job_number === jobNumberValue);
     }
 
     if (selectedJob) {
-      // Check if this is the same job we just processed to prevent infinite loops
       const isSameJob = lastProcessedJobRef.current?.name === selectedJob.name &&
         lastProcessedJobRef.current?.number === selectedJob.job_number;
 
-      if (isSameJob) {
-        return;
-      }
+      if (isSameJob) return;
 
       const updates = [];
 
-      // Always sync both job name and number when a job is found
-      // This ensures they stay in sync
       if (selectedJob.name && selectedJob.name !== jobNameValue) {
         updates.push({ field: 'jobName', value: selectedJob.name });
       }
-
       if (selectedJob.job_number && selectedJob.job_number !== jobNumberValue) {
         updates.push({ field: 'jobNumber', value: selectedJob.job_number });
       }
-
-      // Sync account if different
       if (selectedJob.account_name && selectedJob.account_name !== form.getValues('account')) {
         updates.push({ field: 'account', value: selectedJob.account_name });
       }
-
-      // Sync sales person - this is critical!
       if (selectedJob.sales_person_id) {
-        const salesPersonForJob = salesPersons.find((person: any) =>
-          person.id === selectedJob.sales_person_id
-        );
-
+        const salesPersonForJob = salesPersons.find((person: any) => person.id === selectedJob.sales_person_id);
         if (salesPersonForJob) {
-          // Always set sales person when job has one, regardless of current value
-          updates.push({
-            field: 'selectedSalesPerson',
-            value: salesPersonForJob.name
-          });
+          updates.push({ field: 'selectedSalesPerson', value: salesPersonForJob.name });
         }
       }
 
-      // Apply all updates at once
       if (updates.length > 0) {
         updates.forEach(({ field, value }) => {
-          form.setValue(field, value, {
-            shouldValidate: false,
-            shouldDirty: true
-          });
+          form.setValue(field, value, { shouldValidate: false, shouldDirty: true });
         });
-
-        // Store reference to prevent reprocessing
-        lastProcessedJobRef.current = {
-          name: selectedJob.name,
-          number: selectedJob.job_number
-        };
+        lastProcessedJobRef.current = { name: selectedJob.name, number: selectedJob.job_number };
       }
     } else {
-      // No matching job found - clear the reference
       lastProcessedJobRef.current = null;
-
-      // If we have one field populated but can't find the job, clear the other field
-      // This prevents stale data
       if (jobNameValue && !jobNumberValue) {
         form.setValue('jobNumber', '', { shouldValidate: false });
       } else if (jobNumberValue && !jobNameValue) {
@@ -396,24 +384,14 @@ const NewFabIdForm = () => {
     }
   }, [jobNameValue, jobNumberValue, effectiveJobsData, salesPersons, form]);
 
-  // Add this effect to handle account changes
   useEffect(() => {
-    // When account changes, we should clear job selections if they don't belong to the new account
     if (accountValue && lastProcessedJobRef.current) {
       const currentAccount = accountsData?.find((account: any) => account.name === accountValue);
-
-      if (currentAccount) {
-        // If jobs data is still loading, don't clear yet
-        if (isEffectiveJobsLoading) return;
-
-        // Check if the last processed job belongs to the current account
+      if (currentAccount && !isEffectiveJobsLoading) {
         const jobForCurrentAccount = effectiveJobsData?.find((job: any) =>
-          (job.name === lastProcessedJobRef.current?.name ||
-            job.job_number === lastProcessedJobRef.current?.number) &&
+          (job.name === lastProcessedJobRef.current?.name || job.job_number === lastProcessedJobRef.current?.number) &&
           job.account_id === currentAccount.id
         );
-
-        // If the job doesn't belong to the current account, clear it
         if (!jobForCurrentAccount) {
           form.setValue('jobName', '');
           form.setValue('jobNumber', '');
@@ -422,10 +400,9 @@ const NewFabIdForm = () => {
       }
     }
   }, [accountValue, accountsData, effectiveJobsData, form, isEffectiveJobsLoading]);
-  // Add this cleanup effect
+
   useEffect(() => {
     return () => {
-      // Reset the reference when component unmounts or dependencies change
       lastProcessedJobRef.current = null;
     };
   }, []);
@@ -444,7 +421,11 @@ const NewFabIdForm = () => {
 
   // Extract stone types, colors, and edges from the response
   const stoneTypes = !isStoneTypesError && Array.isArray(stoneTypesData) ? (stoneTypesData?.map((type: any) => type.name) || []) : [];
-  const stoneColors = !isStoneColorsError && Array.isArray(stoneColorsData) ? (stoneColorsData?.map((color: any) => color.name) || []) : [];
+  // FIX: Ensure stoneColors is always an array
+  const stoneColors = !isEffectiveStoneColorsError && Array.isArray(effectiveStoneColorsData)
+    ? effectiveStoneColorsData.map((color: any) => color.name)
+    : [];
+
   const edgeOptions = !isEdgesError && Array.isArray(edgesData) ? (edgesData?.map((edge: any) => edge.name) || []) : [];
 
   // Functions to add new items
@@ -454,20 +435,15 @@ const NewFabIdForm = () => {
         await createStoneThickness({ thickness: newThickness.trim() }).unwrap();
         setNewThickness('');
         setShowAddThickness(false);
-        setThicknessPopoverOpen(false); // Close the main popover
+        setThicknessPopoverOpen(false);
         toast.success('Thickness added successfully');
       } catch (error: any) {
         console.error('Failed to add thickness:', error);
-        if (error?.status === 'FETCH_ERROR') {
-          toast.error('Network error: Unable to add thickness. Please check your connection and try again.');
-        } else if (error?.data?.message) {
-          toast.error(`Failed to add thickness: ${error.data.message}`);
-        } else {
-          toast.error('Failed to add thickness');
-        }
+        toast.error('Failed to add thickness');
       }
     }
   };
+
   const handleAddStoneType = async () => {
     if (newStoneType.trim()) {
       try {
@@ -478,16 +454,11 @@ const NewFabIdForm = () => {
         toast.success('Stone type added successfully');
       } catch (error: any) {
         console.error('Failed to add stone type:', error);
-        if (error?.status === 'FETCH_ERROR') {
-          toast.error('Network error: Unable to add stone type. Please check your connection.');
-        } else if (error?.data?.message) {
-          toast.error(`Failed to add stone type: ${error.data.message}`);
-        } else {
-          toast.error('Failed to add stone type');
-        }
+        toast.error('Failed to add stone type');
       }
     }
   };
+
   const handleAddStoneColor = async () => {
     if (newStoneColor.trim()) {
       try {
@@ -498,16 +469,11 @@ const NewFabIdForm = () => {
         toast.success('Stone color added successfully');
       } catch (error: any) {
         console.error('Failed to add stone color:', error);
-        if (error?.status === 'FETCH_ERROR') {
-          toast.error('Network error: Unable to add stone color. Please check your connection.');
-        } else if (error?.data?.message) {
-          toast.error(`Failed to add stone color: ${error.data.message}`);
-        } else {
-          toast.error('Failed to add stone color');
-        }
+        toast.error('Failed to add stone color');
       }
     }
   };
+
   const handleAddEdge = async () => {
     if (newEdge.trim()) {
       try {
@@ -518,53 +484,34 @@ const NewFabIdForm = () => {
         toast.success('Edge added successfully');
       } catch (error: any) {
         console.error('Failed to add edge:', error);
-        if (error?.status === 'FETCH_ERROR') {
-          toast.error('Network error: Unable to add edge. Please check your connection.');
-        } else if (error?.data?.message) {
-          toast.error(`Failed to add edge: ${error.data.message}`);
-        } else {
-          toast.error('Failed to add edge');
-        }
+        toast.error('Failed to add edge');
       }
     }
   };
-  // Filter edges based on search
+
   const filteredEdges = edgeOptions.filter(edge =>
     edge.toLowerCase().includes(edgeSearch.toLowerCase())
   );
+
   const onSubmit = async (values: FabIdFormData) => {
     try {
       setIsSubmitting(true);
       setError(null);
 
-      // Find IDs for selected values
       const selectedFabType = Array.isArray(fabTypesData) ? fabTypesData?.find((type: any) => type.name === values.fabType) : undefined;
       const selectedAccount = Array.isArray(accountsData) ? accountsData?.find((account: any) => account.name === values.account) : undefined;
       const selectedStoneType = Array.isArray(stoneTypesData) ? stoneTypesData?.find((type: any) => type.name === values.stoneType) : undefined;
       const selectedStoneColor = Array.isArray(stoneColorsData) ? stoneColorsData?.find((color: any) => color.name === values.stoneColor) : undefined;
       const selectedStoneThickness = Array.isArray(stoneThicknessesData) ? stoneThicknessesData?.find((thickness: any) => thickness.thickness === values.stoneThickness) : undefined;
       const selectedEdge = Array.isArray(edgesData) ? edgesData?.find((edge: any) => edge.name === values.edge) : undefined;
+      const selectedSalesPerson = salesPersons.find((person: any) => person.name === values.selectedSalesPerson);
 
-      // Find the selected sales person ID
-      const selectedSalesPerson = salesPersons.find((person: any) =>
-        person.name === values.selectedSalesPerson
-      );
-
-      // Find the selected job - match by either name or number
       let selectedJob;
       if (effectiveJobsData && Array.isArray(effectiveJobsData)) {
-        // Try to match by name first
-        if (values.jobName) {
-          selectedJob = effectiveJobsData.find((job: any) => job.name === values.jobName);
-        }
-
-        // If that doesn't work, try to match by job number
-        if (!selectedJob && values.jobNumber) {
-          selectedJob = effectiveJobsData.find((job: any) => job.job_number === values.jobNumber);
-        }
+        if (values.jobName) selectedJob = effectiveJobsData.find((job: any) => job.name === values.jobName);
+        if (!selectedJob && values.jobNumber) selectedJob = effectiveJobsData.find((job: any) => job.job_number === values.jobNumber);
       }
 
-      // Validate all required data is available
       if (!selectedFabType || !selectedAccount || !selectedStoneType || !selectedStoneColor || !selectedStoneThickness || !selectedEdge || !selectedSalesPerson || !selectedJob) {
         const missingFields = [];
         if (!selectedFabType) missingFields.push('FAB Type');
@@ -575,21 +522,13 @@ const NewFabIdForm = () => {
         if (!selectedEdge) missingFields.push('Edge');
         if (!selectedSalesPerson) missingFields.push('Sales Person');
         if (!selectedJob) missingFields.push('Job');
-
         throw new Error('Please select valid options for all dropdown fields. Missing: ' + missingFields.join(', '));
       }
 
-      // Process notes - keep as string
-      let notesValue: string | undefined = undefined;
-      if (values.notes) {
-        notesValue = values.notes;
-      }
-
-      // Create fab using the existing job ID (no job creation)
       const response = await createFab({
         job_id: selectedJob.id,
         fab_type: selectedFabType.name,
-        sales_person_id: selectedSalesPerson.id, // Use the actual sales person ID
+        sales_person_id: selectedSalesPerson.id,
         stone_type_id: selectedStoneType.id,
         stone_color_id: selectedStoneColor.id,
         stone_thickness_id: selectedStoneThickness.id,
@@ -597,8 +536,8 @@ const NewFabIdForm = () => {
         input_area: values.area,
         total_sqft: parseFloat(values.totalSqFt) || 0,
         revenue: parseFloat(values.revenue) || 0,
-        cost_of_stone: parseFloat(values.cost_of_stone) || 0, // Added cost_of_stone field
-        notes: notesValue, // Send as array
+        cost_of_stone: parseFloat(values.cost_of_stone) || 0,
+        notes: values.notes,
         template_needed: !values.templateNotNeeded,
         drafting_needed: !values.draftNotNeeded,
         slab_smith_cust_needed: !values.slabSmithCustNotNeeded,
@@ -607,35 +546,12 @@ const NewFabIdForm = () => {
         final_programming_needed: !values.finalProgrammingNotNeeded,
       }).unwrap();
 
-      // Get the created FAB ID from response
       const newFabId = response.data?.id;
       setFabId(newFabId);
-      console.log(newFabId);
       setShowPopover(true);
-      // toast.custom(
-      //   () => (
-      //     <Alert variant="success" icon="success">
-      //       <AlertIcon>
-      //         <Check />
-      //       </AlertIcon>
-      //       <AlertTitle>
-      //         FAB ID submitted successfully!
-      //       </AlertTitle>
-      //     </Alert>
-      //   ),
-      //   {
-      //     position: 'top-right',
-      //   },
-      // );
       form.reset();
-
-      // Navigate based on user's department/role instead of always going to templating
-      // For sales role, navigate back to sales jobs page
-      // navigate('/job');
-
     } catch (err: any) {
       console.error('Submission error:', err);
-      // Handle different types of errors
       if (err?.status === 'FETCH_ERROR') {
         setError('Network error: Unable to connect to the server. Please check your connection and try again.');
       } else if (err?.data?.message) {
@@ -676,8 +592,7 @@ const NewFabIdForm = () => {
                     </CardHeader>
                     <CardContent className='space-y-6'>
                       <div className="space-y-4 grid grid-cols-2 gap-x-4">
-
-                        {/* FAB Type with Popover */}
+                        {/* FAB Type */}
                         <FormField
                           control={form.control}
                           name="fabType"
@@ -713,7 +628,7 @@ const NewFabIdForm = () => {
                                     </div>
                                     {isFabTypesError && (
                                       <div className="px-3 py-2 text-sm text-red-500 text-center">
-                                        Failed to load FAB types: {fabTypesError ? 'Server error occurred' : 'Unknown error'}
+                                        Failed to load FAB types
                                       </div>
                                     )}
                                     <div className="space-y-1 max-h-48 overflow-y-auto">
@@ -744,7 +659,7 @@ const NewFabIdForm = () => {
                           )}
                         />
 
-                        {/* Account with Popover - REMOVED ADD FUNCTIONALITY */}
+                        {/* Account */}
                         <FormField
                           control={form.control}
                           name="account"
@@ -779,7 +694,7 @@ const NewFabIdForm = () => {
                                     </div>
                                     {isAccountsError && (
                                       <div className="px-3 py-2 text-sm text-red-500 text-center">
-                                        Failed to load accounts: {accountsError ? 'Server error occurred' : 'Unknown error'}
+                                        Failed to load accounts
                                       </div>
                                     )}
                                     <div className="space-y-1 max-h-48 overflow-y-auto">
@@ -810,7 +725,7 @@ const NewFabIdForm = () => {
                           )}
                         />
 
-                        {/* Job Name - Searchable Popover */}
+                        {/* Job Name */}
                         <FormField
                           control={form.control}
                           name="jobName"
@@ -823,9 +738,9 @@ const NewFabIdForm = () => {
                                 open={jobNamePopoverOpen}
                                 onOpenChange={(open) => {
                                   setJobNamePopoverOpen(open);
-                                  if (!open) setJobNameSearch(''); // Clear search when closing
+                                  if (!open) setJobNameSearch('');
                                 }}
-                                key={`jobName-${accountValue}`} // Reset component when account changes
+                                key={`jobName-${accountValue}`}
                               >
                                 <PopoverTrigger asChild>
                                   <FormControl>
@@ -856,7 +771,7 @@ const NewFabIdForm = () => {
                                     </div>
                                     {isEffectiveJobsError ? (
                                       <div className="px-3 py-2 text-sm text-red-500 text-center">
-                                        Failed to load jobs: Server error occurred
+                                        Failed to load jobs
                                       </div>
                                     ) : selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0 ? (
                                       <div className="px-3 py-2 text-sm text-gray-500 text-center flex flex-col items-center gap-2">
@@ -877,7 +792,6 @@ const NewFabIdForm = () => {
                                             className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
                                             onClick={() => {
                                               field.onChange(job.name);
-                                              // Immediately set the job number as well
                                               form.setValue('jobNumber', job.job_number, { shouldValidate: false });
                                               setJobNameSearch('');
                                               setJobNamePopoverOpen(false);
@@ -901,7 +815,7 @@ const NewFabIdForm = () => {
                           )}
                         />
 
-                        {/* Job Number - Searchable Popover */}
+                        {/* Job Number */}
                         <FormField
                           control={form.control}
                           name="jobNumber"
@@ -912,9 +826,9 @@ const NewFabIdForm = () => {
                                 open={jobNumberPopoverOpen}
                                 onOpenChange={(open) => {
                                   setJobNumberPopoverOpen(open);
-                                  if (!open) setJobNumberSearch(''); // Clear search when closing
+                                  if (!open) setJobNumberSearch('');
                                 }}
-                                key={`jobNumber-${accountValue}`} // Reset component when account changes
+                                key={`jobNumber-${accountValue}`}
                               >
                                 <PopoverTrigger asChild>
                                   <FormControl>
@@ -945,7 +859,7 @@ const NewFabIdForm = () => {
                                     </div>
                                     {isEffectiveJobsError ? (
                                       <div className="px-3 py-2 text-sm text-red-500 text-center">
-                                        Failed to load jobs: Server error occurred
+                                        Failed to load jobs
                                       </div>
                                     ) : selectedAccountId && effectiveJobsData && effectiveJobsData.length === 0 ? (
                                       <div className="px-3 py-2 text-sm text-gray-500 text-center flex flex-col items-center gap-2">
@@ -966,7 +880,6 @@ const NewFabIdForm = () => {
                                             className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
                                             onClick={() => {
                                               field.onChange(job.job_number);
-                                              // Immediately set the job name as well
                                               form.setValue('jobName', job.name, { shouldValidate: false });
                                               setJobNumberSearch('');
                                               setJobNumberPopoverOpen(false);
@@ -990,7 +903,7 @@ const NewFabIdForm = () => {
                           )}
                         />
 
-                        {/* Third Row */}
+                        {/* Area */}
                         <FormField
                           control={form.control}
                           name="area"
@@ -1005,7 +918,7 @@ const NewFabIdForm = () => {
                           )}
                         />
 
-                        {/* Stone Information */}
+                        {/* Stone Type */}
                         <FormField
                           control={form.control}
                           name="stoneType"
@@ -1072,14 +985,12 @@ const NewFabIdForm = () => {
                                     </div>
                                     {isStoneTypesError && (
                                       <div className="px-3 py-2 text-sm text-red-500 text-center">
-                                        Failed to load stone types: Server error occurred
+                                        Failed to load stone types
                                       </div>
                                     )}
                                     <div className="space-y-1 max-h-48 overflow-y-auto">
                                       {stoneTypes
-                                        .filter((type: string) =>
-                                          type.toLowerCase().includes(stoneTypeSearch.toLowerCase())
-                                        )
+                                        .filter((type: string) => type.toLowerCase().includes(stoneTypeSearch.toLowerCase()))
                                         .map((type: string) => (
                                           <div
                                             key={type}
@@ -1093,13 +1004,11 @@ const NewFabIdForm = () => {
                                             {type}
                                           </div>
                                         ))}
-                                      {stoneTypes.filter((type: string) =>
-                                        type.toLowerCase().includes(stoneTypeSearch.toLowerCase())
-                                      ).length === 0 && !isStoneTypesError && (
-                                          <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                            {isLoadingStoneTypes ? 'Loading stone types...' : 'No stone types found'}
-                                          </div>
-                                        )}
+                                      {stoneTypes.filter((type: string) => type.toLowerCase().includes(stoneTypeSearch.toLowerCase())).length === 0 && !isStoneTypesError && (
+                                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                          {isLoadingStoneTypes ? 'Loading stone types...' : 'No stone types found'}
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 </PopoverContent>
@@ -1109,6 +1018,7 @@ const NewFabIdForm = () => {
                           )}
                         />
 
+                        {/* Stone Color - FIX: Disabled until stone type selected */}
                         <FormField
                           control={form.control}
                           name="stoneColor"
@@ -1121,10 +1031,10 @@ const NewFabIdForm = () => {
                                     <Button
                                       variant="outline"
                                       className="w-full justify-between h-[48px] px-4 text-sm border-input shadow-xs shadow-black/5"
-                                      disabled={isLoadingStoneColors}
+                                      disabled={isEffectiveStoneColorsLoading || !selectedStoneTypeId}
                                     >
                                       <span className={!field.value ? "text-muted-foreground" : ""}>
-                                        {isLoadingStoneColors ? 'Loading...' : (field.value || "Select stone color")}
+                                        {isEffectiveStoneColorsLoading ? 'Loading...' : (field.value || "Select stone color")}
                                       </span>
                                       <ChevronDown className="h-4 w-4 opacity-60" />
                                     </Button>
@@ -1173,16 +1083,14 @@ const NewFabIdForm = () => {
                                         onChange={(e) => setStoneColorSearch(e.target.value)}
                                       />
                                     </div>
-                                    {isStoneColorsError && (
+                                    {isEffectiveStoneColorsError && (
                                       <div className="px-3 py-2 text-sm text-red-500 text-center">
-                                        Failed to load stone colors: Server error occurred
+                                        Failed to load stone colors
                                       </div>
                                     )}
                                     <div className="space-y-1 max-h-48 overflow-y-auto">
                                       {stoneColors
-                                        .filter((color: string) =>
-                                          color.toLowerCase().includes(stoneColorSearch.toLowerCase())
-                                        )
+                                        .filter((color: string) => color.toLowerCase().includes(stoneColorSearch.toLowerCase()))
                                         .map((color: string) => (
                                           <div
                                             key={color}
@@ -1196,13 +1104,11 @@ const NewFabIdForm = () => {
                                             {color}
                                           </div>
                                         ))}
-                                      {stoneColors.filter((color: string) =>
-                                        color.toLowerCase().includes(stoneColorSearch.toLowerCase())
-                                      ).length === 0 && !isStoneColorsError && (
-                                          <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                            {isLoadingStoneColors ? 'Loading stone colors...' : 'No stone colors found'}
-                                          </div>
-                                        )}
+                                      {stoneColors.filter((color: string) => color.toLowerCase().includes(stoneColorSearch.toLowerCase())).length === 0 && !isEffectiveStoneColorsError && (
+                                        <div className="px-3 py-2 text-sm text-gray-500 text-center">
+                                          {isEffectiveStoneColorsLoading ? 'Loading stone colors...' : 'No stone colors found'}
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 </PopoverContent>
@@ -1212,7 +1118,7 @@ const NewFabIdForm = () => {
                           )}
                         />
 
-                        {/* Stone Thickness with Popover */}
+                        {/* Stone Thickness */}
                         <FormField
                           control={form.control}
                           name="stoneThickness"
@@ -1279,7 +1185,7 @@ const NewFabIdForm = () => {
                                     </div>
                                     {isStoneThicknessesError && (
                                       <div className="px-3 py-2 text-sm text-red-500 text-center">
-                                        Failed to load thicknesses: Server error occurred
+                                        Failed to load thicknesses
                                       </div>
                                     )}
                                     <div className="space-y-1 max-h-48 overflow-y-auto">
@@ -1310,7 +1216,7 @@ const NewFabIdForm = () => {
                           )}
                         />
 
-                        {/* Edge and Total Sq Ft */}
+                        {/* Edge */}
                         <FormField
                           control={form.control}
                           name="edge"
@@ -1377,7 +1283,7 @@ const NewFabIdForm = () => {
                                     </div>
                                     {isEdgesError && (
                                       <div className="px-3 py-2 text-sm text-red-500 text-center">
-                                        Failed to load edges: Server error occurred
+                                        Failed to load edges
                                       </div>
                                     )}
                                     <div className="space-y-1 max-h-48 overflow-y-auto">
@@ -1408,6 +1314,7 @@ const NewFabIdForm = () => {
                           )}
                         />
 
+                        {/* Total Sq Ft */}
                         <FormField
                           control={form.control}
                           name="totalSqFt"
@@ -1422,7 +1329,7 @@ const NewFabIdForm = () => {
                           )}
                         />
 
-                        {/* Revenue Field */}
+                        {/* Revenue */}
                         <FormField
                           control={form.control}
                           name="revenue"
@@ -1436,6 +1343,7 @@ const NewFabIdForm = () => {
                                   type="number"
                                   step="0.01"
                                   min="0"
+                                  onWheel={(e) => e.currentTarget.blur()}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -1443,7 +1351,7 @@ const NewFabIdForm = () => {
                           )}
                         />
 
-                        {/* NEW FIELD: Cost of Stone */}
+                        {/* Cost of Stone */}
                         <FormField
                           control={form.control}
                           name="cost_of_stone"
@@ -1457,6 +1365,7 @@ const NewFabIdForm = () => {
                                   type="number"
                                   step="0.01"
                                   min="0"
+                                  onWheel={(e) => e.currentTarget.blur()}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -1464,7 +1373,7 @@ const NewFabIdForm = () => {
                           )}
                         />
 
-                        {/* Sales Person - Auto-populates when job is selected */}
+                        {/* Sales Person */}
                         <FormField
                           control={form.control}
                           name="selectedSalesPerson"
@@ -1494,10 +1403,7 @@ const NewFabIdForm = () => {
                                     </div>
                                   ) : (
                                     salesPersons.map((person: any) => (
-                                      <SelectItem
-                                        key={person.id}
-                                        value={person.name}
-                                      >
+                                      <SelectItem key={person.id} value={person.name}>
                                         {person.name}
                                       </SelectItem>
                                     ))
@@ -1518,90 +1424,67 @@ const NewFabIdForm = () => {
                           render={({ field }) => (
                             <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                               <FormControl>
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
+                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                               </FormControl>
                               <FormLabel className="font-normal">Template not needed</FormLabel>
                             </FormItem>
                           )}
                         />
-
                         <FormField
                           control={form.control}
                           name="draftNotNeeded"
                           render={({ field }) => (
                             <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                               <FormControl>
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
+                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                               </FormControl>
                               <FormLabel className="font-normal">Draft not needed</FormLabel>
                             </FormItem>
                           )}
                         />
-
                         <FormField
                           control={form.control}
                           name="slabSmithCustNotNeeded"
                           render={({ field }) => (
                             <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                               <FormControl>
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
+                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                               </FormControl>
                               <FormLabel className="font-normal">SlabSmith (Cust) not needed</FormLabel>
                             </FormItem>
                           )}
                         />
-
                         <FormField
                           control={form.control}
                           name="sctNotNeeded"
                           render={({ field }) => (
                             <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                               <FormControl>
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
+                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                               </FormControl>
                               <FormLabel className="font-normal">SCT not needed</FormLabel>
                             </FormItem>
                           )}
                         />
-
                         <FormField
                           control={form.control}
                           name="slabSmithAGNotNeeded"
                           render={({ field }) => (
                             <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                               <FormControl>
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
+                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                               </FormControl>
                               <FormLabel className="font-normal">Slab smith (AG) not needed</FormLabel>
                             </FormItem>
                           )}
                         />
-
                         <FormField
                           control={form.control}
                           name="finalProgrammingNotNeeded"
                           render={({ field }) => (
                             <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                               <FormControl>
-                                <Checkbox
-                                  checked={field.value}
-                                  onCheckedChange={field.onChange}
-                                />
+                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                               </FormControl>
                               <FormLabel className="font-normal">Final programing not needed</FormLabel>
                             </FormItem>
@@ -1619,11 +1502,7 @@ const NewFabIdForm = () => {
                               <FormLabel>Notes</FormLabel>
                             </div>
                             <FormControl>
-                              <Textarea
-                                placeholder="Type here..."
-                                {...field}
-                                rows={4}
-                              />
+                              <Textarea placeholder="Type here..." {...field} rows={4} />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -1635,7 +1514,6 @@ const NewFabIdForm = () => {
                         <ArrowLeft className="w-4 h-4" />
                         Back to All Fabs
                       </Link>
-                      {/* Action Buttons */}
                       <div className="flex items-center justify-end gap-3 ">
                         <Link to="/sales">
                           <Button variant="outline" type="button">Cancel</Button>
@@ -1662,24 +1540,12 @@ const NewFabIdForm = () => {
       <Popup isOpen={showPopover}
         title={`${fabId} created successfully `}
         description={'Your fab ID has been created successfully'}
-
       >
-
         <div className="flex gap-x-3 items-center mt-4">
           <Link to={`/sales/edit/${fabId}`}>
-            <Button
-              className="px-8"
-
-            >
-              Edit Fab Details
-            </Button>
+            <Button className="px-8">Edit Fab Details</Button>
           </Link>
-          <Button
-            className="px-8"
-            onClick={handlePopupClose}
-          >
-            Confirm
-          </Button>
+          <Button className="px-8" onClick={handlePopupClose}>Confirm</Button>
         </div>
       </Popup>
     </div>

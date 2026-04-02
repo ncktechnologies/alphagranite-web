@@ -10,6 +10,7 @@ import {
     Card,
     CardHeader,
     CardHeading,
+    CardTable,
 } from '@/components/ui/card';
 import { DataGrid } from '@/components/ui/data-grid';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
@@ -25,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router';
 import { Link } from 'react-router';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 interface FinalProgrammingTableProps {
     data: Fab[];
@@ -287,7 +289,12 @@ export const FinalProgrammingTable = ({
                     </CardHeading>
                 </CardHeader>
 
-                <DataGridTable />
+                <CardTable>
+                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
+                        <DataGridTable />
+                        <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                    </ScrollArea>
+                </CardTable>
 
                 <DataGridPagination />
             </Card>

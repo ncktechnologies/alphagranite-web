@@ -29,6 +29,7 @@ import {
     useGetAccountsQuery,
     useGetStoneTypesQuery,
     useGetStoneColorsQuery,
+    useGetStoneColorsByStoneTypeQuery,
     useGetStoneThicknessesQuery,
     useGetEdgesQuery,
     useCreateAccountMutation,
@@ -53,19 +54,11 @@ interface CurrencyInputProps {
 const CurrencyInput = ({ value, onChange, placeholder, ...props }: CurrencyInputProps & React.InputHTMLAttributes<HTMLInputElement>) => {
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Format number with commas and dollar sign
     const formatCurrency = useCallback((val: string): string => {
         if (!val || val === '0') return '$0';
-
-        // Remove any non-numeric characters except decimal point
         const numericString = val.replace(/[^0-9.]/g, '');
-
-        // Parse as float
         const num = parseFloat(numericString);
-
         if (isNaN(num)) return '$0';
-
-        // Format with commas
         return '$' + num.toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
@@ -79,10 +72,8 @@ const CurrencyInput = ({ value, onChange, placeholder, ...props }: CurrencyInput
         }
         return '$0';
     });
-
     const [isFocused, setIsFocused] = useState(false);
 
-    // Update display value when value prop changes
     useEffect(() => {
         if (!isFocused) {
             if (value && value !== '0') {
@@ -100,21 +91,13 @@ const CurrencyInput = ({ value, onChange, placeholder, ...props }: CurrencyInput
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const input = e.target.value;
-
-        // Allow only numbers and decimal point
         const sanitized = input.replace(/[^0-9.]/g, '');
-
-        // Ensure only one decimal point
         const parts = sanitized.split('.');
         let finalValue = parts[0];
         if (parts.length > 1) {
             finalValue = parts[0] + '.' + parts.slice(1).join('').substring(0, 2);
         }
-
-        // Update form value (raw number without formatting)
         onChange(finalValue || '');
-
-        // Update display value with formatting
         if (finalValue) {
             const num = parseFloat(finalValue);
             if (!isNaN(num)) {
@@ -129,7 +112,6 @@ const CurrencyInput = ({ value, onChange, placeholder, ...props }: CurrencyInput
 
     const handleFocus = () => {
         setIsFocused(true);
-        // When focused, show raw number without formatting for editing
         if (value && value !== '0') {
             setDisplayValue(value);
         } else {
@@ -139,7 +121,6 @@ const CurrencyInput = ({ value, onChange, placeholder, ...props }: CurrencyInput
 
     const handleBlur = () => {
         setIsFocused(false);
-        // When blurred, format with dollar sign and commas
         if (value) {
             const num = parseFloat(value);
             if (!isNaN(num) && num > 0) {
@@ -155,23 +136,17 @@ const CurrencyInput = ({ value, onChange, placeholder, ...props }: CurrencyInput
     };
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        // Allow: backspace, delete, tab, escape, enter, decimal point, numbers
         if (
             [46, 8, 9, 27, 13, 110, 190].includes(e.keyCode) ||
-            // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
             (e.keyCode === 65 && (e.ctrlKey || e.metaKey)) ||
             (e.keyCode === 67 && (e.ctrlKey || e.metaKey)) ||
             (e.keyCode === 86 && (e.ctrlKey || e.metaKey)) ||
             (e.keyCode === 88 && (e.ctrlKey || e.metaKey)) ||
-            // Allow: home, end, left, right
             (e.keyCode >= 35 && e.keyCode <= 39) ||
-            // Allow: numbers on keypad
             (e.keyCode >= 96 && e.keyCode <= 105)
         ) {
             return;
         }
-
-        // Ensure it's a number
         if ((e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
             e.preventDefault();
         }
@@ -192,7 +167,6 @@ const CurrencyInput = ({ value, onChange, placeholder, ...props }: CurrencyInput
     );
 };
 
-// Update the Zod schema
 const fabIdFormSchema = z.object({
     fabType: z.string().min(1, 'FAB Type is required'),
     account: z.string().min(1, 'Account is required'),
@@ -235,57 +209,16 @@ const EditFabIdForm = () => {
     const [isLoadingFormData, setIsLoadingFormData] = useState(false);
     const lastProcessedJobRef = useRef<{ name: string; number: string } | null>(null);
 
-
     // API hooks for dropdown data
-    const {
-        data: fabTypesData = [],
-        isLoading: isLoadingFabTypes,
-    } = useGetFabTypesQuery();
-
-    const {
-        data: accountsData = [],
-        isLoading: isLoadingAccounts,
-    } = useGetAccountsQuery({ limit: 1000 });
-
-    const {
-        data: stoneTypesData = [],
-        isLoading: isLoadingStoneTypes,
-    } = useGetStoneTypesQuery({ limit: 1000 });
-
-    const {
-        data: stoneColorsData = [],
-        isLoading: isLoadingStoneColors,
-    } = useGetStoneColorsQuery({ limit: 1000 });
-
-    const {
-        data: stoneThicknessesData = [],
-        isLoading: isLoadingStoneThicknesses,
-    } = useGetStoneThicknessesQuery({ limit: 1000 });
-
-    const {
-        data: edgesData = [],
-        isLoading: isLoadingEdges,
-    } = useGetEdgesQuery({ limit: 1000 });
-
-    // Fetch jobs for linked dropdowns
-    const {
-        data: jobsData = [],
-        isLoading: isLoadingJobs,
-    } = useGetJobsQuery({ limit: 1000 });
-
-    // Fetch existing FAB data
-    const {
-        data: existingFab,
-        isLoading: isLoadingFab,
-        isError: isFabError,
-        error: fabError
-    } = useGetFabByIdQuery(Number(id));
-
-    // Get sales persons
-    const {
-        data: salesPersonsData = [],
-        isLoading: isLoadingSalesPersons,
-    } = useGetSalesPersonsQuery();
+    const { data: fabTypesData = [], isLoading: isLoadingFabTypes } = useGetFabTypesQuery();
+    const { data: accountsData = [], isLoading: isLoadingAccounts } = useGetAccountsQuery({ limit: 1000 });
+    const { data: stoneTypesData = [], isLoading: isLoadingStoneTypes } = useGetStoneTypesQuery({ limit: 1000 });
+    const { data: stoneColorsData = [], isLoading: isLoadingStoneColors } = useGetStoneColorsQuery({ limit: 1000 });
+    const { data: stoneThicknessesData = [], isLoading: isLoadingStoneThicknesses } = useGetStoneThicknessesQuery({ limit: 1000 });
+    const { data: edgesData = [], isLoading: isLoadingEdges } = useGetEdgesQuery({ limit: 1000 });
+    const { data: jobsData = [], isLoading: isLoadingJobs } = useGetJobsQuery({ limit: 1000 });
+    const { data: existingFab, isLoading: isLoadingFab, isError: isFabError, error: fabError } = useGetFabByIdQuery(Number(id));
+    const { data: salesPersonsData = [], isLoading: isLoadingSalesPersons } = useGetSalesPersonsQuery();
 
     // Mutations
     const [updateFab] = useUpdateFabMutation();
@@ -347,18 +280,41 @@ const EditFabIdForm = () => {
         },
     });
 
+    // ======================== FIX: ONLY ONE DECLARATION (after form initialization) ========================
+    const stoneTypeValue = form.watch('stoneType');
+    const selectedStoneType = stoneTypesData?.find((type: any) => type.name === stoneTypeValue);
+    const selectedStoneTypeId = selectedStoneType?.id;
+
+    const {
+        data: filteredStoneColorsData = [],
+        isLoading: isLoadingFilteredStoneColors,
+        isError: isFilteredStoneColorsError,
+        error: filteredStoneColorsError
+    } = useGetStoneColorsByStoneTypeQuery(
+        { stone_type_id: selectedStoneTypeId!, limit: 1000 },
+        { skip: !selectedStoneTypeId }
+    );
+
+    const effectiveStoneColorsData = selectedStoneTypeId ? filteredStoneColorsData : stoneColorsData;
+    const isEffectiveStoneColorsLoading = selectedStoneTypeId ? isLoadingFilteredStoneColors : isLoadingStoneColors;
+    const isEffectiveStoneColorsError = selectedStoneTypeId ? isFilteredStoneColorsError : isStoneColorsError;
+    // =========================================================================================================
+
     // Watch for account changes
     const accountValue = form.watch('account');
-
-    // Get the selected account ID
     const selectedAccount = accountsData?.find((account: any) => account.name === accountValue);
     const selectedAccountId = selectedAccount?.id;
+
+    // Clear stone color search and value when stone type changes
+    useEffect(() => {
+        setStoneColorSearch('');
+        form.setValue('stoneColor', '', { shouldValidate: false });
+    }, [selectedStoneTypeId, form]);
 
     // Watch for job name and number changes
     const jobNameValue = form.watch('jobName');
     const jobNumberValue = form.watch('jobNumber');
 
-    // Fetch jobs filtered by selected account using the new endpoint
     const {
         data: accountJobsData = [],
         isLoading: isAccountJobsLoading,
@@ -367,20 +323,15 @@ const EditFabIdForm = () => {
         { skip: !selectedAccountId }
     );
 
-    // Override the existing jobsData with account-specific jobs when an account is selected
     const effectiveJobsData = selectedAccountId ? accountJobsData : jobsData;
     const isEffectiveJobsLoading = selectedAccountId ? isAccountJobsLoading : isLoadingJobs;
 
-    // Extract unique sales persons to avoid duplicate key error
     const salesPersons = Array.isArray(salesPersonsData)
         ? salesPersonsData.filter((person: any, index: number, self: any[]) =>
-            index === self.findIndex((p: any) =>
-                p.name === person.name // Filter by unique name to avoid duplicates
-            )
+            index === self.findIndex((p: any) => p.name === person.name)
         )
         : [];
 
-    // Filter functions
     const filteredFabTypes = (Array.isArray(fabTypesData) ? fabTypesData.map((type: any) => type.name) : []).filter((type: string) =>
         type.toLowerCase().includes(fabTypeSearch.toLowerCase())
     );
@@ -397,130 +348,66 @@ const EditFabIdForm = () => {
         edge.toLowerCase().includes(edgeSearch.toLowerCase())
     );
 
-    // Extract options
     const stoneTypes = Array.isArray(stoneTypesData) ? stoneTypesData.map((type: any) => type.name) : [];
-    const stoneColors = Array.isArray(stoneColorsData) ? stoneColorsData.map((color: any) => color.name) : [];
+    const stoneColors = Array.isArray(effectiveStoneColorsData) ? effectiveStoneColorsData.map((color: any) => color.name) : [];
     const edgeOptions = Array.isArray(edgesData) ? edgesData.map((edge: any) => edge.name) : [];
 
-    // Job names and numbers
     const jobNames = Array.isArray(effectiveJobsData) ? effectiveJobsData.map((job: any) => job.name) : [];
     const jobNumbers = Array.isArray(effectiveJobsData) ? effectiveJobsData.map((job: any) => job.job_number) : [];
 
-    // ========== AUTO-POPULATION LOGIC ==========
-
+    // Auto-population logic (same as before)
     useEffect(() => {
         if (!hasInitialDataLoaded || !effectiveJobsData || !Array.isArray(effectiveJobsData) || salesPersons.length === 0) return;
-
-        // Skip if neither job field has a value
         if (!jobNameValue && !jobNumberValue) {
             lastProcessedJobRef.current = null;
             return;
         }
-
-        // Find selected job - we need to be careful about how we match
         let selectedJob = null;
-
-        // FIRST: Try to find a job that matches BOTH current job name and number
-        // This handles the case where user selects a job that should have both fields populated
         if (jobNameValue || jobNumberValue) {
             selectedJob = effectiveJobsData.find((job: any) => {
-                // Check if job matches current selection criteria
                 const nameMatches = jobNameValue ? job.name === jobNameValue : true;
                 const numberMatches = jobNumberValue ? job.job_number === jobNumberValue : true;
                 return nameMatches && numberMatches;
             });
         }
-
-        // SECOND: If no exact match, try to find by job name only
         if (!selectedJob && jobNameValue) {
             selectedJob = effectiveJobsData.find((job: any) => job.name === jobNameValue);
         }
-
-        // THIRD: If still no match, try to find by job number only
         if (!selectedJob && jobNumberValue) {
             selectedJob = effectiveJobsData.find((job: any) => job.job_number === jobNumberValue);
         }
-
         if (selectedJob) {
-            // Check if this is the same job we just processed to prevent infinite loops
             const isSameJob = lastProcessedJobRef.current?.name === selectedJob.name &&
                 lastProcessedJobRef.current?.number === selectedJob.job_number;
-
-            if (isSameJob) {
-                return;
-            }
-
+            if (isSameJob) return;
             const updates = [];
-
-            // Always sync both job name and number when a job is found
-            // This ensures they stay in sync
-            if (selectedJob.name && selectedJob.name !== jobNameValue) {
-                updates.push({ field: 'jobName', value: selectedJob.name });
-            }
-
-            if (selectedJob.job_number && selectedJob.job_number !== jobNumberValue) {
-                updates.push({ field: 'jobNumber', value: selectedJob.job_number });
-            }
-
-            // Sync sales person - this is critical!
+            if (selectedJob.name && selectedJob.name !== jobNameValue) updates.push({ field: 'jobName', value: selectedJob.name });
+            if (selectedJob.job_number && selectedJob.job_number !== jobNumberValue) updates.push({ field: 'jobNumber', value: selectedJob.job_number });
             if (selectedJob.sales_person_id) {
-                const salesPersonForJob = salesPersons.find((person: any) =>
-                    person.id === selectedJob.sales_person_id
-                );
-
-                if (salesPersonForJob) {
-                    // Always set sales person when job has one, regardless of current value
-                    updates.push({
-                        field: 'selectedSalesPerson',
-                        value: salesPersonForJob.name
-                    });
-                }
+                const salesPersonForJob = salesPersons.find((person: any) => person.id === selectedJob.sales_person_id);
+                if (salesPersonForJob) updates.push({ field: 'selectedSalesPerson', value: salesPersonForJob.name });
             }
-
-            // Apply all updates at once
             if (updates.length > 0) {
                 updates.forEach(({ field, value }) => {
-                    form.setValue(field, value, {
-                        shouldValidate: false,
-                        shouldDirty: true
-                    });
+                    form.setValue(field, value, { shouldValidate: false, shouldDirty: true });
                 });
-
-                // Store reference to prevent reprocessing
-                lastProcessedJobRef.current = {
-                    name: selectedJob.name,
-                    number: selectedJob.job_number
-                };
+                lastProcessedJobRef.current = { name: selectedJob.name, number: selectedJob.job_number };
             }
         } else {
-            // No matching job found - clear the reference
             lastProcessedJobRef.current = null;
-
-            // If we have one field populated but can't find the job, clear the other field
-            // This prevents stale data
-            if (jobNameValue && !jobNumberValue) {
-                form.setValue('jobNumber', '', { shouldValidate: false });
-            } else if (jobNumberValue && !jobNameValue) {
-                form.setValue('jobName', '', { shouldValidate: false });
-            }
+            if (jobNameValue && !jobNumberValue) form.setValue('jobNumber', '', { shouldValidate: false });
+            else if (jobNumberValue && !jobNameValue) form.setValue('jobName', '', { shouldValidate: false });
         }
     }, [jobNameValue, jobNumberValue, effectiveJobsData, salesPersons, form, hasInitialDataLoaded]);
 
-    // Add this effect to handle account changes
     useEffect(() => {
         if (!hasInitialDataLoaded || !accountValue || !lastProcessedJobRef.current) return;
-
         const currentAccount = accountsData?.find((account: any) => account.name === accountValue);
-
         if (currentAccount) {
-            // Check if the last processed job belongs to the current account
             const jobForCurrentAccount = effectiveJobsData?.find((job: any) =>
-                (job.name === lastProcessedJobRef.current?.name ||
-                    job.job_number === lastProcessedJobRef.current?.number) &&
+                (job.name === lastProcessedJobRef.current?.name || job.job_number === lastProcessedJobRef.current?.number) &&
                 job.account_id === currentAccount.id
             );
-
-            // If the job doesn't belong to the current account, clear it
             if (!jobForCurrentAccount) {
                 form.setValue('jobName', '');
                 form.setValue('jobNumber', '');
@@ -529,32 +416,19 @@ const EditFabIdForm = () => {
         }
     }, [accountValue, accountsData, effectiveJobsData, form, hasInitialDataLoaded]);
 
-    // Add this cleanup effect
     useEffect(() => {
-        return () => {
-            // Reset the reference when component unmounts or dependencies change
-            lastProcessedJobRef.current = null;
-        };
+        return () => { lastProcessedJobRef.current = null; };
     }, []);
 
     // Load form data from existing FAB
     useEffect(() => {
         const loadFormData = async () => {
-            console.log('Checking if should load form data...');
-
-            // Only attempt to load once using ref to prevent multiple attempts
             if (existingFab && !isLoadingFab && !hasInitialDataLoaded && !hasAttemptedLoadRef.current) {
                 hasAttemptedLoadRef.current = true;
                 setIsLoadingFormData(true);
-
                 setTimeout(async () => {
                     try {
-                        console.log('Loading form data from existing FAB:', existingFab);
-
-                        // Type assertion to bypass strict typing
                         const fabData: any = existingFab;
-
-                        // Prepare form data
                         const formData = {
                             fabType: fabData.fab_type || '',
                             account: fabData.account_name || '',
@@ -577,27 +451,15 @@ const EditFabIdForm = () => {
                             slabSmithAGNotNeeded: !fabData.slab_smith_ag_needed,
                             finalProgrammingNotNeeded: !fabData.final_programming_needed,
                         };
-
-                        // Handle notes
                         if (fabData.notes && Array.isArray(fabData.notes) && fabData.notes.length > 0) {
                             formData.notes = fabData.notes[0];
                         } else if (typeof fabData.notes === 'string') {
                             formData.notes = fabData.notes;
                         }
-
-                        console.log('Prepared form data:', formData);
-
-                        // Reset form with data
                         form.reset(formData);
-
-                        // Set last processed job reference
                         if (formData.jobName && formData.jobNumber) {
-                            lastProcessedJobRef.current = {
-                                name: formData.jobName,
-                                number: formData.jobNumber
-                            };
+                            lastProcessedJobRef.current = { name: formData.jobName, number: formData.jobNumber };
                         }
-
                         setHasInitialDataLoaded(true);
                     } catch (error) {
                         console.error('Error loading form data:', error);
@@ -607,11 +469,9 @@ const EditFabIdForm = () => {
                 }, 300);
             }
         };
-
         loadFormData();
-    }, [existingFab, isLoadingFab, hasInitialDataLoaded, form, accountsData]);
+    }, [existingFab, isLoadingFab, hasInitialDataLoaded, form]);
 
-    // Functions to add new items
     const handleAddThickness = async () => {
         if (newThickness.trim()) {
             try {
@@ -621,7 +481,6 @@ const EditFabIdForm = () => {
                 setThicknessPopoverOpen(false);
                 toast.success('Thickness added successfully');
             } catch (error: any) {
-                console.error('Failed to add thickness:', error);
                 toast.error('Failed to add thickness');
             }
         }
@@ -636,7 +495,6 @@ const EditFabIdForm = () => {
                 setAccountPopoverOpen(false);
                 toast.success('Account added successfully');
             } catch (error: any) {
-                console.error('Failed to add account:', error);
                 toast.error('Failed to add account');
             }
         }
@@ -651,11 +509,11 @@ const EditFabIdForm = () => {
                 setEdgePopoverOpen(false);
                 toast.success('Edge added successfully');
             } catch (error: any) {
-                console.error('Failed to add edge:', error);
                 toast.error('Failed to add edge');
             }
         }
     };
+
     const handleAddStoneColor = async () => {
         if (newStoneColor.trim()) {
             try {
@@ -665,17 +523,13 @@ const EditFabIdForm = () => {
                 setStoneColorPopoverOpen(false);
                 toast.success('Stone color added successfully');
             } catch (error: any) {
-                console.error('Failed to add stone color:', error);
                 toast.error('Failed to add stone color');
             }
         }
     };
 
-    // Update job select handlers to set both fields
     const handleJobNameChange = (value: string) => {
         form.setValue('jobName', value);
-
-        // Try to find the corresponding job number
         const selectedJob = effectiveJobsData.find((job: any) => job.name === value);
         if (selectedJob && selectedJob.job_number) {
             form.setValue('jobNumber', selectedJob.job_number, { shouldValidate: false });
@@ -684,8 +538,6 @@ const EditFabIdForm = () => {
 
     const handleJobNumberChange = (value: string) => {
         form.setValue('jobNumber', value);
-
-        // Try to find the corresponding job name
         const selectedJob = effectiveJobsData.find((job: any) => job.job_number === value);
         if (selectedJob && selectedJob.name) {
             form.setValue('jobName', selectedJob.name, { shouldValidate: false });
@@ -696,10 +548,6 @@ const EditFabIdForm = () => {
         try {
             setIsSubmitting(true);
             setError(null);
-
-            console.log('Form values:', values);
-
-            // Find IDs for selected values
             const selectedFabType = fabTypesData.find((type: any) => type.name === values.fabType);
             const selectedAccount = accountsData.find((account: any) => account.name === values.account);
             const selectedStoneType = stoneTypesData.find((type: any) => type.name === values.stoneType);
@@ -707,21 +555,15 @@ const EditFabIdForm = () => {
             const selectedStoneThickness = stoneThicknessesData.find((thickness: any) => thickness.thickness === values.stoneThickness);
             const selectedEdge = edgesData.find((edge: any) => edge.name === values.edge);
             const selectedSalesPerson = salesPersons.find((person: any) => person.name === values.selectedSalesPerson);
-
-            // Find the selected job
             let selectedJob;
             if (values.jobName) {
                 selectedJob = effectiveJobsData.find((job: any) => job.name === values.jobName);
             } else if (values.jobNumber) {
                 selectedJob = effectiveJobsData.find((job: any) => job.job_number === values.jobNumber);
             }
-
-            // If still no job, use the existing job ID
             if (!selectedJob && existingFab) {
                 selectedJob = { id: existingFab.job_id };
             }
-
-            // Validate all required data
             if (!selectedFabType || !selectedAccount || !selectedStoneType || !selectedStoneColor || !selectedStoneThickness || !selectedEdge || !selectedSalesPerson || !selectedJob) {
                 const missingFields = [];
                 if (!selectedFabType) missingFields.push('FAB Type');
@@ -732,17 +574,8 @@ const EditFabIdForm = () => {
                 if (!selectedEdge) missingFields.push('Edge');
                 if (!selectedSalesPerson) missingFields.push('Sales Person');
                 if (!selectedJob) missingFields.push('Job');
-
                 throw new Error('Please select valid options for all dropdown fields. Missing: ' + missingFields.join(', '));
             }
-
-            // Prepare notes - send as string as expected by API
-            let notesValue: string | undefined = undefined;
-            if (values.notes && values.notes.trim()) {
-                notesValue = values.notes.trim();
-            }
-
-            // Prepare update payload
             const updatePayload: any = {
                 job_id: selectedJob.id,
                 fab_type: selectedFabType.name,
@@ -755,7 +588,7 @@ const EditFabIdForm = () => {
                 total_sqft: parseFloat(values.totalSqFt) || 0,
                 revenue: parseFloat(values.revenue) || 0,
                 cost_of_stone: parseFloat(values.cost_of_stone) || 0,
-                notes: notesValue,
+                notes: values.notes?.trim() || undefined,
                 template_needed: !values.templateNotNeeded,
                 drafting_needed: !values.draftNotNeeded,
                 slab_smith_cust_needed: !values.slabSmithCustNotNeeded,
@@ -763,31 +596,15 @@ const EditFabIdForm = () => {
                 sct_needed: !values.sctNotNeeded,
                 final_programming_needed: !values.finalProgrammingNotNeeded,
             };
-
-            console.log('Update payload:', updatePayload);
-
-            // Update FAB
-            await updateFab({
-                id: Number(id),
-                data: updatePayload
-            }).unwrap();
-
+            await updateFab({ id: Number(id), data: updatePayload }).unwrap();
             toast.success('FAB ID updated successfully!');
             navigate('/sales');
-
         } catch (err: any) {
             console.error('Submission error:', err);
-
             let errorMessage = 'An unexpected error occurred. Please try again.';
-
-            if (err?.status === 'FETCH_ERROR') {
-                errorMessage = 'Network error: Unable to connect to the server.';
-            } else if (err?.data?.message) {
-                errorMessage = err.data.message;
-            } else if (err?.message) {
-                errorMessage = err.message;
-            }
-
+            if (err?.status === 'FETCH_ERROR') errorMessage = 'Network error: Unable to connect to the server.';
+            else if (err?.data?.message) errorMessage = err.data.message;
+            else if (err?.message) errorMessage = err.message;
             setError(errorMessage);
             toast.error('Failed to update FAB ID. ' + errorMessage);
         } finally {
@@ -801,22 +618,13 @@ const EditFabIdForm = () => {
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h1 className="text-2xl font-semibold">Edit FAB ID</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Loading FAB details...
-                        </p>
+                        <p className="text-sm text-muted-foreground">Loading FAB details...</p>
                     </div>
                 </div>
                 <div className="max-w-4xl mx-auto">
                     <Card className="animate-pulse">
-                        <CardHeader>
-                            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                                <div className="h-10 bg-gray-200 rounded"></div>
-                            </div>
-                        </CardContent>
+                        <CardHeader><div className="h-8 bg-gray-200 rounded w-1/3"></div></CardHeader>
+                        <CardContent><div className="space-y-4"><div className="h-4 bg-gray-200 rounded w-1/4"></div><div className="h-10 bg-gray-200 rounded"></div></div></CardContent>
                     </Card>
                 </div>
             </Container>
@@ -829,18 +637,14 @@ const EditFabIdForm = () => {
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h1 className="text-2xl font-semibold">Edit FAB ID</h1>
-                        <p className="text-sm text-muted-foreground">
-                            Error loading FAB details
-                        </p>
+                        <p className="text-sm text-muted-foreground">Error loading FAB details</p>
                     </div>
                 </div>
                 <div className="max-w-4xl mx-auto">
                     <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>Error</AlertTitle>
-                        <AlertDescription>
-                            Failed to load FAB data. Please try again.
-                        </AlertDescription>
+                        <AlertDescription>Failed to load FAB data. Please try again.</AlertDescription>
                     </Alert>
                 </div>
             </Container>
@@ -853,15 +657,10 @@ const EditFabIdForm = () => {
                 <div className="py-6">
                     <Card className="max-w-4xl mx-auto mb-4 py-6">
                         <CardHeader className='flex flex-col justify-start items-start'>
-                            <CardTitle className='text-2xl font-bold text-[#111827]'>
-                                Edit FAB ID
-                            </CardTitle>
-                            <CardDescription className='text-sm text-[#4B5563]'>
-                                Edit the Standard Fabrication Form with project specifications.
-                            </CardDescription>
+                            <CardTitle className='text-2xl font-bold text-[#111827]'>Edit FAB ID</CardTitle>
+                            <CardDescription className='text-sm text-[#4B5563]'>Edit the Standard Fabrication Form with project specifications.</CardDescription>
                         </CardHeader>
                     </Card>
-
                     <div className="max-w-4xl mx-auto">
                         <Form {...form}>
                             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -880,7 +679,6 @@ const EditFabIdForm = () => {
                                                 <AlertDescription>{error}</AlertDescription>
                                             </Alert>
                                         )}
-
                                         <div className="space-y-4 grid grid-cols-2 gap-x-4">
                                             {/* FAB Type */}
                                             <FormField
@@ -908,32 +706,15 @@ const EditFabIdForm = () => {
                                                                 <div className="p-2">
                                                                     <div className="relative">
                                                                         <Search className="absolute left-2 top-4 h-4 w-4 text-muted-foreground" />
-                                                                        <Input
-                                                                            placeholder="Search FAB type"
-                                                                            className="pl-8 mb-2"
-                                                                            value={fabTypeSearch}
-                                                                            onChange={(e) => setFabTypeSearch(e.target.value)}
-                                                                        />
+                                                                        <Input placeholder="Search FAB type" className="pl-8 mb-2" value={fabTypeSearch} onChange={(e) => setFabTypeSearch(e.target.value)} />
                                                                     </div>
                                                                     <div className="space-y-1 max-h-48 overflow-y-auto">
                                                                         {filteredFabTypes.map((type: string) => (
-                                                                            <div
-                                                                                key={type}
-                                                                                className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm uppercase"
-                                                                                onClick={() => {
-                                                                                    field.onChange(type);
-                                                                                    setFabTypeSearch('');
-                                                                                    setFabTypePopoverOpen(false);
-                                                                                }}
-                                                                            >
+                                                                            <div key={type} className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm uppercase" onClick={() => { field.onChange(type); setFabTypeSearch(''); setFabTypePopoverOpen(false); }}>
                                                                                 {type}
                                                                             </div>
                                                                         ))}
-                                                                        {filteredFabTypes.length === 0 && (
-                                                                            <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                                                                No FAB types found
-                                                                            </div>
-                                                                        )}
+                                                                        {filteredFabTypes.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">No FAB types found</div>}
                                                                     </div>
                                                                 </div>
                                                             </PopoverContent>
@@ -942,7 +723,6 @@ const EditFabIdForm = () => {
                                                     </FormItem>
                                                 )}
                                             />
-
                                             {/* Account */}
                                             <FormField
                                                 control={form.control}
@@ -970,63 +750,21 @@ const EditFabIdForm = () => {
                                                                     <div className="flex items-center justify-between mb-2">
                                                                         <span className="text-sm font-medium">Accounts</span>
                                                                         <Popover open={showAddAccount} onOpenChange={setShowAddAccount}>
-                                                                            <PopoverTrigger asChild>
-                                                                                <Button variant="ghost" size="sm" className="h-7 px-2">
-                                                                                    <Plus className="w-3 h-3 mr-1" />
-                                                                                    Add
-                                                                                </Button>
-                                                                            </PopoverTrigger>
+                                                                            <PopoverTrigger asChild><Button variant="ghost" size="sm" className="h-7 px-2"><Plus className="w-3 h-3 mr-1" />Add</Button></PopoverTrigger>
                                                                             <PopoverContent className="w-80" align="end">
                                                                                 <div className="space-y-3">
-                                                                                    <div>
-                                                                                        <Label htmlFor="newAccount">Account Name</Label>
-                                                                                        <Input
-                                                                                            id="newAccount"
-                                                                                            placeholder="Enter account name"
-                                                                                            value={newAccount}
-                                                                                            onChange={(e) => setNewAccount(e.target.value)}
-                                                                                        />
-                                                                                    </div>
-                                                                                    <div className="flex justify-end gap-2">
-                                                                                        <Button variant="outline" size="sm" onClick={() => setShowAddAccount(false)}>
-                                                                                            Cancel
-                                                                                        </Button>
-                                                                                        <Button size="sm" onClick={handleAddAccount}>
-                                                                                            Add
-                                                                                        </Button>
-                                                                                    </div>
+                                                                                    <div><Label htmlFor="newAccount">Account Name</Label><Input id="newAccount" placeholder="Enter account name" value={newAccount} onChange={(e) => setNewAccount(e.target.value)} /></div>
+                                                                                    <div className="flex justify-end gap-2"><Button variant="outline" size="sm" onClick={() => setShowAddAccount(false)}>Cancel</Button><Button size="sm" onClick={handleAddAccount}>Add</Button></div>
                                                                                 </div>
                                                                             </PopoverContent>
                                                                         </Popover>
                                                                     </div>
-                                                                    <div className="relative mb-2">
-                                                                        <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
-                                                                        <Input
-                                                                            placeholder="Search account"
-                                                                            className="pl-8"
-                                                                            value={accountSearch}
-                                                                            onChange={(e) => setAccountSearch(e.target.value)}
-                                                                        />
-                                                                    </div>
+                                                                    <div className="relative mb-2"><Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" /><Input placeholder="Search account" className="pl-8" value={accountSearch} onChange={(e) => setAccountSearch(e.target.value)} /></div>
                                                                     <div className="space-y-1 max-h-48 overflow-y-auto">
                                                                         {filteredAccounts.map((account: string) => (
-                                                                            <div
-                                                                                key={account}
-                                                                                className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
-                                                                                onClick={() => {
-                                                                                    field.onChange(account);
-                                                                                    setAccountSearch('');
-                                                                                    setAccountPopoverOpen(false);
-                                                                                }}
-                                                                            >
-                                                                                {account}
-                                                                            </div>
+                                                                            <div key={account} className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm" onClick={() => { field.onChange(account); setAccountSearch(''); setAccountPopoverOpen(false); }}>{account}</div>
                                                                         ))}
-                                                                        {filteredAccounts.length === 0 && (
-                                                                            <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                                                                No accounts found
-                                                                            </div>
-                                                                        )}
+                                                                        {filteredAccounts.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">No accounts found</div>}
                                                                     </div>
                                                                 </div>
                                                             </PopoverContent>
@@ -1035,7 +773,6 @@ const EditFabIdForm = () => {
                                                     </FormItem>
                                                 )}
                                             />
-
                                             {/* Job Name */}
                                             <FormField
                                                 control={form.control}
@@ -1043,39 +780,17 @@ const EditFabIdForm = () => {
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>Job Name</FormLabel>
-                                                        <Select
-                                                            onValueChange={(value) => {
-                                                                handleJobNameChange(value);
-                                                                field.onChange(value);
-                                                            }}
-                                                            value={field.value}
-                                                            disabled={isEffectiveJobsLoading}
-                                                        >
-                                                            <FormControl>
-                                                                <SelectTrigger>
-                                                                    <SelectValue placeholder={
-                                                                        isEffectiveJobsLoading ? 'Loading...' : 'Select job name'
-                                                                    } />
-                                                                </SelectTrigger>
-                                                            </FormControl>
+                                                        <Select onValueChange={(value) => { handleJobNameChange(value); field.onChange(value); }} value={field.value} disabled={isEffectiveJobsLoading}>
+                                                            <FormControl><SelectTrigger><SelectValue placeholder={isEffectiveJobsLoading ? 'Loading...' : 'Select job name'} /></SelectTrigger></FormControl>
                                                             <SelectContent>
-                                                                {jobNames.map((jobName: string) => (
-                                                                    <SelectItem key={jobName} value={jobName}>
-                                                                        {jobName}
-                                                                    </SelectItem>
-                                                                ))}
-                                                                {jobNames.length === 0 && (
-                                                                    <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                                                        {selectedAccountId ? 'No jobs found for this account' : 'No jobs found'}
-                                                                    </div>
-                                                                )}
+                                                                {jobNames.map((jobName: string) => <SelectItem key={jobName} value={jobName}>{jobName}</SelectItem>)}
+                                                                {jobNames.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">{selectedAccountId ? 'No jobs found for this account' : 'No jobs found'}</div>}
                                                             </SelectContent>
                                                         </Select>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}
                                             />
-
                                             {/* Job Number */}
                                             <FormField
                                                 control={form.control}
@@ -1083,54 +798,19 @@ const EditFabIdForm = () => {
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>Job Number</FormLabel>
-                                                        <Select
-                                                            onValueChange={(value) => {
-                                                                handleJobNumberChange(value);
-                                                                field.onChange(value);
-                                                            }}
-                                                            value={field.value}
-                                                            disabled={isEffectiveJobsLoading}
-                                                        >
-                                                            <FormControl>
-                                                                <SelectTrigger>
-                                                                    <SelectValue placeholder={
-                                                                        isEffectiveJobsLoading ? 'Loading...' : 'Select job number'
-                                                                    } />
-                                                                </SelectTrigger>
-                                                            </FormControl>
+                                                        <Select onValueChange={(value) => { handleJobNumberChange(value); field.onChange(value); }} value={field.value} disabled={isEffectiveJobsLoading}>
+                                                            <FormControl><SelectTrigger><SelectValue placeholder={isEffectiveJobsLoading ? 'Loading...' : 'Select job number'} /></SelectTrigger></FormControl>
                                                             <SelectContent>
-                                                                {jobNumbers.map((jobNumber: string) => (
-                                                                    <SelectItem key={jobNumber} value={jobNumber}>
-                                                                        {jobNumber}
-                                                                    </SelectItem>
-                                                                ))}
-                                                                {jobNumbers.length === 0 && (
-                                                                    <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                                                        {selectedAccountId ? 'No jobs found for this account' : 'No jobs found'}
-                                                                    </div>
-                                                                )}
+                                                                {jobNumbers.map((jobNumber: string) => <SelectItem key={jobNumber} value={jobNumber}>{jobNumber}</SelectItem>)}
+                                                                {jobNumbers.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">{selectedAccountId ? 'No jobs found for this account' : 'No jobs found'}</div>}
                                                             </SelectContent>
                                                         </Select>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}
                                             />
-
                                             {/* Area */}
-                                            <FormField
-                                                control={form.control}
-                                                name="area"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Area (s) *</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="Enter area" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-
+                                            <FormField control={form.control} name="area" render={({ field }) => (<FormItem><FormLabel>Area (s) *</FormLabel><FormControl><Input placeholder="Enter area" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                             {/* Stone Type */}
                                             <FormField
                                                 control={form.control}
@@ -1138,35 +818,18 @@ const EditFabIdForm = () => {
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>Stone Type *</FormLabel>
-                                                        <Select
-                                                            onValueChange={field.onChange}
-                                                            value={field.value}
-                                                            disabled={isLoadingStoneTypes}
-                                                        >
-                                                            <FormControl>
-                                                                <SelectTrigger>
-                                                                    <SelectValue placeholder={isLoadingStoneTypes ? 'Loading...' : 'Select stone type'} />
-                                                                </SelectTrigger>
-                                                            </FormControl>
+                                                        <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingStoneTypes}>
+                                                            <FormControl><SelectTrigger><SelectValue placeholder={isLoadingStoneTypes ? 'Loading...' : 'Select stone type'} /></SelectTrigger></FormControl>
                                                             <SelectContent>
-                                                                {stoneTypes.map((type: string) => (
-                                                                    <SelectItem key={type} value={type}>
-                                                                        {type}
-                                                                    </SelectItem>
-                                                                ))}
-                                                                {stoneTypes.length === 0 && (
-                                                                    <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                                                        No stone types found
-                                                                    </div>
-                                                                )}
+                                                                {stoneTypes.map((type: string) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                                                                {stoneTypes.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">No stone types found</div>}
                                                             </SelectContent>
                                                         </Select>
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}
                                             />
-
-                                            {/* Stone Color */}
+                                            {/* Stone Color - FIX: disabled until stone type selected */}
                                             <FormField
                                                 control={form.control}
                                                 name="stoneColor"
@@ -1179,10 +842,10 @@ const EditFabIdForm = () => {
                                                                     <Button
                                                                         variant="outline"
                                                                         className="w-full justify-between h-[48px] px-4 text-sm border-input shadow-xs shadow-black/5"
-                                                                        disabled={isLoadingStoneColors}
+                                                                        disabled={isEffectiveStoneColorsLoading || !selectedStoneTypeId}
                                                                     >
                                                                         <span className={!field.value ? "text-muted-foreground" : ""}>
-                                                                            {isLoadingStoneColors ? 'Loading...' : (field.value || "Select stone color")}
+                                                                            {isEffectiveStoneColorsLoading ? 'Loading...' : (field.value || "Select stone color")}
                                                                         </span>
                                                                         <ChevronDown className="h-4 w-4 opacity-60" />
                                                                     </Button>
@@ -1193,78 +856,23 @@ const EditFabIdForm = () => {
                                                                     <div className="flex items-center justify-between mb-2">
                                                                         <span className="text-sm font-medium">Stone Colors</span>
                                                                         <Popover open={showAddStoneColor} onOpenChange={setShowAddStoneColor}>
-                                                                            <PopoverTrigger asChild>
-                                                                                <Button variant="ghost" size="sm" className="h-7 px-2">
-                                                                                    <Plus className="w-3 h-3 mr-1" />
-                                                                                    Add
-                                                                                </Button>
-                                                                            </PopoverTrigger>
+                                                                            <PopoverTrigger asChild><Button variant="ghost" size="sm" className="h-7 px-2"><Plus className="w-3 h-3 mr-1" />Add</Button></PopoverTrigger>
                                                                             <PopoverContent className="w-80" align="end">
                                                                                 <div className="space-y-3">
-                                                                                    <div>
-                                                                                        <Label htmlFor="newStoneColor">Stone Color Name</Label>
-                                                                                        <Input
-                                                                                            id="newStoneColor"
-                                                                                            placeholder="Enter stone color"
-                                                                                            value={newStoneColor}
-                                                                                            onChange={(e) => setNewStoneColor(e.target.value)}
-                                                                                        />
-                                                                                    </div>
-                                                                                    <div className="flex justify-end gap-2">
-                                                                                        <Button
-                                                                                            variant="outline"
-                                                                                            size="sm"
-                                                                                            type="button"
-                                                                                            onClick={() => setShowAddStoneColor(false)}
-                                                                                        >
-                                                                                            Cancel
-                                                                                        </Button>
-                                                                                        <Button
-                                                                                            size="sm"
-                                                                                            type="button"
-                                                                                            onClick={handleAddStoneColor}
-                                                                                        >
-                                                                                            Add
-                                                                                        </Button>
-                                                                                    </div>
+                                                                                    <div><Label htmlFor="newStoneColor">Stone Color Name</Label><Input id="newStoneColor" placeholder="Enter stone color" value={newStoneColor} onChange={(e) => setNewStoneColor(e.target.value)} /></div>
+                                                                                    <div className="flex justify-end gap-2"><Button variant="outline" size="sm" type="button" onClick={() => setShowAddStoneColor(false)}>Cancel</Button><Button size="sm" type="button" onClick={handleAddStoneColor}>Add</Button></div>
                                                                                 </div>
                                                                             </PopoverContent>
                                                                         </Popover>
                                                                     </div>
-                                                                    <div className="relative mb-2">
-                                                                        <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
-                                                                        <Input
-                                                                            placeholder="Search stone color"
-                                                                            className="pl-8"
-                                                                            value={stoneColorSearch}
-                                                                            onChange={(e) => setStoneColorSearch(e.target.value)}
-                                                                        />
-                                                                    </div>
+                                                                    <div className="relative mb-2"><Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" /><Input placeholder="Search stone color" className="pl-8" value={stoneColorSearch} onChange={(e) => setStoneColorSearch(e.target.value)} /></div>
                                                                     <div className="space-y-1 max-h-48 overflow-y-auto">
-                                                                        {stoneColors
-                                                                            .filter((color: string) =>
-                                                                                color.toLowerCase().includes(stoneColorSearch.toLowerCase())
-                                                                            )
-                                                                            .map((color: string) => (
-                                                                                <div
-                                                                                    key={color}
-                                                                                    className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
-                                                                                    onClick={() => {
-                                                                                        field.onChange(color);
-                                                                                        setStoneColorSearch('');
-                                                                                        setStoneColorPopoverOpen(false);
-                                                                                    }}
-                                                                                >
-                                                                                    {color}
-                                                                                </div>
-                                                                            ))}
-                                                                        {stoneColors.filter((color: string) =>
-                                                                            color.toLowerCase().includes(stoneColorSearch.toLowerCase())
-                                                                        ).length === 0 && (
-                                                                                <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                                                                    {isLoadingStoneColors ? 'Loading stone colors...' : 'No stone colors found'}
-                                                                                </div>
-                                                                            )}
+                                                                        {stoneColors.filter((color: string) => color.toLowerCase().includes(stoneColorSearch.toLowerCase())).map((color: string) => (
+                                                                            <div key={color} className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm" onClick={() => { field.onChange(color); setStoneColorSearch(''); setStoneColorPopoverOpen(false); }}>{color}</div>
+                                                                        ))}
+                                                                        {stoneColors.filter((color: string) => color.toLowerCase().includes(stoneColorSearch.toLowerCase())).length === 0 && (
+                                                                            <div className="px-3 py-2 text-sm text-gray-500 text-center">{isEffectiveStoneColorsLoading ? 'Loading stone colors...' : 'No stone colors found'}</div>
+                                                                        )}
                                                                     </div>
                                                                 </div>
                                                             </PopoverContent>
@@ -1273,7 +881,6 @@ const EditFabIdForm = () => {
                                                     </FormItem>
                                                 )}
                                             />
-
                                             {/* Stone Thickness */}
                                             <FormField
                                                 control={form.control}
@@ -1284,81 +891,17 @@ const EditFabIdForm = () => {
                                                         <Popover open={thicknessPopoverOpen} onOpenChange={setThicknessPopoverOpen}>
                                                             <PopoverTrigger asChild>
                                                                 <FormControl>
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        className="w-full justify-between h-[48px] px-4 text-sm border-input shadow-xs shadow-black/5"
-                                                                        disabled={isLoadingStoneThicknesses}
-                                                                    >
-                                                                        <span className={!field.value ? "text-muted-foreground" : ""}>
-                                                                            {isLoadingStoneThicknesses ? 'Loading...' : (field.value || "Select thickness")}
-                                                                        </span>
+                                                                    <Button variant="outline" className="w-full justify-between h-[48px] px-4 text-sm border-input shadow-xs shadow-black/5" disabled={isLoadingStoneThicknesses}>
+                                                                        <span className={!field.value ? "text-muted-foreground" : ""}>{isLoadingStoneThicknesses ? 'Loading...' : (field.value || "Select thickness")}</span>
                                                                         <ChevronDown className="h-4 w-4 opacity-60" />
                                                                     </Button>
                                                                 </FormControl>
                                                             </PopoverTrigger>
                                                             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                                                                 <div className="p-2">
-                                                                    <div className="flex items-center justify-between mb-2">
-                                                                        <span className="text-sm font-medium">Thickness</span>
-                                                                        <Popover open={showAddThickness} onOpenChange={setShowAddThickness}>
-                                                                            <PopoverTrigger asChild>
-                                                                                <Button variant="ghost" size="sm" className="h-7 px-2">
-                                                                                    <Plus className="w-3 h-3 mr-1" />
-                                                                                    Add
-                                                                                </Button>
-                                                                            </PopoverTrigger>
-                                                                            <PopoverContent className="w-80" align="end">
-                                                                                <div className="space-y-3">
-                                                                                    <div>
-                                                                                        <Label htmlFor="newThickness">Thickness (cm)</Label>
-                                                                                        <Input
-                                                                                            id="newThickness"
-                                                                                            placeholder="Enter thickness (cm)"
-                                                                                            value={newThickness}
-                                                                                            onChange={(e) => setNewThickness(e.target.value)}
-                                                                                        />
-                                                                                    </div>
-                                                                                    <div className="flex justify-end gap-2">
-                                                                                        <Button variant="outline" size="sm" onClick={() => setShowAddThickness(false)}>
-                                                                                            Cancel
-                                                                                        </Button>
-                                                                                        <Button size="sm" onClick={handleAddThickness}>
-                                                                                            Add
-                                                                                        </Button>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </PopoverContent>
-                                                                        </Popover>
-                                                                    </div>
-                                                                    <div className="relative mb-2">
-                                                                        <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
-                                                                        <Input
-                                                                            placeholder="Search thickness"
-                                                                            className="pl-8"
-                                                                            value={thicknessSearch}
-                                                                            onChange={(e) => setThicknessSearch(e.target.value)}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="space-y-1 max-h-48 overflow-y-auto">
-                                                                        {filteredThicknessOptions.map((thickness: string) => (
-                                                                            <div
-                                                                                key={thickness}
-                                                                                className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
-                                                                                onClick={() => {
-                                                                                    field.onChange(thickness);
-                                                                                    setThicknessSearch('');
-                                                                                    setThicknessPopoverOpen(false);
-                                                                                }}
-                                                                            >
-                                                                                {thickness}
-                                                                            </div>
-                                                                        ))}
-                                                                        {filteredThicknessOptions.length === 0 && (
-                                                                            <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                                                                No thickness options found
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
+                                                                    <div className="flex items-center justify-between mb-2"><span className="text-sm font-medium">Thickness</span><Popover open={showAddThickness} onOpenChange={setShowAddThickness}><PopoverTrigger asChild><Button variant="ghost" size="sm" className="h-7 px-2"><Plus className="w-3 h-3 mr-1" />Add</Button></PopoverTrigger><PopoverContent className="w-80" align="end"><div className="space-y-3"><div><Label htmlFor="newThickness">Thickness (cm)</Label><Input id="newThickness" placeholder="Enter thickness (cm)" value={newThickness} onChange={(e) => setNewThickness(e.target.value)} /></div><div className="flex justify-end gap-2"><Button variant="outline" size="sm" onClick={() => setShowAddThickness(false)}>Cancel</Button><Button size="sm" onClick={handleAddThickness}>Add</Button></div></div></PopoverContent></Popover></div>
+                                                                    <div className="relative mb-2"><Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" /><Input placeholder="Search thickness" className="pl-8" value={thicknessSearch} onChange={(e) => setThicknessSearch(e.target.value)} /></div>
+                                                                    <div className="space-y-1 max-h-48 overflow-y-auto">{filteredThicknessOptions.map((thickness: string) => (<div key={thickness} className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm" onClick={() => { field.onChange(thickness); setThicknessSearch(''); setThicknessPopoverOpen(false); }}>{thickness}</div>))}{filteredThicknessOptions.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">No thickness options found</div>}</div>
                                                                 </div>
                                                             </PopoverContent>
                                                         </Popover>
@@ -1366,7 +909,6 @@ const EditFabIdForm = () => {
                                                     </FormItem>
                                                 )}
                                             />
-
                                             {/* Edge */}
                                             <FormField
                                                 control={form.control}
@@ -1377,81 +919,17 @@ const EditFabIdForm = () => {
                                                         <Popover open={edgePopoverOpen} onOpenChange={setEdgePopoverOpen}>
                                                             <PopoverTrigger asChild>
                                                                 <FormControl>
-                                                                    <Button
-                                                                        variant="outline"
-                                                                        className="w-full justify-between h-[48px] px-4 text-sm border-input shadow-xs shadow-black/5"
-                                                                        disabled={isLoadingEdges}
-                                                                    >
-                                                                        <span className={!field.value ? "text-muted-foreground" : ""}>
-                                                                            {isLoadingEdges ? 'Loading...' : (field.value || "Select edge")}
-                                                                        </span>
+                                                                    <Button variant="outline" className="w-full justify-between h-[48px] px-4 text-sm border-input shadow-xs shadow-black/5" disabled={isLoadingEdges}>
+                                                                        <span className={!field.value ? "text-muted-foreground" : ""}>{isLoadingEdges ? 'Loading...' : (field.value || "Select edge")}</span>
                                                                         <ChevronDown className="h-4 w-4 opacity-60" />
                                                                     </Button>
                                                                 </FormControl>
                                                             </PopoverTrigger>
                                                             <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
                                                                 <div className="p-2">
-                                                                    <div className="flex items-center justify-between mb-2">
-                                                                        <span className="text-sm font-medium">Edges</span>
-                                                                        <Popover open={showAddEdge} onOpenChange={setShowAddEdge}>
-                                                                            <PopoverTrigger asChild>
-                                                                                <Button variant="ghost" size="sm" className="h-7 px-2">
-                                                                                    <Plus className="w-3 h-3 mr-1" />
-                                                                                    Add
-                                                                                </Button>
-                                                                            </PopoverTrigger>
-                                                                            <PopoverContent className="w-80" align="end">
-                                                                                <div className="space-y-3">
-                                                                                    <div>
-                                                                                        <Label htmlFor="newEdge">Edge Name</Label>
-                                                                                        <Input
-                                                                                            id="newEdge"
-                                                                                            placeholder="Enter edge name"
-                                                                                            value={newEdge}
-                                                                                            onChange={(e) => setNewEdge(e.target.value)}
-                                                                                        />
-                                                                                    </div>
-                                                                                    <div className="flex justify-end gap-2">
-                                                                                        <Button variant="outline" size="sm" onClick={() => setShowAddEdge(false)}>
-                                                                                            Cancel
-                                                                                        </Button>
-                                                                                        <Button size="sm" onClick={handleAddEdge}>
-                                                                                            Add
-                                                                                        </Button>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </PopoverContent>
-                                                                        </Popover>
-                                                                    </div>
-                                                                    <div className="relative mb-2">
-                                                                        <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
-                                                                        <Input
-                                                                            placeholder="Search edge"
-                                                                            className="pl-8"
-                                                                            value={edgeSearch}
-                                                                            onChange={(e) => setEdgeSearch(e.target.value)}
-                                                                        />
-                                                                    </div>
-                                                                    <div className="space-y-1 max-h-48 overflow-y-auto">
-                                                                        {filteredEdgeOptions.map((edge: string) => (
-                                                                            <div
-                                                                                key={edge}
-                                                                                className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm"
-                                                                                onClick={() => {
-                                                                                    field.onChange(edge);
-                                                                                    setEdgeSearch('');
-                                                                                    setEdgePopoverOpen(false);
-                                                                                }}
-                                                                            >
-                                                                                {edge}
-                                                                            </div>
-                                                                        ))}
-                                                                        {filteredEdgeOptions.length === 0 && (
-                                                                            <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                                                                No edge options found
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
+                                                                    <div className="flex items-center justify-between mb-2"><span className="text-sm font-medium">Edges</span><Popover open={showAddEdge} onOpenChange={setShowAddEdge}><PopoverTrigger asChild><Button variant="ghost" size="sm" className="h-7 px-2"><Plus className="w-3 h-3 mr-1" />Add</Button></PopoverTrigger><PopoverContent className="w-80" align="end"><div className="space-y-3"><div><Label htmlFor="newEdge">Edge Name</Label><Input id="newEdge" placeholder="Enter edge name" value={newEdge} onChange={(e) => setNewEdge(e.target.value)} /></div><div className="flex justify-end gap-2"><Button variant="outline" size="sm" onClick={() => setShowAddEdge(false)}>Cancel</Button><Button size="sm" onClick={handleAddEdge}>Add</Button></div></div></PopoverContent></Popover></div>
+                                                                    <div className="relative mb-2"><Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" /><Input placeholder="Search edge" className="pl-8" value={edgeSearch} onChange={(e) => setEdgeSearch(e.target.value)} /></div>
+                                                                    <div className="space-y-1 max-h-48 overflow-y-auto">{filteredEdgeOptions.map((edge: string) => (<div key={edge} className="px-3 py-2 hover:bg-gray-100 cursor-pointer rounded text-sm" onClick={() => { field.onChange(edge); setEdgeSearch(''); setEdgePopoverOpen(false); }}>{edge}</div>))}{filteredEdgeOptions.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">No edge options found</div>}</div>
                                                                 </div>
                                                             </PopoverContent>
                                                         </Popover>
@@ -1459,64 +937,12 @@ const EditFabIdForm = () => {
                                                     </FormItem>
                                                 )}
                                             />
-
                                             {/* Total Sq Ft */}
-                                            <FormField
-                                                control={form.control}
-                                                name="totalSqFt"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Total Sq Ft *</FormLabel>
-                                                        <FormControl>
-                                                            <Input placeholder="Enter total size" {...field} />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-
+                                            <FormField control={form.control} name="totalSqFt" render={({ field }) => (<FormItem><FormLabel>Total Sq Ft *</FormLabel><FormControl><Input placeholder="Enter total size" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                             {/* Revenue */}
-                                            <FormField
-                                                control={form.control}
-                                                name="revenue"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Revenue ($) *</FormLabel>
-                                                        <FormControl>
-                                                            <Input
-                                                                placeholder="Enter revenue amount"
-                                                                type="text"
-                                                                inputMode="decimal"
-                                                                value={field.value}
-                                                                onChange={field.onChange}
-                                                            />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-
+                                            <FormField control={form.control} name="revenue" render={({ field }) => (<FormItem><FormLabel>Revenue ($) *</FormLabel><FormControl><Input placeholder="Enter revenue amount" type="text" inputMode="decimal" value={field.value} onChange={field.onChange} onWheel={(e) => e.currentTarget.blur()} /></FormControl><FormMessage /></FormItem>)} />
                                             {/* Cost of Stone */}
-                                            <FormField
-                                                control={form.control}
-                                                name="cost_of_stone"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel>Cost of Stone ($) *</FormLabel>
-                                                        <FormControl>
-                                                            <Input
-                                                                placeholder="Enter cost of stone"
-                                                                type="text"
-                                                                inputMode="decimal"
-                                                                value={field.value}
-                                                                onChange={field.onChange}
-                                                            />
-                                                        </FormControl>
-                                                        <FormMessage />
-                                                    </FormItem>
-                                                )}
-                                            />
-
+                                            <FormField control={form.control} name="cost_of_stone" render={({ field }) => (<FormItem><FormLabel>Cost of Stone ($) *</FormLabel><FormControl><Input placeholder="Enter cost of stone" type="text" inputMode="decimal" value={field.value} onChange={field.onChange} onWheel={(e) => e.currentTarget.blur()} /></FormControl><FormMessage /></FormItem>)} />
                                             {/* Sales Person */}
                                             <FormField
                                                 control={form.control}
@@ -1524,32 +950,11 @@ const EditFabIdForm = () => {
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>Select Sales Person *</FormLabel>
-                                                        <Select
-                                                            onValueChange={field.onChange}
-                                                            value={field.value}
-                                                            disabled={isLoadingSalesPersons}
-                                                        >
-                                                            <FormControl>
-                                                                <SelectTrigger>
-                                                                    <SelectValue placeholder={
-                                                                        isLoadingSalesPersons ? 'Loading sales persons...' : 'Select salesperson'
-                                                                    } />
-                                                                </SelectTrigger>
-                                                            </FormControl>
+                                                        <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingSalesPersons}>
+                                                            <FormControl><SelectTrigger><SelectValue placeholder={isLoadingSalesPersons ? 'Loading sales persons...' : 'Select salesperson'} /></SelectTrigger></FormControl>
                                                             <SelectContent>
-                                                                {salesPersons.map((person: any) => (
-                                                                    <SelectItem
-                                                                        key={person.id}
-                                                                        value={person.name}
-                                                                    >
-                                                                        {person.name}
-                                                                    </SelectItem>
-                                                                ))}
-                                                                {salesPersons.length === 0 && (
-                                                                    <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                                                                        No sales persons found
-                                                                    </div>
-                                                                )}
+                                                                {salesPersons.map((person: any) => <SelectItem key={person.id} value={person.name}>{person.name}</SelectItem>)}
+                                                                {salesPersons.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">No sales persons found</div>}
                                                             </SelectContent>
                                                         </Select>
                                                         <FormMessage />
@@ -1557,143 +962,21 @@ const EditFabIdForm = () => {
                                                 )}
                                             />
                                         </div>
-
                                         {/* Checkboxes */}
                                         <div className="gap-3 flex flex-wrap">
-                                            <FormField
-                                                control={form.control}
-                                                name="templateNotNeeded"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                                        <FormControl>
-                                                            <Checkbox
-                                                                checked={field.value}
-                                                                onCheckedChange={field.onChange}
-                                                            />
-                                                        </FormControl>
-                                                        <FormLabel className="font-normal">Template not needed</FormLabel>
-                                                    </FormItem>
-                                                )}
-                                            />
-
-                                            <FormField
-                                                control={form.control}
-                                                name="draftNotNeeded"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                                        <FormControl>
-                                                            <Checkbox
-                                                                checked={field.value}
-                                                                onCheckedChange={field.onChange}
-                                                            />
-                                                        </FormControl>
-                                                        <FormLabel className="font-normal">Draft not needed</FormLabel>
-                                                    </FormItem>
-                                                )}
-                                            />
-
-                                            <FormField
-                                                control={form.control}
-                                                name="slabSmithCustNotNeeded"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                                        <FormControl>
-                                                            <Checkbox
-                                                                checked={field.value}
-                                                                onCheckedChange={field.onChange}
-                                                            />
-                                                        </FormControl>
-                                                        <FormLabel className="font-normal">SlabSmith (Cust) not needed</FormLabel>
-                                                    </FormItem>
-                                                )}
-                                            />
-
-                                            <FormField
-                                                control={form.control}
-                                                name="slabSmithAGNotNeeded"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                                        <FormControl>
-                                                            <Checkbox
-                                                                checked={field.value}
-                                                                onCheckedChange={field.onChange}
-                                                            />
-                                                        </FormControl>
-                                                        <FormLabel className="font-normal">Slab smith (AG) not needed</FormLabel>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control}
-                                                name="sctNotNeeded"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                                        <FormControl>
-                                                            <Checkbox
-                                                                checked={field.value}
-                                                                onCheckedChange={field.onChange}
-                                                            />
-                                                        </FormControl>
-                                                        <FormLabel className="font-normal">SCT not needed</FormLabel>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={form.control}
-                                                name="finalProgrammingNotNeeded"
-                                                render={({ field }) => (
-                                                    <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                                        <FormControl>
-                                                            <Checkbox
-                                                                checked={field.value}
-                                                                onCheckedChange={field.onChange}
-                                                            />
-                                                        </FormControl>
-                                                        <FormLabel className="font-normal">Final programming not needed</FormLabel>
-                                                    </FormItem>
-                                                )}
-                                            />
+                                            <FormField control={form.control} name="templateNotNeeded" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Template not needed</FormLabel></FormItem>)} />
+                                            <FormField control={form.control} name="draftNotNeeded" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Draft not needed</FormLabel></FormItem>)} />
+                                            <FormField control={form.control} name="slabSmithCustNotNeeded" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">SlabSmith (Cust) not needed</FormLabel></FormItem>)} />
+                                            <FormField control={form.control} name="slabSmithAGNotNeeded" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Slab smith (AG) not needed</FormLabel></FormItem>)} />
+                                            <FormField control={form.control} name="sctNotNeeded" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">SCT not needed</FormLabel></FormItem>)} />
+                                            <FormField control={form.control} name="finalProgrammingNotNeeded" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Final programming not needed</FormLabel></FormItem>)} />
                                         </div>
-
                                         {/* Notes */}
-                                        <FormField
-                                            control={form.control}
-                                            name="notes"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Notes</FormLabel>
-                                                    <FormControl>
-                                                        <Textarea
-                                                            placeholder="Type here..."
-                                                            {...field}
-                                                            rows={4}
-                                                        />
-                                                    </FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
+                                        <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea placeholder="Type here..." {...field} rows={4} /></FormControl><FormMessage /></FormItem>)} />
                                     </CardContent>
                                     <CardFooter className='flex justify-between items-center'>
-                                        <Link to="/sales" className="flex flex-nowrap items-center gap-2 text-sm text-primary underline">
-                                            <ArrowLeft className="w-4 h-4" />
-                                            Back to Fabs
-                                        </Link>
-                                        <div className="flex items-center justify-end gap-3">
-                                            <Link to="/sales">
-                                                <Button variant="outline" type="button">Cancel</Button>
-                                            </Link>
-                                            <Button type="submit" disabled={isSubmitting || isLoadingFormData || !hasInitialDataLoaded}>
-                                                {isSubmitting ? (
-                                                    <>
-                                                        <LoaderCircleIcon className="mr-2 h-4 w-4 animate-spin" />
-                                                        Updating...
-                                                    </>
-                                                ) : (
-                                                    'Update FAB'
-                                                )}
-                                            </Button>
-                                        </div>
+                                        <Link to="/sales" className="flex flex-nowrap items-center gap-2 text-sm text-primary underline"><ArrowLeft className="w-4 h-4" /> Back to Fabs</Link>
+                                        <div className="flex items-center justify-end gap-3"><Link to="/sales"><Button variant="outline" type="button">Cancel</Button></Link><Button type="submit" disabled={isSubmitting || isLoadingFormData || !hasInitialDataLoaded}>{isSubmitting ? (<><LoaderCircleIcon className="mr-2 h-4 w-4 animate-spin" /> Updating...</>) : 'Update FAB'}</Button></div>
                                     </CardFooter>
                                 </Card>
                             </form>

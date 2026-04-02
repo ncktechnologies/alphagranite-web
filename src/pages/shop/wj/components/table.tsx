@@ -74,24 +74,24 @@ const CuttingPlan = () => {
 
     const filteredData = useMemo(() => {
         let result = dummyData;
-        
+
         // Text search across multiple fields
         if (searchQuery) {
-            result = result.filter((item) => 
+            result = result.filter((item) =>
                 item.job_no?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 item.fab_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 item.fab_type?.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
-        
+
         // Date filter
         if (dateFilter !== 'all') {
             result = result.filter((item) => {
                 if (!item.date) return false;
-                
+
                 const itemDate = new Date(item.date);
                 const today = new Date();
-                
+
                 switch (dateFilter) {
                     case 'today':
                         return itemDate.toDateString() === today.toDateString();
@@ -116,7 +116,7 @@ const CuttingPlan = () => {
                 }
             });
         }
-        
+
         return result;
     }, [searchQuery, dateFilter, dateRange, dummyData]);
 
@@ -346,8 +346,8 @@ const CuttingPlan = () => {
 
                             <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                 <PopoverTrigger asChild>
-                                    <Button 
-                                        variant="outline" 
+                                    <Button
+                                        variant="outline"
                                         size="sm"
                                         className={`${dateFilter !== 'custom' ? 'hidden' : ''}`}
                                     >
@@ -365,8 +365,8 @@ const CuttingPlan = () => {
                                         numberOfMonths={2}
                                     />
                                     <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
-                                        <Button 
-                                            variant="outline" 
+                                        <Button
+                                            variant="outline"
                                             size="sm"
                                             onClick={() => {
                                                 setTempDateRange(undefined);
@@ -376,7 +376,7 @@ const CuttingPlan = () => {
                                         >
                                             Reset
                                         </Button>
-                                        <Button 
+                                        <Button
                                             size="sm"
                                             onClick={() => {
                                                 setDateRange(tempDateRange);
@@ -425,15 +425,12 @@ const CuttingPlan = () => {
                     </CardToolbar>
                 </CardHeader>
 
-                 <CardTable>
-                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-300px)]">
-                            <DataGridTable />
-                            <ScrollBar 
-                                orientation="horizontal" 
-                                className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500"
-                            />
-                        </ScrollArea>
-                    </CardTable>
+                <CardTable>
+                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
+                        <DataGridTable />
+                        <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                    </ScrollArea>
+                </CardTable>
 
                 <CardFooter>
                     <DataGridPagination />

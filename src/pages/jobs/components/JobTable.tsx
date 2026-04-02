@@ -132,24 +132,24 @@ export const JobTable = ({
     const [toggleFabOnHold] = useToggleFabOnHoldMutation();
 
     // Use backend state if available, otherwise use local state
-    const pagination        = tableState?.pagination        ?? localPagination;
-    const setPagination     = tableState?.setPagination     ?? setLocalPagination;
-    const searchQuery       = tableState?.searchQuery       ?? localSearchQuery;
-    const setSearchQuery    = tableState?.setSearchQuery    ?? setLocalSearchQuery;
-    const effectiveSearchType    = (tableState as any)?.searchType    ?? searchType;
+    const pagination = tableState?.pagination ?? localPagination;
+    const setPagination = tableState?.setPagination ?? setLocalPagination;
+    const searchQuery = tableState?.searchQuery ?? localSearchQuery;
+    const setSearchQuery = tableState?.setSearchQuery ?? setLocalSearchQuery;
+    const effectiveSearchType = (tableState as any)?.searchType ?? searchType;
     const setEffectiveSearchType = (tableState as any)?.setSearchType ?? setSearchType;
-    const dateFilter        = tableState?.dateFilter        ?? localDateFilter;
-    const setDateFilter     = tableState?.setDateFilter     ?? setLocalDateFilter;
-    const fabTypeFilter     = tableState?.fabTypeFilter     ?? localFabTypeFilter;
-    const setFabTypeFilter  = tableState?.setFabTypeFilter  ?? setLocalFabTypeFilter;
+    const dateFilter = tableState?.dateFilter ?? localDateFilter;
+    const setDateFilter = tableState?.setDateFilter ?? setLocalDateFilter;
+    const fabTypeFilter = tableState?.fabTypeFilter ?? localFabTypeFilter;
+    const setFabTypeFilter = tableState?.setFabTypeFilter ?? setLocalFabTypeFilter;
     const salesPersonFilter = (tableState as any)?.salesPersonFilter ?? localSalesPersonFilter;
     const setSalesPersonFilter = (tableState as any)?.setSalesPersonFilter ?? setLocalSalesPersonFilter;
-    const dateRange         = tableState?.dateRange         ?? localDateRange;
-    const setDateRange      = tableState?.setDateRange      ?? setLocalDateRange;
-    const scheduleFilter    = tableState?.scheduleFilter    ?? 'all';
+    const dateRange = tableState?.dateRange ?? localDateRange;
+    const setDateRange = tableState?.setDateRange ?? setLocalDateRange;
+    const scheduleFilter = tableState?.scheduleFilter ?? 'all';
     const setScheduleFilter = tableState?.setScheduleFilter ?? (() => { });
 
-    const effectiveSelectedRows    = selectedRows ?? localSelectedRows;
+    const effectiveSelectedRows = selectedRows ?? localSelectedRows;
     const setEffectiveSelectedRows = setSelectedRows ?? setLocalSelectedRows;
 
     const getViewPath = (job: IJob): string => {
@@ -188,9 +188,9 @@ export const JobTable = ({
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
             result = result.filter((job) => {
-                if (effectiveSearchType === 'fab_id')     return job.fab_id?.toLowerCase().includes(q);
+                if (effectiveSearchType === 'fab_id') return job.fab_id?.toLowerCase().includes(q);
                 if (effectiveSearchType === 'job_number') return job.job_no?.toLowerCase().includes(q);
-                if (effectiveSearchType === 'job_name')   return job.job_name?.toLowerCase().includes(q);
+                if (effectiveSearchType === 'job_name') return job.job_name?.toLowerCase().includes(q);
                 return false;
             });
         }
@@ -686,7 +686,7 @@ export const JobTable = ({
                 const needed = (row.original as any).slabsmith_ag_needed ?? (row.original as any)._rawFabData?.slabsmith_ag_needed;
                 const completed = (row.original as any).slabsmith_completed_date ?? (row.original as any)._rawFabData?.slabsmith_completed_date;
                 if (needed === false) return <span className="text-sm text-gray-500">Not Needed</span>;
-                if (needed === true)  return completed
+                if (needed === true) return completed
                     ? <span className="text-sm text-green-600 font-medium">Completed</span>
                     : <span className="text-sm text-red-600 font-medium">Not Completed</span>;
                 return <span className="text-sm">Unknown</span>;
@@ -703,7 +703,7 @@ export const JobTable = ({
             cell: ({ row }) => {
                 const status = row.original.draft_completed;
                 if (status === 'drafting') return <span className="text-sm text-green-600 font-medium">Drafting</span>;
-                if (status === 'paused')   return <span className="text-sm text-red-600 font-medium">Paused</span>;
+                if (status === 'paused') return <span className="text-sm text-red-600 font-medium">Paused</span>;
                 return <span className="text-sm text-gray-500">Not Started</span>;
             },
             size: 130,
@@ -721,17 +721,17 @@ export const JobTable = ({
         },
 
         // ── Notes columns ─────────────────────────────────────────────────────
-        { id: 'templating_notes',        header: ({ column }) => <DataGridColumnHeader title="Templating Notes"       column={column} />, cell: ({ row }) => renderNotes(row, 'templating'),                         enableSorting: false, size: 180 },
-        { id: 'drafting_notes',          header: ({ column }) => <DataGridColumnHeader title="Drafting Notes"         column={column} />, cell: ({ row }) => renderNotes(row, 'drafting'),                           enableSorting: false, size: 180 },
-        { id: 'final_programming_notes', header: ({ column }) => <DataGridColumnHeader title="Notes"                  column={column} />, cell: ({ row }) => renderNotes(row, 'final_programming'),                  enableSorting: false, size: 180 },
-        { id: 'pre_draft_notes',         header: ({ column }) => <DataGridColumnHeader title="Pre-Draft Notes"        column={column} />, cell: ({ row }) => renderNotes(row, 'pre_draft_review'),                   enableSorting: false, size: 180 },
-        { id: 'cutting_notes',           header: ({ column }) => <DataGridColumnHeader title="Cut List Notes"         column={column} />, cell: ({ row }) => renderNotes(row, 'cut_list'),                           enableSorting: false, size: 180 },
-        { id: 'slabsmith_notes',         header: ({ column }) => <DataGridColumnHeader title="SlabSmith Notes"        column={column} />, cell: ({ row }) => renderNotes(row, 'slab_smith_request'),                 enableSorting: false, size: 180 },
-        { id: 'sct_notes',               header: ({ column }) => <DataGridColumnHeader title="SCT Notes"              column={column} />, cell: ({ row }) => renderNotes(row, 'sales_ct'),                           enableSorting: false, size: 180 },
-        { id: 'draft_revision_notes',    header: ({ column }) => <DataGridColumnHeader title="Draft/Revision Notes"   column={column} />, cell: ({ row }) => renderNotes(row, ['draft', 'revisions']),               enableSorting: false, size: 180 },
-        { id: 'draft_notes',             header: ({ column }) => <DataGridColumnHeader title="Draft Notes"            column={column} />, cell: ({ row }) => renderNotes(row, 'drafting'),                           enableSorting: false, size: 180 },
-        { id: 'revision_notes',          header: ({ column }) => <DataGridColumnHeader title="Revision Notes"         column={column} />, cell: ({ row }) => renderNotes(row, ['revision', 'revisions']),            enableSorting: false, size: 180 },
-        { id: 'install_notes',           header: ({ column }) => <DataGridColumnHeader title="Install Notes"          column={column} />, cell: ({ row }) => renderNotes(row, 'install_schedulling'),                enableSorting: false, size: 180 },
+        { id: 'templating_notes', header: ({ column }) => <DataGridColumnHeader title="Templating Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'templating'), enableSorting: false, size: 180 },
+        { id: 'drafting_notes', header: ({ column }) => <DataGridColumnHeader title="Drafting Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'drafting'), enableSorting: false, size: 180 },
+        { id: 'final_programming_notes', header: ({ column }) => <DataGridColumnHeader title="Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'final_programming'), enableSorting: false, size: 180 },
+        { id: 'pre_draft_notes', header: ({ column }) => <DataGridColumnHeader title="Pre-Draft Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'pre_draft_review'), enableSorting: false, size: 180 },
+        { id: 'cutting_notes', header: ({ column }) => <DataGridColumnHeader title="Cut List Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'cut_list'), enableSorting: false, size: 180 },
+        { id: 'slabsmith_notes', header: ({ column }) => <DataGridColumnHeader title="SlabSmith Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'slab_smith_request'), enableSorting: false, size: 180 },
+        { id: 'sct_notes', header: ({ column }) => <DataGridColumnHeader title="SCT Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'sales_ct'), enableSorting: false, size: 180 },
+        { id: 'draft_revision_notes', header: ({ column }) => <DataGridColumnHeader title="Draft/Revision Notes" column={column} />, cell: ({ row }) => renderNotes(row, ['draft', 'revisions']), enableSorting: false, size: 180 },
+        { id: 'draft_notes', header: ({ column }) => <DataGridColumnHeader title="Draft Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'drafting'), enableSorting: false, size: 180 },
+        { id: 'revision_notes', header: ({ column }) => <DataGridColumnHeader title="Revision Notes" column={column} />, cell: ({ row }) => renderNotes(row, ['revision', 'revisions']), enableSorting: false, size: 180 },
+        { id: 'install_notes', header: ({ column }) => <DataGridColumnHeader title="Install Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'install_schedulling'), enableSorting: false, size: 180 },
 
         // ── File ──────────────────────────────────────────────────────────────
         {
@@ -878,8 +878,8 @@ export const JobTable = ({
             header: ({ column }) => <DataGridColumnHeader title="INSTALL CONFIRMED" column={column} />,
             cell: ({ row }) => {
                 const confirmed = (row.original as any).install_confirmed;
-                if (confirmed === true  || confirmed === 'Yes') return <span className="text-xs font-medium text-green-600">Yes</span>;
-                if (confirmed === false || confirmed === 'No')  return <span className="text-xs font-medium text-red-500">No</span>;
+                if (confirmed === true || confirmed === 'Yes') return <span className="text-xs font-medium text-green-600">Yes</span>;
+                if (confirmed === false || confirmed === 'No') return <span className="text-xs font-medium text-red-500">No</span>;
                 return <span className="text-xs text-gray-400">-</span>;
             },
             size: 140,
@@ -1216,7 +1216,7 @@ export const JobTable = ({
                 </CardHeader>
 
                 <CardTable>
-                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)]">
+                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                         <DataGridTable />
                         <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
                     </ScrollArea>

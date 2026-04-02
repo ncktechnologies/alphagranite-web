@@ -417,6 +417,14 @@ export interface StoneColorListParams {
     search?: string;
 }
 
+export interface StoneColorByStoneTypeParams {
+    stone_type_id: number;
+    skip?: number;
+    limit?: number;
+    status_id?: number;
+    search?: string;
+}
+
 export interface StoneThicknessListParams {
     skip?: number;
     limit?: number;
@@ -1208,6 +1216,31 @@ export const jobApi = createApi({
                         }
                     };
 
+                },
+                transformResponse: (response: any) => {
+                    // Handle the response format with success, message, and data properties
+                    if (response && response.data) {
+                        return response.data;
+                    }
+                    return response;
+                },
+                providesTags: ["StoneColor"],
+            }),
+
+            // Stone Colors by Stone Type
+            getStoneColorsByStoneType: build.query<StoneColor[], StoneColorByStoneTypeParams>({
+                query: (params) => {
+                    const { stone_type_id, ...otherParams } = params;
+                    return {
+                        url: `/stone-types/${stone_type_id}/stone-colors`,
+                        method: "get",
+                        params: {
+                            skip: otherParams.skip || 0,
+                            limit: otherParams.limit || 100,
+                            ...(otherParams.status_id !== undefined && { status_id: otherParams.status_id }),
+                            ...(otherParams.search && { search: otherParams.search }),
+                        }
+                    };
                 },
                 transformResponse: (response: any) => {
                     // Handle the response format with success, message, and data properties
@@ -2216,4 +2249,5 @@ export const {
     useSetPredraftToRedraftMutation,
     useUpdateFabStageMutation,
     // useAddFilesToDraftingMutation,
+    useGetStoneColorsByStoneTypeQuery
 } = jobApi;
