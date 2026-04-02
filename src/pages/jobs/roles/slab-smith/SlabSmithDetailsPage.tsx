@@ -284,8 +284,8 @@ export function SlabSmithDetailsPage() {
     }
   }, [refetchFab, refetchDrafting, refetchSlabSmith, refetchSSSession]);
 
-  const shouldShowUploadSection = (isDrafting && !isPaused) || (slabSmithData?.files?.length > 0);
-  const canOpenSubmit = slabSmithData?.files?.length > 0 && !isPaused && isDrafting;
+  const shouldShowUploadSection = (isDrafting && !isPaused) || (fabData?.slabsmith_data?.files?.length > 0);
+  const canOpenSubmit = fabData?.slabsmith_data?.files?.length > 0 && !isPaused && isDrafting;
 
   const handleOpenSubmissionModal = async () => {
     setShowSubmissionModal(true);
