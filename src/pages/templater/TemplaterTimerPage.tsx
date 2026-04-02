@@ -26,12 +26,11 @@ export function TemplaterTimerPage() {
     const [elapsedTime, setElapsedTime] = useState(0);
     const [isRunning, setIsRunning] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
+    const [isStopped, setIsStopped] = useState(false); // renamed for clarity
 
-    // Modal states
     const [pauseModalOpen, setPauseModalOpen] = useState(false);
     const [stopModalOpen, setStopModalOpen] = useState(false);
 
-    // Skip query if missing IDs
     const shouldSkip = !job_id || !templater_id;
     const { data: timerState, refetch } = useGetTemplaterTimerStateQuery(
         { job_id: Number(job_id), templater_id: templater_id! },
@@ -44,14 +43,20 @@ export function TemplaterTimerPage() {
 
     // Sync timer state from server
     useEffect(() => {
-        if (timerState?.session) {
-            setElapsedTime(timerState.session.total_work_seconds || 0);
-            setIsRunning(timerState.session.status === 'running');
-            setIsPaused(timerState.session.status === 'paused');
-        } else {
-            setElapsedTime(0);
-            setIsRunning(false);
-            setIsPaused(false);
+        if (timerState) {
+            const session = timerState.session;
+            if (session) {
+                setElapsedTime(session.total_work_seconds || 0);
+                setIsRunning(session.status === 'running');
+                setIsPaused(session.status === 'paused');
+                setIsStopped(session.status === 'stopped');
+            } else {
+                // No session (should not happen with current API, but fallback)
+                setIsStopped(false);
+                setElapsedTime(0);
+                setIsRunning(false);
+                setIsPaused(false);
+            }
         }
     }, [timerState]);
 
@@ -66,13 +71,8 @@ export function TemplaterTimerPage() {
         }
     };
 
-    const handlePause = () => {
-        setPauseModalOpen(true);
-    };
-
-    const handleStopSubmit = () => {
-        setStopModalOpen(true);
-    };
+    const handlePause = () => setPauseModalOpen(true);
+    const handleStopSubmit = () => setStopModalOpen(true);
 
     const handleResume = async () => {
         if (!templater_id) return;
@@ -85,14 +85,8 @@ export function TemplaterTimerPage() {
         }
     };
 
-    const handlePauseSuccess = () => {
-        refetch();
-    };
-
-    const handleStopSuccess = () => {
-        // After successful stop, navigate to a list or dashboard
-        navigate('/templater/jobs');
-    };
+    const handlePauseSuccess = () => refetch();
+    const handleStopSuccess = () => refetch(); // stay on page, will show stopped state
 
     if (shouldSkip) {
         return (
@@ -124,27 +118,37 @@ export function TemplaterTimerPage() {
 
             <div className="container mx-auto px-4 py-8">
                 <div className="max-w-3xl mx-auto">
-                    <OperatorTimerComponent
-                        totalTime={elapsedTime}
-                        isRunning={isRunning}
-                        isPaused={isPaused}
-                        onStart={handleStart}
-                        onPause={handlePause}
-                        onResume={handleResume}
-                        onTimeUpdate={setElapsedTime}
-                        disabled={!job_id || !templater_id}
-                    />
-
-                    {/* Submit button below the timer card */}
-                    <div className="mt-6 flex justify-center">
-                        <Button
-                            onClick={handleStopSubmit}
-                            size="lg"
-                            disabled={!job_id || !templater_id}
-                        >
-                            Submit
-                        </Button>
-                    </div>
+                    {!isStopped ? (
+                        <>
+                            <OperatorTimerComponent
+                                totalTime={elapsedTime}
+                                isRunning={isRunning}
+                                isPaused={isPaused}
+                                onStart={handleStart}
+                                onPause={handlePause}
+                                onResume={handleResume}
+                                onTimeUpdate={setElapsedTime}
+                                disabled={!job_id || !templater_id}
+                            />
+                            <div className="mt-6 flex justify-center">
+                                <Button
+                                    onClick={handleStopSubmit}
+                                    size="lg"
+                                    disabled={!job_id || !templater_id}
+                                >
+                                    Submit
+                                </Button>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="text-center p-8 bg-white rounded-lg border shadow-sm">
+                            <div className="text-lg font-semibold text-gray-700 mb-2">Session Ended</div>
+                            <p className="text-gray-500">This timer session has been completed and cannot be restarted.</p>
+                            <div className="mt-4 text-sm text-gray-400">
+                                Total time worked: {Math.floor(elapsedTime / 3600)}h {Math.floor((elapsedTime % 3600) / 60)}m {elapsedTime % 60}s
+                            </div>
+                        </div>
+                    )}
                     <TemplaterTimerHistory
                         jobId={Number(job_id)}
                         templaterId={templater_id!}

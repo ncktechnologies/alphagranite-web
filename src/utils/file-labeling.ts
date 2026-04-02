@@ -101,6 +101,20 @@ export const WORKFLOW_STAGES: Record<string, FileLabel> = {
     bgColor: 'bg-purple-100'
   },
   
+  // CNC stages
+  'cnc': {
+    stage: 'cnc',
+    label: 'CNC',
+    color: 'text-cyan-700',
+    bgColor: 'bg-cyan-100'
+  },
+  'cnc_uploads': {
+    stage: 'cnc_uploads',
+    label: 'CNC Uploads',
+    color: 'text-cyan-700',
+    bgColor: 'bg-cyan-100'
+  },
+  
   // Cutting stages
   'cutting': {
     stage: 'cutting',
@@ -154,6 +168,11 @@ export const getFileStage = (
   // Final Programming/Cut List files
   if (lowerFileName?.includes('cutlist') || lowerFileName?.includes('cut_list') || lowerFileName?.includes('final_programming') || context?.isFinalProgramming) {
     return WORKFLOW_STAGES.final_programming;
+  }
+  
+  // CNC files
+  if (lowerFileName?.includes('cnc') || context?.currentStage === 'cnc') {
+    return WORKFLOW_STAGES.cnc_uploads;
   }
   
   // Default to general

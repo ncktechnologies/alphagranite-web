@@ -1454,18 +1454,7 @@ const NewFabIdForm = () => {
                             </FormItem>
                           )}
                         />
-                        <FormField
-                          control={form.control}
-                          name="sctNotNeeded"
-                          render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                              <FormControl>
-                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
-                              </FormControl>
-                              <FormLabel className="font-normal">SCT not needed</FormLabel>
-                            </FormItem>
-                          )}
-                        />
+                       
                         <FormField
                           control={form.control}
                           name="slabSmithAGNotNeeded"
@@ -1475,6 +1464,18 @@ const NewFabIdForm = () => {
                                 <Checkbox checked={field.value} onCheckedChange={field.onChange} />
                               </FormControl>
                               <FormLabel className="font-normal">Slab smith (AG) not needed</FormLabel>
+                            </FormItem>
+                          )}
+                        />
+                         <FormField
+                          control={form.control}
+                          name="sctNotNeeded"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                              </FormControl>
+                              <FormLabel className="font-normal">SCT not needed</FormLabel>
                             </FormItem>
                           )}
                         />

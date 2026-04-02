@@ -13,6 +13,7 @@ import { AfterDraftSalesPage } from '@/pages/jobs/roles/back-to-sales/BackSalesP
 import { DraftReviewDetailsPage } from '@/pages/jobs/roles/back-to-sales/details';
 import { DrafterDetailsPage } from '@/pages/jobs/roles/drafters';
 import DrafterPage from '@/pages/jobs/roles/drafters/DrafterPage';
+import CNCPage from '@/pages/jobs/roles/cnc/CNCPage';
 import { PreDraftDetailsPage } from '@/pages/jobs/roles/predraft/components/details';
 import { PredraftPage } from '@/pages/jobs/roles/predraft/PredraftPage';
 // import { PreDraftReviewPage } from '@/pages/jobs/roles/predraft/PreDraftReviewPage';
@@ -207,25 +208,31 @@ export function AppRoutingSetup() {
            <Route
             path="/job/draft/:id"
             element={
-              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <DrafterDetailsPage/>
-              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job/cnc"
+            element={
+                <CNCPage/>
+            }
+          />
+          <Route
+            path="/job/cnc/:id"
+            element={
+                <div>CNC Details Page - Coming Soon</div>
             }
           />
           <Route
             path="/job/draft-review"
             element={
-              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <AfterDraftSalesPage/>
-              // </ProtectedRoute>
             }
           />
            <Route
             path="/job/draft-review/:id"
             element={
-              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <DraftReviewDetailsPage/>
-              // </ProtectedRoute>
             }
           />
           <Route

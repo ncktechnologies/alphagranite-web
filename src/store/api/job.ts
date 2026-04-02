@@ -507,6 +507,98 @@ export interface BulkDraftingAssignment {
     total_sqft_required_to_draft: string | number;
 }
 
+// CNC Types - EXACT SAME PATTERN AS DRAFTING
+export interface CNCDraftingFile {
+    id: number;
+    name: string;
+    file_url: string;
+    file_type: string;
+    file_size: string;
+    created_at: string;
+}
+
+export interface CNCDrafting {
+    id: number;
+    fab_id: number;
+    drafter_id: number;
+    drafter_name?: string;
+    scheduled_start_date?: string;
+    scheduled_end_date?: string;
+    drafter_start_date?: string | null;
+    drafter_end_date?: string | null;
+    total_time_spent?: number | null;
+    total_hours_drafted?: number | null;
+    total_sqft_drafted?: string | null;
+    no_of_piece_drafted?: string | null;
+    draft_note?: string | null;
+    mentions?: string | null;
+    work_percentage_done?: number | null;
+    status_id: number;
+    status_name?: string;
+    created_at: string;
+    updated_at?: string | null;
+    updated_by?: number | null;
+    updated_by_name?: string | null;
+    file_ids?: string | null;
+    files?: CNCDraftingFile[];
+}
+
+export interface CNCDraftingCreate {
+    drafter_id: number;
+    items: CNCDraftingItem[];
+}
+
+export interface CNCDraftingItem {
+    fab_id: number;
+    scheduled_start_date: string;
+    scheduled_end_date: string;
+    total_sqft_required_to_draft: number;
+}
+
+export interface CNCDraftingResponse {
+    fab_id: number;
+    cnc_linft: number;
+    message: string;
+}
+
+export interface CNCDraftingSessionAction {
+    drafter_id: number;
+    action: string; // 'start', 'pause', 'resume', 'on_hold', 'end'
+    session_start_time?: string | null;
+    session_end_time?: string | null;
+    timestamp?: string | null;
+    sqft_drafted?: string | null;
+    work_percentage_done?: number | null;
+    note?: string | null;
+    is_revision?: boolean;
+}
+
+export interface CNCDraftingSessionNoteResponse {
+    id: number;
+    note: string;
+    created_at: string;
+}
+
+export interface CNCDraftingSessionResponse {
+    session_id: number;
+    fab_id: number;
+    drafter_id: number;
+    status: string;
+    current_session_start_time: string;
+    last_action_time?: string | null;
+    total_time_spent: number;
+    cumulative_sqft_drafted: string;
+    work_percentage_done: number;
+    current_pause_start_time?: string | null;
+    total_pause_duration: number;
+    notes: CNCDraftingSessionNoteResponse[];
+}
+
+export interface CNCDraftingSessionHistoryResponse {
+    fab_id: number;
+    sessions: CNCDraftingSessionResponse[];
+}
+
 export interface Stage {
     id: number;
     name: string;
@@ -739,7 +831,7 @@ export interface AdminDashboardResponse {
 export const jobApi = createApi({
     reducerPath: "jobApi",
     baseQuery: axiosBaseQuery({ baseUrl: `${baseUrl}/api/v1` }),
-    tagTypes: ["Job", "Fab", "FabType", "Account", "StoneType", "StoneColor", "StoneThickness", "Edge", "Drafting"],
+    tagTypes: ["Job", "Fab", "FabType", "Account", "StoneType", "StoneColor", "StoneThickness", "Edge", "Drafting", "CNC"],
     keepUnusedDataFor: 0,
     endpoints(build) {
         return {
@@ -1517,6 +1609,106 @@ export const jobApi = createApi({
                 invalidatesTags: ["Drafting"],
             }),
 
+            // CNC Drafting endpoints - EXACT SAME PATTERN AS DRAFTING
+            // Create CNC drafting assignment
+            createCNCDrafting: build.mutation<CNCDraftingResponse, CNCDraftingCreate>({
+                query: (data) => ({
+                    url: "/CNC",
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Manage CNC session (start, pause, resume, on_hold, end)
+            manageCNCSession: build.mutation<CNCDraftingSessionResponse, { fab_id: number; data: CNCDraftingSessionAction }>({
+                query: ({ fab_id, data }) => ({
+                    url: `/CNC/${fab_id}/session`,
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+            
+            // Get current CNC session
+            getCurrentCNCSession: build.query<CNCDraftingSessionResponse, number>({
+                query: (fab_id) => ({
+                    url: `/CNC/${fab_id}/session`,
+                    method: "get"
+                }),
+                providesTags: ["Fab"],
+            }),
+            
+            // Get CNC session history
+            getCNCSessionHistory: build.query<CNCDraftingSessionHistoryResponse, number>({
+                query: (fab_id) => ({
+                    url: `/CNC/${fab_id}/session/history`,
+                    method: "get"
+                }),
+                providesTags: ["Fab"],
+            }),
+
+            // Update CNCDrafting
+            updateCNCDrafting: build.mutation<CNCDrafting, { id: number; data: DraftingUpdate }>({
+                query: ({ id, data }) => ({
+                    url: `/CNC/${id}`,
+                    method: "put",
+                    data
+                }),
+                invalidatesTags: (_result, _error, { id }) => [{ type: "Drafting", id }, "Drafting", "Fab"],
+            }),
+
+            // Submit CNCDrafting for review
+            submitCNCDraftingForReview: build.mutation<any, { cnc_id: number; data: DraftingSubmitReview }>({
+                query: ({ cnc_id, data }) => ({
+                    url: `/CNC/${cnc_id}/submit-review`,
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Fab", "Drafting"],
+            }),
+
+            // Add files to CNCDrafting
+            addFilesToCNCDrafting: build.mutation<any, { cnc_id: number; files: File[]; stage?: string; stage_name?: string; file_design?: string }>({
+                query: ({ cnc_id, files, stage, stage_name, file_design }) => {
+                    const formData = new FormData();
+                    files.forEach((file) => {
+                        formData.append('files', file);
+                    });
+                    if (stage) {
+                        formData.append('stage', stage);
+                    }
+                    // CNCDrafting endpoint expects BOTH `stage` and `stage_name`
+                    // Fallback to `stage` if `stage_name` wasn't provided.
+                    if (stage_name) {
+                        formData.append('stage_name', stage_name);
+                    } else if (stage) {
+                        formData.append('stage_name', stage);
+                    }
+                    if (file_design) {
+                        formData.append('file_design', file_design);
+                    }
+                    return {
+                        url: `/CNC/${cnc_id}/files`,
+                        method: "post",
+                        data: formData,
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
+                    };
+                },
+                invalidatesTags: ["Drafting"],
+            }),
+
+            // Delete file from CNCDrafting
+            deleteFileFromCNCDrafting: build.mutation<any, { cnc_id: number; file_id: string }>({
+                query: ({ cnc_id, file_id }) => ({
+                    url: `/CNC/${cnc_id}/file/${file_id}`,
+                    method: "delete"
+                }),
+                invalidatesTags: ["Drafting"],
+            }),
+
             // Add files to slab smith
             addFilesToSlabSmith: build.mutation<any, { slabsmith_id: number; files: File[]; stage_name?: string; file_design?: string }>({
                 query: ({ slabsmith_id, files, stage_name, file_design }) => {
@@ -2249,5 +2441,14 @@ export const {
     useSetPredraftToRedraftMutation,
     useUpdateFabStageMutation,
     // useAddFilesToDraftingMutation,
-    useGetStoneColorsByStoneTypeQuery
+    useGetStoneColorsByStoneTypeQuery,
+    // CNCDrafting hooks - EXACT SAME PATTERN AS DRAFTING
+    useCreateCNCDraftingMutation,
+    useManageCNCSessionMutation,
+    useGetCurrentCNCSessionQuery,
+    useGetCNCSessionHistoryQuery,
+    useUpdateCNCDraftingMutation,
+    useSubmitCNCDraftingForReviewMutation,
+    useAddFilesToCNCDraftingMutation,
+    useDeleteFileFromCNCDraftingMutation
 } = jobApi;

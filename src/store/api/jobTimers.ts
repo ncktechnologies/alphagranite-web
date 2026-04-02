@@ -19,10 +19,13 @@ export interface JobTimerState {
         current_run_start_at: string | null;
         current_pause_start_at: string | null;
         stopped_at: string | null;
-        total_elapsed_seconds: number;
+        total_work_seconds: number;
+        total_pause_seconds: number;
+        sqft_templated?: number | null;
+        sqft_not_templated?: number | null;
     };
-    total_time_seconds?: number;
-    elapsed_time?: number;
+    total_actual_seconds?: number;
+    total_actual_hours?: number;
 }
 
 export interface JobTimerHistory {
@@ -55,7 +58,7 @@ export const installerTimerApi = createApi({
             query: ({ job_id, installer_id }) => ({
                 url: `/api/v1/job-timers/installer/jobs/${job_id}/timer/start`,
                 method: 'POST',
-                params: { installer_id }, // send in body
+                params: { installer_id },
             }),
             invalidatesTags: (_result, _error, { job_id, installer_id }) => [
                 { type: 'InstallerTimer', id: `${job_id}_${installer_id}` }
@@ -63,13 +66,26 @@ export const installerTimerApi = createApi({
             transformResponse: (response: any) => response.data || response,
         }),
 
-        // Pause timer
-        pauseInstallerTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number; installer_id: number }>({
-            query: ({ job_id, installer_id }) => ({
+        // Pause timer (with optional sqft and note)
+        pauseInstallerTimer: builder.mutation<
+            SuccessResponse<JobTimerState>,
+            { 
+                job_id: number; 
+                installer_id: number; 
+                sqft_installed?: number; 
+                sqft_not_installed?: number; 
+                note?: string; 
+            }
+        >({
+            query: ({ job_id, installer_id, sqft_installed, sqft_not_installed, note }) => ({
                 url: `/api/v1/job-timers/installer/jobs/${job_id}/timer/pause`,
                 method: 'POST',
                 params: { installer_id },
-
+                data: {
+                    ...(sqft_installed !== undefined && { sqft_installed }),
+                    ...(sqft_not_installed !== undefined && { sqft_not_installed }),
+                    ...(note !== undefined && { note })
+                },
             }),
             invalidatesTags: (_result, _error, { job_id, installer_id }) => [
                 { type: 'InstallerTimer', id: `${job_id}_${installer_id}` }
@@ -90,12 +106,26 @@ export const installerTimerApi = createApi({
             transformResponse: (response: any) => response.data || response,
         }),
 
-        // Stop timer
-        stopInstallerTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number; installer_id: number }>({
-            query: ({ job_id, installer_id }) => ({
+        // Stop timer (with optional sqft and note)
+        stopInstallerTimer: builder.mutation<
+            SuccessResponse<JobTimerState>,
+            { 
+                job_id: number; 
+                installer_id: number; 
+                sqft_installed?: number; 
+                sqft_not_installed?: number; 
+                note?: string; 
+            }
+        >({
+            query: ({ job_id, installer_id, sqft_installed, sqft_not_installed, note }) => ({
                 url: `/api/v1/job-timers/installer/jobs/${job_id}/timer/stop`,
                 method: 'POST',
                 params: { installer_id },
+                data: {
+                    ...(sqft_installed !== undefined && { sqft_installed }),
+                    ...(sqft_not_installed !== undefined && { sqft_not_installed }),
+                    ...(note !== undefined && { note })
+                },
             }),
             invalidatesTags: (_result, _error, { job_id, installer_id }) => [
                 { type: 'InstallerTimer', id: `${job_id}_${installer_id}` }
@@ -108,7 +138,7 @@ export const installerTimerApi = createApi({
             query: ({ job_id, installer_id }) => ({
                 url: `/api/v1/job-timers/installer/jobs/${job_id}/timer`,
                 method: 'GET',
-                params: { installer_id }, // send as query param
+                params: { installer_id },
             }),
             providesTags: (_result, _error, { job_id, installer_id }) => [
                 { type: 'InstallerTimer', id: `${job_id}_${installer_id}` }
@@ -117,7 +147,7 @@ export const installerTimerApi = createApi({
         }),
 
         // Get timer history
-        getInstallerTimerHistory: builder.query<JobTimerHistory[], { job_id: number; installer_id: number }>({
+        getInstallerTimerHistory: builder.query<any, { job_id: number; installer_id: number }>({
             query: ({ job_id, installer_id }) => ({
                 url: `/api/v1/job-timers/installer/jobs/${job_id}/timer/history`,
                 method: 'GET',
@@ -151,18 +181,25 @@ export const templaterTimerApi = createApi({
         }),
 
         // Pause timer
-        pauseTemplaterTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number; templater_id: number, sqft_templated: number, sqft_not_templated: number, note?: string; }>({
+        pauseTemplaterTimer: builder.mutation<
+            SuccessResponse<JobTimerState>,
+            { 
+                job_id: number; 
+                templater_id: number; 
+                sqft_templated?: number; 
+                sqft_not_templated?: number; 
+                note?: string; 
+            }
+        >({
             query: ({ job_id, templater_id, sqft_templated, sqft_not_templated, note }) => ({
                 url: `/api/v1/job-timers/templater/jobs/${job_id}/timer/pause`,
                 method: 'POST',
                 params: { templater_id },
                 data: {
-
                     ...(sqft_templated !== undefined && { sqft_templated }),
                     ...(sqft_not_templated !== undefined && { sqft_not_templated }),
                     ...(note !== undefined && { note })
                 },
-
             }),
             invalidatesTags: (_result, _error, { job_id, templater_id }) => [
                 { type: 'TemplaterTimer', id: `${job_id}_${templater_id}` }
@@ -184,9 +221,16 @@ export const templaterTimerApi = createApi({
         }),
 
         // Stop timer
-        stopTemplaterTimer: builder.mutation<SuccessResponse<JobTimerState>, {
-            job_id: number; templater_id: number, sqft_templated?: number, sqft_not_templated?: number, note?: string;
-        }>({
+        stopTemplaterTimer: builder.mutation<
+            SuccessResponse<JobTimerState>,
+            { 
+                job_id: number; 
+                templater_id: number; 
+                sqft_templated?: number; 
+                sqft_not_templated?: number; 
+                note?: string; 
+            }
+        >({
             query: ({ job_id, templater_id, sqft_templated, sqft_not_templated, note }) => ({
                 url: `/api/v1/job-timers/templater/jobs/${job_id}/timer/stop`,
                 method: 'POST',
@@ -217,7 +261,7 @@ export const templaterTimerApi = createApi({
         }),
 
         // Get timer history
-        getTemplaterTimerHistory: builder.query<JobTimerHistory[], { job_id: number; templater_id: number }>({
+        getTemplaterTimerHistory: builder.query<any, { job_id: number; templater_id: number }>({
             query: ({ job_id, templater_id }) => ({
                 url: `/api/v1/job-timers/templater/jobs/${job_id}/timer/history`,
                 method: 'GET',
