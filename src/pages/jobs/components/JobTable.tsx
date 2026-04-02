@@ -1136,12 +1136,11 @@ export const JobTable = ({
                             {/* Schedule filter */}
                             {showScheduleFilter && (
                                 <Select value={scheduleFilter} onValueChange={setScheduleFilter}>
-                                    <SelectTrigger className="w-[150px] h-[34px]">
+                                    <SelectTrigger className="w-auto h-[34px]">
                                         <SelectValue placeholder="Schedule Status" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectLabel>Schedule Status</SelectLabel>
-                                        <SelectItem value="all">All</SelectItem>
+                                        <SelectItem value="all">All Schedule Status</SelectItem>
                                         <SelectItem value="scheduled">Scheduled</SelectItem>
                                         <SelectItem value="unscheduled">Unscheduled</SelectItem>
                                     </SelectContent>

@@ -47,53 +47,32 @@ const generateTimeSlots = (interval = 30): string[] => {
 
 // Enhanced Calendar with Year/Month Navigation
 interface EnhancedCalendarProps {
-  mode: "single"
-  selected?: Date
-  onSelect: (date: Date | undefined) => void
-  disabled?: (date: Date) => boolean
-  className?: string
+  mode: "single";
+  selected?: Date;
+  onSelect: (date: Date | undefined) => void;
+  disabled?: (date: Date) => boolean;
+  className?: string;
 }
 
 function EnhancedCalendar({ mode, selected, onSelect, disabled, className }: EnhancedCalendarProps) {
-  const [currentMonth, setCurrentMonth] = useState(selected || new Date())
-  const [showYearMonthPicker, setShowYearMonthPicker] = useState(false)
+  const [showYearMonthPicker, setShowYearMonthPicker] = useState(false);
+  const [month, setMonth] = useState<Date>(selected || new Date());
 
-  const currentYear = currentMonth.getFullYear()
-  const currentMonthIndex = currentMonth.getMonth()
+  const currentYear = month.getFullYear();
+  const currentMonthIndex = month.getMonth();
 
   const months = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ]
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December",
+  ];
 
-  // Generate year options (current year ± 50 years)
-  const yearOptions = Array.from({ length: 101 }, (_, i) => currentYear - 50 + i)
+  const yearOptions = Array.from({ length: 101 }, (_, i) => currentYear - 50 + i);
 
-  const handleMonthYearChange = (year: number, month: number) => {
-    const newDate = new Date(year, month, 1)
-    setCurrentMonth(newDate)
-    setShowYearMonthPicker(false)
-  }
-
-  const navigateMonth = (direction: "prev" | "next") => {
-    const newMonth = new Date(currentMonth)
-    if (direction === "prev") {
-      newMonth.setMonth(newMonth.getMonth() - 1)
-    } else {
-      newMonth.setMonth(newMonth.getMonth() + 1)
-    }
-    setCurrentMonth(newMonth)
-  }
+  const handleMonthYearChange = (year: number, monthIndex: number) => {
+    const newDate = new Date(year, monthIndex, 1);
+    setMonth(newDate);
+    setShowYearMonthPicker(false);
+  };
 
   if (showYearMonthPicker) {
     return (
@@ -104,13 +83,12 @@ function EnhancedCalendar({ mode, selected, onSelect, disabled, className }: Enh
             Back
           </Button>
         </div>
-
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label className="text-xs text-muted-foreground">Year</Label>
             <Select
               value={currentYear.toString()}
-              onValueChange={(value) => handleMonthYearChange(Number.parseInt(value), currentMonthIndex)}
+              onValueChange={(value) => handleMonthYearChange(parseInt(value), currentMonthIndex)}
             >
               <SelectTrigger>
                 <SelectValue />
@@ -124,20 +102,19 @@ function EnhancedCalendar({ mode, selected, onSelect, disabled, className }: Enh
               </SelectContent>
             </Select>
           </div>
-
           <div>
             <Label className="text-xs text-muted-foreground">Month</Label>
             <Select
               value={currentMonthIndex.toString()}
-              onValueChange={(value) => handleMonthYearChange(currentYear, Number.parseInt(value))}
+              onValueChange={(value) => handleMonthYearChange(currentYear, parseInt(value))}
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {months.map((month, index) => (
-                  <SelectItem key={month} value={index.toString()}>
-                    {month}
+                {months.map((monthName, index) => (
+                  <SelectItem key={monthName} value={index.toString()}>
+                    {monthName}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -145,46 +122,35 @@ function EnhancedCalendar({ mode, selected, onSelect, disabled, className }: Enh
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className={className}>
-      {/* Custom Header */}
-      <div className="flex items-center justify-between p-2 border-b">
-        <Button type="button" variant="ghost" size="sm" onClick={() => navigateMonth("prev")}>
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-
-        {/* Month/year display with subtle indicator for year/month selection */}
-        <div 
-          className="font-medium cursor-pointer hover:bg-accent rounded-md px-2 py-1 flex items-center"
-          onClick={() => setShowYearMonthPicker(true)}
-        >
-          {format(currentMonth, "MMMM yyyy")}
-          <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
-        </div>
-
-        <Button type="button" variant="ghost" size="sm" onClick={() => navigateMonth("next")}>
-          <ChevronRight className="h-4 w-4" />
-        </Button>
-      </div>
-
-      {/* Calendar Component - Hide default month caption */}
       <Calendar
         mode={mode}
         selected={selected}
         onSelect={onSelect}
-        month={currentMonth}
-        onMonthChange={setCurrentMonth}
+        month={month}
+        onMonthChange={setMonth}
         disabled={disabled}
         className="p-0"
-        classNames={{
-          month_caption: 'hidden', // Hide the default month caption
+        components={{
+          Caption: () => (
+            <div className="flex items-center justify-between p-2 border-b">
+              <div
+                className="font-medium cursor-pointer hover:bg-accent rounded-md px-2 py-1 flex items-center"
+                onClick={() => setShowYearMonthPicker(true)}
+              >
+                {format(month, "MMMM yyyy")}
+                <ChevronDown className="h-4 w-4 ml-1 opacity-50" />
+              </div>
+            </div>
+          ),
         }}
       />
     </div>
-  )
+  );
 }
 
 // Helper function to format date as YYYY-MM-DD in local timezone (not UTC)

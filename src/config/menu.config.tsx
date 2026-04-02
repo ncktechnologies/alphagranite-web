@@ -89,6 +89,7 @@ export const MENU_SIDEBAR: MenuConfig = [
           { title: 'Manage Jobs', path: '/create-jobs' },
           { title: 'View All Fabs', path: '/sales' },
           { title: 'Need to Invoice', path: '/need-to-invoice' },
+          // { title: 'Job Status', path: '/status-report' },
         ],
   },
   {

@@ -9,11 +9,14 @@ import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useBulkAssignDraftingMutation, useUpdateDraftingMutation, useGetDraftingByFabIdQuery } from '@/store/api/job';
 import { toast } from 'sonner';
 
+// Helper to get today's date in YYYY-MM-DD format
+const getTodayDate = () => new Date().toISOString().split('T')[0];
+
 interface AssignDrafterModalProps {
   open: boolean;
   onClose: () => void;
   selectedFabIds?: string[];
-  reassignFabId?: string | null; // for single reassign
+  reassignFabId?: string | null;
   initialSqftValues?: { [key: string]: string };
   initialStartDates?: { [key: string]: string };
   initialEndDates?: { [key: string]: string };
@@ -31,8 +34,8 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
   onAssignSuccess,
 }) => {
   const [drafterId, setDrafterId] = useState<string>('');
-  const [startDate, setStartDate] = useState<string>('');
-  const [endDate, setEndDate] = useState<string>('');
+  const [startDate, setStartDate] = useState<string>(getTodayDate());
+  const [endDate, setEndDate] = useState<string>(getTodayDate());
   const [sqftPerFab, setSqftPerFab] = useState<{ [key: string]: string }>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const initializedRef = useRef(false);
@@ -41,7 +44,6 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
   const [bulkAssignDrafting] = useBulkAssignDraftingMutation();
   const [updateDrafting] = useUpdateDraftingMutation();
 
-  // Fetch existing drafting data if reassigning
   const { data: draftingData, isFetching: draftingLoading } = useGetDraftingByFabIdQuery(
     reassignFabId ? parseInt(reassignFabId, 10) : 0,
     { skip: !reassignFabId || !open }
@@ -56,8 +58,8 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
     if (!open) {
       initializedRef.current = false;
       setDrafterId('');
-      setStartDate('');
-      setEndDate('');
+      setStartDate(getTodayDate());
+      setEndDate(getTodayDate());
       setSqftPerFab({});
     }
   }, [open]);
@@ -70,18 +72,23 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
     if (isReassign && draftingData) {
       const drafting = draftingData?.data || draftingData;
       setDrafterId(String(drafting.drafter_id || ''));
-      setStartDate(drafting.scheduled_start_date || '');
-      setEndDate(drafting.scheduled_end_date || '');
+      // Use existing dates if available, otherwise fallback to today
+      setStartDate(drafting.scheduled_start_date || getTodayDate());
+      setEndDate(drafting.scheduled_end_date || getTodayDate());
       setSqftPerFab({
         [reassignFabId]: String(drafting.total_sqft_required_to_draft || ''),
       });
       initializedRef.current = true;
     } else if (!isReassign && fabIds.length > 0) {
+      // Bulk assign: default dates are already today (state initialised)
+      // Pre-fill sqft per FAB
       const initialSqft: { [key: string]: string } = {};
       fabIds.forEach((id) => {
         initialSqft[id] = initialSqftValues[id] || '';
       });
       setSqftPerFab(initialSqft);
+      // Optionally pre-fill dates from first FAB's existing schedule? 
+      // Not needed – we use common dates from state.
       initializedRef.current = true;
     }
   }, [open, isReassign, draftingData, reassignFabId, fabIds, initialSqftValues]);
@@ -119,12 +126,13 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
         }).unwrap();
         toast.success(`Drafter reassigned for FAB ${reassignFabId}`);
       } else {
+        // Bulk assign – use the common startDate and endDate for all selected FABs
         const requestData = {
           drafter_id: parseInt(drafterId, 10),
           items: fabIds.map((fabId) => ({
             fab_id: parseInt(fabId, 10),
-            scheduled_start_date: initialStartDates[fabId] || '',
-            scheduled_end_date: initialEndDates[fabId] || '',
+            scheduled_start_date: startDate,
+            scheduled_end_date: endDate,
             total_sqft_required_to_draft: parseFloat(sqftPerFab[fabId] || '0'),
           })),
         };
@@ -150,6 +158,7 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Drafter selection */}
           <div>
             <Label>Select Drafter</Label>
             <Select value={drafterId} onValueChange={setDrafterId}>
@@ -167,20 +176,28 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
             </Select>
           </div>
 
-          {/* {isReassign && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Scheduled Start Date</Label>
-                <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-              </div>
-              <div>
-                <Label>Scheduled End Date</Label>
-                <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-              </div>
+          {/* Date inputs – always visible, defaulted to today or existing data */}
+          {/* <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label>Scheduled Start Date</Label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
             </div>
-          )}
+            <div>
+              <Label>Scheduled End Date</Label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+          </div> */}
 
-          <div>
+          {/* Square footage per FAB */}
+          {/* <div>
             <h3 className="font-semibold mb-3">{isReassign ? 'FAB Details' : `Selected FABs (${fabIds.length})`}</h3>
             <div className="border rounded-md max-h-60 overflow-y-auto">
               {fabIds.map((fabId) => (
@@ -196,6 +213,7 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
                       onChange={(e) => handleSqftChange(fabId, e.target.value)}
                       placeholder="Enter sq ft"
                       className="w-32"
+                      onWheel={(e) => e.currentTarget.blur()} // prevent accidental scroll changes
                     />
                   </div>
                 </div>
