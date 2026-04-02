@@ -2,7 +2,7 @@ name: Deploy Alphagranite Web Demo
 
 on:
   push:
-    branches: [ main ]
+    branches: [ dev ]
 
 jobs:
   deploy:
