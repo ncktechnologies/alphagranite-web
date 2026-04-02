@@ -30,17 +30,17 @@ export interface OperatorTask {
     status?: string;
     is_active?: boolean;
     scheduled_start_date: string;
-    actual_end_date: string
+    actual_end_date: string;
 }
 
 export interface TimerState {
     id?: number;
-    job_id: number;
+    fab_id: number;           // ← corrected: API uses fab_id
     operator_id: number;
     workstation_id?: number | null;
     session?: {
         id: number;
-        job_id: number;
+        fab_id: number;
         operator_id: number;
         workstation_id?: number | null;
         status: 'idle' | 'running' | 'paused' | 'stopped';
@@ -60,7 +60,7 @@ export interface TimerState {
 
 export interface TimerHistory {
     id: number;
-    job_id: number;
+    fab_id: number;           // ← corrected
     operator_id: number;
     action: 'start' | 'pause' | 'resume' | 'stop';
     timestamp: string;
@@ -126,7 +126,8 @@ export const operatorApi = createApi({
             providesTags: ['Task'],
             transformResponse: (response: any) => response.data || response,
         }),
-        getCurrentOperatorTasksById: builder.query<OperatorTask[], { id?: number, operator_id: number, workstation_id: number }>({
+
+        getCurrentOperatorTasksById: builder.query<OperatorTask[], { id?: number; operator_id: number; workstation_id: number }>({
             query: ({ id, operator_id, workstation_id }) => ({
                 url: `/api/v1/operators/${operator_id}/workstations/${workstation_id}/tasks/${id}`,
                 method: 'GET',
@@ -136,39 +137,48 @@ export const operatorApi = createApi({
             transformResponse: (response: any) => response.data || response,
         }),
 
+        // ─────────────────────────────────────────────────────────────────────
+        // TIMER — all use fab_id: POST/GET /api/v1/operators/me/jobs/{fab_id}/...
+        // ─────────────────────────────────────────────────────────────────────
+
         // Manage timer (start, pause, resume, stop)
-        manageTimer: builder.mutation<TimerState, { job_id: number; data: OperatorJobTimerActionRequest }>({
-            query: ({ job_id, data }) => ({
-                url: `/api/v1/operators/me/jobs/${job_id}/timer/action`,
+        // POST /api/v1/operators/me/jobs/{fab_id}/timer/action
+        manageTimer: builder.mutation<TimerState, { fab_id: number; data: OperatorJobTimerActionRequest }>({
+            query: ({ fab_id, data }) => ({
+                url: `/api/v1/operators/me/jobs/${fab_id}/timer/action`,
                 method: 'POST',
                 data
             }),
-            invalidatesTags: (_result, _error, { job_id }) => [
-                { type: 'Timer', id: job_id },
+            invalidatesTags: (_result, _error, { fab_id }) => [
+                { type: 'Timer', id: fab_id },
                 'Task'
             ],
             transformResponse: (response: any) => response.data || response,
         }),
 
         // Get timer state
-        getTimerState: builder.query<TimerState, { job_id: number }>({
-            query: ({ job_id }) => ({
-                url: `/api/v1/operators/me/jobs/${job_id}/timer`,
-                method: 'GET'
+        // GET /api/v1/operators/me/jobs/{fab_id}/timer
+        getTimerState: builder.query<TimerState, { fab_id: number; scheduled_start_date?: string }>({
+            query: ({ fab_id, scheduled_start_date }) => ({
+                url: `/api/v1/operators/me/jobs/${fab_id}/timer`,
+                method: 'GET',
+                params: scheduled_start_date ? { scheduled_start_date } : undefined,
             }),
-            providesTags: (_result, _error, { job_id }) => [{ type: 'Timer', id: job_id }],
+            providesTags: (_result, _error, { fab_id }) => [{ type: 'Timer', id: fab_id }],
             transformResponse: (response: any) => response.data || null,
         }),
 
         // Get timer history
-        getTimerHistory: builder.query<TimerHistory[], { job_id: number }>({
-            query: ({ job_id }) => ({
-                url: `/api/v1/operators/me/jobs/${job_id}/timer/history`,
+        // GET /api/v1/operators/me/jobs/{fab_id}/timer/history
+        getTimerHistory: builder.query<TimerHistory[], { fab_id: number }>({
+            query: ({ fab_id }) => ({
+                url: `/api/v1/operators/me/jobs/${fab_id}/timer/history`,
                 method: 'GET'
             }),
-            providesTags: (_result, _error, { job_id }) => [{ type: 'Timer', id: job_id }],
+            providesTags: (_result, _error, { fab_id }) => [{ type: 'Timer', id: fab_id }],
             transformResponse: (response: any) => response.data || response,
         }),
+
         updateOperatorTask: builder.mutation<ShopCutPlanSuccessResponse<OperatorTask>, { operator_id: number; workstation_id: number; task_id: number; data: OperatorTask }>({
             query: ({ operator_id, workstation_id, task_id, data }) => ({
                 url: `/api/v1/operators/${operator_id}/workstations/${workstation_id}/tasks/${task_id}`,
@@ -180,22 +190,24 @@ export const operatorApi = createApi({
                 "Task",
             ],
         }),
+
         // Upload QA files for operator task
+        // POST /api/v1/operators/{operator_id}/jobs/{fab_id}/upload
         uploadOperatorQa: builder.mutation<any, {
             operator_id: number;
-            job_id: number;
+            job_id: number;       // kept as job_id in the component interface for compatibility
             files: File[];
             stage_name: string;
             file_design: string;
         }>({
             query: ({ operator_id, job_id, files, stage_name, file_design }) => {
                 const formData = new FormData();
-                // API expects 'file' (singular) not 'files'
                 files.forEach(file => formData.append('file', file));
                 formData.append('stage_name', stage_name);
                 formData.append('file_design', file_design);
 
                 return {
+                    // job_id here is fab_id — the URL uses fab_id per API spec
                     url: `/api/v1/operators/${operator_id}/jobs/${job_id}/upload`,
                     method: 'POST',
                     data: formData,
@@ -206,12 +218,12 @@ export const operatorApi = createApi({
             transformResponse: (response: any) => response.data || response,
         }),
 
-        // Get QA files for operator task
+        // Get QA files for operator
         getOperatorQaFiles: builder.query<any[], {
             operator_id: number;
             job_id: number;
         }>({
-            query: ({ operator_id, job_id }) => ({
+            query: ({ operator_id }) => ({
                 url: `/api/v1/operators/${operator_id}/files`,
                 method: 'GET'
             }),

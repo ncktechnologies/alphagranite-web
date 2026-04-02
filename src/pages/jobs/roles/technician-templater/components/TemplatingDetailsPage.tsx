@@ -4,12 +4,13 @@ import { TemplatingActivityForm } from './templatingActivity';
 import GraySidebar from '@/pages/jobs/components/job-details.tsx/GraySidebar';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { useGetFabByIdQuery } from '@/store/api/job';
-import { useParams, Link } from 'react-router';
+import { useParams, Link, useNavigate } from 'react-router';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { formatDate } from '../TechnicianPage';
 import { BackButton } from '@/components/common/BackButton';
+import { Button } from '@/components/ui/button';
 
 // Helper function to get all fab notes (unfiltered)
 const getAllFabNotes = (fabNotes: any[]) => fabNotes || [];
@@ -24,7 +25,7 @@ const getFabStatusInfo = (statusId: number | undefined) => {
 export function TemplatingDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const { data: fab, isLoading, isError, error } = useGetFabByIdQuery(Number(id));
-
+  const navigate = useNavigate();
   // Prepare clickable links
   const jobNameLink = fab?.job_details?.id ? `/job/details/${fab.job_details.id}` : '#';
   const jobNumberLink = fab?.job_details?.job_number
@@ -42,7 +43,7 @@ export function TemplatingDetailsPage() {
           label: "Fab ID",
           value: (
             <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">
-              FAB-{fab.id}
+              {fab.id}
             </Link>
           ),
         },
@@ -235,13 +236,13 @@ export function TemplatingDetailsPage() {
               <p className="text-xs text-white ml-4 mt-1">
                 {fab?.templating_schedule_start_date
                   ? new Date(fab.templating_schedule_start_date).toLocaleDateString('en-US', {
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                      hour: 'numeric',
-                      minute: '2-digit',
-                      hour12: true
-                    })
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  })
                   : 'Not scheduled'}
               </p>
             </div>
@@ -252,9 +253,16 @@ export function TemplatingDetailsPage() {
         <main className="flex-1 min-w-0 p-3 sm:p-4 lg:p-5 space-y-4">
           <Card>
             <CardHeader className="py-3 px-4 sm:px-5">
-              <CardTitle className="text-sm sm:text-base">Template activity</CardTitle>
+              <CardTitle className="text-sm sm:text-base">Template activity
               <p className="text-xs text-gray-500 mt-0.5">Update your templating activity here</p>
+              </CardTitle>
+              <Button
+                onClick={() => navigate(`/jobs/${fab?.job_details?.id || ''}/templater/timer`)}
+              >
+                Go to Timer
+              </Button>
             </CardHeader>
+
           </Card>
 
           <Card>

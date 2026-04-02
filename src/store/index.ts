@@ -15,6 +15,8 @@ import { jobApi } from "./api/job";
 import { workstationApi } from "./api/workstation";
 import { shopCutPlanningApi } from "./api/shopCutPlanning";
 import { operatorApi } from "./api/operator";
+import { installerTimerApi, templaterTimerApi } from "./api/jobTimers";
+
 
 
 const persistConfig = {
@@ -36,6 +38,8 @@ const rootReducer = combineReducers({
     [workstationApi.reducerPath]: workstationApi.reducer,
     [shopCutPlanningApi.reducerPath]: shopCutPlanningApi.reducer,
     [operatorApi.reducerPath]: operatorApi.reducer,
+    [templaterTimerApi.reducerPath]: templaterTimerApi.reducer,
+    [installerTimerApi.reducerPath]: installerTimerApi.reducer,
 
 });
 
@@ -62,6 +66,8 @@ const store = configureStore({
                 workstationApi.middleware,
                 shopCutPlanningApi.middleware,
                 operatorApi.middleware,
+                templaterTimerApi.middleware,
+                installerTimerApi.middleware,
 
             ),
 

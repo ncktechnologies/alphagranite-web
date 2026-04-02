@@ -231,7 +231,7 @@ export function ReviewChecklistForm() {
                     open={openModal}
                     onClose={() => setOpenModal(false)}
                     fabData={{
-                        fabId: fab?.id ? `FAB-${fab.id}` : "FAB-ID",
+                        fabId: fab?.id ? `${fab.id}` : "FAB-ID",
                         jobName: fab?.fab_type || "Job Name",
                         revenue: fab?.revenue,
                         total_sqft: fab?.total_sqft

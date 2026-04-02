@@ -321,6 +321,7 @@ export function TemplatingPage() {
                         onAssignDrafterClick={() => { }} // Placeholder if needed, or update JobTable to separate onAssignTechnicianClick
                         // Since JobTable likely needs a specific onAssignClick for the templating page:
                         onAssignClick={handleAssignClick}
+                        pageRole="templater"
                     />
 
                     <AssignTechnicianModal

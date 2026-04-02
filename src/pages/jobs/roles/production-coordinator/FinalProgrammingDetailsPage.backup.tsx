@@ -288,7 +288,7 @@ export function FinalProgrammingDetailsPage() {
       title: 'Job Details',
       type: 'details',
       items: [
-        { label: 'FAB ID', value: fabData?.id ? `FAB-${fabData.id}` : 'N/A' },
+        { label: 'FAB ID', value: fabData?.id ? `${fabData.id}` : 'N/A' },
         { label: 'FAB Type', value: fabData?.fab_type || 'N/A' },
         { label: 'Job name', value: fabData?.job_details?.name || 'N/A' },
         { label: 'Job #', value: fabData?.job_details?.job_number || 'N/A' },
@@ -299,6 +299,17 @@ export function FinalProgrammingDetailsPage() {
         { label: 'Edge', value: fabData?.edge_name || 'N/A' },
         { label: 'Total square ft', value: fabData?.total_sqft || 'N/A' },
       ],
+    },
+    {
+      title: 'Notes',
+      type: 'notes',
+      notes: fabData?.notes?.map((note: string, index: number) => ({
+        id: index,
+        avatar: 'N',
+        content: note,
+        author: '',
+        timestamp: '',
+      })) || [],
     },
     {
       title: 'FAB Notes',
@@ -379,18 +390,17 @@ export function FinalProgrammingDetailsPage() {
               <div className="flex justify-between items-start">
                 <div className="text-black">
                   <div className="flex items-center gap-3">
-                    <p className="font-bold text-base">FAB-{fabData?.id || 'N/A'}</p>
+                    <p className="font-bold text-base">{fabData?.id || 'N/A'}</p>
                     <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                       FINAL PROGRAMMING
                     </span>
                     <span
-                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        fabData?.status_id === 0
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${fabData?.status_id === 0
                           ? 'bg-red-100 text-red-800'
                           : fabData?.status_id === 1
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
                     >
                       {fabData?.status_id === 0 ? 'ON HOLD' : fabData?.status_id === 1 ? 'ACTIVE' : 'LOADING'}
                     </span>
@@ -456,7 +466,7 @@ export function FinalProgrammingDetailsPage() {
                             (stageKey && stageKey.toLowerCase().includes('cut_list'))
                           );
                         }),
-                      file_ids:""
+                        file_ids: ""
 
                       }}
                       onFileClick={handleFileClick}

@@ -136,7 +136,7 @@ export function SubmitWorkModal({
                             Complete
                             {fabId && (
                                 <span className="ml-3 text-sm font-normal text-gray-500">
-                                    FAB-{fabId}
+                                    {fabId}
                                 </span>
                             )}
                         </DialogTitle>

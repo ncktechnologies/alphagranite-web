@@ -258,6 +258,7 @@ export function InstallSchedulingPage() {
                     'shop_status',
                     'on_hold',
                 ]}
+                pageRole="installer"
             />
         </Container>
     );

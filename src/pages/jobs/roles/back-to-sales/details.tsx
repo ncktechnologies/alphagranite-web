@@ -172,7 +172,7 @@ export const DraftReviewDetailsPage = () => {
                     label: "Fab ID",
                     value: (
                         <Link to={`/sales/${fabData.id}`} className="text-primary hover:underline">
-                            FAB-{fabData.id}
+                            {fabData.id}
                         </Link>
                     ),
                 },
@@ -431,7 +431,7 @@ export const DraftReviewDetailsPage = () => {
                     open={showSubmissionModal}
                     onClose={() => setShowSubmissionModal(false)}
                     onSubmit={handleSubmitDraft}
-                    fabId={`FAB-${fabData.id}`}
+                    fabId={fabData.id}
                     fabType={fabData.fab_type}
                     jobNumber={fabData.job_details?.job_number || ''}
                     totalSqFt={fabData.total_sqft}

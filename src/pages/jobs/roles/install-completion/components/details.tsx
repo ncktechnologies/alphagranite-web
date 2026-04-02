@@ -64,7 +64,7 @@ export function InstallSchedulingDetailsPage() {
                     label: "Fab ID",
                     value: (
                         <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">
-                            FAB-{fab.id}
+                            {fab.id}
                         </Link>
                     ),
                 },

@@ -443,7 +443,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
               {isSearchLocked ? (
                 <div className="flex items-center gap-2 h-[36px] bg-[#f0f4e8] border border-[#9cc15e] rounded-[6px] px-3">
                   <Lock className="size-3.5 text-[#7a9705]" />
-                  <span className="font-semibold text-[13px] text-[#4b545d]">FAB-{lockedFabId}</span>
+                  <span className="font-semibold text-[13px] text-[#4b545d]">{lockedFabId}</span>
                 </div>
               ) : (
                 <div className="relative w-[194px]">
@@ -551,7 +551,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
               <div className="flex flex-col items-end gap-1">
                 <p className="font-semibold text-[16px] leading-[24px] text-[#7c8689] whitespace-nowrap">
                   Total Scheduled Plans
-                  {isSearchLocked && <span className="ml-2 text-[#7a9705]">· FAB-{lockedFabId}</span>}
+                  {isSearchLocked && <span className="ml-2 text-[#7a9705]">. {lockedFabId}</span>}
                 </p>
                 <p className="font-semibold text-[20px] leading-[24px] text-black">
                   {isLoading ? '–' : totalPlans}

@@ -70,7 +70,7 @@ export function CutListDetailsPage() {
             label: 'Fab ID',
             value: (
               <Link to={`/sales/${fabData.id}`} className="text-primary hover:underline">
-                FAB-{fabData.id}
+                {fabData.id}
               </Link>
             ),
           },
@@ -115,6 +115,17 @@ export function CutListDetailsPage() {
             ]
           : [],
       },
+      {
+      title: 'Notes',
+      type: 'notes',
+      notes: fabData?.notes?.map((note: string, index: number) => ({
+        id: index,
+        avatar: 'N',
+        content: note,
+        author: '',
+        timestamp: '',
+      })) || [],
+    },
       {
         title: 'FAB Notes',
         type: 'notes',

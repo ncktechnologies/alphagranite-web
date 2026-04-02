@@ -520,7 +520,7 @@ export function RevisionDetailsPage() {
           label: "Fab ID",
           value: (
             <Link to={`/sales/${fabData?.id}`} className="text-primary hover:underline">
-              FAB-{fabData?.id}
+              {fabData?.id}
             </Link>
           ),
         },

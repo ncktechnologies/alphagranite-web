@@ -229,7 +229,7 @@ export function UpdateFabIdModal({
         {/* FAB identifier */}
         <div className="space-y-1 mb-4">
           <p className="font-bold text-lg">
-            {fabData?.fabId || `FAB-${fabData?.id || "2024-001"}`}
+            {fabData?.fabId ||  ""}
           </p>
           <p className="text-sm">
             {fabData?.jobName || fabData?.job_details?.name || "Conference Table - Quartz"}

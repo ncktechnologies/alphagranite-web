@@ -1430,7 +1430,7 @@ export const jobApi = createApi({
                     method: "put",
                     data
                 }),
-                invalidatesTags: (_result, _error, { id }) => [{ type: "Drafting", id }, "Drafting"],
+                invalidatesTags: (_result, _error, { id }) => [{ type: "Drafting", id }, "Drafting", "Fab" ],
             }),
 
             // Submit drafting for review

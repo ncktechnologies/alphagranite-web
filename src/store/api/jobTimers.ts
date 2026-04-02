@@ -44,164 +44,187 @@ export interface SuccessResponse<T = any> {
     message?: string;
 }
 
-// Installer Timer API
+// ======================= INSTALLER TIMER API =======================
 export const installerTimerApi = createApi({
     reducerPath: 'installerTimerApi',
-    baseQuery: axiosBaseQuery({
-        baseUrl: baseUrl
-    }),
+    baseQuery: axiosBaseQuery({ baseUrl }),
     tagTypes: ['InstallerTimer'],
     endpoints: (builder) => ({
         // Start timer
-        startInstallerTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number }>({
-            query: ({ job_id }) => ({
+        startInstallerTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number; installer_id: number }>({
+            query: ({ job_id, installer_id }) => ({
                 url: `/api/v1/job-timers/installer/jobs/${job_id}/timer/start`,
                 method: 'POST',
+                params: { installer_id }, // send in body
             }),
-            invalidatesTags: (_result, _error, { job_id }) => [
-                { type: 'InstallerTimer', id: job_id }
+            invalidatesTags: (_result, _error, { job_id, installer_id }) => [
+                { type: 'InstallerTimer', id: `${job_id}_${installer_id}` }
             ],
             transformResponse: (response: any) => response.data || response,
         }),
 
         // Pause timer
-        pauseInstallerTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number }>({
-            query: ({ job_id }) => ({
+        pauseInstallerTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number; installer_id: number }>({
+            query: ({ job_id, installer_id }) => ({
                 url: `/api/v1/job-timers/installer/jobs/${job_id}/timer/pause`,
                 method: 'POST',
+                params: { installer_id },
+
             }),
-            invalidatesTags: (_result, _error, { job_id }) => [
-                { type: 'InstallerTimer', id: job_id }
+            invalidatesTags: (_result, _error, { job_id, installer_id }) => [
+                { type: 'InstallerTimer', id: `${job_id}_${installer_id}` }
             ],
             transformResponse: (response: any) => response.data || response,
         }),
 
         // Resume timer
-        resumeInstallerTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number }>({
-            query: ({ job_id }) => ({
+        resumeInstallerTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number; installer_id: number }>({
+            query: ({ job_id, installer_id }) => ({
                 url: `/api/v1/job-timers/installer/jobs/${job_id}/timer/resume`,
                 method: 'POST',
+                params: { installer_id },
             }),
-            invalidatesTags: (_result, _error, { job_id }) => [
-                { type: 'InstallerTimer', id: job_id }
+            invalidatesTags: (_result, _error, { job_id, installer_id }) => [
+                { type: 'InstallerTimer', id: `${job_id}_${installer_id}` }
             ],
             transformResponse: (response: any) => response.data || response,
         }),
 
         // Stop timer
-        stopInstallerTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number }>({
-            query: ({ job_id }) => ({
+        stopInstallerTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number; installer_id: number }>({
+            query: ({ job_id, installer_id }) => ({
                 url: `/api/v1/job-timers/installer/jobs/${job_id}/timer/stop`,
                 method: 'POST',
+                params: { installer_id },
             }),
-            invalidatesTags: (_result, _error, { job_id }) => [
-                { type: 'InstallerTimer', id: job_id }
+            invalidatesTags: (_result, _error, { job_id, installer_id }) => [
+                { type: 'InstallerTimer', id: `${job_id}_${installer_id}` }
             ],
             transformResponse: (response: any) => response.data || response,
         }),
 
         // Get timer state
-        getInstallerTimerState: builder.query<JobTimerState, { job_id: number }>({
-            query: ({ job_id }) => ({
+        getInstallerTimerState: builder.query<JobTimerState, { job_id: number; installer_id: number }>({
+            query: ({ job_id, installer_id }) => ({
                 url: `/api/v1/job-timers/installer/jobs/${job_id}/timer`,
                 method: 'GET',
+                params: { installer_id }, // send as query param
             }),
-            providesTags: (_result, _error, { job_id }) => [
-                { type: 'InstallerTimer', id: job_id }
+            providesTags: (_result, _error, { job_id, installer_id }) => [
+                { type: 'InstallerTimer', id: `${job_id}_${installer_id}` }
             ],
             transformResponse: (response: any) => response.data || response,
         }),
 
         // Get timer history
-        getInstallerTimerHistory: builder.query<JobTimerHistory[], { job_id: number }>({
-            query: ({ job_id }) => ({
+        getInstallerTimerHistory: builder.query<JobTimerHistory[], { job_id: number; installer_id: number }>({
+            query: ({ job_id, installer_id }) => ({
                 url: `/api/v1/job-timers/installer/jobs/${job_id}/timer/history`,
                 method: 'GET',
+                params: { installer_id },
             }),
-            providesTags: (_result, _error, { job_id }) => [
-                { type: 'InstallerTimer', id: job_id }
+            providesTags: (_result, _error, { job_id, installer_id }) => [
+                { type: 'InstallerTimer', id: `${job_id}_${installer_id}` }
             ],
             transformResponse: (response: any) => response.data || response,
         }),
     }),
 });
 
-// Templater Timer API
+// ======================= TEMPLATER TIMER API =======================
 export const templaterTimerApi = createApi({
     reducerPath: 'templaterTimerApi',
-    baseQuery: axiosBaseQuery({
-        baseUrl: baseUrl
-    }),
+    baseQuery: axiosBaseQuery({ baseUrl }),
     tagTypes: ['TemplaterTimer'],
     endpoints: (builder) => ({
         // Start timer
-        startTemplaterTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number }>({
-            query: ({ job_id }) => ({
+        startTemplaterTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number; templater_id: number }>({
+            query: ({ job_id, templater_id }) => ({
                 url: `/api/v1/job-timers/templater/jobs/${job_id}/timer/start`,
                 method: 'POST',
+                params: { templater_id },
             }),
-            invalidatesTags: (_result, _error, { job_id }) => [
-                { type: 'TemplaterTimer', id: job_id }
+            invalidatesTags: (_result, _error, { job_id, templater_id }) => [
+                { type: 'TemplaterTimer', id: `${job_id}_${templater_id}` }
             ],
             transformResponse: (response: any) => response.data || response,
         }),
 
         // Pause timer
-        pauseTemplaterTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number }>({
-            query: ({ job_id }) => ({
+        pauseTemplaterTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number; templater_id: number, sqft_templated: number, sqft_not_templated: number, note?: string; }>({
+            query: ({ job_id, templater_id, sqft_templated, sqft_not_templated, note }) => ({
                 url: `/api/v1/job-timers/templater/jobs/${job_id}/timer/pause`,
                 method: 'POST',
+                params: { templater_id },
+                data: {
+
+                    ...(sqft_templated !== undefined && { sqft_templated }),
+                    ...(sqft_not_templated !== undefined && { sqft_not_templated }),
+                    ...(note !== undefined && { note })
+                },
+
             }),
-            invalidatesTags: (_result, _error, { job_id }) => [
-                { type: 'TemplaterTimer', id: job_id }
+            invalidatesTags: (_result, _error, { job_id, templater_id }) => [
+                { type: 'TemplaterTimer', id: `${job_id}_${templater_id}` }
             ],
             transformResponse: (response: any) => response.data || response,
         }),
 
         // Resume timer
-        resumeTemplaterTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number }>({
-            query: ({ job_id }) => ({
+        resumeTemplaterTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number; templater_id: number }>({
+            query: ({ job_id, templater_id }) => ({
                 url: `/api/v1/job-timers/templater/jobs/${job_id}/timer/resume`,
                 method: 'POST',
+                params: { templater_id },
             }),
-            invalidatesTags: (_result, _error, { job_id }) => [
-                { type: 'TemplaterTimer', id: job_id }
+            invalidatesTags: (_result, _error, { job_id, templater_id }) => [
+                { type: 'TemplaterTimer', id: `${job_id}_${templater_id}` }
             ],
             transformResponse: (response: any) => response.data || response,
         }),
 
         // Stop timer
-        stopTemplaterTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number }>({
-            query: ({ job_id }) => ({
+        stopTemplaterTimer: builder.mutation<SuccessResponse<JobTimerState>, {
+            job_id: number; templater_id: number, sqft_templated?: number, sqft_not_templated?: number, note?: string;
+        }>({
+            query: ({ job_id, templater_id, sqft_templated, sqft_not_templated, note }) => ({
                 url: `/api/v1/job-timers/templater/jobs/${job_id}/timer/stop`,
                 method: 'POST',
+                params: { templater_id },
+                data: {
+                    ...(sqft_templated !== undefined && { sqft_templated }),
+                    ...(sqft_not_templated !== undefined && { sqft_not_templated }),
+                    ...(note !== undefined && { note })
+                },
             }),
-            invalidatesTags: (_result, _error, { job_id }) => [
-                { type: 'TemplaterTimer', id: job_id }
+            invalidatesTags: (_result, _error, { job_id, templater_id }) => [
+                { type: 'TemplaterTimer', id: `${job_id}_${templater_id}` }
             ],
             transformResponse: (response: any) => response.data || response,
         }),
 
         // Get timer state
-        getTemplaterTimerState: builder.query<JobTimerState, { job_id: number }>({
-            query: ({ job_id }) => ({
+        getTemplaterTimerState: builder.query<JobTimerState, { job_id: number; templater_id: number }>({
+            query: ({ job_id, templater_id }) => ({
                 url: `/api/v1/job-timers/templater/jobs/${job_id}/timer`,
                 method: 'GET',
+                params: { templater_id },
             }),
-            providesTags: (_result, _error, { job_id }) => [
-                { type: 'TemplaterTimer', id: job_id }
+            providesTags: (_result, _error, { job_id, templater_id }) => [
+                { type: 'TemplaterTimer', id: `${job_id}_${templater_id}` }
             ],
             transformResponse: (response: any) => response.data || response,
         }),
 
         // Get timer history
-        getTemplaterTimerHistory: builder.query<JobTimerHistory[], { job_id: number }>({
-            query: ({ job_id }) => ({
+        getTemplaterTimerHistory: builder.query<JobTimerHistory[], { job_id: number; templater_id: number }>({
+            query: ({ job_id, templater_id }) => ({
                 url: `/api/v1/job-timers/templater/jobs/${job_id}/timer/history`,
                 method: 'GET',
+                params: { templater_id },
             }),
-            providesTags: (_result, _error, { job_id }) => [
-                { type: 'TemplaterTimer', id: job_id }
+            providesTags: (_result, _error, { job_id, templater_id }) => [
+                { type: 'TemplaterTimer', id: `${job_id}_${templater_id}` }
             ],
             transformResponse: (response: any) => response.data || response,
         }),

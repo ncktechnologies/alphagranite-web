@@ -44,7 +44,7 @@ export function ResurfacingDetailsPage() {
           label: 'Fab ID',
           value: (
             <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">
-              FAB-{fab.id}
+              {fab.id}
             </Link>
           ),
         },
@@ -72,6 +72,17 @@ export function ResurfacingDetailsPage() {
 
   // Sidebar sections (only FAB Notes)
   const sidebarSections = [
+    {
+      title: 'Notes',
+      type: 'notes',
+      notes: fab?.notes?.map((note: string, index: number) => ({
+        id: index,
+        avatar: 'N',
+        content: note,
+        author: '',
+        timestamp: '',
+      })) || [],
+    },
     {
       title: 'FAB Notes',
       type: 'notes',

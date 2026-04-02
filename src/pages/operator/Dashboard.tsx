@@ -208,7 +208,7 @@ export function OperatorDashboard() {
                 <div className="px-2 py-1 h-full flex flex-col justify-start overflow-hidden gap-0.5">
                     <div className="flex items-center gap-1">
                         <p className="text-[12px] font-bold truncate leading-tight shrink-0" style={{ color: text }}>
-                            FAB-{event.fab_id}
+                            {event.fab_id}
                         </p>
                         {event.job_name && (
                             <p className="text-[11px] font-medium truncate leading-tight" style={{ color: text, opacity: 0.85 }}>
@@ -468,7 +468,7 @@ export function OperatorDashboard() {
                                                                 onClick={() => handleEventClick(event)}
                                                             >
                                                                 <div className="font-medium truncate">
-                                                                    FAB-{event.fab_number || event.fab_id}
+                                                                    {event.fab_number || event.fab_id}
                                                                 </div>
                                                                 {event.plan_name && (
                                                                     <div className="text-[9px] opacity-70 truncate">{event.plan_name}</div>
