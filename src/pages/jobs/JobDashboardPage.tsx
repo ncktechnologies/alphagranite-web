@@ -48,6 +48,7 @@ export function JobDashboardPage() {
       'Revisions': '/job/revision',
       'Install Scheduling': '/job/install-scheduling',
       'Install Completion': '/job/install-completion',
+      'CNC': '/job/cnc',
     };
     return routeMap[widgetId] || '/job';
   };
@@ -71,7 +72,8 @@ export function JobDashboardPage() {
       'Revisions': 'revision',
       'Install Scheduling': 'install_scheduling',
       'Install Completion': 'install_completion',
-      'FAB IDs': 'fab_created'
+      'FAB IDs': 'fab_created',
+      'CNC': 'cnc'
     };
 
     const stageName = stageNameMap[widgetId] || widgetId.toLowerCase().replace(/ /g, '_');

@@ -98,24 +98,24 @@ export function Documents({
         }
       }
       // Fallback to file_ids string
-      else if (draftingData.file_ids) {
-        try {
-          const fileIdsArray = draftingData.file_ids.split(',').filter(id => id.trim() !== '');
-          const mockFiles = fileIdsArray.map((id, index) => ({
-            id: id.trim(),
-            name: `${index + 1}.pdf`,
-            size: 1024000 + index * 512000,
-            type: 'application/pdf',
-            url: '/images/app/upload-file.svg',
-            stage: currentStage ? WORKFLOW_STAGES[currentStage] : WORKFLOW_STAGES.drafting,
-            stage_name: currentStage ?? WORKFLOW_STAGES.drafting.stage,
-            uploadedAt: new Date()
-          }));
-          allFiles.push(...mockFiles);
-        } catch (error) {
-          console.error('Error parsing file_ids:', error);
-        }
-      }
+      // else if (draftingData.file_ids) {
+      //   try {
+      //     const fileIdsArray = draftingData.file_ids.split(',').filter(id => id.trim() !== '');
+      //     const mockFiles = fileIdsArray.map((id, index) => ({
+      //       id: id.trim(),
+      //       name: `${index + 1}.pdf`,
+      //       size: 1024000 + index * 512000,
+      //       type: 'application/pdf',
+      //       url: '/images/app/upload-file.svg',
+      //       stage: currentStage ? WORKFLOW_STAGES[currentStage] : WORKFLOW_STAGES.drafting,
+      //       stage_name: currentStage ?? WORKFLOW_STAGES.drafting.stage,
+      //       uploadedAt: new Date()
+      //     }));
+      //     allFiles.push(...mockFiles);
+      //   } catch (error) {
+      //     console.error('Error parsing file_ids:', error);
+      //   }
+      // }
     }
     
     // Add newly uploaded files

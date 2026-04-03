@@ -387,9 +387,8 @@ export const DraftReviewDetailsPage = () => {
                                             onFileClick={handleFileClick}
                                             draftingData={draftData}
                                             slabsmithData={(fabData as any)?.slabsmith_data}
-                                            onDeleteFile={handleDeleteFile}
                                             draftingId={draftData?.id}
-                                            showDeleteButton={!isUploadDisabled}
+                                            showDeleteButton={true}
                                         />
                                     </div>
                                 </CardContent>

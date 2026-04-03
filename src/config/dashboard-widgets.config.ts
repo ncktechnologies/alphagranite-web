@@ -133,7 +133,19 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     order: 9,
     data: { icon: 'settings.svg', bgColor: 'bg-[#573DEA]' }
   },
-  // Install to schedule (10)
+  // CNC (10)
+  {
+    id: 'CNC',
+    title: 'CNC',
+    requiredPermission: 'CNC',
+    requiredAction: 'read',
+    component: 'StatWidget',
+    category: 'stats',
+    domain: 'job',
+    order: 12,
+    data: { icon: 'icon-6.svg', bgColor: 'bg-[#0BC3BD]' }
+  },
+  // Install to schedule (11)
   {
     id: 'Install Scheduling',
     title: 'INSTALL TO SCHEDULE',
@@ -145,7 +157,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     order: 10,
     data: { icon: 'calendar-pin.svg', bgColor: 'bg-[#CF2675]' }
   },
-  // Install Scheduled (11)
+  // Install Scheduled (12)
   {
     id: 'Install Completion',
     title: ' INSTALL SCHEDULED',
@@ -282,6 +294,7 @@ export const stageNameMap: Record<string, string> = {
   'slab_smith_request': 'SlabSmith Request',
   'final_programming': 'Final Programming',
   'cut_list': 'Cut List',
+  'cnc': 'CNC Manufacturing',
   'resurface_scheduling': 'Resurface Scheduling',
   'revision': 'Revisions',
   'install_scheduling': 'Install Scheduling',

@@ -1,4 +1,4 @@
-// DrafterDetailsPageRefactor.tsx - FIXED DOUBLE SUBMIT VERSION
+// CNCDetailsPage.tsx - Following exact DrafterDetailsPage pattern
 import { useCallback, useState, useEffect, useRef, useMemo } from 'react';
 import { Container } from '@/components/common/container';
 import GraySidebar from '../../components/job-details.tsx/GraySidebar';
@@ -10,12 +10,12 @@ import { toast } from 'sonner';
 import {
   useGetFabByIdQuery,
   useGetDraftingByFabIdQuery,
-  useManageDraftingSessionMutation,
-  useGetCurrentDraftingSessionQuery,
+  useManageCNCSessionMutation,
+  useGetCurrentCNCSessionQuery,
   useToggleFabOnHoldMutation,
   useCreateFabNoteMutation,
-  useDeleteFileFromDraftingMutation,
-  useAddFilesToDraftingMutation
+  useDeleteFileFromCNCDraftingMutation,
+  useAddFilesToCNCDraftingMutation
 } from '@/store/api/job';
 import { TimeTrackingComponent } from './components/TimeTrackingComponent';
 import { Documents } from '@/pages/shop/components/files';
@@ -62,7 +62,7 @@ const getFabStatusInfo = (statusId: number | undefined) => {
   }
 };
 
-export function DrafterDetailsPage() {
+export function CNCDetailsPage() {
   const { id } = useParams<{ id: string }>();
   const fabId = id ? Number(id) : 0;
   const navigate = useNavigate();
@@ -70,27 +70,27 @@ export function DrafterDetailsPage() {
   const currentUser = useSelector((s: any) => s.user.user);
   const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
 
-  // Load fab & drafting data
+  // Load fab & CNC data
   const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, {
     skip: !fabId,
     refetchOnMountOrArgChange: true,
   });
-  const { data: draftingData, isLoading: isDraftingLoading, refetch: refetchDrafting } = useGetDraftingByFabIdQuery(fabId, {
+  const { data: cncData, isLoading: isCNCLoading, refetch: refetchCNC } = useGetDraftingByFabIdQuery(fabId, {
     skip: !fabId,
     refetchOnMountOrArgChange: true,
   });
 
   // Get current session state
-  const { data: sessionData, isLoading: isSessionLoading, refetch: refetchSession } = useGetCurrentDraftingSessionQuery(fabId, {
+  const { data: sessionData, isLoading: isSessionLoading, refetch: refetchSession } = useGetCurrentCNCSessionQuery(fabId, {
     skip: !fabId,
     refetchOnMountOrArgChange: true,
   });
 
-  const [manageDraftingSession] = useManageDraftingSessionMutation();
+  const [manageCNCSession] = useManageCNCSessionMutation();
   const [toggleFabOnHold] = useToggleFabOnHoldMutation();
   const [createFabNote] = useCreateFabNoteMutation();
-  const [deleteDraftingFile] = useDeleteFileFromDraftingMutation();
-  const [addFilesToDrafting] = useAddFilesToDraftingMutation();
+  const [deleteCNCFile] = useDeleteFileFromCNCDraftingMutation();
+  const [addFilesToCNC] = useAddFilesToCNCDraftingMutation();
 
   // Use draft_data from FAB response for displaying existing files
   const draftData = fabData?.draft_data;
@@ -146,24 +146,23 @@ export function DrafterDetailsPage() {
 
   useTabClosingWarning({
     isActive: isDrafting && !isPaused,
-    warningMessage: '⚠️ ACTIVE DRAFTING SESSION ⚠️\n\nYou have an active drafting session in progress. Closing this tab will pause your session and may result in lost work.\n\nPlease pause your session properly before leaving.',
+    warningMessage: '⚠️ ACTIVE CNC SESSION ⚠️\n\nYou have an active CNC session in progress. Closing this tab will pause your session and may result in lost work.\n\nPlease pause your session properly before leaving.',
     onBeforeUnload: async () => {
-      if (isDrafting && fabId && currentEmployeeId) {
-        try {
-          await manageDraftingSession({
-            fab_id: fabId,
-            data: {
-              action: 'pause',
-              drafter_id: currentEmployeeId,
-              timestamp: formatTimestamp(new Date()),
-              note: 'Auto-paused due to tab closing'
-            }
-          }).unwrap();
-        } catch (error) {
-          console.error('Failed to auto-pause session:', error);
-        }
+      // Auto-pause when user tries to close tab
+      try {
+        await manageCNCSession({
+          fab_id: fabId,
+          data: {
+            drafter_id: currentEmployeeId,
+            action: 'pause',
+            timestamp: formatTimestamp(new Date()),
+          },
+        }).unwrap();
+        setSessionStatus('paused');
+      } catch (error) {
+        console.error('Failed to auto-pause:', error);
       }
-    }
+    },
   });
 
   const existingFilesFromServer = draftData?.files || [];
@@ -192,36 +191,24 @@ export function DrafterDetailsPage() {
     }));
   }, [existingFilesFromServer, currentUser]);
 
-  const createOrStartSession = async (
-    action: 'start' | 'resume',
-    startDate: Date,
-    note?: string,
-    sqftDrafted?: string,
-    workPercentage?: string
-  ) => {
+  const handleStart = async (startDate: Date) => {
     try {
-      await manageDraftingSession({
+      await manageCNCSession({
         fab_id: fabId,
         data: {
-          action,
           drafter_id: currentEmployeeId,
-          timestamp: formatTimestamp(startDate),
-          note,
-          sqft_drafted: sqftDrafted,
-          work_percentage_done: workPercentage
-        }
+          action: 'start',
+          session_start_time: formatTimestamp(startDate),
+        },
       }).unwrap();
-
+      
       setSessionStatus('drafting');
-      setDraftStart(startDate);
-      setDraftEnd(null);
-
-      await refetchSession();
-      toast.success(`Session ${action === 'start' ? 'started' : 'resumed'} successfully`);
+      setCNCStart(startDate);
+      toast.success('CNC session started successfully');
+      refetchSession();
     } catch (error) {
-      console.error(`Failed to ${action} session:`, error);
-      toast.error(`Failed to ${action} session`);
-      throw error;
+      console.error('Failed to start session:', error);
+      toast.error('Failed to start CNC session');
     }
   };
 
@@ -265,17 +252,7 @@ export function DrafterDetailsPage() {
     }
   };
 
-  const handleStart = async (startDate: Date, data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
-    const hasDraftingAssignment = draftingData?.id || fabData?.draft_data?.id;
-    if (!hasDraftingAssignment) {
-      toast.error('Cannot start drafting session - no drafting assignment found');
-      return;
-    }
-    try {
-      await createOrStartSession('start', startDate, data?.note, data?.sqft_drafted, data?.work_percentage_done);
-    } catch (error) { }
-  };
-
+  
   const handlePause = async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     try {
       await updateSession('pause', new Date(), data?.note, data?.sqft_drafted, data?.work_percentage_done);
@@ -338,7 +315,7 @@ export function DrafterDetailsPage() {
     try {
       await deleteDraftingFile({ drafting_id: draftingId, file_id: fileId }).unwrap();
       await refetchFab();
-      await refetchDrafting();
+    //   await refetchDrafting();
       toast.success('File deleted successfully');
     } catch (error) {
       console.error('Failed to delete file:', error);
@@ -348,11 +325,11 @@ export function DrafterDetailsPage() {
 
   const refetchAllFiles = useCallback(async () => {
     try {
-      await Promise.all([refetchFab(), refetchDrafting(), refetchSession()]);
+      await Promise.all([refetchFab(), refetchSession()]);
     } catch (error) {
       console.error('Failed to refetch files:', error);
     }
-  }, [refetchFab, refetchDrafting, refetchSession]);
+  }, [refetchFab, refetchSession]);
 
   const shouldShowUploadSection = (isDrafting || isPaused) || allFilesForDisplay.length > 0;
   const canOpenSubmit = isDrafting && totalTime > 0 && allFilesForDisplay.length > 0;
@@ -380,6 +357,9 @@ export function DrafterDetailsPage() {
   const jobNumberLink = fabData?.job_details?.job_number
     ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fabData.job_details.job_number}`
     : '#';
+
+  // CNC-specific: use cncData instead of draftingData
+  const cncId = cncData?.id || fabData?.draft_data?.id;
 
   const sidebarSections = fabData ? [
     {
@@ -469,7 +449,7 @@ export function DrafterDetailsPage() {
   }));
 
   // ── Loading skeleton ──────────────────────────────────────────────────────
-  if (isFabLoading || isDraftingLoading || isSessionLoading) {
+  if (isFabLoading || isCNCLoading || isSessionLoading) {
     return (
       <div className="flex flex-col min-h-screen">
         {/* sticky toolbar skeleton */}
@@ -590,8 +570,8 @@ export function DrafterDetailsPage() {
                 <CardHeader className="py-3 px-4 sm:px-5">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div>
-                      <CardTitle className="text-sm sm:text-base">Drafting activity</CardTitle>
-                      <p className="text-xs text-gray-500 mt-0.5">Update your drafting activity here</p>
+                      <CardTitle className="text-sm sm:text-base">CNC activity</CardTitle>
+                      <p className="text-xs text-gray-500 mt-0.5">Update your CNC activity here</p>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{
@@ -604,7 +584,7 @@ export function DrafterDetailsPage() {
                         }`}>
                         {{
                           idle: 'Ready to Start',
-                          drafting: 'Drafting Active',
+                          drafting: 'CNC Active',
                           paused: 'Paused',
                           on_hold: 'On Hold',
                           ended: 'Completed',
@@ -665,7 +645,7 @@ export function DrafterDetailsPage() {
                         <Documents
                           onFileClick={handleFileClick}
                           draftingData={fabData?.draft_data}
-                          draftingId={draftingData?.id || fabData?.draft_data?.id}
+                          draftingId={cncData?.id || fabData?.cnc_data?.id || fabData?.draft_data?.id}
                           showDeleteButton={!hasEnded && !isOnHold}
                         />
                       </div>
@@ -681,13 +661,13 @@ export function DrafterDetailsPage() {
                   {viewMode === 'activity' && (
                     <div className="flex justify-end gap-2 pt-2">
                       <BackButton fallbackUrl="/job/draft" label="Cancel" />
-                      <Can action="create" on="Drafting">
+                      <Can action="create" on="CNC">
                         <Button
                           onClick={handleOpenSubmissionModal}
                           className="bg-green-600 hover:bg-green-700"
                           disabled={!canOpenSubmit}
                         >
-                          Submit Draft
+                          Submit CNC
                         </Button>
                       </Can>
                     </div>
@@ -706,7 +686,7 @@ export function DrafterDetailsPage() {
         <SubmissionModal
           open={showSubmissionModal}
           onClose={() => setShowSubmissionModal(false)}
-          drafting={draftingData}
+          cnc={cncData}
           uploadedFiles={filesForSubmission}
           fabId={fabId}
           userId={currentEmployeeId}
@@ -717,27 +697,23 @@ export function DrafterDetailsPage() {
       <UniversalUploadModal
         open={showUploadModal}
         onOpenChange={setShowUploadModal}
-        title="Upload Drafting Files"
-        entityId={draftingData?.id || fabData?.draft_data?.id}
-        uploadMutation={addFilesToDrafting}
+        title="Upload CNC Files"
+        entityId={cncId}
+        uploadMutation={addFilesToCNC}
         stages={[
-          { value: 'drafting', label: 'Drafting' },
-          { value: 'revision', label: 'Revision' },
+          { value: 'cnc', label: 'CNC' },
         ]}
         fileTypes={[
-          { value: 'block_drawing', label: 'Block Drawing' },
-          { value: 'layout', label: 'Layout' },
-          { value: 'ss_layout', label: 'SS Layout' },
-          { value: 'shop_drawing', label: 'Shop Drawing' },
+          { value: 'cnc_file', label: 'CNC File' },
         ]}
         additionalParams={{
-          drafting_id: draftingData?.id || fabData?.draft_data?.id,
-          stage_name: 'drafting',
+          cnc_id: cncId,
+          stage_name: 'cnc_uploads',
         }}
         onUploadComplete={() => {
           toast.success('Files uploaded successfully');
+          refetchCNC();
           refetchFab();
-          refetchDrafting();
           setShowUploadModal(false);
         }}
       />
@@ -745,4 +721,4 @@ export function DrafterDetailsPage() {
   );
 }
 
-export default DrafterDetailsPage;
+export default CNCDetailsPage;

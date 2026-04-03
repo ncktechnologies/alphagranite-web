@@ -14,6 +14,7 @@ import { DraftReviewDetailsPage } from '@/pages/jobs/roles/back-to-sales/details
 import { DrafterDetailsPage } from '@/pages/jobs/roles/drafters';
 import DrafterPage from '@/pages/jobs/roles/drafters/DrafterPage';
 import CNCPage from '@/pages/jobs/roles/cnc/CNCPage';
+import { CNCDetailsPage } from '@/pages/jobs/roles/cnc/CNCDetailsPage';
 import { PreDraftDetailsPage } from '@/pages/jobs/roles/predraft/components/details';
 import { PredraftPage } from '@/pages/jobs/roles/predraft/PredraftPage';
 // import { PreDraftReviewPage } from '@/pages/jobs/roles/predraft/PreDraftReviewPage';
@@ -220,7 +221,7 @@ export function AppRoutingSetup() {
           <Route
             path="/job/cnc/:id"
             element={
-                <div>CNC Details Page - Coming Soon</div>
+                <CNCDetailsPage/>
             }
           />
           <Route

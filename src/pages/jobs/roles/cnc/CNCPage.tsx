@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router';
 import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
 import { Container } from '@/components/common/container';
-import { useGetFabsQuery, Fab } from '@/store/api/job';
+import { useGetFabsQuery, Fab, useGetFabsCncQuery } from '@/store/api/job';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
 import { useMemo, useState } from 'react';
@@ -74,7 +74,7 @@ const CNCPage = () => {
         const params: any = {
             skip,
             limit: tableState.pagination.pageSize,
-            current_stage: 'cnc',
+            current_stage: '',
         };
         if (tableState.searchQuery) params.search = tableState.searchQuery;
         if (tableState.searchType) params.type = tableState.searchType;
@@ -106,7 +106,7 @@ const CNCPage = () => {
         tableState.dateRange,
     ]);
 
-    const { data, isLoading } = useGetFabsQuery(queryParams);
+    const { data, isLoading } = useGetFabsCncQuery(queryParams);
 
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
     const [showAssignModal, setShowAssignModal] = useState(false);
