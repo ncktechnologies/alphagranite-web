@@ -25,6 +25,9 @@ jobs:
         script: |
           cd /var/www/html/carpediem/alphagranite-web
 
+          # Fix permissions so all commands run without sudo
+          sudo chown -R $USER:$USER /var/www/html/carpediem/alphagranite-web
+
           # Pull latest updates
           git stash
 
