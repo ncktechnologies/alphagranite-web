@@ -210,23 +210,7 @@ export const DraftReviewDetailsPage = () => {
                 }))
                 : [],
         },
-        {
-            title: "Drafting Notes",
-            type: "notes",
-            notes: draftData && Array.isArray(draftData) ? draftData.map(...) : [],  // adjust if draftData is not an array
-            // But based on your code, draftData appears to be a single object, so:
-            notes: draftData
-                ? [
-                    {
-                        id: 1,
-                        avatar: draftData?.drafter_name?.substring(0, 2).toUpperCase() || 'DR',
-                        content: draftData?.draft_note || `Drafting completed with ${draftData?.no_of_piece_drafted || 0} pieces, ${draftData?.total_sqft_drafted || 0} sq ft`,
-                        author: draftData?.drafter_name || 'Unknown Drafter',
-                        timestamp: draftData?.updated_at ? new Date(draftData.updated_at).toLocaleDateString() : 'N/A',
-                    }
-                ]
-                : [],
-        },
+       
         {
             title: "FAB Notes",
             type: "notes",
