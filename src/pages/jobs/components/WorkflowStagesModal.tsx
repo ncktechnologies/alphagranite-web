@@ -102,6 +102,13 @@ const getWorkflowStages = (): WorkflowStage[] => [
   },
   {
     id: '9',
+    name: 'CNC',
+    status: 'not-started',
+    notes: 'CNC machine fabrication',
+    route: '/job/cnc'
+  },
+  {
+    id: '10',
     name: 'Shop Planning',
     status: 'not-started',
     notes: 'Final preparation before fabrication',

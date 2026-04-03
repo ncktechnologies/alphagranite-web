@@ -258,7 +258,7 @@ const ShopCalendarPage = () => {
           setShowCreateForm(true);
         }}
       >
-        <div className="font-semibold truncate">FAB-{event.fab_id}</div>
+        <div className="font-semibold truncate">{event.fab_id}</div>
         <div className="truncate">{event.fab_type}</div>
         <div className="truncate text-gray-700">{event.workstation_name}</div>
         <div className="truncate">{event.operator_name}</div>
@@ -675,7 +675,7 @@ const ShopCalendarPage = () => {
                                     setShowCreateForm(true);
                                   }}
                                 >
-                                  <div className="font-['Proxima_Nova:Semibold',sans-serif] font-semibold truncate">FAB-{event.fab_id}</div>
+                                  <div className="font-['Proxima_Nova:Semibold',sans-serif] font-semibold truncate">{event.fab_id}</div>
                                   <div className="truncate text-[9px]">{event.fab_type}</div>
                                 </div>
                               );

@@ -12,11 +12,12 @@ import { ViewMode } from '@/config/types';
 import { ProfileFormSection } from './profileForm';
 import { useGetProfileQuery } from '@/store/api/auth';
 import { ContentLoader } from '@/components/common/content-loader';
+import { useIsSuperAdmin } from '@/hooks/use-permission';
 
 const ProfileSection = () => {
   const [viewMode, setViewMode] = useState<ViewMode>('details');
   const [success, setSuccess] = useState(false);
-  
+  const isSuperAdmin = useIsSuperAdmin();
   const { data: profile, isLoading, error } = useGetProfileQuery();
 
   const image = (
@@ -73,7 +74,7 @@ const ProfileSection = () => {
               <NavbarActions>
                 <div className="flex items-center justify-between w-full">
                   <h1 className="text-black font-semibold text-lg">Personal Information</h1>
-                  {viewMode === 'details' ? (
+                  {viewMode === 'details'  && isSuperAdmin ? (
                     <Button onClick={() => setViewMode('edit')}>Edit Profile</Button>
                   ) : (
                     <div className="flex items-center gap-2">

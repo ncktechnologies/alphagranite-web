@@ -333,25 +333,25 @@ export function RevisionDetailsPage() {
     }
     try {
       await createOrStartSession('start', startDate, data?.note, data?.sqft_drafted, data?.work_percentage_done);
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const handlePause = async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     try {
       await updateSession('pause', new Date(), data?.note, data?.sqft_drafted, data?.work_percentage_done);
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const handleResume = async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     try {
       await createOrStartSession('resume', new Date(), data?.note, data?.sqft_drafted, data?.work_percentage_done);
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const handleEnd = async (endDate: Date, data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     try {
       await updateSession('end', endDate, data?.note, data?.sqft_drafted, data?.work_percentage_done);
-    } catch (error) {}
+    } catch (error) { }
   };
 
   const handleOnHold = async (data?: { note?: string }) => {
@@ -469,10 +469,10 @@ export function RevisionDetailsPage() {
 
       toast.success("Revision submitted successfully");
       setShowSubmissionModal(false);
-      
+
       // Refetch all data to ensure UI consistency
       await refetchAllFiles();
-      
+
       navigate('/job/revision');
     } catch (error: any) {
       console.error('Failed to submit revision:', error);
@@ -520,7 +520,7 @@ export function RevisionDetailsPage() {
           label: "Fab ID",
           value: (
             <Link to={`/sales/${fabData?.id}`} className="text-primary hover:underline">
-              FAB-{fabData?.id}
+              {fabData?.id}
             </Link>
           ),
         },
@@ -540,7 +540,7 @@ export function RevisionDetailsPage() {
             ? new Date(fabData.templating_schedule_start_date).toLocaleDateString()
             : 'Not scheduled',
         },
-        { label: "Assigned to", value: fabData?.draft_data?.drafter_name || 'Unassigned' },
+        { label: "Drafter Assigned", value: fabData?.draft_data?.drafter_name || 'Unassigned' },
         { label: "Sales Person", value: fabData?.sales_person_name || '—' },
         { label: "SlabSmith Needed", value: fabData?.slab_smith_ag_needed ? 'Yes' : 'No' },
       ],
@@ -552,13 +552,12 @@ export function RevisionDetailsPage() {
         <div className="p-4 bg-yellow-50 border-l-4 border-yellow-500 mb-4">
           <h4 className="font-semibold text-yellow-800 mb-2">Revision Details</h4>
           <div className="flex items-center gap-2 mb-3">
-            <span className={`px-2 py-1 rounded text-xs font-medium ${
-              revisionInfo.revisionType === 'cad' ? 'bg-blue-100 text-blue-800' :
+            <span className={`px-2 py-1 rounded text-xs font-medium ${revisionInfo.revisionType === 'cad' ? 'bg-blue-100 text-blue-800' :
               revisionInfo.revisionType === 'client' ? 'bg-green-100 text-green-800' :
-              revisionInfo.revisionType === 'sales' ? 'bg-yellow-100 text-yellow-800' :
-              revisionInfo.revisionType === 'template' ? 'bg-orange-100 text-orange-800' :
-              'bg-gray-100 text-gray-800'
-            }`}>
+                revisionInfo.revisionType === 'sales' ? 'bg-yellow-100 text-yellow-800' :
+                  revisionInfo.revisionType === 'template' ? 'bg-orange-100 text-orange-800' :
+                    'bg-gray-100 text-gray-800'
+              }`}>
               {revisionInfo.revisionType.toUpperCase()}
             </span>
             <span className="px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800">
@@ -608,7 +607,10 @@ export function RevisionDetailsPage() {
               <ToolbarHeading
                 title={
                   <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
-                    <a href={jobNameLink} className="hover:underline">
+                    <a href={jobNameLink} className="hover:underline"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
                     </a>
                     <span className="mx-1 text-gray-400">·</span>
@@ -691,19 +693,18 @@ export function RevisionDetailsPage() {
                       <p className="text-xs text-gray-500 mt-0.5">Update your revision activity here</p>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        sessionStatus === 'idle' ? 'bg-gray-100 text-gray-800' :
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${sessionStatus === 'idle' ? 'bg-gray-100 text-gray-800' :
                         sessionStatus === 'drafting' ? 'bg-green-100 text-green-800' :
-                        sessionStatus === 'paused' ? 'bg-yellow-100 text-yellow-800' :
-                        sessionStatus === 'on_hold' ? 'bg-orange-100 text-orange-800' :
-                        sessionStatus === 'ended' ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
+                          sessionStatus === 'paused' ? 'bg-yellow-100 text-yellow-800' :
+                            sessionStatus === 'on_hold' ? 'bg-orange-100 text-orange-800' :
+                              sessionStatus === 'ended' ? 'bg-blue-100 text-blue-800' :
+                                'bg-gray-100 text-gray-800'
+                        }`}>
                         {sessionStatus === 'idle' ? 'Ready to Start' :
-                         sessionStatus === 'drafting' ? 'Revision Active' :
-                         sessionStatus === 'paused' ? 'Paused' :
-                         sessionStatus === 'on_hold' ? 'On Hold' :
-                         sessionStatus === 'ended' ? 'Completed' : 'Unknown'}
+                          sessionStatus === 'drafting' ? 'Revision Active' :
+                            sessionStatus === 'paused' ? 'Paused' :
+                              sessionStatus === 'on_hold' ? 'On Hold' :
+                                sessionStatus === 'ended' ? 'Completed' : 'Unknown'}
                       </span>
                       {fabData?.status_id === 0 && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">

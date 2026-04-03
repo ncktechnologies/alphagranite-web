@@ -9,6 +9,7 @@ interface RolesListProps {
     selectedRole: Station | null;
     onRoleSelect: (role: Station) => void;
     onNewRole: () => void;
+    onToggleStatus?: (role: Station) => void;
 }
 
 export const StationList = ({
@@ -16,6 +17,7 @@ export const StationList = ({
     selectedRole,
     onRoleSelect,
     onNewRole,
+    onToggleStatus,
 }: RolesListProps) => {
     return (
         <div className="w-80 space-y-4 pr-6 border-r">
@@ -33,6 +35,7 @@ export const StationList = ({
                         role={role}
                         isSelected={selectedRole?.id === role.id}
                         onClick={onRoleSelect}
+                        onToggleStatus={onToggleStatus}
                     />
                 ))}
             </div>

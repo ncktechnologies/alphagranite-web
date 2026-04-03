@@ -391,7 +391,7 @@ export function DrafterDetailsPage() {
           label: 'Fab ID',
           value: (
             <Link to={`/sales/${fabData.id}`} className="text-primary hover:underline">
-              FAB-{fabData.id}
+              {fabData.id}
             </Link>
           ),
         },
@@ -411,7 +411,7 @@ export function DrafterDetailsPage() {
             ? new Date(fabData.templating_schedule_start_date).toLocaleDateString()
             : 'Not scheduled',
         },
-        { label: 'Assigned to', value: fabData.draft_data?.drafter_name || 'Unassigned' },
+        { label: 'Drafter Assigned', value: fabData.draft_data?.drafter_name || 'Unassigned' },
         { label: 'Sales Person', value: fabData.sales_person_name || '—' },
         { label: 'SlabSmith Needed', value: fabData.slab_smith_ag_needed ? 'Yes' : 'No' },
       ],
@@ -419,13 +419,15 @@ export function DrafterDetailsPage() {
     {
       title: 'Notes',
       type: 'notes',
-      notes: fabData?.notes?.map((note: string, index: number) => ({
-        id: index,
-        avatar: 'N',
-        content: note,
-        author: '',
-        timestamp: '',
-      })) || [],
+      notes: Array.isArray(fabData?.notes)
+        ?   fabData.notes.map((note: string, index: number) => ({
+          id: index,
+          avatar: 'N',
+          content: note,
+          author: '',
+          timestamp: '',
+        }))
+        : [],
     },
     {
       title: 'FAB Notes',
@@ -506,7 +508,10 @@ export function DrafterDetailsPage() {
               <ToolbarHeading
                 title={
                   <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
-                    <a href={jobNameLink} className="hover:underline">
+                    <a href={jobNameLink} className="hover:underline"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
                     </a>
                     <span className="mx-1 text-gray-400">·</span>
@@ -595,12 +600,12 @@ export function DrafterDetailsPage() {
                     </div>
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{
-                          idle: 'bg-gray-100 text-gray-800',
-                          drafting: 'bg-green-100 text-green-800',
-                          paused: 'bg-yellow-100 text-yellow-800',
-                          on_hold: 'bg-orange-100 text-orange-800',
-                          ended: 'bg-blue-100 text-blue-800',
-                        }[sessionStatus] || 'bg-gray-100 text-gray-800'
+                        idle: 'bg-gray-100 text-gray-800',
+                        drafting: 'bg-green-100 text-green-800',
+                        paused: 'bg-yellow-100 text-yellow-800',
+                        on_hold: 'bg-orange-100 text-orange-800',
+                        ended: 'bg-blue-100 text-blue-800',
+                      }[sessionStatus] || 'bg-gray-100 text-gray-800'
                         }`}>
                         {{
                           idle: 'Ready to Start',
@@ -687,7 +692,7 @@ export function DrafterDetailsPage() {
                           className="bg-green-600 hover:bg-green-700"
                           disabled={!canOpenSubmit}
                         >
-                          Submit draft
+                          Submit Draft
                         </Button>
                       </Can>
                     </div>
@@ -722,7 +727,6 @@ export function DrafterDetailsPage() {
         uploadMutation={addFilesToDrafting}
         stages={[
           { value: 'drafting', label: 'Drafting' },
-          { value: 'pre_draft_review', label: 'Pre-Draft Review' },
           { value: 'revision', label: 'Revision' },
         ]}
         fileTypes={[

@@ -13,6 +13,8 @@ import { AfterDraftSalesPage } from '@/pages/jobs/roles/back-to-sales/BackSalesP
 import { DraftReviewDetailsPage } from '@/pages/jobs/roles/back-to-sales/details';
 import { DrafterDetailsPage } from '@/pages/jobs/roles/drafters';
 import DrafterPage from '@/pages/jobs/roles/drafters/DrafterPage';
+import CNCPage from '@/pages/jobs/roles/cnc/CNCPage';
+import { CNCDetailsPage } from '@/pages/jobs/roles/cnc/CNCDetailsPage';
 import { PreDraftDetailsPage } from '@/pages/jobs/roles/predraft/components/details';
 import { PredraftPage } from '@/pages/jobs/roles/predraft/PredraftPage';
 // import { PreDraftReviewPage } from '@/pages/jobs/roles/predraft/PreDraftReviewPage';
@@ -63,6 +65,10 @@ import { InstallCompletionPage } from '@/pages/jobs/roles/install-completion';
 import { ResurfacingStatusDetailsPage } from '@/pages/jobs/roles/resurfacing-completion/components/details';
 // import ShopCalendarPage from '@/pages/shop/calendarPage';
 import { OperatorDashboard, OperatorTaskDetails } from '@/pages/operator';
+import { TemplaterTimerPage } from '@/pages/templater/TemplaterTimerPage';
+import { InstallerTimerPage } from '@/pages/installer/InstallerTimerPage';
+import { JobStatusTable } from '@/pages/jobs/roles/report/JobStatus';
+import JobStatusPage from '@/pages/jobs/roles/report/JobStatusPage';
 
 export function AppRoutingSetup() {
   return (
@@ -76,6 +82,7 @@ export function AppRoutingSetup() {
           <Route path="/settings/notifications" element={<NotificationsSection />} />
           <Route path="/settings/permissions" element={<PermissionsSection />} />
           <Route path="/create-jobs" element={<JobsSection />} />
+          <Route path="/status-report" element={<JobStatusPage/>} />
           <Route path="/need-to-invoice" element={<NeedToInvoicePage />} />
           
           {/* Job Dashboard Route */}
@@ -202,25 +209,31 @@ export function AppRoutingSetup() {
            <Route
             path="/job/draft/:id"
             element={
-              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <DrafterDetailsPage/>
-              // </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/job/cnc"
+            element={
+                <CNCPage/>
+            }
+          />
+          <Route
+            path="/job/cnc/:id"
+            element={
+                <CNCDetailsPage/>
             }
           />
           <Route
             path="/job/draft-review"
             element={
-              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <AfterDraftSalesPage/>
-              // </ProtectedRoute>
             }
           />
            <Route
             path="/job/draft-review/:id"
             element={
-              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <DraftReviewDetailsPage/>
-              // </ProtectedRoute>
             }
           />
           <Route
@@ -467,6 +480,16 @@ export function AppRoutingSetup() {
             path="/operator/task/:jobId"
             element={
               <OperatorTaskDetails />
+            }
+          />
+          <Route
+            path="/jobs/:job_id/templater/timer"
+            element={<TemplaterTimerPage />}
+          />
+          <Route
+            path='jobs/:job_id/installer/timer'
+            element={
+              <InstallerTimerPage />
             }
           />
         </Route>

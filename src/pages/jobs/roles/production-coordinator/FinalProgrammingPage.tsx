@@ -15,6 +15,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { useTableState } from '@/hooks/use-table-state';
+import { AssignDrafterModal } from '../drafters/components/AssignDrafterModal';
 
 const transformFabToJob = (fab: Fab): IJob => {
     return {
@@ -43,7 +44,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         shop_date_scheduled: fab.templating_schedule_start_date || '',
         wj_time_minutes: fab.programming_time_minutes ? String(fab.programming_time_minutes) : null,
         final_programming_completed: fab.final_programming_complete ? 'Yes' : 'No',
-        final_programmer: fab.final_programmer_name || '',
+        final_programmer: fab.final_programmer_name || fab.draft_data?.drafter_name || '-',
         stone_type_name: fab.stone_type_name || '',
         stone_color_name: fab.stone_color_name || '',
         stone_thickness_value: fab.stone_thickness_value || '',
@@ -153,13 +154,61 @@ const FinalProgrammingPage = () => {
         tableState.dateFilter,
         tableState.dateRange,
         tableState.searchType,
-        
+
     ]);
 
     // Fetch data with backend pagination and filtering
     // const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
 
     const { data, isLoading, isFetching, isError, error } = useGetFabsInFinalProgrammingPendingQuery();
+
+    const [selectedRows, setSelectedRows] = useState<string[]>([]);
+    const [showAssignModal, setShowAssignModal] = useState(false);
+    const [reassignJob, setReassignJob] = useState<any>(null);
+    const [reassignFabId, setReassignFabId] = useState<string | null>(null);
+    const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
+
+    // Mappings for bulk assign
+    const sqftPerFab = useMemo(() => {
+        const mapping: { [key: string]: string } = {};
+        data?.data?.forEach((fab) => {
+            mapping[String(fab.id)] = String(fab.total_sqft || '0');
+        });
+        return mapping;
+    }, [data]);
+
+    const datePerFab = useMemo(() => {
+        const start: { [key: string]: string } = {};
+        const end: { [key: string]: string } = {};
+        data?.data?.forEach((fab) => {
+            start[String(fab.id)] = fab.templating_schedule_start_date || fab.draft_data?.scheduled_start_date || '';
+            end[String(fab.id)] = fab.templating_schedule_due_date || fab.draft_data?.scheduled_end_date || '';
+        });
+        return { startDateMapping: start, endDateMapping: end };
+    }, [data]);
+
+    const handleAssignDrafterClick = () => {
+        if (selectedRows.length > 0) {
+            setReassignJob(null);
+            setShowAssignModal(true);
+        }
+    };
+
+    const handleReassignDrafterClick = (job: IJob) => {
+        setReassignFabId(job.fab_id); // just pass the FAB ID
+        setSelectedRows([]);
+        setShowAssignModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setShowAssignModal(false);
+        setReassignFabId(null);
+    };
+    const handleAssignSuccess = () => {
+        setSelectedRows([]);
+        // Optionally refetch: tableState.refetch?.()
+    };
+
     if (isLoading) {
         return (
             <div className="">
@@ -197,7 +246,7 @@ const FinalProgrammingPage = () => {
     }
 
     // Transform Fab data to IJob format
-    const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
+    // const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
 
     return (
         <>
@@ -216,6 +265,22 @@ const FinalProgrammingPage = () => {
                     showSalesPersonFilter={true}
                     salesPersons={salesPersons}
                     visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'wj_time_minutes', 'final_programming_notes', 'final_programming_completed', 'final_programmer', 'on_hold']}
+                    enableMultiSelect
+                    selectedRows={selectedRows}
+                    setSelectedRows={setSelectedRows}
+                    showAssignDrafterButton
+                    onAssignDrafterClick={handleAssignDrafterClick}
+                    onReassignDrafterClick={handleReassignDrafterClick}
+                />
+                <AssignDrafterModal
+                    open={showAssignModal}
+                    onClose={handleCloseModal}
+                    selectedFabIds={reassignFabId ? [] : selectedRows}
+                    reassignFabId={reassignFabId}
+                    initialSqftValues={sqftPerFab}
+                    initialStartDates={datePerFab.startDateMapping}
+                    initialEndDates={datePerFab.endDateMapping}
+                    onAssignSuccess={handleAssignSuccess}
                 />
 
             </Container>

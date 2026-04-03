@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
-import { Card, CardContent, CardHeader, CardHeading, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
@@ -71,10 +71,13 @@ export function OperatorTaskDetails() {
                 : (taskData as any).data
             : taskData ?? null;
 
-    // Fetch QA files for this job and operator
+    // ─── fab_id is the correct ID for all timer & upload API calls ───────────
+    const fabId: number = currentTask?.fab_id || 1;
+
+    // Fetch QA files for this operator (uses fab_id as job_id param for the upload URL)
     const { data: qaFilesData, isLoading: isQaLoading, refetch: refetchQaFiles } = useGetOperatorQaFilesQuery(
-        { operator_id: operatorId, job_id: currentTask?.business_job?.id || 0 },
-        { skip: !currentTask?.business_job?.id || !operatorId }
+        { operator_id: operatorId, job_id: fabId },
+        { skip: !fabId || !operatorId }
     );
 
     // Map QA files to UnifiedFile format for FileGallery
@@ -96,10 +99,11 @@ export function OperatorTaskDetails() {
         }
     }, [currentTask]);
 
+    // ─── Timer query — uses fab_id ────────────────────────────────────────────
     const { data: timerData, isLoading: isTimerLoading, refetch: refetchTimer } =
         useGetTimerStateQuery(
-            { job_id: currentTask?.business_job.id || 0, scheduled_start_date: scheduledStartDate ?? undefined },
-            { skip: !currentTask }
+            { fab_id: fabId, scheduled_start_date: scheduledStartDate ?? undefined },
+            { skip: !fabId }
         );
 
     const [manageTimer] = useManageTimerMutation();
@@ -112,10 +116,11 @@ export function OperatorTaskDetails() {
         }
     }, [timerData]);
 
+    // ─── Timer action helpers — all use fab_id ────────────────────────────────
     const handleStart = async () => {
         try {
             await manageTimer({
-                job_id: currentTask?.business_job?.id || 0,
+                fab_id: fabId,
                 data: {
                     action: 'start',
                     timestamp: new Date().toISOString(),
@@ -135,7 +140,7 @@ export function OperatorTaskDetails() {
     const handlePause = async () => {
         try {
             await manageTimer({
-                job_id: currentTask?.business_job?.id || 0,
+                fab_id: fabId,
                 data: {
                     action: 'pause',
                     timestamp: new Date().toISOString(),
@@ -163,7 +168,7 @@ export function OperatorTaskDetails() {
     const handleResume = async () => {
         try {
             await manageTimer({
-                job_id: currentTask?.business_job?.id || 0,
+                fab_id: fabId,
                 data: {
                     action: 'resume',
                     timestamp: new Date().toISOString(),
@@ -183,7 +188,7 @@ export function OperatorTaskDetails() {
     const handleSubmitWork = async (data: SubmitWorkData) => {
         try {
             await manageTimer({
-                job_id: currentTask?.business_job?.id || 0,
+                fab_id: fabId,
                 data: {
                     action: 'stop',
                     timestamp: new Date().toISOString(),
@@ -214,13 +219,13 @@ export function OperatorTaskDetails() {
         : '#';
     const statusInfo = getStatusInfo(currentTask?.fab_status_id, t);
 
-    // Task information fields – labels translated
+    // Task information fields
     const taskInfo = [
         { label: t('LABEL.ACCOUNT_NAME'), value: currentTask?.account_name || '—' },
         { label: t('LABEL.JOB_NAME'), value: currentTask?.job_name || '—' },
         {
             label: t('JOB.FAB_ID'),
-            value: currentTask?.fab_id ? <Link to={`/sales/${currentTask.fab_id}`} className="text-primary hover:underline">FAB-{currentTask.fab_id}</Link> : '—',
+            value: fabId ? <Link to={`/sales/${fabId}`} className="text-primary hover:underline">FAB-{fabId}</Link> : '—',
         },
         { label: t('JOB.FAB_TYPE'), value: <span className="uppercase">{currentTask?.fab_type || '—'}</span> },
         { label: t('JOB.AREA'), value: currentTask?.area || '—' },
@@ -311,7 +316,7 @@ export function OperatorTaskDetails() {
                 </div>
             </div>
 
-            {/* Two‑column layout */}
+            {/* Two-column layout */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-3 sm:p-4 lg:p-5">
                 {/* Left column (8 columns) */}
                 <div className="lg:col-span-8 space-y-6">
@@ -436,22 +441,19 @@ export function OperatorTaskDetails() {
                                     className="w-full gap-2 bg-red-600 hover:bg-red-700 text-white"
                                     size="lg"
                                 >
-                                    <CheckCircle2 className="h-5 w-5" /> {t('OPERATOR.SUBMIT_END_SESSION')}
+                                    <CheckCircle2 className="h-5 w-5" /> {t('OPERATOR.SUBMIT')}
                                 </Button>
                             )}
                         </CardContent>
                     </Card>
-                    {/* Extra QA card (optional) */}
+
+                    {/* Extra QA card */}
                     <Card className="mt-6">
                         <CardHeader>
                             <CardTitle className="text-lg font-semibold">{t('QA.DOCUMENTATION')}</CardTitle>
                             <p className="text-sm text-muted-foreground">{t('QA.DOCUMENTATION_DESCRIPTION')}</p>
                         </CardHeader>
-                        <CardContent>
-                            <Button onClick={() => setShowUploadDialog(true)} variant="outline" className="w-full">
-                                <Camera className="h-4 w-4 mr-2" /> {t('QA.UPLOAD_FILES')}
-                            </Button>
-                        </CardContent>
+                        
                     </Card>
                 </div>
             </div>
@@ -477,19 +479,20 @@ export function OperatorTaskDetails() {
                 taskId={currentTask?.task_id || taskId}
                 operatorId={operatorId}
                 workstationId={workstationId}
-                fabId={currentTask?.fab_id}
-                jobId={currentTask?.business_job.id}
+                fabId={fabId}
+                jobId={currentTask?.business_job?.id}
             />
 
             <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
-                            {t('UPLOAD.QA.TITLE')} {currentTask?.fab_id ? `FAB-${currentTask.fab_id}` : ''}
+                            {t('UPLOAD.QA.TITLE')} {fabId ? `FAB-${fabId}` : ''}
                         </DialogTitle>
                     </DialogHeader>
+                    {/* OperatorMediaUpload — jobId prop receives fab_id per API spec */}
                     <OperatorMediaUpload
-                        jobId={currentTask?.business_job.id || 0}
+                        jobId={fabId}
                         onUploadComplete={() => {
                             setShowUploadDialog(false);
                             refetchQaFiles();

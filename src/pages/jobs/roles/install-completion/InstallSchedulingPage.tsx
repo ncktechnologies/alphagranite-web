@@ -72,11 +72,11 @@ const transformFabToJob = (fab: Fab): IJob => {
         completion_date: (fab as any).completion_date
             ? formatDate((fab as any).completion_date)
             : undefined,
-        installer: (fab as any).installer_name || (fab as any).installer || undefined,
-        install_date: (fab as any).scheduled_install_date
-            ? formatDate((fab as any).scheduled_install_date)
+        installer: (fab as any).install_details.installer_name || (fab as any).installer || undefined,
+        install_date: (fab as any).install_details.scheduled_install_date
+            ? formatDate((fab as any).install_details.scheduled_install_date)
             : undefined,
-        install_confirmed: (fab as any).install_confirmed ?? undefined,
+        install_confirmed: (fab as any).install_details.is_completed ?? undefined,
         shop_status: (fab as any).shop_status || undefined,
     };
 };

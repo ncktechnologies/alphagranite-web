@@ -376,7 +376,7 @@ export const TimeTrackingComponent = ({
             <Can action="update" on="Drafting">
               <Button onClick={handleStart} disabled={isStarting}>
                 <Play className="w-4 h-4 mr-2" />
-                {isStarting ? 'Starting...' : 'Start drafting'}
+                {isStarting ? 'Starting...' : 'Start Revision'}
               </Button>
             </Can>
           ) : isDrafting && !hasEnded ? (

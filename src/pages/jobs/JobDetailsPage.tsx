@@ -197,7 +197,10 @@ export function JobDetailsPage() {
             // title={`Job ${job?.job_number || 'Loading...'}: ${job?.name || ''}`}
             title={
               <div className="text-2xl font-bold">
-                <a href={jobNameLink} className="hover:underline">
+                <a href={jobNameLink} className="hover:underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   {/* {fabData?.job_details?.name || `Job ${fabData?.job_id}`} */}
                   {job?.name || ''}
                 </a>
@@ -210,7 +213,7 @@ export function JobDetailsPage() {
             description="View job details, FABs, and media files"
           />
           <ToolbarActions>
-            <BackButton  />
+            <BackButton />
           </ToolbarActions>
         </Toolbar>
       </Container>
@@ -325,13 +328,13 @@ export function JobDetailsPage() {
                           </p>
                           <div className="flex items-center space-x-2 mt-1">
                             <Badge
-                              // variant={
-                              //   fab.status_id === 1
-                              //     ? 'default'
-                              //     : fab.status_id === 2
-                              //       ? 'secondary'
-                              //       : 'outline'
-                              // }
+                            // variant={
+                            //   fab.status_id === 1
+                            //     ? 'default'
+                            //     : fab.status_id === 2
+                            //       ? 'secondary'
+                            //       : 'outline'
+                            // }
                             >
                               {fab.current_stage}
                             </Badge>

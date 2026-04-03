@@ -184,7 +184,7 @@ function DataGridTableBody({ children }: { children: ReactNode }) {
     <tbody
       className={cn(
         '[&_tr:last-child]:border-0',
-        props.tableLayout?.rowRounded && '[&_td:first-child]:rounded-s-lg [&_td:last-child]:rounded-e-lg',
+        props.tableLayout?.rowRounded && '[&_td:first-child]:rounded-s-lg [&_td:last-child]:rounded-e-lg ',
         props.tableClassNames?.body,
       )}
     >
@@ -609,7 +609,7 @@ function DataGridTable<TData extends object>() {
       })}
 
       {Object.keys(groupedRows).length === 0 && (
-        <div className="border border-border rounded-lg">
+        <div className="border border-border rounded-lg ">
           <DataGridTableBase>
             <DataGridTableBody>
               <DataGridTableEmpty />

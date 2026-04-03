@@ -284,8 +284,8 @@ export function SlabSmithDetailsPage() {
     }
   }, [refetchFab, refetchDrafting, refetchSlabSmith, refetchSSSession]);
 
-  const shouldShowUploadSection = (isDrafting && !isPaused) || (slabSmithData?.files?.length > 0);
-  const canOpenSubmit = slabSmithData?.files?.length > 0 && !isPaused && isDrafting;
+  const shouldShowUploadSection = (isDrafting && !isPaused) || (fabData?.slabsmith_data?.files?.length > 0);
+  const canOpenSubmit = fabData?.slabsmith_data?.files?.length > 0 && !isPaused && isDrafting;
 
   const handleOpenSubmissionModal = async () => {
     setShowSubmissionModal(true);
@@ -316,7 +316,7 @@ export function SlabSmithDetailsPage() {
             label: "Fab ID",
             value: (
               <Link to={`/sales/${fabData.id}`} className="text-primary hover:underline">
-                FAB-{fabData.id}
+                {fabData.id}
               </Link>
             ),
           },
@@ -336,7 +336,7 @@ export function SlabSmithDetailsPage() {
               ? new Date(fabData.templating_schedule_start_date).toLocaleDateString()
               : 'Not scheduled',
           },
-          { label: "Assigned to", value: fabData.draft_data?.drafter_name || 'Unassigned' },
+          { label: "Drafter Assigned", value: fabData.draft_data?.drafter_name || 'Unassigned' },
           { label: "Sales Person", value: fabData.sales_person_name || '—' },
           { label: "SlabSmith Needed", value: fabData.slab_smith_ag_needed ? 'Yes' : 'No' },
         ],
@@ -410,7 +410,10 @@ export function SlabSmithDetailsPage() {
               <ToolbarHeading
                 title={
                   <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
-                    <a href={jobNameLink} className="hover:underline">
+                    <a href={jobNameLink} className="hover:underline"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
                     </a>
                     <span className="mx-1 text-gray-400">·</span>

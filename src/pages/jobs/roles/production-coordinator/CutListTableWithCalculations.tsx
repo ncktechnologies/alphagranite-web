@@ -236,9 +236,9 @@ export const CutListTableWithCalculations = ({
         if (effectiveSearchQuery) {
             const q = effectiveSearchQuery.toLowerCase();
             result = result.filter((list) => {
-                if (effectiveSearchType === 'fab_id')     return list.fab_id?.toLowerCase().includes(q);
+                if (effectiveSearchType === 'fab_id') return list.fab_id?.toLowerCase().includes(q);
                 if (effectiveSearchType === 'job_number') return list.job_no?.toLowerCase().includes(q);
-                if (effectiveSearchType === 'job_name')   return list.job_name?.toLowerCase().includes(q);
+                if (effectiveSearchType === 'job_name') return list.job_name?.toLowerCase().includes(q);
                 return false;
             });
         }
@@ -246,7 +246,7 @@ export const CutListTableWithCalculations = ({
         if (effectiveDateFilter !== 'all') {
             result = result.filter((list) => {
                 if (effectiveDateFilter === 'unscheduled') return !list.install_date || list.install_date === '';
-                if (effectiveDateFilter === 'scheduled')   return list.install_date && list.install_date !== '';
+                if (effectiveDateFilter === 'scheduled') return list.install_date && list.install_date !== '';
                 if (!list.install_date) return false;
 
                 const installDate = new Date(list.install_date);
@@ -268,10 +268,10 @@ export const CutListTableWithCalculations = ({
                 const endOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0);
 
                 switch (effectiveDateFilter) {
-                    case 'today':      return installDate.toDateString() === today.toDateString();
-                    case 'this_week':  return installDate >= startOfWeek && installDate <= endOfWeek;
+                    case 'today': return installDate.toDateString() === today.toDateString();
+                    case 'this_week': return installDate >= startOfWeek && installDate <= endOfWeek;
                     case 'this_month': return installDate >= startOfMonth && installDate <= endOfMonth;
-                    case 'next_week':  return installDate >= startOfNextWeek && installDate <= endOfNextWeek;
+                    case 'next_week': return installDate >= startOfNextWeek && installDate <= endOfNextWeek;
                     case 'next_month': return installDate >= startOfNextMonth && installDate <= endOfNextMonth;
                     case 'custom':
                         if (effectiveDateRange?.from && effectiveDateRange?.to) {
@@ -393,7 +393,7 @@ export const CutListTableWithCalculations = ({
                 </Link>
             ) : <span className="text-sm">{row.original.job_no}</span>,
         },
-          {
+        {
             id: 'fab_info',
             header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
             cell: ({ row }) => {
@@ -418,7 +418,7 @@ export const CutListTableWithCalculations = ({
             },
             size: 300,
         },
-          {
+        {
             id: 'fp_completed', accessorKey: 'fp_completed',
             header: ({ column }) => <DataGridColumnHeader title="FP COMPLETED DATE" column={column} />,
             cell: ({ row }) => (
@@ -475,7 +475,7 @@ export const CutListTableWithCalculations = ({
             header: ({ column }) => <DataGridColumnHeader title="REVENUE" column={column} />,
             cell: ({ row }) => <span className="text-sm block">${row.original.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
         },
-      
+
         {
             id: 'cip', accessorKey: 'cip',
             header: ({ column }) => <DataGridColumnHeader title="GP" column={column} />,
@@ -486,7 +486,7 @@ export const CutListTableWithCalculations = ({
             header: ({ column }) => <DataGridColumnHeader title="SALES PERSON" column={column} />,
             cell: ({ row }) => <span className="text-sm">{row.original.sales_person || 'N/A'}</span>,
         },
-      
+
         {
             id: 'fab_notes', accessorKey: 'fab_notes',
             header: ({ column }) => <DataGridColumnHeader title="Cut List Notes" column={column} />,
@@ -749,7 +749,7 @@ export const CutListTableWithCalculations = ({
                     </CardHeader>
 
                     <CardTable>
-                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-300px)]">
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                             <DataGridTable />
                             <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
                         </ScrollArea>

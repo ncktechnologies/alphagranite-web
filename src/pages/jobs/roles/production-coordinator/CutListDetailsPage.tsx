@@ -70,7 +70,7 @@ export function CutListDetailsPage() {
             label: 'Fab ID',
             value: (
               <Link to={`/sales/${fabData.id}`} className="text-primary hover:underline">
-                FAB-{fabData.id}
+                {fabData.id}
               </Link>
             ),
           },
@@ -90,10 +90,10 @@ export function CutListDetailsPage() {
             value: cuttingScheduleDate
               ? new Date(cuttingScheduleDate).toLocaleDateString()
               : fabData.templating_schedule_start_date
-              ? new Date(fabData.templating_schedule_start_date).toLocaleDateString()
-              : 'Not scheduled',
+                ? new Date(fabData.templating_schedule_start_date).toLocaleDateString()
+                : 'Not scheduled',
           },
-          { label: 'Assigned to', value: draftData?.drafter_name || 'Unassigned' },
+          { label: 'Drafter Assigned', value: draftData?.drafter_name || 'Unassigned' },
           { label: 'Sales Person', value: fabData.sales_person_name || '—' },
           { label: 'SlabSmith Needed', value: fabData.slab_smith_ag_needed ? 'Yes' : 'No' },
         ],
@@ -103,17 +103,28 @@ export function CutListDetailsPage() {
         type: 'notes',
         notes: draftData
           ? [
-              {
-                id: 1,
-                avatar: draftData.drafter_name?.substring(0, 2).toUpperCase() || 'DR',
-                content:
-                  draftData.draft_note ||
-                  `Drafting completed with ${draftData.no_of_piece_drafted || 0} pieces, ${draftData.total_sqft_drafted || 0} sq ft`,
-                author: draftData.drafter_name || 'Unknown Drafter',
-                timestamp: draftData.updated_at ? new Date(draftData.updated_at).toLocaleDateString() : 'N/A',
-              },
-            ]
+            {
+              id: 1,
+              avatar: draftData.drafter_name?.substring(0, 2).toUpperCase() || 'DR',
+              content:
+                draftData.draft_note ||
+                `Drafting completed with ${draftData.no_of_piece_drafted || 0} pieces, ${draftData.total_sqft_drafted || 0} sq ft`,
+              author: draftData.drafter_name || 'Unknown Drafter',
+              timestamp: draftData.updated_at ? new Date(draftData.updated_at).toLocaleDateString() : 'N/A',
+            },
+          ]
           : [],
+      },
+      {
+        title: 'Notes',
+        type: 'notes',
+        notes: fabData?.notes?.map((note: string, index: number) => ({
+          id: index,
+          avatar: 'N',
+          content: note,
+          author: '',
+          timestamp: '',
+        })) || [],
       },
       {
         title: 'FAB Notes',
@@ -195,7 +206,10 @@ export function CutListDetailsPage() {
               <ToolbarHeading
                 title={
                   <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
-                    <a href={jobNameLink} className="hover:underline">
+                    <a href={jobNameLink} className="hover:underline"
+                      target="_blank"
+                      rel="noreferrer"
+                    >
                       {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
                     </a>
                     <span className="mx-1 text-gray-400">·</span>
@@ -275,19 +289,19 @@ export function CutListDetailsPage() {
               {/* ── Cutlist activity card ──────────────────────────────────── */}
               <Card>
                 <CardHeader className="py-3 px-4 sm:px-5">
-                    <div>
-                      <CardTitle className="text-sm sm:text-base">Cutlist activity</CardTitle>
-                      <p className="text-xs text-gray-500 mt-0.5">Review drafting work and schedule for cutting</p>
-                    </div>
-                    <Can action="update" on="Cut List">
-                      <Button
-                        onClick={() => setShowScheduleModal(true)}
-                        // variant={isScheduled ? 'outline' : 'default'}
-                        // className={isScheduled ? '' : 'bg-green-600 hover:bg-green-700'}
-                      >
-                        {isScheduled ? 'Update Cut' : 'Schedule Cut'}
-                      </Button>
-                    </Can>
+                  <div>
+                    <CardTitle className="text-sm sm:text-base">Cutlist activity</CardTitle>
+                    <p className="text-xs text-gray-500 mt-0.5">Review drafting work and schedule for cutting</p>
+                  </div>
+                  <Can action="update" on="Cut List">
+                    <Button
+                      onClick={() => setShowScheduleModal(true)}
+                    // variant={isScheduled ? 'outline' : 'default'}
+                    // className={isScheduled ? '' : 'bg-green-600 hover:bg-green-700'}
+                    >
+                      {isScheduled ? 'Update Cut' : 'Schedule Cut'}
+                    </Button>
+                  </Can>
                 </CardHeader>
               </Card>
 

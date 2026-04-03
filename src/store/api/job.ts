@@ -417,6 +417,14 @@ export interface StoneColorListParams {
     search?: string;
 }
 
+export interface StoneColorByStoneTypeParams {
+    stone_type_id: number;
+    skip?: number;
+    limit?: number;
+    status_id?: number;
+    search?: string;
+}
+
 export interface StoneThicknessListParams {
     skip?: number;
     limit?: number;
@@ -497,6 +505,98 @@ export interface BulkDraftingAssignment {
     scheduled_start_date: string;
     scheduled_end_date: string;
     total_sqft_required_to_draft: string | number;
+}
+
+// CNC Types - EXACT SAME PATTERN AS DRAFTING
+export interface CNCDraftingFile {
+    id: number;
+    name: string;
+    file_url: string;
+    file_type: string;
+    file_size: string;
+    created_at: string;
+}
+
+export interface CNCDrafting {
+    id: number;
+    fab_id: number;
+    drafter_id: number;
+    drafter_name?: string;
+    scheduled_start_date?: string;
+    scheduled_end_date?: string;
+    drafter_start_date?: string | null;
+    drafter_end_date?: string | null;
+    total_time_spent?: number | null;
+    total_hours_drafted?: number | null;
+    total_sqft_drafted?: string | null;
+    no_of_piece_drafted?: string | null;
+    draft_note?: string | null;
+    mentions?: string | null;
+    work_percentage_done?: number | null;
+    status_id: number;
+    status_name?: string;
+    created_at: string;
+    updated_at?: string | null;
+    updated_by?: number | null;
+    updated_by_name?: string | null;
+    file_ids?: string | null;
+    files?: CNCDraftingFile[];
+}
+
+export interface CNCDraftingCreate {
+    drafter_id: number;
+    items: CNCDraftingItem[];
+}
+
+export interface CNCDraftingItem {
+    fab_id: number;
+    scheduled_start_date: string;
+    scheduled_end_date: string;
+    total_sqft_required_to_draft: number;
+}
+
+export interface CNCDraftingResponse {
+    fab_id: number;
+    cnc_linft: number;
+    message: string;
+}
+
+export interface CNCDraftingSessionAction {
+    drafter_id: number;
+    action: string; // 'start', 'pause', 'resume', 'on_hold', 'end'
+    session_start_time?: string | null;
+    session_end_time?: string | null;
+    timestamp?: string | null;
+    sqft_drafted?: string | null;
+    work_percentage_done?: number | null;
+    note?: string | null;
+    is_revision?: boolean;
+}
+
+export interface CNCDraftingSessionNoteResponse {
+    id: number;
+    note: string;
+    created_at: string;
+}
+
+export interface CNCDraftingSessionResponse {
+    session_id: number;
+    fab_id: number;
+    drafter_id: number;
+    status: string;
+    current_session_start_time: string;
+    last_action_time?: string | null;
+    total_time_spent: number;
+    cumulative_sqft_drafted: string;
+    work_percentage_done: number;
+    current_pause_start_time?: string | null;
+    total_pause_duration: number;
+    notes: CNCDraftingSessionNoteResponse[];
+}
+
+export interface CNCDraftingSessionHistoryResponse {
+    fab_id: number;
+    sessions: CNCDraftingSessionResponse[];
 }
 
 export interface Stage {
@@ -731,7 +831,7 @@ export interface AdminDashboardResponse {
 export const jobApi = createApi({
     reducerPath: "jobApi",
     baseQuery: axiosBaseQuery({ baseUrl: `${baseUrl}/api/v1` }),
-    tagTypes: ["Job", "Fab", "FabType", "Account", "StoneType", "StoneColor", "StoneThickness", "Edge", "Drafting"],
+    tagTypes: ["Job", "Fab", "FabType", "Account", "StoneType", "StoneColor", "StoneThickness", "Edge", "Drafting", "CNC"],
     keepUnusedDataFor: 0,
     endpoints(build) {
         return {
@@ -1099,6 +1199,55 @@ export const jobApi = createApi({
                 transformResponse: (response: any) => response.data || response,
                 providesTags: ["Fab"],
             }),
+              getFabsCnc: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
+                query: (params) => {
+                    const queryParams = params || {};
+                    return {
+                        url: "/fabs/cnc-widget",
+                        method: "get",
+                        params: {
+                            skip: queryParams.skip || 0,
+                            limit: queryParams.limit || 100,
+                            // Existing filters
+                            ...(queryParams.job_id !== undefined && { job_id: queryParams.job_id }),
+                            ...(queryParams.fab_type && { fab_type: queryParams.fab_type }),
+                            ...(queryParams.sales_person_id !== undefined && { sales_person_id: queryParams.sales_person_id }),
+                            ...(queryParams.templater_id !== undefined && { templater_id: queryParams.templater_id }),
+                            ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
+                            ...(queryParams.current_stage && { current_stage: queryParams.current_stage }),
+                            // New stage filter
+                            ...(queryParams.next_stage && { next_stage: queryParams.next_stage }),
+                            // Search filter
+                            ...(queryParams.search && { search: queryParams.search }),
+                            // Schedule date filters
+                             // Search type filter (fab_id, job_number, job_name)
+                            ...(queryParams.type && { type: queryParams.type }),
+                            ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
+                            ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
+                            ...(queryParams.schedule_status && { schedule_status: queryParams.schedule_status }),
+                            // Date filter (predefined periods)
+                            ...(queryParams.date_filter && { date_filter: queryParams.date_filter }),
+                            // Shop date range filters
+                            ...(queryParams.shop_date_start && { shop_date_start: queryParams.shop_date_start }),
+                            ...(queryParams.shop_date_end && { shop_date_end: queryParams.shop_date_end }),
+                            // Template completion date range filters
+                            ...(queryParams.template_completed_start && { template_completed_start: queryParams.template_completed_start }),
+                            ...(queryParams.template_completed_end && { template_completed_end: queryParams.template_completed_end }),
+                            // Predraft completion date range filters
+                            ...(queryParams.predraft_completed_start && { predraft_completed_start: queryParams.predraft_completed_start }),
+                            ...(queryParams.predraft_completed_end && { predraft_completed_end: queryParams.predraft_completed_end }),
+                            // Draft completion date range filters
+                            ...(queryParams.draft_completed_start && { draft_completed_start: queryParams.draft_completed_start }),
+                            ...(queryParams.draft_completed_end && { draft_completed_end: queryParams.draft_completed_end }),
+                            // SCT completion date range filters
+                            ...(queryParams.sct_completed_start && { sct_completed_start: queryParams.sct_completed_start }),
+                            ...(queryParams.sct_completed_end && { sct_completed_end: queryParams.sct_completed_end }),
+                        }
+                    };
+                },
+                transformResponse: (response: any) => response.data || response,
+                providesTags: ["Fab"],
+            }),
 
             createFab: build.mutation<Fab, FabCreate>({
                 query: (data) => ({
@@ -1208,6 +1357,31 @@ export const jobApi = createApi({
                         }
                     };
 
+                },
+                transformResponse: (response: any) => {
+                    // Handle the response format with success, message, and data properties
+                    if (response && response.data) {
+                        return response.data;
+                    }
+                    return response;
+                },
+                providesTags: ["StoneColor"],
+            }),
+
+            // Stone Colors by Stone Type
+            getStoneColorsByStoneType: build.query<StoneColor[], StoneColorByStoneTypeParams>({
+                query: (params) => {
+                    const { stone_type_id, ...otherParams } = params;
+                    return {
+                        url: `/stone-types/${stone_type_id}/stone-colors`,
+                        method: "get",
+                        params: {
+                            skip: otherParams.skip || 0,
+                            limit: otherParams.limit || 100,
+                            ...(otherParams.status_id !== undefined && { status_id: otherParams.status_id }),
+                            ...(otherParams.search && { search: otherParams.search }),
+                        }
+                    };
                 },
                 transformResponse: (response: any) => {
                     // Handle the response format with success, message, and data properties
@@ -1430,7 +1604,7 @@ export const jobApi = createApi({
                     method: "put",
                     data
                 }),
-                invalidatesTags: (_result, _error, { id }) => [{ type: "Drafting", id }, "Drafting"],
+                invalidatesTags: (_result, _error, { id }) => [{ type: "Drafting", id }, "Drafting", "Fab" ],
             }),
 
             // Submit drafting for review
@@ -1479,6 +1653,106 @@ export const jobApi = createApi({
             deleteFileFromDrafting: build.mutation<any, { drafting_id: number; file_id: string }>({
                 query: ({ drafting_id, file_id }) => ({
                     url: `/drafting/${drafting_id}/file/${file_id}`,
+                    method: "delete"
+                }),
+                invalidatesTags: ["Drafting"],
+            }),
+
+            // CNC Drafting endpoints - EXACT SAME PATTERN AS DRAFTING
+            // Create CNC drafting assignment
+            createCNCDrafting: build.mutation<CNCDraftingResponse, CNCDraftingCreate>({
+                query: (data) => ({
+                    url: "/CNC",
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+
+            // Manage CNC session (start, pause, resume, on_hold, end)
+            manageCNCSession: build.mutation<CNCDraftingSessionResponse, { fab_id: number; data: CNCDraftingSessionAction }>({
+                query: ({ fab_id, data }) => ({
+                    url: `/CNC/${fab_id}/session`,
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Fab"],
+            }),
+            
+            // Get current CNC session
+            getCurrentCNCSession: build.query<CNCDraftingSessionResponse, number>({
+                query: (fab_id) => ({
+                    url: `/CNC/${fab_id}/session`,
+                    method: "get"
+                }),
+                providesTags: ["Fab"],
+            }),
+            
+            // Get CNC session history
+            getCNCSessionHistory: build.query<CNCDraftingSessionHistoryResponse, number>({
+                query: (fab_id) => ({
+                    url: `/CNC/${fab_id}/session/history`,
+                    method: "get"
+                }),
+                providesTags: ["Fab"],
+            }),
+
+            // Update CNCDrafting
+            updateCNCDrafting: build.mutation<CNCDrafting, { id: number; data: DraftingUpdate }>({
+                query: ({ id, data }) => ({
+                    url: `/CNC/${id}`,
+                    method: "put",
+                    data
+                }),
+                invalidatesTags: (_result, _error, { id }) => [{ type: "Drafting", id }, "Drafting", "Fab"],
+            }),
+
+            // Submit CNCDrafting for review
+            submitCNCDraftingForReview: build.mutation<any, { cnc_id: number; data: DraftingSubmitReview }>({
+                query: ({ cnc_id, data }) => ({
+                    url: `/CNC/${cnc_id}/submit-review`,
+                    method: "post",
+                    data
+                }),
+                invalidatesTags: ["Fab", "Drafting"],
+            }),
+
+            // Add files to CNCDrafting
+            addFilesToCNCDrafting: build.mutation<any, { cnc_id: number; files: File[]; stage?: string; stage_name?: string; file_design?: string }>({
+                query: ({ cnc_id, files, stage, stage_name, file_design }) => {
+                    const formData = new FormData();
+                    files.forEach((file) => {
+                        formData.append('files', file);
+                    });
+                    if (stage) {
+                        formData.append('stage', stage);
+                    }
+                    // CNCDrafting endpoint expects BOTH `stage` and `stage_name`
+                    // Fallback to `stage` if `stage_name` wasn't provided.
+                    if (stage_name) {
+                        formData.append('stage_name', stage_name);
+                    } else if (stage) {
+                        formData.append('stage_name', stage);
+                    }
+                    if (file_design) {
+                        formData.append('file_design', file_design);
+                    }
+                    return {
+                        url: `/CNC/${cnc_id}/add-file`,
+                        method: "post",
+                        data: formData,
+                        headers: {
+                            'Content-Type': 'multipart/form-data',
+                        },
+                    };
+                },
+                invalidatesTags: ["Drafting"],
+            }),
+
+            // Delete file from CNCDrafting
+            deleteFileFromCNCDrafting: build.mutation<any, { cnc_id: number; file_id: string }>({
+                query: ({ cnc_id, file_id }) => ({
+                    url: `/CNC/${cnc_id}/file/${file_id}`,
                     method: "delete"
                 }),
                 invalidatesTags: ["Drafting"],
@@ -1842,7 +2116,7 @@ export const jobApi = createApi({
             // Universal delete file - works with just file_id
             deleteFile: build.mutation<any, { file_id: string }>({
                 query: ({ file_id }) => ({
-                    url: `https://api.ag.easybusiness.ng/files/${file_id}`, // absolute URL
+                    url: `${baseUrl}/files/${file_id}`,
                     method: "DELETE",
                 }),
                 invalidatesTags: ["Drafting", "Fab"],
@@ -2107,6 +2381,7 @@ export const {
     useUpdateJobMutation,
     useDeleteJobMutation,
     useGetFabsQuery,
+    useGetFabsCncQuery,
     useGetFabByIdQuery,
     useGetFabsByJobQuery,
     useGetFabsByStageQuery,
@@ -2216,4 +2491,14 @@ export const {
     useSetPredraftToRedraftMutation,
     useUpdateFabStageMutation,
     // useAddFilesToDraftingMutation,
+    useGetStoneColorsByStoneTypeQuery,
+    // CNCDrafting hooks - EXACT SAME PATTERN AS DRAFTING
+    useCreateCNCDraftingMutation,
+    useManageCNCSessionMutation,
+    useGetCurrentCNCSessionQuery,
+    useGetCNCSessionHistoryQuery,
+    useUpdateCNCDraftingMutation,
+    useSubmitCNCDraftingForReviewMutation,
+    useAddFilesToCNCDraftingMutation,
+    useDeleteFileFromCNCDraftingMutation
 } = jobApi;

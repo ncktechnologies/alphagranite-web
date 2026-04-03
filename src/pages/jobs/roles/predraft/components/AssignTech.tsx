@@ -95,8 +95,8 @@ export function AssignTechnicianModal({
         </DialogHeader>
 
         <div>
-          <p className="font-bold"> {fabData?.fabId || "FAB-2024-001"}</p>
-          <p>{fabData?.jobName || "Conference Table - Quartz"}</p>
+          <p className="font-bold"> {fabData?.fabId || ""}</p>
+          <p>{fabData?.jobName || ""}</p>
         </div>
 
         <Form {...form}>

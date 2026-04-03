@@ -172,7 +172,7 @@ export const DraftReviewDetailsPage = () => {
                     label: "Fab ID",
                     value: (
                         <Link to={`/sales/${fabData.id}`} className="text-primary hover:underline">
-                            FAB-{fabData.id}
+                            {fabData.id}
                         </Link>
                     ),
                 },
@@ -192,50 +192,69 @@ export const DraftReviewDetailsPage = () => {
                         ? new Date(fabData.templating_schedule_start_date).toLocaleDateString()
                         : 'Not scheduled',
                 },
-                { label: "Assigned to", value: fabData.draft_data?.drafter_name || 'Unassigned' },
+                { label: "Drafter Assigned", value: fabData.draft_data?.drafter_name || 'Unassigned' },
                 { label: "Sales Person", value: fabData.sales_person_name || '—' },
                 { label: "SlabSmith Needed", value: fabData.slab_smith_ag_needed ? 'Yes' : 'No' },
             ],
         },
         {
+            title: 'Notes',
+            type: 'notes',
+            notes: Array.isArray(fabData?.notes)
+                ? fabData.notes.map((note: string, index: number) => ({
+                    id: index,
+                    avatar: 'N',
+                    content: note,
+                    author: '',
+                    timestamp: '',
+                }))
+                : [],
+        },
+        {
             title: "Drafting Notes",
             type: "notes",
-            notes: draftData ? [
-                {
-                    id: 1,
-                    avatar: draftData?.drafter_name?.substring(0, 2).toUpperCase() || 'DR',
-                    content: draftData?.draft_note || `Drafting completed with ${draftData?.no_of_piece_drafted || 0} pieces, ${draftData?.total_sqft_drafted || 0} sq ft`,
-                    author: draftData?.drafter_name || 'Unknown Drafter',
-                    timestamp: draftData?.updated_at ? new Date(draftData.updated_at).toLocaleDateString() : 'N/A',
-                }
-            ] : [],
+            notes: draftData && Array.isArray(draftData) ? draftData.map(...) : [],  // adjust if draftData is not an array
+            // But based on your code, draftData appears to be a single object, so:
+            notes: draftData
+                ? [
+                    {
+                        id: 1,
+                        avatar: draftData?.drafter_name?.substring(0, 2).toUpperCase() || 'DR',
+                        content: draftData?.draft_note || `Drafting completed with ${draftData?.no_of_piece_drafted || 0} pieces, ${draftData?.total_sqft_drafted || 0} sq ft`,
+                        author: draftData?.drafter_name || 'Unknown Drafter',
+                        timestamp: draftData?.updated_at ? new Date(draftData.updated_at).toLocaleDateString() : 'N/A',
+                    }
+                ]
+                : [],
         },
         {
             title: "FAB Notes",
             type: "notes",
-            notes: getAllFabNotes(fabData?.fab_notes || []).map(note => {
-                const stageConfig: Record<string, { label: string; color: string }> = {
-                    templating: { label: 'Templating', color: 'text-blue-700' },
-                    pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
-                    drafting: { label: 'Drafting', color: 'text-green-700' },
-                    sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
-                    slab_smith_request: { label: 'Slab Smith Request', color: 'text-red-700' },
-                    cut_list: { label: 'Final Programming', color: 'text-purple-700' },
-                    cutting: { label: 'Cutting', color: 'text-orange-700' },
-                    revisions: { label: 'Revisions', color: 'text-purple-700' },
-                    draft: { label: 'Draft', color: 'text-green-700' },
-                    general: { label: 'General', color: 'text-gray-700' }
-                };
-                const stage = note.stage || 'general';
-                const config = stageConfig[stage] || stageConfig.general;
-                return {
-                    id: note.id,
-                    avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
-                    content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${note.note}`,
-                    author: note.created_by_name || 'Unknown',
-                    timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
-                };
-            })
+            notes: Array.isArray(fabData?.fab_notes)
+                ? fabData.fab_notes.map((note: any) => {
+                    const stageConfig: Record<string, { label: string; color: string }> = {
+                        templating: { label: 'Templating', color: 'text-blue-700' },
+                        pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
+                        drafting: { label: 'Drafting', color: 'text-green-700' },
+                        sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
+                        slab_smith_request: { label: 'Slab Smith Request', color: 'text-red-700' },
+                        cut_list: { label: 'Final Programming', color: 'text-purple-700' },
+                        cutting: { label: 'Cutting', color: 'text-orange-700' },
+                        revisions: { label: 'Revisions', color: 'text-purple-700' },
+                        draft: { label: 'Draft', color: 'text-green-700' },
+                        general: { label: 'General', color: 'text-gray-700' }
+                    };
+                    const stage = note?.stage || 'general';
+                    const config = stageConfig[stage] || stageConfig.general;
+                    return {
+                        id: note?.id,
+                        avatar: note?.created_by_name?.charAt(0).toUpperCase() || 'U',
+                        content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${note?.note || ''}`,
+                        author: note?.created_by_name || 'Unknown',
+                        timestamp: note?.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+                    };
+                })
+                : [],
         }
     ];
 
@@ -249,7 +268,10 @@ export const DraftReviewDetailsPage = () => {
                             <ToolbarHeading
                                 title={
                                     <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
-                                        <a href={jobNameLink} className="hover:underline">
+                                        <a href={jobNameLink} className="hover:underline"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
                                             {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
                                         </a>
                                         <span className="mx-1 text-gray-400">·</span>
@@ -374,7 +396,7 @@ export const DraftReviewDetailsPage = () => {
                                                     variant="dashed"
                                                     size="sm"
                                                     onClick={() => setShowUploadModal(true)}
-                                                    disabled={isUploadDisabled}
+                                                    // disabled={isUploadDisabled}
                                                     className="flex items-center gap-1.5 text-xs"
                                                 >
                                                     <Plus className="w-3.5 h-3.5" />
@@ -387,9 +409,8 @@ export const DraftReviewDetailsPage = () => {
                                             onFileClick={handleFileClick}
                                             draftingData={draftData}
                                             slabsmithData={(fabData as any)?.slabsmith_data}
-                                            onDeleteFile={handleDeleteFile}
                                             draftingId={draftData?.id}
-                                            showDeleteButton={!isUploadDisabled}
+                                            showDeleteButton={true}
                                         />
                                     </div>
                                 </CardContent>
@@ -406,7 +427,7 @@ export const DraftReviewDetailsPage = () => {
                 title="Upload SCT Files"
                 entityId={draftData?.id}
                 uploadMutation={addFilesToDrafting}
-                stages={[{ value: 'sales_ct', label: 'Sales CT' }]}
+                stages={[{ value: 'sales_ct', label: 'SCT' }]}
                 fileTypes={[
                     { value: 'block_drawing', label: 'Block Drawing' },
                     { value: 'layout', label: 'Layout' },
@@ -431,7 +452,7 @@ export const DraftReviewDetailsPage = () => {
                     open={showSubmissionModal}
                     onClose={() => setShowSubmissionModal(false)}
                     onSubmit={handleSubmitDraft}
-                    fabId={`FAB-${fabData.id}`}
+                    fabId={fabData.id}
                     fabType={fabData.fab_type}
                     jobNumber={fabData.job_details?.job_number || ''}
                     totalSqFt={fabData.total_sqft}

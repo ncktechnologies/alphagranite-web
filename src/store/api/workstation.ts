@@ -59,6 +59,21 @@ export interface PlanningSection {
   id: number;
   name: string;
   description?: string;
+  status_id?: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface PlanningSectionCreate {
+  plan_name: string;
+  plan_description?: string;
+  status_id?: number;
+}
+
+export interface PlanningSectionUpdate {
+  plan_name?: string;
+  plan_description?: string;
+  status_id?: number;
 }
 
 export interface SuccessResponse<T = any> {
@@ -155,6 +170,16 @@ export const workstationApi = createApi({
         invalidatesTags: ["Workstation"],
       }),
 
+      // Toggle workstation status
+      toggleWorkstationStatus: build.mutation<SuccessResponse<Workstation>, { id: number; data: WorkstationUpdatePayload }>({
+        query: ({ id, data }) => ({
+          url: `/api/v1/workstation/${id}`,
+          method: "put",
+          data,
+        }),
+        invalidatesTags: ["Workstation"],
+      }),
+
       // Get planning sections (for workstation assignment)
       getPlanningSections: build.query<PlanningSection[], void>({
         query: () => ({
@@ -163,6 +188,55 @@ export const workstationApi = createApi({
         }),
         transformResponse: (response: any) => response.data || response,
         providesTags: ["Workstation"],
+      }),
+
+      // Get all planning sections (including inactive)
+      getAllPlanningSections: build.query<PlanningSection[], void>({
+        query: () => ({
+          url: "/api/v1/planning-section/active",
+          method: "get",
+        }),
+        transformResponse: (response: any) => response.data || response,
+        providesTags: ["Workstation"],
+      }),
+
+      // Create planning section
+      createPlanningSection: build.mutation<SuccessResponse<PlanningSection>, PlanningSectionCreate>({
+        query: (data) => ({
+          url: "/api/v1/planning-section",
+          method: "post",
+          data,
+        }),
+        invalidatesTags: ["Workstation"],
+      }),
+
+      // Update planning section
+      updatePlanningSection: build.mutation<SuccessResponse<PlanningSection>, { id: number; data: PlanningSectionUpdate }>({
+        query: ({ id, data }) => ({
+          url: `/api/v1/planning-section/${id}`,
+          method: "put",
+          data,
+        }),
+        invalidatesTags: ["Workstation"],
+      }),
+
+      // Delete planning section
+      deletePlanningSection: build.mutation<SuccessResponse<void>, number>({
+        query: (id) => ({
+          url: `/api/v1/planning-section/${id}`,
+          method: "delete",
+        }),
+        invalidatesTags: ["Workstation"],
+      }),
+
+      // Toggle planning section status
+      togglePlanningSectionStatus: build.mutation<SuccessResponse<PlanningSection>, { id: number; data: PlanningSectionUpdate }>({
+        query: ({ id, data }) => ({
+          url: `/api/v1/planning-section/${id}`,
+          method: "put",
+          data,
+        }),
+        invalidatesTags: ["Workstation"],
       }),
 
       getWorkStationByPlanningSections: build.query<PlanningSection[], void>({
@@ -188,6 +262,12 @@ export const {
   useCreateWorkstationMutation,
   useUpdateWorkstationMutation,
   useDeleteWorkstationMutation,
+  useToggleWorkstationStatusMutation,
   useGetPlanningSectionsQuery,
+  useGetAllPlanningSectionsQuery,
+  useCreatePlanningSectionMutation,
+  useUpdatePlanningSectionMutation,
+  useDeletePlanningSectionMutation,
+  useTogglePlanningSectionStatusMutation,
   useGetWorkStationByPlanningSectionsQuery,
 } = workstationApi;
