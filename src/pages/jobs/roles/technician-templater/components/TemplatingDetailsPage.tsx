@@ -183,7 +183,9 @@ export function TemplatingDetailsPage() {
               <ToolbarHeading
                 title={
                   <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
-                    <a href={jobNameLink} className="hover:underline">
+                    <a href={jobNameLink} className="hover:underline"
+                     target="_blank"
+                      rel="noreferrer">
                       {fab?.job_details?.name || `Job ${fab?.job_id}`}
                     </a>
                     <span className="mx-1 text-gray-400">·</span>
@@ -254,7 +256,7 @@ export function TemplatingDetailsPage() {
           <Card>
             <CardHeader className="py-3 px-4 sm:px-5">
               <CardTitle className="text-sm sm:text-base">Template activity
-              <p className="text-xs text-gray-500 mt-0.5">Update your templating activity here</p>
+                <p className="text-xs text-gray-500 mt-0.5">Update your templating activity here</p>
               </CardTitle>
               <Button
                 onClick={() => navigate(`/jobs/${fab?.job_details?.id || ''}/templater/timer`)}

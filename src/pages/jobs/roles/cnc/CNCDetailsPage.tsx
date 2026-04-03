@@ -377,7 +377,7 @@ export function CNCDetailsPage() {
         : '#';
 
     // CNC-specific: use cncData instead of draftingData
-    const cncId = cncData?.id || fabData?.draft_data?.id;
+    const cncId = fabData?.cnc_data?.id;
 
     const sidebarSections = fabData ? [
         {
@@ -504,7 +504,10 @@ export function CNCDetailsPage() {
                             <ToolbarHeading
                                 title={
                                     <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
-                                        <a href={jobNameLink} className="hover:underline">
+                                        <a href={jobNameLink} className="hover:underline"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
                                             {fabData?.job_details?.name || `Job ${fabData?.job_id}`}
                                         </a>
                                         <span className="mx-1 text-gray-400">·</span>
@@ -663,7 +666,7 @@ export function CNCDetailsPage() {
                                                 <Documents
                                                     onFileClick={handleFileClick}
                                                     draftingData={fabData?.draft_data}
-                                                    draftingId={cncData?.id || fabData?.cnc_data?.id || fabData?.draft_data?.id}
+                                                    draftingId={fabData?.cnc_data?.id}
                                                     showDeleteButton={!hasEnded && !isOnHold}
                                                 />
                                             </div>

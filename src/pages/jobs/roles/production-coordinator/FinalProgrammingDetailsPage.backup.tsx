@@ -303,7 +303,8 @@ export function FinalProgrammingDetailsPage() {
     {
       title: 'Notes',
       type: 'notes',
-      notes: fabData?.notes?.map((note: string, index: number) => ({
+      notes: Array.isArray(fabData?.notes)
+      ? fabData?.notes?.map((note: string, index: number) => ({
         id: index,
         avatar: 'N',
         content: note,

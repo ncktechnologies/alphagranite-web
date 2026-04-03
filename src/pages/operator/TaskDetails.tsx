@@ -453,11 +453,7 @@ export function OperatorTaskDetails() {
                             <CardTitle className="text-lg font-semibold">{t('QA.DOCUMENTATION')}</CardTitle>
                             <p className="text-sm text-muted-foreground">{t('QA.DOCUMENTATION_DESCRIPTION')}</p>
                         </CardHeader>
-                        <CardContent>
-                            <Button onClick={() => setShowUploadDialog(true)} variant="outline" className="w-full">
-                                <Camera className="h-4 w-4 mr-2" /> {t('QA.UPLOAD_FILES')}
-                            </Button>
-                        </CardContent>
+                        
                     </Card>
                 </div>
             </div>

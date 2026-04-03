@@ -38,35 +38,35 @@ export function ResurfacingStatusDetailsPage() {
   // Build the fields for the Job Details card (exactly as required)
   const jobDetailsFields = fab
     ? [
-        { label: 'Account', value: fab.account_name || '—' },
-        {
-          label: 'Fab ID',
-          value: (
-            <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">
-              {fab.id}
-            </Link>
-          ),
-        },
-        { label: 'Area', value: fab.input_area || '—' },
-        {
-          label: 'Material',
-          value: fab.stone_type_name
-            ? `${fab.stone_type_name} - ${fab.stone_color_name || ''} - ${fab.stone_thickness_value || ''}`
-            : '—',
-        },
-        {
-          label: 'Fab Type',
-          value: <span className="uppercase">{fab.fab_type || '—'}</span>,
-        },
-        { label: 'Edge', value: fab.edge_name || '—' },
-        { label: 'Total S.F', value: fab.total_sqft?.toString() || '—' },
-        { label: 'Sales Person', value: fab.sales_person_name || '—' },
-        {
-          label: 'Job Notes',
-          value: fab.job_details?.description || 'None',
-          fullWidth: true,
-        },
-      ]
+      { label: 'Account', value: fab.account_name || '—' },
+      {
+        label: 'Fab ID',
+        value: (
+          <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">
+            {fab.id}
+          </Link>
+        ),
+      },
+      { label: 'Area', value: fab.input_area || '—' },
+      {
+        label: 'Material',
+        value: fab.stone_type_name
+          ? `${fab.stone_type_name} - ${fab.stone_color_name || ''} - ${fab.stone_thickness_value || ''}`
+          : '—',
+      },
+      {
+        label: 'Fab Type',
+        value: <span className="uppercase">{fab.fab_type || '—'}</span>,
+      },
+      { label: 'Edge', value: fab.edge_name || '—' },
+      { label: 'Total S.F', value: fab.total_sqft?.toString() || '—' },
+      { label: 'Sales Person', value: fab.sales_person_name || '—' },
+      {
+        label: 'Job Notes',
+        value: fab.job_details?.description || 'None',
+        fullWidth: true,
+      },
+    ]
     : [];
 
   // Sidebar sections (only FAB Notes)
@@ -74,42 +74,49 @@ export function ResurfacingStatusDetailsPage() {
     {
       title: 'Notes',
       type: 'notes',
-      notes: fab?.notes?.map((note: string, index: number) => ({
-        id: index,
-        avatar: 'N',
-        content: note,
-        author: '',
-        timestamp: '',
-      })) || [],
+      notes: Array.isArray(fab?.notes)
+        ? fab.notes.map((note: string, index: number) => ({
+          id: index,
+          avatar: 'N',
+          content: note,
+          author: '',
+          timestamp: '',
+        }))
+        : [],
     },
     {
       title: 'FAB Notes',
       type: 'notes',
-      notes: (fab?.notes || []).map((noteItem: any, index: number) => {
-        const stageConfig: Record<string, { label: string; color: string }> = {
-          templating: { label: 'Templating', color: 'text-blue-700' },
-          pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
-          drafting: { label: 'Drafting', color: 'text-green-700' },
-          sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
-          slab_smith_request: { label: 'Slab Smith Request', color: 'text-red-700' },
-          cut_list: { label: 'Final Programming', color: 'text-purple-700' },
-          cutting: { label: 'Cutting', color: 'text-orange-700' },
-          revisions: { label: 'Revisions', color: 'text-purple-700' },
-          draft: { label: 'Draft', color: 'text-green-700' },
-          general: { label: 'General', color: 'text-gray-700' },
-        };
+      notes: Array.isArray(fab?.notes)
+        ? fab.notes.map((noteItem: any, index: number) => {
+          const stageConfig: Record<string, { label: string; color: string }> = {
+            templating: { label: 'Templating', color: 'text-blue-700' },
+            pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
+            drafting: { label: 'Drafting', color: 'text-green-700' },
+            sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
+            slab_smith_request: { label: 'Slab Smith Request', color: 'text-red-700' },
+            cut_list: { label: 'Final Programming', color: 'text-purple-700' },
+            cutting: { label: 'Cutting', color: 'text-orange-700' },
+            revisions: { label: 'Revisions', color: 'text-purple-700' },
+            draft: { label: 'Draft', color: 'text-green-700' },
+            general: { label: 'General', color: 'text-gray-700' },
+          };
 
-        const stage = noteItem.stage || 'general';
-        const config = stageConfig[stage] || stageConfig.general;
+          const stage = noteItem?.stage || 'general';
+          const config = stageConfig[stage] || stageConfig.general;
 
-        return {
-          id: noteItem.id || index,
-          avatar: fabAuthorName.charAt(0).toUpperCase() || 'U',
-          content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${noteItem}`,
-          author: fabAuthorName,
-          timestamp: fab?.created_at ? new Date(fab.created_at).toLocaleDateString() : 'Unknown date',
-        };
-      }),
+          // Safely extract note content – assuming noteItem has a 'note' property
+          const noteContent = noteItem?.note || (typeof noteItem === 'string' ? noteItem : '');
+
+          return {
+            id: noteItem?.id ?? index,
+            avatar: fabAuthorName?.charAt(0).toUpperCase() || 'U',
+            content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${noteContent}`,
+            author: fabAuthorName || 'Unknown',
+            timestamp: fab?.created_at ? new Date(fab.created_at).toLocaleDateString() : 'Unknown date',
+          };
+        })
+        : [],
     },
   ];
 
@@ -197,7 +204,10 @@ export function ResurfacingStatusDetailsPage() {
           <ToolbarHeading
             title={
               <div className="text-2xl font-bold">
-                <a href={jobNameLink} className="hover:underline">
+                <a href={jobNameLink} className="hover:underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   {fab?.job_details?.name || `Job ${fab?.job_id}`}
                 </a>
                 {' - '}
@@ -209,12 +219,11 @@ export function ResurfacingStatusDetailsPage() {
             description={fab?.job_details?.description || 'No description available'}
           />
           <span
-            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-              {
-                0: 'bg-red-100 text-red-800',
-                1: 'bg-green-100 text-green-800',
-              }[fab?.status_id] || 'bg-gray-100 text-gray-800'
-            }`}
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{
+              0: 'bg-red-100 text-red-800',
+              1: 'bg-green-100 text-green-800',
+            }[fab?.status_id] || 'bg-gray-100 text-gray-800'
+              }`}
           >
             {{
               0: 'ON HOLD',

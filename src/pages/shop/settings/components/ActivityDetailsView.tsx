@@ -49,7 +49,7 @@ export function ActivityDetailsView({ activity, onEdit, onDelete, onToggleStatus
                   <Edit2 className="w-4 h-4 mr-1" />
                   Edit
                 </Button>
-                <Button 
+                {/* <Button 
                   size="sm"
                   onClick={onDelete}
                   variant="outline"
@@ -57,7 +57,7 @@ export function ActivityDetailsView({ activity, onEdit, onDelete, onToggleStatus
                 >
                   <Trash2 className="w-4 h-4 mr-1" />
                   Delete
-                </Button>
+                </Button> */}
               </div>
             </div>
           </div>

@@ -1738,7 +1738,7 @@ export const jobApi = createApi({
                         formData.append('file_design', file_design);
                     }
                     return {
-                        url: `/CNC/${cnc_id}/files`,
+                        url: `/CNC/${cnc_id}/add-file`,
                         method: "post",
                         data: formData,
                         headers: {
