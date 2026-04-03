@@ -418,6 +418,7 @@ export function RevisionDetailsPage() {
   const canOpenSubmit = isDrafting && allFilesForDisplay.length > 0;
 
   const handleSubmitRevision = async (data: any) => {
+    
     if (!fabId || !currentEmployeeId) {
       toast.error("Missing required data");
       return;
@@ -440,6 +441,7 @@ export function RevisionDetailsPage() {
           revision_notes: data.notes || revisionInfo.revisionReason || '',
           is_completed: data.complete || false
         };
+        console.log("[v0] Sending updateData to API:", updateData);
         await updateRevision({ revision_id: latestRevision.id, data: updateData }).unwrap();
         revisionId = latestRevision.id;
       } else {
