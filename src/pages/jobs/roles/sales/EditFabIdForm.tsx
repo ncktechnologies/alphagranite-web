@@ -213,7 +213,7 @@ const EditFabIdForm = () => {
     const { data: fabTypesData = [], isLoading: isLoadingFabTypes } = useGetFabTypesQuery();
     const { data: accountsData = [], isLoading: isLoadingAccounts } = useGetAccountsQuery({ limit: 1000 });
     const { data: stoneTypesData = [], isLoading: isLoadingStoneTypes } = useGetStoneTypesQuery({ limit: 1000 });
-    const { data: stoneColorsData = [], isLoading: isLoadingStoneColors } = useGetStoneColorsQuery({ limit: 1000 });
+    const { data: stoneColorsData = [], isLoading: isLoadingStoneColors,  isError: isStoneColorsError} = useGetStoneColorsQuery({ limit: 1000 });
     const { data: stoneThicknessesData = [], isLoading: isLoadingStoneThicknesses } = useGetStoneThicknessesQuery({ limit: 1000 });
     const { data: edgesData = [], isLoading: isLoadingEdges } = useGetEdgesQuery({ limit: 1000 });
     const { data: jobsData = [], isLoading: isLoadingJobs } = useGetJobsQuery({ limit: 1000 });

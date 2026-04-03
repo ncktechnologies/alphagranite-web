@@ -258,11 +258,11 @@ export function TemplatingDetailsPage() {
               <CardTitle className="text-sm sm:text-base">Template activity
                 <p className="text-xs text-gray-500 mt-0.5">Update your templating activity here</p>
               </CardTitle>
-              <Button
+              {/* <Button
                 onClick={() => navigate(`/jobs/${fab?.job_details?.id || ''}/templater/timer`)}
               >
                 Go to Timer
-              </Button>
+              </Button> */}
             </CardHeader>
 
           </Card>

@@ -166,7 +166,7 @@ export const JobSalesTable = ({
 
     const handleView = (job: IJob) => {
         const viewPath = getViewPath(job);
-        navigate(`/job/${viewPath}/${job.fab_id}`);
+        navigate(`/${viewPath}/${job.fab_id}`);
     };
 
     const handleRowClickInternal = (job: IJob) => {

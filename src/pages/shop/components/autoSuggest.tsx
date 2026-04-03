@@ -33,10 +33,8 @@ const FAB_STAGE_FIELDS: { keyword: string; field: string; label: string }[] = [
   { keyword: 'cnc', field: 'cnc_linft', label: 'CNC' },
 ];
 
-// ── Touchup keyword — identifies the "touchup" planning section ───────────────
 const TOUCHUP_KEYWORD = 'touch';
 
-// ── Entry type ────────────────────────────────────────────────────────────────
 interface AutoPlanEntry {
   id?: number;
   fab_id: string;
@@ -50,13 +48,12 @@ interface AutoPlanEntry {
   stageName: string;
   date?: Date;
   sequence: string;
-  isTouchup?: boolean; // ← flag to pin this entry last
+  isTouchup?: boolean;
 }
 
-// ── AutoPlanEntryCard ─────────────────────────────────────────────────────────
 interface AutoPlanEntryCardProps {
   entry: AutoPlanEntry;
-  idx: number;           // visual position (0-based)
+  idx: number;
   totalNonTouchup: number;
   employees: any[];
   planningSections: any[];
@@ -108,13 +105,11 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
 
   return (
     <Card className="border border-[#ecedf0] rounded-[12px] overflow-hidden">
-      {/* ── Card header ─────────────────────────────────────────────────────── */}
       <CardHeader
         className="pb-3 border-b border-[#ecedf0] cursor-pointer select-none px-4"
         onClick={onToggleExpand}
       >
         <div className="flex items-center gap-2 w-full">
-          {/* Left — takes all available space, truncates internally */}
           <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
             <ChevronDown
               className={cn(
@@ -142,7 +137,6 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
             )}
           </div>
 
-          {/* Right — fixed width, never shrinks, pushed to far right by flex-1 on left */}
           <div
             className="flex items-center gap-2 ml-auto pl-4 shrink-0"
             onClick={e => e.stopPropagation()}
@@ -175,10 +169,9 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
         </div>
       </CardHeader>
 
-      {/* ── Card body ───────────────────────────────────────────────────────── */}
       {isExpanded && (
         <CardContent className="pt-5 space-y-5">
-          {/* Planning Section + Est. Hours — 3 cells wide */}
+          {/* Planning Section + Est. Hours + Workstation */}
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label className="text-[14px] text-[#4b545d] font-semibold">Shop Activity</Label>
@@ -216,7 +209,6 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
               />
             </div>
 
-            {/* Workstation occupies the 3rd cell in this row */}
             <div>
               <Label className="text-[14px] text-[#4b545d] font-semibold">Workstation *</Label>
               <Select
@@ -243,7 +235,7 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
             </div>
           </div>
 
-          {/* Operator + Date + Time — 3 cells */}
+          {/* Operator + Date + Time */}
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label className="text-[14px] text-[#4b545d] font-semibold">Operator *</Label>
@@ -355,7 +347,7 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
             </div>
           )}
 
-          {/* Notes — full width */}
+          {/* Notes */}
           <div>
             <Label className="text-[14px] text-[#4b545d] font-semibold">Description / Notes</Label>
             <Textarea
@@ -397,7 +389,6 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   const effectivePrefillFabId = propPrefillFabId || urlFabId || '';
 
   const [proposals, setProposals] = useState<Record<number, any[]>>({});
-  // ── All cards collapsed by default ───────────────────────────────────────
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
 
   const emptyEntry = (opts?: {
@@ -417,18 +408,11 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     planning_section_id: opts?.section_id !== undefined ? String(opts.section_id) : undefined,
     stageName: opts?.stageName || '',
     date: opts?.date || propSelectedDate || undefined,
-    sequence: '',      // no default — user picks or touchup uses none
+    sequence: '',
     isTouchup: opts?.isTouchup || false,
   });
 
   const [entries, setEntries] = useState<AutoPlanEntry[]>([emptyEntry()]);
-
-  // Sequence options for non-touchup entries (minimum 3 shown)
-  const nonTouchupCount = entries.filter(e => !e.isTouchup).length;
-  const sequenceOptions = useMemo(
-    () => Array.from({ length: Math.max(3, nonTouchupCount) }, (_, i) => i + 1),
-    [nonTouchupCount]
-  );
 
   const [createShopPlan, { isLoading }] = useCreateShopPlansMutation();
   const [updateShopPlan] = useUpdateShopPlanMutation();
@@ -463,7 +447,6 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   const { findSectionByKeyword } = usePlanSections();
   const employeesLoaded = employees.length > 0;
 
-  // ── Find touchup section once planning sections load ─────────────────────
   const touchupSection = useMemo(
     () => planningSections.find((ps: any) =>
       (ps.name || ps.plan_name || ps.title || '').toLowerCase().includes(TOUCHUP_KEYWORD)
@@ -482,39 +465,42 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       );
   }
 
-  // ── When FAB changes, auto-build entries with touchup always last ─────────
+  // Helper: get smallest positive integer not in usedSequences
+  const getNextAvailableSequence = (used: Set<number>) => {
+    let seq = 1;
+    while (used.has(seq)) seq++;
+    return seq;
+  };
+
+  // When FAB changes, rebuild entries with unique sequences
   useEffect(() => {
     if (selectedEvent || !selectedFab) return;
 
     const activeStages = getActiveStagesFromFab(selectedFab);
-
-    // Build regular stage entries (numbered 1…n)
     const regularEntries: AutoPlanEntry[] = activeStages.length === 0
       ? [emptyEntry({ fab_id: String(selectedFab.id) })]
       : activeStages.map((s, i) => ({
-        ...emptyEntry({ section_id: s.section_id, stageName: s.label, fab_id: String(selectedFab.id) }),
-        sequence: String(i + 1),
-      }));
+          ...emptyEntry({ section_id: s.section_id, stageName: s.label, fab_id: String(selectedFab.id) }),
+          sequence: String(i + 1),
+        }));
 
-    // ── Append touchup as the last entry if the section exists ────────────
     const touchupEntry: AutoPlanEntry | null = touchupSection
       ? {
-        ...emptyEntry({
-          section_id: touchupSection.id,
-          stageName: touchupSection.name || touchupSection.plan_name || touchupSection.title || 'Touchup',
-          fab_id: String(selectedFab.id),
-          isTouchup: true,
-        }),
-        sequence: '', // no sequence for touchup
-      }
+          ...emptyEntry({
+            section_id: touchupSection.id,
+            stageName: touchupSection.name || touchupSection.plan_name || touchupSection.title || 'Touchup',
+            fab_id: String(selectedFab.id),
+            isTouchup: true,
+          }),
+          sequence: '',
+        }
       : null;
 
     setEntries(touchupEntry ? [...regularEntries, touchupEntry] : regularEntries);
-    // Collapse all by default
     setExpandedCards({});
   }, [selectedFab, selectedEvent, touchupSection]);
 
-  // ── Editing an existing event ─────────────────────────────────────────────
+  // Editing existing event
   useEffect(() => {
     if (!selectedEvent || !employeesLoaded) return;
     const ev: any = selectedEvent;
@@ -537,34 +523,37 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       sequence: ev.sequence != null ? String(ev.sequence) : '',
       isTouchup: false,
     }]);
-    setExpandedCards({ 0: true }); // expand the single edit card
+    setExpandedCards({ 0: true });
   }, [selectedEvent, employeesLoaded]);
 
-  // ── Entry helpers ─────────────────────────────────────────────────────────
+  // ── Entry management with sequence uniqueness ─────────────────────────────
   const addEntry = () => {
     setEntries(prev => {
       const hasTouchup = prev.some(e => e.isTouchup);
-      const touchupEntry = hasTouchup ? prev[prev.length - 1] : null;
       const regularEntries = hasTouchup ? prev.slice(0, -1) : prev;
+      const usedSequences = new Set(regularEntries.map(e => Number(e.sequence)).filter(s => !isNaN(s)));
+      const nextSeq = getNextAvailableSequence(usedSequences);
 
       const newEntry: AutoPlanEntry = {
         ...emptyEntry({ fab_id: prev[0]?.fab_id }),
-        sequence: String(regularEntries.length + 1),
+        sequence: String(nextSeq),
       };
 
-      // Insert before touchup (or at end if no touchup)
-      return touchupEntry
-        ? [...regularEntries, newEntry, touchupEntry]
-        : [...regularEntries, newEntry];
+      const touchupEntry = hasTouchup ? prev[prev.length - 1] : null;
+      return touchupEntry ? [...regularEntries, newEntry, touchupEntry] : [...regularEntries, newEntry];
     });
   };
 
   const removeEntry = (idx: number) => {
     setEntries(prev => {
       const next = prev.filter((_, i) => i !== idx);
-      // Re-number non-touchup sequences
+      // Renumber non-touchup entries sequentially
       let seq = 1;
-      return next.map(e => e.isTouchup ? e : { ...e, sequence: String(seq++) });
+      const updated = next.map(e => {
+        if (e.isTouchup) return e;
+        return { ...e, sequence: String(seq++) };
+      });
+      return updated;
     });
     setProposals(p => {
       const next = { ...p };
@@ -573,13 +562,38 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     });
   };
 
-  const updateEntry = (idx: number, patch: Partial<AutoPlanEntry>) =>
-    setEntries(p => p.map((e, i) => {
-      if (i === idx) return { ...e, ...patch };
-      // Sync fab_id across all entries when changed on first card
-      if (idx === 0 && patch.fab_id !== undefined) return { ...e, fab_id: patch.fab_id };
-      return e;
-    }));
+  const updateEntry = (idx: number, patch: Partial<AutoPlanEntry>) => {
+    setEntries(prev => {
+      const newEntries = [...prev];
+      const target = newEntries[idx];
+
+      // Handle sequence update with uniqueness & swapping
+      if (patch.sequence !== undefined && !target.isTouchup) {
+        const newSeq = Number(patch.sequence);
+        if (!isNaN(newSeq)) {
+          // Find another non-touchup entry that already has this sequence
+          const conflictIdx = newEntries.findIndex((e, i) =>
+            i !== idx && !e.isTouchup && Number(e.sequence) === newSeq
+          );
+          if (conflictIdx !== -1) {
+            // Swap sequences
+            const oldSeq = Number(target.sequence);
+            newEntries[conflictIdx] = { ...newEntries[conflictIdx], sequence: String(oldSeq) };
+            newEntries[idx] = { ...newEntries[idx], sequence: String(newSeq) };
+            return newEntries;
+          }
+        }
+      }
+
+      // Apply normal update
+      if (idx === 0 && patch.fab_id !== undefined) {
+        // Sync fab_id across all entries
+        return newEntries.map(e => ({ ...e, fab_id: patch.fab_id! }));
+      }
+      newEntries[idx] = { ...target, ...patch };
+      return newEntries;
+    });
+  };
 
   const applyProposal = (entryIdx: number, proposal: { start: string; end: string }) => {
     const start = new Date(proposal.start);
@@ -593,7 +607,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
 
   const handleBack = () => { if (onBack) onBack(); else navigate(-1); };
 
-  // ── Submit ────────────────────────────────────────────────────────────────
+  // Submit logic
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     for (const entry of entries) {
@@ -637,7 +651,6 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
             scheduled_start: start,
             ...(end && { scheduled_end: end }),
             notes: entry.notes || undefined,
-            // Touchup gets sequence after all other stages; regular entries use their value
             sequence: entry.isTouchup
               ? groups[fabId].length  // always last
               : (Number(entry.sequence) || idx + 1),
@@ -672,11 +685,10 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       onEventCreated?.();
       handleBack();
     } catch (error: any) {
-      // toast.error(error?.data?.detail?.message || 'Failed to create/update Plan');
+      // error handling
     }
   };
 
-  // ── Auto-populate ─────────────────────────────────────────────────────────
   const handleAutoPopulate = async () => {
     for (const entry of entries) {
       if (!entry.operator_id) { toast.error('Please select an operator for each stage'); return; }
@@ -723,13 +735,19 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
 
       toast.success('Earliest slots applied — pick an alternative below each stage if needed');
     } catch (error: any) {
-      // toast.error(error?.data?.detail?.message || 'Failed to fetch available slots');
+      // error handling
     }
   };
 
   const isEditing = !!selectedEvent;
+  const nonTouchupCount = entries.filter(e => !e.isTouchup).length;
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // For each non-touchup card, provide all numbers 1..nonTouchupCount as options
+  const sequenceOptions = useMemo(
+    () => Array.from({ length: Math.max(1, nonTouchupCount) }, (_, i) => i + 1),
+    [nonTouchupCount]
+  );
+
   return (
     <div className="bg-white min-h-screen">
       {/* Header */}
@@ -783,7 +801,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
             </CardContent>
           </Card>
 
-          {/* FAB Details — 3 cells per row */}
+          {/* FAB Details */}
           {selectedFabId && selectedFab && (
             <Card className="border border-[#ecedf0] rounded-[12px]">
               <CardHeader className="pb-3 border-b border-[#ecedf0]">
@@ -833,7 +851,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
             </Card>
           )}
 
-          {/* Plan entry cards — all collapsed by default */}
+          {/* Plan Entry Cards */}
           {entries.map((entry, idx) => (
             <AutoPlanEntryCard
               key={idx}
@@ -843,7 +861,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
               employees={employees}
               planningSections={planningSections}
               proposals={proposals[idx] || []}
-              isExpanded={expandedCards[idx] === true}   // ← collapsed unless explicitly opened
+              isExpanded={expandedCards[idx] === true}
               sequenceOptions={sequenceOptions}
               onToggleExpand={() =>
                 setExpandedCards(p => ({ ...p, [idx]: !(p[idx] === true) }))
@@ -854,7 +872,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
             />
           ))}
 
-          {/* Add stage — inserts before touchup */}
+          {/* Add Stage Button */}
           <button
             type="button"
             onClick={addEntry}
@@ -864,7 +882,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
             <span className="text-[14px] font-semibold">Add Another Stage</span>
           </button>
 
-          {/* Auto-populate */}
+          {/* Auto-populate Button */}
           <button
             type="button"
             onClick={handleAutoPopulate}
@@ -876,7 +894,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
               : <><Sparkles className="h-4 w-4" />Auto-populate Dates</>}
           </button>
 
-          {/* Actions */}
+          {/* Action Buttons */}
           <div className="flex items-center gap-3 pt-2 pb-8">
             <button
               type="button"

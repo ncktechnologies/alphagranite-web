@@ -23,7 +23,7 @@ const JobStatusPage = () => {
                         </Link>
                     </ToolbarActions> */}
                 </Toolbar>
-                <JobStatusTable />
+                <JobStatusTable/>
             </Container>
         </div>
     );

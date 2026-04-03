@@ -408,6 +408,11 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel:     getSortedRowModel(),
         manualPagination: true,
+        meta: {
+            getRowAttributes: (row: any) => ({
+                'data-fab-type': row.original.fab_type?.toLowerCase()
+            })
+        }
     });
 
     const isLoading = isApiLoading || externalLoading;
