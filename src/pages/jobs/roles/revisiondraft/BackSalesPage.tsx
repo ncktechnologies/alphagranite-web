@@ -5,7 +5,7 @@ import { IJob } from '../../components/job';
 import { useGetFabsQuery, Fab } from '@/store/api/job';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -162,6 +162,54 @@ export function DraftRevisionPage() {
 
     // Fetch data with backend pagination and filtering
     const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
+
+
+    const [selectedRows, setSelectedRows] = useState<string[]>([]);
+    const [showAssignModal, setShowAssignModal] = useState(false);
+    const [reassignJob, setReassignJob] = useState<any>(null);
+    const [reassignFabId, setReassignFabId] = useState<string | null>(null);
+
+    // Mappings for bulk assign
+    const sqftPerFab = useMemo(() => {
+        const mapping: { [key: string]: string } = {};
+        data?.data?.forEach((fab) => {
+            mapping[String(fab.id)] = String(fab.total_sqft || '0');
+        });
+        return mapping;
+    }, [data]);
+
+    const datePerFab = useMemo(() => {
+        const start: { [key: string]: string } = {};
+        const end: { [key: string]: string } = {};
+        data?.data?.forEach((fab) => {
+            start[String(fab.id)] = fab.templating_schedule_start_date || fab.draft_data?.scheduled_start_date || '';
+            end[String(fab.id)] = fab.templating_schedule_due_date || fab.draft_data?.scheduled_end_date || '';
+        });
+        return { startDateMapping: start, endDateMapping: end };
+    }, [data]);
+
+    const handleAssignDrafterClick = () => {
+        if (selectedRows.length > 0) {
+            setReassignJob(null);
+            setShowAssignModal(true);
+        }
+    };
+
+    const handleReassignDrafterClick = (job: IJob) => {
+        setReassignFabId(job.fab_id); // just pass the FAB ID
+        setSelectedRows([]);
+        setShowAssignModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setShowAssignModal(false);
+        setReassignFabId(null);
+    };
+    const handleAssignSuccess = () => {
+        setSelectedRows([]);
+        // Optionally refetch: tableState.refetch?.()
+    };
+
 
     const handleRowClick = (fabId: string) => {
         navigate(`/job/revision/${fabId}`);
