@@ -232,12 +232,6 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
           </div>
 
           {/* Time */}
-          {/* <div> */}
-          {/* <div className="flex items-center gap-2 mb-3">
-              <Clock className="h-4 w-4 text-[#7a9705]" />
-              <Label className="text-[13px] text-[#4b545d]">Scheduled Time *</Label>
-            </div> */}
-          {/* <div className=""> */}
           <div>
             <Label className="text-[13px] text-[#4b545d]">Start</Label>
             <Select value={entry.start_time} onValueChange={value => onUpdate({ start_time: value })}>
@@ -264,8 +258,6 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
               </SelectContent>
             </Select>
           </div>
-          {/* </div> */}
-          {/* </div> */}
 
           {/* Planning Section */}
           <div>
@@ -395,7 +387,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
 
   const prefillSectionIdStr = prefillPlanSectionId != null ? String(prefillPlanSectionId) : undefined;
 
-  // ✅ FIX 1: Memoize emptyEntry with useCallback so it has a stable reference
   const emptyEntry = useCallback((): PlanEntry => ({
     fab_id: effectivePrefillFabId || '',
     workstation_id: '',
@@ -408,7 +399,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     sequence: '1',
   }), [effectivePrefillFabId, selectedTimeSlot, prefillSectionIdStr, propSelectedDate]);
 
-  // ✅ FIX 2: Use lazy initializer for useState to avoid calling emptyEntry on every render
   const [entries, setEntries] = useState<PlanEntry[]>(() => [emptyEntry()]);
 
   const [createShopPlan, { isLoading }] = useCreateShopPlansMutation();
@@ -441,7 +431,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     return fabs.find((fab: any) => String(fab.id) === selectedFabId) || null;
   }, [allFabsData, selectedFabId]);
 
-  // ✅ FIX 3: Use stable boolean flags instead of array/object references in useEffect deps
   const employeesLoaded = employees.length > 0;
   const workstationsLoaded = allWorkstations.length > 0;
   const sectionsLoaded = planningSections.length > 0;
@@ -453,15 +442,11 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       return;
     }
 
-    // Wait for ALL required data before populating edit form
     if (!employeesLoaded || !workstationsLoaded || !sectionsLoaded || !fabsLoaded) {
       return;
     }
 
     const ev: any = effectiveEvent;
-
-    console.log('populating event with', ev);
-
     const fabId = ev.fab_id ?? '';
     const workstationId = ev.workstation_id ?? '';
     const operatorId = ev.operator_id ?? '';
@@ -502,34 +487,74 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
 
     setEntries([finalEntry]);
     setExpandedCards({ 0: true });
-
   }, [
     effectiveEvent,
     employeesLoaded,
     workstationsLoaded,
-    sectionsLoaded,   // ✅ boolean — stable, no reference churn
-    fabsLoaded,       // ✅ boolean — stable, no reference churn
-    emptyEntry,       // ✅ stable via useCallback
+    sectionsLoaded,
+    fabsLoaded,
+    emptyEntry,
+    prefillSectionIdStr,
   ]);
 
-  const sequenceOptions = useMemo(
-    () => Array.from({ length: Math.max(3, entries.length) }, (_, i) => i + 1),
-    [entries.length]
-  );
+  // Helper: get next available sequence (smallest positive integer not in used set)
+  const getNextAvailableSequence = useCallback((used: Set<number>) => {
+    let seq = 1;
+    while (used.has(seq)) seq++;
+    return seq;
+  }, []);
 
-  // ✅ FIX 4: Memoize addEntry and resetForm so they use the stable emptyEntry
-  const addEntry = useCallback(() => {
-    setEntries(p => {
-      const e = emptyEntry();
-      if (p[0]?.fab_id) e.fab_id = p[0].fab_id;
-      e.sequence = String(p.length + 1);
-      return [...p, e];
+  // Update entry with conflict resolution (swap sequences if duplicate selected)
+  const updateEntry = useCallback((idx: number, patch: Partial<PlanEntry>) => {
+    setEntries(prev => {
+      const newEntries = [...prev];
+      const target = newEntries[idx];
+
+      // Handle sequence update with uniqueness & swapping
+      if (patch.sequence !== undefined) {
+        const newSeq = Number(patch.sequence);
+        if (!isNaN(newSeq)) {
+          // Find another entry that already has this sequence (excluding current)
+          const conflictIdx = newEntries.findIndex((e, i) =>
+            i !== idx && Number(e.sequence) === newSeq
+          );
+          if (conflictIdx !== -1) {
+            // Swap sequences
+            const oldSeq = Number(target.sequence);
+            newEntries[conflictIdx] = { ...newEntries[conflictIdx], sequence: String(oldSeq) };
+            newEntries[idx] = { ...newEntries[idx], sequence: String(newSeq) };
+            return newEntries;
+          }
+        }
+      }
+
+      // Apply normal update
+      if (idx === 0 && patch.fab_id !== undefined) {
+        // Sync fab_id across all entries
+        return newEntries.map(e => ({ ...e, fab_id: patch.fab_id! }));
+      }
+      newEntries[idx] = { ...target, ...patch };
+      return newEntries;
     });
-  }, [emptyEntry]);
+  }, []);
+
+  const addEntry = useCallback(() => {
+    setEntries(prev => {
+      // Get current used sequences
+      const usedSequences = new Set(prev.map(e => Number(e.sequence)).filter(s => !isNaN(s)));
+      const nextSeq = getNextAvailableSequence(usedSequences);
+
+      const newEntry = emptyEntry();
+      if (prev[0]?.fab_id) newEntry.fab_id = prev[0].fab_id;
+      newEntry.sequence = String(nextSeq);
+      return [...prev, newEntry];
+    });
+  }, [emptyEntry, getNextAvailableSequence]);
 
   const removeEntry = useCallback((idx: number) => {
-    setEntries(p => {
-      const next = p.filter((_, i) => i !== idx);
+    setEntries(prev => {
+      const next = prev.filter((_, i) => i !== idx);
+      // Renumber sequentially
       return next.map((e, i) => ({ ...e, sequence: String(i + 1) }));
     });
   }, []);
@@ -614,12 +639,15 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       onEventCreated?.();
       handleBack();
     } catch (error: any) {
-      // const msg = error?.data?.detail?.message || 'Failed to create/update Plan';
-      // c.error(msg);
+      // error handling
     }
   };
 
   const isEditing = !!(effectiveEvent);
+  const sequenceOptions = useMemo(
+    () => Array.from({ length: Math.max(3, entries.length) }, (_, i) => i + 1),
+    [entries.length]
+  );
 
   return (
     <div className="bg-white min-h-screen">
@@ -705,13 +733,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               isEditing={isEditing}
               sequenceOptions={sequenceOptions}
               onToggleExpand={() => setExpandedCards(p => ({ ...p, [idx]: !(p[idx] !== false) }))}
-              onUpdate={patch => {
-                setEntries(p => p.map((e, i) => {
-                  if (i === idx) return { ...e, ...patch };
-                  if (idx === 0 && patch.fab_id !== undefined) return { ...e, fab_id: patch.fab_id };
-                  return e;
-                }));
-              }}
+              onUpdate={patch => updateEntry(idx, patch)}
               onRemove={() => removeEntry(idx)}
             />
           ))}

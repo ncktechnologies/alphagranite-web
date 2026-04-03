@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { AssignDrafterModal } from '../drafters/components/AssignDrafterModal';
 
 
 // Transform Fab data to match IJob interface
@@ -110,10 +111,10 @@ export function DraftRevisionPage() {
         };
 
         if (tableState.searchQuery) {
-            params.search = tableState.searchQuery; 
+            params.search = tableState.searchQuery;
         }
-        if(tableState.searchType){
-             params.type = tableState.searchType; 
+        if (tableState.searchType) {
+            params.type = tableState.searchType;
         }
 
         if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') {
@@ -225,7 +226,23 @@ export function DraftRevisionPage() {
                 tableState={tableState}
                 showSalesPersonFilter={true}
                 salesPersons={salesPersons}
+                enableMultiSelect
+                selectedRows={selectedRows}
+                setSelectedRows={setSelectedRows}
+                showAssignDrafterButton
+                onAssignDrafterClick={handleAssignDrafterClick}
+                onReassignDrafterClick={handleReassignDrafterClick}
                 visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'revision_reason', 'total_sq_ft', 'draft_notes', 'sales_person_name', 'revisor', 'revision_type', 'revision_notes', 'revision_completed', 'revision_note', 'on_hold']}
+            />
+            <AssignDrafterModal
+                open={showAssignModal}
+                onClose={handleCloseModal}
+                selectedFabIds={reassignFabId ? [] : selectedRows}
+                reassignFabId={reassignFabId}
+                initialSqftValues={sqftPerFab}
+                initialStartDates={datePerFab.startDateMapping}
+                initialEndDates={datePerFab.endDateMapping}
+                onAssignSuccess={handleAssignSuccess}
             />
         </Container>
     );
