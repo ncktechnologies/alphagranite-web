@@ -77,7 +77,7 @@ export const FileViewer = ({
 
   const CloseButton = () => (
     <Button variant="ghost" size="sm" onClick={onClose}>
-      <X className="w-6 h-6" /> Close file
+      <X className="w-10 h-10" /> 
     </Button>
   );
 

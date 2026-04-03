@@ -197,7 +197,7 @@ export const RevisionModal = ({
 
       // Then, send to drafting with notes
       await sendToDrafting({
-        fab_id: parseInt(fabId.replace('FAB-', '')),
+        fab_id: fabId,
         data: {
           notes: values.reason
         }
@@ -224,7 +224,7 @@ export const RevisionModal = ({
       navigate('/job/draft-review')
     } catch (error) {
       console.error("Failed to submit revision:", error);
-      toast.error("Failed to submit revision. Please try again.");
+      // toast.error("Failed to submit revision. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

@@ -342,15 +342,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
                 return (
                     <div className="flex flex-col gap-1 min-w-[80px]">
                         <span className="text-xs">{pct.toFixed(2)}%</span>
-                        <div className="w-full bg-[#e2e4ed] rounded-full h-[4px] overflow-hidden">
-                            <div
-                                className="h-full rounded-full transition-all duration-300"
-                                style={{
-                                    width: `${Math.min(pct, 100)}%`,
-                                    backgroundColor: pct === 100 ? '#4caf50' : pct >= 75 ? '#2196f3' : pct >= 50 ? '#ff9800' : '#9e9e9e',
-                                }}
-                            />
-                        </div>
+                       
                     </div>
                 );
             },
