@@ -25,13 +25,13 @@ jobs:
         script: |
           cd /var/www/html/carpediem/alphagranite-web
 
-          # Fix permissions so npm can run without sudo
+          # Fix permissions so all commands run without sudo
           sudo chown -R $USER:$USER /var/www/html/carpediem/alphagranite-web
 
           # Pull latest updates
-          sudo git stash
+          git stash
 
-          sudo git pull
+          git pull
 
           # Install dependencies
           npm install --legacy-peer-deps
