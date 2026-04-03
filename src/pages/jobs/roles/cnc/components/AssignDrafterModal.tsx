@@ -57,7 +57,7 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
   useEffect(() => {
     if (!open) {
       initializedRef.current = false;
-      setDrafterId('');
+      setOperatorId('');
       setStartDate(getTodayDate());
       setEndDate(getTodayDate());
       setSqftPerFab({});
@@ -124,18 +124,18 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
         }).unwrap();
         toast.success(`CNC operator reassigned for FAB ${reassignFabId}`);
       } else {
-        // Create CNC assignment for each FAB
-        const createPromises = fabIds.map((fabId) =>
-          createCNCDrafting({
+        // Create CNC assignment - API requires drafter_id and items array
+        const requestData = {
+          drafter_id: parseInt(operatorId, 10),
+          items: fabIds.map((fabId) => ({
             fab_id: parseInt(fabId, 10),
-            drafter_id: parseInt(operatorId, 10),
             scheduled_start_date: startDate,
             scheduled_end_date: endDate,
             total_sqft_required_to_draft: parseFloat(sqftPerFab[fabId] || '0'),
-          }).unwrap()
-        );
+          })),
+        };
         
-        await Promise.all(createPromises);
+        await createCNCDrafting(requestData).unwrap();
         toast.success(`Successfully assigned CNC operator to ${fabIds.length} FAB(s)`);
       }
 

@@ -71,6 +71,10 @@ interface JobTableProps {
      *  The drafter column is hidden by default when every visible row has a
      *  drafter; clicking Reassign temporarily shows the column for that row. */
     onReassignDrafterClick?: (job: IJob) => void;
+    /** CNC operator assignment callbacks */
+    showAssignCNCButton?: boolean;
+    onAssignCNCClick?: () => void;
+    onReassignCNCClick?: (job: IJob) => void;
     /** 'templater' | 'installer' — when set, job number links to the role timer page */
     pageRole?: 'templater' | 'installer';
 }
@@ -102,6 +106,9 @@ export const JobTable = ({
     onRescheduleClick,
     onAssignClick,
     onReassignDrafterClick,
+    showAssignCNCButton = false,
+    onAssignCNCClick = () => { },
+    onReassignCNCClick,
     pageRole,
 }: JobTableProps) => {
     const [localSelectedRows, setLocalSelectedRows] = useState<string[]>([]);
@@ -555,6 +562,41 @@ export const JobTable = ({
                                     // Ensure the column stays visible while the user acts
                                     setDrafterColumnVisible(true);
                                     onReassignDrafterClick(row.original);
+                                }}
+                            >
+                                Reassign
+                            </Button>
+                        )}
+                    </div>
+                );
+            },
+            size: 160,
+            enableSorting: true,
+        },
+
+        // ── CNC Operator ─────────────────────────────────────────────────────
+        // Shows CNC operator assigned to the FAB with optional reassign button
+        {
+            id: "cnc_operator",
+            accessorKey: "cnc_operator",
+            header: ({ column }) => <DataGridColumnHeader title="CNC OPERATOR" column={column} />,
+            cell: ({ row }) => {
+                const cncOperator = row.original.cnc_operator;
+                const hasOperator = cncOperator && cncOperator !== '-';
+
+                return (
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs">{cncOperator || '—'}</span>
+
+                        {/* Reassign button - only shown when prop is provided and operator exists */}
+                        {hasOperator && onReassignCNCClick && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap"
+                                onClick={e => {
+                                    e.stopPropagation();
+                                    onReassignCNCClick(row.original);
                                 }}
                             >
                                 Reassign
@@ -1205,6 +1247,13 @@ export const JobTable = ({
                         {showAssignDrafterButton && (
                             <Button variant="outline" onClick={onAssignDrafterClick} disabled={selectedRows.length === 0}>
                                 Assign Drafter ({selectedRows.length})
+                            </Button>
+                        )}
+
+                        {/* Assign CNC Operator button */}
+                        {showAssignCNCButton && (
+                            <Button variant="outline" onClick={onAssignCNCClick} disabled={selectedRows.length === 0}>
+                                Assign CNC ({selectedRows.length})
                             </Button>
                         )}
 

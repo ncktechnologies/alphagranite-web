@@ -28,7 +28,7 @@ export const transformFabToJob = (fab: Fab): IJob => {
         revenue: fab.job_details?.project_value || '-',
         gp: '-',
         draft_completed: fab.drafting_session?.status || 'Not started',
-        drafter: fab.draft_data?.drafter_name || '-',
+        cnc_operator: fab.cnc_data?.drafter_name || '-',
         template_received: '',
         revised: '',
         sct_completed: '',
@@ -185,10 +185,10 @@ const CNCPage = () => {
                     'total_sq_ft',
                     'revenue',
                     'gp',
-                    'drafting_notes',
-                    'draft_completed',
-                    'drafter',
+                    'cnc_notes',
+                    // 'draft_completed',
                     'on_hold',
+                    'cnc_operator'
                 ]}
             />
             <AssignDrafterModal
