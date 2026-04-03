@@ -228,7 +228,7 @@ export function CNCDetailsPage() {
     workPercentage?: string
   ) => {
     try {
-      await manageDraftingSession({
+      await manageCNCSession({
         fab_id: fabId,
         data: {
           action,
@@ -261,8 +261,26 @@ export function CNCDetailsPage() {
 
   const handleResume = async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
     try {
-      await createOrStartSession('resume', new Date(), data?.note, data?.sqft_drafted, data?.work_percentage_done);
-    } catch (error) { }
+      await manageCNCSession({
+        fab_id: fabId,
+        data: {
+          drafter_id: currentEmployeeId,
+          action: 'resume',
+          timestamp: formatTimestamp(new Date()),
+          note: data?.note,
+          sqft_drafted: data?.sqft_drafted,
+          work_percentage_done: data?.work_percentage_done
+        }
+      }).unwrap();
+      
+      // Update local state to reflect resumed session - timer will start automatically
+      setSessionStatus('drafting');
+      toast.success('CNC session resumed successfully');
+      await refetchSession();
+    } catch (error) {
+      console.error('Failed to resume session:', error);
+      toast.error('Failed to resume CNC session');
+    }
   };
 
   const handleEnd = async (endDate: Date, data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
