@@ -1073,7 +1073,7 @@ export const jobApi = createApi({
                             ...(queryParams.next_stage && { next_stage: queryParams.next_stage }),
                             // Search filter
                             ...(queryParams.search && { search: queryParams.search }),
-                             // Search type filter (fab_id, job_number, job_name)
+                            // Search type filter (fab_id, job_number, job_name)
                             ...(queryParams.type && { type: queryParams.type }),
 
                             // Schedule date filters
@@ -1171,7 +1171,7 @@ export const jobApi = createApi({
                             // Search filter
                             ...(queryParams.search && { search: queryParams.search }),
                             // Schedule date filters
-                             // Search type filter (fab_id, job_number, job_name)
+                            // Search type filter (fab_id, job_number, job_name)
                             ...(queryParams.type && { type: queryParams.type }),
                             ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
                             ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
@@ -1199,7 +1199,7 @@ export const jobApi = createApi({
                 transformResponse: (response: any) => response.data || response,
                 providesTags: ["Fab"],
             }),
-              getFabsCnc: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
+            getFabsCnc: build.query<{ data: Fab[]; total: number }, FabListParams | void>({
                 query: (params) => {
                     const queryParams = params || {};
                     return {
@@ -1220,7 +1220,7 @@ export const jobApi = createApi({
                             // Search filter
                             ...(queryParams.search && { search: queryParams.search }),
                             // Schedule date filters
-                             // Search type filter (fab_id, job_number, job_name)
+                            // Search type filter (fab_id, job_number, job_name)
                             ...(queryParams.type && { type: queryParams.type }),
                             ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
                             ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
@@ -1604,7 +1604,7 @@ export const jobApi = createApi({
                     method: "put",
                     data
                 }),
-                invalidatesTags: (_result, _error, { id }) => [{ type: "Drafting", id }, "Drafting", "Fab" ],
+                invalidatesTags: (_result, _error, { id }) => [{ type: "Drafting", id }, "Drafting", "Fab"],
             }),
 
             // Submit drafting for review
@@ -1678,7 +1678,7 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Fab"],
             }),
-            
+
             // Get current CNC session
             getCurrentCNCSession: build.query<CNCDraftingSessionResponse, number>({
                 query: (fab_id) => ({
@@ -1687,7 +1687,7 @@ export const jobApi = createApi({
                 }),
                 providesTags: ["Fab"],
             }),
-            
+
             // Get CNC session history
             getCNCSessionHistory: build.query<CNCDraftingSessionHistoryResponse, number>({
                 query: (fab_id) => ({
@@ -1716,13 +1716,19 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Fab", "Drafting"],
             }),
-
+            getCNCByFabId: build.query<Drafting, number>({
+                query: (fab_id) => ({
+                    url: `/CNC/fab/${fab_id}`,
+                    method: "get"
+                }),
+                providesTags: ["Fab", "Drafting"],
+            }),
             // Add files to CNCDrafting
             addFilesToCNCDrafting: build.mutation<any, { cnc_id: number; files: File[]; stage?: string; stage_name?: string; file_design?: string }>({
                 query: ({ cnc_id, files, stage, stage_name, file_design }) => {
                     const formData = new FormData();
                     files.forEach((file) => {
-                        formData.append('files', file);
+                        formData.append('file', file);
                     });
                     if (stage) {
                         formData.append('stage', stage);
@@ -2500,5 +2506,6 @@ export const {
     useUpdateCNCDraftingMutation,
     useSubmitCNCDraftingForReviewMutation,
     useAddFilesToCNCDraftingMutation,
-    useDeleteFileFromCNCDraftingMutation
+    useDeleteFileFromCNCDraftingMutation,
+    useGetCNCByFabIdQuery,
 } = jobApi;

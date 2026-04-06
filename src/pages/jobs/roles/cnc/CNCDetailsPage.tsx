@@ -9,7 +9,7 @@ import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 import {
     useGetFabByIdQuery,
-    useGetDraftingByFabIdQuery,
+    useGetCNCByFabIdQuery,
     useManageCNCSessionMutation,
     useGetCurrentCNCSessionQuery,
     useToggleFabOnHoldMutation,
@@ -75,7 +75,7 @@ export function CNCDetailsPage() {
         skip: !fabId,
         refetchOnMountOrArgChange: true,
     });
-    const { data: cncData, isLoading: isCNCLoading, refetch: refetchCNC } = useGetDraftingByFabIdQuery(fabId, {
+    const { data: cncData, isLoading: isCNCLoading, refetch: refetchCNC } = useGetCNCByFabIdQuery(fabId, {
         skip: !fabId,
         refetchOnMountOrArgChange: true,
     });

@@ -1,4 +1,4 @@
-// SubmissionModal.tsx
+// CNCTSubmissionModal.tsx - Updated for CNC submission
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { useUpdateDraftingMutation, useManageDraftingSessionMutation } from '@/store/api/job';
+import { useUpdateCNCDraftingMutation, useManageCNCSessionMutation } from '@/store/api/job';
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -44,7 +44,7 @@ interface UploadedFile {
 interface SubmissionModalProps {
   open: boolean;
   onClose: (success?: boolean) => void;
-  drafting: any;
+  cnc: any; // Changed from drafting to cnc
   uploadedFiles: UploadedFile[];
   fabId: number;
   userId: number;
@@ -54,7 +54,7 @@ interface SubmissionModalProps {
 export const SubmissionModal = ({ 
   open, 
   onClose, 
-  drafting, 
+  cnc, // Changed from drafting to cnc
   uploadedFiles, 
   fabId, 
   userId, 
@@ -64,8 +64,8 @@ export const SubmissionModal = ({
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [sessionData, setSessionData] = useState<any>(null);
 
-  const [updateDrafting] = useUpdateDraftingMutation();
-  const [manageDraftingSession] = useManageDraftingSessionMutation();
+  const [updateCNCDrafting] = useUpdateCNCDraftingMutation();
+  const [manageCNCSession] = useManageCNCSessionMutation();
 
   const { data: employeesData } = useGetSalesPersonsQuery();
   const salesPersons = Array.isArray(employeesData) ? employeesData : [];
@@ -111,25 +111,25 @@ export const SubmissionModal = ({
   }, [fabData?.sales_person_id, form]);
 
  
-  // End the session and get session data
-  const endDraftingSession = async () => {
+  // End the CNC session and get session data
+  const endCNCSession = async () => {
     if (!fabId) {
       toast.error('Fab ID is required to end session');
       return null;
     }
 
     try {
-      const sessionResponse = await manageDraftingSession({
+      const sessionResponse = await manageCNCSession({
         fab_id: fabId,
         data: {
           action: 'end',
           drafter_id: userId,
           timestamp: formatTimestamp(new Date()),
-          note: 'Draft submitted and session ended'
+          note: 'CNC completed and session ended'
         }
       }).unwrap();
 
-      console.log('Session ended successfully:', sessionResponse);
+      console.log('CNC Session ended successfully:', sessionResponse);
       
       // Extract session data for later use
       const extractedData = extractSessionData(sessionResponse);
@@ -137,39 +137,40 @@ export const SubmissionModal = ({
       
       return sessionResponse;
     } catch (error: any) {
-      console.error('Failed to end drafting session:', error);
-      toast.error(error?.data?.message || 'Failed to end drafting session');
+      console.error('Failed to end CNC session:', error);
+      toast.error(error?.data?.message || 'Failed to end CNC session');
       return null;
     }
   };
 
   const handleFinalSubmit = async (values: SubmissionData) => {
-    let draftingId = drafting?.id ?? drafting?.data?.id;
+    let cncId = cnc?.id ?? cnc?.data?.id;
     
-    if (!draftingId) {
-      console.error('Drafting record does not exist. Please assign drafter first.');
+    if (!cncId) {
+      console.error('CNC record does not exist. Please assign CNC operator first.');
+      toast.error('CNC assignment not found. Please assign a CNC operator first.');
       return;
     }
 
     if (!isConfirmed) {
-      console.error('Please confirm the drafting is completed by checking the box.');
+      console.error('Please confirm the CNC is completed by checking the box.');
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      // Step 1: First end the session and get session data
-      const sessionResponse = await endDraftingSession();
+      // Step 1: First end the CNC session and get session data
+      const sessionResponse = await endCNCSession();
       
       if (!sessionResponse) {
-        throw new Error('Failed to end drafting session');
+        throw new Error('Failed to end CNC session');
       }
 
       // Extract session timing data
       const sessionTimingData = extractSessionData(sessionResponse);
       
-      // Step 2: Update drafting with form data AND session timing data
+      // Step 2: Update CNC with form data AND session timing data
       const payload: any = {
         // Session timing data from ended session
         drafter_start_date: sessionTimingData?.drafter_start_date || null,
@@ -186,18 +187,18 @@ export const SubmissionModal = ({
       };
 
       
-
-      console.log('Updating draft with payload:', payload);
-      await updateDrafting({ 
-        id: draftingId, 
+      console.log('Updating CNC with payload:', payload);
+      await updateCNCDrafting({ 
+        id: cncId, 
         data: payload 
       }).unwrap();
 
-      toast.success('Draft submitted successfully');
+      toast.success('CNC submitted successfully');
       onClose(true);
-      navigate('/job/draft');
+      navigate('/job/cnc');
     } catch (err: any) {
-      console.error('Failed to submit drafting:', err);
+      console.error('Failed to submit CNC:', err);
+      toast.error(err?.data?.message || 'Failed to submit CNC');
       onClose(false);
     } finally {
       setIsSubmitting(false);
@@ -210,7 +211,7 @@ export const SubmissionModal = ({
         <DialogHeader>
           <div className="border-b">
             <DialogTitle className="text-[15px] font-semibold py-2">
-              Submit Draft
+              Submit CNC
               <span className="ml-3 text-sm font-normal text-gray-500">
                 FAB ID: {fabId}
               </span>
@@ -295,7 +296,7 @@ export const SubmissionModal = ({
                 disabled={false}
               />
               <label className={`font-semibold text-[16px] ${isConfirmed ? 'text-green-600' : 'text-gray-600'}`}>
-                CAD Drafting Complete 
+                CNC Complete 
               </label>
             </div>
 
@@ -304,13 +305,13 @@ export const SubmissionModal = ({
                 Cancel
               </Button>
 
-              <Can action="update" on="Drafting">
+              <Can action="update" on="CNC">
                 <Button 
                   type="submit" 
                   disabled={!isConfirmed || isSubmitting}
                   className="bg-green-600 hover:bg-green-700"
                 >
-                  {isSubmitting ? 'Submitting...' : 'Submit draft'}
+                  {isSubmitting ? 'Submitting...' : 'Submit CNC'}
                 </Button>
               </Can>
             </div>
