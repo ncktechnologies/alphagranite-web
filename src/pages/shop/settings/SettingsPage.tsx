@@ -424,7 +424,6 @@ function SettingsPage() {
                     <TabsList className="mb-4">
                         <TabsTrigger value="workstations">Workstations</TabsTrigger>
                         <TabsTrigger value="activities">Shop Activities</TabsTrigger>
-                        <TabsTrigger value="stone-types">Stone Types & Colors</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="workstations" className="mt-0">

@@ -887,6 +887,7 @@ export const JobSalesTable = ({
                 return <span className="text-xs">{val != null ? `${val}%` : '-'}</span>;
             },
             size: 100,
+           
             enableSorting: true,
         },
 

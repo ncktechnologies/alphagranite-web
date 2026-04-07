@@ -32,51 +32,85 @@ export function TemplatingDetailsPage() {
     ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fab.job_details.job_number}`
     : '#';
 
+
+  const jobDetailsFields = fab
+    ? [
+      { label: 'Account', value: fab.account_name || '—' },
+      {
+        label: 'Fab ID',
+        value: (
+          <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">
+            {fab.id}
+          </Link>
+        ),
+      },
+      { label: 'Area', value: fab.input_area || '—' },
+      {
+        label: 'Material',
+        value: fab.stone_type_name
+          ? `${fab.stone_type_name} - ${fab.stone_color_name || ''} - ${fab.stone_thickness_value || ''}`
+          : '—',
+      },
+      {
+        label: 'Fab Type',
+        value: <span className="uppercase">{fab.fab_type || '—'}</span>,
+      },
+      { label: 'Edge', value: fab.edge_name || '—' },
+      { label: 'Total S.F', value: fab.total_sqft?.toString() || '—' },
+      { label: 'Sales Person', value: fab.sales_person_name || '—' },
+      {
+        label: 'Job Notes',
+        value: fab.job_details?.description || 'None',
+        fullWidth: true,
+      },
+    ]
+    : [];
+
   // Create sidebar sections based on actual FAB data
   const sidebarSections = fab ? [
-    {
-      title: "Job Details",
-      type: "details",
-      items: [
-        { label: "Account Name", value: fab.account_name || '—' },
-        {
-          label: "Fab ID",
-          value: (
-            <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">
-              {fab.id}
-            </Link>
-          ),
-        },
-        { label: "Area", value: fab.input_area || '—' },
-        {
-          label: "Material",
-          value: fab.stone_type_name
-            ? `${fab.stone_type_name} - ${fab.stone_color_name || ''} - ${fab.stone_thickness_value || ''}`
-            : '—',
-        },
-        {
-          label: "Fab Type",
-          value: <span className="uppercase">{fab.fab_type || '—'}</span>,
-        },
-        { label: "Edge", value: fab.edge_name || '—' },
-        { label: "Total s.f.", value: fab.total_sqft?.toString() || '—' },
-        {
-          label: "Scheduled Date",
-          value: fab.templating_schedule_start_date
-            ? formatDate(fab.templating_schedule_start_date)
-            : 'Not scheduled',
-        },
-        {
-          label: "Technician Assigned",
-          value: fab.technician_name || 'Unassigned',
-        },
-        { label: "Sales Person", value: fab.sales_person_name || '—' },
-        {
-          label: "SlabSmith Needed",
-          value: fab.slabsmith_data ? 'Yes' : 'No',
-        },
-      ],
-    },
+    // {
+    //   title: "Job Details",
+    //   type: "details",
+    //   items: [
+    //     { label: "Account Name", value: fab.account_name || '—' },
+    //     {
+    //       label: "Fab ID",
+    //       value: (
+    //         <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">
+    //           {fab.id}
+    //         </Link>
+    //       ),
+    //     },
+    //     { label: "Area", value: fab.input_area || '—' },
+    //     {
+    //       label: "Material",
+    //       value: fab.stone_type_name
+    //         ? `${fab.stone_type_name} - ${fab.stone_color_name || ''} - ${fab.stone_thickness_value || ''}`
+    //         : '—',
+    //     },
+    //     {
+    //       label: "Fab Type",
+    //       value: <span className="uppercase">{fab.fab_type || '—'}</span>,
+    //     },
+    //     { label: "Edge", value: fab.edge_name || '—' },
+    //     { label: "Total s.f.", value: fab.total_sqft?.toString() || '—' },
+    //     {
+    //       label: "Scheduled Date",
+    //       value: fab.templating_schedule_start_date
+    //         ? formatDate(fab.templating_schedule_start_date)
+    //         : 'Not scheduled',
+    //     },
+    //     {
+    //       label: "Technician Assigned",
+    //       value: fab.technician_name || 'Unassigned',
+    //     },
+    //     { label: "Sales Person", value: fab.sales_person_name || '—' },
+    //     {
+    //       label: "SlabSmith Needed",
+    //       value: fab.slabsmith_data ? 'Yes' : 'No',
+    //     },
+    //   ],
+    // },
     {
       title: "FAB Notes",
       type: "notes",
@@ -184,7 +218,7 @@ export function TemplatingDetailsPage() {
                 title={
                   <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
                     <a href={jobNameLink} className="hover:underline"
-                     target="_blank"
+                      target="_blank"
                       rel="noreferrer">
                       {fab?.job_details?.name || `Job ${fab?.job_id}`}
                     </a>
@@ -213,46 +247,68 @@ export function TemplatingDetailsPage() {
       </div>
 
       {/* Main two‑column layout */}
-      <div className="flex flex-col lg:flex-row flex-1 min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6 px-4 sm:px-6 lg:px-8">
         {/* Sticky sidebar */}
-        <aside
-          className={[
-            'w-full bg-white border-b',
-            'lg:w-[220px] xl:w-[260px] lg:shrink-0',
-            'lg:sticky lg:top-[50px]',
-            'lg:self-start',
-            'lg:max-h-[calc(100vh-50px)]',
-            'lg:overflow-y-auto',
-            'lg:border-b-0 lg:border-r',
-          ].join(' ')}
-        >
-          <div className="p-3 sm:p-4 space-y-4">
-            <GraySidebar sections={sidebarSections as any} jobId={fab?.job_id} />
-            {/* Progress Timeline (original component) */}
-            <div className="bg-text w-full py-4 px-6 shadow-sm rounded-md">
-              <h3 className="font-semibold text-white text-lg mb-5">Progress Timeline</h3>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                <p className="text-base text-white">Scheduled date</p>
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-[#111827] text-2xl font-bold">Job Details</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 text-sm">
+                {jobDetailsFields.map((field, index) => (
+                  <div key={index} className={field.fullWidth ? 'col-span-full' : ''}>
+                    <p className="text-sm text-text-foreground font-normal uppercase tracking-wide">
+                      {field.label}
+                    </p>
+                    <p className="font-semibold text-text text-base leading-[24px] whitespace-pre-wrap">
+                      {field.value}
+                    </p>
+                  </div>
+                ))}
               </div>
-              <p className="text-xs text-white ml-4 mt-1">
-                {fab?.templating_schedule_start_date
-                  ? new Date(fab.templating_schedule_start_date).toLocaleDateString('en-US', {
-                    month: 'long',
-                    day: 'numeric',
-                    year: 'numeric',
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true
-                  })
-                  : 'Not scheduled'}
-              </p>
+            </CardContent>
+          </Card>
+          {/* <aside
+            className={[
+              'w-full bg-white border-b',
+              'lg:w-[220px] xl:w-[260px] lg:shrink-0',
+              'lg:sticky lg:top-[50px]',
+              'lg:self-start',
+              'lg:max-h-[calc(100vh-50px)]',
+              'lg:overflow-y-auto',
+              'lg:border-b-0 lg:border-r',
+            ].join(' ')}
+          > */}
+            <div className="p-3 sm:p-4 space-y-4">
+              <GraySidebar sections={sidebarSections as any} jobId={fab?.job_id} />
+              {/* Progress Timeline (original component) */}
+              <div className="bg-text w-full py-4 px-6 shadow-sm rounded-md">
+                <h3 className="font-semibold text-white text-lg mb-5">Progress Timeline</h3>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                  <p className="text-base text-white">Scheduled date</p>
+                </div>
+                <p className="text-xs text-white ml-4 mt-1">
+                  {fab?.templating_schedule_start_date
+                    ? new Date(fab.templating_schedule_start_date).toLocaleDateString('en-US', {
+                      month: 'long',
+                      day: 'numeric',
+                      year: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      hour12: true
+                    })
+                    : 'Not scheduled'}
+                </p>
+              </div>
             </div>
-          </div>
-        </aside>
+          {/* </aside> */}
+        </div>
+
 
         {/* Main content */}
-        <main className="flex-1 min-w-0 p-3 sm:p-4 lg:p-5 space-y-4">
+        <main className="">
           <Card>
             <CardHeader className="py-3 px-4 sm:px-5">
               <CardTitle className="text-sm sm:text-base">Template activity
@@ -264,14 +320,13 @@ export function TemplatingDetailsPage() {
                 Go to Timer
               </Button> */}
             </CardHeader>
-
-          </Card>
-
-          <Card>
             <CardContent className="p-3 sm:p-4 lg:p-5">
               <TemplatingActivityForm fabId={id} revenue={fab?.revenue} />
             </CardContent>
+
           </Card>
+
+          
         </main>
       </div>
     </div>
