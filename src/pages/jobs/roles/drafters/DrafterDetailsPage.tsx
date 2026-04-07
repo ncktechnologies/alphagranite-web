@@ -220,7 +220,7 @@ export function DrafterDetailsPage() {
       toast.success(`Session ${action === 'start' ? 'started' : 'resumed'} successfully`);
     } catch (error) {
       console.error(`Failed to ${action} session:`, error);
-      toast.error(`Failed to ${action} session`);
+      // toast.error(`Failed to ${action} session`);
       throw error;
     }
   };
@@ -260,7 +260,7 @@ export function DrafterDetailsPage() {
       toast.success(`Session ${actionPastTense[action]} successfully`);
     } catch (error) {
       console.error(`Failed to ${action} session:`, error);
-      toast.error(`Failed to ${action} session`);
+      // toast.error(`Failed to ${action} session`);
       throw error;
     }
   };

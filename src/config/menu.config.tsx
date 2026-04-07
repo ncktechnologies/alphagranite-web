@@ -59,6 +59,7 @@ import {
   ShoppingBag,
   Store,
   StoreIcon,
+  Diamond,
 } from 'lucide-react';
 import { Role, Station, type MenuConfig } from './types';
 import { RiBuilding2Line, RiBuildingLine, RiNodeTree, RiNotification3Line, RiShieldKeyholeLine, RiStoreLine, RiUser3Line } from '@remixicon/react';
@@ -140,6 +141,12 @@ export const SETTINGS_NAV:MenuConfig = [
     title: "Notifications",
     icon: RiNotification3Line,
     path:'/settings/notifications',
+    superAdminOnly: true
+  },
+  {
+    title: "Stone Types & Colors",
+    icon: Diamond,
+    path:'/settings/stone-types',
     superAdminOnly: true
   }
 ];

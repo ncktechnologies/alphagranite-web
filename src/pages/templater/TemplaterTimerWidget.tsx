@@ -36,7 +36,7 @@ export function TemplaterTimerWidget() {
         { job_id: Number(job_id), templater_id: templater_id! },
         { 
             skip: shouldSkip,
-            pollingInterval: 5000, // Poll every 5 seconds to keep timer updated
+            pollingInterval: isRunning ? 5000 : 0, // Only poll when running, not when paused/stopped
         }
     );
 

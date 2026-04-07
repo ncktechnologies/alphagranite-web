@@ -833,6 +833,7 @@ export function RevisionDetailsPage() {
         title="Upload Revision Files"
         entityId={draftingData?.id || fabData?.draft_data?.id}
         uploadMutation={addFilesToDrafting}
+        disabled={!isDrafting && !isPaused}
         stages={[
           { value: 'revision', label: 'Revision' },
         ]}

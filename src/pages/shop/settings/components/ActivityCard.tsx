@@ -11,6 +11,7 @@ interface ActivityCardProps {
 }
 
 export const ActivityCard = ({ 
+  id,
   plan_name, 
   plan_description, 
   status_id, 

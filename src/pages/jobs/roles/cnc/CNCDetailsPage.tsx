@@ -722,6 +722,7 @@ export function CNCDetailsPage() {
                 title="Upload CNC Files"
                 entityId={cncId}
                 uploadMutation={addFilesToCNC}
+                disabled={!isDrafting && !isPaused}
                 stages={[
                     { value: 'cnc', label: 'CNC' },
                 ]}

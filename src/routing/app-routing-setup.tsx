@@ -26,7 +26,7 @@ import { TechnicianPage } from '@/pages/jobs/roles/technician-templater/Technici
 import { FabIdDetailsPage } from '@/pages/jobs/roles/templating-coordinator/components/details';
 // import { TemplatingCoordinatorDetailsPage } from '@/pages/jobs/roles/templating-coordinator/components/TemplatingCoordinatorDetailsPage';
 import { TemplatingPage } from '@/pages/jobs/roles/templating-coordinator/templatingPage';
-import { NotificationsSection, ProfileSection, RolesSection, PermissionsSection } from '@/pages/settings';
+import { NotificationsSection, ProfileSection, RolesSection, PermissionsSection, StoneTypesSection } from '@/pages/settings';
 import CuttingPlanPage from '@/pages/shop/cutting-plan/CuttingPlanPage';
 import { ShopDetailsPage } from '@/pages/shop/cutting-plan/Details';
 import { EdgingDetailsPage } from '@/pages/shop/edging/Details';
@@ -81,6 +81,7 @@ export function AppRoutingSetup() {
           <Route path="/settings/profile" element={<ProfileSection />} />
           <Route path="/settings/notifications" element={<NotificationsSection />} />
           <Route path="/settings/permissions" element={<PermissionsSection />} />
+          <Route path="/settings/stone-types" element={<StoneTypesSection />} />
           <Route path="/create-jobs" element={<JobsSection />} />
           <Route path="/status-report" element={<JobStatusPage/>} />
           <Route path="/need-to-invoice" element={<NeedToInvoicePage />} />

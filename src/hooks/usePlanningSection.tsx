@@ -7,18 +7,7 @@ export interface PlanSection {
     status_id: number;
 }
 
-/**
- * Provides planning sections fetched from the API.
- * Use `findSectionByKeyword` to resolve a section by a partial name match —
- * this way your UI never hardcodes IDs; only names are coupled.
- *
- * Example:
- *   findSectionByKeyword('wj')      → { id: 8, plan_name: 'WJ Planning', ... }
- *   findSectionByKeyword('cnc')     → { id: 1, plan_name: 'CNC Planning', ... }
- *   findSectionByKeyword('edg')     → { id: 9, plan_name: 'Edging Planning', ... }
- *   findSectionByKeyword('mit')     → { id: 2, plan_name: 'Miter Planning', ... }
- *   findSectionByKeyword('cut')     → { id: 7, plan_name: 'Cut Planning', ... }
- */
+
 export const usePlanSections = () => {
     const { data, isLoading, isError } = useGetPlanningSectionsQuery();
 

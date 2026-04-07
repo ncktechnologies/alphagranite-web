@@ -245,6 +245,12 @@ export interface StoneTypeCreate {
     description?: string;
 }
 
+export interface StoneTypeUpdate {
+    name?: string;
+    description?: string;
+    status_id?: number;
+}
+
 export interface StoneColor {
     id: number;
     name: string;
@@ -259,8 +265,17 @@ export interface StoneColor {
 
 export interface StoneColorCreate {
     name: string;
+    stone_type_id: number;
     color_code?: string;
     description?: string;
+}
+
+export interface StoneColorUpdate {
+    name?: string;
+    stone_type_id?: number;
+    color_code?: string;
+    description?: string;
+    status_id?: number;
 }
 
 export interface StoneThickness {
@@ -1528,12 +1543,50 @@ export const jobApi = createApi({
                 invalidatesTags: ["StoneType"],
             }),
 
+            // Update Stone Type
+            updateStoneType: build.mutation<StoneType, { id: number; data: StoneTypeUpdate }>({
+                query: ({ id, data }) => ({
+                    url: `/stone-types/${id}`,
+                    method: "put",
+                    data
+                }),
+                invalidatesTags: (_result, _error, { id }) => ["StoneType", { type: "StoneType", id }],
+            }),
+
+            // Delete Stone Type
+            deleteStoneType: build.mutation<void, number>({
+                query: (id) => ({
+                    url: `/stone-types/${id}`,
+                    method: "delete"
+                }),
+                invalidatesTags: ["StoneType"],
+            }),
+
             // Create Stone Color
             createStoneColor: build.mutation<StoneColor, StoneColorCreate>({
                 query: (data) => ({
                     url: "/stone-colors",
                     method: "post",
                     data
+                }),
+                invalidatesTags: ["StoneColor"],
+            }),
+
+            // Update Stone Color
+            updateStoneColor: build.mutation<StoneColor, { id: number; data: StoneColorUpdate }>({
+                query: ({ id, data }) => ({
+                    url: `/stone-colors/${id}`,
+                    method: "put",
+                    data
+                }),
+                invalidatesTags: (_result, _error, { id }) => ["StoneColor", { type: "StoneColor", id }],
+            }),
+
+            // Delete Stone Color
+            deleteStoneColor: build.mutation<void, number>({
+                query: (id) => ({
+                    url: `/stone-colors/${id}`,
+                    method: "delete"
                 }),
                 invalidatesTags: ["StoneColor"],
             }),
@@ -2415,7 +2468,11 @@ export const {
     // New mutation hooks
     useCreateAccountMutation,
     useCreateStoneTypeMutation,
+    useUpdateStoneTypeMutation,
+    useDeleteStoneTypeMutation,
     useCreateStoneColorMutation,
+    useUpdateStoneColorMutation,
+    useDeleteStoneColorMutation,
     useCreateStoneThicknessMutation,
     useCreateEdgeMutation,
     useCreateDraftingMutation,

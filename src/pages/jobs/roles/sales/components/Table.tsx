@@ -839,7 +839,14 @@ export const JobSalesTable = ({
             size: 150,
             enableSorting: true,
         },
-
+{
+            id: 'current_stage',
+            accessorKey: 'current_stage',
+            header: ({ column }) => <DataGridColumnHeader title="CURRENT STAGE" column={column} />,
+            cell: ({ row }) => <span className="text-xs">{row.original.current_stage || '-'}</span>,
+            size: 150,
+            enableSorting: true,
+        },
         // ── Templating Action ─────────────────────────────────────────────────
         {
             id: "reschedule",

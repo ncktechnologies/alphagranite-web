@@ -193,7 +193,7 @@ export const workstationApi = createApi({
       // Get all planning sections (including inactive)
       getAllPlanningSections: build.query<PlanningSection[], void>({
         query: () => ({
-          url: "/api/v1/planning-section/active",
+          url: "/api/v1/planning-section",
           method: "get",
         }),
         transformResponse: (response: any) => response.data || response,

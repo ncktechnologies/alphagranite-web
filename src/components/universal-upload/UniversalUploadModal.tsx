@@ -21,6 +21,7 @@ interface UniversalUploadModalProps extends Omit<UniversalUploadProps, 'onClose'
   // Controlled mode props
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  disabled?: boolean;
 }
 
 /**
@@ -38,6 +39,7 @@ export function UniversalUploadModal({
   onUploadComplete,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
+  disabled = false,
   ...uploadProps
 }: UniversalUploadModalProps) {
   // Internal state for uncontrolled mode
@@ -52,16 +54,25 @@ export function UniversalUploadModal({
     onUploadComplete?.();
   };
 
+  // Prevent opening if disabled
+  const handleOpenChange = (open: boolean) => {
+    if (disabled && open) {
+      return; // Don't allow opening when disabled
+    }
+    setIsOpen(open);
+  };
+
   return (
     <div className="space-y-4">
       {/* Trigger Button - only render in uncontrolled mode (no open prop provided) */}
       {controlledOpen === undefined && (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog open={isOpen} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
             {trigger || (
               <Button
                 variant="dashed"
                 className="flex items-center gap-2 h-12 w-full"
+                disabled={disabled}
               >
                 <Plus className="w-4 h-4" />
                 Add files
@@ -79,7 +90,7 @@ export function UniversalUploadModal({
             <div className="py-4">
               <UniversalUpload
                 {...uploadProps}
-                onClose={() => setIsOpen(false)}
+                onClose={() => handleOpenChange(false)}
                 onUploadComplete={handleUploadComplete}
               />
             </div>
@@ -89,7 +100,7 @@ export function UniversalUploadModal({
       
       {/* Render dialog directly for controlled mode (when open prop is provided) */}
       {controlledOpen !== undefined && (
-        <Dialog open={controlledOpen} onOpenChange={controlledOnOpenChange}>
+        <Dialog open={controlledOpen && !disabled} onOpenChange={handleOpenChange}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="text-[15px] font-semibold py-2 border-b">
@@ -100,7 +111,7 @@ export function UniversalUploadModal({
             <div className="py-4">
               <UniversalUpload
                 {...uploadProps}
-                onClose={() => controlledOnOpenChange?.(false)}
+                onClose={() => handleOpenChange(false)}
                 onUploadComplete={handleUploadComplete}
               />
             </div>
