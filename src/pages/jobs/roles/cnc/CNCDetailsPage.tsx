@@ -203,12 +203,12 @@ export function CNCDetailsPage() {
             }).unwrap();
 
             setSessionStatus('drafting');
-            setCNCStart(startDate);
+            // setCNCStart(startDate);
             toast.success('CNC session started successfully');
             refetchSession();
         } catch (error) {
             console.error('Failed to start session:', error);
-            toast.error('Failed to start CNC session');
+            // toast.error('Failed to start CNC session');
         }
     };
 
@@ -576,7 +576,7 @@ export function CNCDetailsPage() {
                                     size="sm"
                                     onClick={() => { setViewMode('activity'); setActiveFile(null); }}
                                 >
-                                    <X className="w-5 h-5" />
+                                    <X className="w-10 h-10" />
                                 </Button>
                             </div>
                             <FileViewer
@@ -668,6 +668,7 @@ export function CNCDetailsPage() {
                                                     draftingData={fabData?.draft_data}
                                                     draftingId={fabData?.cnc_data?.id}
                                                     showDeleteButton={!hasEnded && !isOnHold}
+                                                    cncData={fabData?.cnc_data}
                                                 />
                                             </div>
                                         ) : (

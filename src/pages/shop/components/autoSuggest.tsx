@@ -480,20 +480,20 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     const regularEntries: AutoPlanEntry[] = activeStages.length === 0
       ? [emptyEntry({ fab_id: String(selectedFab.id) })]
       : activeStages.map((s, i) => ({
-          ...emptyEntry({ section_id: s.section_id, stageName: s.label, fab_id: String(selectedFab.id) }),
-          sequence: String(i + 1),
-        }));
+        ...emptyEntry({ section_id: s.section_id, stageName: s.label, fab_id: String(selectedFab.id) }),
+        sequence: String(i + 1),
+      }));
 
     const touchupEntry: AutoPlanEntry | null = touchupSection
       ? {
-          ...emptyEntry({
-            section_id: touchupSection.id,
-            stageName: touchupSection.name || touchupSection.plan_name || touchupSection.title || 'Touchup',
-            fab_id: String(selectedFab.id),
-            isTouchup: true,
-          }),
-          sequence: '',
-        }
+        ...emptyEntry({
+          section_id: touchupSection.id,
+          stageName: touchupSection.name || touchupSection.plan_name || touchupSection.title || 'Touchup',
+          fab_id: String(selectedFab.id),
+          isTouchup: true,
+        }),
+        sequence: '',
+      }
       : null;
 
     setEntries(touchupEntry ? [...regularEntries, touchupEntry] : regularEntries);
@@ -754,24 +754,26 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       <div className="border-b border-[#dfdfdf]">
         <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
           <div className="flex items-center gap-4">
-            {!hideBackButton && (
-              <button
-                onClick={handleBack}
-                className="h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] bg-white flex items-center gap-2 text-[#4b545d] hover:bg-gray-50 transition-colors"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span className="text-[14px] font-semibold">Back</span>
-              </button>
-            )}
+
             <p className="text-[28px] leading-[32px] text-black font-semibold">
               {isEditing ? 'Edit Plan' : 'Auto Schedule Plan'}
             </p>
+            {entries[0]?.fab_id && (
+              <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2">
+                <span className="text-[14px] text-[#4a4d59]">FAB ID</span>
+                <span className="text-[20px] text-[#7a9705] font-semibold">#{entries[0].fab_id}</span>
+              </div>
+            )}
           </div>
-          {entries[0]?.fab_id && (
-            <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2">
-              <span className="text-[14px] text-[#4a4d59]">FAB ID</span>
-              <span className="text-[20px] text-[#7a9705] font-semibold">#{entries[0].fab_id}</span>
-            </div>
+
+          {!hideBackButton && (
+            <button
+              onClick={handleBack}
+              className="h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] bg-white flex items-center gap-2 text-[#4b545d] hover:bg-gray-50 transition-colors"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              <span className="text-[14px] font-semibold">Back</span>
+            </button>
           )}
         </div>
       </div>

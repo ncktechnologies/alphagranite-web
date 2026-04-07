@@ -76,8 +76,10 @@ export const FileViewer = ({
     : ({ children }: { children: React.ReactNode }) => <>{children}</>;
 
   const CloseButton = () => (
-    <Button variant="ghost" size="sm" onClick={onClose}>
-      <X className="w-10 h-10" /> 
+    <Button variant="ghost"  onClick={onClose}>
+      <X className="h-32 w-32" />
+
+      close
     </Button>
   );
 

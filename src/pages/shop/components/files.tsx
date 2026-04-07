@@ -41,34 +41,38 @@ interface UploadBoxProps {
   uploadedFileMetas?: any[];
   currentStage?: string; // Current workflow stage for context
   slabsmithData?: any; // SlabSmith data containing files
+  sctData?: any; // SCT data containing files
+  cncData?: any; // CNC data containing files
   showDeleteButton?: boolean; // Control delete button visibility
 }
 
 // Helper function to compare if two objects have the same files data
 const areFilesEqual = (files1: any[], files2: any[]) => {
   if (files1.length !== files2.length) return false;
-  return files1.every((file, index) => 
-    file.id === files2[index]?.id && 
+  return files1.every((file, index) =>
+    file.id === files2[index]?.id &&
     file.name === files2[index]?.name
   );
 };
 
-export function Documents({ 
-  onFileClick, 
-  draftingData, 
-  onDeleteFile, 
-  draftingId, 
+export function Documents({
+  onFileClick,
+  draftingData,
+  onDeleteFile,
+  draftingId,
   uploadedFileMetas = [],
   currentStage,
   slabsmithData,
+  sctData,
+  cncData,
   showDeleteButton = true
 }: UploadBoxProps) {
   const { t } = useTranslation();
-  
+
   // Use useMemo to compute files instead of useState/useEffect
   const files = useMemo(() => {
     const allFiles: FileMetadata[] = [];
-    
+
     // Extract files from draftingData
     if (draftingData) {
       if (draftingData.files && Array.isArray(draftingData.files) && draftingData.files.length > 0) {
@@ -117,7 +121,7 @@ export function Documents({
       //   }
       // }
     }
-    
+
     // Add newly uploaded files
     if (uploadedFileMetas && uploadedFileMetas.length > 0) {
       const newFiles = uploadedFileMetas.map((meta: any) => ({
@@ -135,7 +139,7 @@ export function Documents({
       }));
       allFiles.push(...newFiles);
     }
-    
+
     // Extract files from slabsmithData
     if (slabsmithData) {
       if (slabsmithData.files && Array.isArray(slabsmithData.files) && slabsmithData.files.length > 0) {
@@ -162,9 +166,63 @@ export function Documents({
         }
       }
     }
-    
+
+    // Extract files from sctData
+    if (sctData) {
+      if (sctData.files && Array.isArray(sctData.files) && sctData.files.length > 0) {
+        try {
+          const sctFiles = sctData.files.map((file: any) => ({
+            id: String(file.id),
+            name: file.name || `SCT_File_${file.id}`,
+            size: parseInt(file.file_size) || 0,
+            type: file.file_type || 'application/octet-stream',
+            url: file.file_url || '/images/app/upload-file.svg',
+            stage: getFileStage(file.name, {
+              isDrafting: false,
+              currentStage: 'sct',
+            }),
+            stage_name: file.stage_name ?? file.stage ?? 'sct',
+            file_design: file.file_design ?? undefined,
+            uploaded_by_name: file.uploaded_by_name ?? file.uploader_name ?? '-',
+            uploadedBy: file.uploaded_by_name ?? file.uploader_name ?? '-',
+            uploadedAt: file.created_at ? new Date(file.created_at) : new Date()
+          }));
+          allFiles.push(...sctFiles);
+        } catch (error) {
+          console.error('Error processing SCT files array:', error);
+        }
+      }
+    }
+
+    // Extract files from cncData
+    if (cncData) {
+      if (cncData.files && Array.isArray(cncData.files) && cncData.files.length > 0) {
+        try {
+          const cncFiles = cncData.files.map((file: any) => ({
+            id: String(file.id),
+            name: file.name || `CNC_File_${file.id}`,
+            size: parseInt(file.file_size) || 0,
+            type: file.file_type || 'application/octet-stream',
+            url: file.file_url || '/images/app/upload-file.svg',
+            stage: getFileStage(file.name, {
+              isDrafting: false,
+              currentStage: 'cnc',
+            }),
+            stage_name: file.stage_name ?? file.stage ?? 'cnc',
+            file_design: file.file_design ?? undefined,
+            uploaded_by_name: file.uploaded_by_name ?? file.uploader_name ?? '-',
+            uploadedBy: file.uploaded_by_name ?? file.uploader_name ?? '-',
+            uploadedAt: file.created_at ? new Date(file.created_at) : new Date()
+          }));
+          allFiles.push(...cncFiles);
+        } catch (error) {
+          console.error('Error processing CNC files array:', error);
+        }
+      }
+    }
+
     return allFiles;
-  }, [draftingData, uploadedFileMetas, currentStage, slabsmithData]); // Only recompute when these change
+  }, [draftingData, uploadedFileMetas, currentStage, slabsmithData, sctData, cncData]); // Only recompute when these change
 
   const getFileIcon = useCallback((file: FileMetadata) => {
     const { type } = file;
@@ -184,12 +242,12 @@ export function Documents({
 
   // Universal delete handler - just needs file_id
   const [deleteFile] = useDeleteFileMutation();
-  
+
   const handleDeleteInternal = useCallback(async (fileId: string) => {
     try {
       await deleteFile({ file_id: fileId }).unwrap();
       toast.success('File deleted successfully');
-      
+
       // Call parent callback if provided
       if (onDeleteFile) {
         onDeleteFile(fileId);
@@ -233,38 +291,38 @@ export function Documents({
                       {formatBytes(file.size)}
                     </p>
                     {(() => {
-  // Determine stage key from file metadata
-  const stageKey = file.stage_name || getFileStage(file.name, { isDrafting: false }).stage;
-  
-  if (!stageKey) {
-    // No stage information available – return null to show nothing
-    return null;
-  }
-  
-  // Try to get the badge from the mapping
-  const badge = getStageBadge(stageKey as any);
-  
-  // Use badge label if available, otherwise format the stageKey as a readable label
-  const label = badge?.label || stageKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  // Use badge className if available, otherwise a default badge style
-  const className = badge?.className || 'bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded';
-  
-  return (
-    <span className={className}>
-      {label}
-    </span>
-  );
-})()}
+                      // Determine stage key from file metadata
+                      const stageKey = file.stage_name || getFileStage(file.name, { isDrafting: false }).stage;
+
+                      if (!stageKey) {
+                        // No stage information available – return null to show nothing
+                        return null;
+                      }
+
+                      // Try to get the badge from the mapping
+                      const badge = getStageBadge(stageKey as any);
+
+                      // Use badge label if available, otherwise format the stageKey as a readable label
+                      const label = badge?.label || stageKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                      // Use badge className if available, otherwise a default badge style
+                      const className = badge?.className || 'bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded';
+
+                      return (
+                        <span className={className}>
+                          {label}
+                        </span>
+                      );
+                    })()}
 
                     {file.file_design && (
                       <span className="text-xs text-muted-foreground bg-gray-100 px-2 py-0.5 rounded">
-                         {file.file_design}
+                        {file.file_design}
                       </span>
                     )}
 
                     {file.uploaded_by_name && (
                       <span className="text-xs text-muted-foreground bg-blue-50 px-2 py-0.5 rounded">
-                         {file.uploaded_by_name}
+                        {file.uploaded_by_name}
                       </span>
                     )}
                   </div>
@@ -288,20 +346,20 @@ export function Documents({
               )}
             </div>
 
-              <div className="flex items-center gap-1">
-                {/* View/Eye Icon Button */}
-                <Button
-                  onClick={() => handleViewFile(file)}
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 w-8 p-0"
-                  title="View file"
-                >
-                  <Eye className="w-4 h-4 text-blue-500" />
-                </Button>
+            <div className="flex items-center gap-1">
+              {/* View/Eye Icon Button */}
+              <Button
+                onClick={() => handleViewFile(file)}
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0"
+                title="View file"
+              >
+                <Eye className="w-4 h-4 text-blue-500" />
+              </Button>
 
-               
-                {/* {showDeleteButton && onDeleteFile && draftingId && (
+
+              {/* {showDeleteButton && onDeleteFile && draftingId && (
                   <Button
                     variant="ghost"
                     size="icon"
@@ -319,7 +377,7 @@ export function Documents({
                     </Can>
                   </Button>
                 )} */}
-              </div>
+            </div>
           </div>
         ))}
       </div>

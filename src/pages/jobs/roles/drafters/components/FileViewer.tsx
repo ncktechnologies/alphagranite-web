@@ -76,8 +76,9 @@ export const FileViewer = ({
             </div>
           )}
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="h-10 w-10" /> 
+        <Button variant="ghost" onClick={onClose}>
+          <X className="size-[36px]" /> 
+          
         </Button>
       </div>
 
