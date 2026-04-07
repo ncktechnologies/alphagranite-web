@@ -329,11 +329,12 @@ const NewFabIdForm = () => {
   const isEffectiveStoneColorsLoading = selectedStoneTypeId ? isLoadingFilteredStoneColors : isLoadingStoneColors;
   const isEffectiveStoneColorsError = selectedStoneTypeId ? isFilteredStoneColorsError : isStoneColorsError;
 
-  // Auto-check all checkboxes when FAB type is resurfacing
+  // Auto-check all checkboxes when FAB type is resurfacing or punchout
   const fabTypeValue = form.watch('fabType');
 
   useEffect(() => {
-    if (fabTypeValue?.toLowerCase() === 'resurface') {
+    const fabTypeLower = fabTypeValue?.toLowerCase();
+    if (fabTypeLower === 'resurface' || fabTypeLower === 'punchout-ag' || fabTypeLower === 'punchout-billable') {
       form.setValue('templateNotNeeded', true);
       form.setValue('draftNotNeeded', true);
       form.setValue('slabSmithCustNotNeeded', true);

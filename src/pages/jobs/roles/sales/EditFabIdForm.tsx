@@ -383,6 +383,9 @@ const EditFabIdForm = () => {
             const updates = [];
             if (selectedJob.name && selectedJob.name !== jobNameValue) updates.push({ field: 'jobName', value: selectedJob.name });
             if (selectedJob.job_number && selectedJob.job_number !== jobNumberValue) updates.push({ field: 'jobNumber', value: selectedJob.job_number });
+            if (selectedJob.account_name && selectedJob.account_name !== form.getValues('account')) {
+                updates.push({ field: 'account', value: selectedJob.account_name });
+            }
             if (selectedJob.sales_person_id) {
                 const salesPersonForJob = salesPersons.find((person: any) => person.id === selectedJob.sales_person_id);
                 if (salesPersonForJob) updates.push({ field: 'selectedSalesPerson', value: salesPersonForJob.name });
@@ -471,6 +474,22 @@ const EditFabIdForm = () => {
         };
         loadFormData();
     }, [existingFab, isLoadingFab, hasInitialDataLoaded, form]);
+
+    // Auto-check all checkboxes when FAB type is resurfacing or punchout
+    const fabTypeValue = form.watch('fabType');
+
+    useEffect(() => {
+        const fabTypeLower = fabTypeValue?.toLowerCase();
+        if (fabTypeLower === 'resurface' || fabTypeLower === 'punchout') {
+            form.setValue('templateNotNeeded', true);
+            form.setValue('draftNotNeeded', true);
+            form.setValue('slabSmithCustNotNeeded', true);
+            form.setValue('sctNotNeeded', true);
+            form.setValue('slabSmithAGNotNeeded', true);
+            form.setValue('finalProgrammingNotNeeded', true);
+        }
+        // Note: We don't reset to false on other types for edit form, as user may have manually set them
+    }, [fabTypeValue, form]);
 
     const handleAddThickness = async () => {
         if (newThickness.trim()) {

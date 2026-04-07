@@ -269,7 +269,7 @@ export function RescheduleTechnicianModal({
                                                 field.onChange(formatted);
                                             }}
                                             placeholder="Schedule date"
-                                            minDate={new Date()}
+                                            // minDate={new Date()}
                                         />
                                     </FormControl>
                                     <FormMessage>{fieldState.error?.message}</FormMessage>

@@ -259,7 +259,7 @@ const EmployeeFormSheet = ({
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Email address</FormLabel>
+                            <FormLabel>Email address *</FormLabel>
                             <FormControl>
                               <Input
                                 placeholder="Enter email address"

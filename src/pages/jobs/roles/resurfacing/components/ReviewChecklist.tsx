@@ -264,7 +264,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                   value={parseDateString(field.value)}
                   onChange={(date) => field.onChange(formatDate(date))}
                   disabled={!isCompleted}
-                  minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
+                  // minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
                 />
                 <FormMessage />
               </FormItem>

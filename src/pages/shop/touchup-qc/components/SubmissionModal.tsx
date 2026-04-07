@@ -177,7 +177,7 @@ export const ScheduleCuttingModal = ({
                         mode="single"
                         selected={field.value}
                         onSelect={field.onChange}
-                        disabled={(date) => date < new Date()}
+                        // disabled={(date) => date < new Date()}
                         // Use timezone-consistent month navigation
                         defaultMonth={getCalendarMonth(field.value)}
                       />

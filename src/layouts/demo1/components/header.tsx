@@ -35,6 +35,7 @@ import { SidebarMenu } from './sidebar-menu';
 import { Input } from '@/components/ui/input';
 import { useSelector } from 'react-redux';
 import { getUserInitials } from '@/utils/userUtils';
+import { TemplaterTimerWidget } from '@/pages/templater/TemplaterTimerWidget';
 
 export function Header() {
   const [isSidebarSheetOpen, setIsSidebarSheetOpen] = useState(false);
@@ -177,6 +178,7 @@ export function Header() {
                   </Button>
                 }
               /> */}
+              <TemplaterTimerWidget />
               <UserDropdownMenu
                 trigger={
                   <div className="size-9 rounded-full border-2 border-green-500 shrink-0 cursor-pointer flex items-center justify-center bg-green-100 text-green-800 font-semibold">

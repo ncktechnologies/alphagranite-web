@@ -437,7 +437,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                                 mode="date"
                                 value={draft.start_date}
                                 onChange={date => patch({ start_date: date })}
-                                minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
+                                // minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
                             />
                         </div>
 

@@ -211,7 +211,7 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
                         field.onChange(`${year}-${month}-${day}`);
                       }}
                       placeholder="Select scheduled date"
-                      minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
+                      // minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
                     />
                   </FormControl>
                   <FormMessage />
@@ -238,7 +238,7 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
                         field.onChange(`${year}-${month}-${day}`);
                       }}
                       placeholder="Select complete date"
-                      minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
+                      // minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
                       disabled={statusValue !== true}  // 👈 Disable unless Completed is checked
                     />
                   </FormControl>
