@@ -36,6 +36,7 @@ const buttonVariants = cva(
         dashed: '',
       },
       size: {
+        xl: 'h-10 w-20 rounded-md px-4 text-sm gap-1.5 [&_svg:not([class*=size-])]:size-10',
         lg: 'h-10 rounded-md px-4 text-sm gap-1.5 [&_svg:not([class*=size-])]:size-4',
         md: 'h-8.5 rounded-md px-3 gap-1.5 text-[0.8125rem] leading-(--text-sm--line-height) [&_svg:not([class*=size-])]:size-4',
         sm: 'h-7 rounded-md px-2.5 gap-1.25 text-xs [&_svg:not([class*=size-])]:size-3.5',
@@ -323,6 +324,11 @@ const buttonVariants = cva(
       },
       {
         size: 'lg',
+        mode: 'icon',
+        className: 'w-10 h-10 p-0 [&_svg:not([class*=size-])]:size-4',
+      },
+       {
+        size: 'xl',
         mode: 'icon',
         className: 'w-10 h-10 p-0 [&_svg:not([class*=size-])]:size-4',
       },

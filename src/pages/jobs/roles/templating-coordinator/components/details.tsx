@@ -10,11 +10,10 @@ import { AlertCircle } from 'lucide-react';
 import GraySidebar from '@/pages/jobs/components/job-details.tsx/GraySidebar';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { BackButton } from '@/components/common/BackButton';
+import { getAllFabNotes } from '@/lib/helpers';
 
 // Helper function to get all fab notes (unfiltered)
-const getAllFabNotes = (fabNotes: any[]) => {
-  return fabNotes || [];
-};
+
 
 export function FabIdDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -88,33 +87,29 @@ export function FabIdDetailsPage() {
     {
       title: 'FAB Notes',
       type: 'notes',
-      notes: Array.isArray(fab?.notes)
-        ? fab.notes.map((noteItem: any, index: number) => {
-          const stageConfig: Record<string, { label: string; color: string }> = {
-            templating: { label: 'Templating', color: 'text-blue-700' },
-            pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
-            drafting: { label: 'Drafting', color: 'text-green-700' },
-            sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
-            slab_smith_request: { label: 'Slab Smith Request', color: 'text-red-700' },
-            cut_list: { label: 'Final Programming', color: 'text-purple-700' },
-            cutting: { label: 'Cutting', color: 'text-orange-700' },
-            revisions: { label: 'Revisions', color: 'text-purple-700' },
-            draft: { label: 'Draft', color: 'text-green-700' },
-            general: { label: 'General', color: 'text-gray-700' },
-          };
-
-          const stage = noteItem?.stage || 'general';
-          const config = stageConfig[stage] || stageConfig.general;
-
-          return {
-            id: noteItem?.id ?? index,
-            avatar: fabAuthorName.charAt(0).toUpperCase() || 'U',
-            content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${noteItem}`,
-            author: fabAuthorName,
-            timestamp: fab?.created_at ? new Date(fab.created_at).toLocaleDateString() : 'Unknown date',
-          };
-        })
-        : [],
+      notes: getAllFabNotes(fab?.fab_notes || []).map(note => {
+        const stageConfig: Record<string, { label: string; color: string }> = {
+          templating: { label: 'Templating', color: 'text-blue-700' },
+          pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
+          drafting: { label: 'Drafting', color: 'text-green-700' },
+          sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
+          slab_smith_request: { label: 'SlabSmith Request', color: 'text-red-700' },
+          cut_list: { label: 'Final Programming', color: 'text-purple-700' },
+          cutting: { label: 'Cutting', color: 'text-orange-700' },
+          revisions: { label: 'Revisions', color: 'text-purple-700' },
+          draft: { label: 'Draft', color: 'text-green-700' },
+          general: { label: 'General', color: 'text-gray-700' }
+        };
+        const stage = note.stage || 'general';
+        const config = stageConfig[stage] || stageConfig.general;
+        return {
+          id: note.id,
+          avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+          content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${note.note}`,
+          author: note.created_by_name || 'Unknown',
+          timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+        };
+      })
     },
   ];
 

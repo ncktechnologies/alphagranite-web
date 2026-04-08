@@ -117,3 +117,5 @@ export function formatDateTime(input: Date | string | number): string {
     hour12: true,
   });
 }
+
+export const getAllFabNotes = (fabNotes: any[]) => fabNotes || [];

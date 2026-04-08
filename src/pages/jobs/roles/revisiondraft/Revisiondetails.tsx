@@ -287,7 +287,7 @@ export function RevisionDetailsPage() {
       toast.success(`Revision session ${action === 'start' ? 'started' : 'resumed'} successfully`);
     } catch (error: any) {
       console.error(`Failed to ${action} session:`, error);
-      toast.error(error?.data?.message || `Failed to ${action} session`);
+      // toast.error(error?.data?.message || `Failed to ${action} session`);
       throw error;
     }
   };
@@ -320,7 +320,7 @@ export function RevisionDetailsPage() {
       toast.success(`Session ${actionPastTense[action]} successfully`);
     } catch (error: any) {
       console.error(`Failed to ${action} session:`, error);
-      toast.error(error?.data?.message || `Failed to ${action} session`);
+      // toast.error(error?.data?.message || `Failed to ${action} session`);
       throw error;
     }
   };
@@ -402,7 +402,7 @@ export function RevisionDetailsPage() {
       toast.success('File deleted successfully');
     } catch (error) {
       console.error('Failed to delete file:', error);
-      toast.error('Failed to delete file');
+      // toast.error('Failed to delete file');
     }
   };
 
@@ -418,7 +418,7 @@ export function RevisionDetailsPage() {
   const canOpenSubmit = isDrafting && allFilesForDisplay.length > 0;
 
   const handleSubmitRevision = async (data: any) => {
-    
+   
     if (!fabId || !currentEmployeeId) {
       toast.error("Missing required data");
       return;
@@ -433,37 +433,72 @@ export function RevisionDetailsPage() {
       const existingRevisions = Array.isArray(revisionsArray) ? revisionsArray : [];
       const hasExistingRevisions = existingRevisions.length > 0;
 
-      if (hasExistingRevisions) {
-        // Update the earliest (or latest?) – for simplicity, update the most recent
+      // If complete is true, create revision if needed, then call updateRevision to complete the stage
+      if (data.complete) {
+        let revisionIdToUpdate: number;
+
+        if (hasExistingRevisions) {
+          // Use existing revision
+          const latestRevision = existingRevisions[existingRevisions.length - 1];
+          revisionIdToUpdate = latestRevision.id;
+        } else {
+          // Create new revision first to get the ID
+          const createData: any = {
+            fab_id: fabId,
+            revision_type: revisionInfo.salesCTData?.revision_type || revisionInfo.revisionType,
+            requested_by: currentEmployeeId,
+            revision_notes: data.notes || revisionInfo.revisionReason || '',
+            is_completed: false,
+            sales_ct_id: revisionInfo.salesCTId || null
+          };
+          const createResult = await createRevision(createData).unwrap();
+          // console.log("[v0] createRevision response:", createResult);
+          revisionIdToUpdate = createResult.data.id;
+        }
+
+        // Now call updateRevision with is_completed: true
+        const updateData: any = {
+          revision_type: revisionInfo.salesCTData?.revision_type || revisionInfo.revisionType,
+          revision_notes: data.notes || revisionInfo.revisionReason || '',
+          is_completed: true
+        };
+        const updateResult = await updateRevision({ revision_id: revisionIdToUpdate, data: updateData }).unwrap();
+        // console.log("[v0] updateRevision response:", updateResult);
+        revisionId = revisionIdToUpdate;
+      } else if (hasExistingRevisions) {
+        // If complete is false but there are existing revisions, update them
+        // console.log("[v0] complete is FALSE but hasExistingRevisions is TRUE");
         const latestRevision = existingRevisions[existingRevisions.length - 1];
         const updateData: any = {
           revision_type: revisionInfo.salesCTData?.revision_type || revisionInfo.revisionType,
           revision_notes: data.notes || revisionInfo.revisionReason || '',
-          is_completed: data.complete || false
+          is_completed: false
         };
-        console.log("[v0] Sending updateData to API:", updateData);
-        await updateRevision({ revision_id: latestRevision.id, data: updateData }).unwrap();
+        const updateResult = await updateRevision({ revision_id: latestRevision.id, data: updateData }).unwrap();
+        // console.log("[v0] updateRevision response:", updateResult);
         revisionId = latestRevision.id;
       } else {
+        // If complete is false and no existing revisions, create new
+        // console.log("[v0] complete is FALSE and hasExistingRevisions is FALSE - creating new");
         const createData: any = {
           fab_id: fabId,
           revision_type: revisionInfo.salesCTData?.revision_type || revisionInfo.revisionType,
           requested_by: currentEmployeeId,
           revision_notes: data.notes || revisionInfo.revisionReason || '',
-          is_completed: data.complete || false,
+          is_completed: false,
           sales_ct_id: revisionInfo.salesCTId || null
         };
+        // console.log("[v0] Sending createData to API:", createData);
         const createResult = await createRevision(createData).unwrap();
+        //  console.log("[v0] createRevision response:", createResult);
         revisionId = createResult.id;
       }
 
-      // If marked as complete, end the session
-      if (data.complete) {
-        await updateSession('end', new Date(), 'Revision completed and submitted');
-        // Immediately set local state to ended to reflect in UI
-        setSessionStatus('ended');
-        setDraftEnd(new Date());
-      }
+      // End the session after successful submission
+      await updateSession('end', new Date(), 'Revision completed and submitted');
+      // Immediately set local state to ended to reflect in UI
+      setSessionStatus('ended');
+      setDraftEnd(new Date());
 
       if (data.notes) {
         await createFabNote({ fab_id: fabId, note: data.notes, stage: 'revisions' }).unwrap();
@@ -477,8 +512,8 @@ export function RevisionDetailsPage() {
 
       navigate('/job/revision');
     } catch (error: any) {
-      console.error('Failed to submit revision:', error);
-      toast.error(error?.data?.message || "Failed to submit revision. Please try again.");
+      console.error(error?.data?.message || "Failed to submit revision. Please try again.");
+    
     }
   };
 
@@ -762,6 +797,7 @@ export function RevisionDetailsPage() {
                       <Documents
                         onFileClick={handleFileClick}
                         draftingData={fabData?.draft_data}
+                        slabsmithData={(fabData as any)?.slabsmith_data}
                         draftingId={draftingData?.id || fabData?.draft_data?.id}
                         showDeleteButton={!hasEnded && !isOnHold}
                       />
@@ -833,7 +869,6 @@ export function RevisionDetailsPage() {
         title="Upload Revision Files"
         entityId={draftingData?.id || fabData?.draft_data?.id}
         uploadMutation={addFilesToDrafting}
-        disabled={!isDrafting && !isPaused}
         stages={[
           { value: 'revision', label: 'Revision' },
         ]}

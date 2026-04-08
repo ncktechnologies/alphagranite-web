@@ -103,30 +103,44 @@ export default function GraySidebar({ sections, className = '', jobId }: GraySid
                         </div>
                     )}
 
-                    {/* Notes Section */}
+                    {/* Notes Section - Chat Layout */}
                     {section.type === 'notes' && section.notes && (
-                        <div className="space-y-4">
+                        <div className="space-y-3">
                             {section.sectionTitle && (
                                 <h4 className="font-semibold text-text my-5 text-base leading-[24px]">{section.sectionTitle}</h4>
                             )}
-                            {section.notes.map((note) => (
-                                <div key={note.id} className="flex gap-3">
-                                    <Avatar className="h-8 w-8">
-                                        <AvatarFallback className="text-xs bg-gray-200">
-                                            {note.avatar}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1">
-                                        <div
-                                            className="text-sm text-black mb-1 bg-[#FAFAFA] p-3 rounded-lg"
-                                            dangerouslySetInnerHTML={{ __html: note.content }}
-                                        />
-                                        <p className="text-sm text-text-foreground">
-                                            {note.author} • {note.timestamp}
-                                        </p>
+                            {section.notes.map((note, index) => {
+                                // Alternate alignment for chat effect
+                                const isEven = index % 2 === 0;
+                                return (
+                                    <div 
+                                        key={note.id} 
+                                        className={`flex gap-2 items-start ${isEven ? 'flex-row' : 'flex-row'}`}
+                                    >
+                                        <Avatar className="h-8 w-8 flex-shrink-0 mt-1">
+                                            <AvatarFallback className="text-xs bg-gradient-to-br from-green-400 to-green-600 text-white font-semibold">
+                                                {note.avatar}
+                                            </AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-1 min-w-0">
+                                            {/* Author and timestamp header */}
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-xs font-semibold text-gray-900">{note.author}</span>
+                                                <span className="text-xs text-gray-500">{note.timestamp}</span>
+                                            </div>
+                                            {/* Message bubble */}
+                                            <div 
+                                                className={`text-sm p-3 rounded-lg break-words shadow-sm ${
+                                                    isEven 
+                                                        ? 'bg-white border border-gray-200 text-gray-800' 
+                                                        : 'bg-green-50 border border-green-100 text-gray-800'
+                                                }`}
+                                                dangerouslySetInnerHTML={{ __html: note.content }}
+                                            />
+                                        </div>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                             {section.finalNote && (
                                 <div className="pt-3 border-t border-gray-200">
                                     <p className="text-sm text-gray-900 italic">{section.finalNote}</p>

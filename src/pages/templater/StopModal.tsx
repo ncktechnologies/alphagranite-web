@@ -10,15 +10,18 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { useStopTemplaterTimerMutation } from '@/store/api/jobTimers';
 
+// ✅ Require sqftTemplated as a positive number
 const stopSchema = z.object({
   sqftTemplated: z
     .string()
-    .optional()
-    .transform(val => (val === '' ? undefined : Number(val))),
+    .min(1, "Sqft Templated is required")
+    .transform(val => Number(val))
+    .refine(val => !isNaN(val) && val > 0, "Must be a positive number"),
   sqftNotTemplated: z
     .string()
     .optional()
-    .transform(val => (val === '' ? undefined : Number(val))),
+    .transform(val => (val === '' ? undefined : Number(val)))
+    .refine(val => val === undefined || (!isNaN(val) && val >= 0), "Must be a non-negative number if provided"),
 });
 
 type StopData = z.infer<typeof stopSchema>;
@@ -40,7 +43,8 @@ export const StopModal = ({ open, onClose, jobId, templaterId, onStopSuccess }: 
     defaultValues: {
       sqftTemplated: '',
       sqftNotTemplated: '',
-    }
+    },
+    mode: "onChange", // ✅ enables real-time validation
   });
 
   const handleSubmit = async (values: StopData) => {
@@ -83,7 +87,7 @@ export const StopModal = ({ open, onClose, jobId, templaterId, onStopSuccess }: 
               name="sqftTemplated"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Sqft Templated</FormLabel>
+                  <FormLabel>Sqft Templated *</FormLabel>
                   <FormControl>
                     <Input
                       type="number"
@@ -120,7 +124,10 @@ export const StopModal = ({ open, onClose, jobId, templaterId, onStopSuccess }: 
               <Button type="button" variant="outline" onClick={() => onClose(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting || !form.formState.isValid}
+              >
                 {isSubmitting ? 'Submitting...' : 'Confirm Submit'}
               </Button>
             </div>

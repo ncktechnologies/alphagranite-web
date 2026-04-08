@@ -50,7 +50,7 @@ interface JobTableProps {
     onRowClick?: (fabId: string) => void;
     showScheduleFilter?: boolean;
     showSalesPersonFilter?: boolean;
-    salesPersons?: string[];
+    salesPersons?: string[] | any[]; // Support both string array and object array with id/name
     salesPersonFilterLabel?: string;
     showTemplaterFilter?: boolean;
     templaters?: string[];
@@ -71,6 +71,8 @@ interface JobTableProps {
      *  The drafter column is hidden by default when every visible row has a
      *  drafter; clicking Reassign temporarily shows the column for that row. */
     onReassignDrafterClick?: (job: IJob) => void;
+    /** Reassign revisor callback */
+    onReassignRevisorClick?: (job: IJob) => void;
     /** CNC operator assignment callbacks */
     showAssignCNCButton?: boolean;
     onAssignCNCClick?: () => void;
@@ -106,6 +108,7 @@ export const JobTable = ({
     onRescheduleClick,
     onAssignClick,
     onReassignDrafterClick,
+    onReassignRevisorClick,
     showAssignCNCButton = false,
     onAssignCNCClick = () => { },
     onReassignCNCClick,
@@ -184,8 +187,17 @@ export const JobTable = ({
     }, [jobs]);
 
     const uniqueSalesPersons = useMemo(() => {
+        // If salesPersons prop is provided (from API), extract names from objects
+        if (salesPersons && salesPersons.length > 0) {
+            return salesPersons.map((sp: any) => {
+                if (typeof sp === 'string') return sp;
+                if (typeof sp === 'object' && sp !== null) return sp.name || String(sp);
+                return String(sp);
+            }).filter(Boolean).sort();
+        }
+        // Otherwise extract from jobs data
         return Array.from(new Set(jobs.map(job => job.sales_person_name).filter(Boolean))).sort();
-    }, [jobs]);
+    }, [jobs, salesPersons]);
 
     const filteredData = useMemo(() => {
         if (useBackendPagination) return jobs;
@@ -324,30 +336,18 @@ export const JobTable = ({
             accessorKey: 'id',
             accessorFn: (row) => row.id,
             header: () => {
-                if (!enableMultiSelect) return null;
-                const selectableJobs = filteredData.filter(job => !job.drafter || job.drafter === '-');
-                if (selectableJobs.length === 0) return null;
-                return (
-                    <div className="w-full h-full flex items-center justify-center">
-                        <Checkbox
-                            checked={selectableJobs.every(job => effectiveSelectedRows.includes(job.fab_id))}
-                            onCheckedChange={() => {
-                                const selectableFabIds = selectableJobs.map(job => job.fab_id);
-                                const allSelected = selectableFabIds.every(id => effectiveSelectedRows.includes(id));
-                                if (allSelected) {
-                                    setSelectedRows(effectiveSelectedRows.filter(id => !selectableFabIds.includes(id)));
-                                } else {
-                                    setSelectedRows([...new Set([...effectiveSelectedRows, ...selectableFabIds])]);
-                                }
-                            }}
-                            aria-label="Select all"
-                        />
-                    </div>
-                );
+                // Always hide the header checkbox - no select-all functionality
+                return null;
             },
             cell: ({ row }) => {
-                const hasDrafter = row.original.drafter && row.original.drafter !== '-';
-                if (!enableMultiSelect || hasDrafter) return null;
+                // Hide checkbox if any assignee is present (drafter, cnc_operator, revisor, or final_programmer)
+                const hasAssignee = (
+                    (row.original.drafter && row.original.drafter !== '-') ||
+                    (row.original.cnc_operator && row.original.cnc_operator !== '-') ||
+                    (row.original.revisor && row.original.revisor !== '-') ||
+                    (row.original as any).final_programmer
+                );
+                if (!enableMultiSelect || hasAssignee) return null;
                 return (
                     <div className="w-full h-full flex items-center justify-center">
                         <Checkbox
@@ -624,7 +624,31 @@ export const JobTable = ({
             id: "revisor",
             accessorKey: "revisor",
             header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Revisor" column={column} />,
-            cell: ({ row }) => <span className="text-xs break-words max-w-[120px]">{row.original.revisor}</span>,
+            cell: ({ row }) => {
+                const revisor = row.original.revisor;
+                const hasRevisor = revisor && revisor !== '-';
+
+                return (
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs break-words max-w-[120px]">{revisor || '—'}</span>
+                        
+                        {/* Reassign button - only shown when prop is provided and revisor exists */}
+                        {hasRevisor && onReassignRevisorClick && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap"
+                                onClick={e => {
+                                    e.stopPropagation();
+                                    onReassignRevisorClick(row.original);
+                                }}
+                            >
+                                Reassign
+                            </Button>
+                        )}
+                    </div>
+                );
+            },
             size: 100,
             enableSorting: true,
         },

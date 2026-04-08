@@ -54,10 +54,14 @@ const DrafterPage = () => {
         if (Array.isArray(salesPersonsData)) rawData = salesPersonsData;
         else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData)
             rawData = (salesPersonsData as any).data || [];
-        const extractName = (item: { name: string } | string) =>
-            typeof item === 'string' ? item : item.name || String(item);
-        return rawData.map(extractName);
+        // Keep full objects with id and name
+        return rawData;
     }, [salesPersonsData]);
+
+    // Extract just names for display
+    const salesPersonNames = useMemo(() => {
+        return salesPersons.map((sp: any) => sp.name || String(sp));
+    }, [salesPersons]);
 
     // Table state
     const tableState = useTableState({
@@ -82,7 +86,10 @@ const DrafterPage = () => {
             params.fab_type = tableState.fabTypeFilter;
         if (tableState.salesPersonFilter && tableState.salesPersonFilter !== 'all') {
             if (tableState.salesPersonFilter === 'no_sales_person') params.sales_person_name = '';
-            else params.sales_person_name = tableState.salesPersonFilter;
+            else {
+                const selectedSalesPerson = salesPersons.find((sp: any) => sp.name === tableState.salesPersonFilter);
+                if (selectedSalesPerson && selectedSalesPerson.id) params.sales_person_id = selectedSalesPerson.id;
+            }
         }
         if (tableState.dateFilter && tableState.dateFilter !== 'all') {
             if (tableState.dateFilter === 'custom') {

@@ -378,6 +378,7 @@ export interface FabListParams {
     job_id?: number;
     fab_type?: string;
     sales_person_id?: number;
+    sales_person_name?: string;
     templater_id?: number;
     status_id?: number;
     current_stage?: string;

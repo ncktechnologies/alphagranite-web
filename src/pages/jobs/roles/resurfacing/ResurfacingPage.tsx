@@ -83,19 +83,14 @@ export function ResurfacingPage() {
             rawData = (salesPersonsData as any).data || [];
         }
 
-        // Extract names from sales person objects
-        const extractName = (item: { name: string } | string) => {
-            if (typeof item === 'string') {
-                return item;
-            }
-            if (typeof item === 'object' && item !== null) {
-                return item.name || String(item);
-            }
-            return String(item);
-        };
-
-        return rawData.map(extractName);
+        // Extract sales persons - keep full objects with id and name
+        return rawData;
     }, [salesPersonsData]);
+
+    // Extract just names for display
+    const salesPersonNames = useMemo(() => {
+        return salesPersons.map((sp: any) => sp.name || String(sp));
+    }, [salesPersons]);
 
     // Use independent table state for predraft table
     const tableState = useTableState({
@@ -125,12 +120,17 @@ export function ResurfacingPage() {
             params.fab_type = tableState.fabTypeFilter;
         }
 
-        // Add sales person filter using name
+        // Add sales person filter using ID
         if (tableState.salesPersonFilter && tableState.salesPersonFilter !== 'all') {
             if (tableState.salesPersonFilter === 'no_sales_person') {
+                // Filter for fabs without a sales person
                 params.sales_person_name = '';
             } else {
-                params.sales_person_name = tableState.salesPersonFilter;
+                // Find the sales person object by name and get the ID
+                const selectedSalesPerson = salesPersons.find((sp: any) => sp.name === tableState.salesPersonFilter);
+                if (selectedSalesPerson && selectedSalesPerson.id) {
+                    params.sales_person_id = selectedSalesPerson.id;
+                }
             }
         }
 

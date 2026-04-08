@@ -1659,7 +1659,7 @@ const NewFabIdForm = () => {
                               Submitting...
                             </>
                           ) : (
-                            'Submit for Templating'
+                            'Submit'
                           )}
                         </Button>
                       </div>

@@ -56,7 +56,7 @@ export function TemplaterTimerPage() {
     const [stopModalOpen, setStopModalOpen] = useState(false);
 
     const shouldSkip = !job_id || !templater_id;
-    const { data: timerState, refetch } = useGetTemplaterTimerStateQuery(
+    const { data: timerState, refetch, isLoading: isTimerLoading } = useGetTemplaterTimerStateQuery(
         { job_id: Number(job_id), templater_id: templater_id! },
         {
             skip: shouldSkip,
@@ -217,7 +217,24 @@ export function TemplaterTimerPage() {
             {/* Main content */}
             <div className="container mx-auto px-4 py-8">
                 <div className="max-w-3xl mx-auto">
-                    {!isStopped ? (
+                    {isTimerLoading ? (
+                        <div className="space-y-6">
+                            {/* Timer skeleton */}
+                            <div className="bg-white rounded-lg border shadow-sm p-8 space-y-4">
+                                <div className="flex justify-center">
+                                    <Skeleton className="h-32 w-48 rounded-full" />
+                                </div>
+                                <div className="flex justify-center gap-3">
+                                    <Skeleton className="h-10 w-24" />
+                                    <Skeleton className="h-10 w-24" />
+                                </div>
+                            </div>
+                            {/* Submit button skeleton */}
+                            <div className="flex justify-center">
+                                <Skeleton className="h-10 w-32" />
+                            </div>
+                        </div>
+                    ) : !isStopped ? (
                         <>
                             <OperatorTimerComponent
                                 totalTime={elapsedTime}
@@ -232,7 +249,7 @@ export function TemplaterTimerPage() {
                             <div className="mt-6 flex justify-center">
                                 <Button
                                     onClick={handleStopSubmit}
-                                    size="lg"
+                                    size="xl"
                                     disabled={!job_id || !templater_id}
                                 >
                                     Submit

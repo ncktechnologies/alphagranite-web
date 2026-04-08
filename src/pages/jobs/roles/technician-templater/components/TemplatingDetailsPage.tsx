@@ -11,9 +11,9 @@ import { AlertCircle } from 'lucide-react';
 import { formatDate } from '../TechnicianPage';
 import { BackButton } from '@/components/common/BackButton';
 import { Button } from '@/components/ui/button';
+import { getAllFabNotes } from '@/lib/helpers';
 
 // Helper function to get all fab notes (unfiltered)
-const getAllFabNotes = (fabNotes: any[]) => fabNotes || [];
 
 // Helper function to get FAB status display
 const getFabStatusInfo = (statusId: number | undefined) => {
