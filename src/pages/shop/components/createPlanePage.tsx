@@ -520,7 +520,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const { data: employeesData } = useGetEmployeesQuery();
   const employees: any[] = employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
 
-  const { data: allFabsData, isLoading: isLoadingFabs } = useGetFabsQuery({ limit: 1000, current_stage: 'cut_list' });
+  const { data: allFabsData, isLoading: isLoadingFabs } = useGetFabsQuery({ limit: 1000, current_stage: 'shop' });
 
   const { data: allWorkstationsData } = useGetWorkstationsQuery();
   const allWorkstations: any[] = allWorkstationsData?.data || (Array.isArray(allWorkstationsData) ? allWorkstationsData : []);
