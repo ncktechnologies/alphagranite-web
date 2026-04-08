@@ -60,8 +60,10 @@ export interface ShopCutPlanUpdate {
 
 export interface ShopCutPlanListParams {
   fab_id?: number;
-  month?: number;
-  year?: number;
+  view?: 'day' | 'week' | 'month'; // View type for the calendar
+  reference_date?: string; // Reference date in YYYY-MM-DD format
+  month?: number; // Deprecated: kept for backward compatibility
+  year?: number; // Deprecated: kept for backward compatibility
   skip?: number;
   limit?: number;
   search?: string;
@@ -146,9 +148,14 @@ export const shopCutPlanningApi = createApi({
             url: "/api/v1/shop/plans",
             method: "get",
             params: {
-              ...(queryParams.fab_id !== undefined && { fab_id: queryParams.fab_id }),
+              // New preferred parameters
+              ...(queryParams.view && { view: queryParams.view }),
+              ...(queryParams.reference_date && { reference_date: queryParams.reference_date }),
+              // Legacy parameters (backward compatibility)
               ...(queryParams.month !== undefined && { month: queryParams.month }),
               ...(queryParams.year !== undefined && { year: queryParams.year }),
+              // Other filters
+              ...(queryParams.fab_id !== undefined && { fab_id: queryParams.fab_id }),
               ...(queryParams.skip !== undefined && { skip: queryParams.skip }),
               ...(queryParams.limit !== undefined && { limit: queryParams.limit }),
               ...(queryParams.search && { search: queryParams.search }),

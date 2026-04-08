@@ -8,8 +8,6 @@ import {
   startOfWeek,
   endOfWeek,
   isSameDay,
-  getMonth,
-  getYear,
   addMonths,
   startOfMonth,
   endOfMonth,
@@ -108,14 +106,14 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
   const isSearchLocked = !!lockedFabId;
 
   const queryParams = useMemo(() => ({
-    month: getMonth(currentDate) + 1,
-    year: getYear(currentDate),
+    view: viewMode, // 'day', 'week', or 'month'
+    reference_date: format(currentDate, 'yyyy-MM-dd'), // Reference date in YYYY-MM-DD format
     limit: 1000,
     ...(effectiveFabId && { fab_id: Number(effectiveFabId) }),
     ...(filterFabType && { fab_type: filterFabType }),
     ...(filterWorkstation && { workstation_id: Number(filterWorkstation) }),
     ...(filterOperator && { operator_id: Number(filterOperator) }),
-  }), [currentDate, effectiveFabId, filterFabType, filterWorkstation, filterOperator]);
+  }), [currentDate, viewMode, effectiveFabId, filterFabType, filterWorkstation, filterOperator]);
 
   const { data: plansResponse, isLoading } = useGetAllShopPlansQuery(queryParams);
 

@@ -18,12 +18,13 @@ import {
     useGetCurrentOperatorTasksByIdQuery,
     useGetOperatorQaFilesQuery,
 } from '@/store/api/operator';
+import { useGetFabByIdQuery } from '@/store/api/job';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { OperatorMediaUpload } from './components/OperatorMediaUpload';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { BackButton } from '@/components/common/BackButton';
 import { FileViewer } from '../jobs/roles/drafters/components';
-import { FileGallery, type UnifiedFile } from '@/pages/jobs/components/FileGallery';
+import { FileGallery, type FileSource, type UnifiedFile } from '@/pages/jobs/components/FileGallery';
 import { WorkPercentageModal } from './components/WorkPercentageModal';
 
 // Helper for status display
@@ -92,6 +93,52 @@ export function OperatorTaskDetails() {
         uploadedAt: file.created_at ? new Date(file.created_at) : undefined,
         _raw: file,
     }));
+
+    // Fetch full FAB data to get all files
+    const { data: fabResponse } = useGetFabByIdQuery(fabId, { skip: !fabId });
+    const fabData = (fabResponse as any)?.data ?? fabResponse;
+
+    // Build file sources from actual API shape (following sales Details.tsx pattern)
+    const fileSources: FileSource[] = (() => {
+        if (!fabData) return [];
+        const sources: FileSource[] = [];
+
+        const mapFiles = (files: any[], stage: string, uploadedBy?: string): UnifiedFile[] =>
+            (files ?? []).map((f): UnifiedFile => ({
+                id: String(f.id),
+                name: f.name || f.filename || `File_${f.id}`,
+                size: parseInt(f.file_size) || f.size || 0,
+                type: f.file_type || f.mime_type || 'application/octet-stream',
+                url: f.file_url || f.url || '',
+                stage,
+                uploadedBy,
+                uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
+                _raw: f,
+            }));
+
+        // Add FAB files from different stages
+        const draftFiles = mapFiles(fabData.draft_data?.files ?? [], 'Drafting', fabData.draft_data?.drafter_name);
+        if (draftFiles.length > 0) sources.push({ kind: 'raw', data: draftFiles });
+
+        const slabFiles = mapFiles(fabData.slabsmith_data?.files ?? [], 'SlabSmith');
+        if (slabFiles.length > 0) sources.push({ kind: 'raw', data: slabFiles });
+
+        const salesCtFiles = mapFiles(fabData.sales_ct_data?.files ?? [], 'Sales CT');
+        if (salesCtFiles.length > 0) sources.push({ kind: 'raw', data: salesCtFiles });
+
+        const cncFiles = mapFiles(fabData.cnc_data?.files ?? [], 'CNC');
+        if (cncFiles.length > 0) sources.push({ kind: 'raw', data: cncFiles });
+
+        const topFiles = mapFiles(fabData.files ?? [], 'General');
+        if (topFiles.length > 0) sources.push({ kind: 'raw', data: topFiles });
+
+        // Add QA files (operator uploads - these are separate from FAB files but should show together)
+        if (qaFiles.length > 0) sources.push({ kind: 'raw', data: qaFiles });
+
+        return sources;
+    })();
+
+    const totalFileCount = fileSources.reduce((sum, s) => sum + (s.kind === 'raw' ? s.data.length : 0), 0);
 
     useEffect(() => {
         if (currentTask?.work_percentage !== undefined) {
@@ -351,32 +398,33 @@ export function OperatorTaskDetails() {
                         hideControls={true}
                     />
 
-                    {/* QA Documentation – File Gallery */}
+                    {/* FAB Files Card - All files from all stages */}
                     <Card>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <div>
-                                <CardTitle className="text-lg font-semibold">{t('QA.DOCUMENTATION')}</CardTitle>
-                                <p className="text-sm text-muted-foreground">{t('QA.DOCUMENTATION_DESCRIPTION')}</p>
-                            </div>
-                            <Button
-                                onClick={() => setShowUploadDialog(true)}
-                                variant="outline"
-                                size="sm"
-                            >
-                                <Camera className="h-4 w-4 mr-2" /> {t('QA.UPLOAD_FILES')}
-                            </Button>
+                        <CardHeader>
+                            <CardTitle className="text-lg font-semibold">
+                                FAB Files
+                                {totalFileCount > 0 && (
+                                    <span className="ml-2 text-sm font-normal text-gray-400">
+                                        ({totalFileCount})
+                                    </span>
+                                )}
+                            </CardTitle>
+                            <p className="text-sm text-muted-foreground">
+                                Drafting, SlabSmith, Sales CT, QA, and all other files for this fabrication
+                            </p>
                         </CardHeader>
                         <CardContent>
-                            {isQaLoading ? (
+                            {isQaLoading && fileSources.length === 0 ? (
                                 <div className="space-y-2">
                                     <Skeleton className="h-20 w-full" />
                                     <Skeleton className="h-20 w-full" />
                                 </div>
                             ) : (
                                 <FileGallery
-                                    sources={[{ kind: 'raw', data: qaFiles }]}
+                                    sources={fileSources}
                                     onFileClick={handleFileClick}
-                                    emptyMessage={t('QA.NO_FILES')}
+                                    defaultLayout="card"
+                                    emptyMessage="No files have been uploaded for this FAB yet."
                                 />
                             )}
                         </CardContent>
@@ -441,7 +489,7 @@ export function OperatorTaskDetails() {
                                     className="w-full gap-2 bg-red-600 hover:bg-red-700 text-white"
                                     size="lg"
                                 >
-                                    <CheckCircle2 className="h-5 w-5" /> SUBMIT
+                                    <CheckCircle2 className="h-5 w-5" /> Complete
                                 </Button>
                             )}
                         </CardContent>
@@ -453,7 +501,15 @@ export function OperatorTaskDetails() {
                             <CardTitle className="text-lg font-semibold">{t('QA.DOCUMENTATION')}</CardTitle>
                             <p className="text-sm text-muted-foreground">{t('QA.DOCUMENTATION_DESCRIPTION')}</p>
                         </CardHeader>
-                        
+                        <CardContent>
+                            <Button
+                                onClick={() => setShowUploadDialog(true)}
+                                className="w-full gap-2 bg-[#7a9705] hover:bg-[#6a8505] text-white"
+                                size="lg"
+                            >
+                                <Camera className="h-5 w-5" /> Upload QA Files
+                            </Button>
+                        </CardContent>
                     </Card>
                 </div>
             </div>

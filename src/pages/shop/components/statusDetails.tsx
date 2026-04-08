@@ -35,6 +35,8 @@ import { useGetEmployeesQuery } from '@/store/api/employee';
 import { BackButton } from '@/components/common/BackButton';
 import { usePlanSections } from '@/hooks/usePlanningSection';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+import { FileGallery, type FileSource, type UnifiedFile } from '@/pages/jobs/components/FileGallery';
+import { FileViewer } from '@/pages/jobs/roles/drafters/components';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants & Helpers
@@ -548,6 +550,52 @@ const FabDetailsPage: React.FC = () => {
 
     const fab = fabResponse?.data ?? fabResponse;
 
+    // State for file viewer
+    const [activeFile, setActiveFile] = useState<UnifiedFile | null>(null);
+
+    // Build file sources from FAB data (following the same pattern as other pages)
+    const fileSources: FileSource[] = (() => {
+        if (!fab) return [];
+        const sources: FileSource[] = [];
+
+        const mapFiles = (files: any[], stage: string, uploadedBy?: string): UnifiedFile[] =>
+            (files ?? []).map((f): UnifiedFile => ({
+                id: String(f.id),
+                name: f.name || f.filename || `File_${f.id}`,
+                size: parseInt(f.file_size) || f.size || 0,
+                type: f.file_type || f.mime_type || 'application/octet-stream',
+                url: f.file_url || f.url || '',
+                stage,
+                uploadedBy,
+                uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
+                _raw: f,
+            }));
+
+        // Add FAB files from different stages
+        const draftFiles = mapFiles(fab.draft_data?.files ?? [], 'Drafting', fab.draft_data?.drafter_name);
+        if (draftFiles.length > 0) sources.push({ kind: 'raw', data: draftFiles });
+
+        const slabFiles = mapFiles(fab.slabsmith_data?.files ?? [], 'SlabSmith');
+        if (slabFiles.length > 0) sources.push({ kind: 'raw', data: slabFiles });
+
+        const salesCtFiles = mapFiles(fab.sales_ct_data?.files ?? [], 'Sales CT');
+        if (salesCtFiles.length > 0) sources.push({ kind: 'raw', data: salesCtFiles });
+
+        const cncFiles = mapFiles(fab.cnc_data?.files ?? [], 'CNC');
+        if (cncFiles.length > 0) sources.push({ kind: 'raw', data: cncFiles });
+
+        const topFiles = mapFiles(fab.files ?? [], 'General');
+        if (topFiles.length > 0) sources.push({ kind: 'raw', data: topFiles });
+
+        return sources;
+    })();
+
+    const totalFileCount = fileSources.reduce((count, source) => count + (source.kind === 'raw' ? source.data.length : 0), 0);
+
+    const handleFileClick = (file: UnifiedFile) => {
+        setActiveFile(file);
+    };
+
     const [fabNotesOpen, setFabNotesOpen] = useState(false);
     const [showNoteInput, setShowNoteInput] = useState(false);
     const [noteText, setNoteText] = useState('');
@@ -712,6 +760,38 @@ const FabDetailsPage: React.FC = () => {
                                     <InfoRow key={i} label={item.label} value={item.value} />
                                 ))}
                             </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* FAB Files Card - All files from all stages */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-[#111827] leading-[32px] text-2xl font-bold">
+                                FAB Files
+                                {totalFileCount > 0 && (
+                                    <span className="ml-2 text-base font-normal text-gray-400">
+                                        ({totalFileCount})
+                                    </span>
+                                )}
+                            </CardTitle>
+                            <p className="text-sm text-[#4B5563]">
+                                Drafting, SlabSmith, CNC, Sales CT, and all other files for this fabrication
+                            </p>
+                        </CardHeader>
+                        <CardContent>
+                            {isLoading ? (
+                                <div className="space-y-2">
+                                    <Skeleton className="h-20 w-full" />
+                                    <Skeleton className="h-20 w-full" />
+                                </div>
+                            ) : (
+                                <FileGallery
+                                    sources={fileSources}
+                                    onFileClick={handleFileClick}
+                                    defaultLayout="card"
+                                    emptyMessage="No files have been uploaded for this FAB yet."
+                                />
+                            )}
                         </CardContent>
                     </Card>
 
@@ -891,6 +971,13 @@ const FabDetailsPage: React.FC = () => {
                     </Card>
                 </div>
             </div>
+
+            {/* Full-screen file viewer modal */}
+            {activeFile && (
+                <div className="fixed inset-0 z-50 bg-white overflow-auto">
+                    <FileViewer file={activeFile} onClose={() => setActiveFile(null)} />
+                </div>
+            )}
         </div>
     );
 };
