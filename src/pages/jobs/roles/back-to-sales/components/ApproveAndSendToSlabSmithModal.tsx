@@ -91,7 +91,7 @@ export const ApproveAndSendToSlabSmithModal = ({
       navigate('/job/draft-review');
     } catch (error) {
       console.error("Failed to approve and send to slab smith:", error);
-      toast.error("Failed to approve and send to Slab Smith. Please try again.");
+      // toast.error("Failed to approve and send to Slab Smith. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

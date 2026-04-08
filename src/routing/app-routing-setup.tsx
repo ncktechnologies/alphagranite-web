@@ -83,7 +83,7 @@ export function AppRoutingSetup() {
           <Route path="/settings/permissions" element={<PermissionsSection />} />
           <Route path="/settings/stone-types" element={<StoneTypesSection />} />
           <Route path="/create-jobs" element={<JobsSection />} />
-          <Route path="/status-report" element={<JobStatusPage/>} />
+          <Route path="/report-status" element={<JobStatusPage/>} />
           <Route path="/need-to-invoice" element={<NeedToInvoicePage />} />
           
           {/* Job Dashboard Route */}

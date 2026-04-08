@@ -410,6 +410,7 @@ export interface TemplatingSchedule {
     revenue?: number;
     notes?: string[];
     created_by?: number;
+    review_checklist?: Record<string, any>; // Flexible JSON object for review checklist data
 }
 
 export interface AccountListParams {

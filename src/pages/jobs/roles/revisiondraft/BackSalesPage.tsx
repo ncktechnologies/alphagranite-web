@@ -34,7 +34,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         // revenue: fab.job_details?.project_value || "-",
         // gp: "-",
         revision_completed: fabData.sales_ct_data?.is_revision_completed ? 'Yes' : 'No',
-        revisor: fabData.sales_ct_data?.updated_by_name || '',
+        revisor: fabData.draft_data?.drafter_name || '',
         revision_number: fabData.sales_ct_data?.current_revision_count ? `#${fabData.sales_ct_data.current_revision_count}` : '#1',
         revision_reason: fabData.sales_ct_data?.revision_reason || fabData.sales_ct_data?.draft_note || 'N/A',
         revision_type: fabData.sales_ct_data?.revision_type || '-',

@@ -36,6 +36,7 @@ type ReviewChecklistData = z.infer<typeof reviewChecklistSchema>;
 export function ReviewChecklistForm() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [openModal, setOpenModal] = useState(false);
+    const [reviewChecklistData, setReviewChecklistData] = useState<Record<string, any> | null>(null);
     const navigate = useNavigate();
     const { id } = useParams<{ id: string }>();
     const { data: fab } = useGetFabByIdQuery(Number(id));
@@ -69,6 +70,17 @@ export function ReviewChecklistForm() {
             return;
         }
 
+        // Build review checklist object
+        const reviewChecklist = {
+            customer_info_verified: values.customerInfo,
+            material_specs_confirmed: values.materialSpecs,
+            stone_type_confirmed: values.stoneType,
+            stone_colour_confirmed: values.stoneColour,
+            fab_type_confirmed: values.fabType,
+            reviewed_at: new Date().toISOString(),
+            reviewed_by: "Templating Coordinator" // Can be replaced with actual user info
+        };
+
         // Handle notes submission if notes exist
         if (values.notes && values.notes.trim()) {
             try {
@@ -85,7 +97,8 @@ export function ReviewChecklistForm() {
             }
         }
 
-        // Open the assign technician modal instead of submitting directly
+        // Open the assign technician modal with review checklist data
+        setReviewChecklistData(reviewChecklist);
         setOpenModal(true);
     };
 
@@ -229,7 +242,10 @@ export function ReviewChecklistForm() {
             {openModal && (
                 <AssignTechnicianModal
                     open={openModal}
-                    onClose={() => setOpenModal(false)}
+                    onClose={() => {
+                        setOpenModal(false);
+                        setReviewChecklistData(null);
+                    }}
                     fabData={{
                         fabId: fab?.id ? `${fab.id}` : "FAB-ID",
                         jobName: fab?.fab_type || "Job Name",
@@ -237,6 +253,7 @@ export function ReviewChecklistForm() {
                         total_sqft: fab?.total_sqft
 
                     }}
+                    reviewChecklist={reviewChecklistData}
                 />
             )}
         </>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -23,7 +23,8 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Can } from '@/components/permission';
 
-const markAsCompleteSchema = z.object({
+// Dynamic schema – will be refined based on slabSmithNeeded
+const markAsCompleteBaseSchema = z.object({
   revenue: z.string().min(1, "Revenue is required"),
   notes: z.string().optional(),
   slabSmithApproved: z.boolean().default(false),
@@ -31,7 +32,7 @@ const markAsCompleteSchema = z.object({
   sctCompleted: z.boolean().default(false),
 });
 
-type MarkAsCompleteData = z.infer<typeof markAsCompleteSchema>;
+type MarkAsCompleteData = z.infer<typeof markAsCompleteBaseSchema>;
 
 export const MarkAsCompleteModal = ({
   open,
@@ -50,8 +51,35 @@ export const MarkAsCompleteModal = ({
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ✅ Build schema with required checkboxes
+  const getMarkAsCompleteSchema = () => {
+    let schema = markAsCompleteBaseSchema;
+
+    // Block drawing is always required
+    schema = schema.refine(data => data.blockDrawingApproved === true, {
+      message: "Block Drawing must be approved",
+      path: ["blockDrawingApproved"],
+    });
+
+    // SCT is always required
+    schema = schema.refine(data => data.sctCompleted === true, {
+      message: "SCT must be completed",
+      path: ["sctCompleted"],
+    });
+
+    // SlabSmith approval required only if needed
+    if (slabSmithNeeded) {
+      schema = schema.refine(data => data.slabSmithApproved === true, {
+        message: "SlabSmith must be approved",
+        path: ["slabSmithApproved"],
+      });
+    }
+
+    return schema;
+  };
+
   const form = useForm<MarkAsCompleteData>({
-    resolver: zodResolver(markAsCompleteSchema),
+    resolver: zodResolver(getMarkAsCompleteSchema()),
     defaultValues: {
       revenue: "",
       notes: "",
@@ -59,7 +87,16 @@ export const MarkAsCompleteModal = ({
       blockDrawingApproved: false,
       sctCompleted: false,
     },
+    mode: "onChange", // re-validate on every change
   });
+
+  // ✅ Re-run validation when slabSmithNeeded changes (modal reopened)
+  useEffect(() => {
+    if (open) {
+      form.clearErrors();
+      form.trigger(); // re-validate entire form
+    }
+  }, [open, slabSmithNeeded, form]);
 
   const handleFormSubmit = async (values: MarkAsCompleteData) => {
     setIsSubmitting(true);
@@ -75,7 +112,11 @@ export const MarkAsCompleteModal = ({
     }
   };
 
-  const isSubmitDisabled = slabSmithNeeded && !isSlabSmithActivityComplete;
+  // ✅ External condition (SlabSmith activity must be complete before allowing submit)
+  const isExternalBlocked = slabSmithNeeded && !isSlabSmithActivityComplete;
+
+  // ✅ Checkboxes are already enforced via Zod – so isValid covers them
+  const isSubmitDisabled = isSubmitting || !form.formState.isValid || isExternalBlocked;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -93,7 +134,7 @@ export const MarkAsCompleteModal = ({
               name="revenue"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Revenue ($)</FormLabel>
+                  <FormLabel>Revenue ($) *</FormLabel>
                   <FormControl>
                     <Input
                       placeholder="Enter revenue amount"
@@ -139,8 +180,9 @@ export const MarkAsCompleteModal = ({
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel>SlabSmith Approved</FormLabel>
+                      <FormLabel>SlabSmith Approved *</FormLabel>
                     </div>
+                    <FormMessage />
                   </FormItem>
                 )}
               />
@@ -158,8 +200,9 @@ export const MarkAsCompleteModal = ({
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel>Block Drawing Approved</FormLabel>
+                    <FormLabel>Block Drawing Approved *</FormLabel>
                   </div>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -176,8 +219,9 @@ export const MarkAsCompleteModal = ({
                     />
                   </FormControl>
                   <div className="space-y-1 leading-none">
-                    <FormLabel>SCT Complete</FormLabel>
+                    <FormLabel>SCT Complete *</FormLabel>
                   </div>
+                  <FormMessage />
                 </FormItem>
               )}
             />
@@ -193,15 +237,19 @@ export const MarkAsCompleteModal = ({
               >
                 Cancel
               </Button>
-              {/* <Can action="update" on="Sct"> */}
               <Button
                 type="submit"
-                disabled={isSubmitting || !form.formState.isValid || isSubmitDisabled}
-                title={isSubmitDisabled ? "SlabSmith activity must be complete first" : ""}
+                disabled={isSubmitDisabled}
+                title={
+                  isExternalBlocked
+                    ? "SlabSmith activity must be complete first"
+                    : !form.formState.isValid
+                    ? "Please fill all required fields and check all required checkboxes"
+                    : ""
+                }
               >
                 {isSubmitting ? "Submitting..." : "Approve and Send to Cut List"}
               </Button>
-              {/* </Can> */}
             </div>
           </form>
         </Form>

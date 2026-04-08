@@ -1,6 +1,6 @@
 import React from 'react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Link } from 'react-router-dom'
+import { Link } from 'react-router'
 
 interface SidebarSection {
     title?: string
@@ -17,6 +17,7 @@ interface SidebarSection {
         content: string
         author: string
         timestamp: string
+        category?: string
     }[]
     finalNote?: string
     className?: string
@@ -62,7 +63,7 @@ export default function GraySidebar({ sections, className = '', jobId }: GraySid
 
     return (
         <div
-            className={`w-full border-r p-5 overflow-y-auto bg-[#FAFAFA]  ${className}`}
+            className={`w-full border-r p-5 overflow-y-auto bg-white  ${className}`}
         >
             {sections.map((section, sectionIndex) => (
                 <section key={sectionIndex} className={`mt-3 mb-8 ${section.className || ''}`}>
@@ -103,44 +104,43 @@ export default function GraySidebar({ sections, className = '', jobId }: GraySid
                         </div>
                     )}
 
-                    {/* Notes Section - Chat Layout */}
+                    {/* Notes Section - Figma Design Style */}
                     {section.type === 'notes' && section.notes && (
-                        <div className="space-y-3">
+                        <div className="space-y-6">
                             {section.sectionTitle && (
                                 <h4 className="font-semibold text-text my-5 text-base leading-[24px]">{section.sectionTitle}</h4>
                             )}
-                            {section.notes.map((note, index) => {
-                                // Alternate alignment for chat effect
-                                const isEven = index % 2 === 0;
-                                return (
-                                    <div 
-                                        key={note.id} 
-                                        className={`flex gap-2 items-start ${isEven ? 'flex-row' : 'flex-row'}`}
-                                    >
-                                        <Avatar className="h-8 w-8 flex-shrink-0 mt-1">
-                                            <AvatarFallback className="text-xs bg-gradient-to-br from-green-400 to-green-600 text-white font-semibold">
-                                                {note.avatar}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                        <div className="flex-1 min-w-0">
-                                            {/* Author and timestamp header */}
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <span className="text-xs font-semibold text-gray-900">{note.author}</span>
-                                                <span className="text-xs text-gray-500">{note.timestamp}</span>
-                                            </div>
-                                            {/* Message bubble */}
-                                            <div 
-                                                className={`text-sm p-3 rounded-lg break-words shadow-sm ${
-                                                    isEven 
-                                                        ? 'bg-white border border-gray-200 text-gray-800' 
-                                                        : 'bg-green-50 border border-green-100 text-gray-800'
-                                                }`}
-                                                dangerouslySetInnerHTML={{ __html: note.content }}
-                                            />
+                            {section.notes.map((note) => (
+                                <div key={note.id} className="flex flex-col gap-3">
+                                    {/* Header: Avatar + Name on left, Date on right */}
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Avatar className="h-8 w-8 flex-shrink-0">
+                                                <AvatarFallback className="text-sm bg-[#B85C5C] text-white font-medium">
+                                                    {note.avatar}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <span className="text-sm font-normal text-[#111827]">{note.author}</span>
                                         </div>
+                                        <span className="text-xs font-normal text-[#9CA3AF]">{note.timestamp}</span>
                                     </div>
-                                );
-                            })}
+                                    
+                                    {/* Category/Tag */}
+                                    {note.category && (
+                                        <div className="pl-10">
+                                            <span className="text-sm font-medium text-[#C026D3]">{note.category}</span>
+                                        </div>
+                                    )}
+                                    
+                                    {/* Content */}
+                                    <div className="pl-10">
+                                        <p 
+                                            className="text-sm font-normal text-[#111827] leading-[20px]"
+                                            dangerouslySetInnerHTML={{ __html: note.content }}
+                                        />
+                                    </div>
+                                </div>
+                            ))}
                             {section.finalNote && (
                                 <div className="pt-3 border-t border-gray-200">
                                     <p className="text-sm text-gray-900 italic">{section.finalNote}</p>

@@ -51,10 +51,12 @@ export function AssignTechnicianModal({
   open,
   onClose,
   fabData,
+  reviewChecklist,
 }: {
   open: boolean;
   onClose: () => void;
   fabData?: any;
+  reviewChecklist?: Record<string, any> | null;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { id } = useParams<{ id: string }>();
@@ -122,6 +124,7 @@ export function AssignTechnicianModal({
           total_sqft: values?.total_sqft ? String(values.total_sqft) : 0,
           revenue: values.revenue ? parseFloat(values.revenue) : undefined,
           notes: [values.notes || ""],
+          review_checklist: reviewChecklist || undefined, // Include review checklist data
         }).unwrap();
 
         // Use success message from endpoint if available and successful, otherwise use default
