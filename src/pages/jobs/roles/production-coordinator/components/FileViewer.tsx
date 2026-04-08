@@ -4,6 +4,18 @@ import { Button } from '@/components/ui/button';
 import { X, Download, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 
+// Helper function to convert file_design value to label
+const getFileDesignLabel = (value: string): string => {
+  const designMap: Record<string, string> = {
+    'block_drawing': 'Block Drawing',
+    'layout': 'Layout',
+    'ss_layout': 'SS Layout',
+    'shop_drawing': 'Shop Drawing',
+    'photo_media': 'Photo / Media',
+  };
+  return designMap[value] || value;
+};
+
 interface FileViewerProps {
   file: any;
   onClose: () => void;
@@ -160,7 +172,7 @@ export function FileViewer({ file, onClose }: FileViewerProps) {
             {(file.stage_name || file.file_design || file.uploaded_by_name) && (
               <div className="text-xs text-gray-500 text-center mt-1 space-x-3">
                 {file.stage_name && <span>Stage: {file.stage_name}</span>}
-                {file.file_design && <span>Design: {file.file_design}</span>}
+                {file.file_design && <span>Design: {getFileDesignLabel(file.file_design)}</span>}
                 {file.uploaded_by_name && <span>By: {file.uploaded_by_name}</span>}
               </div>
             )}

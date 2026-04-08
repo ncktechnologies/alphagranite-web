@@ -23,6 +23,7 @@ import { useGetPlanningSectionsQuery, useGetWorkStationByPlanningSectionsQuery }
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetFabsQuery } from '@/store/api/job';
 import { usePlanSections } from '@/hooks/usePlanningSection';
+import { TIME_SLOTS } from './createPlanePage';
 
 // ── Field-to-keyword mapping ──────────────────────────────────────────────────
 const FAB_STAGE_FIELDS: { keyword: string; field: string; label: string }[] = [
@@ -111,7 +112,6 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
   const stageName = getStageName();
   const hasSlot = !!(entry.date && entry.start_time && entry.end_time);
 
-  // Collapsed summary: prefer the API-provided scheduled_time string; fall back to manual format
   const collapsedTimeLabel = useMemo(() => {
     if (!hasSlot) return null;
     if (entry.scheduled_time) return entry.scheduled_time;
@@ -120,75 +120,104 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
     return `${format(entry.date!, 'MMM d')} · ${startLabel}–${endLabel}`;
   }, [hasSlot, entry.scheduled_time, entry.date, entry.start_time, entry.end_time]);
 
-  // Scheduled time display in the expanded card
-  const scheduledTimeDisplay = useMemo(() => {
-    if (!entry.start_time || !entry.end_time) return null;
-    if (entry.scheduled_time) return entry.scheduled_time;
-    const startLabel = format(new Date(`1970-01-01T${entry.start_time}`), 'hh:mm a');
-    const endLabel = format(new Date(`1970-01-01T${entry.end_time}`), 'hh:mm a');
-    return `${startLabel} – ${endLabel}`;
-  }, [entry.scheduled_time, entry.start_time, entry.end_time]);
+  // Helper to combine date and time
+  const combineDateAndTime = (date: Date | undefined, time: string): Date | null => {
+    if (!date || !time) return null;
+    const [hours, minutes] = time.split(':').map(Number);
+    const newDate = new Date(date);
+    newDate.setHours(hours, minutes, 0, 0);
+    return newDate;
+  };
+
+  // When start/end times change, recalculate estimated hours
+  const handleTimeUpdate = (startTime?: string, endTime?: string) => {
+    const finalStart = startTime ?? entry.start_time;
+    const finalEnd = endTime ?? entry.end_time;
+    if (!entry.date || !finalStart || !finalEnd) {
+      onUpdate({ start_time: finalStart, end_time: finalEnd });
+      return;
+    }
+    const startDateTime = combineDateAndTime(entry.date, finalStart);
+    const endDateTime = combineDateAndTime(entry.date, finalEnd);
+    if (startDateTime && endDateTime && endDateTime > startDateTime) {
+      const minutes = (endDateTime.getTime() - startDateTime.getTime()) / 60000;
+      const hours = (minutes / 60).toFixed(2);
+      onUpdate({ start_time: finalStart, end_time: finalEnd, estimated_hours: hours });
+    } else {
+      onUpdate({ start_time: finalStart, end_time: finalEnd });
+    }
+  };
+
+  // When estimated hours change, recalculate end time
+  const handleHoursChange = (hoursStr: string) => {
+    const hours = parseFloat(hoursStr);
+    if (!entry.date || !entry.start_time || isNaN(hours) || hours <= 0) {
+      onUpdate({ estimated_hours: hoursStr });
+      return;
+    }
+    const startDateTime = combineDateAndTime(entry.date, entry.start_time);
+    if (!startDateTime) {
+      onUpdate({ estimated_hours: hoursStr });
+      return;
+    }
+    const endDateTime = new Date(startDateTime.getTime() + hours * 3600000);
+    const endTime = format(endDateTime, 'HH:mm');
+    onUpdate({ estimated_hours: hoursStr, end_time: endTime, end_date: endDateTime });
+  };
+
+  // When date changes, recalculate end date if end_time is set and hours exist
+  const handleDateChange = (newDate: Date) => {
+    if (!entry.end_time || !entry.estimated_hours) {
+      onUpdate({ date: newDate });
+      return;
+    }
+    const hours = parseFloat(entry.estimated_hours);
+    if (!isNaN(hours) && hours > 0) {
+      const startDateTime = combineDateAndTime(newDate, entry.start_time);
+      if (startDateTime) {
+        const endDateTime = new Date(startDateTime.getTime() + hours * 3600000);
+        onUpdate({ date: newDate, end_date: endDateTime });
+      } else {
+        onUpdate({ date: newDate });
+      }
+    } else {
+      onUpdate({ date: newDate });
+    }
+  };
 
   return (
     <Card className="border border-[#ecedf0] rounded-[12px] overflow-hidden">
-      <CardHeader
-        className="pb-3 border-b border-[#ecedf0] cursor-pointer select-none px-4"
-        onClick={onToggleExpand}
-      >
+      {/* Header (same as before) */}
+      <CardHeader className="pb-3 border-b border-[#ecedf0] cursor-pointer select-none px-4" onClick={onToggleExpand}>
         <div className="flex items-center gap-2 w-full">
           <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
-            <ChevronDown
-              className={cn(
-                'h-5 w-5 text-[#7c8689] transition-transform shrink-0',
-                !isExpanded && '-rotate-90'
-              )}
-            />
+            <ChevronDown className={cn('h-5 w-5 text-[#7c8689] transition-transform shrink-0', !isExpanded && '-rotate-90')} />
             <CardTitle className="text-[15px] text-[#4b545d] font-semibold truncate">
               {stageName || `Plan Section ${idx + 1}`}
             </CardTitle>
             {stageName && (
-              <span className={cn(
-                'px-2 py-0.5 rounded-full text-xs font-semibold shrink-0 border',
-                entry.isTouchup
-                  ? 'bg-orange-50 border-orange-300 text-orange-700'
-                  : 'bg-[#f0f4e8] border-[#9cc15e] text-[#5a7a00]'
-              )}>
+              <span className={cn('px-2 py-0.5 rounded-full text-xs font-semibold shrink-0 border', entry.isTouchup ? 'bg-orange-50 border-orange-300 text-orange-700' : 'bg-[#f0f4e8] border-[#9cc15e] text-[#5a7a00]')}>
                 {stageName}
               </span>
             )}
             {!isExpanded && collapsedTimeLabel && (
-              <span className="text-xs text-[#7c8689] shrink-0 hidden sm:inline">
-                {collapsedTimeLabel}
-              </span>
+              <span className="text-xs text-[#7c8689] shrink-0 hidden sm:inline">{collapsedTimeLabel}</span>
             )}
           </div>
-
-          <div
-            className="flex items-center gap-2 ml-auto pl-4 shrink-0"
-            onClick={e => e.stopPropagation()}
-          >
+          <div className="flex items-center gap-2 ml-auto pl-4 shrink-0" onClick={e => e.stopPropagation()}>
             {!entry.isTouchup ? (
               <Select value={entry.sequence} onValueChange={value => onUpdate({ sequence: value })}>
                 <SelectTrigger className="h-7 w-auto text-[13px] border-[#e2e4ed] rounded-[4px] font-bold">
                   <SelectValue placeholder="Seq" />
                 </SelectTrigger>
                 <SelectContent>
-                  {sequenceOptions.map(num => (
-                    <SelectItem key={num} value={String(num)}>Seq: {num}</SelectItem>
-                  ))}
+                  {sequenceOptions.map(num => (<SelectItem key={num} value={String(num)}>Seq: {num}</SelectItem>))}
                 </SelectContent>
               </Select>
             ) : (
-              <span className="text-[12px] text-[#b0b7bc] px-2 py-1 rounded border border-dashed border-[#e2e4ed]">
-                Last
-              </span>
+              <span className="text-[12px] text-[#b0b7bc] px-2 py-1 rounded border border-dashed border-[#e2e4ed]">Last</span>
             )}
-
-            <button
-              type="button"
-              onClick={onRemove}
-              className="h-7 w-7 rounded-[6px] border border-[#e2e4ed] flex items-center justify-center hover:bg-red-50 transition-colors shrink-0"
-            >
+            <button type="button" onClick={onRemove} className="h-7 w-7 rounded-[6px] border border-[#e2e4ed] flex items-center justify-center hover:bg-red-50 transition-colors shrink-0">
               <X className="h-4 w-4 text-red-500" />
             </button>
           </div>
@@ -201,95 +230,49 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label className="text-[14px] text-[#4b545d] font-semibold">Shop Activity</Label>
-              <Select
-                value={entry.planning_section_id}
-                onValueChange={value => {
-                  const ps = planningSections.find((s: any) => String(s.id) === value);
-                  const name = ps?.name || ps?.plan_name || ps?.title || '';
-                  onUpdate({ planning_section_id: value, stageName: name, workstation_id: '', operator_id: '' });
-                }}
-              >
+              <Select value={entry.planning_section_id} onValueChange={value => {
+                const ps = planningSections.find((s: any) => String(s.id) === value);
+                const name = ps?.name || ps?.plan_name || ps?.title || '';
+                onUpdate({ planning_section_id: value, stageName: name, workstation_id: '', operator_id: '' });
+              }}>
                 <SelectTrigger className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[14px]">
                   <SelectValue placeholder="Select section" />
                 </SelectTrigger>
                 <SelectContent>
-                  {planningSections.map((ps: any) => (
-                    <SelectItem key={ps.id} value={String(ps.id)}>
-                      {ps.name || ps.plan_name || ps.title}
-                    </SelectItem>
-                  ))}
+                  {planningSections.map((ps: any) => (<SelectItem key={ps.id} value={String(ps.id)}>{ps.name || ps.plan_name || ps.title}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
 
             <div>
               <Label className="text-[14px] text-[#4b545d] font-semibold">Est. Hours *</Label>
-              <Input
-                type="number"
-                min="0.5"
-                step="0.5"
-                placeholder="e.g. 2.5"
-                value={entry.estimated_hours}
-                onChange={e => onUpdate({ estimated_hours: e.target.value })}
-                className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[14px]"
-              />
+              <Input type="number" min="0.5" step="0.5" placeholder="e.g. 2.5" value={entry.estimated_hours} onChange={e => handleHoursChange(e.target.value)} className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[14px]" />
             </div>
 
             <div>
               <Label className="text-[14px] text-[#4b545d] font-semibold">Workstation *</Label>
-              <Select
-                value={entry.workstation_id}
-                onValueChange={value => onUpdate({ workstation_id: value, operator_id: '' })}
-                disabled={!entry.planning_section_id || isLoadingWorkstations}
-              >
+              <Select value={entry.workstation_id} onValueChange={value => onUpdate({ workstation_id: value, operator_id: '' })} disabled={!entry.planning_section_id || isLoadingWorkstations}>
                 <SelectTrigger className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[14px]">
-                  <SelectValue
-                    placeholder={
-                      isLoadingWorkstations ? 'Loading…' :
-                        !entry.planning_section_id ? 'Select a section first' :
-                          workstationsForSection.length === 0 ? 'None for this section' :
-                            'Select workstation'
-                    }
-                  />
+                  <SelectValue placeholder={isLoadingWorkstations ? 'Loading…' : !entry.planning_section_id ? 'Select a section first' : workstationsForSection.length === 0 ? 'None for this section' : 'Select workstation'} />
                 </SelectTrigger>
                 <SelectContent>
-                  {workstationsForSection.map((ws: any) => (
-                    <SelectItem key={ws.id} value={String(ws.id)}>{ws.name}</SelectItem>
-                  ))}
+                  {workstationsForSection.map((ws: any) => (<SelectItem key={ws.id} value={String(ws.id)}>{ws.name}</SelectItem>))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {/* Operator + Date + Scheduled Time */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* Operator + Date */}
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-[14px] text-[#4b545d] font-semibold">Operator *</Label>
-              <Select
-                value={entry.operator_id}
-                onValueChange={value => onUpdate({ operator_id: value })}
-                disabled={!entry.workstation_id}
-              >
+              <Select value={entry.operator_id} onValueChange={value => onUpdate({ operator_id: value })} disabled={!entry.workstation_id}>
                 <SelectTrigger className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[14px]">
-                  <SelectValue
-                    placeholder={
-                      !entry.workstation_id ? 'Select workstation first' :
-                        filteredEmployees.length === 0 ? 'No operators assigned' :
-                          'Select operator'
-                    }
-                  />
+                  <SelectValue placeholder={!entry.workstation_id ? 'Select workstation first' : filteredEmployees.length === 0 ? 'No operators assigned' : 'Select operator'} />
                 </SelectTrigger>
                 <SelectContent>
-                  {filteredEmployees.length === 0 ? (
-                    <div className="px-3 py-2 text-sm text-muted-foreground">
-                      No operators assigned to this workstation
-                    </div>
-                  ) : (
-                    filteredEmployees.map((emp: any) => (
-                      <SelectItem key={emp.id} value={String(emp.id)}>
-                        {`${emp.first_name || emp.name || ''} ${emp.last_name || ''}`.trim() || emp.email}
-                      </SelectItem>
-                    ))
+                  {filteredEmployees.length === 0 ? (<div className="px-3 py-2 text-sm text-muted-foreground">No operators assigned to this workstation</div>) : (
+                    filteredEmployees.map((emp: any) => (<SelectItem key={emp.id} value={String(emp.id)}>{`${emp.first_name || emp.name || ''} ${emp.last_name || ''}`.trim() || emp.email}</SelectItem>))
                   )}
                 </SelectContent>
               </Select>
@@ -299,96 +282,64 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
               <Label className="text-[14px] text-[#4b545d] font-semibold">Date</Label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className={cn(
-                      'mt-2 w-full h-[44px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[14px] flex items-center gap-2',
-                      !entry.date && 'text-muted-foreground'
-                    )}
-                  >
+                  <button type="button" className={cn('mt-2 w-full h-[44px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[14px] flex items-center gap-2', !entry.date && 'text-muted-foreground')}>
                     <Calendar className="h-4 w-4 text-[#7a9705]" />
-                    {entry.date
-                      ? format(entry.date, 'MMM d, yyyy')
-                      : <span className="text-[#b0b7bc]">Auto-filled</span>}
+                    {entry.date ? format(entry.date, 'MMM d, yyyy') : <span className="text-[#b0b7bc]">Auto-filled</span>}
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <CalendarComponent
-                    mode="single"
-                    selected={entry.date}
-                    onSelect={date => {
-                      if (date) {
-                        // When user manually picks a date, clear the scheduled_time
-                        // since it no longer matches the auto-proposed range
-                        onUpdate({ date, scheduled_time: undefined, end_date: undefined });
-                      }
-                    }}
-                    initialFocus
-                    disabled={date => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                  />
+                  <CalendarComponent mode="single" selected={entry.date} onSelect={date => date && handleDateChange(date)} initialFocus disabled={date => date < new Date(new Date().setHours(0, 0, 0, 0))} />
                 </PopoverContent>
               </Popover>
             </div>
+          </div>
+
+          {/* Start Time, End Time */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-[14px] text-[#4b545d] font-semibold">Start Time</Label>
+              <Select value={entry.start_time} onValueChange={value => handleTimeUpdate(value, undefined)}>
+                <SelectTrigger className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[14px]">
+                  <SelectValue placeholder="Select start" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {TIME_SLOTS.map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}
+                </SelectContent>
+              </Select>
+            </div>
 
             <div>
-              <Label className="text-[14px] text-[#4b545d] font-semibold">Scheduled Time</Label>
-              {scheduledTimeDisplay ? (
-                <div className="mt-2 h-[44px] flex items-center gap-2 px-3 rounded-[6px] bg-[#f0f4e8] border border-[#9cc15e]">
-                  <span className="text-[13px] font-semibold text-[#5a7a00] truncate">
-                    {scheduledTimeDisplay}
-                  </span>
-                </div>
-              ) : (
-                <div className="mt-2 h-[44px] flex items-center px-3 rounded-[6px] border border-dashed border-[#e2e4ed] text-[14px] text-[#b0b7bc]">
-                  Auto-filled by schedule
-                </div>
-              )}
+              <Label className="text-[14px] text-[#4b545d] font-semibold">End Time</Label>
+              <Select value={entry.end_time} onValueChange={value => handleTimeUpdate(undefined, value)}>
+                <SelectTrigger className="mt-2 h-[44px] border-[#e2e4ed] rounded-[6px] text-[14px]">
+                  <SelectValue placeholder="Select end" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {TIME_SLOTS.filter(slot => !entry.start_time || slot.value > entry.start_time).map(slot => (<SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
-          {/* Proposals */}
+          {/* Proposals (unchanged) */}
           {proposals.length > 0 && (
             <div>
-              <Label className="text-[13px] text-[#7c8689] mb-2 block">
-                Available slots — click to apply
-              </Label>
+              <Label className="text-[13px] text-[#7c8689] mb-2 block">Available slots — click to apply</Label>
               <div className="flex flex-wrap gap-2">
                 {proposals.map((proposal, pIdx) => {
-                  const isActive = entry.scheduled_time
-                    ? entry.scheduled_time === proposal.scheduled_time
-                    : entry.start_time === format(new Date(proposal.start), 'HH:mm') &&
-                    entry.date &&
-                    format(entry.date, 'yyyy-MM-dd') === format(new Date(proposal.start), 'yyyy-MM-dd');
-
-                  return (
-                    <button
-                      key={pIdx}
-                      type="button"
-                      onClick={() => onApplyProposal(proposal)}
-                      className={cn(
-                        'px-3 py-1.5 rounded-[6px] border text-[13px] font-medium transition-colors',
-                        isActive
-                          ? 'bg-[#f0f4e8] border-[#9cc15e] text-[#5a7a00]'
-                          : 'bg-white border-[#e2e4ed] text-[#4b545d] hover:border-[#9cc15e] hover:bg-[#f0f4e8]'
-                      )}
-                    >
-                      {proposal.scheduled_time || `${format(new Date(proposal.start), 'MMM d · hh:mm a')}–${format(new Date(proposal.end), 'hh:mm a')}`}
-                    </button>
-                  );
+                  const isActive = entry.scheduled_time ? entry.scheduled_time === proposal.scheduled_time : (entry.start_time === format(new Date(proposal.start), 'HH:mm') && entry.date && format(entry.date, 'yyyy-MM-dd') === format(new Date(proposal.start), 'yyyy-MM-dd'));
+                  return (<button key={pIdx} type="button" onClick={() => onApplyProposal(proposal)} className={cn('px-3 py-1.5 rounded-[6px] border text-[13px] font-medium transition-colors', isActive ? 'bg-[#f0f4e8] border-[#9cc15e] text-[#5a7a00]' : 'bg-white border-[#e2e4ed] text-[#4b545d] hover:border-[#9cc15e] hover:bg-[#f0f4e8]')}>
+                    {proposal.scheduled_time || `${format(new Date(proposal.start), 'MMM d · hh:mm a')}–${format(new Date(proposal.end), 'hh:mm a')}`}
+                  </button>);
                 })}
               </div>
             </div>
           )}
 
-          {/* Notes */}
+          {/* Notes (unchanged) */}
           <div>
             <Label className="text-[14px] text-[#4b545d] font-semibold">Description / Notes</Label>
-            <Textarea
-              placeholder="Add any notes about this plan..."
-              value={entry.notes}
-              onChange={e => onUpdate({ notes: e.target.value })}
-              className="mt-2 min-h-[80px] border-[#e2e4ed] rounded-[6px] text-[14px]"
-            />
+            <Textarea placeholder="Add any notes about this plan..." value={entry.notes} onChange={e => onUpdate({ notes: e.target.value })} className="mt-2 min-h-[80px] border-[#e2e4ed] rounded-[6px] text-[14px]" />
           </div>
         </CardContent>
       )}

@@ -234,10 +234,10 @@ export function TemplaterTimerPage() {
                                 <Skeleton className="h-10 w-32" />
                             </div>
                         </div>
-                    ) : !isStopped ? (
+                    ) : (
                         <>
                             <OperatorTimerComponent
-                                totalTime={elapsedTime}
+                                totalTime={isStopped ? 0 : elapsedTime}
                                 isRunning={isRunning}
                                 isPaused={isPaused}
                                 onStart={handleStart}
@@ -246,24 +246,18 @@ export function TemplaterTimerPage() {
                                 onTimeUpdate={setElapsedTime}
                                 disabled={!job_id || !templater_id}
                             />
-                            <div className="mt-6 flex justify-center">
-                                <Button
-                                    onClick={handleStopSubmit}
-                                    size="xl"
-                                    disabled={!job_id || !templater_id}
-                                >
-                                    Submit
-                                </Button>
-                            </div>
+                            {!isStopped && (
+                                <div className="mt-6 flex justify-center">
+                                    <Button
+                                        onClick={handleStopSubmit}
+                                        size="xl"
+                                        disabled={!job_id || !templater_id}
+                                    >
+                                        Submit
+                                    </Button>
+                                </div>
+                            )}
                         </>
-                    ) : (
-                        <div className="text-center p-8 bg-white rounded-lg border shadow-sm">
-                            <div className="text-lg font-semibold text-gray-700 mb-2">Session Ended</div>
-                            <p className="text-gray-500">This timer session has been completed and cannot be restarted.</p>
-                            <div className="mt-4 text-sm text-gray-400">
-                                Total time worked: {Math.floor(elapsedTime / 3600)}h {Math.floor((elapsedTime % 3600) / 60)}m {elapsedTime % 60}s
-                            </div>
-                        </div>
                     )}
                     {/* ── Media Files ─────────────────────────────────────────────────── */}
                     <Card className="my-4">

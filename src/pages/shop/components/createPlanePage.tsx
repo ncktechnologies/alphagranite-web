@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Clock, Calendar, ChevronDown, LoaderCircle, Plus, X } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addHours, differenceInMinutes, parseISO, setHours, setMinutes } from 'date-fns';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -22,7 +22,7 @@ import { useGetPlanningSectionsQuery, useGetWorkStationByPlanningSectionsQuery, 
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetFabsQuery } from '@/store/api/job';
 
-const TIME_SLOTS = (() => {
+export const TIME_SLOTS = (() => {
   const slots: { value: string; label: string }[] = [];
   for (let h = 6; h <= 22; h++) {
     for (const m of [0, 15, 30, 45]) {
@@ -44,10 +44,12 @@ interface PlanEntry {
   workstation_id: string;
   operator_id: string;
   notes: string;
+  start_date: Date | undefined;
   start_time: string;
+  end_date: Date | undefined;
   end_time: string;
+  estimated_hours: string;
   planning_section_id?: string;
-  date: Date | undefined;
   sequence: string;
 }
 
@@ -103,7 +105,6 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
     return employees.filter(emp => allowedOperatorIds.includes(String(emp.id)));
   }, [employees, selectedWorkstation, allowedOperatorIds]);
 
-  // Only reset operator when user actively changes the workstation
   const prevWorkstationId = useRef(entry.workstation_id);
   useEffect(() => {
     const userChanged = prevWorkstationId.current !== entry.workstation_id;
@@ -120,7 +121,64 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
     }
   }, [entry.workstation_id, isLoadingWorkstations, workstationsForSection.length]);
 
-  const hasSlot = !!(entry.date && entry.start_time && entry.end_time);
+  const hasSlot = !!(entry.start_date && entry.start_time && entry.end_date && entry.end_time);
+
+  // Helper to build a Date from date picker + time string
+  const combineDateAndTime = (date: Date | undefined, time: string): Date | null => {
+    if (!date || !time) return null;
+    const [hours, minutes] = time.split(':').map(Number);
+    return setMinutes(setHours(new Date(date), hours), minutes);
+  };
+
+  // Auto‑sync estimated hours when end date/time changes
+  const updateFromEndDateTime = useCallback((newEndDate: Date | undefined, newEndTime: string) => {
+    const startDateTime = combineDateAndTime(entry.start_date, entry.start_time);
+    const endDateTime = combineDateAndTime(newEndDate, newEndTime);
+    if (startDateTime && endDateTime && endDateTime > startDateTime) {
+      const minutes = differenceInMinutes(endDateTime, startDateTime);
+      const hours = (minutes / 60).toFixed(2);
+      onUpdate({ end_date: newEndDate, end_time: newEndTime, estimated_hours: hours });
+    } else {
+      onUpdate({ end_date: newEndDate, end_time: newEndTime });
+    }
+  }, [entry.start_date, entry.start_time, onUpdate]);
+
+  // Auto‑sync end date/time when estimated hours change
+  const updateFromEstimatedHours = useCallback((hoursStr: string) => {
+    const startDateTime = combineDateAndTime(entry.start_date, entry.start_time);
+    if (!startDateTime) {
+      onUpdate({ estimated_hours: hoursStr });
+      return;
+    }
+    const hours = parseFloat(hoursStr);
+    if (!isNaN(hours) && hours > 0) {
+      const endDateTime = addHours(startDateTime, hours);
+      onUpdate({
+        estimated_hours: hoursStr,
+        end_date: endDateTime,
+        end_time: format(endDateTime, 'HH:mm'),
+      });
+    } else {
+      onUpdate({ estimated_hours: hoursStr });
+    }
+  }, [entry.start_date, entry.start_time, onUpdate]);
+
+  // When start date/time changes, adjust end if possible
+  const handleStartDateTimeChange = useCallback((newStartDate: Date | undefined, newStartTime: string) => {
+    // First update start
+    onUpdate({ start_date: newStartDate, start_time: newStartTime });
+    // Then recalculate end based on current estimated hours
+    if (entry.estimated_hours) {
+      const startDateTime = combineDateAndTime(newStartDate, newStartTime);
+      if (startDateTime) {
+        const hours = parseFloat(entry.estimated_hours);
+        if (!isNaN(hours) && hours > 0) {
+          const newEnd = addHours(startDateTime, hours);
+          onUpdate({ end_date: newEnd, end_time: format(newEnd, 'HH:mm') });
+        }
+      }
+    }
+  }, [entry.estimated_hours, onUpdate]);
 
   return (
     <Card className="border border-[#ecedf0] rounded-[12px] overflow-hidden">
@@ -143,7 +201,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
             </CardTitle>
             {!isExpanded && hasSlot && (
               <span className="text-xs text-[#7c8689] shrink-0">
-                {format(entry.date!, 'MMM d')} · {format(new Date(`1970-01-01T${entry.start_time}`), 'hh:mm a')}–{format(new Date(`1970-01-01T${entry.end_time}`), 'hh:mm a')}
+                {format(entry.start_date!, 'MMM d')} {format(new Date(`1970-01-01T${entry.start_time}`), 'hh:mm a')} – {format(entry.end_date!, 'MMM d')} {format(new Date(`1970-01-01T${entry.end_time}`), 'hh:mm a')}
               </span>
             )}
           </div>
@@ -174,9 +232,9 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
       </CardHeader>
 
       {isExpanded && (
-        <CardContent className="pt-5 space-y-5 grid grid-cols-3 gap-4">
+        <CardContent className="pt-5 space-y-5 grid grid-cols-4 gap-4">
           {/* FAB ID */}
-          <div>
+          <div className="col-span-1">
             <Label className="text-[13px] text-[#4b545d]">FAB ID *</Label>
             {idx === 0 ? (
               <Select
@@ -203,39 +261,41 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
             )}
           </div>
 
-          {/* Date */}
+          {/* Start Date */}
           <div>
-            <Label className="text-[13px] text-[#4b545d]">Date *</Label>
+            <Label className="text-[13px] text-[#4b545d]">Start Date *</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <button
                   type="button"
                   className={cn(
                     'mt-2 w-full h-[42px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[13px] flex items-center gap-2',
-                    !entry.date && 'text-muted-foreground'
+                    !entry.start_date && 'text-muted-foreground'
                   )}
                 >
                   <Calendar className="h-4 w-4 text-[#7a9705]" />
-                  {entry.date ? format(entry.date, 'PPP') : <span>Pick a date</span>}
+                  {entry.start_date ? format(entry.start_date, 'PPP') : <span>Pick start date</span>}
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
                 <CalendarComponent
                   mode="single"
-                  selected={entry.date}
-                  onSelect={date => date && onUpdate({ date })}
+                  selected={entry.start_date}
+                  onSelect={date => date && handleStartDateTimeChange(date, entry.start_time)}
                   initialFocus
-                // disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
                 />
               </PopoverContent>
             </Popover>
           </div>
 
-          {/* Time */}
+          {/* Start Time */}
           <div>
-            <Label className="text-[13px] text-[#4b545d]">Start</Label>
-            <Select value={entry.start_time} onValueChange={value => onUpdate({ start_time: value })}>
-              <SelectTrigger className="h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+            <Label className="text-[13px] text-[#4b545d]">Start Time</Label>
+            <Select
+              value={entry.start_time}
+              onValueChange={value => handleStartDateTimeChange(entry.start_date, value)}
+            >
+              <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
                 <SelectValue placeholder="Select start" />
               </SelectTrigger>
               <SelectContent className="max-h-60">
@@ -245,14 +305,61 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
               </SelectContent>
             </Select>
           </div>
+
+          {/* Estimated Hours */}
           <div>
-            <Label className="text-[13px] text-[#4b545d]">End</Label>
-            <Select value={entry.end_time} onValueChange={value => onUpdate({ end_time: value })}>
-              <SelectTrigger className="h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+            <Label className="text-[13px] text-[#4b545d]">Est. Hours</Label>
+            <Input
+              type="number"
+              step="0.25"
+              min="0"
+              placeholder="Auto from end"
+              value={entry.estimated_hours}
+              onChange={e => updateFromEstimatedHours(e.target.value)}
+              className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]"
+            />
+          </div>
+
+          {/* End Date */}
+          <div>
+            <Label className="text-[13px] text-[#4b545d]">End Date</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    'mt-2 w-full h-[42px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[13px] flex items-center gap-2',
+                    !entry.end_date && 'text-muted-foreground'
+                  )}
+                >
+                  <Calendar className="h-4 w-4 text-[#7a9705]" />
+                  {entry.end_date ? format(entry.end_date, 'PPP') : <span>Pick end date</span>}
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarComponent
+                  mode="single"
+                  selected={entry.end_date}
+                  onSelect={date => date && updateFromEndDateTime(date, entry.end_time)}
+                  initialFocus
+                  disabled={date => entry.start_date ? date < entry.start_date : false}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          {/* End Time */}
+          <div>
+            <Label className="text-[13px] text-[#4b545d]">End Time</Label>
+            <Select
+              value={entry.end_time}
+              onValueChange={value => updateFromEndDateTime(entry.end_date, value)}
+            >
+              <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
                 <SelectValue placeholder="Select end" />
               </SelectTrigger>
               <SelectContent className="max-h-60">
-                {TIME_SLOTS.filter(slot => !entry.start_time || slot.value > entry.start_time).map(slot => (
+                {TIME_SLOTS.map(slot => (
                   <SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>
                 ))}
               </SelectContent>
@@ -339,8 +446,8 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
             </Select>
           </div>
 
-          {/* Notes */}
-          <div className='col-span-2'>
+          {/* Notes – full width */}
+          <div className="col-span-4">
             <Label className="text-[13px] text-[#4b545d]">Description / Notes</Label>
             <Textarea
               placeholder="Add any notes about this plan..."
@@ -392,10 +499,12 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     workstation_id: '',
     operator_id: '',
     notes: '',
+    start_date: propSelectedDate ?? undefined,
     start_time: selectedTimeSlot || '',
+    end_date: undefined,
     end_time: '',
+    estimated_hours: '',
     planning_section_id: prefillSectionIdStr,
-    date: propSelectedDate ?? undefined,
     sequence: '1',
   }), [effectivePrefillFabId, selectedTimeSlot, prefillSectionIdStr, propSelectedDate]);
 
@@ -457,17 +566,8 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     const sequence = ev.sequence ?? 1;
     const estimatedHours = ev.estimated_hours ?? 0;
 
-    const startDate = scheduledStart ? new Date(scheduledStart) : new Date();
-
-    let endTime = '';
-    if (scheduledEnd) {
-      endTime = format(new Date(scheduledEnd), 'HH:mm');
-    } else if (estimatedHours) {
-      endTime = format(
-        new Date(startDate.getTime() + estimatedHours * 3_600_000),
-        'HH:mm'
-      );
-    }
+    const startDate = scheduledStart ? new Date(scheduledStart) : undefined;
+    const endDate = scheduledEnd ? new Date(scheduledEnd) : undefined;
 
     const finalEntry: PlanEntry = {
       id: ev.id,
@@ -475,13 +575,15 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       workstation_id: workstationId ? String(workstationId) : '',
       operator_id: operatorId ? String(operatorId) : '',
       notes: notes ? String(notes) : '',
-      start_time: format(startDate, 'HH:mm'),
-      end_time: endTime || '',
+      start_date: startDate,
+      start_time: startDate ? format(startDate, 'HH:mm') : '',
+      end_date: endDate,
+      end_time: endDate ? format(endDate, 'HH:mm') : '',
+      estimated_hours: estimatedHours ? String(estimatedHours) : '',
       planning_section_id:
         planningSectionId !== null && planningSectionId !== undefined
           ? String(planningSectionId)
           : prefillSectionIdStr || '',
-      date: startDate,
       sequence: sequence ? String(sequence) : '1',
     };
 
@@ -497,29 +599,24 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     prefillSectionIdStr,
   ]);
 
-  // Helper: get next available sequence (smallest positive integer not in used set)
   const getNextAvailableSequence = useCallback((used: Set<number>) => {
     let seq = 1;
     while (used.has(seq)) seq++;
     return seq;
   }, []);
 
-  // Update entry with conflict resolution (swap sequences if duplicate selected)
   const updateEntry = useCallback((idx: number, patch: Partial<PlanEntry>) => {
     setEntries(prev => {
       const newEntries = [...prev];
       const target = newEntries[idx];
 
-      // Handle sequence update with uniqueness & swapping
       if (patch.sequence !== undefined) {
         const newSeq = Number(patch.sequence);
         if (!isNaN(newSeq)) {
-          // Find another entry that already has this sequence (excluding current)
           const conflictIdx = newEntries.findIndex((e, i) =>
             i !== idx && Number(e.sequence) === newSeq
           );
           if (conflictIdx !== -1) {
-            // Swap sequences
             const oldSeq = Number(target.sequence);
             newEntries[conflictIdx] = { ...newEntries[conflictIdx], sequence: String(oldSeq) };
             newEntries[idx] = { ...newEntries[idx], sequence: String(newSeq) };
@@ -528,9 +625,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
         }
       }
 
-      // Apply normal update
       if (idx === 0 && patch.fab_id !== undefined) {
-        // Sync fab_id across all entries
         return newEntries.map(e => ({ ...e, fab_id: patch.fab_id! }));
       }
       newEntries[idx] = { ...target, ...patch };
@@ -540,7 +635,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
 
   const addEntry = useCallback(() => {
     setEntries(prev => {
-      // Get current used sequences
       const usedSequences = new Set(prev.map(e => Number(e.sequence)).filter(s => !isNaN(s)));
       const nextSeq = getNextAvailableSequence(usedSequences);
 
@@ -554,7 +648,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const removeEntry = useCallback((idx: number) => {
     setEntries(prev => {
       const next = prev.filter((_, i) => i !== idx);
-      // Renumber sequentially
       return next.map((e, i) => ({ ...e, sequence: String(i + 1) }));
     });
   }, []);
@@ -575,9 +668,13 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       if (!entry.fab_id) { toast.error('FAB ID is required'); return; }
       if (!entry.operator_id) { toast.error('Operator is required'); return; }
       if (!entry.workstation_id) { toast.error('Workstation is required'); return; }
+      if (!entry.start_date) { toast.error('Start date is required'); return; }
       if (!entry.start_time) { toast.error('Start time is required'); return; }
+      if (!entry.end_date) { toast.error('End date is required'); return; }
       if (!entry.end_time) { toast.error('End time is required'); return; }
-      if (!entry.date) { toast.error('Date is required'); return; }
+      if (!entry.estimated_hours || parseFloat(entry.estimated_hours) <= 0) {
+        toast.error('Estimated hours must be positive (auto‑calculated if end is set)'); return;
+      }
     }
 
     try {
@@ -593,18 +690,22 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       for (const fabId in groups) {
         let totalEst = 0;
         const stages = groups[fabId].map((entry, idx) => {
-          const d = format(entry.date!, 'yyyy-MM-dd');
-          const start = `${d}T${entry.start_time}:00`;
-          const end = `${d}T${entry.end_time}:00`;
-          const hrs = Math.round(((new Date(end).getTime() - new Date(start).getTime()) / 3_600_000) * 100) / 100;
+          const startDateTime = new Date(entry.start_date!);
+          const [startHour, startMin] = entry.start_time.split(':').map(Number);
+          startDateTime.setHours(startHour, startMin, 0, 0);
+          const endDateTime = new Date(entry.end_date!);
+          const [endHour, endMin] = entry.end_time.split(':').map(Number);
+          endDateTime.setHours(endHour, endMin, 0, 0);
+
+          const hrs = Math.round(((endDateTime.getTime() - startDateTime.getTime()) / 3_600_000) * 100) / 100;
           totalEst += hrs;
           return {
             workstation_id: Number(entry.workstation_id),
             planning_section_id: Number(entry.planning_section_id) || (planningSections[0]?.id ?? 0),
             operator_ids: [Number(entry.operator_id)],
             estimated_hours: hrs,
-            scheduled_start: start,
-            scheduled_end: end,
+            scheduled_start: startDateTime.toISOString(),
+            scheduled_end: endDateTime.toISOString(),
             notes: entry.notes || undefined,
             sequence: Number(entry.sequence) || (idx + 1),
           };
@@ -613,10 +714,14 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       }
 
       for (const entry of updates) {
-        const d = format(entry.date!, 'yyyy-MM-dd');
-        const start = `${d}T${entry.start_time}:00`;
-        const end = `${d}T${entry.end_time}:00`;
-        const hrs = Math.round(((new Date(end).getTime() - new Date(start).getTime()) / 3_600_000) * 100) / 100;
+        const startDateTime = new Date(entry.start_date!);
+        const [startHour, startMin] = entry.start_time.split(':').map(Number);
+        startDateTime.setHours(startHour, startMin, 0, 0);
+        const endDateTime = new Date(entry.end_date!);
+        const [endHour, endMin] = entry.end_time.split(':').map(Number);
+        endDateTime.setHours(endHour, endMin, 0, 0);
+        const hrs = Math.round(((endDateTime.getTime() - startDateTime.getTime()) / 3_600_000) * 100) / 100;
+
         await updateShopPlan({
           plan_id: Number(entry.id),
           data: {
@@ -625,8 +730,8 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               planning_section_id: Number(entry.planning_section_id) || (planningSections[0]?.id ?? 0),
               operator_ids: [Number(entry.operator_id)],
               estimated_hours: hrs,
-              scheduled_start: start,
-              scheduled_end: end,
+              scheduled_start: startDateTime.toISOString(),
+              scheduled_end: endDateTime.toISOString(),
               notes: entry.notes || undefined,
               sequence: Number(entry.sequence) || 1,
             },
@@ -639,7 +744,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       onEventCreated?.();
       handleBack();
     } catch (error: any) {
-      // error handling
+      toast.error(error?.data?.message || 'Failed to create/update plan');
     }
   };
 
@@ -654,7 +759,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       <div className="border-b border-[#dfdfdf]">
         <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
           <div className="flex items-center gap-4">
-
             <p className="text-[28px] leading-[32px] text-black font-semibold">
               {isEditing ? 'Edit Plan' : 'Create Plan'}
             </p>
@@ -666,31 +770,31 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
             )}
           </div>
 
-
-
-          <button
-            onClick={() => navigate(`/shop/auto-schedule?fabId=${entries[0]?.fab_id || ''}`)}
-            className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px]"
-            style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
-          >
-            <Plus className="h-4 w-4" />
-            Auto Schedule
-          </button>
-          {!hideBackButton && (
+          <div className="flex items-center gap-3">
             <button
-              onClick={handleBack}
-              className="h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] bg-white flex items-center justify-center gap-2 text-[#4b545d] hover:bg-gray-50 transition-colors"
+              onClick={() => navigate(`/shop/auto-schedule?fabId=${entries[0]?.fab_id || ''}`)}
+              className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px]"
+              style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
             >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="text-[14px] font-semibold">Back</span>
+              <Plus className="h-4 w-4" />
+              Auto Schedule
             </button>
-          )}
+            {!hideBackButton && (
+              <button
+                onClick={handleBack}
+                className="h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] bg-white flex items-center justify-center gap-2 text-[#4b545d] hover:bg-gray-50 transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="text-[14px] font-semibold">Back</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="px-10 py-8 max-w-4xl mx-auto">
+      <div className="px-10 py-8 max-w-6xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* FAB Details */}
+          {/* FAB Details (unchanged) */}
           {selectedFabId && selectedFab && (
             <Card className="border border-[#ecedf0] rounded-[12px] mb-6">
               <CardHeader className="pb-3 border-b border-[#ecedf0]">

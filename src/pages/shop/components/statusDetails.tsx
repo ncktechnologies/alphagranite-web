@@ -79,7 +79,62 @@ const parseDateString = (s: string | undefined): Date | undefined => {
 
 const formatDate = (d: Date | undefined): string => {
     if (!d) return '';
+    // Format in local time to avoid timezone shifts
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+// Helper to parse date string for display (handles timezone correctly)
+const parseDateForDisplay = (s: string | undefined): Date | undefined => {
+    if (!s || typeof s !== 'string' || s.trim() === '') return undefined;
+    
+    try {
+        // If it's in YYYY-MM-DD format, parse as local date to avoid UTC shift
+        const parts = s.split('-');
+        if (parts.length === 3) {
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const day = parseInt(parts[2], 10);
+            
+            // Validate the parsed values
+            if (isNaN(year) || isNaN(month) || isNaN(day)) return undefined;
+            if (month < 1 || month > 12 || day < 1 || day > 31) return undefined;
+            
+            return new Date(year, month - 1, day);
+        }
+        
+        // If it has time component (ISO string), extract just the date part
+        if (s.includes('T')) {
+            const datePart = s.split('T')[0];
+            const dateParts = datePart.split('-');
+            if (dateParts.length === 3) {
+                const year = parseInt(dateParts[0], 10);
+                const month = parseInt(dateParts[1], 10);
+                const day = parseInt(dateParts[2], 10);
+                
+                if (isNaN(year) || isNaN(month) || isNaN(day)) return undefined;
+                if (month < 1 || month > 12 || day < 1 || day > 31) return undefined;
+                
+                return new Date(year, month - 1, day);
+            }
+        }
+        
+        // Fallback: try parsing normally
+        const d = new Date(s);
+        return isNaN(d.getTime()) ? undefined : d;
+    } catch {
+        return undefined;
+    }
+};
+
+// Safe format helper that handles invalid dates gracefully
+const safeFormatDate = (dateStr: string | undefined, formatStr: string): string => {
+    const date = parseDateForDisplay(dateStr);
+    if (!date || isNaN(date.getTime())) return '—';
+    try {
+        return format(date, formatStr);
+    } catch {
+        return '—';
+    }
 };
 
 const parseTimeFromISO = (isoStr: string | undefined): string => {
@@ -132,10 +187,10 @@ const ShopEstDateField: React.FC<{ value: string | undefined; fabId: number; onS
 }) => {
     const [updateFab] = useUpdateFabMutation();
     const [isEditing, setIsEditing] = useState(false);
-    const [editedDate, setEditedDate] = useState<Date | undefined>(parseDateString(value?.split('T')[0]));
+    const [editedDate, setEditedDate] = useState<Date | undefined>(parseDateForDisplay(value));
     const [isSaving, setIsSaving] = useState(false);
 
-    useEffect(() => { setEditedDate(parseDateString(value?.split('T')[0])); }, [value]);
+    useEffect(() => { setEditedDate(parseDateForDisplay(value)); }, [value]);
 
     const handleSave = async () => {
         setIsSaving(true);
@@ -161,7 +216,7 @@ const ShopEstDateField: React.FC<{ value: string | undefined; fabId: number; onS
                         {isSaving ? <LoaderCircle className="h-3 w-3 animate-spin" /> : 'Save'}
                     </Button>
                     <Button size="sm" variant="outline" className="flex-1 h-8 text-xs"
-                        onClick={() => { setEditedDate(parseDateString(value?.split('T')[0])); setIsEditing(false); }}
+                        onClick={() => { setEditedDate(parseDateForDisplay(value)); setIsEditing(false); }}
                         disabled={isSaving}>
                         Cancel
                     </Button>
@@ -175,9 +230,7 @@ const ShopEstDateField: React.FC<{ value: string | undefined; fabId: number; onS
             <div className="flex flex-col gap-0.5">
                 <span className="text-xs text-muted-foreground uppercase tracking-wide font-normal">Shop Est. Completion</span>
                 <span className="text-sm font-medium text-text">
-                    {value
-                        ? format(new Date(value), 'MMM dd, yyyy')
-                        : <span className="text-muted-foreground">—</span>}
+                    {safeFormatDate(value, 'MMM dd, yyyy')}
                 </span>
             </div>
             <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-muted-foreground hover:text-text"
@@ -947,13 +1000,11 @@ const FabDetailsPage: React.FC = () => {
                         <CardContent className="pt-4 flex flex-col gap-3">
                             <InfoRow
                                 label="Shop Date Schedule"
-                                value={fab.shop_date_schedule
-                                    ? format(new Date(fab.shop_date_schedule), 'MMM dd, yyyy') : '—'}
+                                value={safeFormatDate(fab.shop_date_schedule, 'MMM dd, yyyy')}
                             />
                             <InfoRow
                                 label="Install Date"
-                                value={fab.installation_date
-                                    ? format(new Date(fab.installation_date), 'MMM dd, yyyy') : '—'}
+                                value={safeFormatDate(fab.installation_date, 'MMM dd, yyyy')}
                             />
                             {/* ← Uses planSections from hook instead of hardcoded stageMapping */}
                             {plans.map((plan: any) => {
@@ -963,7 +1014,7 @@ const FabDetailsPage: React.FC = () => {
                                     <InfoRow
                                         key={plan.id}
                                         label={`${section.plan_name} Date`}
-                                        value={format(new Date(plan.scheduled_start_date), 'MMM dd, yyyy')}
+                                        value={safeFormatDate(plan.scheduled_start_date, 'MMM dd, yyyy')}
                                     />
                                 );
                             })}

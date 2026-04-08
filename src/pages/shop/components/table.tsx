@@ -106,7 +106,6 @@ const ShopTable: React.FC<ShopTableProps> = () => {
 
     const [sorting, setSorting] = useState<SortingState>([]);
     const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id'); // Keep searchType as local state
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [salesPersonFilter, setSalesPersonFilter] = useState<string>('all');
@@ -122,6 +121,8 @@ const ShopTable: React.FC<ShopTableProps> = () => {
         setPagination,
         searchQuery,
         setSearchQuery,
+        searchType,
+        setSearchType,
         dateRange,
         setDateRange,
         fabTypeFilter,

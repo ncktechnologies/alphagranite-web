@@ -577,7 +577,7 @@ export function SlabSmithDetailsPage() {
         title="Upload SlabSmith Files"
         entityId={slabSmithData?.id}
         uploadMutation={addFilesToSlabSmith}
-        stages={[{ value: 'slab_smith', label: 'Slab Smith' }]}
+        stages={[{ value: 'slab_smith', label: 'SlabSmith' }]}
         fileTypes={[
           { value: 'block_drawing', label: 'Block Drawing' },
           { value: 'layout', label: 'Layout' },

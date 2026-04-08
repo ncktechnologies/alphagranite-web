@@ -61,7 +61,7 @@ const jobInfo = [
             title: "Job Details",
             type: "details",
             items: [
-                { label: "Slab smith used?", value: "No" },
+                { label: "SlabSmith used?", value: "No" },
             ],
         },
         {

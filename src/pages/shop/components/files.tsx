@@ -17,6 +17,18 @@ import { getFileStage, getStageBadge, WORKFLOW_STAGES } from '@/utils/file-label
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
 
+// Helper function to convert file_design value to label
+const getFileDesignLabel = (value: string): string => {
+  const designMap: Record<string, string> = {
+    'block_drawing': 'Block Drawing',
+    'layout': 'Layout',
+    'ss_layout': 'SS Layout',
+    'shop_drawing': 'Shop Drawing',
+    'photo_media': 'Photo / Media',
+  };
+  return designMap[value] || value;
+};
+
 interface FileMetadata {
   id: string;
   name: string;
@@ -316,7 +328,7 @@ export function Documents({
 
                     {file.file_design && (
                       <span className="text-xs text-muted-foreground bg-gray-100 px-2 py-0.5 rounded">
-                        {file.file_design}
+                        {getFileDesignLabel(file.file_design)}
                       </span>
                     )}
 

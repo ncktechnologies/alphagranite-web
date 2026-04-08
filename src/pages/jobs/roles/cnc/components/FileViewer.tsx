@@ -5,6 +5,18 @@ import { X, Download, ZoomIn, ZoomOut } from 'lucide-react';
 import { FileViewerProps } from '@/pages/jobs/components/job';
 import { WORKFLOW_STAGES, getFileStage, getStageBadge } from '@/utils/file-labeling';
 
+// Helper function to convert file_design value to label
+const getFileDesignLabel = (value: string): string => {
+  const designMap: Record<string, string> = {
+    'block_drawing': 'Block Drawing',
+    'layout': 'Layout',
+    'ss_layout': 'SS Layout',
+    'shop_drawing': 'Shop Drawing',
+    'photo_media': 'Photo / Media',
+  };
+  return designMap[value] || value;
+};
+
 export const FileViewer = ({
   inline = false,
   onClose,
@@ -71,7 +83,7 @@ export const FileViewer = ({
           {(file.stage_name || file.file_design || file.uploaded_by_name) && (
             <div className="mt-2 text-xs text-gray-500 space-x-2">
               {file.stage_name && <span>Stage: {file.stage_name}</span>}
-              {file.file_design && <span>Type: {file.file_design}</span>}
+              {file.file_design && <span>Type: {getFileDesignLabel(file.file_design)}</span>}
               {file.uploaded_by_name && <span>By: {file.uploaded_by_name}</span>}
             </div>
           )}

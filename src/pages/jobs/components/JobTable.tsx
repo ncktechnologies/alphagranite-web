@@ -548,15 +548,15 @@ export const JobTable = ({
                 const hasDrafter = drafter && drafter !== '-';
 
                 return (
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs">{drafter || '—'}</span>
+                    <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-xs truncate flex-1">{drafter || '—'}</span>
 
                         {/* Only render Reassign when the prop is provided (JobStatusTable context) */}
                         {hasDrafter && onReassignDrafterClick && (
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap"
+                                className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
                                 onClick={e => {
                                     e.stopPropagation();
                                     // Ensure the column stays visible while the user acts
@@ -570,7 +570,8 @@ export const JobTable = ({
                     </div>
                 );
             },
-            size: 160,
+            size: 220,
+            minSize: 200,
             enableSorting: true,
         },
 
@@ -586,14 +587,14 @@ export const JobTable = ({
 
                 return (
                     <div className="flex items-center gap-2">
-                        <span className="text-xs">{cncOperator || '—'}</span>
+                        <span className="text-xs truncate flex-1">{cncOperator || '—'}</span>
 
                         {/* Reassign button - only shown when prop is provided and operator exists */}
                         {hasOperator && onReassignCNCClick && (
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap"
+                                className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
                                 onClick={e => {
                                     e.stopPropagation();
                                     onReassignCNCClick(row.original);
@@ -605,7 +606,8 @@ export const JobTable = ({
                     </div>
                 );
             },
-            size: 160,
+            size: 220,
+            minSize: 200,
             enableSorting: true,
         },
 
@@ -630,14 +632,14 @@ export const JobTable = ({
 
                 return (
                     <div className="flex items-center gap-2">
-                        <span className="text-xs break-words max-w-[120px]">{revisor || '—'}</span>
+                        <span className="text-xs truncate flex-1">{revisor || '—'}</span>
                         
                         {/* Reassign button - only shown when prop is provided and revisor exists */}
                         {hasRevisor && onReassignRevisorClick && (
                             <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap"
+                                className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
                                 onClick={e => {
                                     e.stopPropagation();
                                     onReassignRevisorClick(row.original);
@@ -649,7 +651,8 @@ export const JobTable = ({
                     </div>
                 );
             },
-            size: 100,
+            size: 220,
+            minSize: 200,
             enableSorting: true,
         },
 

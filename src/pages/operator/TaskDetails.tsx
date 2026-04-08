@@ -336,7 +336,10 @@ export function OperatorTaskDetails() {
                             <ToolbarHeading
                                 title={
                                     <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
-                                        <a href={jobNameLink} className="hover:underline">
+                                        <a href={jobNameLink} className="hover:underline"
+                                            target="_blank"
+                                            rel="noreferrer"
+                                        >
                                             {jobName}
                                         </a>
                                         <span className="mx-1 text-gray-400">·</span>
@@ -391,9 +394,9 @@ export function OperatorTaskDetails() {
                         isRunning={timerState === 'running'}
                         isPaused={timerState === 'paused'}
                         estimatedHours={currentTask?.estimated_hours}
-                        onStart={() => {}}
-                        onPause={() => {}}
-                        onResume={() => {}}
+                        onStart={() => { }}
+                        onPause={() => { }}
+                        onResume={() => { }}
                         onTimeUpdate={setTotalTime}
                         hideControls={true}
                     />
