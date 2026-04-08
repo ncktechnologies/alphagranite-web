@@ -312,19 +312,23 @@ export function CutListDetailsPage() {
 
               {/* ── Uploaded files card ────────────────────────────────────── */}
               <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm font-semibold">All FAB Files</CardTitle>
+                  <p className="text-xs text-muted-foreground">Files from drafting, SlabSmith, SCT, CNC, and final programming</p>
+                </CardHeader>
                 <CardContent className="p-3 sm:p-4 lg:p-5 space-y-5">
-                  <div>
-                    <h3 className="font-semibold text-sm mb-2">Uploaded files from final programming</h3>
-                    <Documents
-                      draftingData={{
-                        ...fabData?.draft_data,
-                        files: finalProgrammingFiles,
-                        file_ids: '',
-                      }}
-                      onFileClick={handleFileClick}
-                      showDeleteButton={false} // Typically no delete in cutlist view
-                    />
-                  </div>
+                  <Documents
+                    draftingData={{
+                      ...fabData?.draft_data,
+                      files: finalProgrammingFiles,
+                      file_ids: '',
+                    }}
+                    slabsmithData={(fabData as any)?.slabsmith_data}
+                    sctData={(fabData as any)?.sales_ct_data}
+                    cncData={(fabData as any)?.cnc_data}
+                    onFileClick={handleFileClick}
+                    showDeleteButton={false}
+                  />
                 </CardContent>
               </Card>
             </>

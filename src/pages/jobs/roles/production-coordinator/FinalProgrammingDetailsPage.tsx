@@ -33,6 +33,7 @@ import { UploadedFileMeta } from '@/types/uploads';
 import { FileWithPreview } from '@/hooks/use-file-upload';
 import { getFileStage } from '@/utils/file-labeling';
 import { FileViewer } from '../drafters/components';
+import { FileGallery, type FileSource, type UnifiedFile } from '@/pages/jobs/components/FileGallery';
 
 // Helper functions
 const formatBytes = (bytes: number, decimals = 2) => {
@@ -505,6 +506,8 @@ export function FinalProgrammingDetailsPage() {
                         onFileClick={handleFileClick}
                         draftingData={fabData?.draft_data}
                         slabsmithData={(fabData as any)?.slabsmith_data}
+                        sctData={(fabData as any)?.sales_ct_data}
+                        cncData={(fabData as any)?.cnc_data}
                         draftingId={fabData?.draft_data?.id}
                         showDeleteButton={!hasEnded && !isPaused}
                       />
