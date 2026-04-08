@@ -147,9 +147,15 @@ const isCurrentStateImpossible = (formData: Partial<FabIdFormData>): boolean => 
   return currentSelected.length > 0 && isScenarioImpossible(currentSelected);
 };
 
+const ALLOW_ALL_CHECKBOX_FAB_TYPES = ['resurface', 'punchout-ag', 'punchout-billable'];
+
+const canAllowAllCheckboxes = (fabType?: string): boolean => {
+  return !!fabType && ALLOW_ALL_CHECKBOX_FAB_TYPES.includes(fabType.toLowerCase());
+};
+
 const getCheckboxRuleError = (formData: Partial<FabIdFormData>): string | null => {
   const selectedCount = getSelectedCheckboxLabels(formData).length;
-  if (selectedCount === 6) {
+  if (selectedCount === 6 && !canAllowAllCheckboxes(formData.fabType)) {
     return 'All 6 checkboxes cannot be selected at the same time.';
   }
 
