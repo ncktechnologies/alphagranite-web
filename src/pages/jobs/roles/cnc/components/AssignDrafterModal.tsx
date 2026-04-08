@@ -5,8 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useGetSalesPersonsQuery } from '@/store/api/employee';
-import { useCreateCNCDraftingMutation, useUpdateCNCDraftingMutation, useGetDraftingByFabIdQuery } from '@/store/api/job';
+import { useGetEmployeesQuery } from '@/store/api/employee';
+import { useCreateCNCDraftingMutation, useUpdateCNCDraftingMutation, useGetCNCByFabIdQuery } from '@/store/api/job';
 import { toast } from 'sonner';
 
 // Helper to get today's date in YYYY-MM-DD format
@@ -40,22 +40,27 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const initializedRef = useRef(false);
 
-  const { data: employeesData, isLoading: employeesLoading } = useGetSalesPersonsQuery();
+  const { data: employeesData, isLoading: employeesLoading } = useGetEmployeesQuery();
   const [createCNCDrafting] = useCreateCNCDraftingMutation();
   const [updateCNCDrafting] = useUpdateCNCDraftingMutation();
 
-  const { data: cncData, isFetching: cncLoading } = useGetDraftingByFabIdQuery(
+  const { data: cncData, isFetching: cncLoading } = useGetCNCByFabIdQuery(
     reassignFabId ? parseInt(reassignFabId, 10) : 0,
     { skip: !reassignFabId || !open }
   );
 
-  const drafters = Array.isArray(employeesData) ? employeesData : [];
+  // Extract employees from the response (handles both array and paginated response)
+  const drafters = Array.isArray(employeesData) 
+    ? employeesData 
+    : employeesData?.data || [];
+  
   const isReassign = !!reassignFabId;
   const fabIds = isReassign ? [reassignFabId] : selectedFabIds;
 
-  // Reset when modal closes
+  // Reset form when modal closes or when different FABs are selected
   useEffect(() => {
     if (!open) {
+      // Complete reset when modal closes
       initializedRef.current = false;
       setOperatorId('');
       setStartDate(getTodayDate());
@@ -63,6 +68,18 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
       setSqftPerFab({});
     }
   }, [open]);
+
+  // Reset and reinitialize when modal opens with different data
+  useEffect(() => {
+    if (!open) return;
+    
+    // Reset all form state first
+    initializedRef.current = false;
+    setOperatorId('');
+    setStartDate(getTodayDate());
+    setEndDate(getTodayDate());
+    setSqftPerFab({});
+  }, [open, reassignFabId, selectedFabIds]);
 
   // Initialize form when data is ready (for reassign) or immediately (for bulk)
   useEffect(() => {
@@ -166,9 +183,9 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
               </SelectTrigger>
               <SelectContent>
                 {!employeesLoading &&
-                  drafters.map((drafter) => (
-                    <SelectItem key={drafter.id} value={drafter.id.toString()}>
-                      {drafter.name}
+                  drafters.map((employee: any) => (
+                    <SelectItem key={employee.id} value={employee.id.toString()}>
+                      {employee.name || `${employee.first_name || ''} ${employee.last_name || ''}`.trim() || employee.email}
                     </SelectItem>
                   ))}
               </SelectContent>

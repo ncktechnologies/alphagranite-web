@@ -630,7 +630,7 @@ export function FileGallery({
           <table className="w-full text-left">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                {['Name', 'Stage', 'Type / Design', 'Uploaded by', 'Date', ''].map((h) => (
+                {['Name', 'Stage', 'Type ', 'Uploaded by', 'Date', ''].map((h) => (
                   <th
                     key={h}
                     className="py-2.5 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wide whitespace-nowrap"
