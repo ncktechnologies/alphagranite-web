@@ -418,7 +418,7 @@ export function RevisionDetailsPage() {
   const canOpenSubmit = isDrafting && allFilesForDisplay.length > 0;
 
   const handleSubmitRevision = async (data: any) => {
-   
+
     if (!fabId || !currentEmployeeId) {
       toast.error("Missing required data");
       return;
@@ -513,7 +513,7 @@ export function RevisionDetailsPage() {
       navigate('/job/revision');
     } catch (error: any) {
       console.error(error?.data?.message || "Failed to submit revision. Please try again.");
-    
+
     }
   };
 
@@ -626,9 +626,11 @@ export function RevisionDetailsPage() {
         return {
           id: note.id,
           avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
-          content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${note.note}`,
+          content: note?.note || '',
           author: note.created_by_name || 'Unknown',
-          timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+          timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
+          category: config.label,
+          categoryColor: config.color,
         };
       })
     }
@@ -784,7 +786,7 @@ export function RevisionDetailsPage() {
                           variant="dashed"
                           size="sm"
                           onClick={() => setShowUploadModal(true)}
-                          disabled={hasEnded || isOnHold || isPaused}
+                          disabled={!isDrafting || isPaused || hasEnded || isOnHold}
                           className="flex items-center gap-1.5 text-xs"
                         >
                           <Plus className="w-3.5 h-3.5" />

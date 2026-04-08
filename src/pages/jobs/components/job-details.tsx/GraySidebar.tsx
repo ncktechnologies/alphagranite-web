@@ -18,6 +18,7 @@ interface SidebarSection {
         author: string
         timestamp: string
         category?: string
+        categoryColor?: string
     }[]
     finalNote?: string
     className?: string
@@ -106,7 +107,7 @@ export default function GraySidebar({ sections, className = '', jobId }: GraySid
 
                     {/* Notes Section - Figma Design Style */}
                     {section.type === 'notes' && section.notes && (
-                        <div className="space-y-6">
+                        <div className="space-y-6 ">
                             {section.sectionTitle && (
                                 <h4 className="font-semibold text-text my-5 text-base leading-[24px]">{section.sectionTitle}</h4>
                             )}
@@ -124,20 +125,27 @@ export default function GraySidebar({ sections, className = '', jobId }: GraySid
                                         </div>
                                         <span className="text-xs font-normal text-[#9CA3AF]">{note.timestamp}</span>
                                     </div>
-                                    
-                                    {/* Category/Tag */}
-                                    {note.category && (
-                                        <div className="pl-10">
-                                            <span className="text-sm font-medium text-[#C026D3]">{note.category}</span>
+
+                                    <div className="bg-[#F9F9F9] ml-6 p-2">
+                                        {/* Category/Tag */}
+                                        {note.category && (
+                                            <div className="">
+                                                <span
+                                                    className="inline-block px-2 py-1 rounded text-xs font-medium bg-gray-100"
+                                                    style={{ color: note.categoryColor || '#C026D3' }}
+                                                >
+                                                    {note.category}
+                                                </span>
+                                            </div>
+                                        )}
+
+                                        {/* Content */}
+                                        <div className="pt-5">
+                                            <p
+                                                className="text-sm font-normal text-[#111827] leading-[20px]"
+                                                dangerouslySetInnerHTML={{ __html: note.content }}
+                                            />
                                         </div>
-                                    )}
-                                    
-                                    {/* Content */}
-                                    <div className="pl-10">
-                                        <p 
-                                            className="text-sm font-normal text-[#111827] leading-[20px]"
-                                            dangerouslySetInnerHTML={{ __html: note.content }}
-                                        />
                                     </div>
                                 </div>
                             ))}

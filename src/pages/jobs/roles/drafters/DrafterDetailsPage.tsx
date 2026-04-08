@@ -420,7 +420,7 @@ export function DrafterDetailsPage() {
       title: 'Notes',
       type: 'notes',
       notes: Array.isArray(fabData?.notes)
-        ?   fabData.notes.map((note: string, index: number) => ({
+        ? fabData.notes.map((note: string, index: number) => ({
           id: index,
           avatar: 'N',
           content: note,
@@ -450,9 +450,11 @@ export function DrafterDetailsPage() {
         return {
           id: note.id,
           avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
-          content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${note.note}`,
+          content: note?.note || '',
           author: note.created_by_name || 'Unknown',
-          timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+          timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
+          category: config.label,
+          categoryColor: config.color,
         };
       })
     }
@@ -659,7 +661,7 @@ export function DrafterDetailsPage() {
                               variant="dashed"
                               size="sm"
                               onClick={() => setShowUploadModal(true)}
-                              disabled={hasEnded || isOnHold || isPaused}
+                              disabled={!isDrafting || isPaused || hasEnded || isOnHold}
                               className="flex items-center gap-1.5 text-xs"
                             >
                               <Plus className="w-3.5 h-3.5" />

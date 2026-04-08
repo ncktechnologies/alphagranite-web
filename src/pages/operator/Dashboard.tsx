@@ -20,7 +20,7 @@ import { WorkstationToggle } from './components/WorkstationToggle';
 import { useGetCurrentOperatorTasksQuery, useGetOperatorWorkstationsQuery } from '@/store/api/operator';
 import { useSelector } from 'react-redux';
 
-// Layout constants
+// Layout constants (unchanged)
 const DAY_START_HOUR = 7;
 const DAY_END_HOUR   = 19;
 const TOTAL_HOURS    = DAY_END_HOUR - DAY_START_HOUR;
@@ -29,21 +29,29 @@ const ROW_HEIGHT  = 80;
 const TIME_LABEL_HEIGHT = 40;
 const DATE_LABEL_WIDTH  = 80;
 
-const COLOR_CYCLE = [
-    { bg: '#d5e7ff', border: '#70a5f8', text: '#2563eb' },
-    { bg: '#caf2d7', border: '#5fd28c', text: '#16a34a' },
-    { bg: '#ffebcf', border: '#ffb84d', text: '#b45309' },
-    { bg: '#ffe0e3', border: '#ed7172', text: '#dc2626' },
-    { bg: '#c4edea', border: '#4db6ac', text: '#0f766e' },
-    { bg: '#f3e8ff', border: '#c084fc', text: '#7c3aed' },
-    { bg: '#fef9c3', border: '#fde047', text: '#854d0e' },
-    { bg: '#f1f2f4', border: '#8f929c', text: '#4b5563' },
-];
+// ─────────────────────────────────────────────────────────────────────────────
+// Color mapping based on fab type (deterministic, not random)
+// Colors are derived from the CSS rules provided by the user.
+// ─────────────────────────────────────────────────────────────────────────────
+const FAB_TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+    'standard':    { bg: '#9eeb47', border: '#7bc62e', text: '#2c5a0e' },
+    'fab only':    { bg: '#5bd1d7', border: '#2fa7ae', text: '#0a5c62' },
+    'cust redo':   { bg: '#f0bf4c', border: '#d99e1a', text: '#704d0a' },
+    'resurface':   { bg: '#d094ea', border: '#b267e0', text: '#4a1d6e' },
+    'fast track':  { bg: '#f59794', border: '#e05e5a', text: '#8b1a1a' },
+    'ag redo':     { bg: '#f5cc94', border: '#e6a832', text: '#7a4b0e' },
+};
 
-function getColorForFab(fabId: string | number) {
-    return COLOR_CYCLE[Number(fabId) % COLOR_CYCLE.length];
+const DEFAULT_COLOR = { bg: '#f1f2f4', border: '#8f929c', text: '#4b5563' };
+
+function getColorForFabType(fabType?: string) {
+    if (!fabType) return DEFAULT_COLOR;
+    const normalized = fabType.toLowerCase();
+    return FAB_TYPE_COLORS[normalized] ?? DEFAULT_COLOR;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Helper functions (unchanged)
 const isSameDay = (d1: Date, d2: Date) =>
     format(d1, 'yyyy-MM-dd') === format(d2, 'yyyy-MM-dd');
 
@@ -75,7 +83,7 @@ export function OperatorDashboard() {
             { skip: !currentEmployeeId }
         );
 
-    // Display days
+    // Display days (unchanged)
     const displayDays = useMemo(() => {
         if (viewMode === 'day') return [currentDate];
         if (viewMode === 'week') {
@@ -95,7 +103,7 @@ export function OperatorDashboard() {
         return weeks;
     }, [currentDate, viewMode]);
 
-    // Events grouped by day
+    // Events grouped by day (unchanged, but ensure we pass fab_type)
     const eventsByDay = useMemo(() => {
         const grouped: Record<string, any[]> = {};
         const allDays = viewMode === 'month' ? monthWeeks.flat() : displayDays;
@@ -124,7 +132,7 @@ export function OperatorDashboard() {
         return grouped;
     }, [tasksData, displayDays, monthWeeks, viewMode, selectedWorkstation]);
 
-    // Navigation
+    // Navigation (unchanged)
     const handlePrevious = () => {
         if (viewMode === 'day')   setCurrentDate(addDays(currentDate, -1));
         else if (viewMode === 'week') setCurrentDate(addDays(currentDate, -7));
@@ -145,7 +153,7 @@ export function OperatorDashboard() {
         navigate(`/operator/task/${task.job_id}?${params.toString()}`);
     }, [navigate]);
 
-    // Event positioning for day/week view
+    // Event positioning (unchanged)
     const getEventsWithXPositions = useCallback((events: any[]) => {
         if (!events.length) return [];
 
@@ -182,8 +190,11 @@ export function OperatorDashboard() {
         });
     }, []);
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // Render a single event card – uses fab_type for colors
+    // ─────────────────────────────────────────────────────────────────────────
     const renderEventCard = useCallback((event: any) => {
-        const { bg, border, text } = getColorForFab(event.fab_id || event.id);
+        const { bg, border, text } = getColorForFabType(event.fab_type);
         const startTime = event.scheduled_start_date
             ? format(new Date(event.scheduled_start_date), 'h:mma')
             : null;
@@ -263,7 +274,7 @@ export function OperatorDashboard() {
         );
     }, [handleEventClick]);
 
-    // Calendar label
+    // Calendar label (unchanged)
     const calLabel =
         viewMode === 'day'
             ? format(currentDate, 'EEEE, MMMM d, yyyy')
@@ -271,7 +282,7 @@ export function OperatorDashboard() {
                 ? `${format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d')} – ${format(addDays(startOfWeek(currentDate, { weekStartsOn: 1 }), 6), 'MMM d, yyyy')}`
                 : format(currentDate, 'MMMM yyyy');
 
-    // Stats
+    // Stats (unchanged)
     const totalTasksCount = Object.values(eventsByDay).reduce((acc, evs) => acc + evs.length, 0);
     const activeJobsCount = Object.values(eventsByDay).flat().filter((e: any) => e.estimated_hours).length;
     const workstationCount = selectedWorkstation ? 1 : (workstationsData as any)?.data?.length || 0;
@@ -297,7 +308,7 @@ export function OperatorDashboard() {
 
     return (
         <div className="bg-white min-h-screen">
-            {/* Header */}
+            {/* Header (unchanged) */}
             <div className="border-b border-[#dfdfdf]">
                 <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
                     <div className="flex flex-col gap-2">
@@ -351,7 +362,7 @@ export function OperatorDashboard() {
             </div>
 
             <div className="p-6 space-y-4">
-                {/* Workstation filter */}
+                {/* Workstation filter (unchanged) */}
                 {!isWorkstationsLoading && workstationsData && (
                     <WorkstationToggle
                         workstations={Array.isArray(workstationsData) ? workstationsData : (workstationsData as any)?.data || []}
@@ -429,7 +440,7 @@ export function OperatorDashboard() {
                         </div>
                     )}
 
-                    {/* Month view */}
+                    {/* Month view – also uses fab_type colors */}
                     {viewMode === 'month' && (
                         <div className="grid grid-cols-7 gap-px bg-[#e2e4ed]">
                             {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day) => (
@@ -459,7 +470,7 @@ export function OperatorDashboard() {
                                                 </div>
                                                 <div className="space-y-1">
                                                     {events.slice(0, 3).map((event: any) => {
-                                                        const { bg, border, text } = getColorForFab(event.fab_id || event.id);
+                                                        const { bg, border, text } = getColorForFabType(event.fab_type);
                                                         return (
                                                             <div
                                                                 key={event.task_id || event.id}
@@ -502,7 +513,7 @@ export function OperatorDashboard() {
                     )}
                 </div>
 
-                {/* Quick stats */}
+                {/* Quick stats (unchanged) */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6">
                     <div className="flex items-center gap-3 p-4 rounded-[8px] border border-[#e2e4ed] bg-white">
                         <div className="h-10 w-10 rounded-[6px] bg-[#d5e7ff] flex items-center justify-center">

@@ -44,11 +44,19 @@ interface AutoPlanEntry {
   estimated_hours: string;
   start_time: string;
   end_time: string;
+  end_date?: Date;           // actual end date (may differ from start date)
+  scheduled_time?: string;   // display string from API e.g. "Apr 10, 7:00 AM – Apr 13, 1:30 PM"
   planning_section_id?: string;
   stageName: string;
   date?: Date;
   sequence: string;
   isTouchup?: boolean;
+}
+
+interface ProposedRange {
+  start: string;
+  end: string;
+  scheduled_time?: string;
 }
 
 interface AutoPlanEntryCardProps {
@@ -57,13 +65,13 @@ interface AutoPlanEntryCardProps {
   totalNonTouchup: number;
   employees: any[];
   planningSections: any[];
-  proposals: any[];
+  proposals: ProposedRange[];
   isExpanded: boolean;
   sequenceOptions: number[];
   onToggleExpand: () => void;
   onUpdate: (patch: Partial<AutoPlanEntry>) => void;
   onRemove: () => void;
-  onApplyProposal: (proposal: { start: string; end: string }) => void;
+  onApplyProposal: (proposal: ProposedRange) => void;
 }
 
 const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
@@ -103,6 +111,24 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
   const stageName = getStageName();
   const hasSlot = !!(entry.date && entry.start_time && entry.end_time);
 
+  // Collapsed summary: prefer the API-provided scheduled_time string; fall back to manual format
+  const collapsedTimeLabel = useMemo(() => {
+    if (!hasSlot) return null;
+    if (entry.scheduled_time) return entry.scheduled_time;
+    const startLabel = format(new Date(`1970-01-01T${entry.start_time}`), 'hh:mm a');
+    const endLabel   = format(new Date(`1970-01-01T${entry.end_time}`),   'hh:mm a');
+    return `${format(entry.date!, 'MMM d')} · ${startLabel}–${endLabel}`;
+  }, [hasSlot, entry.scheduled_time, entry.date, entry.start_time, entry.end_time]);
+
+  // Scheduled time display in the expanded card
+  const scheduledTimeDisplay = useMemo(() => {
+    if (!entry.start_time || !entry.end_time) return null;
+    if (entry.scheduled_time) return entry.scheduled_time;
+    const startLabel = format(new Date(`1970-01-01T${entry.start_time}`), 'hh:mm a');
+    const endLabel   = format(new Date(`1970-01-01T${entry.end_time}`),   'hh:mm a');
+    return `${startLabel} – ${endLabel}`;
+  }, [entry.scheduled_time, entry.start_time, entry.end_time]);
+
   return (
     <Card className="border border-[#ecedf0] rounded-[12px] overflow-hidden">
       <CardHeader
@@ -130,9 +156,9 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
                 {stageName}
               </span>
             )}
-            {!isExpanded && hasSlot && (
+            {!isExpanded && collapsedTimeLabel && (
               <span className="text-xs text-[#7c8689] shrink-0 hidden sm:inline">
-                {format(entry.date!, 'MMM d')} · {format(new Date(`1970-01-01T${entry.start_time}`), 'hh:mm a')}–{format(new Date(`1970-01-01T${entry.end_time}`), 'hh:mm a')}
+                {collapsedTimeLabel}
               </span>
             )}
           </div>
@@ -235,7 +261,7 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
             </div>
           </div>
 
-          {/* Operator + Date + Time */}
+          {/* Operator + Date + Scheduled Time */}
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label className="text-[14px] text-[#4b545d] font-semibold">Operator *</Label>
@@ -290,7 +316,13 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
                   <CalendarComponent
                     mode="single"
                     selected={entry.date}
-                    onSelect={date => date && onUpdate({ date })}
+                    onSelect={date => {
+                      if (date) {
+                        // When user manually picks a date, clear the scheduled_time
+                        // since it no longer matches the auto-proposed range
+                        onUpdate({ date, scheduled_time: undefined, end_date: undefined });
+                      }
+                    }}
                     initialFocus
                     disabled={date => date < new Date(new Date().setHours(0, 0, 0, 0))}
                   />
@@ -300,10 +332,10 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
 
             <div>
               <Label className="text-[14px] text-[#4b545d] font-semibold">Scheduled Time</Label>
-              {entry.start_time && entry.end_time ? (
+              {scheduledTimeDisplay ? (
                 <div className="mt-2 h-[44px] flex items-center gap-2 px-3 rounded-[6px] bg-[#f0f4e8] border border-[#9cc15e]">
-                  <span className="text-[14px] font-semibold text-[#5a7a00]">
-                    {format(new Date(`1970-01-01T${entry.start_time}`), 'hh:mm a')} – {format(new Date(`1970-01-01T${entry.end_time}`), 'hh:mm a')}
+                  <span className="text-[13px] font-semibold text-[#5a7a00] truncate">
+                    {scheduledTimeDisplay}
                   </span>
                 </div>
               ) : (
@@ -321,12 +353,13 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
                 Available slots — click to apply
               </Label>
               <div className="flex flex-wrap gap-2">
-                {proposals.map((proposal: any, pIdx: number) => {
-                  const start = new Date(proposal.start || proposal.scheduled_start);
-                  const end = new Date(proposal.end || proposal.scheduled_end);
-                  const isActive =
-                    entry.start_time === format(start, 'HH:mm') &&
-                    entry.date && format(entry.date, 'yyyy-MM-dd') === format(start, 'yyyy-MM-dd');
+                {proposals.map((proposal, pIdx) => {
+                  const isActive = entry.scheduled_time
+                    ? entry.scheduled_time === proposal.scheduled_time
+                    : entry.start_time === format(new Date(proposal.start), 'HH:mm') &&
+                      entry.date &&
+                      format(entry.date, 'yyyy-MM-dd') === format(new Date(proposal.start), 'yyyy-MM-dd');
+
                   return (
                     <button
                       key={pIdx}
@@ -339,7 +372,7 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
                           : 'bg-white border-[#e2e4ed] text-[#4b545d] hover:border-[#9cc15e] hover:bg-[#f0f4e8]'
                       )}
                     >
-                      {format(start, 'MMM d')} · {format(start, 'hh:mm a')}–{format(end, 'hh:mm a')}
+                      {proposal.scheduled_time || `${format(new Date(proposal.start), 'MMM d · hh:mm a')}–${format(new Date(proposal.end), 'hh:mm a')}`}
                     </button>
                   );
                 })}
@@ -388,7 +421,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   const urlFabId = searchParams.get('fabId');
   const effectivePrefillFabId = propPrefillFabId || urlFabId || '';
 
-  const [proposals, setProposals] = useState<Record<number, any[]>>({});
+  const [proposals, setProposals] = useState<Record<number, ProposedRange[]>>({});
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
 
   const emptyEntry = (opts?: {
@@ -405,6 +438,8 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     estimated_hours: '',
     start_time: '',
     end_time: '',
+    end_date: undefined,
+    scheduled_time: undefined,
     planning_section_id: opts?.section_id !== undefined ? String(opts.section_id) : undefined,
     stageName: opts?.stageName || '',
     date: opts?.date || propSelectedDate || undefined,
@@ -465,7 +500,6 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       );
   }
 
-  // Helper: get smallest positive integer not in usedSequences
   const getNextAvailableSequence = (used: Set<number>) => {
     let seq = 1;
     while (used.has(seq)) seq++;
@@ -517,6 +551,8 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       estimated_hours: String(ev.estimated_hours ?? ''),
       start_time: format(startDate, 'HH:mm'),
       end_time: endTime,
+      end_date: undefined,
+      scheduled_time: undefined,
       planning_section_id: ev.planning_section_id != null ? String(ev.planning_section_id) : undefined,
       stageName: ev.stage_name || '',
       date: startDate,
@@ -526,7 +562,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     setExpandedCards({ 0: true });
   }, [selectedEvent, employeesLoaded]);
 
-  // ── Entry management with sequence uniqueness ─────────────────────────────
+  // ── Entry management ───────────────────────────────────────────────────────
   const addEntry = () => {
     setEntries(prev => {
       const hasTouchup = prev.some(e => e.isTouchup);
@@ -547,7 +583,6 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   const removeEntry = (idx: number) => {
     setEntries(prev => {
       const next = prev.filter((_, i) => i !== idx);
-      // Renumber non-touchup entries sequentially
       let seq = 1;
       const updated = next.map(e => {
         if (e.isTouchup) return e;
@@ -571,12 +606,10 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       if (patch.sequence !== undefined && !target.isTouchup) {
         const newSeq = Number(patch.sequence);
         if (!isNaN(newSeq)) {
-          // Find another non-touchup entry that already has this sequence
           const conflictIdx = newEntries.findIndex((e, i) =>
             i !== idx && !e.isTouchup && Number(e.sequence) === newSeq
           );
           if (conflictIdx !== -1) {
-            // Swap sequences
             const oldSeq = Number(target.sequence);
             newEntries[conflictIdx] = { ...newEntries[conflictIdx], sequence: String(oldSeq) };
             newEntries[idx] = { ...newEntries[idx], sequence: String(newSeq) };
@@ -585,9 +618,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
         }
       }
 
-      // Apply normal update
       if (idx === 0 && patch.fab_id !== undefined) {
-        // Sync fab_id across all entries
         return newEntries.map(e => ({ ...e, fab_id: patch.fab_id! }));
       }
       newEntries[idx] = { ...target, ...patch };
@@ -595,25 +626,28 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     });
   };
 
-  const applyProposal = (entryIdx: number, proposal: { start: string; end: string }) => {
+  // Apply a proposed slot — stores start/end dates and the display string
+  const applyProposal = (entryIdx: number, proposal: ProposedRange) => {
     const start = new Date(proposal.start);
-    const end = new Date(proposal.end);
+    const end   = new Date(proposal.end);
     updateEntry(entryIdx, {
-      date: start,
-      start_time: format(start, 'HH:mm'),
-      end_time: format(end, 'HH:mm'),
+      date:           start,
+      start_time:     format(start, 'HH:mm'),
+      end_time:       format(end,   'HH:mm'),
+      end_date:       end,                       // may be a different calendar day
+      scheduled_time: proposal.scheduled_time,   // ready-made display string from API
     });
   };
 
   const handleBack = () => { if (onBack) onBack(); else navigate(-1); };
 
-  // Submit logic
+  // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     for (const entry of entries) {
-      if (!entry.fab_id) { toast.error('FAB ID is required'); return; }
-      if (!entry.operator_id) { toast.error('Operator is required'); return; }
-      if (!entry.workstation_id) { toast.error('Workstation is required'); return; }
+      if (!entry.fab_id)              { toast.error('FAB ID is required'); return; }
+      if (!entry.operator_id)         { toast.error('Operator is required'); return; }
+      if (!entry.workstation_id)      { toast.error('Workstation is required'); return; }
       if (!entry.planning_section_id) { toast.error('Planning section is required'); return; }
       if (!entry.estimated_hours || parseFloat(entry.estimated_hours) <= 0) {
         toast.error('Estimated hours is required'); return;
@@ -638,44 +672,71 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       for (const fabId in groups) {
         let totalEst = 0;
         const stages = groups[fabId].map((entry, idx) => {
-          const d = format(entry.date!, 'yyyy-MM-dd');
-          const start = entry.start_time ? `${d}T${entry.start_time}:00` : `${d}T00:00:00`;
-          const end = entry.end_time ? `${d}T${entry.end_time}:00` : undefined;
+          const startDateStr = format(entry.date!, 'yyyy-MM-dd');
+          // Use the actual end date (may differ from start when slot spans multiple days)
+          const endDateStr   = entry.end_date
+            ? format(entry.end_date, 'yyyy-MM-dd')
+            : startDateStr;
+
+          const scheduledStart = entry.start_time
+            ? `${startDateStr}T${entry.start_time}:00`
+            : `${startDateStr}T00:00:00`;
+          const scheduledEnd = entry.end_time
+            ? `${endDateStr}T${entry.end_time}:00`
+            : undefined;
+
           const hrs = parseFloat(entry.estimated_hours) || 0;
           totalEst += hrs;
+
           return {
-            workstation_id: Number(entry.workstation_id),
+            workstation_id:      Number(entry.workstation_id),
             planning_section_id: Number(entry.planning_section_id) || (planningSections[0]?.id ?? 0),
-            operator_ids: [Number(entry.operator_id)],
-            estimated_hours: hrs,
-            scheduled_start: start,
-            ...(end && { scheduled_end: end }),
-            notes: entry.notes || undefined,
-            sequence: entry.isTouchup
-              ? groups[fabId].length  // always last
+            operator_ids:        [Number(entry.operator_id)],
+            estimated_hours:     hrs,
+            scheduled_start:     scheduledStart,
+            ...(scheduledEnd && { scheduled_end: scheduledEnd }),
+            notes:               entry.notes || undefined,
+            sequence:            entry.isTouchup
+              ? groups[fabId].length
               : (Number(entry.sequence) || idx + 1),
           };
         });
-        await createShopPlan({ fab_id: Number(fabId), estimated_hours: totalEst, status_id: 1, stages } as any).unwrap();
+
+        await createShopPlan({
+          fab_id:          Number(fabId),
+          estimated_hours: totalEst,
+          status_id:       1,
+          stages,
+        } as any).unwrap();
       }
 
       for (const entry of updates) {
-        const d = format(entry.date!, 'yyyy-MM-dd');
-        const start = entry.start_time ? `${d}T${entry.start_time}:00` : `${d}T00:00:00`;
-        const end = entry.end_time ? `${d}T${entry.end_time}:00` : undefined;
+        const startDateStr = format(entry.date!, 'yyyy-MM-dd');
+        const endDateStr   = entry.end_date
+          ? format(entry.end_date, 'yyyy-MM-dd')
+          : startDateStr;
+
+        const scheduledStart = entry.start_time
+          ? `${startDateStr}T${entry.start_time}:00`
+          : `${startDateStr}T00:00:00`;
+        const scheduledEnd = entry.end_time
+          ? `${endDateStr}T${entry.end_time}:00`
+          : undefined;
+
         const hrs = parseFloat(entry.estimated_hours) || 0;
+
         await updateShopPlan({
           plan_id: Number(entry.id),
           data: {
             stage: {
-              workstation_id: Number(entry.workstation_id),
+              workstation_id:      Number(entry.workstation_id),
               planning_section_id: Number(entry.planning_section_id) || (planningSections[0]?.id ?? 0),
-              operator_ids: [Number(entry.operator_id)],
-              estimated_hours: hrs,
-              scheduled_start: start,
-              ...(end && { scheduled_end: end }),
-              notes: entry.notes || undefined,
-              sequence: entry.isTouchup ? 999 : (Number(entry.sequence) || 1),
+              operator_ids:        [Number(entry.operator_id)],
+              estimated_hours:     hrs,
+              scheduled_start:     scheduledStart,
+              ...(scheduledEnd && { scheduled_end: scheduledEnd }),
+              notes:               entry.notes || undefined,
+              sequence:            entry.isTouchup ? 999 : (Number(entry.sequence) || 1),
             },
           },
         } as any).unwrap();
@@ -689,10 +750,11 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     }
   };
 
+  // ── Auto-populate ──────────────────────────────────────────────────────────
   const handleAutoPopulate = async () => {
     for (const entry of entries) {
-      if (!entry.operator_id) { toast.error('Please select an operator for each stage'); return; }
-      if (!entry.workstation_id) { toast.error('Please select a workstation for each stage'); return; }
+      if (!entry.operator_id)         { toast.error('Please select an operator for each stage'); return; }
+      if (!entry.workstation_id)      { toast.error('Please select a workstation for each stage'); return; }
       if (!entry.planning_section_id) { toast.error('Please select a planning section for each stage'); return; }
       if (!entry.estimated_hours || parseFloat(entry.estimated_hours) <= 0) {
         toast.error('Estimated hours is required for each stage'); return;
@@ -703,13 +765,13 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       const payload = {
         requests: entries.map(entry => ({
           planning_section_id: Number(entry.planning_section_id),
-          operator_id: Number(entry.operator_id),
-          workstation_id: Number(entry.workstation_id),
-          estimated_hours: parseFloat(entry.estimated_hours),
+          operator_id:         Number(entry.operator_id),
+          workstation_id:      Number(entry.workstation_id),
+          estimated_hours:     parseFloat(entry.estimated_hours),
         })),
-        start_from: new Date().toISOString(),
-        slot_minutes: 30,
-        search_horizon_days: 30,
+        start_from:              new Date().toISOString(),
+        slot_minutes:            30,
+        search_horizon_days:     30,
         max_proposals_per_request: 3,
       };
 
@@ -718,19 +780,31 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
 
       if (results.length === 0) { toast.error('No available slots found in the next 30 days'); return; }
 
-      const newProposals: Record<number, any[]> = {};
+      const newProposals: Record<number, ProposedRange[]> = {};
       entries.forEach((entry, idx) => {
-        const match = results.find((r: any) => String(r.planning_section_id) === String(entry.planning_section_id));
-        if (match?.proposed_ranges?.length) newProposals[idx] = match.proposed_ranges;
+        const match = results.find((r: any) =>
+          String(r.planning_section_id) === String(entry.planning_section_id)
+        );
+        if (match?.proposed_ranges?.length) {
+          newProposals[idx] = match.proposed_ranges as ProposedRange[];
+        }
       });
       setProposals(newProposals);
 
+      // Apply the first (earliest) proposal for each entry
       setEntries(prev => prev.map((entry, idx) => {
         const first = newProposals[idx]?.[0];
         if (!first) return entry;
         const start = new Date(first.start);
-        const end = new Date(first.end);
-        return { ...entry, date: start, start_time: format(start, 'HH:mm'), end_time: format(end, 'HH:mm') };
+        const end   = new Date(first.end);
+        return {
+          ...entry,
+          date:           start,
+          start_time:     format(start, 'HH:mm'),
+          end_time:       format(end,   'HH:mm'),
+          end_date:       end,
+          scheduled_time: first.scheduled_time,
+        };
       }));
 
       toast.success('Earliest slots applied — pick an alternative below each stage if needed');
@@ -742,7 +816,6 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   const isEditing = !!selectedEvent;
   const nonTouchupCount = entries.filter(e => !e.isTouchup).length;
 
-  // For each non-touchup card, provide all numbers 1..nonTouchupCount as options
   const sequenceOptions = useMemo(
     () => Array.from({ length: Math.max(1, nonTouchupCount) }, (_, i) => i + 1),
     [nonTouchupCount]
@@ -754,7 +827,6 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       <div className="border-b border-[#dfdfdf]">
         <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
           <div className="flex items-center gap-4">
-
             <p className="text-[28px] leading-[32px] text-black font-semibold">
               {isEditing ? 'Edit Plan' : 'Auto Schedule Plan'}
             </p>
@@ -812,15 +884,15 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
               <CardContent className="pt-5">
                 <div className="grid grid-cols-3 gap-4">
                   {[
-                    { label: 'Job No', val: selectedFab.job_details?.job_number },
-                    { label: 'Job Name', val: selectedFab.job_details?.name },
-                    { label: 'Account Name', val: selectedFab.account_name },
-                    { label: 'No. of Pieces', val: selectedFab.no_of_pieces || 0 },
-                    { label: 'Total Sq Ft', val: selectedFab.total_sqft?.toFixed(2) || '0.00' },
-                    { label: 'WJ LinFt', val: selectedFab.wj_linft?.toFixed(2) || '0.00' },
-                    { label: 'Edging LinFt', val: selectedFab.edging_linft?.toFixed(2) || '0.00' },
-                    { label: 'CNC LinFt', val: selectedFab.cnc_linft?.toFixed(2) || '0.00' },
-                    { label: 'Miter LinFt', val: selectedFab.miter_linft?.toFixed(2) || '0.00' },
+                    { label: 'Job No',        val: selectedFab.job_details?.job_number },
+                    { label: 'Job Name',       val: selectedFab.job_details?.name },
+                    { label: 'Account Name',   val: selectedFab.account_name },
+                    { label: 'No. of Pieces',  val: selectedFab.no_of_pieces || 0 },
+                    { label: 'Total Sq Ft',    val: selectedFab.total_sqft?.toFixed(2) || '0.00' },
+                    { label: 'WJ LinFt',       val: selectedFab.wj_linft?.toFixed(2) || '0.00' },
+                    { label: 'Edging LinFt',   val: selectedFab.edging_linft?.toFixed(2) || '0.00' },
+                    { label: 'CNC LinFt',      val: selectedFab.cnc_linft?.toFixed(2) || '0.00' },
+                    { label: 'Miter LinFt',    val: selectedFab.miter_linft?.toFixed(2) || '0.00' },
                   ].map(({ label, val }) => (
                     <div key={label}>
                       <Label className="text-[13px] text-[#7c8689]">{label}</Label>

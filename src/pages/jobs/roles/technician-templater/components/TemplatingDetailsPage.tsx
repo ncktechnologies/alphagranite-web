@@ -132,9 +132,11 @@ export function TemplatingDetailsPage() {
         return {
           id: note.id,
           avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
-          content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${note.note}`,
+          content: note?.note || '',
           author: note.created_by_name || 'Unknown',
-          timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+          timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
+          category: config.label,
+          categoryColor: config.color,
         };
       })
     }
@@ -280,29 +282,29 @@ export function TemplatingDetailsPage() {
               'lg:border-b-0 lg:border-r',
             ].join(' ')}
           > */}
-            <div className="p-3 sm:p-4 space-y-4">
-              <GraySidebar sections={sidebarSections as any} jobId={fab?.job_id} />
-              {/* Progress Timeline (original component) */}
-              <div className="bg-text w-full py-4 px-6 shadow-sm rounded-md">
-                <h3 className="font-semibold text-white text-lg mb-5">Progress Timeline</h3>
-                <div className="flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-                  <p className="text-base text-white">Scheduled date</p>
-                </div>
-                <p className="text-xs text-white ml-4 mt-1">
-                  {fab?.templating_schedule_start_date
-                    ? new Date(fab.templating_schedule_start_date).toLocaleDateString('en-US', {
-                      month: 'long',
-                      day: 'numeric',
-                      year: 'numeric',
-                      hour: 'numeric',
-                      minute: '2-digit',
-                      hour12: true
-                    })
-                    : 'Not scheduled'}
-                </p>
+          <div className="p-3 sm:p-4 space-y-4">
+            <GraySidebar sections={sidebarSections as any} jobId={fab?.job_id} />
+            {/* Progress Timeline (original component) */}
+            <div className="bg-text w-full py-4 px-6 shadow-sm rounded-md">
+              <h3 className="font-semibold text-white text-lg mb-5">Progress Timeline</h3>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                <p className="text-base text-white">Scheduled date</p>
               </div>
+              <p className="text-xs text-white ml-4 mt-1">
+                {fab?.templating_schedule_start_date
+                  ? new Date(fab.templating_schedule_start_date).toLocaleDateString('en-US', {
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                  })
+                  : 'Not scheduled'}
+              </p>
             </div>
+          </div>
           {/* </aside> */}
         </div>
 
@@ -326,7 +328,7 @@ export function TemplatingDetailsPage() {
 
           </Card>
 
-          
+
         </main>
       </div>
     </div>

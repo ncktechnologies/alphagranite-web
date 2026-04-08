@@ -111,9 +111,11 @@ export function ResurfacingStatusDetailsPage() {
           return {
             id: noteItem?.id ?? index,
             avatar: fabAuthorName?.charAt(0).toUpperCase() || 'U',
-            content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${noteContent}`,
+            content: note?.note || '',
             author: fabAuthorName || 'Unknown',
             timestamp: fab?.created_at ? new Date(fab.created_at).toLocaleDateString() : 'Unknown date',
+            category: config.label,
+            categoryColor: config.color,
           };
         })
         : [],

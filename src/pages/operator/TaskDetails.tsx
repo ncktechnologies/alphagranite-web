@@ -225,7 +225,7 @@ export function OperatorTaskDetails() {
         { label: t('LABEL.JOB_NAME'), value: currentTask?.job_name || '—' },
         {
             label: t('JOB.FAB_ID'),
-            value: fabId ? <Link to={`/sales/${fabId}`} className="text-primary hover:underline">FAB-{fabId}</Link> : '—',
+            value: fabId ? <Link to={`/sales/${fabId}`} className="text-primary hover:underline">{fabId}</Link> : '—',
         },
         { label: t('JOB.FAB_TYPE'), value: <span className="uppercase">{currentTask?.fab_type || '—'}</span> },
         { label: t('JOB.AREA'), value: currentTask?.area || '—' },
@@ -303,7 +303,7 @@ export function OperatorTaskDetails() {
                                         </a>
                                     </div>
                                 }
-                                description={t('OPERATOR.TASK_DETAILS_TITLE')}
+                                description={currentTask?.plan_name || '—'}
                             />
                             <div className="flex items-center gap-2 flex-shrink-0">
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
@@ -387,8 +387,8 @@ export function OperatorTaskDetails() {
                 <div className="lg:col-span-4">
                     <Card className="border-l shadow-sm">
                         <CardHeader className="border-b pb-4">
-                            <CardTitle className="text-lg font-semibold">{t('TIMER.CONTROLS')}</CardTitle>
-                            <p className="text-sm text-muted-foreground">{t('TIMER.CONTROLS_DESCRIPTION')}</p>
+                            <CardTitle className="text-lg font-semibold">Timer</CardTitle>
+                            {/* <p className="text-sm text-muted-foreground">{t('TIMER.CONTROLS_DESCRIPTION')}</p> */}
                         </CardHeader>
                         <CardContent className="space-y-4 pt-6">
                             {/* Start button (idle state) */}
@@ -441,7 +441,7 @@ export function OperatorTaskDetails() {
                                     className="w-full gap-2 bg-red-600 hover:bg-red-700 text-white"
                                     size="lg"
                                 >
-                                    <CheckCircle2 className="h-5 w-5" /> {t('OPERATOR.SUBMIT')}
+                                    <CheckCircle2 className="h-5 w-5" /> SUBMIT
                                 </Button>
                             )}
                         </CardContent>

@@ -110,9 +110,11 @@ export function InstallSchedulingDetailsPage() {
                 return {
                     id: note.id,
                     avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
-                    content: `<span class="inline-block px-2 py-1 rounded text-xs font-medium ${config.color} bg-gray-100 mr-2">${config.label}</span>${note.note}`,
+                    content: note?.note || '',
                     author: note.created_by_name || 'Unknown',
-                    timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date'
+                    timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
+                    category: config.label,
+                    categoryColor: config.color,
                 };
             })
         }
