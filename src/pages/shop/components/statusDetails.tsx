@@ -210,7 +210,7 @@ const ShopEstDateField: React.FC<{ value: string | undefined; fabId: number; onS
         return (
             <div className="space-y-2">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide font-normal">Shop Est. Completion</p>
-                <DateTimePicker mode="date" value={editedDate} onChange={d => setEditedDate(d)} minDate={new Date(new Date().setDate(new Date().getDate() - 1))} />
+                <DateTimePicker mode="date" value={editedDate} onChange={d => setEditedDate(d)}  />
                 <div className="flex gap-2">
                     <Button size="sm" className="flex-1 h-8 text-xs" onClick={handleSave} disabled={isSaving}>
                         {isSaving ? <LoaderCircle className="h-3 w-3 animate-spin" /> : 'Save'}
