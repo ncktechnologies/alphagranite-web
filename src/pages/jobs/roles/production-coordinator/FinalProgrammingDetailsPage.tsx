@@ -562,7 +562,6 @@ export function FinalProgrammingDetailsPage() {
         entityId={fabData?.draft_data?.id}
         uploadMutation={addFilesToFinalProgramming}
         stages={[
-          { value: 'cut_list', label: 'Cut List' },
           { value: 'final_programming', label: 'Final Programming' },
         ]}
         fileTypes={[
