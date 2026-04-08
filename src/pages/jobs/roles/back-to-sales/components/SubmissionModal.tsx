@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useSelector } from "react-redux";
 import {
   Dialog,
   DialogContent,
@@ -28,7 +29,8 @@ import {
   useGetSalesCTByFabIdQuery,
   useSetSCTReviewYesMutation,
   useSendToDraftingMutation,
-  useUpdateSCTRevisionMutation
+  useUpdateSCTRevisionMutation,
+  useCreateRevisionMutation
 } from "@/store/api/job";
 import {
   Select,
@@ -80,7 +82,11 @@ export const RevisionModal = ({
   const [setSCTReviewYes] = useSetSCTReviewYesMutation();
   const [sendToDrafting] = useSendToDraftingMutation();
   const [updateSCTRevision] = useUpdateSCTRevisionMutation();
+  const [createRevision] = useCreateRevisionMutation();
   const navigate = useNavigate();
+  
+  // Get current user from Redux store
+  const currentUser = useSelector((state: any) => state.user.user);
 
   const form = useForm<RevisionData>({
     resolver: zodResolver(revisionSchema),
@@ -187,7 +193,15 @@ export const RevisionModal = ({
         fileIds = existingFileIds;
       }
 
-      // First, set review needed to yes with revision reason and file IDs
+      // Create revision - THIS SHOULD ALWAYS BE CALLED
+      await createRevision({
+        fab_id: Number(fabId),
+        revision_type: values.revisionType,
+        requested_by: currentUser?.id,
+        revision_notes: values.reason
+      }).unwrap();
+
+      // Then, set review needed to yes with revision reason and file IDs
       await setSCTReviewYes({
         sct_id: currentSctId,
         revision_reason: values.reason,
@@ -197,7 +211,7 @@ export const RevisionModal = ({
 
       // Then, send to drafting with notes
       await sendToDrafting({
-        fab_id: fabId,
+        fab_id: Number(fabId),
         data: {
           notes: values.reason
         }
