@@ -142,34 +142,32 @@ const isScenarioImpossible = (scenario: string[]): boolean => {
   );
 };
 
-const getDisabledCheckboxes = (formData: Partial<FabIdFormData>): Set<string> => {
-  const currentSelected = getSelectedCheckboxLabels(formData);
-  const disabled = new Set<string>();
-  
-  // Check each field to see if enabling it would create an impossible scenario
-  Object.entries(CHECKBOX_FIELD_MAP).forEach(([label, field]) => {
-    // If already selected, it can't be disabled
-    if (formData[field]) return;
-    
-    // Test what would happen if we selected this checkbox
-    const testScenario = [...currentSelected, label].sort();
-    
-    if (isScenarioImpossible(testScenario)) {
-      disabled.add(label);
-    }
-  });
-  
-  return disabled;
-};
-
 const isCurrentStateImpossible = (formData: Partial<FabIdFormData>): boolean => {
   const currentSelected = getSelectedCheckboxLabels(formData);
   return currentSelected.length > 0 && isScenarioImpossible(currentSelected);
 };
 
+const getCheckboxRuleError = (formData: Partial<FabIdFormData>): string | null => {
+  const selectedCount = getSelectedCheckboxLabels(formData).length;
+  if (selectedCount === 6) {
+    return 'All 6 checkboxes cannot be selected at the same time.';
+  }
+
+  if (!formData.slabSmithCustNotNeeded && !formData.slabSmithAGNotNeeded) {
+    return 'At least one SlabSmith checkbox must be selected.';
+  }
+
+  if (isCurrentStateImpossible(formData)) {
+    return 'This checkbox combination is not allowed.';
+  }
+
+  return null;
+};
+
 const NewFabIdForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checkboxLogicError, setCheckboxLogicError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [fabId, setFabId] = useState<number | null>(null);
   const navigate = useNavigate();
@@ -582,10 +580,38 @@ const NewFabIdForm = () => {
     edge.toLowerCase().includes(edgeSearch.toLowerCase())
   );
 
+  const handleCheckboxToggle = (
+    fieldName: keyof FabIdFormData,
+    nextChecked: boolean,
+    onChange: (value: boolean) => void
+  ) => {
+    const currentValues = form.getValues();
+    const nextValues: Partial<FabIdFormData> = {
+      ...currentValues,
+      [fieldName]: nextChecked,
+    };
+
+    const checkboxRuleError = getCheckboxRuleError(nextValues);
+    if (checkboxRuleError) {
+      setCheckboxLogicError(checkboxRuleError);
+      return;
+    }
+
+    setCheckboxLogicError(null);
+    onChange(nextChecked);
+  };
+
   const onSubmit = async (values: FabIdFormData) => {
     try {
       setIsSubmitting(true);
       setError(null);
+
+      const checkboxRuleError = getCheckboxRuleError(values);
+      if (checkboxRuleError) {
+        setCheckboxLogicError(checkboxRuleError);
+        setIsSubmitting(false);
+        return;
+      }
 
       const selectedFabType = Array.isArray(fabTypesData) ? fabTypesData?.find((type: any) => type.name === values.fabType) : undefined;
       const selectedAccount = Array.isArray(accountsData) ? accountsData?.find((account: any) => account.name === values.account) : undefined;
@@ -1507,121 +1533,117 @@ const NewFabIdForm = () => {
 
                       {/* Checkboxes */}
                       <div>
-                        {isCurrentStateImpossible(form.getValues()) && (
+                        {(checkboxLogicError || isCurrentStateImpossible(form.getValues())) && (
                           <Alert className="mb-4 border-red-200 bg-red-50">
                             <AlertCircle className="h-4 w-4 text-red-600" />
-                            <AlertTitle className="text-red-800">Invalid checkbox combination detected</AlertTitle>
+                            <AlertTitle className="text-red-800">
+                              {checkboxLogicError || 'Invalid checkbox combination detected'}
+                            </AlertTitle>
                           </Alert>
                         )}
                         <div className="gap-3 flex flex-wrap">
                           <FormField
                             control={form.control}
                             name="templateNotNeeded"
-                            render={({ field }) => {
-                              const disabledCheckboxes = getDisabledCheckboxes(form.getValues());
-                              const isDisabled = disabledCheckboxes.has('Template not needed');
-                              return (
-                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isDisabled} />
-                                  </FormControl>
-                                  <FormLabel className={`font-normal ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                    Template not needed
-                                  </FormLabel>
-                                </FormItem>
-                              );
-                            }}
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={(checked) =>
+                                      handleCheckboxToggle('templateNotNeeded', checked === true, field.onChange)
+                                    }
+                                  />
+                                </FormControl>
+                                <FormLabel className="font-normal">Template not needed</FormLabel>
+                              </FormItem>
+                            )}
                           />
                           <FormField
                             control={form.control}
                             name="draftNotNeeded"
-                            render={({ field }) => {
-                              const disabledCheckboxes = getDisabledCheckboxes(form.getValues());
-                              const isDisabled = disabledCheckboxes.has('Draft not needed');
-                              return (
-                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isDisabled} />
-                                  </FormControl>
-                                  <FormLabel className={`font-normal ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                    Draft not needed
-                                  </FormLabel>
-                                </FormItem>
-                              );
-                            }}
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={(checked) =>
+                                      handleCheckboxToggle('draftNotNeeded', checked === true, field.onChange)
+                                    }
+                                  />
+                                </FormControl>
+                                <FormLabel className="font-normal">Draft not needed</FormLabel>
+                              </FormItem>
+                            )}
                           />
                           <FormField
                             control={form.control}
                             name="slabSmithCustNotNeeded"
-                            render={({ field }) => {
-                              const disabledCheckboxes = getDisabledCheckboxes(form.getValues());
-                              const isDisabled = disabledCheckboxes.has('SS Cust not needed');
-                              return (
-                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isDisabled} />
-                                  </FormControl>
-                                  <FormLabel className={`font-normal ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                    SlabSmith (Cust) not needed
-                                  </FormLabel>
-                                </FormItem>
-                              );
-                            }}
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={(checked) =>
+                                      handleCheckboxToggle('slabSmithCustNotNeeded', checked === true, field.onChange)
+                                    }
+                                  />
+                                </FormControl>
+                                <FormLabel className="font-normal">SlabSmith (Cust) not needed</FormLabel>
+                              </FormItem>
+                            )}
                           />
                          
                           <FormField
                             control={form.control}
                             name="slabSmithAGNotNeeded"
-                            render={({ field }) => {
-                              const disabledCheckboxes = getDisabledCheckboxes(form.getValues());
-                              const isDisabled = disabledCheckboxes.has('SS AG not needed');
-                              return (
-                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isDisabled} />
-                                  </FormControl>
-                                  <FormLabel className={`font-normal ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                    Slab smith (AG) not needed
-                                  </FormLabel>
-                                </FormItem>
-                              );
-                            }}
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={(checked) =>
+                                      handleCheckboxToggle('slabSmithAGNotNeeded', checked === true, field.onChange)
+                                    }
+                                  />
+                                </FormControl>
+                                <FormLabel className="font-normal">Slab smith (AG) not needed</FormLabel>
+                              </FormItem>
+                            )}
                           />
                            <FormField
                             control={form.control}
                             name="sctNotNeeded"
-                            render={({ field }) => {
-                              const disabledCheckboxes = getDisabledCheckboxes(form.getValues());
-                              const isDisabled = disabledCheckboxes.has('SCT not needed');
-                              return (
-                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isDisabled} />
-                                  </FormControl>
-                                  <FormLabel className={`font-normal ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                    SCT not needed
-                                  </FormLabel>
-                                </FormItem>
-                              );
-                            }}
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={(checked) =>
+                                      handleCheckboxToggle('sctNotNeeded', checked === true, field.onChange)
+                                    }
+                                  />
+                                </FormControl>
+                                <FormLabel className="font-normal">SCT not needed</FormLabel>
+                              </FormItem>
+                            )}
                           />
                           <FormField
                             control={form.control}
                             name="finalProgrammingNotNeeded"
-                            render={({ field }) => {
-                              const disabledCheckboxes = getDisabledCheckboxes(form.getValues());
-                              const isDisabled = disabledCheckboxes.has('Final Prog not needed');
-                              return (
-                                <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                                  <FormControl>
-                                    <Checkbox checked={field.value} onCheckedChange={field.onChange} disabled={isDisabled} />
-                                  </FormControl>
-                                  <FormLabel className={`font-normal ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                                    Final programing not needed
-                                  </FormLabel>
-                                </FormItem>
-                              );
-                            }}
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={(checked) =>
+                                      handleCheckboxToggle('finalProgrammingNotNeeded', checked === true, field.onChange)
+                                    }
+                                  />
+                                </FormControl>
+                                <FormLabel className="font-normal">Final programing not needed</FormLabel>
+                              </FormItem>
+                            )}
                           />
                         </div>
                       </div>
