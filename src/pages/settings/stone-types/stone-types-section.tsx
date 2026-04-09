@@ -3,7 +3,7 @@ import { Container } from '@/components/common/container';
 import { SETTINGS_NAV } from '@/config/menu.config';
 import { Toolbar, ToolbarBreadcrumbs, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardHeading } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -28,7 +28,7 @@ import { PageMenu } from '../page-menu';
 
 export function StoneTypesSection() {
     const [activeTab, setActiveTab] = useState('stone-types');
-    
+
     // Stone types state
     const [showAddStoneTypeDialog, setShowAddStoneTypeDialog] = useState(false);
     const [newStoneTypeName, setNewStoneTypeName] = useState('');
@@ -208,13 +208,17 @@ export function StoneTypesSection() {
         <Fragment>
             <PageMenu />
             <Container>
-               
+
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6" >
-                    <TabsList className="mb-6">
-                        <TabsTrigger value="stone-types">Stone Types</TabsTrigger>
-                        <TabsTrigger value="stone-colors">Stone Colors</TabsTrigger>
-                    </TabsList>
+                    <CardHeader className="py-3.5 border-b flex flex-row items-center justify-between">
+                        <CardHeading>
+                            <TabsList className="mb-6">
+                                <TabsTrigger value="stone-types">Stone Types</TabsTrigger>
+                                <TabsTrigger value="stone-colors">Stone Colors</TabsTrigger>
+                            </TabsList>
+                        </CardHeading>
+                    </CardHeader>
 
                     {/* Stone Types Tab */}
                     <TabsContent value="stone-types" className="mt-0">

@@ -11,7 +11,7 @@ import { useGetFabByIdQuery } from '@/store/api/job';
 interface RoleDetailsViewProps {
   role: Station;
   onEdit: (role: Station) => void;
-  onDelete: (role: Station) => void;
+  onDelete?: (role: Station) => void;
   onStatusChange?: () => void;
 
 }
@@ -78,7 +78,7 @@ export const StationDetailsView = ({ role, onEdit, onDelete, onStatusChange }: R
   
   return (
     <div className="space-y-6">
-      <StationHeader role={role} onEdit={onEdit} OnDelete={onDelete} onStatusChange={onStatusChange} />      
+      <StationHeader role={role} onEdit={onEdit}  onStatusChange={onStatusChange} />      
       {/* <UsersSection /> */}
       <div className="grid grid-cols-2 gap-[14px] rounded-[8px] bg-[#FAFAFA] p-8 space-y-10">
         <div>

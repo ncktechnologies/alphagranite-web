@@ -126,6 +126,7 @@ export const workstationApi = createApi({
         },
         transformResponse: (response: any) => response.data || response,
         providesTags: ["Workstation"],
+        
       }),
 
       // Get single workstation by ID
@@ -177,7 +178,8 @@ export const workstationApi = createApi({
           method: "put",
           data,
         }),
-        invalidatesTags: ["Workstation"],
+        // invalidatesTags: ["Workstation"],
+         invalidatesTags: (result, error, { id }) => [{ type: 'Workstation', id }]
       }),
 
       // Get planning sections (for workstation assignment)

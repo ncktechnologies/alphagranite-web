@@ -131,6 +131,7 @@ export function PlanningSectionManager({
               plan_name={section.plan_name}
               plan_description={section.plan_description}
               status_id={section.status_id}
+              is_active={section.is_active}
               isSelected={selectedActivityId === section.id}
               onClick={(id) => onSelectActivity && onSelectActivity(id)}
             />

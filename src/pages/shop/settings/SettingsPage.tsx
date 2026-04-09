@@ -22,7 +22,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { X, Check, Plus, Trash2, Edit2 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import {
     useGetStoneTypesQuery,
     useGetStoneColorsByStoneTypeQuery,
@@ -38,7 +38,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 
 function SettingsPage() {
     const [viewMode, setViewMode] = useState<ViewMode>('details');
-    const [selectedRole, setSelectedRole] = useState<Station | null>(null);
     const [activeTab, setActiveTab] = useState<'workstations' | 'activities' | 'stone-types'>('workstations');
     const [selectedActivityId, setSelectedActivityId] = useState<number | null>(null);
     const [editingSectionId, setEditingSectionId] = useState<number | null>(null);
@@ -56,6 +55,10 @@ function SettingsPage() {
     const [newStoneColorCode, setNewStoneColorCode] = useState('');
     const [editingStoneTypeId, setEditingStoneTypeId] = useState<number | null>(null);
     const [editingStoneColorId, setEditingStoneColorId] = useState<number | null>(null);
+    const [selectedRoleId, setSelectedRoleId] = useState<string | null>(null);
+
+
+
 
     // Fetch workstations from API
     const { data: workstationsData, isLoading, isError, refetch } = useGetWorkstationsQuery();
@@ -112,10 +115,15 @@ function SettingsPage() {
         });
     }, [workstationsData]);
 
+    const selectedRole = useMemo(() => {
+        if (!selectedRoleId) return null;
+        return workstations.find(ws => ws.id === selectedRoleId) || null;
+    }, [workstations, selectedRoleId]);
+
     // Auto-select first workstation when in workstations tab
     useEffect(() => {
         if (activeTab === 'workstations' && workstations.length > 0 && !selectedRole && viewMode !== 'new' && viewMode !== 'edit') {
-            setSelectedRole(workstations[0]);
+            setSelectedRoleId(workstations[0].id);
             setViewMode('details');
         }
     }, [activeTab, workstations, selectedRole, viewMode]);
@@ -129,47 +137,34 @@ function SettingsPage() {
 
     const handleNewRole = () => {
         setViewMode('new');
-        setSelectedRole(null);
+        setSelectedRoleId(null);
     };
 
     const handleRoleSelect = (role: Station) => {
-        setSelectedRole(role);
+        setSelectedRoleId(role.id);
         setViewMode('details');
     };
 
     const handleEditRole = (role: Station) => {
-        setSelectedRole(role);
+        setSelectedRoleId(role.id);
         setViewMode('edit');
     };
 
     // Toggle workstation status using update mutation with is_active
     const handleToggleWorkstationStatus = async (role: Station) => {
-        const newIsActive = role.status !== 'Active'; // true = activate, false = deactivate
+        const newIsActive = role.is_active !== true; // true = activate, false = deactivate
         const action = newIsActive ? 'activate' : 'deactivate';
+        console.log(newIsActive, "kkkkk");
 
-        try {
-            await updateWorkstation({
-                id: parseInt(role.id),
-                data: {
-                    is_active: newIsActive   // ✅ directly set the boolean (or 1/0 based on API)
-                }
-            }).unwrap();
-
-            toast.success(`Workstation ${action}d successfully`);
-            refetch(); // refresh the list to reflect new status
-        } catch (error) {
-            console.error('Failed to update workstation status:', error);
-            toast.error(`Failed to ${action} workstation`);
-        }
     };
 
     const handleCloseForm = () => {
         if (viewMode === 'new') {
             setViewMode('list');
-            setSelectedRole(null);
+            setSelectedRoleId(null);
         } else if (viewMode === 'edit') {
             setViewMode('list');
-            setSelectedRole(null);
+            setSelectedRoleId(null);
         }
     };
 
@@ -385,7 +380,7 @@ function SettingsPage() {
         }
 
         if (viewMode === 'details' && selectedRole) {
-            return <StationDetailsView role={selectedRole} onEdit={handleEditRole} onDelete={() => { }} onStatusChange={refetch} />;
+            return <StationDetailsView role={selectedRole} onEdit={handleEditRole} onStatusChange={() => refetch()} />;
         }
 
         if (viewMode === 'new' || viewMode === 'edit') {
@@ -420,11 +415,13 @@ function SettingsPage() {
                 </Toolbar>
 
                 {/* Tab Navigation */}
-                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="mt-4">
-                    <TabsList className="mb-4">
-                        <TabsTrigger value="workstations">Workstations</TabsTrigger>
-                        <TabsTrigger value="activities">Shop Activities</TabsTrigger>
-                    </TabsList>
+                <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="mt-4 w-full">
+                    <CardHeader className="py-3.5 border-b flex flex-row items-center justify-between ">
+                        <TabsList className="mb-4">
+                            <TabsTrigger value="workstations">Workstations</TabsTrigger>
+                            <TabsTrigger value="activities">Shop Activities</TabsTrigger>
+                        </TabsList>
+                    </CardHeader>
 
                     <TabsContent value="workstations" className="mt-0">
                         <div className="flex h-full gap-6">

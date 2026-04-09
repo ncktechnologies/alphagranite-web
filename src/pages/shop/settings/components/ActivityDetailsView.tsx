@@ -30,12 +30,12 @@ export function ActivityDetailsView({ activity, onEdit, onDelete, onToggleStatus
             <div className="flex flex-col items-end gap-2">
               <div className="flex items-center gap-2">
                 <Badge 
-                  className={`${activity.status_id === 1 ? 'bg-[#0BC33F33] text-[#0BC33F]' : 'bg-[#ED143B33] text-[#ED143B]'} px-3 py-1 rounded-[50px]`}
+                  className={`${activity.is_active ? 'bg-[#0BC33F33] text-[#0BC33F]' : 'bg-[#ED143B33] text-[#ED143B]'} px-3 py-1 rounded-[50px]`}
                 >
-                  {activity.status_id === 1 ? 'Active' : 'Inactive'}
+                  {activity.is_active  ? 'Active' : 'Inactive'}
                 </Badge>
                 <Switch
-                  checked={activity.status_id === 1}
+                  checked={activity.is_active}
                   onCheckedChange={onToggleStatus}
                   aria-label="Toggle status"
                 />

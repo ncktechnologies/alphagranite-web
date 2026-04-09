@@ -35,7 +35,7 @@ export const StationList = ({
                         role={role}
                         isSelected={selectedRole?.id === role.id}
                         onClick={onRoleSelect}
-                        onToggleStatus={onToggleStatus}
+                       
                     />
                 ))}
             </div>

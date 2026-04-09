@@ -8,6 +8,7 @@ interface ActivityCardProps {
   status_id?: number;
   isSelected: boolean;
   onClick: (id: number) => void;
+  is_active: boolean;
 }
 
 export const ActivityCard = ({ 
@@ -15,7 +16,8 @@ export const ActivityCard = ({
   plan_name, 
   plan_description, 
   status_id, 
-  isSelected, 
+  isSelected,
+  is_active, 
   onClick
 }: ActivityCardProps) => {
   return (
@@ -32,9 +34,9 @@ export const ActivityCard = ({
               {plan_name}
             </h3>
             <Badge 
-              className={`${status_id === 1 ? 'bg-[#0BC33F33] text-[#0BC33F]' : 'bg-[#ED143B33] text-[#ED143B]'} px-2 py-1 rounded-[50px] text-sm`}
+              className={`${is_active ? 'bg-[#0BC33F33] text-[#0BC33F]' : 'bg-[#ED143B33] text-[#ED143B]'} px-2 py-1 rounded-[50px] text-sm`}
             >
-              {status_id === 1 ? 'Active' : 'Inactive'}
+              {is_active ? 'Active' : 'Inactive'}
             </Badge>
           </div>
           

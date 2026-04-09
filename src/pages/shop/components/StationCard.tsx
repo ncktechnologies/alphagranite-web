@@ -9,16 +9,11 @@ interface StationCardProps {
   role: Station;
   isSelected: boolean;
   onClick: (role: Station) => void;
-  onToggleStatus?: (role: Station) => void;
+  
 }
 
-export const StationCard = ({ role, isSelected, onClick, onToggleStatus }: StationCardProps) => {
-  const handleStatusToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onToggleStatus) {
-      onToggleStatus(role);
-    }
-  };
+export const StationCard = ({ role, isSelected, onClick }: StationCardProps) => {
+ 
 
   // Get initials from operator names
   const getInitials = (name: string) => {
@@ -63,14 +58,7 @@ export const StationCard = ({ role, isSelected, onClick, onToggleStatus }: Stati
               >
                 {role.status}
               </Badge>
-              {/* {onToggleStatus && (
-                <div onClick={handleStatusToggle} className="cursor-pointer">
-                  <Switch
-                    checked={role.status === 'Active'}
-                    aria-label="Toggle status"
-                  />
-                </div>
-              )} */}
+              
             </div>
           </div>
           
