@@ -192,6 +192,11 @@ export function CNCDetailsPage() {
     }, [existingFilesFromServer, currentUser]);
 
     const handleStart = async (startDate: Date) => {
+         const hasDraftingAssignment = cncData?.id || fabData?.cnc_data?.id;
+            if (!hasDraftingAssignment) {
+              toast.error('Cannot start CNC session - no cnc operator found found');
+              return;
+            }
         try {
             await manageCNCSession({
                 fab_id: fabId,
@@ -350,7 +355,7 @@ export function CNCDetailsPage() {
     }, [refetchFab, refetchSession]);
 
     const shouldShowUploadSection = (isDrafting || isPaused) || allFilesForDisplay.length > 0;
-    const canOpenSubmit = isDrafting && totalTime > 0 && allFilesForDisplay.length > 0;
+    const canOpenSubmit = isDrafting && totalTime > 0 && fabData?.cnc_data?.files.length > 0;
 
     const handleOpenSubmissionModal = async () => {
         setShowSubmissionModal(true);
@@ -417,13 +422,15 @@ export function CNCDetailsPage() {
         {
             title: 'Notes',
             type: 'notes',
-            notes: fabData?.notes?.map((note: string, index: number) => ({
-                id: index,
-                avatar: 'N',
-                content: note,
-                author: '',
-                timestamp: '',
-            })) || [],
+            notes: Array.isArray(fabData.notes)
+                ? fabData.notes.map((note: string, index: number) => ({
+                    id: index,
+                    avatar: 'N',
+                    content: note,
+                    author: '',
+                    timestamp: '',
+                }))
+                : [],
         },
         {
             title: 'FAB Notes',
