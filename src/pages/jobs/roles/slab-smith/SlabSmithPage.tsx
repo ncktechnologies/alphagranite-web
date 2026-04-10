@@ -138,15 +138,15 @@ const SlabSmithPage = () => {
             }
         }
 
-        if (tableState.dateFilter && tableState.dateFilter !== 'all') {
+       if (tableState.dateFilter && tableState.dateFilter !== 'all') {
             // For custom date range, use schedule_start_date and schedule_due_date
             if (tableState.dateFilter === 'custom') {
                 if (tableState.dateRange?.from) {
-                    // Use local date string (YYYY-MM-DD) to prevent timezone shifts
-                    params.schedule_start_date = format(tableState.dateRange.from, 'yyyy-MM-dd');
+                    // Use local date string (YYYY-MM-DD)
+                    params.draft_completed_start = format(tableState.dateRange.from, 'yyyy-MM-dd');
                 }
                 if (tableState.dateRange?.to) {
-                    params.schedule_due_date = format(tableState.dateRange.to, 'yyyy-MM-dd');
+                    params.draft_completed_end = format(tableState.dateRange.to, 'yyyy-MM-dd');
                 }
                 // Don't send date_filter when using custom range
             } else {
