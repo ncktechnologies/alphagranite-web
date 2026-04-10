@@ -43,6 +43,7 @@ import {
     useGetJobsByAccountQuery
 } from '@/store/api/job';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
+import { getCheckboxRuleError, isCurrentStateImpossible } from './NewFabIdForm';
 
 // Custom Currency Input Component
 interface CurrencyInputProps {
@@ -213,7 +214,7 @@ const EditFabIdForm = () => {
     const { data: fabTypesData = [], isLoading: isLoadingFabTypes } = useGetFabTypesQuery();
     const { data: accountsData = [], isLoading: isLoadingAccounts } = useGetAccountsQuery({ limit: 1000 });
     const { data: stoneTypesData = [], isLoading: isLoadingStoneTypes } = useGetStoneTypesQuery({ limit: 1000 });
-    const { data: stoneColorsData = [], isLoading: isLoadingStoneColors,  isError: isStoneColorsError} = useGetStoneColorsQuery({ limit: 1000 });
+    const { data: stoneColorsData = [], isLoading: isLoadingStoneColors, isError: isStoneColorsError } = useGetStoneColorsQuery({ limit: 1000 });
     const { data: stoneThicknessesData = [], isLoading: isLoadingStoneThicknesses } = useGetStoneThicknessesQuery({ limit: 1000 });
     const { data: edgesData = [], isLoading: isLoadingEdges } = useGetEdgesQuery({ limit: 1000 });
     const { data: jobsData = [], isLoading: isLoadingJobs } = useGetJobsQuery({ limit: 1000 });
@@ -253,6 +254,8 @@ const EditFabIdForm = () => {
     const [stoneColorSearch, setStoneColorSearch] = useState('');
     const [showAddStoneColor, setShowAddStoneColor] = useState(false);
     const [newStoneColor, setNewStoneColor] = useState('');
+
+    const [checkboxLogicError, setCheckboxLogicError] = useState<string | null>(null);
 
     const form = useForm<FabIdFormData>({
         resolver: zodResolver(fabIdFormSchema),
@@ -562,6 +565,28 @@ const EditFabIdForm = () => {
             form.setValue('jobName', selectedJob.name, { shouldValidate: false });
         }
     };
+
+    const handleCheckboxToggle = (
+        fieldName: keyof FabIdFormData,
+        nextChecked: boolean,
+        onChange: (value: boolean) => void
+    ) => {
+        const currentValues = form.getValues();
+        const nextValues: Partial<FabIdFormData> = {
+            ...currentValues,
+            [fieldName]: nextChecked,
+        };
+
+        const checkboxRuleError = getCheckboxRuleError(nextValues);
+        if (checkboxRuleError) {
+            setCheckboxLogicError(checkboxRuleError);
+            return;
+        }
+
+        setCheckboxLogicError(null);
+        onChange(nextChecked);
+    };
+
 
     const onSubmit = async (values: FabIdFormData) => {
         try {
@@ -982,13 +1007,120 @@ const EditFabIdForm = () => {
                                             />
                                         </div>
                                         {/* Checkboxes */}
-                                        <div className="gap-3 flex flex-wrap">
-                                            <FormField control={form.control} name="templateNotNeeded" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Template not needed</FormLabel></FormItem>)} />
-                                            <FormField control={form.control} name="draftNotNeeded" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Draft not needed</FormLabel></FormItem>)} />
-                                            <FormField control={form.control} name="slabSmithCustNotNeeded" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">SlabSmith (Cust) not needed</FormLabel></FormItem>)} />
-                                            <FormField control={form.control} name="slabSmithAGNotNeeded" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Slab smith (AG) not needed</FormLabel></FormItem>)} />
-                                            <FormField control={form.control} name="sctNotNeeded" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">SCT not needed</FormLabel></FormItem>)} />
-                                            <FormField control={form.control} name="finalProgrammingNotNeeded" render={({ field }) => (<FormItem className="flex flex-row items-center space-x-3 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel className="font-normal">Final programming not needed</FormLabel></FormItem>)} />
+                                        <div>
+                                            {(checkboxLogicError || isCurrentStateImpossible(form.getValues())) && (
+                                                <Alert className="mb-4 border-red-200 bg-red-50">
+                                                    <AlertCircle className="h-4 w-4 text-red-600" />
+                                                    <AlertTitle className="text-red-800">
+                                                        {checkboxLogicError || 'Invalid checkbox combination detected'}
+                                                    </AlertTitle>
+                                                </Alert>
+                                            )}
+                                            <div className="gap-3 flex flex-wrap">
+                                                <FormField
+                                                    control={form.control}
+                                                    name="templateNotNeeded"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                                            <FormControl>
+                                                                <Checkbox
+                                                                    checked={field.value}
+                                                                    onCheckedChange={(checked) =>
+                                                                        handleCheckboxToggle('templateNotNeeded', checked === true, field.onChange)
+                                                                    }
+                                                                />
+                                                            </FormControl>
+                                                            <FormLabel className="font-normal">Template not needed</FormLabel>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="draftNotNeeded"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                                            <FormControl>
+                                                                <Checkbox
+                                                                    checked={field.value}
+                                                                    onCheckedChange={(checked) =>
+                                                                        handleCheckboxToggle('draftNotNeeded', checked === true, field.onChange)
+                                                                    }
+                                                                />
+                                                            </FormControl>
+                                                            <FormLabel className="font-normal">Draft not needed</FormLabel>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="slabSmithCustNotNeeded"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                                            <FormControl>
+                                                                <Checkbox
+                                                                    checked={field.value}
+                                                                    onCheckedChange={(checked) =>
+                                                                        handleCheckboxToggle('slabSmithCustNotNeeded', checked === true, field.onChange)
+                                                                    }
+                                                                />
+                                                            </FormControl>
+                                                            <FormLabel className="font-normal">SlabSmith (Cust) not needed</FormLabel>
+                                                        </FormItem>
+                                                    )}
+                                                />
+
+                                                <FormField
+                                                    control={form.control}
+                                                    name="slabSmithAGNotNeeded"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                                            <FormControl>
+                                                                <Checkbox
+                                                                    checked={field.value}
+                                                                    onCheckedChange={(checked) =>
+                                                                        handleCheckboxToggle('slabSmithAGNotNeeded', checked === true, field.onChange)
+                                                                    }
+                                                                />
+                                                            </FormControl>
+                                                            <FormLabel className="font-normal">Slab smith (AG) not needed</FormLabel>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="sctNotNeeded"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                                            <FormControl>
+                                                                <Checkbox
+                                                                    checked={field.value}
+                                                                    onCheckedChange={(checked) =>
+                                                                        handleCheckboxToggle('sctNotNeeded', checked === true, field.onChange)
+                                                                    }
+                                                                />
+                                                            </FormControl>
+                                                            <FormLabel className="font-normal">SCT not needed</FormLabel>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                                <FormField
+                                                    control={form.control}
+                                                    name="finalProgrammingNotNeeded"
+                                                    render={({ field }) => (
+                                                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                                                            <FormControl>
+                                                                <Checkbox
+                                                                    checked={field.value}
+                                                                    onCheckedChange={(checked) =>
+                                                                        handleCheckboxToggle('finalProgrammingNotNeeded', checked === true, field.onChange)
+                                                                    }
+                                                                />
+                                                            </FormControl>
+                                                            <FormLabel className="font-normal">Final programing not needed</FormLabel>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
                                         </div>
                                         {/* Notes */}
                                         <FormField control={form.control} name="notes" render={({ field }) => (<FormItem><FormLabel>Notes</FormLabel><FormControl><Textarea placeholder="Type here..." {...field} rows={4} /></FormControl><FormMessage /></FormItem>)} />

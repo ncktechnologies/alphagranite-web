@@ -473,57 +473,6 @@ export const JobTable = ({
             size: 400,
             enableSorting: false,
         },
-
-        // ── Template Needed ───────────────────────────────────────────────────
-        {
-            id: "template_needed",
-            accessorKey: "template_needed",
-            header: ({ column }) => <DataGridColumnHeader title="Template not needed" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.template_needed}</span>,
-            size: 120,
-            enableSorting: true,
-        },
-
-        // ── Acct Name ────────────────────────────────────────────────────────
-        {
-            id: "acct_name",
-            accessorKey: "acct_name",
-            header: ({ column }) => <DataGridColumnHeader title="ACCT NAME" column={column} />,
-            cell: ({ row }) => <span className="text-xs break-words max-w-[140px]">{row.original.acct_name}</span>,
-            size: 120,
-            enableSorting: true,
-        },
-
-        // ── No of pieces ─────────────────────────────────────────────────────
-        {
-            id: "no_of_pieces",
-            accessorKey: "no_of_pieces",
-            header: ({ column }) => <DataGridColumnHeader className="uppercase" title="No. of pieces" column={column} />,
-            cell: ({ row }) => <span className="text-xs break-words max-w-[110px]">{row.original.no_of_pieces}</span>,
-            size: 100,
-            enableSorting: true,
-        },
-
-        // ── Template Schedule ─────────────────────────────────────────────────
-        {
-            id: "template_schedule",
-            accessorKey: "template_schedule",
-            header: ({ column }) => <DataGridColumnHeader className="uppercase" title="TEMPLATE SCHEDULE" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.template_schedule}</span>,
-            size: 120,
-            enableSorting: true,
-        },
-
-        // ── Template Received ─────────────────────────────────────────────────
-        {
-            id: "template_received",
-            accessorKey: "template_received",
-            header: ({ column }) => <DataGridColumnHeader title="TEMPLATE RECEIVED" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.template_received}</span>,
-            size: 120,
-            enableSorting: true,
-        },
-
         // ── Templater ────────────────────────────────────────────────────────
         {
             id: "templater",
@@ -534,11 +483,7 @@ export const JobTable = ({
             enableSorting: true,
         },
 
-        // ── Drafter ──────────────────────────────────────────────────────────
-        // Hidden when all rows have a drafter. "Reassign" button per row
-        // temporarily reveals the column so a new drafter can be selected.
-        // On pages that don't pass onReassignDrafterClick this column behaves
-        // exactly as before (shown/hidden by visibleColumns prop).
+
         {
             id: "drafter",
             accessorKey: "drafter",
@@ -610,17 +555,15 @@ export const JobTable = ({
             minSize: 200,
             enableSorting: true,
         },
-
-        // ── Total Sq Ft ──────────────────────────────────────────────────────
+        // ── Final Programmer ──────────────────────────────────────────────────
         {
-            id: "total_sq_ft",
-            accessorKey: "total_sq_ft",
-            header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Total Sq ft" column={column} />,
-            cell: ({ row }) => <span className="text-xs break-words max-w-[100px]">{row.original.total_sq_ft}</span>,
-            size: 100,
+            id: 'final_programmer',
+            accessorKey: 'final_programmer',
+            header: ({ column }) => <DataGridColumnHeader title="FINAL PROGRAMMER" column={column} />,
+            cell: ({ row }) => <span className="text-xs">{row.original.final_programmer || '-'}</span>,
+            size: 150,
             enableSorting: true,
         },
-
         // ── Revisor ───────────────────────────────────────────────────────────
         {
             id: "revisor",
@@ -633,7 +576,7 @@ export const JobTable = ({
                 return (
                     <div className="flex items-center gap-2">
                         <span className="text-xs truncate flex-1">{revisor || '—'}</span>
-                        
+
                         {/* Reassign button - only shown when prop is provided and revisor exists */}
                         {hasRevisor && onReassignRevisorClick && (
                             <Button
@@ -655,6 +598,69 @@ export const JobTable = ({
             minSize: 200,
             enableSorting: true,
         },
+        // ── Template Needed ───────────────────────────────────────────────────
+        {
+            id: "template_needed",
+            accessorKey: "template_needed",
+            header: ({ column }) => <DataGridColumnHeader title="Template not needed" column={column} />,
+            cell: ({ row }) => <span className="text-xs">{row.original.template_needed}</span>,
+            size: 120,
+            enableSorting: true,
+        },
+
+        // ── Acct Name ────────────────────────────────────────────────────────
+        {
+            id: "acct_name",
+            accessorKey: "acct_name",
+            header: ({ column }) => <DataGridColumnHeader title="ACCT NAME" column={column} />,
+            cell: ({ row }) => <span className="text-xs break-words max-w-[140px]">{row.original.acct_name}</span>,
+            size: 120,
+            enableSorting: true,
+        },
+
+        // ── No of pieces ─────────────────────────────────────────────────────
+        {
+            id: "no_of_pieces",
+            accessorKey: "no_of_pieces",
+            header: ({ column }) => <DataGridColumnHeader className="uppercase" title="No. of pieces" column={column} />,
+            cell: ({ row }) => <span className="text-xs break-words max-w-[110px]">{row.original.no_of_pieces}</span>,
+            size: 100,
+            enableSorting: true,
+        },
+
+        // ── Template Schedule ─────────────────────────────────────────────────
+        {
+            id: "template_schedule",
+            accessorKey: "template_schedule",
+            header: ({ column }) => <DataGridColumnHeader className="uppercase" title="TEMPLATE SCHEDULE" column={column} />,
+            cell: ({ row }) => <span className="text-xs">{row.original.template_schedule}</span>,
+            size: 120,
+            enableSorting: true,
+        },
+
+        // ── Template Received ─────────────────────────────────────────────────
+        {
+            id: "template_received",
+            accessorKey: "template_received",
+            header: ({ column }) => <DataGridColumnHeader title="TEMPLATE RECEIVED" column={column} />,
+            cell: ({ row }) => <span className="text-xs">{row.original.template_received}</span>,
+            size: 120,
+            enableSorting: true,
+        },
+
+
+
+        // ── Total Sq Ft ──────────────────────────────────────────────────────
+        {
+            id: "total_sq_ft",
+            accessorKey: "total_sq_ft",
+            header: ({ column }) => <DataGridColumnHeader className="uppercase" title="Total Sq ft" column={column} />,
+            cell: ({ row }) => <span className="text-xs break-words max-w-[100px]">{row.original.total_sq_ft}</span>,
+            size: 100,
+            enableSorting: true,
+        },
+
+
 
         // ── Revised ───────────────────────────────────────────────────────────
         {
@@ -842,15 +848,7 @@ export const JobTable = ({
             enableSorting: true,
         },
 
-        // ── Final Programmer ──────────────────────────────────────────────────
-        {
-            id: 'final_programmer',
-            accessorKey: 'final_programmer',
-            header: ({ column }) => <DataGridColumnHeader title="FINAL PROGRAMMER" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.final_programmer || '-'}</span>,
-            size: 150,
-            enableSorting: true,
-        },
+
 
         // ── Notes ─────────────────────────────────────────────────────────────
         {

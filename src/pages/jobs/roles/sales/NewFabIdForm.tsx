@@ -80,7 +80,7 @@ const fabIdFormSchema = z.object({
 type FabIdFormData = z.infer<typeof fabIdFormSchema>;
 
 // Checkbox validation logic
-const CHECKBOX_FIELD_MAP: Record<string, keyof FabIdFormData> = {
+export const CHECKBOX_FIELD_MAP: Record<string, keyof FabIdFormData> = {
   'Draft not needed': 'draftNotNeeded',
   'SS Cust not needed': 'slabSmithCustNotNeeded',
   'SS AG not needed': 'slabSmithAGNotNeeded',
@@ -89,7 +89,7 @@ const CHECKBOX_FIELD_MAP: Record<string, keyof FabIdFormData> = {
   'Template not needed': 'templateNotNeeded',
 };
 
-const IMPOSSIBLE_SCENARIOS: string[][] = [
+export const IMPOSSIBLE_SCENARIOS: string[][] = [
   ["Draft not needed"],
   ["Draft not needed", "SS Cust not needed"],
   ["Draft not needed", "SS Cust not needed", "SS AG not needed"],
@@ -122,7 +122,7 @@ const IMPOSSIBLE_SCENARIOS: string[][] = [
   ["Template not needed", "Draft not needed", "Final Prog not needed"]
 ];
 
-const getSelectedCheckboxLabels = (formData: Partial<FabIdFormData>): string[] => {
+export const getSelectedCheckboxLabels = (formData: Partial<FabIdFormData>): string[] => {
   const selected: string[] = [];
   const labels = Object.entries(CHECKBOX_FIELD_MAP);
   
@@ -135,25 +135,25 @@ const getSelectedCheckboxLabels = (formData: Partial<FabIdFormData>): string[] =
   return selected;
 };
 
-const isScenarioImpossible = (scenario: string[]): boolean => {
+export const isScenarioImpossible = (scenario: string[]): boolean => {
   return IMPOSSIBLE_SCENARIOS.some(impossible => 
     impossible.length === scenario.length && 
     impossible.every(item => scenario.includes(item))
   );
 };
 
-const isCurrentStateImpossible = (formData: Partial<FabIdFormData>): boolean => {
+export const isCurrentStateImpossible = (formData: Partial<FabIdFormData>): boolean => {
   const currentSelected = getSelectedCheckboxLabels(formData);
   return currentSelected.length > 0 && isScenarioImpossible(currentSelected);
 };
 
-const ALLOW_ALL_CHECKBOX_FAB_TYPES = ['resurface', 'punchout-ag', 'punchout-billable'];
+export const ALLOW_ALL_CHECKBOX_FAB_TYPES = ['resurface', 'punchout-ag', 'punchout-billable'];
 
-const canAllowAllCheckboxes = (fabType?: string): boolean => {
+export const canAllowAllCheckboxes = (fabType?: string): boolean => {
   return !!fabType && ALLOW_ALL_CHECKBOX_FAB_TYPES.includes(fabType.toLowerCase());
 };
 
-const getCheckboxRuleError = (formData: Partial<FabIdFormData>): string | null => {
+export const getCheckboxRuleError = (formData: Partial<FabIdFormData>): string | null => {
   const selectedCount = getSelectedCheckboxLabels(formData).length;
   if (selectedCount === 6 && !canAllowAllCheckboxes(formData.fabType)) {
     return 'All 6 checkboxes cannot be selected at the same time.';
