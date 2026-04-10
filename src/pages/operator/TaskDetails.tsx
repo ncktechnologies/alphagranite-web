@@ -273,7 +273,7 @@ export function OperatorTaskDetails() {
         { label: t('LABEL.JOB_NAME'), value: currentTask?.job_name || '—' },
         {
             label: t('JOB.FAB_ID'),
-            value: fabId ? <Link to={`/sales/${fabId}`} className="text-primary hover:underline">{fabId}</Link> : '—',
+            value: fabId ? <Link to={`/sales/${fabId}`} className="text-primary hover:underline" target="_blank" rel="noreferrer">{fabId}</Link> : '—',
         },
         { label: t('JOB.FAB_TYPE'), value: <span className="uppercase">{currentTask?.fab_type || '—'}</span> },
         { label: t('JOB.AREA'), value: currentTask?.area || '—' },

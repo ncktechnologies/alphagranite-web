@@ -80,11 +80,11 @@ export function SalesDetailsPage() {
           { label: 'Account', value: fab.account_name || '—' },
           {
             label: 'Fab ID',
-            value: (
-              <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">
-                {fab.id}
-              </Link>
-            ),
+            value: 
+              // <Link to={`/sales/${fab.id}`} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                fab.id
+              // </Link>
+            
           },
           { label: 'Area', value: fab.input_area || '—' },
           {
