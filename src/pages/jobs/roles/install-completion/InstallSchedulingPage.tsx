@@ -243,7 +243,6 @@ export function InstallCompletionPage() {
                     'fab_type',
                     'fab_id',
                     'job_no',
-                    'no_of_pieces',
                     'fab_info',
                     'total_sq_ft',
                     'revenue',

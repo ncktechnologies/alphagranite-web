@@ -318,11 +318,7 @@ export function CutListDetailsPage() {
                 </CardHeader>
                 <CardContent className="p-3 sm:p-4 lg:p-5 space-y-5">
                   <Documents
-                    draftingData={{
-                      ...fabData?.draft_data,
-                      files: finalProgrammingFiles,
-                      file_ids: '',
-                    }}
+                    draftingData={fabData?.draft_data}
                     slabsmithData={(fabData as any)?.slabsmith_data}
                     sctData={(fabData as any)?.sales_ct_data}
                     cncData={(fabData as any)?.cnc_data}

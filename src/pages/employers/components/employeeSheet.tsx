@@ -73,6 +73,8 @@ const EmployeeFormSheet = ({
   const isEditMode = mode === 'edit';
   const isViewMode = mode === 'view';
 
+
+
   const form = useForm<EmployeeFormType>({
     resolver: zodResolver(employeeSchema),
     defaultValues: {
@@ -90,9 +92,11 @@ const EmployeeFormSheet = ({
   // Prefill form when editing or viewing - FIXED VERSION
   useEffect(() => {
     if (isSheetOpen && employee) {
-      console.log('Employee data for form:', employee);
-      console.log('Available departments:', departmentsData?.items);
-
+      let phoneValue = employee.phone || "";
+      const placeholderValues = ["N/A", "NA", "NONE", "NULL"];
+      if (placeholderValues.includes(phoneValue.trim().toUpperCase())) {
+        phoneValue = "";
+      }
       // Use employee.department (which contains the ID) instead of employee.department_id
       const resetData = {
         first_name: employee.first_name || "",
@@ -100,7 +104,7 @@ const EmployeeFormSheet = ({
         email: employee.email || "",
         department: employee.department ? String(employee.department) : "",
         home_address: employee.home_address || "",
-        phone: employee.phone || "",
+        phone: phoneValue,
         gender: employee.gender || "",
         role_id: employee.role_id ? String(employee.role_id) : "",
       };
@@ -208,112 +212,112 @@ const EmployeeFormSheet = ({
                 <div className="space-y-6">
 
 
-                    {!isViewMode && (
-                      <div className="space-y-2">
-                        <FormLabel>Upload image</FormLabel>
-                        <div className="flex items-center gap-4">
-                          <AvatarInput onFileChange={(file) => setProfileImage(file)} />
-                        </div>
+                  {!isViewMode && (
+                    <div className="space-y-2">
+                      <FormLabel>Upload image</FormLabel>
+                      <div className="flex items-center gap-4">
+                        <AvatarInput onFileChange={(file) => setProfileImage(file)} />
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="first_name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>First Name *</FormLabel>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="first_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>First Name *</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Enter first name"
+                              {...field}
+                              disabled={isViewMode}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="last_name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Last Name *</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Enter last name"
+                              {...field}
+                              disabled={isViewMode}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email address *</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Enter email address"
+                              {...field}
+                              disabled={isViewMode}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="department"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Department *</FormLabel>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            disabled={isViewMode || departmentsLoading}
+                          >
                             <FormControl>
-                              <Input
-                                placeholder="Enter first name"
-                                {...field}
-                                disabled={isViewMode}
-                              />
+                              <SelectTrigger>
+                                <SelectValue placeholder={
+                                  departmentsLoading ? "Loading departments..." : "Select Department"
+                                }>
+                                  {departmentsLoading ? "Loading..." : field.value ?
+                                    departmentsData?.items?.find(dept => String(dept.id) === field.value)?.name :
+                                    "Select Department"
+                                  }
+                                </SelectValue>
+                              </SelectTrigger>
                             </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                            <SelectContent>
+                              {departmentsData?.items?.map((dept) => (
+                                <SelectItem key={dept.id} value={String(dept.id)}>
+                                  {dept.name}
+                                </SelectItem>
+                              ))}
+                              {(!departmentsData?.items || departmentsData.items.length === 0) && !departmentsLoading && (
+                                <div className="px-2 py-1.5 text-sm text-muted-foreground text-center">
+                                  No departments available
+                                </div>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                      <FormField
-                        control={form.control}
-                        name="last_name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Last Name *</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Enter last name"
-                                {...field}
-                                disabled={isViewMode}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Email address *</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Enter email address"
-                                {...field}
-                                disabled={isViewMode}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
-                        control={form.control}
-                        name="department"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Department *</FormLabel>
-                            <Select
-                              value={field.value}
-                              onValueChange={field.onChange}
-                              disabled={isViewMode || departmentsLoading}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder={
-                                    departmentsLoading ? "Loading departments..." : "Select Department"
-                                  }>
-                                    {departmentsLoading ? "Loading..." : field.value ?
-                                      departmentsData?.items?.find(dept => String(dept.id) === field.value)?.name :
-                                      "Select Department"
-                                    }
-                                  </SelectValue>
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {departmentsData?.items?.map((dept) => (
-                                  <SelectItem key={dept.id} value={String(dept.id)}>
-                                    {dept.name}
-                                  </SelectItem>
-                                ))}
-                                {(!departmentsData?.items || departmentsData.items.length === 0) && !departmentsLoading && (
-                                  <div className="px-2 py-1.5 text-sm text-muted-foreground text-center">
-                                    No departments available
-                                  </div>
-                                )}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      <FormField
+                    {/* <FormField
                         control={form.control}
                         name="home_address"
                         render={({ field }) => (
@@ -329,27 +333,27 @@ const EmployeeFormSheet = ({
                             <FormMessage />
                           </FormItem>
                         )}
-                      />
+                      /> */}
 
-                      <FormField
-                        control={form.control}
-                        name="phone"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Phone</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Your phone number"
-                                {...field}
-                                disabled={isViewMode}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Your phone number"
+                              {...field}
+                              disabled={isViewMode}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
-                      {/* <FormField
+                    {/* <FormField
                         control={form.control}
                         name="gender"
                         render={({ field }) => (
@@ -375,44 +379,44 @@ const EmployeeFormSheet = ({
                         )}
                       /> */}
 
-                      <FormField
-                        control={form.control}
-                        name="role_id"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Role</FormLabel>
-                            <Select
-                              value={field.value}
-                              onValueChange={field.onChange}
-                              disabled={isViewMode || rolesLoading}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder={
-                                    rolesLoading ? "Loading roles..." : "Select Role"
-                                  } />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {rolesData?.data?.map((role) => (
-                                  <SelectItem key={role.id} value={String(role.id)}>
-                                    {role.name}
-                                  </SelectItem>
-                                ))}
-                                {(!rolesData?.data || rolesData.data.length === 0) && !rolesLoading && (
-                                  <div className="px-2 py-1.5 text-sm text-muted-foreground text-center">
-                                    No roles available
-                                  </div>
-                                )}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                    <FormField
+                      control={form.control}
+                      name="role_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Role</FormLabel>
+                          <Select
+                            value={field.value}
+                            onValueChange={field.onChange}
+                            disabled={isViewMode || rolesLoading}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={
+                                  rolesLoading ? "Loading roles..." : "Select Role"
+                                } />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {rolesData?.data?.map((role) => (
+                                <SelectItem key={role.id} value={String(role.id)}>
+                                  {role.name}
+                                </SelectItem>
+                              ))}
+                              {(!rolesData?.data || rolesData.data.length === 0) && !rolesLoading && (
+                                <div className="px-2 py-1.5 text-sm text-muted-foreground text-center">
+                                  No roles available
+                                </div>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                
+                </div>
+
               </SheetBody>
 
               <SheetFooter className="py-3.5 px-5 border-border flex justify-end gap-3 mt-auto">

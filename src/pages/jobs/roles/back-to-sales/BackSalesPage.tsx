@@ -120,7 +120,9 @@ export function AfterDraftSalesPage() {
         if (tableState.searchQuery) {
             params.search = tableState.searchQuery;
         }
-
+        if (tableState.searchType) {
+            params.type = tableState.searchType;
+        }
         if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') {
             params.fab_type = tableState.fabTypeFilter;
         }
@@ -165,6 +167,7 @@ export function AfterDraftSalesPage() {
         tableState.salesPersonFilter,
         tableState.dateFilter,
         tableState.dateRange,
+        tableState.searchType
     ]);
 
     // Fetch data with backend pagination and filtering
@@ -233,7 +236,7 @@ export function AfterDraftSalesPage() {
                 showSalesPersonFilter={true}
                 showScheduleFilter={false} // Remove separate schedule filter
                 salesPersons={salesPersons}
-                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info',  'total_sq_ft', 'slabsmith_used', 'slabsmith_status', 'sct_notes', 'sct_completed', 'revenue', 'sales_person_name', 'draft_revision_notes', 'revised', 'on_hold']}
+                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'slabsmith_used', 'slabsmith_status', 'sct_notes', 'sct_completed', 'revenue', 'sales_person_name', 'draft_revision_notes', 'revised', 'on_hold']}
             />
         </Container>
     );

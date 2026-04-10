@@ -456,20 +456,21 @@ export function FinalProgrammingDetailsPage() {
                   <div className="mt-6 pt-4 border-t border-gray-200">
                     <h3 className="text-lg font-semibold mb-4 text-gray-900">Uploaded Files</h3>
                     <Documents
-                      draftingData={{
-                        ...fabData.draft_data,
-                        files: fabData.draft_data.files.filter((file: any) => {
-                          const stageKey = file.stage_name ?? file.stage;
-                          return (
-                            stageKey === 'final_programming' ||
-                            stageKey === 'cut_list' ||
-                            (stageKey && stageKey.toLowerCase().includes('final_programming')) ||
-                            (stageKey && stageKey.toLowerCase().includes('cut_list'))
-                          );
-                        }),
-                        file_ids: ""
+                      // draftingData={{
+                      //   ...fabData.draft_data,
+                      //   files: fabData.draft_data.files.filter((file: any) => {
+                      //     const stageKey = file.stage_name ?? file.stage;
+                      //     return (
+                      //       stageKey === 'final_programming' ||
+                      //       stageKey === 'cut_list' ||
+                      //       (stageKey && stageKey.toLowerCase().includes('final_programming')) ||
+                      //       (stageKey && stageKey.toLowerCase().includes('cut_list'))
+                      //     );
+                      //   }),
+                      //   file_ids: ""
 
-                      }}
+                      // }}
+                      draftingData={fabData.draft_data}
                       onFileClick={handleFileClick}
                     />
                   </div>

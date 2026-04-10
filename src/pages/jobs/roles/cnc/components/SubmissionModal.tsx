@@ -296,7 +296,7 @@ export const SubmissionModal = ({
                 disabled={false}
               />
               <label className={`font-semibold text-[16px] ${isConfirmed ? 'text-green-600' : 'text-gray-600'}`}>
-                CNC Complete 
+               CNC Programming Complete
               </label>
             </div>
 

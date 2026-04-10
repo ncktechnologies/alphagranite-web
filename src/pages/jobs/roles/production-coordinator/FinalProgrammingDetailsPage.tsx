@@ -507,7 +507,7 @@ export function FinalProgrammingDetailsPage() {
                         draftingData={fabData?.draft_data}
                         slabsmithData={(fabData as any)?.slabsmith_data}
                         sctData={(fabData as any)?.sales_ct_data}
-                        cncData={(fabData as any)?.cnc_data}
+                        // cncData={(fabData as any)?.cnc_data}
                         draftingId={fabData?.draft_data?.id}
                         showDeleteButton={!hasEnded && !isPaused}
                       />

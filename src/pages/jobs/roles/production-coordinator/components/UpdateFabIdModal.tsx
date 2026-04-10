@@ -385,7 +385,7 @@ export function UpdateFabIdModal({
                   name="cutlistComplete"
                   render={({ field }) => (
                     <FormItem className="flex flex-col space-y-2">
-                      <FormLabel>Cut List Complete</FormLabel>
+                      <FormLabel>Ready for Shop</FormLabel>
                       <FormControl>
                         <Checkbox
                           checked={field.value === true}

@@ -188,7 +188,6 @@ const DrafterPage = () => {
                     'fab_id',
                     'job_no',
                     'fab_info',
-                    'no_of_pieces',
                     'total_sq_ft',
                     'revenue',
                     'gp',

@@ -282,25 +282,25 @@ function FileCard({
         </div>
 
         {/* Delete — top right */}
-        {onDelete && (
-          deletePermissionSubject ? (
-            <Can action="delete" on={deletePermissionSubject}>
-              <button
-                className="size-6 flex items-center justify-center text-muted-foreground hover:text-destructive shrink-0 ml-2"
-                onClick={(e) => { e.stopPropagation(); onDelete(file); }}
-              >
-                <X className="size-3" />
-              </button>
-            </Can>
-          ) : (
+         {onDelete && (
+        deletePermissionSubject ? (
+          <Can action="delete" on={deletePermissionSubject}>
             <button
-              className="size-6 flex items-center justify-center text-muted-foreground hover:text-destructive shrink-0 ml-2"
+              className="absolute top-4 right-4 size-6 flex items-center justify-center text-muted-foreground hover:text-destructive shrink-0"
               onClick={(e) => { e.stopPropagation(); onDelete(file); }}
             >
               <X className="size-3" />
             </button>
-          )
-        )}
+          </Can>
+        ) : (
+          <button
+            className="absolute top-4 right-4 size-6 flex items-center justify-center text-muted-foreground hover:text-destructive shrink-0"
+            onClick={(e) => { e.stopPropagation(); onDelete(file); }}
+          >
+            <X className="size-3" />
+          </button>
+        )
+      )}
       </div>
 
       {/* View button */}

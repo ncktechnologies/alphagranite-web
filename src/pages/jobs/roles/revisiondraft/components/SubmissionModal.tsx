@@ -80,9 +80,6 @@ export const RevisionForm = ({
   const completeValue = form.watch('complete');
 
   const handleFormSubmit = async (values: RevisionData) => {
-    console.log("[v0] Form values at submit:", values);
-    console.log("[v0] values.complete type:", typeof values.complete);
-    console.log("[v0] values.complete value:", values.complete);
     
     if (uploadedFilesCount === 0) {
       toast.error("Please upload at least one file before submitting");

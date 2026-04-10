@@ -208,7 +208,10 @@ export function ResurfacingDetailsPage() {
               <ToolbarHeading
                 title={
                   <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
-                    <a href={jobNameLink} className="hover:underline">
+                    <a href={jobNameLink} className="hover:underline "
+                     target="_blank"
+                      rel="noreferrer"
+                    >
                       {fab?.job_details?.name || `Job ${fab?.job_id}`}
                     </a>
                     <span className="mx-1 text-gray-400">·</span>

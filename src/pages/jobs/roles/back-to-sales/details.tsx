@@ -107,7 +107,7 @@ export const DraftReviewDetailsPage = () => {
         // Submission logic handled by modal
     }, []);
 
-    const slabSmithNeeded = fabData?.slab_smith_ag_needed;
+    const slabSmithNeeded = fabData?.slab_smith_ag_needed || fabData?.slab_smith_cust_needed;
     const isSlabSmithActivityComplete = !!fabData?.slabsmith_completed_date;
 
     const handleMarkAsComplete = useCallback(async (data: any) => {
