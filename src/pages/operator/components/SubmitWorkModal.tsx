@@ -24,7 +24,6 @@ import { toast } from 'sonner';
 import { LoaderCircle } from 'lucide-react';
 import { useUpdateOperatorTaskMutation } from '@/store/api/operator';
 
-// ── Schema ────────────────────────────────────────────────────────────────────
 const submitWorkSchema = z.object({
     work_percentage: z.number().min(0).max(100),
     notes:          z.string().optional(),
@@ -74,17 +73,17 @@ export function SubmitWorkModal({
         defaultValues: {
             work_percentage: currentWorkPercentage,
             notes:           '',
-            is_completed:    currentWorkPercentage >= 100,
+            is_completed:    false,   // never auto‑check
         },
     });
 
-    // ── Reset form when modal opens or fresh data arrives ────────────────────
+    // Reset form when modal opens with fresh data
     useEffect(() => {
         if (open) {
             form.reset({
                 work_percentage: currentWorkPercentage,
                 notes:           '',
-                is_completed:    currentWorkPercentage >= 100,
+                is_completed:    false,
             });
         }
     }, [open, currentWorkPercentage, form]);
@@ -95,15 +94,17 @@ export function SubmitWorkModal({
 
     const handlePercentageChange = (val: number) => {
         form.setValue('work_percentage', val);
-        if (val === 100) {
-            form.setValue('is_completed', true);
-        }
+        // ❌ Removed automatic checkmark
     };
 
     const handleSubmit = async (values: SubmitWorkFormData) => {
-        // Safety: only allow submit when work is 100% complete
+        // Enforce both 100% and checkbox checked
         if (values.work_percentage !== 100) {
             toast.error('You must reach 100% completion before ending the task.');
+            return;
+        }
+        if (!values.is_completed) {
+            toast.error('Please check "Mark task as completed" to finish.');
             return;
         }
 
@@ -125,21 +126,12 @@ export function SubmitWorkModal({
                 }).unwrap();
             }
 
-            await onSubmit({
-                work_percentage: values.work_percentage,
-                notes:           values.notes,
-                is_completed:    values.is_completed,
-            });
-
-            toast.success(
-                values.is_completed
-                    ? 'Task completed and session ended!'
-                    : `Progress saved — ${values.work_percentage}% complete`
-            );
-
+            await onSubmit(values);
+            toast.success('Task completed and session ended!');
             onOpenChange(false);
         } catch (error: any) {
             console.error('Failed to submit work:', error);
+            toast.error(error?.data?.message || 'Failed to submit work');
         } finally {
             setIsSubmitting(false);
         }
@@ -188,7 +180,7 @@ export function SubmitWorkModal({
                             </div>
                         )}
 
-                        {/* Work percentage */}
+                        {/* Work percentage slider */}
                         <FormField
                             control={form.control}
                             name="work_percentage"
@@ -257,7 +249,7 @@ export function SubmitWorkModal({
                             )}
                         />
 
-                        {/* Mark as completed – disabled unless work_percentage === 100 */}
+                        {/* Mark as completed – enabled only at 100%, never auto‑checked */}
                         <FormField
                             control={form.control}
                             name="is_completed"
@@ -284,7 +276,7 @@ export function SubmitWorkModal({
                             )}
                         />
 
-                        {/* Actions – submit button disabled unless 100% complete */}
+                        {/* Submit – disabled unless 100% AND checkbox checked */}
                         <div className="flex justify-end gap-3 pt-4 border-t">
                             <Button
                                 type="button"
@@ -296,7 +288,7 @@ export function SubmitWorkModal({
                             </Button>
                             <Button
                                 type="submit"
-                                disabled={isSubmitting || !isFullyComplete}
+                                disabled={isSubmitting || !isFullyComplete || !isCompleted}
                                 className="bg-red-600 hover:bg-red-700 disabled:opacity-50"
                             >
                                 {isSubmitting ? (

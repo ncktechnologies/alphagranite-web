@@ -5,12 +5,12 @@ interface CanProps {
   /**
    * The action to check permission for
    */
-  action: 'create' | 'read' | 'update' | 'delete';
+  action?: 'create' | 'read' | 'update' | 'delete';
   
   /**
    * The menu code to check permission on (e.g., 'employees', 'departments', 'jobs')
    */
-  on: string;
+  on?: string;
   
   /**
    * Content to render if user has permission

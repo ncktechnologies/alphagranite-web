@@ -12,6 +12,7 @@ import { FileViewer } from '../drafters/components';
 import { BackButton } from '@/components/common/BackButton';
 import GraySidebar from '@/pages/jobs/components/job-details.tsx/GraySidebar';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
+import { Can } from '@/components/permission';
 
 // Helper function to get FAB status display
 const getFabStatusInfo = (statusId: number | undefined) => {
@@ -126,8 +127,9 @@ export function SalesDetailsPage() {
               drafting: { label: 'Drafting', color: 'text-green-700' },
               sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
               slab_smith_request: { label: 'Slab Smith Request', color: 'text-red-700' },
-              cut_list: { label: 'Final Programming', color: 'text-purple-700' },
-              cutting: { label: 'Cutting', color: 'text-orange-700' },
+              slabsmith: { label: 'Slab Smith Request', color: 'text-red-700' },
+              cut_list: { label: 'Cut List', color: 'text-purple-700' },
+              final_programming: { label: 'Final Programming', color: 'text-purple-700' },
               revisions: { label: 'Revisions', color: 'text-purple-700' },
               draft: { label: 'Draft', color: 'text-green-700' },
               general: { label: 'General', color: 'text-gray-700' },
@@ -278,6 +280,7 @@ export function SalesDetailsPage() {
                   Drafting, SlabSmith, and all other files for this fabrication
                 </p>
               </CardHeading>
+              <Can  >
               <div className="space-y-4">
                 <Button
                   onClick={() => navigate(`/sales/edit/${id}`)}
@@ -288,6 +291,7 @@ export function SalesDetailsPage() {
                 </Button>
                 {/* <BackButton label="Back" className="w-full" /> */}
               </div>
+              </Can>
             </CardHeader>
             <CardContent>
               <FileGallery

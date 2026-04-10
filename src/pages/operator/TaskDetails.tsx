@@ -26,6 +26,7 @@ import { BackButton } from '@/components/common/BackButton';
 import { FileViewer } from '../jobs/roles/drafters/components';
 import { FileGallery, type FileSource, type UnifiedFile } from '@/pages/jobs/components/FileGallery';
 import { WorkPercentageModal } from './components/WorkPercentageModal';
+import { useIsSuperAdmin } from '@/hooks/use-permission';
 
 // Helper for status display
 const getStatusInfo = (statusId: number | undefined, t: any) => {
@@ -35,6 +36,7 @@ const getStatusInfo = (statusId: number | undefined, t: any) => {
 };
 
 export function OperatorTaskDetails() {
+    const isSuperAdmin = useIsSuperAdmin();
     const { t, translateStage, translateFileType, translateFileLabel } = useTranslation();
     const { jobId } = useParams<{ jobId: string }>();
     const navigate = useNavigate();
@@ -57,7 +59,6 @@ export function OperatorTaskDetails() {
     const [workPercentage, setWorkPercentage] = useState(0);
     const [showUploadDialog, setShowUploadDialog] = useState(false);
     const [activeFile, setActiveFile] = useState<UnifiedFile | null>(null);
-
     const { data: taskData, isLoading: isTasksLoading } =
         useGetCurrentOperatorTasksByIdQuery(
             { id: taskId, operator_id: operatorId, workstation_id: workstationId },
