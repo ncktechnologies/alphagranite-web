@@ -12,6 +12,7 @@ export interface OperatorWorkstation {
     operator_id: number;
     status_id?: number;
     created_at?: string;
+    work_percentage?: number;
 }
 
 export interface OperatorTask {
@@ -31,6 +32,7 @@ export interface OperatorTask {
     is_active?: boolean;
     scheduled_start_date: string;
     actual_end_date: string;
+    work_percentage?: number;
 }
 
 export interface TimerState {

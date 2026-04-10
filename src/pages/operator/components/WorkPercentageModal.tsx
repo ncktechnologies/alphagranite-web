@@ -54,7 +54,6 @@ export function WorkPercentageModal({
             onClose();
         } catch (error: any) {
             console.error('Failed to update work percentage:', error);
-            toast.error(error?.data?.message || 'Failed to update work percentage');
         } finally {
             setIsSubmitting(false);
         }

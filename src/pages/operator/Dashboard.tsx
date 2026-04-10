@@ -14,6 +14,7 @@ import {
     endOfMonth,
     eachDayOfInterval,
     getMonth,
+    isToday,
 } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { WorkstationToggle } from './components/WorkstationToggle';
@@ -22,24 +23,24 @@ import { useSelector } from 'react-redux';
 
 // Layout constants (unchanged)
 const DAY_START_HOUR = 7;
-const DAY_END_HOUR   = 19;
-const TOTAL_HOURS    = DAY_END_HOUR - DAY_START_HOUR;
-const HOUR_WIDTH  = 120;
-const ROW_HEIGHT  = 80;
+const DAY_END_HOUR = 19;
+const TOTAL_HOURS = DAY_END_HOUR - DAY_START_HOUR;
+const HOUR_WIDTH = 120;
+const ROW_HEIGHT = 80;
 const TIME_LABEL_HEIGHT = 40;
-const DATE_LABEL_WIDTH  = 80;
+const DATE_LABEL_WIDTH = 80;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Color mapping based on fab type (deterministic, not random)
 // Colors are derived from the CSS rules provided by the user.
 // ─────────────────────────────────────────────────────────────────────────────
 const FAB_TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
-    'standard':    { bg: '#9eeb47', border: '#7bc62e', text: '#2c5a0e' },
-    'fab only':    { bg: '#5bd1d7', border: '#2fa7ae', text: '#0a5c62' },
-    'cust redo':   { bg: '#f0bf4c', border: '#d99e1a', text: '#704d0a' },
-    'resurface':   { bg: '#d094ea', border: '#b267e0', text: '#4a1d6e' },
-    'fast track':  { bg: '#f59794', border: '#e05e5a', text: '#8b1a1a' },
-    'ag redo':     { bg: '#f5cc94', border: '#e6a832', text: '#7a4b0e' },
+    'standard': { bg: '#9eeb47', border: '#7bc62e', text: '#2c5a0e' },
+    'fab only': { bg: '#5bd1d7', border: '#2fa7ae', text: '#0a5c62' },
+    'cust redo': { bg: '#f0bf4c', border: '#d99e1a', text: '#704d0a' },
+    'resurface': { bg: '#d094ea', border: '#b267e0', text: '#4a1d6e' },
+    'fast track': { bg: '#f59794', border: '#e05e5a', text: '#8b1a1a' },
+    'ag redo': { bg: '#f5cc94', border: '#e6a832', text: '#7a4b0e' },
 };
 
 const DEFAULT_COLOR = { bg: '#f1f2f4', border: '#8f929c', text: '#4b5563' };
@@ -63,12 +64,12 @@ const setHoursLocal = (date: Date, hours: number) => {
 
 export function OperatorDashboard() {
     const { t } = useTranslation();
-    const navigate  = useNavigate();
+    const navigate = useNavigate();
     const currentUser = useSelector((s: any) => s.user.user);
     const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
 
-    const [currentDate, setCurrentDate]               = useState(new Date());
-    const [viewMode, setViewMode]                     = useState<'day' | 'week' | 'month'>('week');
+    const [currentDate, setCurrentDate] = useState(new Date());
+    const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
     const [selectedWorkstation, setSelectedWorkstation] = useState<number | null>(null);
 
     const { data: workstationsData, isLoading: isWorkstationsLoading } =
@@ -96,11 +97,31 @@ export function OperatorDashboard() {
     const monthWeeks = useMemo(() => {
         if (viewMode !== 'month') return [];
         const start = startOfWeek(startOfMonth(currentDate), { weekStartsOn: 1 });
-        const end   = endOfWeek(endOfMonth(currentDate),   { weekStartsOn: 1 });
-        const days  = eachDayOfInterval({ start, end });
+        const end = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 1 });
+        const days = eachDayOfInterval({ start, end });
         const weeks: Date[][] = [];
         for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
         return weeks;
+    }, [currentDate, viewMode]);
+
+
+    const shouldShowToday = useMemo(() => {
+        if (viewMode === 'day') {
+            return isSameDay(currentDate, new Date());
+        }
+        if (viewMode === 'week') {
+            const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+            const weekEnd = addDays(weekStart, 4); // 5 days (Mon‑Fri)
+            const today = new Date();
+            return today >= weekStart && today <= weekEnd;
+        }
+        if (viewMode === 'month') {
+            const monthStart = startOfMonth(currentDate);
+            const monthEnd = endOfMonth(currentDate);
+            const today = new Date();
+            return today >= monthStart && today <= monthEnd;
+        }
+        return false;
     }, [currentDate, viewMode]);
 
     // Events grouped by day (unchanged, but ensure we pass fab_type)
@@ -134,21 +155,21 @@ export function OperatorDashboard() {
 
     // Navigation (unchanged)
     const handlePrevious = () => {
-        if (viewMode === 'day')   setCurrentDate(addDays(currentDate, -1));
+        if (viewMode === 'day') setCurrentDate(addDays(currentDate, -1));
         else if (viewMode === 'week') setCurrentDate(addDays(currentDate, -7));
         else setCurrentDate(addMonths(currentDate, -1));
     };
 
     const handleNext = () => {
-        if (viewMode === 'day')   setCurrentDate(addDays(currentDate, 1));
+        if (viewMode === 'day') setCurrentDate(addDays(currentDate, 1));
         else if (viewMode === 'week') setCurrentDate(addDays(currentDate, 7));
         else setCurrentDate(addMonths(currentDate, 1));
     };
 
     const handleEventClick = useCallback((task: any) => {
         const params = new URLSearchParams();
-        if (task.task_id)              params.set('task_id',              String(task.task_id));
-        if (task.workstation_id)       params.set('workstation_id',       String(task.workstation_id));
+        if (task.task_id) params.set('task_id', String(task.task_id));
+        if (task.workstation_id) params.set('workstation_id', String(task.workstation_id));
         if (task.scheduled_start_date) params.set('scheduled_start_date', task.scheduled_start_date);
         navigate(`/operator/task/${task.job_id}?${params.toString()}`);
     }, [navigate]);
@@ -178,13 +199,13 @@ export function OperatorDashboard() {
         const maxLane = Math.max(...lanes, 0) + 1;
 
         return sorted.map((ev, i) => {
-            const start   = new Date(ev.scheduled_start_date);
-            const startH  = start.getHours() + start.getMinutes() / 60;
-            const left    = Math.max(0, (startH - DAY_START_HOUR) * HOUR_WIDTH);
-            const width   = Math.max(HOUR_WIDTH * 0.5, (ev.estimated_hours || 1) * HOUR_WIDTH);
-            const laneH   = ROW_HEIGHT / maxLane;
-            const top     = lanes[i] * laneH;
-            const height  = laneH - 4;
+            const start = new Date(ev.scheduled_start_date);
+            const startH = start.getHours() + start.getMinutes() / 60;
+            const left = Math.max(0, (startH - DAY_START_HOUR) * HOUR_WIDTH);
+            const width = Math.max(HOUR_WIDTH * 0.5, (ev.estimated_hours || 1) * HOUR_WIDTH);
+            const laneH = ROW_HEIGHT / maxLane;
+            const top = lanes[i] * laneH;
+            const height = laneH - 4;
 
             return { ...ev, _left: left, _width: width, _top: top, _height: height, _lane: lanes[i], _maxLane: maxLane };
         });
@@ -207,9 +228,9 @@ export function OperatorDashboard() {
                 key={`${event.task_id || event.id}`}
                 className="absolute cursor-pointer rounded-[8px] border overflow-hidden transition-opacity hover:opacity-90 select-none"
                 style={{
-                    left:   event._left + 2,
-                    width:  event._width - 4,
-                    top:    event._top + 2,
+                    left: event._left + 2,
+                    width: event._width - 4,
+                    top: event._top + 2,
                     height: event._height,
                     backgroundColor: bg,
                     borderColor: border,
@@ -331,13 +352,16 @@ export function OperatorDashboard() {
                         >
                             <ChevronRight className="h-4 w-4" />
                         </button>
-                        <button
-                            onClick={() => setCurrentDate(new Date())}
-                            className="h-[44px] px-6 rounded-[8px] text-[14px] font-semibold text-white"
-                            style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
-                        >
-                            {t('COMMON.TODAY')}
-                        </button>
+
+                        {shouldShowToday && (
+                            <button
+                                onClick={() => setCurrentDate(new Date())}
+                                className="h-[44px] px-6 rounded-[8px] text-[14px] font-semibold text-white"
+                                style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
+                            >
+                                {t('COMMON.TODAY')}
+                            </button>
+                        )}
 
                         {/* View toggle */}
                         <div className="flex items-center gap-1 border border-[#e2e4ed] rounded-[8px] p-1 bg-white">
@@ -345,11 +369,10 @@ export function OperatorDashboard() {
                                 <button
                                     key={mode}
                                     onClick={() => setViewMode(mode)}
-                                    className={`flex items-center gap-1.5 px-3 py-2 rounded-[6px] text-[13px] font-medium transition-all capitalize ${
-                                        viewMode === mode
-                                            ? 'bg-[#7a9705] text-white'
-                                            : 'text-[#4b545d] hover:bg-gray-50'
-                                    }`}
+                                    className={`flex items-center gap-1.5 px-3 py-2 rounded-[6px] text-[13px] font-medium transition-all capitalize ${viewMode === mode
+                                        ? 'bg-[#7a9705] text-white'
+                                        : 'text-[#4b545d] hover:bg-gray-50'
+                                        }`}
                                 >
                                     {mode === 'day' && <Columns3 className="w-4 h-4" />}
                                     {mode === 'week' && <Rows3 className="w-4 h-4" />}
@@ -397,7 +420,7 @@ export function OperatorDashboard() {
                             {/* One row per day */}
                             {displayDays.map((day, dayIdx) => {
                                 const dateKey = format(day, 'yyyy-MM-dd');
-                                const events  = eventsByDay[dateKey] || [];
+                                const events = eventsByDay[dateKey] || [];
                                 const eventsWithPositions = getEventsWithXPositions(events);
                                 const isToday = isSameDay(day, new Date());
 
@@ -408,9 +431,8 @@ export function OperatorDashboard() {
                                         style={{ height: ROW_HEIGHT }}
                                     >
                                         <div
-                                            className={`flex-shrink-0 flex flex-col items-center justify-center border-r border-[#e2e4ed] px-2 ${
-                                                isToday ? 'bg-[#f0f4e8]' : 'bg-[#f9fafb]'
-                                            }`}
+                                            className={`flex-shrink-0 flex flex-col items-center justify-center border-r border-[#e2e4ed] px-2 ${isToday ? 'bg-[#f0f4e8]' : 'bg-[#f9fafb]'
+                                                }`}
                                             style={{ width: DATE_LABEL_WIDTH }}
                                         >
                                             <span className={`text-[11px] font-semibold ${isToday ? 'text-[#7a9705]' : 'text-[#4b545d]'}`}>
@@ -461,11 +483,10 @@ export function OperatorDashboard() {
                                                 key={dayIdx}
                                                 className={`min-h-[120px] bg-white p-2 ${!isCurrentMonth ? 'bg-[#f9fafb]' : ''}`}
                                             >
-                                                <div className={`text-[13px] mb-2 ${
-                                                    isToday ? 'text-[#7a9705] font-bold'
+                                                <div className={`text-[13px] mb-2 ${isToday ? 'text-[#7a9705] font-bold'
                                                     : isCurrentMonth ? 'text-[#4b545d]'
-                                                    : 'text-[#9ca3af]'
-                                                }`}>
+                                                        : 'text-[#9ca3af]'
+                                                    }`}>
                                                     {format(day, 'd')}
                                                 </div>
                                                 <div className="space-y-1">

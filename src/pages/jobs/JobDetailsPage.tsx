@@ -23,6 +23,7 @@ import { JobMediaUpload } from './components/JobMediaUpload';
 import Popup from '@/components/ui/popup';
 import { FileViewer } from './roles/drafters/components';
 import { FileGallery } from '@/pages/jobs/components/FileGallery';
+import { useIsSuperAdmin } from '@/hooks/use-permission';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -50,6 +51,8 @@ export function JobDetailsPage() {
   const { job_id } = useParams<{ job_id: string }>();
   const navigate = useNavigate();
   const jobId = job_id ? parseInt(job_id) : 0;
+
+  const isSuperAdmin = useIsSuperAdmin();
 
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
@@ -432,11 +435,12 @@ export function JobDetailsPage() {
         </Container>
 
         {/* ── RIGHT COLUMN ────────────────────────────────────────────────── */}
-        <div className="lg:col-span-4 w-full lg:w-[300px] xl:w-[350px] ultra:w-[400px]">
-          <div className="border-l">
-            <Card className="border-none py-6">
-              <CardHeader className="border-b pb-4 flex-col items-start">
-                <CardTitle className="font-semibold text-text">Actions</CardTitle>
+        {isSuperAdmin && (
+          <div className="lg:col-span-4 w-full lg:w-[300px] xl:w-[350px] ultra:w-[400px]">
+            <div className="border-l">
+              <Card className="border-none py-6">
+                <CardHeader className="border-b pb-4 flex-col items-start">
+                  <CardTitle className="font-semibold text-text">Actions</CardTitle>
                 <p className="text-sm text-text-foreground">Available actions for this job</p>
               </CardHeader>
               <CardContent>
@@ -453,6 +457,7 @@ export function JobDetailsPage() {
             </Card>
           </div>
         </div>
+        )}
       </div>
 
       {/* ── Delete confirmation ──────────────────────────────────────────── */}

@@ -79,7 +79,7 @@ export function OperatorQAUpload({
             setUploadedFiles(prev => prev.filter(f => f.id !== fileId));
             toast.success('File deleted successfully');
         } catch (error) {
-            toast.error('Failed to delete file');
+            console.error('Failed to delete file');
         }
     };
 
@@ -156,7 +156,6 @@ export function OperatorQAUpload({
             
         } catch (error: any) {
             console.error('Upload error:', error);
-            toast.error(error.message || 'Failed to upload files');
         } finally {
             setUploading(false);
         }

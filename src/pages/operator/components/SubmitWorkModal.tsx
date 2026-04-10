@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -47,8 +47,8 @@ interface SubmitWorkModalProps {
     estimatedHours?:        number;
     actualHours?:           number;
     taskId?:                number;
-    operatorId?:            number;      // ✅ new
-    workstationId?:         number;      // ✅ new
+    operatorId?:            number;
+    workstationId?:         number;
     fabId?:                 number;
     jobId?:                 number;
 }
@@ -78,20 +78,39 @@ export function SubmitWorkModal({
         },
     });
 
+    // ── Reset form when modal opens or fresh data arrives ────────────────────
+    useEffect(() => {
+        if (open) {
+            form.reset({
+                work_percentage: currentWorkPercentage,
+                notes:           '',
+                is_completed:    currentWorkPercentage >= 100,
+            });
+        }
+    }, [open, currentWorkPercentage, form]);
+
     const workPct = form.watch('work_percentage');
     const isCompleted = form.watch('is_completed');
+    const isFullyComplete = workPct === 100;
 
     const handlePercentageChange = (val: number) => {
         form.setValue('work_percentage', val);
-        if (val === 100) form.setValue('is_completed', true);
+        if (val === 100) {
+            form.setValue('is_completed', true);
+        }
     };
 
     const handleSubmit = async (values: SubmitWorkFormData) => {
+        // Safety: only allow submit when work is 100% complete
+        if (values.work_percentage !== 100) {
+            toast.error('You must reach 100% completion before ending the task.');
+            return;
+        }
+
         setIsSubmitting(true);
         try {
             const now = new Date().toISOString();
 
-            // ✅ Use the corrected endpoint with operator_id & workstation_id
             if (taskId && operatorId && workstationId) {
                 await updateOperatorTask({
                     operator_id:    operatorId,
@@ -121,7 +140,6 @@ export function SubmitWorkModal({
             onOpenChange(false);
         } catch (error: any) {
             console.error('Failed to submit work:', error);
-            toast.error(error?.data?.message || 'Failed to submit work');
         } finally {
             setIsSubmitting(false);
         }
@@ -239,7 +257,7 @@ export function SubmitWorkModal({
                             )}
                         />
 
-                        {/* Mark as completed */}
+                        {/* Mark as completed – disabled unless work_percentage === 100 */}
                         <FormField
                             control={form.control}
                             name="is_completed"
@@ -250,17 +268,23 @@ export function SubmitWorkModal({
                                             <Checkbox
                                                 checked={field.value}
                                                 onCheckedChange={field.onChange}
+                                                disabled={!isFullyComplete}
                                             />
                                         </FormControl>
                                         <FormLabel className={`text-[16px] font-semibold ${field.value ? 'text-green-600' : 'text-gray-600'}`}>
                                             Mark task as completed
                                         </FormLabel>
                                     </div>
+                                    {!isFullyComplete && (
+                                        <p className="text-xs text-amber-600 mt-1">
+                                            You can only mark as completed when work reaches 100%.
+                                        </p>
+                                    )}
                                 </FormItem>
                             )}
                         />
 
-                        {/* Actions */}
+                        {/* Actions – submit button disabled unless 100% complete */}
                         <div className="flex justify-end gap-3 pt-4 border-t">
                             <Button
                                 type="button"
@@ -272,8 +296,8 @@ export function SubmitWorkModal({
                             </Button>
                             <Button
                                 type="submit"
-                                disabled={isSubmitting}
-                                className="bg-red-600 hover:bg-red-700"
+                                disabled={isSubmitting || !isFullyComplete}
+                                className="bg-red-600 hover:bg-red-700 disabled:opacity-50"
                             >
                                 {isSubmitting ? (
                                     <span className="flex items-center gap-2">
@@ -281,7 +305,7 @@ export function SubmitWorkModal({
                                         Submitting...
                                     </span>
                                 ) : (
-                                    isCompleted ? 'Complete & End' : 'Submit & End'
+                                    'Complete & End'
                                 )}
                             </Button>
                         </div>
