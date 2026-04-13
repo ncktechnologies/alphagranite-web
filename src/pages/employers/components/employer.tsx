@@ -94,11 +94,11 @@ const Employees = () => {
             id: emp.id,
             name: `${emp.first_name} ${emp.last_name}`,
             email: emp.email,
-            home_address: emp.home_address || 'N/A',
-            department_name: emp.department_name || 'N/A',
-            phone: emp.phone || 'N/A',
-            role_name: emp.role_name || 'N/A',
-            status_name: emp.status_name || 'N/A',
+            home_address: emp.home_address || '-',
+            department_name: emp.department_name || '-',
+            phone: emp.phone || '-',
+            role_name: emp.role_name || '-',
+            status_name: emp.status_name || '-',
         }));
     }, [employeesData]);
 
@@ -198,20 +198,7 @@ const Employees = () => {
                 enableSorting: true,
                 size: 200,
             },
-            {
-                id: 'address',
-                accessorFn: (row) => row.home_address,
-                header: ({ column }) => (
-                    <DataGridColumnHeader title="ADDRESS" column={column} />
-                ),
-                cell: ({ row }) => (
-                    <span className="text-sm text-text truncate block max-w-[280px]">
-                        {row.original.home_address || 'n/a'}
-                    </span>
-                ),
-                enableSorting: false,
-                size: 280,
-            },
+           
             {
                 id: 'department',
                 accessorFn: (row) => row.department_name,

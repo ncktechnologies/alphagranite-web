@@ -217,6 +217,7 @@ export function ResurfacingPage() {
                 totalRecords={data?.total || 0}
                 visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'on_hold']}
                 path="resurfacing"
+                showDateFilter={false}
             />
         </Container>
     );

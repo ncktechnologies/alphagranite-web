@@ -38,6 +38,7 @@ const CreatePlanSheet: React.FC<CreatePlanSheetProps> = ({
           prefillFabId={prefillFabId}
           prefillPlanSectionId={prefillPlanSectionId}  
           onEventCreated={onEventCreated}
+          hideBackButton={true}
         />
       </SheetContent>
     </Sheet>

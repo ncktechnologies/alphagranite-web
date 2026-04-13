@@ -79,6 +79,7 @@ interface JobTableProps {
     onReassignCNCClick?: (job: IJob) => void;
     /** 'templater' | 'installer' — when set, job number links to the role timer page */
     pageRole?: 'templater' | 'installer';
+    showDateFilter?: boolean;
 }
 
 export const JobTable = ({
@@ -89,6 +90,7 @@ export const JobTable = ({
     isLoading,
     onRowClick,
     showScheduleFilter = false,
+    showDateFilter = true,
     showSalesPersonFilter = false,
     salesPersons = [],
     salesPersonFilterLabel = "Sales Person",
@@ -1149,57 +1151,58 @@ export const JobTable = ({
                             </Select>
 
                             {/* Date filter */}
-                            <div className="flex items-center gap-2">
-                                <Select value={dateFilter} onValueChange={v => {
-                                    setDateFilter(v);
-                                    if (v === 'custom') setIsDatePickerOpen(true);
-                                }}>
-                                    <SelectTrigger className="w-[170px] h-[34px]">
-                                        <SelectValue placeholder="Filter by date" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="today">Today</SelectItem>
-                                        <SelectItem value="this_week">This Week</SelectItem>
-                                        <SelectItem value="last_week">Last Week</SelectItem>
-                                        <SelectItem value="this_month">This Month</SelectItem>
-                                        <SelectItem value="last_month">Last Month</SelectItem>
-                                        <SelectItem value="next_week">Next Week</SelectItem>
-                                        <SelectItem value="next_month">Next Month</SelectItem>
-                                        <SelectItem value="all">All Date</SelectItem>
-                                        <SelectItem value="custom">Custom</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            {showDateFilter && (
+                                <div className="flex items-center gap-2">
+                                    <Select value={dateFilter} onValueChange={v => {
+                                        setDateFilter(v);
+                                        if (v === 'custom') setIsDatePickerOpen(true);
+                                    }}>
+                                        <SelectTrigger className="w-[170px] h-[34px]">
+                                            <SelectValue placeholder="Filter by date" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="today">Today</SelectItem>
+                                            <SelectItem value="this_week">This Week</SelectItem>
+                                            <SelectItem value="last_week">Last Week</SelectItem>
+                                            <SelectItem value="this_month">This Month</SelectItem>
+                                            <SelectItem value="last_month">Last Month</SelectItem>
+                                            <SelectItem value="next_week">Next Week</SelectItem>
+                                            <SelectItem value="next_month">Next Month</SelectItem>
+                                            <SelectItem value="all">All Date</SelectItem>
+                                            <SelectItem value="custom">Custom</SelectItem>
+                                        </SelectContent>
+                                    </Select>
 
-                                {dateFilter === 'custom' && (
-                                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" size="sm" className="h-[34px]">
-                                                <CalendarDays className="h-4 w-4 mr-2" />
-                                                {dateRange?.from ? (
-                                                    dateRange.to
-                                                        ? <>{formatForDisplay(dateRange.from, 'DISPLAY_US_FORMAT')} – {formatForDisplay(dateRange.to, 'DISPLAY_US_FORMAT')}</>
-                                                        : <>{formatForDisplay(dateRange.from, 'DISPLAY_US_FORMAT')}</>
-                                                ) : <span>Pick dates</span>}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                initialFocus
-                                                mode="range"
-                                                defaultMonth={tempDateRange?.from || new Date()}
-                                                selected={tempDateRange}
-                                                onSelect={setTempDateRange}
-                                                numberOfMonths={2}
-                                            />
-                                            <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
-                                                <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); }}>Reset</Button>
-                                                <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
-                                            </div>
-                                        </PopoverContent>
-                                    </Popover>
-                                )}
-                            </div>
-
+                                    {dateFilter === 'custom' && (
+                                        <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                            <PopoverTrigger asChild>
+                                                <Button variant="outline" size="sm" className="h-[34px]">
+                                                    <CalendarDays className="h-4 w-4 mr-2" />
+                                                    {dateRange?.from ? (
+                                                        dateRange.to
+                                                            ? <>{formatForDisplay(dateRange.from, 'DISPLAY_US_FORMAT')} – {formatForDisplay(dateRange.to, 'DISPLAY_US_FORMAT')}</>
+                                                            : <>{formatForDisplay(dateRange.from, 'DISPLAY_US_FORMAT')}</>
+                                                    ) : <span>Pick dates</span>}
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-auto p-0" align="start">
+                                                <Calendar
+                                                    initialFocus
+                                                    mode="range"
+                                                    defaultMonth={tempDateRange?.from || new Date()}
+                                                    selected={tempDateRange}
+                                                    onSelect={setTempDateRange}
+                                                    numberOfMonths={2}
+                                                />
+                                                <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
+                                                    <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); }}>Reset</Button>
+                                                    <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
+                                    )}
+                                </div>
+                            )}
                             {/* Schedule filter */}
                             {showScheduleFilter && (
                                 <Select value={scheduleFilter} onValueChange={setScheduleFilter}>

@@ -165,7 +165,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             shop_date:              fab.shop_date_schedule ?? null,
             est_completion_date:    fab.estimated_completion_date ?? fab.shop_date_schedule ?? null,
             percent_complete:       fab.percentage_completion ?? fab.percent_complete ?? 0,
-            shop_completion_date:   fab.shop_completion_date ?? null,
+            shop_completion_date:   fab.est_shop_completion_date ?? null,
             install_date:           fab.installation_date ?? null,
             install_confirmed:      fab.install_confirmed === true,
             installed:              fab.is_complete === true,
