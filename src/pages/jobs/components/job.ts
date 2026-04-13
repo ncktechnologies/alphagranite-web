@@ -35,13 +35,14 @@ export interface IJob {
   template_needed?: string; // Add template_not_needed field
   review_completed?: string;
   templating_schedule_start_date?: string;
-  templating_actual_end_date?:string;
+  templating_actual_end_date?: string;
   sales_person_name?: string; // Add sales person name field
   on_hold?: boolean; // Add on hold field
   notes_count?: number; // Number of notes for this FAB
   fab_notes?: Array<{ id: number; note: string; created_by_name?: string; created_at?: string; stage?: string }>; // Array of notes for this FAB
   notes?: Array<{ id: number; note: string; created_by_name?: string; created_at?: string; stage?: string }>; // Alternative notes array name
-
+  template_schedule_raw?: string;
+  technician_id: number;        // ← add this
   // ========== MATERIAL SPECIFICATION FIELDS ==========
   stone_type_name?: string;
   stone_color_name?: string;

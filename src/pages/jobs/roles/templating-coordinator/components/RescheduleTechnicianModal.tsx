@@ -41,7 +41,7 @@ const rescheduleTechnicianSchema = z.object({
     revenue: z.string().optional()
         .refine((val) => val === "" || !isNaN(parseFloat(val)), { message: "Revenue must be a valid number" }),
     notes: z.string().optional(),
-    total_sqft: z.string().optional(),
+    // total_sqft: z.string().optional(),
 });
 
 type RescheduleTechnicianData = z.infer<typeof rescheduleTechnicianSchema>;
@@ -58,7 +58,9 @@ export function RescheduleTechnicianModal({
         fabId: string | number;
         jobName: string;
         revenue?: string | number;
-        total_sqft?: string;
+        // total_sqft?: string;
+        date?: string;
+        technicianId?: number;
     };
     templatingId?: number;
 }) {
@@ -75,8 +77,10 @@ export function RescheduleTechnicianModal({
     const form = useForm<RescheduleTechnicianData>({
         resolver: zodResolver(rescheduleTechnicianSchema),
         defaultValues: {
-            technician: "",
+            technician: fabData?.technicianId ? String(fabData.technicianId) : "",
             revenue: "",
+            date: fabData?.date || ""
+
         },
     });
 
@@ -85,10 +89,16 @@ export function RescheduleTechnicianModal({
         if (fabData?.revenue && !form.getValues('revenue')) {
             form.setValue('revenue', String(fabData.revenue));
         }
-        if (fabData?.total_sqft && !form.getValues('total_sqft')) {
-            form.setValue('total_sqft', String(fabData.total_sqft));
+        if (fabData?.date && !form.getValues('date')) {
+            form.setValue('date', String(fabData.date));
         }
-        console.log(fabData)
+        if (fabData?.technicianId && !form.getValues('technician')) {
+            form.setValue('technician', String(fabData.technicianId));
+        }
+        // if (fabData?.total_sqft && !form.getValues('total_sqft')) {
+        //     form.setValue('total_sqft', String(fabData.total_sqft));
+        // }
+
     }, [fabData, form]);
 
     const onSubmit = async (values: RescheduleTechnicianData) => {
@@ -144,7 +154,7 @@ export function RescheduleTechnicianModal({
                         return formatDateToString(dueDate);
                     })()
                     : "",
-                total_sqft: values?.total_sqft ? String(values.total_sqft) : 0,
+                // total_sqft: values?.total_sqft ? String(values.total_sqft) : 0,
                 revenue: values.revenue ? parseFloat(values.revenue) : undefined,
                 notes: [values.notes || ""],
             }).unwrap();
@@ -269,7 +279,7 @@ export function RescheduleTechnicianModal({
                                                 field.onChange(formatted);
                                             }}
                                             placeholder="Schedule date"
-                                            // minDate={new Date()}
+                                        // minDate={new Date()}
                                         />
                                     </FormControl>
                                     <FormMessage>{fieldState.error?.message}</FormMessage>

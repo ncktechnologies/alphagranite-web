@@ -1478,7 +1478,7 @@ const NewFabIdForm = () => {
                           name="cost_of_stone"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Cost of Stone ($) *</FormLabel>
+                              <FormLabel>Cost of Stone ($) </FormLabel>
                               <FormControl>
                                 <Input
                                   placeholder="Enter cost of stone"

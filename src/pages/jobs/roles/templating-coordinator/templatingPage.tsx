@@ -47,6 +47,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         // Optional fields with default values
         acct_name: fab.account_name || '',
         template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '',
+        template_schedule_raw: fab.templating_schedule_start_date || '',
         template_received: fab.template_received ? 'Yes' : 'No',
         templater: fab.technician_name || '-',
         // no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
@@ -70,7 +71,9 @@ const transformFabToJob = (fab: Fab): IJob => {
         // Map stage_data fields for rescheduling logic
         templating_completed: fab?.is_complete,
         templating_id: fab.stage_data?.templating_id,
-        rescheduled: fab.stage_data?.rescheduled
+        rescheduled: fab.stage_data?.rescheduled,
+        technician_id: fab.stage_data?.technician_id,          // ← add this
+
     };
 };
 
@@ -348,7 +351,21 @@ export function TemplatingPage() {
                             fabId: selectedJob.fab_id,
                             jobName: selectedJob.job_name,
                             revenue: selectedJob.revenue,
-                            total_sqft: selectedJob.total_sq_ft
+                            // total_sqft: selectedJob.total_sqft,
+                            technicianId: selectedJob.technician_id,
+                            date: selectedJob.template_schedule_raw ? (() => {
+                                // If it's already YYYY-MM-DD, use as is
+                                if (/^\d{4}-\d{2}-\d{2}$/.test(selectedJob.template_schedule_raw)) {
+                                    return selectedJob.template_schedule_raw;
+                                }
+                                // Otherwise try to parse and format
+                                const d = new Date(selectedJob.template_schedule_raw);
+                                if (!isNaN(d.getTime())) {
+                                    return format(d, 'yyyy-MM-dd');
+                                }
+                                return '';
+                            })() : ''
+
                         } : undefined}
                         templatingId={selectedJob?.templating_id}
                     />

@@ -209,6 +209,7 @@ const EditFabIdForm = () => {
     const [hasInitialDataLoaded, setHasInitialDataLoaded] = useState(false);
     const [isLoadingFormData, setIsLoadingFormData] = useState(false);
     const lastProcessedJobRef = useRef<{ name: string; number: string } | null>(null);
+    const isInitialLoadCompleteRef = useRef(false);
 
     // API hooks for dropdown data
     const { data: fabTypesData = [], isLoading: isLoadingFabTypes } = useGetFabTypesQuery();
@@ -309,10 +310,12 @@ const EditFabIdForm = () => {
     const selectedAccountId = selectedAccount?.id;
 
     // Clear stone color search and value when stone type changes
-    useEffect(() => {
-        setStoneColorSearch('');
-        form.setValue('stoneColor', '', { shouldValidate: false });
-    }, [selectedStoneTypeId, form]);
+    // useEffect(() => {
+    //     if (isInitialLoadCompleteRef.current) {
+    //         setStoneColorSearch('');
+    //         form.setValue('stoneColor', '', { shouldValidate: false });
+    //     }
+    // }, [selectedStoneTypeId, form]);
 
     // Watch for job name and number changes
     const jobNameValue = form.watch('jobName');
@@ -467,6 +470,7 @@ const EditFabIdForm = () => {
                             lastProcessedJobRef.current = { name: formData.jobName, number: formData.jobNumber };
                         }
                         setHasInitialDataLoaded(true);
+                        isInitialLoadCompleteRef.current = true;
                     } catch (error) {
                         console.error('Error loading form data:', error);
                     } finally {
@@ -493,6 +497,7 @@ const EditFabIdForm = () => {
         }
         // Note: We don't reset to false on other types for edit form, as user may have manually set them
     }, [fabTypeValue, form]);
+
 
     const handleAddThickness = async () => {
         if (newThickness.trim()) {
@@ -862,11 +867,25 @@ const EditFabIdForm = () => {
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>Stone Type *</FormLabel>
-                                                        <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingStoneTypes}>
-                                                            <FormControl><SelectTrigger><SelectValue placeholder={isLoadingStoneTypes ? 'Loading...' : 'Select stone type'} /></SelectTrigger></FormControl>
+                                                        <Select
+                                                            onValueChange={(value) => {
+                                                                field.onChange(value);
+                                                                // Clear stone color when stone type changes manually
+                                                                form.setValue('stoneColor', '', { shouldValidate: false });
+                                                                setStoneColorSearch('');
+                                                            }}
+                                                            value={field.value}
+                                                            disabled={isLoadingStoneTypes}
+                                                        >
+                                                            <FormControl>
+                                                                <SelectTrigger>
+                                                                    <SelectValue placeholder={isLoadingStoneTypes ? 'Loading...' : 'Select stone type'} />
+                                                                </SelectTrigger>
+                                                            </FormControl>
                                                             <SelectContent>
-                                                                {stoneTypes.map((type: string) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                                                                {stoneTypes.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">No stone types found</div>}
+                                                                {stoneTypes.map((type: string) => (
+                                                                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                                                                ))}
                                                             </SelectContent>
                                                         </Select>
                                                         <FormMessage />
@@ -986,7 +1005,7 @@ const EditFabIdForm = () => {
                                             {/* Revenue */}
                                             <FormField control={form.control} name="revenue" render={({ field }) => (<FormItem><FormLabel>Revenue ($) *</FormLabel><FormControl><Input placeholder="Enter revenue amount" type="text" inputMode="decimal" value={field.value} onChange={field.onChange} onWheel={(e) => e.currentTarget.blur()} /></FormControl><FormMessage /></FormItem>)} />
                                             {/* Cost of Stone */}
-                                            <FormField control={form.control} name="cost_of_stone" render={({ field }) => (<FormItem><FormLabel>Cost of Stone ($) *</FormLabel><FormControl><Input placeholder="Enter cost of stone" type="text" inputMode="decimal" value={field.value} onChange={field.onChange} onWheel={(e) => e.currentTarget.blur()} /></FormControl><FormMessage /></FormItem>)} />
+                                            <FormField control={form.control} name="cost_of_stone" render={({ field }) => (<FormItem><FormLabel>Cost of Stone ($) </FormLabel><FormControl><Input placeholder="Enter cost of stone" type="text" inputMode="decimal" value={field.value} onChange={field.onChange} onWheel={(e) => e.currentTarget.blur()} /></FormControl><FormMessage /></FormItem>)} />
                                             {/* Sales Person */}
                                             <FormField
                                                 control={form.control}
