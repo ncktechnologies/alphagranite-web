@@ -284,7 +284,7 @@ export function OperatorTaskDetails() {
         { label: t('LABEL.STONE_THICKNESS'), value: currentTask?.stone_thickness || '—' },
         { label: t('LABEL.EDGE'), value: currentTask?.edge || '—' },
         { label: t('LABEL.PERCENT_COMPLETE'), value: workPercentage ? `${workPercentage}%` : (currentTask?.work_percentage ? `${currentTask.work_percentage}%` : '—') },
-        { label: t('LABEL.EST_JOB_COMP_DATE'), value: currentTask?.estimated_completion ? format(new Date(currentTask.estimated_completion), 'MMM d') : '—' },
+        { label: t('LABEL.EST_FAB_COMP_DATE'), value: fabData?.shop_est_completion_date ? format(new Date(fabData.shop_est_completion_date), 'MMM d') : '—' },
         { label: t('OPERATOR.WORKSTATION'), value: currentTask?.workstation_name || '—' },
         { label: t('LABEL.EMPLOYEE'), value: currentUser?.first_name ? `${currentUser.first_name} ${currentUser.last_name}`.trim() : currentUser?.email || '—' },
         { label: t('OPERATOR.RUN_TIME'), value: formatTimeDisplay(totalTime) },

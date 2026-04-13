@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Clock, Calendar, ChevronDown, LoaderCircle, Plus, X } from 'lucide-react';
-import { format, addHours, differenceInMinutes, parseISO, setHours, setMinutes } from 'date-fns';
+import { ArrowLeft, Calendar, ChevronDown, LoaderCircle, Plus, X } from 'lucide-react';
+import { format, addHours, differenceInMinutes, setHours, setMinutes } from 'date-fns';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -65,6 +65,7 @@ interface PlanEntryCardProps {
   effectivePrefillFabId: string;
   isEditing: boolean;
   sequenceOptions: number[];
+  disableShopActivity: boolean;
   onToggleExpand: () => void;
   onUpdate: (patch: Partial<PlanEntry>) => void;
   onRemove: () => void;
@@ -73,7 +74,7 @@ interface PlanEntryCardProps {
 const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
   entry, idx, total, employees, planningSections,
   isExpanded, fabOptions, isLoadingFabs, effectivePrefillFabId, isEditing,
-  sequenceOptions, onToggleExpand, onUpdate, onRemove,
+  sequenceOptions, disableShopActivity, onToggleExpand, onUpdate, onRemove,
 }) => {
   const { data: workstationData, isLoading: isLoadingWorkstations } = useGetWorkStationByPlanningSectionsQuery(
     entry.planning_section_id ? Number(entry.planning_section_id) : 0,
@@ -123,14 +124,12 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
 
   const hasSlot = !!(entry.start_date && entry.start_time && entry.end_date && entry.end_time);
 
-  // Helper to build a Date from date picker + time string
   const combineDateAndTime = (date: Date | undefined, time: string): Date | null => {
     if (!date || !time) return null;
     const [hours, minutes] = time.split(':').map(Number);
     return setMinutes(setHours(new Date(date), hours), minutes);
   };
 
-  // Auto‑sync estimated hours when end date/time changes
   const updateFromEndDateTime = useCallback((newEndDate: Date | undefined, newEndTime: string) => {
     const startDateTime = combineDateAndTime(entry.start_date, entry.start_time);
     const endDateTime = combineDateAndTime(newEndDate, newEndTime);
@@ -143,7 +142,6 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
     }
   }, [entry.start_date, entry.start_time, onUpdate]);
 
-  // Auto‑sync end date/time when estimated hours change
   const updateFromEstimatedHours = useCallback((hoursStr: string) => {
     const startDateTime = combineDateAndTime(entry.start_date, entry.start_time);
     if (!startDateTime) {
@@ -163,11 +161,8 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
     }
   }, [entry.start_date, entry.start_time, onUpdate]);
 
-  // When start date/time changes, adjust end if possible
   const handleStartDateTimeChange = useCallback((newStartDate: Date | undefined, newStartTime: string) => {
-    // First update start
     onUpdate({ start_date: newStartDate, start_time: newStartTime });
-    // Then recalculate end based on current estimated hours
     if (entry.estimated_hours) {
       const startDateTime = combineDateAndTime(newStartDate, newStartTime);
       if (startDateTime) {
@@ -206,7 +201,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
             )}
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 ml-auto pl-4 " onClick={e => e.stopPropagation()}>
+          <div className="flex items-center gap-2 shrink-0 ml-auto pl-4" onClick={e => e.stopPropagation()}>
             <Select value={entry.sequence} onValueChange={value => onUpdate({ sequence: value })}>
               <SelectTrigger className="h-7 w-auto text-[13px] border-[#e2e4ed] rounded-[4px] font-bold">
                 <SelectValue placeholder="Seq" />
@@ -218,7 +213,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
               </SelectContent>
             </Select>
 
-            {total > 1 && (
+            {total > 1 && !disableShopActivity && (
               <button
                 type="button"
                 onClick={onRemove}
@@ -372,6 +367,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
             <Select
               value={entry.planning_section_id || undefined}
               onValueChange={value => onUpdate({ planning_section_id: value, workstation_id: '', operator_id: '' })}
+              disabled={disableShopActivity}
             >
               <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
                 <SelectValue placeholder="Select section" />
@@ -462,6 +458,10 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
   );
 };
 
+// -----------------------------------------------------------------------------
+// Main component
+// -----------------------------------------------------------------------------
+
 interface CreatePlanPageProps {
   onBack?: () => void;
   selectedDate?: Date | null;
@@ -487,124 +487,141 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const [searchParams] = useSearchParams();
   const urlFabId = searchParams.get('fabId');
   const effectivePrefillFabId = propPrefillFabId || urlFabId || '';
-
   const effectiveEvent = selectedEvent;
-
-  const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
-
   const prefillSectionIdStr = prefillPlanSectionId != null ? String(prefillPlanSectionId) : undefined;
 
-  const emptyEntry = useCallback((): PlanEntry => ({
-    fab_id: effectivePrefillFabId || '',
-    workstation_id: '',
-    operator_id: '',
-    notes: '',
-    start_date: propSelectedDate ?? undefined,
-    start_time: selectedTimeSlot || '',
-    end_date: undefined,
-    end_time: '',
-    estimated_hours: '',
-    planning_section_id: prefillSectionIdStr,
-    sequence: '1',
-  }), [effectivePrefillFabId, selectedTimeSlot, prefillSectionIdStr, propSelectedDate]);
+  const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
+  const [entries, setEntries] = useState<PlanEntry[]>([]);
 
-  const [entries, setEntries] = useState<PlanEntry[]>(() => [emptyEntry()]);
-
-  const [createShopPlan, { isLoading }] = useCreateShopPlansMutation();
-  const [updateShopPlan] = useUpdateShopPlanMutation();
-  const [, { isLoading: isAutoScheduling }] = useCreateShopSuggestionMutation();
-
+  // Data fetching
   const { data: planningSectionsData } = useGetPlanningSectionsQuery();
   const planningSections: any[] = planningSectionsData?.data || (Array.isArray(planningSectionsData) ? planningSectionsData : []);
 
   const { data: employeesData } = useGetEmployeesQuery();
   const employees: any[] = employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
 
-  const { data: allFabsData, isLoading: isLoadingFabs } = useGetFabsQuery({ limit: 1000, current_stage: 'shop' });
-
+  const { data: allFabsData, isLoading: isLoadingFabs } = useGetFabsQuery({ limit: 1000 });
   const { data: allWorkstationsData } = useGetWorkstationsQuery();
   const allWorkstations: any[] = allWorkstationsData?.data || (Array.isArray(allWorkstationsData) ? allWorkstationsData : []);
 
+  // Derived data
+  const allFabsList = useMemo(() => {
+    return allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
+  }, [allFabsData]);
+
   const fabOptions = useMemo(() => {
-    const fabs = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
-    return fabs.map((fab: any) => ({
+    return allFabsList.map((fab: any) => ({
       value: String(fab.id),
       label: `Fab ${fab.id} - (${fab.fab_type || 'N/A'})`,
     }));
-  }, [allFabsData]);
-
-  const selectedFabId = entries[0]?.fab_id;
-  const selectedFab = useMemo(() => {
-    if (!allFabsData || !selectedFabId) return null;
-    const fabs = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
-    return fabs.find((fab: any) => String(fab.id) === selectedFabId) || null;
-  }, [allFabsData, selectedFabId]);
+  }, [allFabsList]);
 
   const employeesLoaded = employees.length > 0;
   const workstationsLoaded = allWorkstations.length > 0;
   const sectionsLoaded = planningSections.length > 0;
   const fabsLoaded = !!allFabsData;
+  const dataReady = !isLoadingFabs && sectionsLoaded && fabsLoaded;
 
+  // Resurface detection
+  const RESURFACE_FAB_TYPE = 'RESURFACE';
+  const RESURFACE_SECTION_NAME = 'RESURFACING';
+
+  const isResurfaceFab = useCallback((fab: any) => {
+    return fab && (fab.fab_type || '').toUpperCase() === RESURFACE_FAB_TYPE;
+  }, []);
+
+  const getResurfaceSection = useCallback((sections: any[]) => {
+    return sections.find(ps =>
+      (ps.plan_name || ps.name || '').toUpperCase() === RESURFACE_SECTION_NAME
+    ) || null;
+  }, []);
+
+  // Create blank entry with optional auto‑section for resurface
+  const createEmptyEntry = useCallback((fabIdOverride?: string): PlanEntry => {
+    let sectionId = prefillSectionIdStr;
+    const fabIdToUse = fabIdOverride !== undefined ? fabIdOverride : effectivePrefillFabId;
+    if (fabIdToUse && allFabsList.length && planningSections.length) {
+      const fab = allFabsList.find(f => String(f.id) === fabIdToUse);
+      if (fab && isResurfaceFab(fab)) {
+        const resurfaceSection = getResurfaceSection(planningSections);
+        if (resurfaceSection) sectionId = String(resurfaceSection.id);
+      }
+    }
+    return {
+      fab_id: fabIdToUse || '',
+      workstation_id: '',
+      operator_id: '',
+      notes: '',
+      start_date: propSelectedDate ?? undefined,
+      start_time: selectedTimeSlot || '',
+      end_date: undefined,
+      end_time: '',
+      estimated_hours: '',
+      planning_section_id: sectionId,
+      sequence: '1',
+    };
+  }, [effectivePrefillFabId, selectedTimeSlot, prefillSectionIdStr, propSelectedDate, allFabsList, planningSections, isResurfaceFab, getResurfaceSection]);
+
+  // Initialize entries when data is ready (create mode only)
   useEffect(() => {
-    if (!effectiveEvent) {
-      setEntries([emptyEntry()]);
-      return;
+    if (!effectiveEvent && dataReady && entries.length === 0) {
+      setEntries([createEmptyEntry(effectivePrefillFabId)]);
     }
+  }, [effectiveEvent, dataReady, entries.length, createEmptyEntry, effectivePrefillFabId]);
 
-    if (!employeesLoaded || !workstationsLoaded || !sectionsLoaded || !fabsLoaded) {
-      return;
+  // Edit mode: pre‑populate from event
+  useEffect(() => {
+    if (!effectiveEvent) return;
+    if (!employeesLoaded || !workstationsLoaded || !sectionsLoaded || !fabsLoaded) return;
+
+    const ev = effectiveEvent;
+    const startDate = ev.scheduled_start_date ? new Date(ev.scheduled_start_date) : undefined;
+    const endDate = ev.scheduled_end_date ? new Date(ev.scheduled_end_date) : undefined;
+
+    let planningSectionId = ev.planning_section_id != null ? String(ev.planning_section_id) : '';
+    if (!planningSectionId) {
+      const fab = allFabsList.find(f => String(f.id) === String(ev.fab_id));
+      if (fab && isResurfaceFab(fab)) {
+        const resurfaceSection = getResurfaceSection(planningSections);
+        if (resurfaceSection) planningSectionId = String(resurfaceSection.id);
+      }
     }
-
-    const ev: any = effectiveEvent;
-    const fabId = ev.fab_id ?? '';
-    const workstationId = ev.workstation_id ?? '';
-    const operatorId = ev.operator_id ?? '';
-    const planningSectionId = ev.planning_section_id ?? null;
-    const scheduledStart = ev.scheduled_start_date ?? null;
-    const scheduledEnd = ev.scheduled_end_date ?? null;
-    const notes = ev.notes ?? '';
-    const sequence = ev.sequence ?? 1;
-    const estimatedHours = ev.estimated_hours ?? 0;
-
-    const startDate = scheduledStart ? new Date(scheduledStart) : undefined;
-    const endDate = scheduledEnd ? new Date(scheduledEnd) : undefined;
 
     const finalEntry: PlanEntry = {
       id: ev.id,
-      fab_id: fabId ? String(fabId) : '',
-      workstation_id: workstationId ? String(workstationId) : '',
-      operator_id: operatorId ? String(operatorId) : '',
-      notes: notes ? String(notes) : '',
+      fab_id: ev.fab_id != null ? String(ev.fab_id) : '',
+      workstation_id: ev.workstation_id != null ? String(ev.workstation_id) : '',
+      operator_id: ev.operator_id != null ? String(ev.operator_id) : '',
+      notes: ev.notes || '',
       start_date: startDate,
       start_time: startDate ? format(startDate, 'HH:mm') : '',
       end_date: endDate,
       end_time: endDate ? format(endDate, 'HH:mm') : '',
-      estimated_hours: estimatedHours ? String(estimatedHours) : '',
-      planning_section_id:
-        planningSectionId !== null && planningSectionId !== undefined
-          ? String(planningSectionId)
-          : prefillSectionIdStr || '',
-      sequence: sequence ? String(sequence) : '1',
+      estimated_hours: ev.estimated_hours != null ? String(ev.estimated_hours) : '',
+      planning_section_id: planningSectionId || prefillSectionIdStr || '',
+      sequence: ev.sequence != null ? String(ev.sequence) : '1',
     };
 
     setEntries([finalEntry]);
     setExpandedCards({ 0: true });
-  }, [
-    effectiveEvent,
-    employeesLoaded,
-    workstationsLoaded,
-    sectionsLoaded,
-    fabsLoaded,
-    emptyEntry,
-    prefillSectionIdStr,
-  ]);
+  }, [effectiveEvent, employeesLoaded, workstationsLoaded, sectionsLoaded, fabsLoaded, allFabsList, planningSections, isResurfaceFab, getResurfaceSection, prefillSectionIdStr]);
 
+  // Helper functions
   const getNextAvailableSequence = useCallback((used: Set<number>) => {
     let seq = 1;
     while (used.has(seq)) seq++;
     return seq;
   }, []);
 
+  // Current selected FAB and resurface flag
+  const selectedFab = useMemo(() => {
+    if (!allFabsList.length || !entries[0]?.fab_id) return null;
+    return allFabsList.find(f => String(f.id) === entries[0].fab_id) || null;
+  }, [allFabsList, entries[0]?.fab_id]);
+
+  const currentIsResurface = selectedFab ? isResurfaceFab(selectedFab) : false;
+
+  // Entry management callbacks
   const updateEntry = useCallback((idx: number, patch: Partial<PlanEntry>) => {
     setEntries(prev => {
       const newEntries = [...prev];
@@ -626,41 +643,61 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       }
 
       if (idx === 0 && patch.fab_id !== undefined) {
-        return newEntries.map(e => ({ ...e, fab_id: patch.fab_id! }));
+        const newFab = allFabsList.find(f => String(f.id) === patch.fab_id) ?? null;
+        let newSectionId = target.planning_section_id;
+        if (newFab && isResurfaceFab(newFab)) {
+          const resurfaceSection = getResurfaceSection(planningSections);
+          newSectionId = resurfaceSection ? String(resurfaceSection.id) : newSectionId;
+        } else if (!newFab || !isResurfaceFab(newFab)) {
+          newSectionId = prefillSectionIdStr ?? newSectionId;
+        }
+        return newEntries.map(e => ({
+          ...e,
+          fab_id: patch.fab_id!,
+          planning_section_id: newSectionId ?? e.planning_section_id,
+          workstation_id: '',
+          operator_id: '',
+        }));
       }
       newEntries[idx] = { ...target, ...patch };
       return newEntries;
     });
-  }, []);
+  }, [allFabsList, planningSections, isResurfaceFab, getResurfaceSection, prefillSectionIdStr]);
 
   const addEntry = useCallback(() => {
+    if (currentIsResurface) return;
     setEntries(prev => {
       const usedSequences = new Set(prev.map(e => Number(e.sequence)).filter(s => !isNaN(s)));
       const nextSeq = getNextAvailableSequence(usedSequences);
-
-      const newEntry = emptyEntry();
-      if (prev[0]?.fab_id) newEntry.fab_id = prev[0].fab_id;
+      const newEntry = createEmptyEntry(prev[0]?.fab_id);
       newEntry.sequence = String(nextSeq);
       return [...prev, newEntry];
     });
-  }, [emptyEntry, getNextAvailableSequence]);
+  }, [currentIsResurface, createEmptyEntry, getNextAvailableSequence]);
 
   const removeEntry = useCallback((idx: number) => {
+    if (currentIsResurface) return;
     setEntries(prev => {
       const next = prev.filter((_, i) => i !== idx);
       return next.map((e, i) => ({ ...e, sequence: String(i + 1) }));
     });
-  }, []);
+  }, [currentIsResurface]);
 
   const resetForm = useCallback(() => {
-    setEntries([emptyEntry()]);
-  }, [emptyEntry]);
+    setEntries([createEmptyEntry(effectivePrefillFabId)]);
+  }, [createEmptyEntry, effectivePrefillFabId]);
 
   const handleBack = useCallback(() => {
     resetForm();
     if (onBack) onBack();
     else navigate(-1);
   }, [resetForm, onBack, navigate]);
+
+  // Mutations
+  const [createShopPlan, mutationState] = useCreateShopPlansMutation();
+  const isLoading = mutationState.isLoading || false;
+  const [updateShopPlan] = useUpdateShopPlanMutation();
+  const [, { isLoading: isAutoScheduling }] = useCreateShopSuggestionMutation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -745,57 +782,66 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       handleBack();
     } catch (error: any) {
       console.error(error?.data?.message || 'Failed to create/update plan');
+      toast.error(error?.data?.message || 'Failed to create/update plan');
     }
   };
 
-  const isEditing = !!(effectiveEvent);
+  const isEditing = !!effectiveEvent;
   const sequenceOptions = useMemo(
     () => Array.from({ length: Math.max(3, entries.length) }, (_, i) => i + 1),
     [entries.length]
   );
 
-  return (
-    <div className="bg-white min-h-screen">
-      <div className="border-b border-[#dfdfdf]">
-        <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
-          <div className="flex items-center gap-4">
-            <p className="text-[28px] leading-[32px] text-black font-semibold">
-              {isEditing ? 'Edit Plan' : 'Create Plan'}
-            </p>
-            {entries[0]?.fab_id && (
-              <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2">
-                <span className="text-[13px] text-[#4a4d59]">FAB ID</span>
-                <span className="text-[20px] text-[#7a9705] font-semibold">#{entries[0].fab_id}</span>
-              </div>
-            )}
-          </div>
+ const isFormReady = effectiveEvent ? entries.length > 0 : (dataReady && entries.length > 0);
 
-          <div className="flex items-center gap-3">
+return (
+  <div className="bg-white min-h-screen">
+    <div className="border-b border-[#dfdfdf]">
+      <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
+        <div className="flex items-center gap-4">
+          <p className="text-[28px] leading-[32px] text-black font-semibold">
+            {isEditing ? 'Edit Plan' : 'Create Plan'}
+          </p>
+          {entries[0]?.fab_id && (
+            <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2">
+              <span className="text-[13px] text-[#4a4d59]">FAB ID</span>
+              <span className="text-[20px] text-[#7a9705] font-semibold">#{entries[0].fab_id}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate(`/shop/auto-schedule?fabId=${entries[0]?.fab_id || ''}`)}
+            className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px]"
+            style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
+          >
+            <Plus className="h-4 w-4" />
+            Auto Schedule
+          </button>
+          {!hideBackButton && (
             <button
-              onClick={() => navigate(`/shop/auto-schedule?fabId=${entries[0]?.fab_id || ''}`)}
-              className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px]"
-              style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
+              onClick={handleBack}
+              className="h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] bg-white flex items-center justify-center gap-2 text-[#4b545d] hover:bg-gray-50 transition-colors"
             >
-              <Plus className="h-4 w-4" />
-              Auto Schedule
+              <ArrowLeft className="h-4 w-4" />
+              <span className="text-[14px] font-semibold">Back</span>
             </button>
-            {!hideBackButton && (
-              <button
-                onClick={handleBack}
-                className="h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] bg-white flex items-center justify-center gap-2 text-[#4b545d] hover:bg-gray-50 transition-colors"
-              >
-                <ArrowLeft className="h-4 w-4" />
-                <span className="text-[14px] font-semibold">Back</span>
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </div>
+    </div>
 
-      <div className="px-10 py-8 max-w-6xl mx-auto">
+    <div className="px-10 py-8 max-w-6xl mx-auto">
+      {!isFormReady ? (
+        <div className="flex flex-col items-center justify-center py-24 gap-4">
+          <LoaderCircle className="h-8 w-8 animate-spin text-[#9cc15e]" />
+          <p className="text-[14px] text-[#7c8689]">Loading plan data…</p>
+        </div>
+      ) : (
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* FAB Details (unchanged) */}
-          {selectedFabId && selectedFab && (
+          {/* FAB Details */}
+          {selectedFab && (
             <Card className="border border-[#ecedf0] rounded-[12px] mb-6">
               <CardHeader className="pb-3 border-b border-[#ecedf0]">
                 <CardTitle className="text-[16px] text-[#4b545d] font-semibold">FAB Details</CardTitle>
@@ -838,21 +884,24 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               effectivePrefillFabId={effectivePrefillFabId}
               isEditing={isEditing}
               sequenceOptions={sequenceOptions}
+              disableShopActivity={currentIsResurface}
               onToggleExpand={() => setExpandedCards(p => ({ ...p, [idx]: !(p[idx] !== false) }))}
               onUpdate={patch => updateEntry(idx, patch)}
               onRemove={() => removeEntry(idx)}
             />
           ))}
 
-          {/* Add stage */}
-          <button
-            type="button"
-            onClick={addEntry}
-            className="w-full h-[44px] border border-dashed border-[#e2e4ed] rounded-[8px] flex items-center justify-center gap-2 text-[#78829d] hover:border-[#9cc15e] hover:text-[#7a9705] hover:bg-[#f0f4e8] transition-all"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="text-[14px] font-semibold">Add Another Stage</span>
-          </button>
+          {/* Add Another Stage - hidden for resurface FABs */}
+          {!currentIsResurface && (
+            <button
+              type="button"
+              onClick={addEntry}
+              className="w-full h-[44px] border border-dashed border-[#e2e4ed] rounded-[8px] flex items-center justify-center gap-2 text-[#78829d] hover:border-[#9cc15e] hover:text-[#7a9705] hover:bg-[#f0f4e8] transition-all"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="text-[14px] font-semibold">Add Another Stage</span>
+            </button>
+          )}
 
           {/* Actions */}
           <div className="flex items-center gap-3 pt-2 pb-8">
@@ -876,9 +925,10 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
             </button>
           </div>
         </form>
-      </div>
+      )}
     </div>
-  );
+  </div>
+);
 };
 
 export default CreatePlanPage;

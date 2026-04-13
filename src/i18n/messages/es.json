@@ -155,7 +155,7 @@
   "LABEL.STONE_THICKNESS": "Grosor de Piedra",
   "LABEL.EDGE": "Borde",
   "LABEL.PERCENT_COMPLETE": "% Completo",
-  "LABEL.EST_JOB_COMP_DATE": "Fecha Estimada de Finalización del Trabajo",
+  "LABEL.EST_FAB_COMP_DATE": "Fecha Estimada de Finalización del Trabajo",
   "LABEL.EMPLOYEE": "Empleado",
   
   "DRAFTING.SUBMISSION": "Envío de Redacción",
