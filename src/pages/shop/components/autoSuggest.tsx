@@ -32,6 +32,7 @@ const FAB_STAGE_FIELDS: { keyword: string; field: string; label: string }[] = [
   { keyword: 'edg', field: 'edging_linft', label: 'Edging' },
   { keyword: 'mit', field: 'miter_linft', label: 'Miter' },
   { keyword: 'cnc', field: 'cnc_linft', label: 'CNC' },
+  {keyword:'resurface', field: 'resurface_linft', label: 'Resurfacing' },
 ];
 
 const TOUCHUP_KEYWORD = 'touch';
@@ -413,7 +414,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
 
   const { data: allFabsData, isLoading: isLoadingFabs } =
-    useGetFabsQuery({ limit: 1000, current_stage: 'shop' });
+    useGetFabsQuery({ limit: 1000, });
 
   const fabOptions = useMemo(() => {
     const fabs = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
@@ -439,17 +440,43 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     ),
     [planningSections]
   );
+  const RESURFACE_KEYWORD = 'resurfac';
+
+const resurfaceSection = useMemo(
+  () => planningSections.find((ps: any) =>
+    (ps.name || ps.plan_name || ps.title || '').toLowerCase().includes(RESURFACE_KEYWORD)
+  ),
+  [planningSections]
+);
+
+const isResurfaceFab = (fab: any) =>
+  (fab?.fab_type || '').toLowerCase().includes(RESURFACE_KEYWORD);
 
   function getActiveStagesFromFab(fab: any) {
-    return FAB_STAGE_FIELDS
-      .map(s => {
-        const section = findSectionByKeyword(s.keyword);
-        return section ? { ...s, section_id: section.id } : null;
-      })
-      .filter((s): s is NonNullable<typeof s> =>
-        s !== null && typeof fab?.[s.field] === 'number' && fab[s.field] > 0
-      );
+  // Resurface FABs only get a single resurfacing stage
+  if (isResurfaceFab(fab)) {
+    if (!resurfaceSection) return [];
+    return [{
+      keyword: RESURFACE_KEYWORD,
+      field: 'total_sqft',
+      label:
+        resurfaceSection.name ||
+        resurfaceSection.plan_name ||
+        resurfaceSection.title ||
+        'Resurfacing',
+      section_id: resurfaceSection.id,
+    }];
   }
+
+  return FAB_STAGE_FIELDS
+    .map(s => {
+      const section = findSectionByKeyword(s.keyword);
+      return section ? { ...s, section_id: section.id } : null;
+    })
+    .filter((s): s is NonNullable<typeof s> =>
+      s !== null && typeof fab?.[s.field] === 'number' && fab[s.field] > 0
+    );
+}
 
   const getNextAvailableSequence = (used: Set<number>) => {
     let seq = 1;
@@ -469,7 +496,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
         sequence: String(i + 1),
       }));
 
-    const touchupEntry: AutoPlanEntry | null = touchupSection
+    const touchupEntry: AutoPlanEntry | null = touchupSection && !isResurfaceFab(selectedFab)
       ? {
         ...emptyEntry({
           section_id: touchupSection.id,
@@ -483,7 +510,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
 
     setEntries(touchupEntry ? [...regularEntries, touchupEntry] : regularEntries);
     setExpandedCards({});
-  }, [selectedFab, selectedEvent, touchupSection]);
+  }, [selectedFab, selectedEvent, touchupSection, resurfaceSection]);
 
   // Editing existing event
   useEffect(() => {
