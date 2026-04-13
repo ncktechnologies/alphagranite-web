@@ -66,6 +66,7 @@ export interface ShopPlanRow {
     operator_name: string;
     estimated_hours: number;
     scheduled_start_date: string;
+    shop_est_completion_date?: string;
     plan_notes: string | null;
     date_group: string;
     shop_office_date_scheduled?: string;
@@ -360,6 +361,18 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             ),
             enableSorting: false,
             size: 50,
+        },
+        {
+            id: 'shop_est_completion_date',
+            accessorFn: r => r.shop_est_completion_date,
+            header: ({ column }) => <DataGridColumnHeader title="EST COMPLETION DATE" column={column} />,
+            cell: ({ row }) => (
+                <span className="text-sm text-text">
+                    {row.original.shop_est_completion_date ? format(new Date(row.original.shop_est_completion_date), 'MM/dd/yyyy') : '-'}
+                </span>
+            ),
+            enableSorting: true,
+            size: 150,
         },
         {
             id: 'shop_cut_date_scheduled',

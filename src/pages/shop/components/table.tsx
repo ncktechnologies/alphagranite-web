@@ -67,6 +67,7 @@ export interface ShopPlanRow {
     operator_name: string;
     estimated_hours: number;
     scheduled_start_date: string;
+    shop_est_completion_date?: string;
     plan_notes: string | null;
     date_group: string;
     shop_office_date_scheduled?: string;
@@ -246,6 +247,9 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                         shop_office_date_scheduled: fab.shop_date_schedule
                             ? format(new Date(fab.shop_date_schedule), 'MM/dd/yyyy')
                             : undefined,
+                        shop_est_completion_date: fab.shop_est_completion_date
+                            ? format(new Date(fab.shop_est_completion_date), 'MM/dd/yyyy')
+                            : undefined,
                     });
                 });
             } else {
@@ -260,6 +264,9 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                     date_group: 'unscheduled',
                     shop_office_date_scheduled: fab.shop_date_schedule
                         ? format(new Date(fab.shop_date_schedule), 'MM/dd/yyyy')
+                        : undefined,
+                    shop_est_completion_date: fab.shop_est_completion_date
+                        ? format(new Date(fab.shop_est_completion_date), 'MM/dd/yyyy')
                         : undefined,
                 });
             }
@@ -330,6 +337,18 @@ const ShopTable: React.FC<ShopTableProps> = () => {
             ),
             enableSorting: false,
             size: 50,
+        },
+        {
+            id: 'shop_est_completion_date',
+            accessorFn: r => r.shop_est_completion_date,
+            header: ({ column }) => <DataGridColumnHeader title="EST Completion Date" column={column} />,
+            cell: ({ row }) => (
+                <span className="text-sm text-text">
+                    {row.original.shop_est_completion_date ? format(new Date(row.original.shop_est_completion_date), 'MM/dd/yyyy') : '-'}
+                </span>
+            ),
+            enableSorting: true,
+            size: 150,
         },
         {
             id: 'shop_cut_date_scheduled',
@@ -713,7 +732,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                                                             {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                                         </th>
                                                     ))}
-                                                 </tr>
+                                                </tr>
                                             ))}
                                         </thead>
                                         <tbody>

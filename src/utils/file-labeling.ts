@@ -169,6 +169,9 @@ export const getFileStage = (
   if (lowerFileName?.includes('cutlist') || lowerFileName?.includes('cut_list') || lowerFileName?.includes('final_programming') || context?.isFinalProgramming) {
     return WORKFLOW_STAGES.final_programming;
   }
+   if (lowerFileName?.includes('slab_smith') || lowerFileName?.includes('slab_smith'))  {
+    return WORKFLOW_STAGES.slab_smith;
+  }
   
   // CNC files
   if (lowerFileName?.includes('cnc') || context?.currentStage === 'cnc') {
