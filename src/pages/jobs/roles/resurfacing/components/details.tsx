@@ -112,7 +112,7 @@ export function ResurfacingDetailsPage() {
           return {
             id: noteItem?.id ?? index,
             avatar: fabAuthorName?.charAt(0).toUpperCase() || 'U',
-            content: note?.note || '',
+            content: noteContent || '',
             author: fabAuthorName || 'Unknown',
             timestamp: noteItem?.created_at ? new Date(noteItem.created_at).toLocaleDateString() : (fab?.created_at ? new Date(fab.created_at).toLocaleDateString() : 'Unknown date'),
             category: config.label,

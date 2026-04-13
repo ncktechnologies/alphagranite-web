@@ -1132,7 +1132,7 @@ export const JobSalesTable = ({
                             </Select>
 
                             {/* Date filter */}
-                            <div className="flex items-center gap-2">
+                            {/* <div className="flex items-center gap-2">
                                 <Select value={dateFilter} onValueChange={v => {
                                     setDateFilter(v);
                                     if (v === 'custom') setIsDatePickerOpen(true);
@@ -1181,7 +1181,7 @@ export const JobSalesTable = ({
                                         </PopoverContent>
                                     </Popover>
                                 )}
-                            </div>
+                            </div> */}
 
                             {/* Schedule filter */}
                             {showScheduleFilter && (

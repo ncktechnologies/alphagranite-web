@@ -169,7 +169,7 @@ export const NeedToInvoicePage = () => {
       };
 
       await addJobNotes(payload).unwrap();
-      toast.success(`Invoice requirement ${job.need_to_invoice ? 'disabled' : 'enabled'} successfully`);
+      toast.success(`Note added successfully`);
       refetch();
       setIsNoteModalOpen(false);
       setNoteText('');
