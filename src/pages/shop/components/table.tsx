@@ -341,7 +341,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
         {
             id: 'shop_est_completion_date',
             accessorFn: r => r.shop_est_completion_date,
-            header: ({ column }) => <DataGridColumnHeader title="EST Completion Date" column={column} />,
+            header: ({ column }) => <DataGridColumnHeader title="Shop EST Completion Date" column={column} />,
             cell: ({ row }) => (
                 <span className="text-sm text-text">
                     {row.original.shop_est_completion_date ? format(new Date(row.original.shop_est_completion_date), 'MM/dd/yyyy') : '-'}
