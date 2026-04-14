@@ -1,14 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { X, Search } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getTodayDate } from '../../drafters/components/AssignDrafterModal';
 import { useCreateSlabSmithMutation, useGetEmployeesQuery, useGetSlabSmithByFabIdQuery, useUpdateSlabSmithMutation } from '@/store/api';
-
-const getTomorrowDate = (): string => {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  return tomorrow.toISOString().split('T')[0];
-};
+import { toast } from 'sonner';
 
 interface AssignSlabSmithOperatorModalProps {
   open: boolean;
@@ -29,10 +26,6 @@ const AssignSlabSmithOperatorModal: React.FC<AssignSlabSmithOperatorModalProps> 
 }) => {
   const [selectedOperator, setSelectedOperator] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const initializedRef = useRef(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const { data: employeesData, isLoading: employeesLoading } = useGetEmployeesQuery();
   const [createSlabSmith] = useCreateSlabSmithMutation();
@@ -48,49 +41,19 @@ const AssignSlabSmithOperatorModal: React.FC<AssignSlabSmithOperatorModalProps> 
     ? employeesData
     : employeesData?.data || [];
 
-  // Filter operators based on search
-  const filteredOperators = operators.filter((op: any) => {
-    const name = `${op.first_name || ''} ${op.last_name || ''}`.trim() || op.email || '';
-    return name.toLowerCase().includes(searchQuery.toLowerCase());
-  });
-
   const fabIdsToAssign = reassignFabId ? [reassignFabId] : selectedFabIds;
   const isReassignMode = !!reassignFabId;
 
   // Reset form when modal opens
   useEffect(() => {
-    if (open && !initializedRef.current) {
-      initializedRef.current = true;
+    if (open) {
       setSelectedOperator('');
-      setSearchQuery('');
-      setShowDropdown(false);
 
       if (isReassignMode && slabSmithData) {
         setSelectedOperator(String(slabSmithData?.drafter_id || ''));
       }
     }
-
-    if (!open) {
-      initializedRef.current = false;
-    }
   }, [open, selectedFabIds, reassignFabId, slabSmithData, isReassignMode]);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowDropdown(false);
-      }
-    };
-
-    if (showDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showDropdown]);
 
   const getOperatorName = (operatorId: string) => {
     const operator = operators.find((op: any) => String(op.id) === operatorId);
@@ -99,7 +62,10 @@ const AssignSlabSmithOperatorModal: React.FC<AssignSlabSmithOperatorModalProps> 
   };
 
   const handleSubmit = async () => {
-    if (!selectedOperator || fabIdsToAssign.length === 0) return;
+    if (!selectedOperator || fabIdsToAssign.length === 0) {
+      toast.error('Please select a SlabSmith operator');
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -108,32 +74,36 @@ const AssignSlabSmithOperatorModal: React.FC<AssignSlabSmithOperatorModalProps> 
       const operatorName = `${operator?.first_name || ''} ${operator?.last_name || ''}`.trim();
 
       if (isReassignMode) {
+        const slabSmithId = slabSmithData?.id;
+        if (!slabSmithId) throw new Error('SlabSmith record not found');
+        
         await updateSlabSmith({
-          fab_id: parseInt(fabIdsToAssign[0], 10),
+          slabsmith_id: slabSmithId,
           data: {
             drafter_id: parseInt(selectedOperator, 10),
-            drafter_name: operatorName,
-            start_date: getTodayDate(),
           }
         }).unwrap();
+        
+        toast.success(`SlabSmith operator reassigned for FAB ${reassignFabId}`);
       } else {
+        // Create SlabSmith assignment for each FAB - send fields at root level
         for (const fabId of fabIdsToAssign) {
           await createSlabSmith({
             fab_id: parseInt(fabId, 10),
-            data: {
-              fab_id: parseInt(fabId, 10),
-              drafter_id: parseInt(selectedOperator, 10),
-              drafter_name: operatorName,
-              start_date: getTodayDate(),
-            }
+            slab_smith_type: 'slab_smith',
+            drafter_id: parseInt(selectedOperator, 10),
+            start_date: getTodayDate(),
           }).unwrap();
         }
+        
+        toast.success(`Successfully assigned SlabSmith operator to ${fabIdsToAssign.length} FAB(s)`);
       }
 
       onAssignSuccess();
       onClose();
     } catch (error) {
-      console.error('Failed to assign SlabSmith operator:', error);
+      console.error('Error assigning SlabSmith operator:', error);
+      toast.error(isReassignMode ? 'Failed to reassign SlabSmith operator' : 'Failed to assign SlabSmith operator');
     } finally {
       setIsSubmitting(false);
     }
@@ -154,69 +124,27 @@ const AssignSlabSmithOperatorModal: React.FC<AssignSlabSmithOperatorModalProps> 
         </div>
 
         <div className="p-[20px] space-y-5">
-          {/* Operator Search Dropdown */}
+          {/* Operator Selection */}
           <div className="space-y-2">
-            <label className="text-xs font-medium text-[#7e8299]">Select Operator *</label>
-            <div className="relative" ref={dropdownRef}>
-              <div
-                className="flex items-center justify-between w-full h-10 px-3 py-2 text-sm bg-white border border-[#ebedf3] rounded-[6px] cursor-pointer hover:border-[#c9c9d8] focus:border-[#b5b5c3] transition-colors"
-                onClick={() => setShowDropdown(!showDropdown)}
-              >
-                <span className={selectedOperator ? 'text-[#181c32]' : 'text-[#99a1b7]'}>
-                  {selectedOperator ? getOperatorName(selectedOperator) : 'Search and select operator...'}
-                </span>
-                <Search size={14} className="text-[#99a1b7]" />
-              </div>
+            <Label>Select SlabSmith Operator</Label>
+            <Select value={selectedOperator} onValueChange={setSelectedOperator}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select SlabSmith operator" />
+              </SelectTrigger>
+              <SelectContent>
+                {!employeesLoading &&
+                  operators.map((operator: any) => {
+                    const operatorId = String(operator.id);
+                    const operatorName = `${operator.first_name || ''} ${operator.last_name || ''}`.trim() || operator.email;
 
-              {showDropdown && (
-                <div className="absolute z-10 w-full mt-1 bg-white border border-[#ebedf3] rounded-[6px] shadow-lg max-h-60 overflow-auto">
-                  <div className="p-2 border-b border-[#ebedf3]">
-                    <input
-                      type="text"
-                      placeholder="Search operators..."
-                      className="w-full h-8 px-2 text-xs border border-[#ebedf3] rounded-[4px] focus:outline-none focus:border-[#b5b5c3]"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-
-                  <div className="py-1">
-                    {employeesLoading ? (
-                      <div className="px-3 py-2 text-xs text-[#99a1b7]">Loading operators...</div>
-                    ) : filteredOperators.length === 0 ? (
-                      <div className="px-3 py-2 text-xs text-[#99a1b7]">No operators found</div>
-                    ) : (
-                      filteredOperators.map((operator: any) => {
-                        const operatorId = String(operator.id);
-                        const operatorName = `${operator.first_name || ''} ${operator.last_name || ''}`.trim() || operator.email;
-
-                        return (
-                          <div
-                            key={operatorId}
-                            className={`px-3 py-2 cursor-pointer transition-colors ${selectedOperator === operatorId
-                              ? 'bg-[#f1f0ff] text-[#5d70ea]'
-                              : 'text-[#181c32] hover:bg-[#f5f8fa]'
-                              }`}
-                            onClick={() => {
-                              setSelectedOperator(operatorId);
-                              setShowDropdown(false);
-                              setSearchQuery('');
-                            }}
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className={`w-2.5 h-2.5 rounded-full ${selectedOperator === operatorId ? 'bg-[#5d70ea]' : 'bg-transparent'
-                                }`} />
-                              <span className="text-xs">{operatorName}</span>
-                            </div>
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+                    return (
+                      <SelectItem key={operatorId} value={operatorId}>
+                        {operatorName}
+                      </SelectItem>
+                    );
+                  })}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* FAB List (read-only) */}

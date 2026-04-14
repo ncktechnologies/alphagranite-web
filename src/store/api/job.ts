@@ -697,6 +697,7 @@ export interface SlabSmithCreate {
 }
 
 export interface SlabSmithUpdate {
+    drafter_id?: number;
     end_date?: string | null;
     total_sqft_completed?: string | null;
     is_completed?: boolean | null;
