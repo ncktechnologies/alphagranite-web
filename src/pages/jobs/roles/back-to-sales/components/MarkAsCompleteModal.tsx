@@ -21,9 +21,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { z } from "zod";
 import { toast } from "sonner";
-import { Can } from '@/components/permission';
 
-// Dynamic schema – will be refined based on slabSmithNeeded
+// Base schema (unchanged)
 const markAsCompleteBaseSchema = z.object({
   revenue: z.string().min(1, "Revenue is required"),
   notes: z.string().optional(),
@@ -41,6 +40,7 @@ export const MarkAsCompleteModal = ({
   slabSmithNeeded = false,
   isSlabSmithActivityComplete = false,
   fabId,
+  initialRevenue = "", // 👈 new prop
 }: {
   open: boolean;
   onClose: () => void;
@@ -48,26 +48,24 @@ export const MarkAsCompleteModal = ({
   slabSmithNeeded?: boolean;
   isSlabSmithActivityComplete?: boolean;
   fabId: number;
+  initialRevenue?: number | string; // 👈 can be number or string
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ✅ Build schema with required checkboxes
+  // Build schema with required checkboxes (unchanged)
   const getMarkAsCompleteSchema = () => {
     let schema = markAsCompleteBaseSchema;
 
-    // Block drawing is always required
     schema = schema.refine(data => data.blockDrawingApproved === true, {
       message: "Block Drawing must be approved",
       path: ["blockDrawingApproved"],
     });
 
-    // SCT is always required
     schema = schema.refine(data => data.sctCompleted === true, {
       message: "SCT must be completed",
       path: ["sctCompleted"],
     });
 
-    // SlabSmith approval required only if needed
     if (slabSmithNeeded) {
       schema = schema.refine(data => data.slabSmithApproved === true, {
         message: "SlabSmith must be approved",
@@ -81,22 +79,29 @@ export const MarkAsCompleteModal = ({
   const form = useForm<MarkAsCompleteData>({
     resolver: zodResolver(getMarkAsCompleteSchema()),
     defaultValues: {
-      revenue: "",
+      revenue: initialRevenue !== undefined && initialRevenue !== "" ? String(initialRevenue) : "",
       notes: "",
       slabSmithApproved: false,
       blockDrawingApproved: false,
       sctCompleted: false,
     },
-    mode: "onChange", // re-validate on every change
+    mode: "onChange",
   });
 
-  // ✅ Re-run validation when slabSmithNeeded changes (modal reopened)
+  // ✅ Reset form when modal opens with a new fabId / initialRevenue
   useEffect(() => {
     if (open) {
+      form.reset({
+        revenue: initialRevenue !== undefined && initialRevenue !== "" ? String(initialRevenue) : "",
+        notes: "",
+        slabSmithApproved: false,
+        blockDrawingApproved: false,
+        sctCompleted: false,
+      });
       form.clearErrors();
-      form.trigger(); // re-validate entire form
+      form.trigger();
     }
-  }, [open, slabSmithNeeded, form]);
+  }, [open, fabId, initialRevenue, form]); // re-run when fab changes
 
   const handleFormSubmit = async (values: MarkAsCompleteData) => {
     setIsSubmitting(true);
@@ -112,10 +117,7 @@ export const MarkAsCompleteModal = ({
     }
   };
 
-  // ✅ External condition (SlabSmith activity must be complete before allowing submit)
   const isExternalBlocked = slabSmithNeeded && !isSlabSmithActivityComplete;
-
-  // ✅ Checkboxes are already enforced via Zod – so isValid covers them
   const isSubmitDisabled = isSubmitting || !form.formState.isValid || isExternalBlocked;
 
   return (

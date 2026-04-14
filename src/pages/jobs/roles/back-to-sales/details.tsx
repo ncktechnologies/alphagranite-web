@@ -455,6 +455,7 @@ export const DraftReviewDetailsPage = () => {
                 slabSmithNeeded={slabSmithNeeded}
                 isSlabSmithActivityComplete={isSlabSmithActivityComplete}
                 fabId={fabData.id}
+                initialRevenue={fabData?.revenue || ''}
             />
         </div>
     );
