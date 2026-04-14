@@ -23,6 +23,7 @@ export interface IJob {
   draft_completed?: string;
   drafter?: string; // Add drafter field
   cnc_operator?: string; // Add CNC operator field
+  slabsmith_operator?: string; // Add SlabSmith operator field
   slabsmith_completed?: string; // Add slabsmith completed field
   slabsmith_clock_complete?: string; // Add slabsmith clock complete field
   slabsmith_used?: string; // Add slabsmith used field

@@ -6,7 +6,8 @@ import { Container } from '@/components/common/container';
 import { useGetFabsQuery, Fab, useGetFabsInSlabSmithPendingQuery } from '@/store/api/job';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import  AssignSlabSmithOperatorModal  from './components/AssignSlabSmithOperatorModal';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
@@ -48,7 +49,8 @@ const transformFabToJob = (fab: Fab): IJob => {
         draft_completed: fab.draft_completed ? 'Yes' : 'No',
         slabsmith_completed: (fab as any).slab_smith_data?.is_completed ? 'Yes' : 'No',
         slabsmith_clock_complete: (fab as any).slab_smith_data?.end_date ? 'Yes' : 'No',
-        drafter: fab.draft_data?.drafter_name || '-',
+        // drafter: fab.draft_data?.drafter_name || '-',
+        slabsmith_operator: (fab as any).slabsmith_data?.drafter_name || '-',
         template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
         template_received: '',
         templater: fab.technician_name || '-',
@@ -172,8 +174,37 @@ const SlabSmithPage = () => {
     // const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
     const { data, isLoading, isFetching, isError, error } = useGetFabsInSlabSmithPendingQuery(queryParams);
 
+    // Modal and selection state
+    const [selectedRows, setSelectedRows] = useState<string[]>([]);
+    const [showAssignModal, setShowAssignModal] = useState(false);
+    const [reassignFabId, setReassignFabId] = useState<string | null>(null);
+
     const handleRowClick = (fabId: string) => {
         navigate(`/job/slab-smith/${fabId}`);
+    };
+
+    // Handler functions for assignment
+    const handleAssignSlabSmithClick = () => {
+        if (selectedRows.length > 0) {
+            setReassignFabId(null);
+            setShowAssignModal(true);
+        }
+    };
+
+    const handleReassignSlabSmithClick = (job: IJob) => {
+        setReassignFabId(job.fab_id);
+        setSelectedRows([]);
+        setShowAssignModal(true);
+    };
+
+    const handleCloseModal = () => {
+        setShowAssignModal(false);
+        setReassignFabId(null);
+    };
+
+    const handleAssignSuccess = () => {
+        setSelectedRows([]);
+        // Data will auto-refetch due to RTK Query tag invalidation
     };
 
     // Transform Fab data to IJob format
@@ -237,17 +268,30 @@ const SlabSmithPage = () => {
                         jobs={jobsData}
                         path='slab-smith'
                         isLoading={isLoading}
-                        // onRowClick={handleRowClick}
-                        // useBackendPagination={true}
                         totalRecords={data?.total || 0}
                         useBackendPagination={true}
                         tableState={tableState}
                         showSalesPersonFilter={false}
-                        showScheduleFilter={false} // Remove separate schedule filter
+                        showScheduleFilter={false}
                         salesPersons={salesPersons}
-                        visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'slabsmith_completed', 'slabsmith_notes', 'drafter', 'slabsmith_clock_complete', 'on_hold']}
+                        enableMultiSelect
+                        selectedRows={selectedRows}
+                        setSelectedRows={setSelectedRows}
+                        showAssignSlabSmithButton
+                        onAssignSlabSmithClick={handleAssignSlabSmithClick}
+                        onReassignSlabSmithClick={handleReassignSlabSmithClick}
+                        visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'slabsmith_completed', 'slabsmith_notes', 'slabsmith_operator', 'slabsmith_clock_complete', 'on_hold']}
                     />
                 </CurrentStageProvider>
+
+                {/* Assign SlabSmith Operator Modal */}
+                <AssignSlabSmithOperatorModal
+                    open={showAssignModal}
+                    onClose={handleCloseModal}
+                    selectedFabIds={reassignFabId ? [] : selectedRows}
+                    reassignFabId={reassignFabId}
+                    onAssignSuccess={handleAssignSuccess}
+                />
 
             </Container>
         </div>

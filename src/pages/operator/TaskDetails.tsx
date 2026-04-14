@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 
 import { OperatorTimerComponent } from './components/TimerComponent';
 import { SubmitWorkModal, type SubmitWorkData } from './components/SubmitWorkModal';
+import { OperatorTimerHistory } from './OperatorTimerHistory';
 import {
     useGetTimerStateQuery,
     useManageTimerMutation,
@@ -433,6 +434,10 @@ export function OperatorTaskDetails() {
                             )}
                         </CardContent>
                     </Card>
+
+                    {/* Timer History Card */}
+                    <OperatorTimerHistory fabId={fabId} />
+                    
                 </div>
 
                 {/* Right column (4 columns) – Timer Controls */}

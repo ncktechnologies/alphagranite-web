@@ -99,22 +99,36 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
   const [createPlanFabId, setCreatePlanFabId] = useState<string>('');
 
   const [searchFabId, setSearchFabId] = useState('');
+  const [searchType, setSearchType] = useState<'fab_id' | 'job_number'>('fab_id');
   const [filterFabType, setFilterFabType] = useState('');
   const [filterWorkstation, setFilterWorkstation] = useState('');
   const [filterOperator, setFilterOperator] = useState('');
 
-  const effectiveFabId = lockedFabId || searchFabId;
   const isSearchLocked = !!lockedFabId;
 
-  const queryParams = useMemo(() => ({
-    view: viewMode, // 'day', 'week', or 'month'
-    reference_date: format(currentDate, 'yyyy-MM-dd'), // Reference date in YYYY-MM-DD format
-    limit: 1000,
-    ...(effectiveFabId && { fab_id: Number(effectiveFabId) }),
-    ...(filterFabType && { fab_type: filterFabType }),
-    ...(filterWorkstation && { workstation_id: Number(filterWorkstation) }),
-    ...(filterOperator && { operator_id: Number(filterOperator) }),
-  }), [currentDate, viewMode, effectiveFabId, filterFabType, filterWorkstation, filterOperator]);
+  const queryParams = useMemo(() => {
+    const params: any = {
+      view: viewMode, // 'day', 'week', or 'month'
+      reference_date: format(currentDate, 'yyyy-MM-dd'), // Reference date in YYYY-MM-DD format
+      limit: 1000,
+    };
+
+    // If lockedFabId exists, always use it (overrides search)
+    if (lockedFabId) {
+      params.fab_id = Number(lockedFabId);
+    } else if (searchFabId) {
+      // Only add search when there's no lockedFabId
+      params.search = searchFabId;
+      params.type = searchType;
+    }
+
+    // Add other filters
+    if (filterFabType) params.fab_type = filterFabType;
+    if (filterWorkstation) params.workstation_id = Number(filterWorkstation);
+    if (filterOperator) params.operator_id = Number(filterOperator);
+
+    return params;
+  }, [currentDate, viewMode, lockedFabId, searchFabId, searchType, filterFabType, filterWorkstation, filterOperator]);
 
   const { data: plansResponse, isLoading } = useGetAllShopPlansQuery(queryParams);
 
@@ -445,19 +459,30 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                   <span className="font-semibold text-[13px] text-[#4b545d]">{lockedFabId}</span>
                 </div>
               ) : (
-                <div className="relative w-[194px]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#78829d]" />
-                  <input
-                    placeholder="Search FAB ID..."
-                    value={searchFabId}
-                    onChange={(e) => setSearchFabId(e.target.value)}
-                    className="w-full h-[36px] bg-white border border-[#e2e4ed] rounded-[6px] pl-9 pr-3 text-[13px] text-[#4b545d] placeholder:text-[#78829d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] outline-none focus:ring-1 focus:ring-[#e2e4ed]"
-                  />
-                  {searchFabId && (
-                    <button className="absolute right-2 top-1/2 -translate-y-1/2" onClick={() => setSearchFabId('')}>
-                      <X className="size-3.5 text-[#78829d]" />
-                    </button>
-                  )}
+                <div className="flex items-center gap-0">
+                  <Select value={searchType} onValueChange={(v) => setSearchType(v as 'fab_id' | 'job_number')}>
+                    <SelectTrigger className="w-[130px] h-[36px] bg-white border border-[#e2e4ed] rounded-[6px] rounded-e-none border-r-0 text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
+                      <SelectValue placeholder="Search by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fab_id">FAB ID</SelectItem>
+                      <SelectItem value="job_number">Job Number</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#78829d]" />
+                    <input
+                      placeholder={`Search by ${searchType === 'fab_id' ? 'FAB ID' : 'Job Number'}...`}
+                      value={searchFabId}
+                      onChange={(e) => setSearchFabId(e.target.value)}
+                      className="w-[194px] h-[36px] bg-white border border-[#e2e4ed] rounded-[6px] rounded-s-none pl-9 pr-3 text-[13px] text-[#4b545d] placeholder:text-[#78829d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] outline-none focus:ring-1 focus:ring-[#e2e4ed]"
+                    />
+                    {searchFabId && (
+                      <button className="absolute right-2 top-1/2 -translate-y-1/2" onClick={() => setSearchFabId('')}>
+                        <X className="size-3.5 text-[#78829d]" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 

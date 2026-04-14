@@ -141,7 +141,7 @@ export function FinalProgrammingDetailsPage() {
     const hasDraftingAssignment = fabData?.draft_data?.id;
     console.log('Attempting to start session with drafting assignment:', hasDraftingAssignment);
     if (!hasDraftingAssignment) {
-      toast.error('Cannot start final programming session - no drafting history found');
+      toast.error('Cannot start final programming session - no drafter found');
       return;
     }
     try {

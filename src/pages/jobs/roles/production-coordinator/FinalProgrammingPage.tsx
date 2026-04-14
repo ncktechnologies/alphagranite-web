@@ -44,7 +44,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         shop_date_scheduled: fab.templating_schedule_start_date || '',
         wj_time_minutes: fab.programming_time_minutes ? String(fab.programming_time_minutes) : null,
         final_programming_completed: fab.final_programming_complete ? 'Yes' : 'No',
-        final_programmer: fab.final_programmer_name || fab.draft_data?.drafter_name || '-',
+        drafter: fab.final_programmer_name || fab.draft_data?.drafter_name || '-',
         stone_type_name: fab.stone_type_name || '',
         stone_color_name: fab.stone_color_name || '',
         stone_thickness_value: fab.stone_thickness_value || '',
@@ -252,7 +252,7 @@ const FinalProgrammingPage = () => {
         <>
             <Container className="lg:mx-0">
                 <Toolbar className=" ">
-                    <ToolbarHeading title="Final Programming" description="Jobs in final CNC programming stage" />
+                    <ToolbarHeading title="Final Programming" description="Jobs in final programming stage" />
                 </Toolbar>
 
                 <JobTable
@@ -264,7 +264,7 @@ const FinalProgrammingPage = () => {
                     // tableState={tableState}
                     showSalesPersonFilter={true}
                     salesPersons={salesPersons}
-                    visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'wj_time_minutes', 'final_programming_notes', 'final_programming_completed', 'final_programmer', 'on_hold']}
+                    visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'wj_time_minutes', 'final_programming_notes', 'final_programming_completed', 'drafter', 'on_hold']}
                     enableMultiSelect
                     selectedRows={selectedRows}
                     setSelectedRows={setSelectedRows}

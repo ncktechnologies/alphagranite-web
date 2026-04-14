@@ -67,6 +67,7 @@ export interface ShopCutPlanListParams {
   skip?: number;
   limit?: number;
   search?: string;
+  type?: 'fab_id' | 'job_number' | 'job_name';
   planning_section_id?: number;
   workstation_id?: number;
   operator_id?: number;
@@ -159,6 +160,7 @@ export const shopCutPlanningApi = createApi({
               ...(queryParams.skip !== undefined && { skip: queryParams.skip }),
               ...(queryParams.limit !== undefined && { limit: queryParams.limit }),
               ...(queryParams.search && { search: queryParams.search }),
+              ...(queryParams.type && { type: queryParams.type }),
               ...(queryParams.planning_section_id !== undefined && { planning_section_id: queryParams.planning_section_id }),
               ...(queryParams.workstation_id !== undefined && { workstation_id: queryParams.workstation_id }),
               ...(queryParams.operator_id !== undefined && { operator_id: queryParams.operator_id }),

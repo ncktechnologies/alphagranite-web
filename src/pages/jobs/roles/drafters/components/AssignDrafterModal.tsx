@@ -10,7 +10,7 @@ import { useBulkAssignDraftingMutation, useUpdateDraftingMutation, useGetDraftin
 import { toast } from 'sonner';
 
 // Helper to get today's date in YYYY-MM-DD format
-const getTodayDate = () => new Date().toISOString().split('T')[0];
+export const getTodayDate = () => new Date().toISOString().split('T')[0];
 
 interface AssignDrafterModalProps {
   open: boolean;

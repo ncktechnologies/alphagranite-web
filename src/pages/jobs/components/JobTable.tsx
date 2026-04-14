@@ -77,6 +77,10 @@ interface JobTableProps {
     showAssignCNCButton?: boolean;
     onAssignCNCClick?: () => void;
     onReassignCNCClick?: (job: IJob) => void;
+    /** SlabSmith operator assignment callbacks */
+    showAssignSlabSmithButton?: boolean;
+    onAssignSlabSmithClick?: () => void;
+    onReassignSlabSmithClick?: (job: IJob) => void;
     /** 'templater' | 'installer' — when set, job number links to the role timer page */
     pageRole?: 'templater' | 'installer';
     showDateFilter?: boolean;
@@ -116,6 +120,9 @@ export const JobTable = ({
     showAssignCNCButton = false,
     onAssignCNCClick = () => { },
     onReassignCNCClick,
+    showAssignSlabSmithButton = false,
+    onAssignSlabSmithClick = () => { },
+    onReassignSlabSmithClick,
     pageRole,
     dateGrouping = 'date',
     onDateGroupingChange,
@@ -346,10 +353,11 @@ export const JobTable = ({
                 return null;
             },
             cell: ({ row }) => {
-                // Hide checkbox if any assignee is present (drafter, cnc_operator, revisor, or final_programmer)
+                // Hide checkbox if any assignee is present (drafter, cnc_operator, slabsmith_operator, revisor, or final_programmer)
                 const hasAssignee = (
                     (row.original.drafter && row.original.drafter !== '-') ||
                     (row.original.cnc_operator && row.original.cnc_operator !== '-') ||
+                    (row.original.slabsmith_operator && row.original.slabsmith_operator !== '-') ||
                     (row.original.revisor && row.original.revisor !== '-') ||
                     (row.original as any).final_programmer
                 );
@@ -557,6 +565,42 @@ export const JobTable = ({
                                 onClick={e => {
                                     e.stopPropagation();
                                     onReassignCNCClick(row.original);
+                                }}
+                            >
+                                Reassign
+                            </Button>
+                        )}
+                    </div>
+                );
+            },
+            size: 220,
+            minSize: 200,
+            enableSorting: true,
+        },
+
+        // ── SlabSmith Operator ───────────────────────────────────────────────
+        // Shows SlabSmith operator assigned to the FAB with optional reassign button
+        {
+            id: "slabsmith_operator",
+            accessorKey: "slabsmith_operator",
+            header: ({ column }) => <DataGridColumnHeader title="SLABSMITH OPERATOR" column={column} />,
+            cell: ({ row }) => {
+                const slabsmithOperator = row.original.slabsmith_operator;
+                const hasOperator = slabsmithOperator && slabsmithOperator !== '-';
+
+                return (
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs truncate flex-1">{slabsmithOperator || '—'}</span>
+
+                        {/* Reassign button - only shown when prop is provided and operator exists */}
+                        {hasOperator && onReassignSlabSmithClick && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap shrink-0"
+                                onClick={e => {
+                                    e.stopPropagation();
+                                    onReassignSlabSmithClick(row.original);
                                 }}
                             >
                                 Reassign
@@ -1295,6 +1339,13 @@ export const JobTable = ({
                         {showAssignCNCButton && (
                             <Button variant="outline" onClick={onAssignCNCClick} disabled={selectedRows.length === 0}>
                                 Assign CNC ({selectedRows.length})
+                            </Button>
+                        )}
+
+                        {/* Assign SlabSmith Operator button */}
+                        {showAssignSlabSmithButton && (
+                            <Button variant="outline" onClick={onAssignSlabSmithClick} disabled={selectedRows.length === 0}>
+                                Assign SlabSmith ({selectedRows.length})
                             </Button>
                         )}
 
