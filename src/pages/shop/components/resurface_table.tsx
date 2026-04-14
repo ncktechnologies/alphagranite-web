@@ -222,6 +222,8 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                 shop_office_date_scheduled: fab.shop_date_schedule
                     ? format(new Date(fab.shop_date_schedule), 'MM/dd/yyyy')
                     : undefined,
+                shop_est_completion_date: fab.shop_est_completion_date ? format(new Date(fab.shop_est_completion_date), 'MM/dd/yyyy') : undefined,
+
             };
 
             if (cutPlans.length > 0) {

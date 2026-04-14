@@ -84,7 +84,7 @@ const AssignSlabSmithOperatorModal: React.FC<AssignSlabSmithOperatorModalProps> 
           }
         }).unwrap();
         
-        toast.success(`SlabSmith operator reassigned for FAB ${reassignFabId}`);
+        toast.success(`SlabSmith Drafter reassigned for FAB ${reassignFabId}`);
       } else {
         // Create SlabSmith assignment for each FAB - send fields at root level
         for (const fabId of fabIdsToAssign) {
@@ -96,14 +96,14 @@ const AssignSlabSmithOperatorModal: React.FC<AssignSlabSmithOperatorModalProps> 
           }).unwrap();
         }
         
-        toast.success(`Successfully assigned SlabSmith operator to ${fabIdsToAssign.length} FAB(s)`);
+        toast.success(`Successfully assigned SlabSmith Drafter to ${fabIdsToAssign.length} FAB(s)`);
       }
 
       onAssignSuccess();
       onClose();
     } catch (error) {
       console.error('Error assigning SlabSmith operator:', error);
-      toast.error(isReassignMode ? 'Failed to reassign SlabSmith operator' : 'Failed to assign SlabSmith operator');
+      // toast.error(isReassignMode ? 'Failed to reassign SlabSmith operator' : 'Failed to assign SlabSmith operator');
     } finally {
       setIsSubmitting(false);
     }
@@ -126,10 +126,10 @@ const AssignSlabSmithOperatorModal: React.FC<AssignSlabSmithOperatorModalProps> 
         <div className="p-[20px] space-y-5">
           {/* Operator Selection */}
           <div className="space-y-2">
-            <Label>Select SlabSmith Operator</Label>
+            <Label>Select SlabSmith Drafter</Label>
             <Select value={selectedOperator} onValueChange={setSelectedOperator}>
               <SelectTrigger>
-                <SelectValue placeholder="Select SlabSmith operator" />
+                <SelectValue placeholder="Select SlabSmith Drafter" />
               </SelectTrigger>
               <SelectContent>
                 {!employeesLoading &&
@@ -172,7 +172,7 @@ const AssignSlabSmithOperatorModal: React.FC<AssignSlabSmithOperatorModalProps> 
             disabled={!selectedOperator || fabIdsToAssign.length === 0 || isSubmitting}
             className="bg-[#5d70ea] hover:bg-[#4b5fd4] text-white"
           >
-            {isSubmitting ? 'Assigning...' : (isReassignMode ? 'Reassign Operator' : `Assign Operator`)}
+            {isSubmitting ? 'Assigning...' : (isReassignMode ? 'Reassign Drafter' : `Assign Drafter`)}
           </Button>
         </div>
       </div>

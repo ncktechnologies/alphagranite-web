@@ -583,7 +583,7 @@ export const JobTable = ({
         {
             id: "slabsmith_operator",
             accessorKey: "slabsmith_operator",
-            header: ({ column }) => <DataGridColumnHeader title="SLABSMITH OPERATOR" column={column} />,
+            header: ({ column }) => <DataGridColumnHeader title="SLABSMITH Drafter" column={column} />,
             cell: ({ row }) => {
                 const slabsmithOperator = row.original.slabsmith_operator;
                 const hasOperator = slabsmithOperator && slabsmithOperator !== '-';
