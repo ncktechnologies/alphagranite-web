@@ -80,6 +80,8 @@ interface JobTableProps {
     /** 'templater' | 'installer' — when set, job number links to the role timer page */
     pageRole?: 'templater' | 'installer';
     showDateFilter?: boolean;
+    dateGrouping?: 'date' | 'month' | 'none'; // Optional: group by date, month, or none
+    onDateGroupingChange?: (grouping: 'date' | 'month' | 'none') => void;
 }
 
 export const JobTable = ({
@@ -115,6 +117,8 @@ export const JobTable = ({
     onAssignCNCClick = () => { },
     onReassignCNCClick,
     pageRole,
+    dateGrouping = 'date',
+    onDateGroupingChange,
 }: JobTableProps) => {
     const [localSelectedRows, setLocalSelectedRows] = useState<string[]>([]);
     const [localPagination, setLocalPagination] = useState<PaginationState>({
@@ -373,7 +377,15 @@ export const JobTable = ({
             enableSorting: false,
             size: 60,
         },
+        {
+            id: "shop_est_completion_date",
+            accessorKey: "shop_est_completion_date",
+            header: ({ column }) => <DataGridColumnHeader title="Est Shop Date" column={column} />,
+            cell: ({ row }) => <span className="text-xs uppercase">{row.original.shop_est_completion_date}</span>,
+            size: 100,
+            enableSorting: true,
 
+        },
         // ── Fab Type ─────────────────────────────────────────────────────────
         {
             id: "fab_type",
@@ -1089,6 +1101,7 @@ export const JobTable = ({
             isLoading={isLoading}
             groupByDate
             dateKey="date"
+            dateGrouping={dateGrouping}
             tableLayout={{
                 columnsPinnable: true,
                 columnsMovable: true,

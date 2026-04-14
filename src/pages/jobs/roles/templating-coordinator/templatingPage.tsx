@@ -85,6 +85,9 @@ export function TemplatingPage() {
 
     // Separate state for templater filter
     const [templaterFilter, setTemplaterFilter] = useState<string>('all');
+    
+    // State for date grouping (default to month for hierarchical view)
+    const [dateGrouping, setDateGrouping] = useState<'date' | 'month' | 'none'>('month');
 
     // State for modals
     const [assignModalOpen, setAssignModalOpen] = useState(false);
@@ -185,7 +188,8 @@ export function TemplatingPage() {
                     // Use local date string (YYYY-MM-DD)
                     params.schedule_start_date = format(tableState.dateRange.from, 'yyyy-MM-dd');
                 }
-                if (tableState.dateRange?.to) {
+              
+                if (tableState.dateRange?.to && tableState.dateRange.to !== tableState.dateRange.from) {
                     params.schedule_due_date = format(tableState.dateRange.to, 'yyyy-MM-dd');
                 }
                 // Don't send date_filter when using custom range
@@ -195,7 +199,15 @@ export function TemplatingPage() {
             }
         }
 
-        console.log('Templating Query Params:', params); // Debug log
+        // Log detailed debug info for schedule date filtering
+        // console.log('=== Templating Query Params Debug ===');
+        // console.log('Date Filter:', tableState.dateFilter);
+        // console.log('Date Range:', tableState.dateRange);
+        // console.log('Schedule Start Date:', params.schedule_start_date);
+        // console.log('Schedule Due Date:', params.schedule_due_date);
+        // console.log('Full Params:', params);
+        // console.log('===================================');
+        
         return params;
     }, [
         skip,
@@ -310,6 +322,8 @@ export function TemplatingPage() {
                         templaters={templaters}
                         templaterFilter={templaterFilter}
                         setTemplaterFilter={setTemplaterFilter}
+                        // dateGrouping={dateGrouping}
+                        // onDateGroupingChange={setDateGrouping}
 
                         visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'templating_notes', 'templater', 'on_hold', 'reschedule']}
                         getPath={(job) => {

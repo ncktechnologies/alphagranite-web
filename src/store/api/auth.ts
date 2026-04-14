@@ -28,9 +28,7 @@ export const authApi = createApi({
     keepUnusedDataFor: 0,
     endpoints(build) {
         return {
-            register: build.mutation<SignupResponse, SignupRequest>({
-                query: (data) => ({ url: "/auth/register", method: "post", data })
-            }),
+            
             login: build.mutation<LoginResponse, LoginRequest>({
                 query: (data) => ({ url: "/auth/login", method: "post", data })
             }),
@@ -96,7 +94,6 @@ export const authApi = createApi({
 
 export const {
     useLoginMutation,
-    useRegisterMutation,
     useLazyGetProfileQuery,
     useGetProfileQuery,
     useUpdateProfileMutation,

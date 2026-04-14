@@ -181,7 +181,7 @@ export function OperatorTaskDetails() {
             toast.success(t('OPERATOR.TIMER.START_SUCCESS', 'Timer started successfully'));
         } catch (error: any) {
             console.error('Failed to start timer:', error);
-            toast.error(error?.data?.message || t('OPERATOR.TIMER.START_FAILED', 'Failed to start timer'));
+            // toast.error(error?.data?.message || t('OPERATOR.TIMER.START_FAILED', 'Failed to start timer'));
         }
     };
 
@@ -203,7 +203,7 @@ export function OperatorTaskDetails() {
             setShowWorkPercentageModal(true);
         } catch (error: any) {
             console.error('Failed to pause timer:', error);
-            toast.error(error?.data?.message || t('OPERATOR.TIMER.PAUSE_FAILED', 'Failed to pause timer'));
+            // toast.error(error?.data?.message || t('OPERATOR.TIMER.PAUSE_FAILED', 'Failed to pause timer'));
         }
     };
 
@@ -229,7 +229,7 @@ export function OperatorTaskDetails() {
             toast.success(t('OPERATOR.TIMER.RESUME_SUCCESS', 'Timer resumed'));
         } catch (error: any) {
             console.error('Failed to resume timer:', error);
-            toast.error(error?.data?.message || t('OPERATOR.TIMER.RESUME_FAILED', 'Failed to resume timer'));
+            // toast.error(error?.data?.message || t('OPERATOR.TIMER.RESUME_FAILED', 'Failed to resume timer'));
         }
     };
 
@@ -250,7 +250,7 @@ export function OperatorTaskDetails() {
             setTimeout(() => navigate('/operator/dashboard'), 2000);
         } catch (error: any) {
             console.error('Failed to submit work:', error);
-            toast.error(error?.data?.message || t('OPERATOR.SUBMIT_WORK_FAILED', 'Failed to submit work'));
+            // toast.error(error?.data?.message || t('OPERATOR.SUBMIT_WORK_FAILED', 'Failed to submit work'));
         }
     };
 

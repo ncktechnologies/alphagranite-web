@@ -5,7 +5,7 @@ import { IJob } from '../../components/job';
 import { useGetFabsQuery, Fab, useGetFabsCompletionQuery } from '@/store/api/job';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -37,6 +37,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         job_name: `${fab.job_details?.name}`,
         job_no: String(fab.job_details?.job_number),
         date: fab.shop_est_completion_date || '',
+        shop_est_completion_date: fab.shop_est_completion_date ? formatDate(fab.shop_est_completion_date) : '-',
         current_stage: fab.current_stage,
         sales_person_name: fab.sales_person_name || '',
         acct_name: fab.account_name || '',
@@ -183,6 +184,8 @@ export function InstallSchedulingPage() {
         tableState.dateRange,
         tableState.searchType,
     ]);
+    const [dateGrouping, setDateGrouping] = useState<'date' | 'month' | 'none'>('month');
+
 
     // Fetch data with backend pagination and filtering
     const { data, isLoading, isFetching, isError, error } = useGetFabsCompletionQuery(queryParams);
@@ -239,6 +242,8 @@ export function InstallSchedulingPage() {
                 showSalesPersonFilter={true}
                 showScheduleFilter={false} // Remove separate schedule filter
                 salesPersons={salesPersons}
+                dateGrouping={dateGrouping}
+                onDateGroupingChange={setDateGrouping}
                 visibleColumns={[
                     'fab_type',
                     'fab_id',
@@ -256,6 +261,7 @@ export function InstallSchedulingPage() {
                     'install_confirmed',
                     'shop_status',
                     'on_hold',
+                    // 'shop_est_completion_date'
                 ]}
                 pageRole="installer"
             />

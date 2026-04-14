@@ -5,7 +5,7 @@ import { IJob } from '../../components/job';
 import { useGetFabsCompletionQuery, Fab, useGetFabsQuery } from '@/store/api/job';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { format } from 'date-fns';
 import { useNavigate } from 'react-router';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -84,6 +84,7 @@ const transformFabToJob = (fab: Fab): IJob => {
 export function InstallCompletionPage() {
     const navigate = useNavigate();
     const isUserSuperAdmin = useIsSuperAdmin();
+    const [dateGrouping, setDateGrouping] = useState<'date' | 'month' | 'none'>('month');
 
     // Fetch sales persons data for filter dropdown
     const { data: salesPersonsData } = useGetSalesPersonsQuery();
@@ -239,6 +240,8 @@ export function InstallCompletionPage() {
                 showSalesPersonFilter={true}
                 showScheduleFilter={false} // Remove separate schedule filter
                 salesPersons={salesPersons}
+                dateGrouping={dateGrouping}
+                onDateGroupingChange={setDateGrouping}
                 visibleColumns={[
                     'fab_type',
                     'fab_id',

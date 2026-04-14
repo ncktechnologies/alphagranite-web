@@ -949,6 +949,7 @@ export const jobApi = createApi({
                             // Existing filters
                             ...(queryParams.job_id !== undefined && { job_id: queryParams.job_id }),
                             ...(queryParams.fab_type && { fab_type: queryParams.fab_type }),
+                            
                             ...(queryParams.sales_person_id !== undefined && { sales_person_id: queryParams.sales_person_id }),
                             ...(queryParams.templater_id !== undefined && { templater_id: queryParams.templater_id }),
                             ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
@@ -958,8 +959,7 @@ export const jobApi = createApi({
                             // Search filter
                             ...(queryParams.search && { search: queryParams.search }),
                             // Search type filter (fab_id, job_number, job_name)
-                            ...(queryParams.type && { type: queryParams.type }),
-
+                            
                             // Schedule date filters
                             ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
                             ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
@@ -981,6 +981,7 @@ export const jobApi = createApi({
                             // SCT completion date range filters
                             ...(queryParams.sct_completed_start && { sct_completed_start: queryParams.sct_completed_start }),
                             ...(queryParams.sct_completed_end && { sct_completed_end: queryParams.sct_completed_end }),
+                            ...(queryParams.type && { type: queryParams.type }),
                         }
                     };
                 },

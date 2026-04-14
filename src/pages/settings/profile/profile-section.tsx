@@ -36,7 +36,7 @@ const ProfileSection = () => {
   };
 
   // Get department name from department ID
- 
+
 
   // Loading state
   if (isLoading) {
@@ -74,21 +74,25 @@ const ProfileSection = () => {
               <NavbarActions>
                 <div className="flex items-center justify-between w-full">
                   <h1 className="text-black font-semibold text-lg">Personal Information</h1>
-                  {viewMode === 'details'  && isSuperAdmin ? (
-                    <Button onClick={() => setViewMode('edit')}>Edit Profile</Button>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setViewMode('details')}
-                      >
-                        Cancel
-                      </Button>
-                      <Button type="submit" form="profile-edit-form">
-                        Save changes
-                      </Button>
-                    </div>
+                  {isSuperAdmin && (
+                    <>
+                      {viewMode === 'details' ? (
+                        <Button onClick={() => setViewMode('edit')}>Edit Profile</Button>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setViewMode('details')}
+                          >
+                            Cancel
+                          </Button>
+                          <Button type="submit" form="profile-edit-form">
+                            Save changes
+                          </Button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </NavbarActions>
@@ -97,9 +101,9 @@ const ProfileSection = () => {
             <UserHero
               name={`${profile?.first_name || ''} ${profile?.last_name || ''}`}
               image={image}
-              username={`@${profile?.username|| 'user'}`}
+              username={`@${profile?.username || 'user'}`}
               role={profile?.department_name || 'Nil'}
-               info={[]}
+              info={[]}
             />
 
 
@@ -131,7 +135,7 @@ const ProfileSection = () => {
             )}
           </Card>
         ) : (
-            <ProfileFormSection onSave={handleSave} onCancel={() => setViewMode('details')} />
+          <ProfileFormSection onSave={handleSave} onCancel={() => setViewMode('details')} />
         )}
       </Container>
     </Fragment>

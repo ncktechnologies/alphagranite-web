@@ -101,7 +101,8 @@ export interface ShopStatusFab {
     percent_complete: number;
     notes?: string | null;
     plans: ShopStatusPlan[];
-    date_group: string;
+    date_group: string;       // 'yyyy-MM-dd' or 'unscheduled'
+    month_group: string;      // 'yyyy-MM'    or 'unscheduled'
     shop_date_schedule?: string;
 }
 
@@ -119,6 +120,30 @@ export type ShopStatusRow = {
     date_group: string;
     subRows: ShopStatusRow[];
 };
+
+// Grouped structure used for rendering
+interface DayGroup {
+    dayKey: string;         // 'yyyy-MM-dd' or 'unscheduled'
+    dayDisplay: string;     // e.g. 'TUESDAY, APRIL 14 2026'
+    parents: ShopStatusRow[];
+    totals: GroupTotals;
+}
+
+interface MonthGroup {
+    monthKey: string;       // 'yyyy-MM' or 'unscheduled'
+    monthDisplay: string;   // e.g. 'APRIL 2026'
+    days: DayGroup[];
+    totals: GroupTotals;
+}
+
+interface GroupTotals {
+    pieces: number;
+    sqft: number;
+    wj: number;
+    edging: number;
+    miter: number;
+    cnc: number;
+}
 
 interface ShopStatusTableProps {
     isLoading?: boolean;
@@ -147,6 +172,17 @@ const getTotalForStage = (fab: any, sectionId: number): number => {
         default: return 0;
     }
 };
+
+const emptyTotals = (): GroupTotals => ({ pieces: 0, sqft: 0, wj: 0, edging: 0, miter: 0, cnc: 0 });
+
+const addToTotals = (acc: GroupTotals, fab: ShopStatusFab): GroupTotals => ({
+    pieces:  acc.pieces  + fab.pieces,
+    sqft:    acc.sqft    + fab.total_sq_ft,
+    wj:      acc.wj      + fab.wj_total,
+    edging:  acc.edging  + fab.edging_total,
+    miter:   acc.miter   + fab.miter_total,
+    cnc:     acc.cnc     + fab.cnc_total,
+});
 
 // ------------------ Progress Bar (plan rows only) ------------------
 const ProgressBar: React.FC<{ total: number; percent: number; unit: string }> = ({ total, percent, unit }) => {
@@ -184,17 +220,10 @@ const AddNoteDialog: React.FC<AddNoteDialogProps> = ({ open, fabId, onClose }) =
     const [createFabNote] = useCreateFabNoteMutation();
 
     const handleSubmit = async () => {
-        if (!note.trim()) {
-            toast.warning('Please enter a note.');
-            return;
-        }
+        if (!note.trim()) { toast.warning('Please enter a note.'); return; }
         setIsSubmitting(true);
         try {
-            await createFabNote({
-                fab_id: Number(fabId),
-                note: note.trim(),
-                stage: 'shop_status',
-            }).unwrap();
+            await createFabNote({ fab_id: Number(fabId), note: note.trim(), stage: 'shop_status' }).unwrap();
             toast.success('Note added successfully.');
             setNote('');
             onClose();
@@ -208,9 +237,7 @@ const AddNoteDialog: React.FC<AddNoteDialogProps> = ({ open, fabId, onClose }) =
     return (
         <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
             <DialogContent className="sm:max-w-[440px]">
-                <DialogHeader>
-                    <DialogTitle>Add Note</DialogTitle>
-                </DialogHeader>
+                <DialogHeader><DialogTitle>Add Note</DialogTitle></DialogHeader>
                 <Textarea
                     placeholder="Type your note here..."
                     className="min-h-[120px] resize-none"
@@ -236,7 +263,6 @@ interface ActionsCellProps {
 
 const ActionsCell: React.FC<ActionsCellProps> = ({ fabId, onAddNote }) => {
     const navigate = useNavigate();
-
     return (
         <div className="flex items-center justify-center">
             <DropdownMenu>
@@ -246,24 +272,12 @@ const ActionsCell: React.FC<ActionsCellProps> = ({ fabId, onAddNote }) => {
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                    <DropdownMenuItem
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/shop/fab/${fabId}`);
-                        }}
-                    >
-                        <Eye className="mr-2 h-4 w-4" />
-                        View Details
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); navigate(`/shop/fab/${fabId}`); }}>
+                        <Eye className="mr-2 h-4 w-4" />View Details
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onAddNote(fabId);
-                        }}
-                    >
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Add Note
+                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAddNote(fabId); }}>
+                        <MessageSquare className="mr-2 h-4 w-4" />Add Note
                     </DropdownMenuItem>
                 </DropdownMenuContent>
             </DropdownMenu>
@@ -273,7 +287,6 @@ const ActionsCell: React.FC<ActionsCellProps> = ({ fabId, onAddNote }) => {
 
 // ------------------ Main Component ------------------
 const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLoading }) => {
-    // Use persistent table state with localStorage
     const tableState = useTableState({
         tableId: 'shop-status-table',
         defaultPagination: { pageIndex: 0, pageSize: 25 },
@@ -290,23 +303,17 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     const [itemsPerPage, setItemsPerPage] = useState<number>(25);
     const [currentPage, setCurrentPage] = useState<number>(1);
 
-    // Extract state from tableState hook
-    const {
-        pagination,
-        setPagination,
-        searchQuery,
-        setSearchQuery,
-        dateRange,
-        setDateRange,
-    } = tableState;
+    // collapsed state for month groups and day groups
+    const [collapsedMonths, setCollapsedMonths] = useState<Set<string>>(new Set());
+    const [collapsedDays, setCollapsedDays] = useState<Set<string>>(new Set());
 
-    // Sync currentPage and itemsPerPage with pagination state
+    const { pagination, setPagination, searchQuery, setSearchQuery, dateRange, setDateRange } = tableState;
+
     useEffect(() => {
         setCurrentPage(pagination.pageIndex + 1);
         setItemsPerPage(pagination.pageSize);
     }, [pagination]);
 
-    // Add note dialog state
     const [noteDialogFabId, setNoteDialogFabId] = useState<string | null>(null);
 
     const queryParams = useMemo(() => ({
@@ -337,7 +344,6 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
     const totalRecords = fabsData?.total || 0;
 
-    // ------------------ Color mapping for fab types (matching your CSS) ------------------
     const fabTypeColorMap: Record<string, string> = {
         standard: '#9eeb47',
         'fab only': '#5bd1d7',
@@ -348,15 +354,12 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     };
 
     const getFabColor = (fabType: string | undefined): string => {
-        if (!fabType) return '#e2e4ed'; // fallback gray (border color)
-        const key = fabType.toLowerCase();
-        return fabTypeColorMap[key] || '#e2e4ed';
+        if (!fabType) return '#e2e4ed';
+        return fabTypeColorMap[fabType.toLowerCase()] || '#e2e4ed';
     };
 
-    // ------------------ Identify stage columns that should show percent fill ------------------
     const stageColumnIds = new Set(['cut', 'wj', 'edging', 'miter', 'cnc', 'touchup', 'percent_complete']);
 
-    // Helper to get the percent value for a given stage column from a fab row
     const getStagePercent = (fab: ShopStatusFab, columnId: string): number => {
         switch (columnId) {
             case 'cut': return fab.cut_progress.percent;
@@ -373,11 +376,9 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     // ------------------ Transform API data → ShopStatusRow tree ------------------
     const tableData: ShopStatusRow[] = useMemo(() => {
         return fabs.map((fab: any): ShopStatusRow => {
-            // Use shop_est_completion_date as the primary date grouping field
-            const expectedDate = fab.shop_est_completion_date || fab.shop_date_schedule || fab.installation_date;
-            const dateGroup = expectedDate
-                ? format(new Date(expectedDate), 'yyyy-MM')
-                : 'unscheduled';
+            const rawDate = fab.shop_est_completion_date || fab.shop_date_schedule || fab.installation_date;
+            const dayKey   = rawDate ? format(new Date(rawDate), 'yyyy-MM-dd') : 'unscheduled';
+            const monthKey = rawDate ? format(new Date(rawDate), 'yyyy-MM')    : 'unscheduled';
 
             const getPlanPercent = (sectionId: number): number => {
                 const plan = (fab.plans || []).find((p: any) => p.planning_section_id === sectionId);
@@ -389,8 +390,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 const unit = info?.unit || 'SF';
                 const total = getTotalForStage(fab, sectionId);
                 const percent = getPlanPercent(sectionId);
-                const completed = total * (percent / 100);
-                return { completed, percent, total, unit };
+                return { completed: total * (percent / 100), percent, total, unit };
             };
 
             const fabData: ShopStatusFab = {
@@ -421,19 +421,15 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 cut_date_scheduled: (fab.plans || []).find((p: any) => p.planning_section_id === 7)?.scheduled_start_date,
                 install_date: fab.installation_date,
                 percent_complete: fab.percent_complete || 0,
-                notes: fab.notes
-                    ? (Array.isArray(fab.notes) ? fab.notes.join(', ') : fab.notes)
-                    : null,
+                notes: fab.notes ? (Array.isArray(fab.notes) ? fab.notes.join(', ') : fab.notes) : null,
                 plans: fab.plans || [],
-                date_group: dateGroup,
+                date_group: dayKey,
+                month_group: monthKey,
                 shop_date_schedule: fab.shop_date_schedule,
             };
 
             const subRows: ShopStatusRow[] = (fab.plans || []).map((plan: any): ShopStatusRow => {
                 const stageInfo = getStageInfo(plan.planning_section_id);
-                const unit = stageInfo?.unit || 'SF';
-                const total = getTotalForStage(fab, plan.planning_section_id);
-                const percent = plan.work_percentage || 0;
                 return {
                     type: 'plan',
                     fab_id: String(fab.id),
@@ -445,13 +441,13 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                         operator_name: plan.operator_name || '-',
                         estimated_hours: plan.estimated_hours || 0,
                         scheduled_start_date: plan.scheduled_start_date,
-                        work_percentage: percent,
+                        work_percentage: plan.work_percentage || 0,
                         notes: plan.notes,
                     },
-                    stage_total: total,
-                    stage_unit: unit,
-                    stage_percent: percent,
-                    date_group: dateGroup,
+                    stage_total: getTotalForStage(fab, plan.planning_section_id),
+                    stage_unit: stageInfo?.unit || 'SF',
+                    stage_percent: plan.work_percentage || 0,
+                    date_group: dayKey,
                     subRows: [],
                 };
             });
@@ -463,7 +459,6 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     // ------------------ Client-side Filtering ------------------
     const filteredData = useMemo(() => {
         let result = tableData;
-
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
             result = result.filter(r =>
@@ -475,13 +470,11 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 )
             );
         }
-
         if (fabTypeFilter !== 'all') {
             result = result.filter(r =>
                 r.type === 'fab' && r.data.fab_type.toLowerCase() === fabTypeFilter.toLowerCase()
             );
         }
-
         if (dateRange?.from && dateRange?.to) {
             const start = startOfDay(dateRange.from);
             const end = startOfDay(dateRange.to);
@@ -492,71 +485,91 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 return d >= start && d <= end;
             });
         }
-
         return result;
     }, [tableData, searchQuery, fabTypeFilter, dateRange]);
 
-    // ------------------ Grouping & Totals ------------------
-    const groupedParents = useMemo(() => {
-        const groups: Record<string, { parents: ShopStatusRow[]; dateDisplay: string }> = {};
-        filteredData.forEach(parent => {
-            if (parent.type !== 'fab') return;
-            const key = parent.data.date_group;
-            const display = key !== 'unscheduled'
-                ? format(new Date(parent.data.shop_est_completion_date!), 'MMMM yyyy').toUpperCase()
+    // ------------------ Build two-level month → day grouping ------------------
+    const monthGroups = useMemo((): MonthGroup[] => {
+        // Build month map preserving insertion order (sorted by monthKey)
+        const monthMap = new Map<string, Map<string, ShopStatusRow[]>>();
+
+        filteredData.forEach(row => {
+            if (row.type !== 'fab') return;
+            const mk = row.data.month_group;
+            const dk = row.data.date_group;
+            if (!monthMap.has(mk)) monthMap.set(mk, new Map());
+            const dayMap = monthMap.get(mk)!;
+            if (!dayMap.has(dk)) dayMap.set(dk, []);
+            dayMap.get(dk)!.push(row);
+        });
+
+        // Sort month keys (unscheduled goes last)
+        const sortedMonthKeys = Array.from(monthMap.keys()).sort((a, b) => {
+            if (a === 'unscheduled') return 1;
+            if (b === 'unscheduled') return -1;
+            return a.localeCompare(b);
+        });
+
+        return sortedMonthKeys.map(mk => {
+            const dayMap = monthMap.get(mk)!;
+
+            // Sort day keys within each month
+            const sortedDayKeys = Array.from(dayMap.keys()).sort((a, b) => {
+                if (a === 'unscheduled') return 1;
+                if (b === 'unscheduled') return -1;
+                return a.localeCompare(b);
+            });
+
+            let monthTotals = emptyTotals();
+
+            const days: DayGroup[] = sortedDayKeys.map(dk => {
+                const parents = dayMap.get(dk)!;
+                let dayTotals = emptyTotals();
+                parents.forEach(p => {
+                    if (p.type === 'fab') dayTotals = addToTotals(dayTotals, p.data);
+                });
+                monthTotals = {
+                    pieces:  monthTotals.pieces  + dayTotals.pieces,
+                    sqft:    monthTotals.sqft    + dayTotals.sqft,
+                    wj:      monthTotals.wj      + dayTotals.wj,
+                    edging:  monthTotals.edging  + dayTotals.edging,
+                    miter:   monthTotals.miter   + dayTotals.miter,
+                    cnc:     monthTotals.cnc     + dayTotals.cnc,
+                };
+
+                const dayDisplay = dk !== 'unscheduled'
+                    ? format(new Date(dk), 'EEEE, MMMM d yyyy').toUpperCase()
+                    : 'UNSCHEDULED';
+
+                return { dayKey: dk, dayDisplay, parents, totals: dayTotals };
+            });
+
+            const monthDisplay = mk !== 'unscheduled'
+                ? format(new Date(mk + '-01'), 'MMMM yyyy').toUpperCase()
                 : 'UNSCHEDULED';
-            if (!groups[key]) groups[key] = { parents: [], dateDisplay: display };
-            groups[key].parents.push(parent);
+
+            return { monthKey: mk, monthDisplay, days, totals: monthTotals };
         });
-        return groups;
     }, [filteredData]);
 
-    const groupTotals = useMemo(() => {
-        const totals: Record<string, { pieces: number; sqft: number; wj: number; edging: number; miter: number; cnc: number }> = {};
-        filteredData.forEach(parent => {
-            if (parent.type !== 'fab') return;
-            const key = parent.data.date_group;
-            if (!totals[key]) totals[key] = { pieces: 0, sqft: 0, wj: 0, edging: 0, miter: 0, cnc: 0 };
-            totals[key].pieces += parent.data.pieces;
-            totals[key].sqft += parent.data.total_sq_ft;
-            totals[key].wj += parent.data.wj_total;
-            totals[key].edging += parent.data.edging_total;
-            totals[key].miter += parent.data.miter_total;
-            totals[key].cnc += parent.data.cnc_total;
-        });
-        return totals;
-    }, [filteredData]);
-
-    const overallTotals = useMemo(() => {
-        let pieces = 0, sqft = 0, wj = 0, edging = 0, miter = 0, cnc = 0;
-        filteredData.forEach(parent => {
-            if (parent.type !== 'fab') return;
-            pieces += parent.data.pieces;
-            sqft += parent.data.total_sq_ft;
-            wj += parent.data.wj_total;
-            edging += parent.data.edging_total;
-            miter += parent.data.miter_total;
-            cnc += parent.data.cnc_total;
-        });
-        return { pieces, sqft, wj, edging, miter, cnc };
+    // ------------------ Overall totals ------------------
+    const overallTotals = useMemo((): GroupTotals => {
+        return filteredData.reduce((acc, row) => {
+            if (row.type !== 'fab') return acc;
+            return addToTotals(acc, row.data);
+        }, emptyTotals());
     }, [filteredData]);
 
     // ------------------ Column Definitions ------------------
     const columns = useMemo<ColumnDef<ShopStatusRow>[]>(() => [
-        // Expander
         {
             id: 'expander',
             header: () => null,
             cell: ({ row }) => {
                 if (row.original.type === 'fab' && row.original.subRows.length > 0) {
                     return (
-                        <button
-                            onClick={(e) => { e.stopPropagation(); row.toggleExpanded(); }}
-                            className="p-1 hover:bg-gray-100 rounded"
-                        >
-                            {row.getIsExpanded()
-                                ? <ChevronDown className="h-4 w-4" />
-                                : <ChevronRightIcon className="h-4 w-4" />}
+                        <button onClick={(e) => { e.stopPropagation(); row.toggleExpanded(); }} className="p-1 hover:bg-gray-100 rounded">
+                            {row.getIsExpanded() ? <ChevronDown className="h-4 w-4" /> : <ChevronRightIcon className="h-4 w-4" />}
                         </button>
                     );
                 }
@@ -564,56 +577,36 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             },
             size: 36,
         },
-        // Actions
         {
             id: 'actions',
             header: () => null,
             cell: ({ row }) => {
                 if (row.original.type !== 'fab') return null;
-                return (
-                    <ActionsCell
-                        fabId={row.original.data.fab_id}
-                        onAddNote={(id) => setNoteDialogFabId(id)}
-                    />
-                );
+                return <ActionsCell fabId={row.original.data.fab_id} onAddNote={(id) => setNoteDialogFabId(id)} />;
             },
             size: 48,
         },
-        // Est. Completion Date
         {
             id: 'estimated_completion_date',
             accessorFn: (r) => r.type === 'fab' ? r.data.shop_est_completion_date : null,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="EST. COMPLETION DATE" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-            ),
+            header: ({ column }) => <DataGridColumnHeader title="EST. COMPLETION DATE" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const date = row.original.data.shop_est_completion_date;
-                    return (
-                        <span className="text-sm text-[#4b545d]">
-                            {date ? format(new Date(date), 'MM/dd/yyyy') : '-'}
-                        </span>
-                    );
+                    return <span className="text-sm text-[#4b545d]">{date ? format(new Date(date), 'MM/dd/yyyy') : '-'}</span>;
                 }
                 if (row.original.type === 'plan') {
-                    return (
-                        <span className="text-xs text-gray-500 pl-4">
-                            {row.original.plan.plan_name} · {row.original.plan.workstation_name} · {row.original.plan.operator_name}
-                        </span>
-                    );
+                    return <span className="text-xs text-gray-500 pl-4">{row.original.plan.plan_name} · {row.original.plan.workstation_name} · {row.original.plan.operator_name}</span>;
                 }
                 return null;
             },
             enableSorting: true,
             size: 230,
         },
-        // Cut Date Scheduled
         {
             id: 'cut_date_scheduled',
             accessorFn: (r) => r.type === 'fab' ? r.data.cut_date_scheduled : null,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="CUT DATE SCHEDULED" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-            ),
+            header: ({ column }) => <DataGridColumnHeader title="CUT DATE SCHEDULED" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const date = row.original.data.shop_date_schedule;
@@ -628,13 +621,10 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             enableSorting: true,
             size: 160,
         },
-        // Install Date
         {
             id: 'install_date',
             accessorFn: (r) => r.type === 'fab' ? r.data.install_date : null,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="INSTALL DATE" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-            ),
+            header: ({ column }) => <DataGridColumnHeader title="INSTALL DATE" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const date = row.original.data.install_date;
@@ -645,29 +635,21 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             enableSorting: true,
             size: 130,
         },
-        // FAB Type
         {
             id: 'fab_type',
             accessorFn: (r) => r.type === 'fab' ? r.data.fab_type : null,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="FAB TYPE" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-            ),
+            header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
-                if (row.original.type === 'fab') {
-                    return <span className="text-sm text-[#4b545d] whitespace-nowrap">{row.original.data.fab_type}</span>;
-                }
+                if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d] whitespace-nowrap">{row.original.data.fab_type}</span>;
                 return null;
             },
             enableSorting: true,
             size: 130,
         },
-        // FAB ID
         {
             id: 'fab_id',
             accessorFn: (r) => r.type === 'fab' ? r.data.fab_id : null,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="FAB ID" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-            ),
+            header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     return (
@@ -681,21 +663,14 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             enableSorting: true,
             size: 100,
         },
-        // Job No
         {
             id: 'job_no',
             accessorFn: (r) => r.type === 'fab' ? r.data.job_no : null,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="JOB NO" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-            ),
+            header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     return row.original.data.job_id ? (
-                        <Link
-                            to={`/job/details/${row.original.data.job_id}`}
-                            rel="noopener noreferrer"
-                            className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                        >
+                        <Link to={`/job/details/${row.original.data.job_id}`} className="text-sm text-blue-600 hover:text-blue-800 hover:underline">
                             {row.original.data.job_no}
                         </Link>
                     ) : (
@@ -707,108 +682,67 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             enableSorting: true,
             size: 100,
         },
-        // FAB INFO (updated to match JobTable layout)
         {
             id: 'fab_info',
-            header: ({ column }) => (
-                <DataGridColumnHeader title="FAB INFO" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-            ),
+            header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const f = row.original.data;
                     const jobInfo = [f.acct_name, f.job_name].filter(Boolean);
                     const stoneInfo = [f.stone_type_name, f.stone_color_name, f.stone_thickness_value].filter(Boolean);
-                    const materialInfo = [
-                        f.input_area ? `Area: ${f.input_area}` : '',
-                        f.edge_name || '',
-                    ].filter(Boolean);
-
+                    const materialInfo = [f.input_area ? `Area: ${f.input_area}` : '', f.edge_name || ''].filter(Boolean);
                     return (
                         <div className="flex gap-4 text-xs max-w-[400px]">
                             {(jobInfo.length > 0 || stoneInfo.length > 0) && (
                                 <div className="flex-1 min-w-0">
-                                    {jobInfo.length > 0 && (
-                                        <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>
-                                            {jobInfo.join(' - ')}
-                                        </div>
-                                    )}
-                                    {stoneInfo.length > 0 && (
-                                        <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>
-                                            {stoneInfo.join(' - ')}
-                                        </div>
-                                    )}
+                                    {jobInfo.length > 0 && <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>{jobInfo.join(' - ')}</div>}
+                                    {stoneInfo.length > 0 && <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>{stoneInfo.join(' - ')}</div>}
                                 </div>
                             )}
                             {materialInfo.length > 0 && (
                                 <div className="flex-1 min-w-0">
-                                    {materialInfo.map((info, idx) => (
-                                        <div key={idx} className="truncate text-gray-600">
-                                            {info}
-                                        </div>
-                                    ))}
+                                    {materialInfo.map((info, idx) => <div key={idx} className="truncate text-gray-600">{info}</div>)}
                                 </div>
                             )}
                         </div>
                     );
                 }
                 if (row.original.type === 'plan') {
-                    return (
-                        <span className="text-xs text-gray-400 pl-4">
-                            Estimated hrs: {row.original.plan.estimated_hours}h
-                        </span>
-                    );
+                    return <span className="text-xs text-gray-400 pl-4">Estimated hrs: {row.original.plan.estimated_hours}h</span>;
                 }
                 return null;
             },
             size: 400,
         },
-        // Pieces
         {
             id: 'pieces',
             accessorFn: (r) => r.type === 'fab' ? r.data.pieces : null,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="NO. OF PIECES" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-            ),
+            header: ({ column }) => <DataGridColumnHeader title="NO. OF PIECES" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
-                if (row.original.type === 'fab') {
-                    return <span className="text-sm text-[#4b545d]">{row.original.data.pieces}</span>;
-                }
+                if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d]">{row.original.data.pieces}</span>;
                 return null;
             },
             enableSorting: true,
             size: 130,
         },
-        // Total Sq Ft
         {
             id: 'total_sq_ft',
             accessorFn: (r) => r.type === 'fab' ? r.data.total_sq_ft : null,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="TOTAL SQ FT" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-            ),
+            header: ({ column }) => <DataGridColumnHeader title="TOTAL SQ FT" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
-                if (row.original.type === 'fab') {
-                    return <span className="text-sm text-[#4b545d]">{row.original.data.total_sq_ft.toFixed(1)}</span>;
-                }
+                if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d]">{row.original.data.total_sq_ft.toFixed(1)}</span>;
                 return null;
             },
             enableSorting: true,
             size: 120,
         },
-        // ---- Stage columns: FAB rows show stacked value and %; plan rows show full progress bar ----
         {
             id: 'cut',
-            header: ({ column }) => (
-                <DataGridColumnHeader title="CUT" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-            ),
+            header: ({ column }) => <DataGridColumnHeader title="CUT" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.cut_progress;
-                    return (
-                        <div className="flex flex-col items-start leading-tight">
-                            <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span>
-                            <span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span>
-                        </div>
-                    );
+                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span><span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span></div>;
                 }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 7) {
                     return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
@@ -819,18 +753,11 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'wj',
-            header: ({ column }) => (
-                <DataGridColumnHeader title="WJ" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-            ),
+            header: ({ column }) => <DataGridColumnHeader title="WJ" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.wj_progress;
-                    return (
-                        <div className="flex flex-col items-start leading-tight">
-                            <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span>
-                            <span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span>
-                        </div>
-                    );
+                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span><span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span></div>;
                 }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 8) {
                     return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
@@ -841,18 +768,11 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'edging',
-            header: ({ column }) => (
-                <DataGridColumnHeader title="EDGING" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-            ),
+            header: ({ column }) => <DataGridColumnHeader title="EDGING" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.edging_progress;
-                    return (
-                        <div className="flex flex-col items-start leading-tight">
-                            <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span>
-                            <span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span>
-                        </div>
-                    );
+                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span><span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span></div>;
                 }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 9) {
                     return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
@@ -863,18 +783,11 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'miter',
-            header: ({ column }) => (
-                <DataGridColumnHeader title="MITER" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-            ),
+            header: ({ column }) => <DataGridColumnHeader title="MITER" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.miter_progress;
-                    return (
-                        <div className="flex flex-col items-start leading-tight">
-                            <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span>
-                            <span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span>
-                        </div>
-                    );
+                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span><span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span></div>;
                 }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 2) {
                     return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
@@ -885,18 +798,11 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'cnc',
-            header: ({ column }) => (
-                <DataGridColumnHeader title="CNC" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-            ),
+            header: ({ column }) => <DataGridColumnHeader title="CNC" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.cnc_progress;
-                    return (
-                        <div className="flex flex-col items-start leading-tight">
-                            <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span>
-                            <span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span>
-                        </div>
-                    );
+                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span><span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span></div>;
                 }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 1) {
                     return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
@@ -907,18 +813,11 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         },
         {
             id: 'touchup',
-            header: ({ column }) => (
-                <DataGridColumnHeader title="TOUCHUP QA" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-            ),
+            header: ({ column }) => <DataGridColumnHeader title="TOUCHUP QA" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.touchup_progress;
-                    return (
-                        <div className="flex flex-col items-start leading-tight">
-                            <span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span>
-                            <span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span>
-                        </div>
-                    );
+                    return <div className="flex flex-col items-start leading-tight"><span className="text-sm text-[#4b545d]">{p.total.toFixed(1)} {p.unit}</span><span className="text-xs text-[#4b545d]">{p.percent.toFixed(1)}%</span></div>;
                 }
                 if (row.original.type === 'plan' && row.original.plan.planning_section_id === 6) {
                     return <ProgressBar total={row.original.stage_total} percent={row.original.stage_percent} unit={row.original.stage_unit} />;
@@ -927,20 +826,13 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             },
             size: 130,
         },
-        // % Complete
         {
             id: 'percent_complete',
             accessorFn: (r) => r.type === 'fab' ? r.data.percent_complete : null,
-            header: ({ column }) => (
-                <DataGridColumnHeader title="% COMPLETE" column={column} className="text-[#7c8689] text-[15px] font-normal" />
-            ),
+            header: ({ column }) => <DataGridColumnHeader title="% COMPLETE" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
-                if (row.original.type === 'fab') {
-                    return <span className="text-sm text-[#4b545d]">{row.original.data.percent_complete.toFixed(2)}%</span>;
-                }
-                if (row.original.type === 'plan') {
-                    return <span className="text-xs text-gray-500">{row.original.stage_percent.toFixed(1)}%</span>;
-                }
+                if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d]">{row.original.data.percent_complete.toFixed(2)}%</span>;
+                if (row.original.type === 'plan') return <span className="text-xs text-gray-500">{row.original.stage_percent.toFixed(1)}%</span>;
                 return null;
             },
             enableSorting: true,
@@ -954,9 +846,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         data: filteredData,
         pageCount: Math.ceil(totalRecords / itemsPerPage),
         getRowId: (row) =>
-            row.type === 'fab'
-                ? row.data.fab_id
-                : `plan-${row.fab_id}-${row.plan.plan_id}`,
+            row.type === 'fab' ? row.data.fab_id : `plan-${row.fab_id}-${row.plan.plan_id}`,
         state: {
             pagination: { pageIndex: currentPage - 1, pageSize: itemsPerPage },
             sorting,
@@ -977,8 +867,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getExpandedRowModel: getExpandedRowModel(),
-        getSubRows: (row) =>
-            row.type === 'fab' && row.subRows.length > 0 ? row.subRows : undefined,
+        getSubRows: (row) => row.type === 'fab' && row.subRows.length > 0 ? row.subRows : undefined,
         manualPagination: true,
     });
 
@@ -1001,8 +890,9 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     // ------------------ Helper: render a totals row ------------------
     const renderTotalsRow = (
         label: string,
-        totals: { pieces: number; sqft: number; wj: number; edging: number; miter: number; cnc: number },
+        totals: GroupTotals,
         bgClass = 'bg-[#f9f9f9]',
+        labelColId = 'estimated_completion_date',
     ) => (
         <tr className={`${bgClass} font-medium border-b border-[#e2e4ed]`}>
             {table.getVisibleFlatColumns().map(col => {
@@ -1010,22 +900,37 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 const td = (content: React.ReactNode) => (
                     <td key={id} className="px-4 py-2 text-sm font-semibold text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0">
                         {content}
-                     </td>
+                    </td>
                 );
                 if (id === 'expander' || id === 'actions') return <td key={id} className="px-4 py-2 border-r border-[#e2e4ed]" />;
-                if (id === 'shop_est_completion_date') return td(label);
-                if (id === 'pieces') return td(totals.pieces);
+                if (id === labelColId) return td(label);
+                if (id === 'pieces')      return td(totals.pieces);
                 if (id === 'total_sq_ft') return td(`${totals.sqft.toFixed(1)} SF`);
-                if (id === 'wj') return td(`${totals.wj.toFixed(1)} LF`);
-                if (id === 'edging') return td(`${totals.edging.toFixed(1)} LF`);
-                if (id === 'miter') return td(`${totals.miter.toFixed(1)} LF`);
-                if (id === 'cnc') return td(`${totals.cnc.toFixed(1)} LF`);
+                if (id === 'wj')          return td(`${totals.wj.toFixed(1)} LF`);
+                if (id === 'edging')      return td(`${totals.edging.toFixed(1)} LF`);
+                if (id === 'miter')       return td(`${totals.miter.toFixed(1)} LF`);
+                if (id === 'cnc')         return td(`${totals.cnc.toFixed(1)} LF`);
                 return <td key={id} className="px-4 py-2 border-r border-[#e2e4ed] last:border-r-0" />;
             })}
-         </tr>
+        </tr>
     );
 
     const isLoading = isApiLoading || externalLoading;
+
+    // Toggle helpers
+    const toggleMonth = (mk: string) => setCollapsedMonths(prev => {
+        const next = new Set(prev);
+        next.has(mk) ? next.delete(mk) : next.add(mk);
+        return next;
+    });
+
+    const toggleDay = (dk: string) => setCollapsedDays(prev => {
+        const next = new Set(prev);
+        next.has(dk) ? next.delete(dk) : next.add(dk);
+        return next;
+    });
+
+    const colCount = table.getVisibleFlatColumns().length;
 
     // ------------------ Render ------------------
     return (
@@ -1035,19 +940,13 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 recordCount={totalRecords}
                 isLoading={isLoading}
                 groupByDate={false}
-                tableLayout={{
-                    columnsPinnable: true,
-                    columnsMovable: true,
-                    columnsVisibility: true,
-                    cellBorder: true,
-                }}
+                tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, cellBorder: true }}
             >
                 <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)]">
 
                     {/* ---- Filters ---- */}
                     <CardHeader className="flex flex-wrap items-center justify-between gap-2 py-3 border-b border-[#e2e4ed] px-5">
                         <div className="flex flex-wrap items-center gap-3">
-                            {/* Search Type Selector */}
                             <Select value={searchType} onValueChange={(value: 'fab_id' | 'job_number' | 'job_name') => setSearchType(value)}>
                                 <SelectTrigger className="w-[140px] h-[34px] border-[#e2e4ed] focus-visible:ring-0">
                                     <SelectValue placeholder="Search by" />
@@ -1058,7 +957,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                     <SelectItem value="job_name">Job Name</SelectItem>
                                 </SelectContent>
                             </Select>
-                            {/* Search Input */}
+
                             <div className="relative">
                                 <Search className="size-4 text-[#7c8689] absolute start-3 top-1/2 -translate-y-1/2" />
                                 <Input
@@ -1069,84 +968,45 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                     disabled={isLoading}
                                 />
                                 {searchQuery && (
-                                    <Button
-                                        size="icon" variant="ghost"
-                                        className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                                        onClick={() => setSearchQuery('')}
-                                    >
+                                    <Button size="icon" variant="ghost" className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6" onClick={() => setSearchQuery('')}>
                                         <X className="h-4 w-4" />
                                     </Button>
                                 )}
                             </div>
 
-                            {/* Date Range */}
                             <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                 <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        className={cn(
-                                            'w-[210px] h-[34px] justify-start text-left font-normal border-[#e2e4ed]',
-                                            !dateRange && 'text-muted-foreground'
-                                        )}
-                                        disabled={isLoading}
-                                    >
+                                    <Button variant="outline" className={cn('w-[210px] h-[34px] justify-start text-left font-normal border-[#e2e4ed]', !dateRange && 'text-muted-foreground')} disabled={isLoading}>
                                         <CalendarDays className="mr-2 h-4 w-4 text-[#7c8689]" />
                                         {dateRange?.from ? (
                                             dateRange.to
                                                 ? `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}`
                                                 : format(dateRange.from, 'MMM dd, yyyy')
-                                        ) : (
-                                            <span>Pick dates</span>
-                                        )}
+                                        ) : <span>Pick dates</span>}
                                     </Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        initialFocus
-                                        mode="range"
-                                        defaultMonth={dateRange?.from || new Date()}
-                                        selected={tempDateRange}
-                                        onSelect={setTempDateRange}
-                                        numberOfMonths={2}
-                                    />
+                                    <Calendar initialFocus mode="range" defaultMonth={dateRange?.from || new Date()} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} />
                                     <div className="flex items-center justify-end gap-1.5 border-t border-[#e2e4ed] p-3">
-                                        <Button
-                                            variant="outline" size="sm"
-                                            onClick={() => { setTempDateRange(undefined); setDateRange(undefined); }}
-                                        >
-                                            Reset
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}
-                                        >
-                                            Apply
-                                        </Button>
+                                        <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); }}>Reset</Button>
+                                        <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
                                     </div>
                                 </PopoverContent>
                             </Popover>
 
-                            {/* FAB Type */}
                             <Select value={fabTypeFilter} onValueChange={setFabTypeFilter} disabled={isLoading}>
                                 <SelectTrigger className="w-auto h-[34px] border-[#e2e4ed]">
                                     <SelectValue placeholder="FAB type" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="all">All Types</SelectItem>
-                                    {fabTypes.map((type) => (
-                                        <SelectItem key={type} value={type}>{type}</SelectItem>
-                                    ))}
+                                    {fabTypes.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
 
                         <CardToolbar className="flex gap-4">
-                            <Button
-                                variant="outline"
-                                onClick={() => exportTableToCSV(table, 'shop-status')}
-                                disabled={isLoading}
-                                className="h-[34px] border-[#e2e4ed] text-[#4b545d]"
-                            >
+                            <Button variant="outline" onClick={() => exportTableToCSV(table, 'shop-status')} disabled={isLoading} className="h-[34px] border-[#e2e4ed] text-[#4b545d]">
                                 Export CSV
                             </Button>
                         </CardToolbar>
@@ -1170,97 +1030,131 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                         className="px-4 py-3 text-left text-xs font-medium text-[#7c8689] bg-[#f9f9f9] border-b border-r border-[#e2e4ed] last:border-r-0 whitespace-normal"
                                                         style={{ width: header.getSize() }}
                                                     >
-                                                        {header.isPlaceholder
-                                                            ? null
-                                                            : flexRender(header.column.columnDef.header, header.getContext())}
+                                                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                                     </th>
                                                 ))}
-                                             </tr>
+                                            </tr>
                                         ))}
                                     </thead>
 
                                     <tbody>
-                                        {/* Overall totals row */}
-                                        {renderTotalsRow('', overallTotals, 'bg-[#eef0f6]')}
+                                        {/* Overall totals */}
+                                        {renderTotalsRow('ALL TOTALS', overallTotals, 'bg-[#eef0f6]')}
 
-                                        {Object.entries(groupedParents).map(([dateKey, group]) => {
-                                            const groupTotal = groupTotals[dateKey] || { pieces: 0, sqft: 0, wj: 0, edging: 0, miter: 0, cnc: 0 };
+                                        {monthGroups.map(monthGroup => {
+                                            const monthCollapsed = collapsedMonths.has(monthGroup.monthKey);
 
                                             return (
-                                                <React.Fragment key={dateKey}>
-                                                    {/* Date group header */}
-                                                    <tr className="bg-[#F6FFE7]">
-                                                        <td
-                                                            className="px-4 py-2 text-xs font-semibold text-[#4b545d]"
-                                                            colSpan={table.getVisibleFlatColumns().length}
-                                                        >
-                                                            {group.dateDisplay}
-                                                         </td>
-                                                     </tr>
+                                                <React.Fragment key={monthGroup.monthKey}>
+                                                    {/* ── Month header row ── */}
+                                                    
 
-                                                    {/* Group totals row */}
-                                                    {renderTotalsRow('', groupTotal)}
+                                                    {/* ── Month totals row ── */}
+                                                    {!monthCollapsed && renderTotalsRow(
+                                                        `${monthGroup.monthDisplay} `,
+                                                        monthGroup.totals,
+                                                        'bg-[#f0f7e0] text-[11px] font-medium',
+                                                    )}
 
-                                                    {/* FAB rows */}
-                                                    {group.parents.map(parent => {
-                                                        if (parent.type !== 'fab') return null;
-
-                                                        const parentRow = table.getRowModel().rows.find(
-                                                            r =>
-                                                                r.original.type === 'fab' &&
-                                                                r.original.data.fab_id === parent.data.fab_id
-                                                        );
-                                                        if (!parentRow) return null;
+                                                    {!monthCollapsed && monthGroup.days.map(dayGroup => {
+                                                        const dayCollapsed = collapsedDays.has(dayGroup.dayKey);
 
                                                         return (
-                                                            <React.Fragment key={parentRow.id}>
-                                                                {/* Parent FAB row */}
-                                                                <tr
-                                                                    className="border-b border-[#e2e4ed] transition-colors"
-                                                                    data-fab-type={parentRow.original.type === 'fab' ? parentRow.original.data.fab_type?.toLowerCase() : undefined}
+                                                            <React.Fragment key={dayGroup.dayKey}>
+                                                                {/* ── Day header row ── */}
+                                                                {/* <tr
+                                                                    className="bg-[#F6FFE7] cursor-pointer select-none hover:bg-[#edffd4] transition-colors"
+                                                                    onClick={() => toggleDay(dayGroup.dayKey)}
                                                                 >
-                                                                    {parentRow.getVisibleCells().map(cell => {
-                                                                        // Apply gradient to any column that shows a percent (stage columns and overall percent)
-                                                                        const columnId = cell.column.id;
-                                                                        let cellStyle = {};
-                                                                        if (stageColumnIds.has(columnId) && parentRow.original.type === 'fab') {
-                                                                            const percent = getStagePercent(parentRow.original.data, columnId);
-                                                                            const fabType = parentRow.original.data.fab_type;
-                                                                            const bgColor = getFabColor(fabType);
-                                                                            cellStyle = {
-                                                                                background: `linear-gradient(to right, ${bgColor} 0%, ${bgColor} ${percent}%, white ${percent}%, white 100%)`,
-                                                                            };
-                                                                        }
-                                                                        return (
-                                                                            <td
-                                                                                key={cell.id}
-                                                                                className="px-4 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
-                                                                                style={cellStyle}
-                                                                            >
-                                                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                                             </td>
-                                                                        );
-                                                                    })}
-                                                                 </tr>
+                                                                    <td className="px-4 py-2" colSpan={colCount}>
+                                                                        <div className="flex items-center gap-2 pl-4">
+                                                                            {dayCollapsed
+                                                                                ? <ChevronRightIcon className="h-3.5 w-3.5 text-[#7a9705]" />
+                                                                                : <ChevronDown className="h-3.5 w-3.5 text-[#7a9705]" />}
+                                                                            <span className="text-xs font-semibold text-[#4b545d]">
+                                                                                {dayGroup.dayDisplay}
+                                                                            </span>
+                                                                            <span className="text-xs text-[#7c8689] ml-1">
+                                                                                ({dayGroup.parents.length} FAB{dayGroup.parents.length !== 1 ? 's' : ''})
+                                                                            </span>
+                                                                        </div>
+                                                                    </td>
+                                                                </tr> */}
 
-                                                                {/* Child plan rows — only shown when expanded */}
-                                                                {parentRow.getIsExpanded() &&
-                                                                    parentRow.subRows.map(childRow => (
-                                                                        <tr
-                                                                            key={childRow.id}
-                                                                            className="border-b border-[#e2e4ed] bg-gray-50/60"
-                                                                        >
-                                                                            {childRow.getVisibleCells().map(cell => (
-                                                                                <td
-                                                                                    key={cell.id}
-                                                                                    className="px-4 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
-                                                                                >
-                                                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                                                 </td>
-                                                                            ))}
-                                                                         </tr>
-                                                                    ))
-                                                                }
+                                                                {/* ── Day totals row ── */}
+                                                                {!dayCollapsed && renderTotalsRow(
+                                                                    `${dayGroup.dayDisplay} `,
+                                                                    dayGroup.totals,
+                                                                    'bg-[#f9f9f9] text-[10px]',
+                                                                )}
+
+                                                                {/* ── FAB rows for this day ── */}
+                                                                {!dayCollapsed && dayGroup.parents.map(parent => {
+                                                                    if (parent.type !== 'fab') return null;
+
+                                                                    const parentRow = table.getRowModel().rows.find(
+                                                                        r => r.original.type === 'fab' && r.original.data.fab_id === parent.data.fab_id
+                                                                    );
+                                                                    if (!parentRow) return null;
+
+                                                                    return (
+                                                                        <React.Fragment key={parentRow.id}>
+                                                                            {(() => {
+                                                                                const rowBgColor = parentRow.original.type === 'fab'
+                                                                                    ? getFabColor(parentRow.original.data.fab_type)
+                                                                                    : 'transparent';
+
+                                                                                return (
+                                                                                    <>
+                                                                                        <tr className="border-b border-[#e2e4ed] transition-colors">
+                                                                                            {parentRow.getVisibleCells().map(cell => {
+                                                                                                const columnId = cell.column.id;
+                                                                                                let cellStyle = {};
+                                                                                                
+                                                                                                if (parentRow.original.type === 'fab') {
+                                                                                                    if (stageColumnIds.has(columnId)) {
+                                                                                                        // Stage columns: gradient based on individual stage progress
+                                                                                                        const percent = getStagePercent(parentRow.original.data, columnId);
+                                                                                                        const bgColor = getFabColor(parentRow.original.data.fab_type);
+                                                                                                        cellStyle = {
+                                                                                                            background: `linear-gradient(to right, ${bgColor} 0%, ${bgColor} ${percent}%, white ${percent}%, white 100%)`,
+                                                                                                        };
+                                                                                                    } else {
+                                                                                                        // Non-stage columns: solid fab_type color
+                                                                                                        cellStyle = {
+                                                                                                            backgroundColor: rowBgColor,
+                                                                                                        };
+                                                                                                    }
+                                                                                                }
+                                                                                                
+                                                                                                return (
+                                                                                                    <td
+                                                                                                        key={cell.id}
+                                                                                                        className="px-4 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
+                                                                                                        style={cellStyle}
+                                                                                                    >
+                                                                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                                                                    </td>
+                                                                                                );
+                                                                                            })}
+                                                                                        </tr>
+
+                                                                                        {/* Child plan rows */}
+                                                                                        {parentRow.getIsExpanded() && parentRow.subRows.map(childRow => (
+                                                                                            <tr key={childRow.id} className="border-b border-[#e2e4ed] bg-gray-50/60">
+                                                                                                {childRow.getVisibleCells().map(cell => (
+                                                                                                    <td key={cell.id} className="px-4 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0">
+                                                                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                                                                    </td>
+                                                                                                ))}
+                                                                                            </tr>
+                                                                                        ))}
+                                                                                    </>
+                                                                                );
+                                                                            })()}
+                                                                        </React.Fragment>
+                                                                    );
+                                                                })}
                                                             </React.Fragment>
                                                         );
                                                     })}
@@ -1270,13 +1164,10 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
                                         {filteredData.length === 0 && (
                                             <tr>
-                                                <td
-                                                    colSpan={table.getVisibleFlatColumns().length}
-                                                    className="px-4 py-12 text-center text-sm text-[#7c8689]"
-                                                >
+                                                <td colSpan={colCount} className="px-4 py-12 text-center text-sm text-[#7c8689]">
                                                     No records found.
-                                                 </td>
-                                             </tr>
+                                                </td>
+                                            </tr>
                                         )}
                                     </tbody>
                                 </table>
@@ -1289,13 +1180,8 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     <CardFooter className="flex items-center justify-between px-5 py-3 border-t border-[#e2e4ed]">
                         <div className="flex items-center gap-2">
                             <span className="text-sm text-[#7c8689]">Show</span>
-                            <Select
-                                value={String(itemsPerPage)}
-                                onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}
-                            >
-                                <SelectTrigger className="h-8 w-[70px] border-[#dbdfe9] bg-[#f9f9f9] text-xs">
-                                    <SelectValue />
-                                </SelectTrigger>
+                            <Select value={String(itemsPerPage)} onValueChange={(v) => { setItemsPerPage(Number(v)); setCurrentPage(1); }}>
+                                <SelectTrigger className="h-8 w-[70px] border-[#dbdfe9] bg-[#f9f9f9] text-xs"><SelectValue /></SelectTrigger>
                                 <SelectContent>
                                     <SelectItem value="10">10</SelectItem>
                                     <SelectItem value="25">25</SelectItem>
@@ -1307,10 +1193,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                         </div>
 
                         <div className="flex items-center gap-4">
-                            <span className="text-sm text-[#7c8689]">
-                                {startItem}–{endItem} of {totalRecords}
-                            </span>
-
+                            <span className="text-sm text-[#7c8689]">{startItem}–{endItem} of {totalRecords}</span>
                             <div className="flex items-center gap-1">
                                 <Button variant="ghost" size="icon" className="h-8 w-8" disabled={currentPage === 1} onClick={() => setCurrentPage(1)}>
                                     <ChevronLeft className="h-4 w-4" /><ChevronLeft className="h-4 w-4 -ml-3" />
@@ -1318,22 +1201,17 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                 <Button variant="ghost" size="icon" className="h-8 w-8" disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>
                                     <ChevronLeft className="h-4 w-4" />
                                 </Button>
-
                                 {pageNumbers.map(page => (
                                     <Button
                                         key={page}
                                         variant={currentPage === page ? 'default' : 'ghost'}
                                         size="icon"
-                                        className={cn(
-                                            'h-8 w-8 text-sm',
-                                            currentPage === page ? 'bg-[#e2e4ed] text-[#4b545d] hover:bg-[#e2e4ed]' : 'text-[#7c8689]'
-                                        )}
+                                        className={cn('h-8 w-8 text-sm', currentPage === page ? 'bg-[#e2e4ed] text-[#4b545d] hover:bg-[#e2e4ed]' : 'text-[#7c8689]')}
                                         onClick={() => setCurrentPage(page)}
                                     >
                                         {page}
                                     </Button>
                                 ))}
-
                                 <Button variant="ghost" size="icon" className="h-8 w-8" disabled={currentPage >= totalPages} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>
                                     <ChevronRight className="h-4 w-4" />
                                 </Button>
@@ -1346,13 +1224,8 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 </Card>
             </DataGrid>
 
-            {/* Add Note Dialog */}
             {noteDialogFabId && (
-                <AddNoteDialog
-                    open={!!noteDialogFabId}
-                    fabId={noteDialogFabId}
-                    onClose={() => setNoteDialogFabId(null)}
-                />
+                <AddNoteDialog open={!!noteDialogFabId} fabId={noteDialogFabId} onClose={() => setNoteDialogFabId(null)} />
             )}
         </>
     );

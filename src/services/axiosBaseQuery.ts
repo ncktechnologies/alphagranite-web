@@ -21,6 +21,8 @@ interface P {
 
 let isRefreshing = false;
 let failedQueue: any[] = [];
+const baseUrl = `${(import.meta as any).env?.VITE_ALPHA_GRANITE_BASE_URL || ''}`
+
 
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach((prom) => {
@@ -109,7 +111,7 @@ instance.interceptors.response.use(
       try {
         // Call refresh token endpoint
         const response = await axios.post(
-          'https://alpha-granite.xyz-ntrinsic.com/auth/refresh',
+          `${baseUrl}/auth/refresh`,
           { refresh_token: refreshToken },
           {
             headers: {

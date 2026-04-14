@@ -7,7 +7,7 @@ import { Cell, Column, flexRender, Header, HeaderGroup, Row } from '@tanstack/re
 import { cva } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 import { formatCalendarDate, formatUsDate } from '@/utils/date-utils';
-import { parseISO, isValid } from 'date-fns';
+import { parseISO, isValid, format } from 'date-fns';
 
 const headerCellSpacingVariants = cva('', {
   variants: {
@@ -431,6 +431,7 @@ function DataGridTable<TData extends object>() {
   // Check if grouping is enabled
   const groupByDate = (props as any).groupByDate;
   const dateKey = (props as any).dateKey;
+  const dateGrouping = (props as any).dateGrouping || 'date';
 
   // Group rows by date if enabled
   const groupedRows = groupByDate && dateKey
@@ -456,6 +457,39 @@ function DataGridTable<TData extends object>() {
         return acc;
       }, {})
     : null;
+
+  // For month grouping: create Month -> Dates hierarchy
+  const monthGroups = groupByDate && dateKey && dateGrouping === 'month' ? (() => {
+    const groups: Record<string, Record<string, Row<TData>[]>> = {};
+    tableRows.forEach(row => {
+      const dateValue = (row.original as any)[dateKey];
+      if (!dateValue) {
+        if (!groups['No Dates']) groups['No Dates'] = {};
+        if (!groups['No Dates']['No Dates']) groups['No Dates']['No Dates'] = [];
+        groups['No Dates']['No Dates'].push(row);
+        return;
+      }
+      try {
+        const dateStr = formatCalendarDate(dateValue);
+        const parsed = typeof dateStr === 'string' ? parseISO(dateStr) : dateStr;
+        if (isValid(parsed)) {
+          const monthKey = format(parsed, 'MMMM yyyy');
+          if (!groups[monthKey]) groups[monthKey] = {};
+          if (!groups[monthKey][dateStr]) groups[monthKey][dateStr] = [];
+          groups[monthKey][dateStr].push(row);
+        } else {
+          if (!groups['Invalid Dates']) groups['Invalid Dates'] = {};
+          if (!groups['Invalid Dates']['Invalid Dates']) groups['Invalid Dates']['Invalid Dates'] = [];
+          groups['Invalid Dates']['Invalid Dates'].push(row);
+        }
+      } catch {
+        if (!groups['Invalid Dates']) groups['Invalid Dates'] = {};
+        if (!groups['Invalid Dates']['Invalid Dates']) groups['Invalid Dates']['Invalid Dates'] = [];
+        groups['Invalid Dates']['Invalid Dates'].push(row);
+      }
+    });
+    return groups;
+  })() : null;
 
   const renderTableHead = () => (
     <DataGridTableHead>
@@ -533,7 +567,114 @@ function DataGridTable<TData extends object>() {
     );
   }
 
-  // Grouped by date view - each date gets its own table section
+  // For month grouping, use hierarchical view
+  if (dateGrouping === 'month' && monthGroups) {
+    const columnsToCalculate = ['total_sq_ft', 'wl_ln_ft', 'sl_ln_ft', 'edging_ln_ft', 'cnc_ln_ft', 'milter_ln_ft', 'cost_of_stone', 'revenue'];
+
+    return (
+      <div className="relative space-y-4">
+        {Object.entries(monthGroups).map(([month, dateGroups]) => {
+          // Calculate month totals
+          const allMonthRows = Object.values(dateGroups).flat();
+          const monthTotals: Record<string, number> = {};
+          columnsToCalculate.forEach(colId => {
+            monthTotals[colId] = allMonthRows.reduce((sum, row) => {
+              const val = (row.original as any)[colId];
+              const num = typeof val === 'number' ? val : parseFloat(val);
+              return sum + (isNaN(num) ? 0 : num);
+            }, 0);
+          });
+
+          return (
+            <div key={month} className="space-y-2">
+              {/* Month Header with Total */}
+              <div className="bg-white border border-border rounded-lg px-4 py-2">
+                <table className="w-full table-fixed">
+                  <thead>
+                    <tr>
+                      {table.getHeaderGroups()[0]?.headers.map((header, idx) => {
+                        const isFirst = idx === 0;
+                        const colId = header.column.id;
+                        const showTotal = columnsToCalculate.includes(colId);
+                        return (
+                          <th key={header.id} style={{ width: header.getSize() }} className="px-2 py-1 text-left font-normal">
+                            {isFirst ? (
+                              <span className="text-[14px] font-semibold text-text whitespace-nowrap">{month}</span>
+                            ) : showTotal ? (
+                              <span className="text-[12px] font-medium text-text">{monthTotals[colId]?.toFixed(1)}</span>
+                            ) : null}
+                          </th>
+                        );
+                      })}
+                    </tr>
+                  </thead>
+                </table>
+              </div>
+
+              {/* Date groups under this month */}
+              <div className="space-y-2 pl-4">
+                {Object.entries(dateGroups).map(([dateStr, rows]) => {
+                  const dateTotals: Record<string, number> = {};
+                  columnsToCalculate.forEach(colId => {
+                    dateTotals[colId] = rows.reduce((sum, row) => {
+                      const val = (row.original as any)[colId];
+                      const num = typeof val === 'number' ? val : parseFloat(val);
+                      return sum + (isNaN(num) ? 0 : num);
+                    }, 0);
+                  });
+
+                  return (
+                    <div key={dateStr} className="border border-border rounded-lg overflow-hidden">
+                      {/* Date Header with Total */}
+                      <div className="bg-[#F6FFE7] border-b border-border">
+                        <table className="w-full table-fixed">
+                          <thead>
+                            <tr>
+                              {table.getHeaderGroups()[0]?.headers.map((header, idx) => {
+                                const isFirst = idx === 0;
+                                const colId = header.column.id;
+                                const showTotal = columnsToCalculate.includes(colId);
+                                return (
+                                  <th key={header.id} style={{ width: header.getSize() }} className="px-2 py-1 text-left font-normal">
+                                    {isFirst ? (
+                                      <span className="text-[13px] font-medium text-text whitespace-nowrap">
+                                        {(() => {
+                                          try {
+                                            const parsed = typeof dateStr === 'string' ? parseISO(dateStr) : dateStr;
+                                            return isValid(parsed) ? formatUsDate(parsed) : dateStr;
+                                          } catch { return dateStr; }
+                                        })()}
+                                      </span>
+                                    ) : showTotal ? (
+                                      <span className="text-[11px] font-medium text-text">{dateTotals[colId]?.toFixed(1)}</span>
+                                    ) : null}
+                                  </th>
+                                );
+                              })}
+                            </tr>
+                          </thead>
+                        </table>
+                      </div>
+
+                      {/* Rows */}
+                      <DataGridTableBase>
+                        {renderTableHead()}
+                        {(props.tableLayout?.stripped || !props.tableLayout?.rowBorder) && <DataGridTableRowSpacer />}
+                        <DataGridTableBody>{renderRows(rows)}</DataGridTableBody>
+                      </DataGridTableBase>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+        {showSpinner && <DataGridTableLoader />}
+      </div>
+    );
+  }
+
+  // Regular date grouping view
   return (
     <div className="relative space-y-3">
       {Object.entries(groupedRows).map(([date, rows]) => {
