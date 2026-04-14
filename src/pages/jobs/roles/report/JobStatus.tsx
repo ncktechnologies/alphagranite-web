@@ -50,26 +50,28 @@ export interface JobStatusRow {
     edge_name: string;
     pieces: number;
     total_sq_ft: number;
-    template_date:          string | null | undefined;
-    template_needed:        boolean;
-    pre_draft_review_date:  string | null | undefined;
-    pre_draft_needed:       boolean;
-    draft_date:             string | null | undefined;
-    draft_needed:           boolean;
-    sct_date:               string | null | undefined;
-    sct_needed:             boolean;
-    been_revised:           boolean;
-    slabsmith_date:         string | null | undefined;
-    slabsmith_needed:       boolean;
+    template_date: string | null | undefined;
+    template_needed: boolean;
+    pre_draft_review_date: string | null | undefined;
+    pre_draft_needed: boolean;
+    draft_date: string | null | undefined;
+    draft_needed: boolean;
+    sct_date: string | null | undefined;
+    sct_needed: boolean;
+    been_revised: boolean;
+    slabsmith_date: string | null | undefined;
+    slabsmith_needed: boolean;
     final_programming_date: string | null | undefined;
-    fp_needed:              boolean;
-    shop_date:              string | null | undefined;
-    est_completion_date:    string | null | undefined;
-    percent_complete:       number;
-    shop_completion_date:   string | null | undefined;
-    install_date:           string | null | undefined;
-    install_confirmed:      boolean;
-    installed:              boolean;
+    fp_needed: boolean;
+    shop_date: string | null | undefined;
+    est_completion_date: string | null | undefined;
+    percent_complete: number;
+    shop_completion_date: string | null | undefined;
+    install_date: string | null | undefined;
+    install_confirmed: boolean;
+    installed: boolean;
+     revenue: number;
+    cost_of_stone: number;
 }
 
 // ─────────────────────────────────────────────────────────
@@ -137,38 +139,40 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
     // ── Transform (kept exactly as original) ─────────────
     const tableData: JobStatusRow[] = useMemo(() => {
         return fabs.map((fab: any): JobStatusRow => ({
-            fab_id:     String(fab.id),
-            fab_type:   fab.fab_type || 'N/A',
-            job_no:     fab.job_details?.job_number || 'N/A',
-            acct_name:  fab.account_name || '',
-            job_name:   fab.job_details?.name || '',
+            fab_id: String(fab.id),
+            fab_type: fab.fab_type || 'N/A',
+            job_no: fab.job_details?.job_number || 'N/A',
+            acct_name: fab.account_name || '',
+            job_name: fab.job_details?.name || '',
             input_area: fab.input_area || '',
-            stone_type_name:       fab.stone_type_name || '',
-            stone_color_name:      fab.stone_color_name || '',
+            stone_type_name: fab.stone_type_name || '',
+            stone_color_name: fab.stone_color_name || '',
             stone_thickness_value: fab.stone_thickness_value || '',
-            edge_name:             fab.edge_name || '',
-            pieces:      fab.no_of_pieces ?? 0,
-            total_sq_ft: fab.total_sqft   ?? 0,
-            template_needed:        fab.template_needed !== false,
-            template_date:          fab.template_completed_date ?? null,
-            pre_draft_needed:       fab.drafting_needed !== false,
-            pre_draft_review_date:  fab.predraft_completed_date ?? null,
-            draft_needed:           fab.drafting_needed !== false,
-            draft_date:             fab.draft_completed_date ?? null,
-            sct_needed:             fab.sct_needed !== false,
-            sct_date:               fab.sct_completed_date ?? null,
-            been_revised:           fab.revised === true,
-            slabsmith_needed:       fab.slab_smith_used === true || fab.slab_smith_ag_needed === true || fab.slab_smith_cust_needed === true,
-            slabsmith_date:         fab.slabsmith_completed_date ?? null,
-            fp_needed:              fab.final_programming_needed !== false,
+            edge_name: fab.edge_name || '',
+            pieces: fab.no_of_pieces ?? 0,
+            total_sq_ft: fab.total_sqft ?? 0,
+            template_needed: fab.template_needed !== false,
+            template_date: fab.template_completed_date ?? null,
+            pre_draft_needed: fab.drafting_needed !== false,
+            pre_draft_review_date: fab.predraft_completed_date ?? null,
+            draft_needed: fab.drafting_needed !== false,
+            draft_date: fab.draft_completed_date ?? null,
+            sct_needed: fab.sct_needed !== false,
+            sct_date: fab.sct_completed_date ?? null,
+            been_revised: fab.revised === true,
+            slabsmith_needed: fab.slab_smith_used === true || fab.slab_smith_ag_needed === true || fab.slab_smith_cust_needed === true,
+            slabsmith_date: fab.slabsmith_completed_date ?? null,
+            fp_needed: fab.final_programming_needed !== false,
             final_programming_date: fab.final_programming_completed_date ?? null,
-            shop_date:              fab.shop_date_schedule ?? null,
-            est_completion_date:    fab.estimated_completion_date ?? fab.shop_date_schedule ?? null,
-            percent_complete:       fab.percentage_completion ?? fab.percent_complete ?? 0,
-            shop_completion_date:   fab.est_shop_completion_date ?? null,
-            install_date:           fab.installation_date ?? null,
-            install_confirmed:      fab.install_confirmed === true,
-            installed:              fab.is_complete === true,
+            shop_date: fab.shop_date_schedule ?? null,
+            est_completion_date: fab.estimated_completion_date ?? fab.shop_date_schedule ?? null,
+            percent_complete: fab.percentage_completion ?? fab.percent_complete ?? 0,
+            shop_completion_date: fab.shop_est_completion_date ?? null,
+            install_date: fab.installation_date ?? null,
+            install_confirmed: fab.install_confirmed === true,
+            installed: fab.is_complete === true,
+            revenue: fab.revenue ?? 0,
+            cost_of_stone: fab.cost_of_stone ?? 0,
         }));
     }, [fabs]);
 
@@ -179,9 +183,9 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
         if (searchQuery) {
             const q = searchQuery.toLowerCase();
             result = result.filter(r => {
-                if (searchType === 'fab_id')     return r.fab_id.toLowerCase().includes(q);
+                if (searchType === 'fab_id') return r.fab_id.toLowerCase().includes(q);
                 if (searchType === 'job_number') return r.job_no.toLowerCase().includes(q);
-                if (searchType === 'job_name')   return r.job_name.toLowerCase().includes(q);
+                if (searchType === 'job_name') return r.job_name.toLowerCase().includes(q);
                 return false;
             });
         }
@@ -192,7 +196,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
 
         if (dateRange?.from && dateRange?.to) {
             const start = startOfDay(dateRange.from);
-            const end   = startOfDay(dateRange.to);
+            const end = startOfDay(dateRange.to);
             end.setHours(23, 59, 59, 999);
             result = result.filter(r => {
                 if (!r.install_date) return false;
@@ -268,6 +272,30 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             enableSorting: true,
             size: 100,
         },
+           // NEW COLUMN: REVENUE
+        {
+            id: 'revenue',
+            accessorKey: 'revenue',
+            header: ({ column }) => <DataGridColumnHeader title="REVENUE" column={column} />,
+            cell: ({ row }) => {
+                const amount = row.original.revenue;
+                return <span className="text-xs font-medium">${amount.toFixed(2)}</span>;
+            },
+            enableSorting: true,
+            size: 100,
+        },
+        // NEW COLUMN: COST OF STONE
+        {
+            id: 'cost_of_stone',
+            accessorKey: 'cost_of_stone',
+            header: ({ column }) => <DataGridColumnHeader title="COST OF STONE" column={column} />,
+            cell: ({ row }) => {
+                const amount = row.original.cost_of_stone;
+                return <span className="text-xs">${amount.toFixed(2)}</span>;
+            },
+            enableSorting: true,
+            size: 120,
+        },
         {
             id: 'template',
             header: ({ column }) => <DataGridColumnHeader title="TEMPLATE" column={column} />,
@@ -342,7 +370,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
                 return (
                     <div className="flex flex-col gap-1 min-w-[80px]">
                         <span className="text-xs">{pct.toFixed(2)}%</span>
-                       
+
                     </div>
                 );
             },
@@ -395,10 +423,10 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
         state: { sorting, pagination },
         onSortingChange: setSorting,
         onPaginationChange: setPagination,
-        getCoreRowModel:       getCoreRowModel(),
-        getFilteredRowModel:   getFilteredRowModel(),
+        getCoreRowModel: getCoreRowModel(),
+        getFilteredRowModel: getFilteredRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel:     getSortedRowModel(),
+        getSortedRowModel: getSortedRowModel(),
         manualPagination: true,
         meta: {
             getRowAttributes: (row: any) => ({
@@ -416,10 +444,10 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             isLoading={isLoading}
             groupByDate={false}
             tableLayout={{
-                columnsPinnable:   true,
-                columnsMovable:    true,
+                columnsPinnable: true,
+                columnsMovable: true,
                 columnsVisibility: true,
-                cellBorder:        true,
+                cellBorder: true,
             }}
         >
             <Card>
