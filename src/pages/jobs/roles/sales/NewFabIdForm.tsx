@@ -622,7 +622,7 @@ const NewFabIdForm = () => {
       const selectedFabType = Array.isArray(fabTypesData) ? fabTypesData?.find((type: any) => type.name === values.fabType) : undefined;
       const selectedAccount = Array.isArray(accountsData) ? accountsData?.find((account: any) => account.name === values.account) : undefined;
       const selectedStoneType = Array.isArray(stoneTypesData) ? stoneTypesData?.find((type: any) => type.name === values.stoneType) : undefined;
-      const selectedStoneColor = Array.isArray(stoneColorsData) ? stoneColorsData?.find((color: any) => color.name === values.stoneColor) : undefined;
+      const selectedStoneColor = Array.isArray(filteredStoneColorsData) ? filteredStoneColorsData?.find((color: any) => color.name === values.stoneColor) : undefined;
       const selectedStoneThickness = Array.isArray(stoneThicknessesData) ? stoneThicknessesData?.find((thickness: any) => thickness.thickness === values.stoneThickness) : undefined;
       const selectedEdge = Array.isArray(edgesData) ? edgesData?.find((edge: any) => edge.name === values.edge) : undefined;
       const selectedSalesPerson = salesPersons.find((person: any) => person.name === values.selectedSalesPerson);
