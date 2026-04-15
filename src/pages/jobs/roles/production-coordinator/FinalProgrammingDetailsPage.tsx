@@ -61,6 +61,7 @@ export function FinalProgrammingDetailsPage() {
 
   const currentUser = useSelector((s: any) => s.user.user);
   const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
+  const isSuperAdmin = currentUser?.is_super_admin || false;
 
   // API hooks
   const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, { skip: !fabId });
@@ -145,6 +146,14 @@ export function FinalProgrammingDetailsPage() {
       toast.error('Cannot start final programming session - no drafter found');
       return;
     }
+
+    // Authorization check: must be drafter_id or super admin
+    const assignedDrafterId = fabData?.draft_data?.drafter_id;
+    if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
+      toast.error('You are not authorized to start this final programming session. Only the assigned drafter or super admin can perform this action.');
+      return;
+    }
+
     try {
       await manageFinalProgrammingSession({
         fab_id: fabId,
@@ -160,9 +169,16 @@ export function FinalProgrammingDetailsPage() {
       console.error('Failed to start session:', error);
       toast.error('Failed to start session');
     }
-  }, [fabData, fabId, currentEmployeeId, manageFinalProgrammingSession, refetchFPSession]);
+  }, [fabData, fabId, currentEmployeeId, isSuperAdmin, manageFinalProgrammingSession, refetchFPSession]);
 
   const handlePause = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
+    // Authorization check: must be drafter_id or super admin
+    const assignedDrafterId = fabData?.draft_data?.drafter_id;
+    if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
+      toast.error('You are not authorized to pause this final programming session. Only the assigned drafter or super admin can perform this action.');
+      return;
+    }
+
     try {
       await manageFinalProgrammingSession({
         fab_id: fabId,
@@ -175,9 +191,16 @@ export function FinalProgrammingDetailsPage() {
       console.error('Failed to pause:', error);
       toast.error('Failed to pause');
     }
-  }, [fabId, manageFinalProgrammingSession, refetchFPSession]);
+  }, [fabData, fabId, currentEmployeeId, isSuperAdmin, manageFinalProgrammingSession, refetchFPSession]);
 
   const handleResume = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
+    // Authorization check: must be drafter_id or super admin
+    const assignedDrafterId = fabData?.draft_data?.drafter_id;
+    if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
+      toast.error('You are not authorized to resume this final programming session. Only the assigned drafter or super admin can perform this action.');
+      return;
+    }
+
     try {
       await manageFinalProgrammingSession({
         fab_id: fabId,
@@ -190,9 +213,16 @@ export function FinalProgrammingDetailsPage() {
       console.error('Failed to resume:', error);
       toast.error('Failed to resume');
     }
-  }, [fabId, manageFinalProgrammingSession, refetchFPSession]);
+  }, [fabData, fabId, currentEmployeeId, isSuperAdmin, manageFinalProgrammingSession, refetchFPSession]);
 
   const handleEnd = useCallback(async (endDate: Date) => {
+    // Authorization check: must be drafter_id or super admin
+    const assignedDrafterId = fabData?.draft_data?.drafter_id;
+    if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
+      toast.error('You are not authorized to end this final programming session. Only the assigned drafter or super admin can perform this action.');
+      return;
+    }
+
     try {
       await manageFinalProgrammingSession({
         fab_id: fabId,
@@ -207,7 +237,7 @@ export function FinalProgrammingDetailsPage() {
     } catch (error) {
       console.error('Failed to end session:', error);
     }
-  }, [fabId, manageFinalProgrammingSession, refetchFPSession]);
+  }, [fabData, fabId, currentEmployeeId, isSuperAdmin, manageFinalProgrammingSession, refetchFPSession]);
 
   const handleOnHold = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
     try {

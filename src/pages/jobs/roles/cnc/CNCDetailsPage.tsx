@@ -70,6 +70,7 @@ export function CNCDetailsPage() {
 
     const currentUser = useSelector((s: any) => s.user.user);
     const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
+    const isSuperAdmin = currentUser?.is_super_admin || false;
 
     // Load fab & CNC data
     const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, {
@@ -198,6 +199,14 @@ export function CNCDetailsPage() {
             toast.error('Cannot start CNC session - no cnc operator found found');
             return;
         }
+
+        // Authorization check: must be CNC drafter_id or super admin
+        const assignedDrafterId = cncData?.drafter_id || fabData?.cnc_data?.drafter_id;
+        if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
+            toast.error('You are not authorized to start this CNC session. Only the assigned CNC operator or super admin can perform this action.');
+            return;
+        }
+
         try {
             await manageCNCSession({
                 fab_id: fabId,
@@ -233,6 +242,13 @@ export function CNCDetailsPage() {
         sqftDrafted?: string,
         workPercentage?: string
     ) => {
+        // Authorization check: must be CNC drafter_id or super admin
+        const assignedDrafterId = cncData?.drafter_id || fabData?.cnc_data?.drafter_id;
+        if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
+            toast.error(`You are not authorized to ${action === 'pause' ? 'pause' : action === 'end' ? 'end' : 'update'} this CNC session. Only the assigned CNC operator or super admin can perform this action.`);
+            return;
+        }
+
         try {
             await manageCNCSession({
                 fab_id: fabId,
@@ -260,12 +276,26 @@ export function CNCDetailsPage() {
 
 
     const handlePause = async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
+        // Authorization check: must be CNC drafter_id or super admin
+        const assignedDrafterId = cncData?.drafter_id || fabData?.cnc_data?.drafter_id;
+        if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
+            toast.error('You are not authorized to pause this CNC session. Only the assigned CNC operator or super admin can perform this action.');
+            return;
+        }
+
         try {
             await updateSession('pause', new Date(), data?.note, data?.sqft_drafted, data?.work_percentage_done);
         } catch (error) { }
     };
 
     const handleResume = async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
+        // Authorization check: must be CNC drafter_id or super admin
+        const assignedDrafterId = cncData?.drafter_id || fabData?.cnc_data?.drafter_id;
+        if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
+            toast.error('You are not authorized to resume this CNC session. Only the assigned CNC operator or super admin can perform this action.');
+            return;
+        }
+
         try {
             await manageCNCSession({
                 fab_id: fabId,
@@ -290,6 +320,13 @@ export function CNCDetailsPage() {
     };
 
     const handleEnd = async (endDate: Date, data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
+        // Authorization check: must be CNC drafter_id or super admin
+        const assignedDrafterId = cncData?.drafter_id || fabData?.cnc_data?.drafter_id;
+        if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
+            toast.error('You are not authorized to end this CNC session. Only the assigned CNC operator or super admin can perform this action.');
+            return;
+        }
+
         try {
             await updateSession('end', endDate, data?.note, data?.sqft_drafted, data?.work_percentage_done);
         } catch (error) { }

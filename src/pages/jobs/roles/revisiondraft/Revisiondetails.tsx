@@ -143,6 +143,7 @@ export function RevisionDetailsPage() {
 
   const currentUser = useSelector((s: any) => s.user.user);
   const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
+  const isSuperAdmin = currentUser?.is_super_admin || false;
 
   // API queries
   const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, {
@@ -332,24 +333,53 @@ export function RevisionDetailsPage() {
       toast.error('Cannot start revision session - no drafting assignment found');
       return;
     }
+
+    // Authorization check: must be drafter_id or super admin
+    const assignedDrafterId = draftingData?.drafter_id || fabData?.draft_data?.drafter_id;
+    if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
+      toast.error('You are not authorized to start this revision session. Only the assigned drafter or super admin can perform this action.');
+      return;
+    }
+
     try {
       await createOrStartSession('start', startDate, data?.note, data?.sqft_drafted, data?.work_percentage_done);
     } catch (error) { }
   };
 
   const handlePause = async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
+    // Authorization check: must be drafter_id or super admin
+    const assignedDrafterId = draftingData?.drafter_id || fabData?.draft_data?.drafter_id;
+    if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
+      toast.error('You are not authorized to pause this revision session. Only the assigned drafter or super admin can perform this action.');
+      return;
+    }
+
     try {
       await updateSession('pause', new Date(), data?.note, data?.sqft_drafted, data?.work_percentage_done);
     } catch (error) { }
   };
 
   const handleResume = async (data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
+    // Authorization check: must be drafter_id or super admin
+    const assignedDrafterId = draftingData?.drafter_id || fabData?.draft_data?.drafter_id;
+    if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
+      toast.error('You are not authorized to resume this revision session. Only the assigned drafter or super admin can perform this action.');
+      return;
+    }
+
     try {
       await createOrStartSession('resume', new Date(), data?.note, data?.sqft_drafted, data?.work_percentage_done);
     } catch (error) { }
   };
 
   const handleEnd = async (endDate: Date, data?: { note?: string; sqft_drafted?: string; work_percentage_done?: string }) => {
+    // Authorization check: must be drafter_id or super admin
+    const assignedDrafterId = draftingData?.drafter_id || fabData?.draft_data?.drafter_id;
+    if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
+      toast.error('You are not authorized to end this revision session. Only the assigned drafter or super admin can perform this action.');
+      return;
+    }
+
     try {
       await updateSession('end', endDate, data?.note, data?.sqft_drafted, data?.work_percentage_done);
     } catch (error) { }
