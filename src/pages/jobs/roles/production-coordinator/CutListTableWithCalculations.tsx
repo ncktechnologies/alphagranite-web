@@ -682,7 +682,7 @@ export const CutListTableWithCalculations = ({
                                             <SelectValue placeholder="Install Date" />
                                         </SelectTrigger>
                                         <SelectContent className="w-48">
-                                            <SelectItem value="all">All</SelectItem>
+                                            <SelectItem value="all">All Time</SelectItem>
                                             <SelectItem value="today">Today</SelectItem>
                                             <SelectItem value="this_week">This Week</SelectItem>
                                             <SelectItem value="last_week">Last Week</SelectItem>
