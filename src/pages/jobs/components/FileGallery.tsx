@@ -2,7 +2,7 @@ import { useMemo, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatBytes } from '@/hooks/use-file-upload';
-import { WORKFLOW_STAGES, getFileStage, getStageBadge } from '@/utils/file-labeling';
+import { WORKFLOW_STAGES, getFileStage, getStageBadge, normalizeStageKey } from '@/utils/file-labeling';
 import { Can } from '@/components/permission';
 import {
   FileTextIcon,
@@ -97,13 +97,27 @@ const getCategory = (mimeType: string): 'image' | 'video' | 'audio' | 'pdf' | 'd
 // ── Resolve stage label + className from a file ───────────────────────────────
 // Priority: stage_name → stage → 'general'
 function resolveStage(file: UnifiedFile): { label: string; className: string } {
-  const stageKey = file.stage_name || file.stage || 'general';
-  const stageObj = WORKFLOW_STAGES[stageKey]
-    ?? getFileStage(file.name, { currentStage: stageKey, isDrafting: false });
+  // 1. Get raw stage from backend (stage_name > stage > fallback)
+  const rawStage = file.stage_name || file.stage || 'general';
+  
+  // 2. Normalise to match WORKFLOW_STAGES keys (e.g. "CNC" → "cnc", "Cut List" → "cut_list")
+  const normalisedKey = normalizeStageKey(rawStage);
+  
+  // 3. Try to find exact match in WORKFLOW_STAGES
+  let stageObj = WORKFLOW_STAGES[normalisedKey];
+  
+  // 4. If not found, use filename-based detection (pass normalised key as currentStage hint)
+  if (!stageObj) {
+    stageObj = getFileStage(file.name, { currentStage: normalisedKey });
+  }
+  
+  // 5. Get badge (safe against undefined)
   const badge = getStageBadge(stageObj);
+  
+  // 6. Return label (use rawStage for display if badge label is fallback)
   return {
-    label:     badge?.label     || stageKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-    className: badge?.className || 'bg-gray-100 text-gray-600 text-xs px-2 py-0.5 rounded',
+    label: badge.label === 'Unknown' ? rawStage.replace(/_/g, ' ') : badge.label,
+    className: badge.className
   };
 }
 
@@ -251,11 +265,11 @@ function FileCard({
               <span className={cn('w-fit', stageCls)}>{stageLabel}</span>
 
               {/* File type (qa, etc.) */}
-              {fileType && (
+              {/* {fileType && (
                 <span className="text-xs font-medium text-gray-700 bg-gray-100 px-2 py-0.5 rounded uppercase">
                   {fileType}
                 </span>
-              )}
+              )} */}
 
               {/* File design */}
               {fileDesign && (

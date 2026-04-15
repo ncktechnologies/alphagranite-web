@@ -14,6 +14,7 @@ import { BackButton } from '@/components/common/BackButton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { X } from 'lucide-react';
 import { UpdateFabIdModal } from './components/UpdateFabIdModal';
+import { stageConfig } from '@/utils/note-utils';
 
 // Helper functions (reused from draft details)
 const getAllFabNotes = (fabNotes: any[]) => fabNotes || [];
@@ -132,18 +133,6 @@ export function CutListDetailsPage() {
         type: 'notes',
         notes: Array.isArray(fabData.fab_notes)
           ? fabData.fab_notes.map((note: any) => {
-            const stageConfig: Record<string, { label: string; color: string }> = {
-              templating: { label: 'Templating', color: '#3B82F6' },
-              pre_draft_review: { label: 'Pre-Draft Review', color: '#6366F1' },
-              drafting: { label: 'Drafting', color: '#10B981' },
-              sales_ct: { label: 'Sales CT', color: '#F59E0B' },
-              slab_smith_request: { label: 'Slab Smith Request', color: '#EF4444' },
-              cut_list: { label: 'Final Programming', color: '#C026D3' },
-              cutting: { label: 'Cutting', color: '#F97316' },
-              revisions: { label: 'Revisions', color: '#C026D3' },
-              draft: { label: 'Draft', color: '#10B981' },
-              general: { label: 'General', color: '#6B7280' },
-            };
             const stage = note?.stage || 'general';
             const config = stageConfig[stage] || stageConfig.general;
             return {

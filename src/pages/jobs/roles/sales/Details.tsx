@@ -13,6 +13,7 @@ import { BackButton } from '@/components/common/BackButton';
 import GraySidebar from '@/pages/jobs/components/job-details.tsx/GraySidebar';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Can } from '@/components/permission';
+import { stageConfig } from '@/utils/note-utils';
 
 // Helper function to get FAB status display
 const getFabStatusInfo = (statusId: number | undefined) => {
@@ -36,37 +37,52 @@ export function SalesDetailsPage() {
     : '#';
 
   // Build file sources from actual API shape
-  const fileSources: FileSource[] = (() => {
-    if (!fab) return [];
-    const sources: FileSource[] = [];
+  // Inside SalesDetailsPage, replace the fileSources building block:
 
-    const mapFiles = (files: any[], stage: string, uploadedBy?: string): UnifiedFile[] =>
-      (files ?? []).map((f): UnifiedFile => ({
-        id: String(f.id),
-        name: f.name || f.filename || `File_${f.id}`,
-        size: parseInt(f.file_size) || f.size || 0,
-        type: f.file_type || f.mime_type || 'application/octet-stream',
-        url: f.file_url || f.url || '',
-        stage,
-        uploadedBy,
-        uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
-        _raw: f,
-      }));
+const fileSources: FileSource[] = (() => {
+  if (!fab) return [];
+  const sources: FileSource[] = [];
 
-    const draftFiles = mapFiles(fab.draft_data?.files ?? [], 'Drafting', fab.draft_data?.drafter_name);
-    if (draftFiles.length > 0) sources.push({ kind: 'raw', data: draftFiles });
+  // Helper to convert API file array into UnifiedFile[]
+  const toUnifiedFiles = (files: any[]): UnifiedFile[] =>
+    (files ?? []).map((f): UnifiedFile => ({
+      id: String(f.id),
+      name: f.name || f.filename || `File_${f.id}`,
+      size: parseInt(f.file_size) || f.size || 0,
+      type: f.file_type || f.mime_type || 'application/octet-stream',
+      url: f.file_url || f.url || '',
+      stage_name: f.stage_name ?? f.stage,   // ← keep backend's stage_name
+      stage: f.stage_name ?? f.stage,
+      file_design: f.file_design,
+      uploaded_by_name: f.uploaded_by_name ?? f.uploader_name,
+      uploadedBy: f.uploaded_by_name ?? f.uploader_name,
+      uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
+      _raw: f,
+    }));
 
-    const slabFiles = mapFiles(fab.slabsmith_data?.files ?? [], 'SlabSmith');
-    if (slabFiles.length > 0) sources.push({ kind: 'raw', data: slabFiles });
+  // Drafting files (from draft_data.files)
+  if (fab.draft_data?.files?.length) {
+    sources.push({ kind: 'raw', data: toUnifiedFiles(fab.draft_data.files) });
+  }
+  // SlabSmith files
+  if (fab.slabsmith_data?.files?.length) {
+    sources.push({ kind: 'raw', data: toUnifiedFiles(fab.slabsmith_data.files) });
+  }
+  // Sales CT files
+  if (fab.sales_ct_data?.files?.length) {
+    sources.push({ kind: 'raw', data: toUnifiedFiles(fab.sales_ct_data.files) });
+  }
+  // CNC files (if you later add cnc_data)
+  if (fab.cnc_data?.files?.length) {
+    sources.push({ kind: 'raw', data: toUnifiedFiles(fab.cnc_data.files) });
+  }
+  // Top-level files
+  if (fab.files?.length) {
+    sources.push({ kind: 'raw', data: toUnifiedFiles(fab.files) });
+  }
 
-    const salesCtFiles = mapFiles(fab.sales_ct_data?.files ?? [], 'Sales CT');
-    if (salesCtFiles.length > 0) sources.push({ kind: 'raw', data: salesCtFiles });
-
-    const topFiles = mapFiles(fab.files ?? [], 'General');
-    if (topFiles.length > 0) sources.push({ kind: 'raw', data: topFiles });
-
-    return sources;
-  })();
+  return sources;
+})();
 
   const totalFileCount = fileSources.reduce((sum, s) => sum + (s.kind === 'raw' ? s.data.length : 0), 0);
 
@@ -121,19 +137,7 @@ export function SalesDetailsPage() {
         type: 'notes',
         notes: Array.isArray(fab.fab_notes)
           ? fab.fab_notes.map((note: any) => {
-            const stageConfig: Record<string, { label: string; color: string }> = {
-              templating: { label: 'Templating', color: 'text-blue-700' },
-              pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
-              drafting: { label: 'Drafting', color: 'text-green-700' },
-              sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
-              slab_smith_request: { label: 'Slab Smith Request', color: 'text-red-700' },
-              slabsmith: { label: 'Slab Smith Request', color: 'text-red-700' },
-              cut_list: { label: 'Cut List', color: 'text-purple-700' },
-              final_programming: { label: 'Final Programming', color: 'text-purple-700' },
-              revisions: { label: 'Revisions', color: 'text-purple-700' },
-              draft: { label: 'Draft', color: 'text-green-700' },
-              general: { label: 'General', color: 'text-gray-700' },
-            };
+          
             const stage = note?.stage || 'general';
             const config = stageConfig[stage] || stageConfig.general;
             return {

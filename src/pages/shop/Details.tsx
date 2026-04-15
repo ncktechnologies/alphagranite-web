@@ -13,6 +13,7 @@ import { Documents } from './components/files';
 import { FileViewer } from '../jobs/roles/drafters/components';
 import { useGetFabByIdQuery } from '@/store/api/job';
 import { useParams } from 'react-router';
+import { stageConfig } from '@/utils/note-utils';
 
 const ShopDetailsPage = () => {
     const { id } = useParams<{ id: string }>();
@@ -78,18 +79,7 @@ const ShopDetailsPage = () => {
             type: "notes",
             notes: getAllFabNotes(fab?.fab_notes || []).map(note => {
                 // Stage display mapping
-                const stageConfig: Record<string, { label: string; color: string }> = {
-                    templating: { label: 'Templating', color: 'text-blue-700' },
-                    pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
-                    drafting: { label: 'Drafting', color: 'text-green-700' },
-                    sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
-                    slab_smith_request: { label: 'SlabSmith Request', color: 'text-red-700' },
-                    cut_list: { label: 'Final Programming', color: 'text-purple-700' },
-                    cutting: { label: 'Cutting', color: 'text-orange-700' },
-                    revisions: { label: 'Revisions', color: 'text-purple-700' },
-                    draft: { label: 'Draft', color: 'text-green-700' },
-                    general: { label: 'General', color: 'text-gray-700' }
-                };
+           
 
                 const stage = note.stage || 'general';
                 const config = stageConfig[stage] || stageConfig.general;

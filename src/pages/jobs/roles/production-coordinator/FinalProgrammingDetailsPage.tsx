@@ -34,6 +34,7 @@ import { FileWithPreview } from '@/hooks/use-file-upload';
 import { getFileStage } from '@/utils/file-labeling';
 import { FileViewer } from '../drafters/components';
 import { FileGallery, type FileSource, type UnifiedFile } from '@/pages/jobs/components/FileGallery';
+import { stageConfig } from '@/utils/note-utils';
 
 // Helper functions
 const formatBytes = (bytes: number, decimals = 2) => {
@@ -331,19 +332,7 @@ export function FinalProgrammingDetailsPage() {
       type: 'notes',
       notes: Array.isArray(fabData?.fab_notes)
         ? fabData.fab_notes.map((note) => {
-          const stageConfig: Record<string, { label: string; color: string }> = {
-            templating: { label: 'Templating', color: 'text-blue-700' },
-            pre_draft_review: { label: 'Pre-Draft Review', color: 'text-indigo-700' },
-            drafting: { label: 'Drafting', color: 'text-green-700' },
-            sales_ct: { label: 'Sales CT', color: 'text-yellow-700' },
-            slab_smith_request: { label: 'Slab Smith Request', color: 'text-red-700' },
-            cut_list: { label: 'Final Programming', color: 'text-purple-700' },
-            cutting: { label: 'Cutting', color: 'text-orange-700' },
-            revisions: { label: 'Revisions', color: 'text-purple-700' },
-            draft: { label: 'Draft', color: 'text-green-700' },
-            final_programming: { label: 'Final Programming', color: 'text-purple-700' },
-            general: { label: 'General', color: 'text-gray-700' },
-          };
+         
           const stage = note?.stage || 'general';
           const config = stageConfig[stage] || stageConfig.general;
           return {
