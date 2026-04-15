@@ -226,7 +226,7 @@ export const SubmissionModal = ({
               name="totalSqFt"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Total Sq Ft</FormLabel>
+                  <FormLabel>Total LinFt</FormLabel>
                   <FormControl>
                     <Input placeholder="Enter total square feet" {...field} />
                   </FormControl>

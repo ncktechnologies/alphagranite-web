@@ -74,6 +74,7 @@ export interface CalculatedCutListData {
     stone_thickness_value?: string;
     edge_name?: string;
     final_programming_completed_date?: string;
+    shop_ready?: string;
 }
 
 // ── Data transform ────────────────────────────────────────────────────────────
@@ -121,6 +122,7 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
         stone_thickness_value: fab.stone_thickness_value,
         edge_name: fab.edge_name,
         final_programming_completed_date: fabWithExtraFields.final_programming_completed_date || '',
+        shop_ready: fabWithExtraFields.cutlist_complete ? 'Yes' : '-',
     };
 };
 
@@ -426,6 +428,17 @@ export const CutListTableWithCalculations = ({
                     {row.original.final_programming_completed_date
                         ? new Date(row.original.final_programming_completed_date).toLocaleDateString()
                         : 'Not Completed'}
+                </span>
+            ),
+        },
+        {
+            id: 'shop_ready', accessorKey: 'shop_ready',
+            header: ({ column }) => <DataGridColumnHeader title="SHOP READY" column={column} />,
+            cell: ({ row }) => (
+                <span className="text-sm">
+                    {row.original.shop_ready === 'Yes'
+                        ? 'Yes'
+                        : '-'}
                 </span>
             ),
         },

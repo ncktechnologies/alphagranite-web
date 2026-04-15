@@ -326,7 +326,6 @@ const ShopTable: React.FC<ShopTableProps> = () => {
     const columns = useMemo<ColumnDef<ShopPlanRow>[]>(() => [
         {
             id: 'actions',
-            header: () => <span className="text-sm text-text">ACTIONS</span>,
             cell: ({ row }) => (
                 <ActionsCell
                     row={row}

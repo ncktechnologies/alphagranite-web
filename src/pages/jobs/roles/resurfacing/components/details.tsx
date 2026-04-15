@@ -177,8 +177,8 @@ export function ResurfacingDetailsPage() {
   }
 
   const statusInfo = {
-    className: fab.status_id === 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800',
-    text: fab.status_id === 0 ? 'ON HOLD' : 'ACTIVE',
+    className: fab?.status_id === 0 ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800',
+    text: fab?.status_id === 0 ? 'ON HOLD' : 'ACTIVE',
   };
 
   return (

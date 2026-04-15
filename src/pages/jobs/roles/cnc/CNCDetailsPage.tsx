@@ -767,6 +767,8 @@ export function CNCDetailsPage() {
                     { value: 'ss_layout', label: 'SS Layout' },
                     { value: 'shop_drawing', label: 'Shop Drawing' },
                     { value: 'photo_media', label: 'Photo/Media' },
+                    { value: 'CNC EST', label: 'CNC EST' },
+
                 ]}
                 additionalParams={{
                     cnc_id: cncId,
