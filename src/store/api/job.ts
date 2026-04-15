@@ -1163,6 +1163,8 @@ export const jobApi = createApi({
                             // SCT completion date range filters
                             ...(queryParams.sct_completed_start && { sct_completed_start: queryParams.sct_completed_start }),
                             ...(queryParams.sct_completed_end && { sct_completed_end: queryParams.sct_completed_end }),
+                            ...(queryParams.type && { type: queryParams.type }),
+
                         }
                     };
                 },
