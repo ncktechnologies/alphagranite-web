@@ -600,7 +600,8 @@ const ShopTable: React.FC<ShopTableProps> = () => {
         pageCount: Math.ceil(totalRecords / pagination.pageSize),
         getRowId: row => `${row.fab_id}_${row.plan_id}`,
         state: { pagination, sorting, rowSelection },
-        columnResizeMode: 'onChange',
+        columnResizeMode: 'onEnd',
+        enableColumnResizing: true,
         onPaginationChange: setPagination,
         onSortingChange: setSorting,
         enableRowSelection: true,
@@ -720,17 +721,29 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                                         <p>Loading...</p>
                                     </div>
                                 ) : (
-                                    <table className="w-full border-collapse">
+                                    <table className="w-full border-collapse table-fixed">
                                         <thead className="sticky top-0 z-10 bg-white">
                                             {table.getHeaderGroups().map(headerGroup => (
                                                 <tr key={headerGroup.id}>
                                                     {headerGroup.headers.map(header => (
                                                         <th
                                                             key={header.id}
-                                                            className="px-4 py-3 text-left text-xs font-medium text-muted-foreground border-b border-border bg-muted/50 break-words whitespace-normal"
-                                                            style={{ width: header.getSize() }}
+                                                            className="px-4 py-2 text-left text-xs font-semibold text-gray-700 border-b border-gray-200 bg-gray-50 break-words whitespace-normal relative"
+                                                            style={{ 
+                                                                width: header.getSize(),
+                                                                minWidth: header.getSize(),
+                                                                maxWidth: header.getSize()
+                                                            }}
                                                         >
                                                             {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                                            {header.column.getCanResize() && (
+                                                                <div
+                                                                    onDoubleClick={() => header.column.resetSize()}
+                                                                    onMouseDown={header.getResizeHandler()}
+                                                                    onTouchStart={header.getResizeHandler()}
+                                                                    className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                                />
+                                                            )}
                                                         </th>
                                                     ))}
                                                 </tr>
@@ -760,8 +773,8 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                                                 const groupTotals = computeGroupTotals(group.rows);
                                                 return (
                                                     <Fragment key={dateKey}>
-                                                        <tr className="bg-[#F6FFE7]">
-                                                            <td className="px-4 py-2 text-xs font-medium text-gray-800 text-start" colSpan={table.getVisibleFlatColumns().length}>
+                                                        <tr className="bg-blue-50">
+                                                            <td className="px-4 py-2 text-xs font-bold text-gray-900 text-start" colSpan={table.getVisibleFlatColumns().length}>
                                                                 {group.dateDisplay}
                                                             </td>
                                                         </tr>
@@ -785,16 +798,17 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                                                             const tableRow = table.getRowModel().rows.find(r => r.original.plan_id === row.plan_id && r.original.fab_id === row.fab_id);
                                                             if (!tableRow) return null;
                                                             return (
-                                                                <tr key={tableRow.id} className="border-b border-border" data-fab-type={row.fab_type.toLowerCase()}>
+                                                                <tr key={tableRow.id} className="border-b border-gray-200 hover:bg-gray-50" data-fab-type={row.fab_type.toLowerCase()}>
                                                                     {tableRow.getVisibleCells().map(cell => {
                                                                         if (cell.column.id === 'month') {
-                                                                            return <td key={cell.id} className="px-4 py-2 text-sm border-r border-border"></td>;
+                                                                            return <td key={cell.id} className="px-2 py-1 text-xs text-gray-700" style={{ width: cell.column.getSize() }}></td>;
                                                                         }
                                                                         const isLongText = cell.column.id === 'fab_info' || cell.column.id === 'notes';
                                                                         return (
                                                                             <td
                                                                                 key={cell.id}
-                                                                                className={`px-4 py-2 text-sm border-r border-border last:border-r-0 ${isLongText ? 'whitespace-normal break-words min-w-[200px]' : 'break-words'}`}
+                                                                                className={`px-2 py-1 text-xs text-gray-700 break-words whitespace-normal`}
+                                                                                style={{ width: cell.column.getSize() }}
                                                                             >
                                                                                 {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                                             </td>

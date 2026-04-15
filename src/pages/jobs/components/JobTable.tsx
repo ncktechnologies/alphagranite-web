@@ -1131,6 +1131,8 @@ export const JobTable = ({
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         manualPagination: useBackendPagination,
+        enableColumnResizing: true,
+        columnResizeMode: 'onEnd',
         meta: {
             getRowAttributes: (row: any) => ({
                 'data-fab-type': row.original.fab_type?.toLowerCase()

@@ -89,27 +89,20 @@ export function ResurfacingDetailsPage() {
     {
       title: 'FAB Notes',
       type: 'notes',
-      notes: Array.isArray(fab?.notes)
-        ? fab.notes.map((noteItem: any, index: number) => {
-        
+      notes: getAllFabNotes(fab?.fab_notes || []).map(note => {
 
-          const stage = noteItem?.stage || 'general';
-          const config = stageConfig[stage] || stageConfig.general;
-
-          // Extract note content correctly – assume noteItem has a 'note' property
-          const noteContent = noteItem?.note || (typeof noteItem === 'string' ? noteItem : '');
-
-          return {
-            id: noteItem?.id ?? index,
-            avatar: fabAuthorName?.charAt(0).toUpperCase() || 'U',
-            content: noteContent || '',
-            author: fabAuthorName || 'Unknown',
-            timestamp: noteItem?.created_at ? new Date(noteItem.created_at).toLocaleDateString() : (fab?.created_at ? new Date(fab.created_at).toLocaleDateString() : 'Unknown date'),
-            category: config.label,
-            categoryColor: config.color,
-          };
-        })
-        : [],
+        const stage = note.stage || 'general';
+        const config = stageConfig[stage] || stageConfig.general;
+        return {
+          id: note.id,
+          avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+          content: note?.note || '',
+          author: note.created_by_name || 'Unknown',
+          timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
+          category: config.label,
+          categoryColor: config.color,
+        };
+      })
     },
   ];
 
@@ -199,7 +192,7 @@ export function ResurfacingDetailsPage() {
                 title={
                   <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
                     <a href={jobNameLink} className="hover:underline "
-                     target="_blank"
+                      target="_blank"
                       rel="noreferrer"
                     >
                       {fab?.job_details?.name || `Job ${fab?.job_id}`}

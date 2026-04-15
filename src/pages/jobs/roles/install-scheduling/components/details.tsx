@@ -65,26 +65,24 @@ export function InstallSchedulingDetailsPage() {
                 }))
                 : [],
         },
-        {
-            title: 'FAB Notes',
-            type: 'notes',
-            notes: Array.isArray(fab?.notes)
-                ? fab.notes.map((noteItem: any, index: number) => {
-                    const stage = noteItem?.stage || 'general';
-                    const config = stageConfig[stage] || stageConfig.general;
-
-                    return {
-                        id: noteItem?.id ?? index,
-                        avatar: fabAuthorName.charAt(0).toUpperCase() || 'U',
-                        content: note?.note || '',
-                        author: fabAuthorName,
-                        timestamp: fab?.created_at ? new Date(fab.created_at).toLocaleDateString() : 'Unknown date',
-                        category: config.label,
-                        categoryColor: config.color,
-                    };
-                })
-                : [],
-        },
+      {
+           title: 'FAB Notes',
+           type: 'notes',
+           notes: getAllFabNotes(fab?.fab_notes || []).map(note => {
+             
+             const stage = note.stage || 'general';
+             const config = stageConfig[stage] || stageConfig.general;
+             return {
+               id: note.id,
+               avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+               content: note?.note || '',
+               author: note.created_by_name || 'Unknown',
+               timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
+               category: config.label,
+               categoryColor: config.color,
+             };
+           })
+         },
     ];
 
     if (isLoading) {

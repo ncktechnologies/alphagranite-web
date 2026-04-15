@@ -852,7 +852,8 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             sorting,
             expanded,
         },
-        columnResizeMode: 'onChange',
+        columnResizeMode: 'onEnd',
+        enableColumnResizing: true,
         onPaginationChange: (updater) => {
             const next = typeof updater === 'function'
                 ? updater({ pageIndex: currentPage - 1, pageSize: itemsPerPage })
@@ -1020,17 +1021,29 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                     <p className="text-[#7c8689]">Loading…</p>
                                 </div>
                             ) : (
-                                <table className="w-full border-collapse">
-                                    <thead className="bg-[#f9f9f9] sticky top-0 z-10">
+                                <table className="w-full border-collapse table-fixed">
+                                    <thead className="bg-gray-50 sticky top-0 z-10">
                                         {table.getHeaderGroups().map(hg => (
                                             <tr key={hg.id}>
                                                 {hg.headers.map(header => (
                                                     <th
                                                         key={header.id}
-                                                        className="px-4 py-3 text-left text-xs font-medium text-[#7c8689] bg-[#f9f9f9] border-b border-r border-[#e2e4ed] last:border-r-0 whitespace-normal"
-                                                        style={{ width: header.getSize() }}
+                                                        className="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50 border-b border-gray-200 whitespace-normal relative"
+                                                        style={{ 
+                                                            width: header.getSize(),
+                                                            minWidth: header.getSize(),
+                                                            maxWidth: header.getSize()
+                                                        }}
                                                     >
                                                         {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                                        {header.column.getCanResize() && (
+                                                            <div
+                                                                onDoubleClick={() => header.column.resetSize()}
+                                                                onMouseDown={header.getResizeHandler()}
+                                                                onTouchStart={header.getResizeHandler()}
+                                                                className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                            />
+                                                        )}
                                                     </th>
                                                 ))}
                                             </tr>

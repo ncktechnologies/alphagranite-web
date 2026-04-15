@@ -1061,6 +1061,8 @@ export const JobSalesTable = ({
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
         manualPagination: useBackendPagination,
+        enableColumnResizing: true,
+        columnResizeMode: 'onEnd',
         meta: {
             getRowAttributes: (row: any) => ({
                 'data-fab-type': row.original.fab_type?.toLowerCase()
@@ -1079,6 +1081,7 @@ export const JobSalesTable = ({
                 columnsPinnable: true,
                 columnsMovable: true,
                 columnsVisibility: true,
+                columnsResizable: true,
                 cellBorder: true,
             }}
             onRowClick={onRowClick ? (row) => handleRowClickInternal(row) : undefined}

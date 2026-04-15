@@ -513,6 +513,8 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
         getFilteredRowModel: getFilteredRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
+        enableColumnResizing: true,
+        columnResizeMode: 'onEnd',
         meta: {
             getRowAttributes: (row: any) => ({
                 'data-fab-type': row.original.fab_type?.toLowerCase()
@@ -531,6 +533,7 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
                 columnsPinnable: true,
                 columnsMovable: true,
                 columnsVisibility: true,
+                columnsResizable: true,
                 cellBorder: true,
             }}
             onRowClick={onRowClick ? (row) => handleRowClickInternal(row) : undefined}

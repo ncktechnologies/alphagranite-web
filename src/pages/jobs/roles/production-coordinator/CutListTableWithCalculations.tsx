@@ -578,6 +578,8 @@ export const CutListTableWithCalculations = ({
         manualPagination: true,
         manualFiltering: true,
         manualSorting: true,
+         enableColumnResizing: true,
+        columnResizeMode: 'onEnd',
         meta: {
             getRowAttributes: (row: any) => ({ 'data-fab-type': row.original.fab_type?.toLowerCase() }),
         },
@@ -592,7 +594,7 @@ export const CutListTableWithCalculations = ({
                 isLoading={isLoading}
                 groupByDate={true}
                 dateKey="shop_date_schedule"
-                tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, cellBorder: true }}
+                tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}
             >
                 <Card>
                     <CardHeader className="py-3.5 border-b">
