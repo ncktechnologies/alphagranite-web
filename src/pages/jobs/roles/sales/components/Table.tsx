@@ -843,7 +843,12 @@ export const JobSalesTable = ({
             id: 'current_stage',
             accessorKey: 'current_stage',
             header: ({ column }) => <DataGridColumnHeader title="CURRENT STAGE" column={column} />,
-            cell: ({ row }) => <span className="text-xs">{row.original.current_stage || '-'}</span>,
+            cell: ({ row }) => {
+                const currentStage = row.original.current_stage || '-';
+                const shopCurrentStage = row.original.shop_current_stage;
+                const displayText = shopCurrentStage ? `${currentStage} (${shopCurrentStage})` : currentStage;
+                return <span className="text-xs">{displayText}</span>;
+            },
             size: 150,
             enableSorting: true,
         },

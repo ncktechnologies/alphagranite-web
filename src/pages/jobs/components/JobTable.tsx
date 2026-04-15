@@ -1150,6 +1150,7 @@ export const JobTable = ({
                 columnsPinnable: true,
                 columnsMovable: true,
                 columnsVisibility: true,
+                columnsResizable: true,
                 cellBorder: true,
             }}
             onRowClick={onRowClick ? (row) => handleRowClickInternal(row) : undefined}

@@ -755,7 +755,7 @@ const FabDetailsPage: React.FC = () => {
         { label: 'No. of Pieces', value: String(fab.no_of_pieces || 0) },
         { label: 'Total Sq Ft', value: fab.total_sqft ? `${Number(fab.total_sqft).toFixed(1)} SF` : 'N/A' },
         { label: 'Sales Person', value: fab.sales_person_name || 'N/A' },
-        { label: 'Current Stage', value: fab.current_stage || 'N/A' },
+        { label: 'Current Stage', value: fab.shop_current_stage ? `${fab.current_stage || 'N/A'} (${fab.shop_current_stage})` : fab.current_stage || 'N/A' },
         { label: '% Complete', value: `${(fab.percent_complete || 0).toFixed(1)}%` },
     ];
 

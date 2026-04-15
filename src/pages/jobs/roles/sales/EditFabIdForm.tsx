@@ -600,7 +600,7 @@ const EditFabIdForm = () => {
             const selectedFabType = fabTypesData.find((type: any) => type.name === values.fabType);
             const selectedAccount = accountsData.find((account: any) => account.name === values.account);
             const selectedStoneType = stoneTypesData.find((type: any) => type.name === values.stoneType);
-            const selectedStoneColor = stoneColorsData.find((color: any) => color.name === values.stoneColor);
+            const selectedStoneColor = effectiveStoneColorsData.find((color: any) => color.name === values.stoneColor);
             const selectedStoneThickness = stoneThicknessesData.find((thickness: any) => thickness.thickness === values.stoneThickness);
             const selectedEdge = edgesData.find((edge: any) => edge.name === values.edge);
             const selectedSalesPerson = salesPersons.find((person: any) => person.name === values.selectedSalesPerson);

@@ -572,6 +572,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                     columnsPinnable: true,
                     columnsMovable: true,
                     columnsVisibility: true,
+                    columnsResizable: true,
                     cellBorder: true,
                 }}
             >

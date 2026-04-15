@@ -33,6 +33,7 @@ export interface IJob {
   gp?: string;
   date: string; // e.g. "08 October, 2025"
   current_stage?: string; // Add current_stage field
+  shop_current_stage?: string; // Add shop_current_stage field
   template_needed?: string; // Add template_not_needed field
   review_completed?: string;
   templating_schedule_start_date?: string;

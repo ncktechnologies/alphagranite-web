@@ -339,7 +339,7 @@ export function JobDetailsPage() {
                             //       : 'outline'
                             // }
                             >
-                              {fab.current_stage}
+                              {fab.current_stage}{fab.shop_current_stage ? ` (${fab.shop_current_stage})` : ''}
                             </Badge>
                           </div>
                         </div>

@@ -623,6 +623,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                     columnsPinnable: true,
                     columnsMovable: true,
                     columnsVisibility: true,
+                    columnsResizable: true,
                     cellBorder: true,
                 }}
             >
