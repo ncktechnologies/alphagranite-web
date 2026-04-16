@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import {
     AlertCircle, Pencil, X, LoaderCircle,
     CheckCircle2, Clock, CalendarDays, ChevronDown,
-    MessageSquare, Save,
+    MessageSquare, Save, Plus,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +37,7 @@ import { usePlanSections } from '@/hooks/usePlanningSection';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { FileGallery, type FileSource, type UnifiedFile } from '@/pages/jobs/components/FileGallery';
 import { FileViewer } from '@/pages/jobs/roles/drafters/components';
+import CreatePlanSheet from './createEvent';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants & Helpers
@@ -606,6 +607,9 @@ const FabDetailsPage: React.FC = () => {
     // State for file viewer
     const [activeFile, setActiveFile] = useState<UnifiedFile | null>(null);
 
+    // State for create plan modal
+    const [showCreatePlanModal, setShowCreatePlanModal] = useState(false);
+
     // Build file sources from FAB data (following the same pattern as other pages)
     const fileSources: FileSource[] = (() => {
         if (!fab) return [];
@@ -851,12 +855,24 @@ const FabDetailsPage: React.FC = () => {
                     {/* Plans Grid */}
                     <Card>
                         <CardHeader className="border-b pb-4">
-                            <CardTitle>Plans by Stage</CardTitle>
-                            {plans.length > 0 && (
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    {plans.length} stage{plans.length !== 1 ? 's' : ''} · click the pencil on any card to edit
-                                </p>
-                            )}
+                            <div className="flex items-center justify-between w-full">
+                                <div>
+                                    <CardTitle>Plans by Stage</CardTitle>
+                                    {plans.length > 0 && (
+                                        <p className="text-sm text-muted-foreground mt-1">
+                                            {plans.length} stage{plans.length !== 1 ? 's' : ''} · click the pencil on any card to edit
+                                        </p>
+                                    )}
+                                </div>
+                                <Button
+                                    size="sm"
+                                    onClick={() => setShowCreatePlanModal(true)}
+                                    className="bg-green-600 hover:bg-green-700"
+                                >
+                                    <Plus className="h-4 w-4 mr-1" />
+                                    Create Plan
+                                </Button>
+                            </div>
                         </CardHeader>
                         <CardContent className="pt-6">
                             {plans.length === 0 ? (
@@ -1029,6 +1045,17 @@ const FabDetailsPage: React.FC = () => {
                     <FileViewer file={activeFile} onClose={() => setActiveFile(null)} />
                 </div>
             )}
+
+            {/* Create Plan Modal */}
+            <CreatePlanSheet
+                open={showCreatePlanModal}
+                onOpenChange={setShowCreatePlanModal}
+                prefillFabId={fabId}
+                hideAddStageButton={true}
+                onEventCreated={() => {
+                    refetch();
+                }}
+            />
         </div>
     );
 };

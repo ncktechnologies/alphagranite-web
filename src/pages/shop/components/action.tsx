@@ -56,14 +56,14 @@ function ActionsCell({ row, onView, onViewCalendar, onCreatePlan, onAddNote, onA
             </DropdownMenuItem>
           )}
 
-          {onCreatePlan && (
+          {/* {onCreatePlan && (
             <DropdownMenuItem
               onClick={(e) => { e.stopPropagation(); onCreatePlan(fabId); }}
             >
               <Plus className="mr-2 h-4 w-4" />
               Create Plan
             </DropdownMenuItem>
-          )}
+          )} */}
           {onAutoSchedule && (
             <DropdownMenuItem
               onClick={(e) => { e.stopPropagation(); onAutoSchedule(fabId); }}

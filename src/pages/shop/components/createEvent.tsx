@@ -11,6 +11,7 @@ interface CreatePlanSheetProps {
   prefillFabId?: string;
   prefillPlanSectionId?: number; 
   onEventCreated?: () => void;
+  hideAddStageButton?: boolean;
 }
 
 const CreatePlanSheet: React.FC<CreatePlanSheetProps> = ({
@@ -22,6 +23,7 @@ const CreatePlanSheet: React.FC<CreatePlanSheetProps> = ({
   prefillFabId,
   prefillPlanSectionId,  
   onEventCreated,
+  hideAddStageButton = false,
 }) => {
   const handleBack = () => {
     onOpenChange(false);
@@ -39,6 +41,7 @@ const CreatePlanSheet: React.FC<CreatePlanSheetProps> = ({
           prefillPlanSectionId={prefillPlanSectionId}  
           onEventCreated={onEventCreated}
           hideBackButton={true}
+          hideAddStageButton={hideAddStageButton}
         />
       </SheetContent>
     </Sheet>

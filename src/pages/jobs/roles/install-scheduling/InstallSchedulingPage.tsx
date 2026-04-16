@@ -36,8 +36,8 @@ const transformFabToJob = (fab: Fab): IJob => {
         fab_id: String(fab.id),
         job_name: `${fab.job_details?.name}`,
         job_no: String(fab.job_details?.job_number),
-        date: fab.shop_est_completion_date || '',
-        shop_est_completion_date: fab.shop_est_completion_date ? formatDate(fab.shop_est_completion_date) : '-',
+        date: fab.estimated_completion_date,
+        shop_est_completion_date: fab.estimated_completion_date ? formatDate(fab.estimated_completion_date) : '-',
         current_stage: fab.current_stage,
         sales_person_name: fab.sales_person_name || '',
         acct_name: fab.account_name || '',
@@ -261,7 +261,7 @@ export function InstallSchedulingPage() {
                     'install_confirmed',
                     'shop_status',
                     'on_hold',
-                    // 'shop_est_completion_date'
+                    'shop_est_completion_date'
                 ]}
                 pageRole="installer"
             />

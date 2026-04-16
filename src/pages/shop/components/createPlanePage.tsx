@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { useCreateShopPlansMutation, useCreateShopSuggestionMutation, useUpdateShopPlanMutation } from '@/store/api';
 import { useGetPlanningSectionsQuery, useGetWorkStationByPlanningSectionsQuery, useGetWorkstationsQuery } from '@/store/api/workstation';
 import { useGetEmployeesQuery } from '@/store/api/employee';
-import { useGetFabsQuery } from '@/store/api/job';
+import { useGetFabsQuery, useGetFabByIdQuery } from '@/store/api/job';
 
 export const TIME_SLOTS = (() => {
   const slots: { value: string; label: string }[] = [];
@@ -37,6 +37,19 @@ export const TIME_SLOTS = (() => {
   }
   return slots;
 })();
+
+// Field-to-keyword mapping for auto-selecting plans based on FAB values
+const FAB_STAGE_FIELDS: { keyword: string; field: string; label: string }[] = [
+  { keyword: 'cut', field: 'total_sqft', label: 'Cut' },
+  { keyword: 'wj', field: 'wj_linft', label: 'WJ' },
+  { keyword: 'edg', field: 'edging_linft', label: 'Edging' },
+  { keyword: 'mit', field: 'miter_linft', label: 'Miter' },
+  { keyword: 'cnc', field: 'cnc_linft', label: 'CNC' },
+  { keyword: 'resurface', field: 'resurface_linft', label: 'Resurfacing' },
+];
+
+const RESURFACE_FAB_TYPE = 'RESURFACE';
+const RESURFACE_SECTION_NAME = 'RESURFACING';
 
 interface PlanEntry {
   id?: number;
@@ -471,6 +484,7 @@ interface CreatePlanPageProps {
   prefillPlanSectionId?: number;
   onEventCreated?: () => void;
   hideBackButton?: boolean;
+  hideAddStageButton?: boolean;
 }
 
 const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
@@ -482,6 +496,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   prefillPlanSectionId,
   onEventCreated,
   hideBackButton = false,
+  hideAddStageButton = false,
 }) => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -492,6 +507,13 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
 
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
   const [entries, setEntries] = useState<PlanEntry[]>([]);
+
+  // Fetch FAB data when prefillFabId is provided (for modal/sheet usage)
+  const { data: fabData } = useGetFabByIdQuery(
+    effectivePrefillFabId ? Number(effectivePrefillFabId) : 0,
+    { skip: !effectivePrefillFabId }
+  );
+  const fabDetails = fabData?.data ?? fabData;
 
   // Data fetching
   const { data: planningSectionsData } = useGetPlanningSectionsQuery();
@@ -523,9 +545,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const dataReady = !isLoadingFabs && sectionsLoaded && fabsLoaded;
 
   // Resurface detection
-  const RESURFACE_FAB_TYPE = 'RESURFACE';
-  const RESURFACE_SECTION_NAME = 'RESURFACING';
-
   const isResurfaceFab = useCallback((fab: any) => {
     return fab && (fab.fab_type || '').toUpperCase() === RESURFACE_FAB_TYPE;
   }, []);
@@ -535,6 +554,40 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       (ps.plan_name || ps.name || '').toUpperCase() === RESURFACE_SECTION_NAME
     ) || null;
   }, []);
+
+  // Helper to find planning section by keyword
+  const findSectionByKeyword = useCallback((keyword: string) => {
+    return planningSections.find(ps => {
+      const name = (ps.name || ps.plan_name || ps.title || '').toLowerCase();
+      return name.includes(keyword);
+    }) || null;
+  }, [planningSections]);
+
+  // Get active stages from FAB based on field values
+  const getActiveStagesFromFab = useCallback((fab: any) => {
+    if (!fab || !planningSections.length) return [];
+
+    // Resurface FABs only get a single resurfacing stage
+    if (isResurfaceFab(fab)) {
+      const resurfaceSection = getResurfaceSection(planningSections);
+      if (!resurfaceSection) return [];
+      return [{
+        keyword: 'resurface',
+        field: 'total_sqft',
+        label: resurfaceSection.name || resurfaceSection.plan_name || resurfaceSection.title || 'Resurfacing',
+        section_id: resurfaceSection.id,
+      }];
+    }
+
+    return FAB_STAGE_FIELDS
+      .map(s => {
+        const section = findSectionByKeyword(s.keyword);
+        return section ? { ...s, section_id: section.id } : null;
+      })
+      .filter((s): s is NonNullable<typeof s> =>
+        s !== null && typeof fab?.[s.field] === 'number' && fab[s.field] > 0
+      );
+  }, [planningSections, isResurfaceFab, getResurfaceSection, findSectionByKeyword]);
 
   // Create blank entry with optional auto‑section for resurface
   const createEmptyEntry = useCallback((fabIdOverride?: string): PlanEntry => {
@@ -565,9 +618,28 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   // Initialize entries when data is ready (create mode only)
   useEffect(() => {
     if (!effectiveEvent && dataReady && entries.length === 0) {
+      // If we have a prefillFabId and NOT hiding add stage button (i.e., not in modal mode),
+      // auto-select plans based on FAB values
+      if (effectivePrefillFabId && fabDetails && !hideAddStageButton) {
+        const activeStages = getActiveStagesFromFab(fabDetails);
+        if (activeStages.length > 0) {
+          const autoEntries = activeStages.map((s, i) => ({
+            ...createEmptyEntry(effectivePrefillFabId),
+            planning_section_id: String(s.section_id),
+            sequence: String(i + 1),
+          }));
+          setEntries(autoEntries);
+          // Auto-expand all cards
+          const expandedState: Record<number, boolean> = {};
+          autoEntries.forEach((_, i) => { expandedState[i] = true; });
+          setExpandedCards(expandedState);
+          return;
+        }
+      }
+      // Fallback: create single empty entry
       setEntries([createEmptyEntry(effectivePrefillFabId)]);
     }
-  }, [effectiveEvent, dataReady, entries.length, createEmptyEntry, effectivePrefillFabId]);
+  }, [effectiveEvent, dataReady, entries.length, createEmptyEntry, effectivePrefillFabId, fabDetails, hideAddStageButton, getActiveStagesFromFab]);
 
   // Edit mode: pre‑populate from event
   useEffect(() => {
@@ -651,6 +723,25 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
         } else if (!newFab || !isResurfaceFab(newFab)) {
           newSectionId = prefillSectionIdStr ?? newSectionId;
         }
+        
+        // Auto-select plans based on FAB values (only when not in modal mode)
+        if (newFab && !hideAddStageButton) {
+          const activeStages = getActiveStagesFromFab(newFab);
+          if (activeStages.length > 0) {
+            // Create entries for each active stage
+            const autoEntries = activeStages.map((s, i) => ({
+              ...createEmptyEntry(patch.fab_id),
+              planning_section_id: String(s.section_id),
+              sequence: String(i + 1),
+            }));
+            // Expand all cards
+            const expandedState: Record<number, boolean> = {};
+            autoEntries.forEach((_, i) => { expandedState[i] = true; });
+            setExpandedCards(expandedState);
+            return autoEntries;
+          }
+        }
+        
         return newEntries.map(e => ({
           ...e,
           fab_id: patch.fab_id!,
@@ -890,8 +981,8 @@ return (
             />
           ))}
 
-          {/* Add Another Stage - hidden for resurface FABs */}
-          {!currentIsResurface && (
+          {/* Add Another Stage - hidden for resurface FABs or when hideAddStageButton is true */}
+          {!currentIsResurface && !hideAddStageButton && (
             <button
               type="button"
               onClick={addEntry}
