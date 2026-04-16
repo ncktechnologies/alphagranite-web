@@ -709,7 +709,14 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
             const oldSeq = Number(target.sequence);
             newEntries[conflictIdx] = { ...newEntries[conflictIdx], sequence: String(oldSeq) };
             newEntries[idx] = { ...newEntries[idx], sequence: String(newSeq) };
-            return newEntries;
+            
+            // Reorder entries based on sequence
+            const sortedEntries = [...newEntries].sort((a, b) => {
+              const seqA = Number(a.sequence) || 0;
+              const seqB = Number(b.sequence) || 0;
+              return seqA - seqB;
+            });
+            return sortedEntries;
           }
         }
       }

@@ -57,7 +57,7 @@ export const MarkAsCompleteModal = ({
     let schema = markAsCompleteBaseSchema;
 
     schema = schema.refine(data => data.blockDrawingApproved === true, {
-      message: "Block Drawing must be approved",
+      message: "Block Drawing must be uploaded and approved",
       path: ["blockDrawingApproved"],
     });
 

@@ -591,7 +591,18 @@ const isResurfaceFab = (fab: any) =>
             const oldSeq = Number(target.sequence);
             newEntries[conflictIdx] = { ...newEntries[conflictIdx], sequence: String(oldSeq) };
             newEntries[idx] = { ...newEntries[idx], sequence: String(newSeq) };
-            return newEntries;
+            
+            // Reorder entries based on sequence (keep touchup at the end)
+            const regularEntries = newEntries.filter(e => !e.isTouchup);
+            const touchupEntry = newEntries.find(e => e.isTouchup);
+            
+            const sortedRegular = [...regularEntries].sort((a, b) => {
+              const seqA = Number(a.sequence) || 0;
+              const seqB = Number(b.sequence) || 0;
+              return seqA - seqB;
+            });
+            
+            return touchupEntry ? [...sortedRegular, touchupEntry] : sortedRegular;
           }
         }
       }
