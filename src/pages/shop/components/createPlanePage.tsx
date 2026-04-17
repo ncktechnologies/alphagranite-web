@@ -146,50 +146,49 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
     return setMinutes(setHours(new Date(date), hours), minutes);
   };
 
-  const updateFromEndDateTime = useCallback((newEndDate: Date | undefined, newEndTime: string) => {
-    const startDateTime = combineDateAndTime(entry.start_date, entry.start_time);
-    const endDateTime = combineDateAndTime(newEndDate, newEndTime);
+  // Helper to recalc estimated hours from start and end
+  const recalcEstimatedHours = useCallback((startDate: Date | undefined, startTime: string, endDate: Date | undefined, endTime: string): string => {
+    const startDateTime = combineDateAndTime(startDate, startTime);
+    const endDateTime = combineDateAndTime(endDate, endTime);
     if (startDateTime && endDateTime && endDateTime > startDateTime) {
       const minutes = differenceInMinutes(endDateTime, startDateTime);
       const hours = (minutes / 60).toFixed(2);
-      onUpdate({ end_date: newEndDate, end_time: newEndTime, estimated_hours: hours });
-    } else {
-      onUpdate({ end_date: newEndDate, end_time: newEndTime });
+      return hours;
     }
-  }, [entry.start_date, entry.start_time, onUpdate]);
+    return '';
+  }, []);
 
-  const updateFromEstimatedHours = useCallback((hoursStr: string) => {
-    const startDateTime = combineDateAndTime(entry.start_date, entry.start_time);
-    if (!startDateTime) {
-      onUpdate({ estimated_hours: hoursStr });
-      return;
-    }
-    const hours = parseFloat(hoursStr);
-    if (!isNaN(hours) && hours > 0) {
-      const endDateTime = addHours(startDateTime, hours);
-      onUpdate({
-        estimated_hours: hoursStr,
-        end_date: endDateTime,
-        end_time: format(endDateTime, 'HH:mm'),
-      });
-    } else {
-      onUpdate({ estimated_hours: hoursStr });
-    }
-  }, [entry.start_date, entry.start_time, onUpdate]);
+  // Update end date/time and recalc estimated hours
+  const updateFromEndDateTime = useCallback((newEndDate: Date | undefined, newEndTime: string) => {
+    const newHours = recalcEstimatedHours(entry.start_date, entry.start_time, newEndDate, newEndTime);
+    onUpdate({ end_date: newEndDate, end_time: newEndTime, estimated_hours: newHours });
+  }, [entry.start_date, entry.start_time, onUpdate, recalcEstimatedHours]);
 
+  // Update start date/time and recalc estimated hours
   const handleStartDateTimeChange = useCallback((newStartDate: Date | undefined, newStartTime: string) => {
-    onUpdate({ start_date: newStartDate, start_time: newStartTime });
-    if (entry.estimated_hours) {
-      const startDateTime = combineDateAndTime(newStartDate, newStartTime);
-      if (startDateTime) {
-        const hours = parseFloat(entry.estimated_hours);
-        if (!isNaN(hours) && hours > 0) {
-          const newEnd = addHours(startDateTime, hours);
-          onUpdate({ end_date: newEnd, end_time: format(newEnd, 'HH:mm') });
-        }
-      }
-    }
-  }, [entry.estimated_hours, onUpdate]);
+    const newHours = recalcEstimatedHours(newStartDate, newStartTime, entry.end_date, entry.end_time);
+    onUpdate({ start_date: newStartDate, start_time: newStartTime, estimated_hours: newHours });
+  }, [entry.end_date, entry.end_time, onUpdate, recalcEstimatedHours]);
+
+  // When end time changes via selector
+  const onEndTimeChange = useCallback((value: string) => {
+    updateFromEndDateTime(entry.end_date, value);
+  }, [entry.end_date, updateFromEndDateTime]);
+
+  // When end date changes via calendar
+  const onEndDateChange = useCallback((date: Date | undefined) => {
+    updateFromEndDateTime(date, entry.end_time);
+  }, [entry.end_time, updateFromEndDateTime]);
+
+  // When start time changes
+  const onStartTimeChange = useCallback((value: string) => {
+    handleStartDateTimeChange(entry.start_date, value);
+  }, [entry.start_date, handleStartDateTimeChange]);
+
+  // When start date changes
+  const onStartDateChange = useCallback((date: Date | undefined) => {
+    handleStartDateTimeChange(date, entry.start_time);
+  }, [entry.start_time, handleStartDateTimeChange]);
 
   return (
     <Card className="border border-[#ecedf0] rounded-[12px] overflow-hidden">
@@ -265,7 +264,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
             </div>
           )}
 
-          {/* Row 1: Planning Section + Est. Hours + Workstation */}
+          {/* Row 1: Planning Section + Est. Hours (read‑only) + Workstation */}
           <div className="grid grid-cols-3 gap-4">
             {/* Planning Section */}
             <div>
@@ -288,17 +287,14 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
               </Select>
             </div>
 
-            {/* Estimated Hours */}
+            {/* Estimated Hours - read‑only, auto‑calculated */}
             <div className='hidden'>
-              <Label className="text-[13px] text-[#4b545d]">Est. Hours</Label>
+              <Label className="text-[13px] text-[#4b545d]">Est. Hours (auto)</Label>
               <Input
-                type="number"
-                step="0.25"
-                min="0"
-                placeholder="Auto from end"
-                value={entry.estimated_hours}
-                onChange={e => updateFromEstimatedHours(e.target.value)}
-                className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]"
+                type="text"
+                value={entry.estimated_hours || ''}
+                readOnly
+                className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px] bg-gray-50"
               />
             </div>
 
@@ -328,7 +324,8 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
                 </SelectContent>
               </Select>
             </div>
-             <div>
+             {/* Operator */}
+            <div>
               <Label className="text-[13px] text-[#4b545d]">Operator *</Label>
               <Select
                 value={entry.operator_id || undefined}
@@ -363,7 +360,6 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
 
           {/* Row 2: Operator + Start Date + End Date */}
           <div className="grid grid-cols-2 gap-4">
-            {/* Operator */}
            
 
             {/* Start Date */}
@@ -386,7 +382,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
                   <CalendarComponent
                     mode="single"
                     selected={entry.start_date}
-                    onSelect={date => date && handleStartDateTimeChange(date, entry.start_time)}
+                    onSelect={onStartDateChange}
                     initialFocus
                   />
                 </PopoverContent>
@@ -413,7 +409,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
                   <CalendarComponent
                     mode="single"
                     selected={entry.end_date}
-                    onSelect={date => date && updateFromEndDateTime(date, entry.end_time)}
+                    onSelect={onEndDateChange}
                     initialFocus
                     disabled={date => entry.start_date ? date < entry.start_date : false}
                   />
@@ -429,7 +425,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
               <Label className="text-[13px] text-[#4b545d]">Start Time</Label>
               <Select
                 value={entry.start_time}
-                onValueChange={value => handleStartDateTimeChange(entry.start_date, value)}
+                onValueChange={onStartTimeChange}
               >
                 <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
                   <SelectValue placeholder="Select start" />
@@ -447,7 +443,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
               <Label className="text-[13px] text-[#4b545d]">End Time</Label>
               <Select
                 value={entry.end_time}
-                onValueChange={value => updateFromEndDateTime(entry.end_date, value)}
+                onValueChange={onEndTimeChange}
               >
                 <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
                   <SelectValue placeholder="Select end" />
@@ -594,6 +590,26 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
         s !== null && typeof fab?.[s.field] === 'number' && fab[s.field] > 0
       );
   }, [planningSections, isResurfaceFab, getResurfaceSection, findSectionByKeyword]);
+
+  // Helper to combine date and time (used for calculations)
+  const combineDateAndTime = useCallback((date: Date | undefined, time: string): Date | null => {
+    if (!date || !time) return null;
+    const [hours, minutes] = time.split(':').map(Number);
+    const newDate = new Date(date);
+    newDate.setHours(hours, minutes, 0, 0);
+    return newDate;
+  }, []);
+
+  // Recalculate estimated hours for an entry (used in updateEntry)
+  const recalcEntryHours = useCallback((entry: PlanEntry): string => {
+    const start = combineDateAndTime(entry.start_date, entry.start_time);
+    const end = combineDateAndTime(entry.end_date, entry.end_time);
+    if (start && end && end > start) {
+      const minutes = (end.getTime() - start.getTime()) / 60000;
+      return (minutes / 60).toFixed(2);
+    }
+    return '';
+  }, [combineDateAndTime]);
 
   // Create blank entry with optional auto‑section for resurface
   const createEmptyEntry = useCallback((fabIdOverride?: string): PlanEntry => {
@@ -770,18 +786,26 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
           }
         }
         
-        return newEntries.map(e => ({
+        // Update all entries with new fab_id and maybe section
+        const updated = newEntries.map(e => ({
           ...e,
           fab_id: patch.fab_id!,
           planning_section_id: newSectionId ?? e.planning_section_id,
           workstation_id: '',
           operator_id: '',
         }));
+        // Recalc estimated hours for each entry
+        return updated.map(e => ({ ...e, estimated_hours: recalcEntryHours(e) }));
       }
-      newEntries[idx] = { ...target, ...patch };
+      // Apply patch and then recalc estimated hours if start/end related fields changed
+      const updatedEntry = { ...target, ...patch };
+      if (patch.start_date !== undefined || patch.start_time !== undefined || patch.end_date !== undefined || patch.end_time !== undefined) {
+        updatedEntry.estimated_hours = recalcEntryHours(updatedEntry);
+      }
+      newEntries[idx] = updatedEntry;
       return newEntries;
     });
-  }, [allFabsList, planningSections, isResurfaceFab, getResurfaceSection, prefillSectionIdStr]);
+  }, [allFabsList, planningSections, isResurfaceFab, getResurfaceSection, prefillSectionIdStr, hideAddStageButton, getActiveStagesFromFab, createEmptyEntry, recalcEntryHours]);
 
   const addEntry = useCallback(() => {
     if (currentIsResurface) return;
@@ -829,7 +853,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       if (!entry.end_date) { toast.error('End date is required'); return; }
       if (!entry.end_time) { toast.error('End time is required'); return; }
       if (!entry.estimated_hours || parseFloat(entry.estimated_hours) <= 0) {
-        toast.error('Estimated hours must be positive (auto‑calculated if end is set)'); return;
+        toast.error('Estimated hours must be positive (auto‑calculated from start/end)'); return;
       }
     }
 
@@ -846,14 +870,9 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       for (const fabId in groups) {
         let totalEst = 0;
         const stages = groups[fabId].map((entry, idx) => {
-          const startDateTime = new Date(entry.start_date!);
-          const [startHour, startMin] = entry.start_time.split(':').map(Number);
-          startDateTime.setHours(startHour, startMin, 0, 0);
-          const endDateTime = new Date(entry.end_date!);
-          const [endHour, endMin] = entry.end_time.split(':').map(Number);
-          endDateTime.setHours(endHour, endMin, 0, 0);
-
-          const hrs = Math.round(((endDateTime.getTime() - startDateTime.getTime()) / 3_600_000) * 100) / 100;
+          const startDateTime = combineDateAndTime(entry.start_date, entry.start_time)!;
+          const endDateTime = combineDateAndTime(entry.end_date, entry.end_time)!;
+          const hrs = parseFloat(entry.estimated_hours);
           totalEst += hrs;
           return {
             workstation_id: Number(entry.workstation_id),
@@ -870,14 +889,9 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       }
 
       for (const entry of updates) {
-        const startDateTime = new Date(entry.start_date!);
-        const [startHour, startMin] = entry.start_time.split(':').map(Number);
-        startDateTime.setHours(startHour, startMin, 0, 0);
-        const endDateTime = new Date(entry.end_date!);
-        const [endHour, endMin] = entry.end_time.split(':').map(Number);
-        endDateTime.setHours(endHour, endMin, 0, 0);
-        const hrs = Math.round(((endDateTime.getTime() - startDateTime.getTime()) / 3_600_000) * 100) / 100;
-
+        const startDateTime = combineDateAndTime(entry.start_date, entry.start_time)!;
+        const endDateTime = combineDateAndTime(entry.end_date, entry.end_time)!;
+        const hrs = parseFloat(entry.estimated_hours);
         await updateShopPlan({
           plan_id: Number(entry.id),
           data: {
@@ -910,143 +924,143 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     [entries.length]
   );
 
- const isFormReady = effectiveEvent ? entries.length > 0 : (dataReady && entries.length > 0);
+  const isFormReady = effectiveEvent ? entries.length > 0 : (dataReady && entries.length > 0);
 
-return (
-  <div className="bg-white min-h-screen">
-    <div className="border-b border-[#dfdfdf]">
-      <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
-        <div className="flex items-center gap-4">
-          <p className="text-[28px] leading-[32px] text-black font-semibold">
-            {isEditing ? 'Edit Plan' : 'Create Plan'}
-          </p>
-          {entries[0]?.fab_id && (
-            <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2">
-              <span className="text-[13px] text-[#4a4d59]">FAB ID</span>
-              <span className="text-[20px] text-[#7a9705] font-semibold">#{entries[0].fab_id}</span>
-            </div>
-          )}
-        </div>
+  return (
+    <div className="bg-white min-h-screen">
+      <div className="border-b border-[#dfdfdf]">
+        <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
+          <div className="flex items-center gap-4">
+            <p className="text-[28px] leading-[32px] text-black font-semibold">
+              {isEditing ? 'Edit Plan' : 'Create Plan'}
+            </p>
+            {entries[0]?.fab_id && (
+              <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2">
+                <span className="text-[13px] text-[#4a4d59]">FAB ID</span>
+                <span className="text-[20px] text-[#7a9705] font-semibold">#{entries[0].fab_id}</span>
+              </div>
+            )}
+          </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => navigate(`/shop/auto-schedule?fabId=${entries[0]?.fab_id || ''}`)}
-            className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px]"
-            style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
-          >
-            <Plus className="h-4 w-4" />
-            Auto Schedule
-          </button>
-          {!hideBackButton && (
+          <div className="flex items-center gap-3">
             <button
-              onClick={handleBack}
-              className="h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] bg-white flex items-center justify-center gap-2 text-[#4b545d] hover:bg-gray-50 transition-colors"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="text-[14px] font-semibold">Back</span>
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-
-    <div className="px-10 py-8 max-w-6xl mx-auto">
-      {!isFormReady ? (
-        <div className="flex flex-col items-center justify-center py-24 gap-4">
-          <LoaderCircle className="h-8 w-8 animate-spin text-[#9cc15e]" />
-          <p className="text-[14px] text-[#7c8689]">Loading plan data…</p>
-        </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* FAB Details */}
-          {selectedFab && (
-            <Card className="border border-[#ecedf0] rounded-[12px] mb-6">
-              <CardHeader className="pb-3 border-b border-[#ecedf0]">
-                <CardTitle className="text-[16px] text-[#4b545d] font-semibold">FAB Details</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-5">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[
-                    { label: 'Job No', val: selectedFab.job_details?.job_number },
-                    { label: 'Job Name', val: selectedFab.job_details?.name },
-                    { label: 'Account Name', val: selectedFab.account_name },
-                    { label: 'No. of Pieces', val: selectedFab.no_of_pieces || 0 },
-                    { label: 'Total Sq Ft', val: selectedFab.total_sqft?.toFixed(2) || '0.00' },
-                    { label: 'WJ LinFt', val: selectedFab.wj_linft?.toFixed(2) || '0.00' },
-                    { label: 'Edging LinFt', val: selectedFab.edging_linft?.toFixed(2) || '0.00' },
-                    { label: 'CNC LinFt', val: selectedFab.cnc_linft?.toFixed(2) || '0.00' },
-                    { label: 'Miter LinFt', val: selectedFab.miter_linft?.toFixed(2) || '0.00' },
-                  ].map(({ label, val }) => (
-                    <div key={label}>
-                      <Label className="text-xs text-[#7c8689]">{label}</Label>
-                      <p className="text-sm font-medium text-[#4b545d]">{val || '-'}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Plan entry cards */}
-          {entries.map((entry, idx) => (
-            <PlanEntryCard
-              key={idx}
-              entry={entry}
-              idx={idx}
-              total={entries.length}
-              employees={employees}
-              planningSections={planningSections}
-              isExpanded={expandedCards[idx] !== false}
-              fabOptions={fabOptions}
-              isLoadingFabs={isLoadingFabs}
-              effectivePrefillFabId={effectivePrefillFabId}
-              isEditing={isEditing}
-              sequenceOptions={sequenceOptions}
-              disableShopActivity={currentIsResurface}
-              onToggleExpand={() => setExpandedCards(p => ({ ...p, [idx]: !(p[idx] !== false) }))}
-              onUpdate={patch => updateEntry(idx, patch)}
-              onRemove={() => removeEntry(idx)}
-            />
-          ))}
-
-          {/* Add Another Stage - hidden for resurface FABs or when hideAddStageButton is true */}
-          {!currentIsResurface && !hideAddStageButton && (
-            <button
-              type="button"
-              onClick={addEntry}
-              className="w-full h-[44px] border border-dashed border-[#e2e4ed] rounded-[8px] flex items-center justify-center gap-2 text-[#78829d] hover:border-[#9cc15e] hover:text-[#7a9705] hover:bg-[#f0f4e8] transition-all"
+              onClick={() => navigate(`/shop/auto-schedule?fabId=${entries[0]?.fab_id || ''}`)}
+              className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px]"
+              style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
             >
               <Plus className="h-4 w-4" />
-              <span className="text-[14px] font-semibold">Add Another Stage</span>
+              Auto Schedule
             </button>
-          )}
-
-          {/* Actions */}
-          <div className="flex items-center gap-3 pt-2 pb-8">
-            <button
-              type="button"
-              onClick={handleBack}
-              className="flex-1 h-[44px] border border-[#e2e4ed] rounded-[8px] text-[14px] text-[#4b545d] hover:bg-gray-50 transition-colors"
-              disabled={isLoading || isAutoScheduling}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold disabled:opacity-60"
-              style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
-              disabled={isLoading || isAutoScheduling}
-            >
-              {isLoading
-                ? <><LoaderCircle className="h-4 w-4 animate-spin" />Scheduling…</>
-                : isEditing ? 'Update Plan' : 'Schedule Plan'}
-            </button>
+            {!hideBackButton && (
+              <button
+                onClick={handleBack}
+                className="h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] bg-white flex items-center justify-center gap-2 text-[#4b545d] hover:bg-gray-50 transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="text-[14px] font-semibold">Back</span>
+              </button>
+            )}
           </div>
-        </form>
-      )}
+        </div>
+      </div>
+
+      <div className="px-10 py-8 max-w-6xl mx-auto">
+        {!isFormReady ? (
+          <div className="flex flex-col items-center justify-center py-24 gap-4">
+            <LoaderCircle className="h-8 w-8 animate-spin text-[#9cc15e]" />
+            <p className="text-[14px] text-[#7c8689]">Loading plan data…</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* FAB Details */}
+            {selectedFab && (
+              <Card className="border border-[#ecedf0] rounded-[12px] mb-6">
+                <CardHeader className="pb-3 border-b border-[#ecedf0]">
+                  <CardTitle className="text-[16px] text-[#4b545d] font-semibold">FAB Details</CardTitle>
+                </CardHeader>
+                <CardContent className="pt-5">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {[
+                      { label: 'Job No', val: selectedFab.job_details?.job_number },
+                      { label: 'Job Name', val: selectedFab.job_details?.name },
+                      { label: 'Account Name', val: selectedFab.account_name },
+                      { label: 'No. of Pieces', val: selectedFab.no_of_pieces || 0 },
+                      { label: 'Total Sq Ft', val: selectedFab.total_sqft?.toFixed(2) || '0.00' },
+                      { label: 'WJ LinFt', val: selectedFab.wj_linft?.toFixed(2) || '0.00' },
+                      { label: 'Edging LinFt', val: selectedFab.edging_linft?.toFixed(2) || '0.00' },
+                      { label: 'CNC LinFt', val: selectedFab.cnc_linft?.toFixed(2) || '0.00' },
+                      { label: 'Miter LinFt', val: selectedFab.miter_linft?.toFixed(2) || '0.00' },
+                    ].map(({ label, val }) => (
+                      <div key={label}>
+                        <Label className="text-xs text-[#7c8689]">{label}</Label>
+                        <p className="text-sm font-medium text-[#4b545d]">{val || '-'}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Plan entry cards */}
+            {entries.map((entry, idx) => (
+              <PlanEntryCard
+                key={idx}
+                entry={entry}
+                idx={idx}
+                total={entries.length}
+                employees={employees}
+                planningSections={planningSections}
+                isExpanded={expandedCards[idx] !== false}
+                fabOptions={fabOptions}
+                isLoadingFabs={isLoadingFabs}
+                effectivePrefillFabId={effectivePrefillFabId}
+                isEditing={isEditing}
+                sequenceOptions={sequenceOptions}
+                disableShopActivity={currentIsResurface}
+                onToggleExpand={() => setExpandedCards(p => ({ ...p, [idx]: !(p[idx] !== false) }))}
+                onUpdate={patch => updateEntry(idx, patch)}
+                onRemove={() => removeEntry(idx)}
+              />
+            ))}
+
+            {/* Add Another Stage - hidden for resurface FABs or when hideAddStageButton is true */}
+            {!currentIsResurface && !hideAddStageButton && (
+              <button
+                type="button"
+                onClick={addEntry}
+                className="w-full h-[44px] border border-dashed border-[#e2e4ed] rounded-[8px] flex items-center justify-center gap-2 text-[#78829d] hover:border-[#9cc15e] hover:text-[#7a9705] hover:bg-[#f0f4e8] transition-all"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="text-[14px] font-semibold">Add Another Stage</span>
+              </button>
+            )}
+
+            {/* Actions */}
+            <div className="flex items-center gap-3 pt-2 pb-8">
+              <button
+                type="button"
+                onClick={handleBack}
+                className="flex-1 h-[44px] border border-[#e2e4ed] rounded-[8px] text-[14px] text-[#4b545d] hover:bg-gray-50 transition-colors"
+                disabled={isLoading || isAutoScheduling}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold disabled:opacity-60"
+                style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
+                disabled={isLoading || isAutoScheduling}
+              >
+                {isLoading
+                  ? <><LoaderCircle className="h-4 w-4 animate-spin" />Scheduling…</>
+                  : isEditing ? 'Update Plan' : 'Schedule Plan'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
 };
 
 export default CreatePlanPage;
