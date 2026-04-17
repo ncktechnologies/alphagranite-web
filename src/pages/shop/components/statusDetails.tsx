@@ -565,7 +565,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                         </div>
 
                         {/* Estimated Hours */}
-                        <div className="flex flex-col gap-1.5">
+                        {/* <div className="flex flex-col gap-1.5">
                             <Label className="text-xs text-muted-foreground uppercase tracking-wide">Est. Hours</Label>
                             <Input
                                 type="number"
@@ -576,7 +576,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                                 onChange={e => patch({ estimated_hours: e.target.value })}
                                 className="h-[38px] border-[#e2e4ed] text-sm"
                             />
-                        </div>
+                        </div> */}
 
                         {/* Notes */}
                         <div className="flex flex-col gap-1.5">

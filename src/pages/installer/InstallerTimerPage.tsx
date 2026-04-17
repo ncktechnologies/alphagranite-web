@@ -102,7 +102,7 @@ export function InstallerTimerPage() {
             toast.success('Timer started');
             refetch();
         } catch (error: any) {
-            toast.error(error?.data?.message || 'Failed to start timer');
+            // toast.error(error?.data?.message || 'Failed to start timer');
         }
     };
 

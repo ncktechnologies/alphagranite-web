@@ -139,7 +139,7 @@ export function FinalProgrammingDetailsPage() {
         toast.success('Final programming session started');
       } catch (error) {
         console.error('Failed to start final programming session:', error);
-        toast.error('Failed to start final programming session');
+        // toast.error('Failed to start final programming session');
         return;
       }
     }

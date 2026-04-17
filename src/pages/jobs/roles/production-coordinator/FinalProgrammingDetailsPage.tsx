@@ -167,7 +167,7 @@ export function FinalProgrammingDetailsPage() {
       setDraftStart(startTime);
     } catch (error) {
       console.error('Failed to start session:', error);
-      toast.error('Failed to start session');
+      // toast.error('Failed to start session');
     }
   }, [fabData, fabId, currentEmployeeId, isSuperAdmin, manageFinalProgrammingSession, refetchFPSession]);
 

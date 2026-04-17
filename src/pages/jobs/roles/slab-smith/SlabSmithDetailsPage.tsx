@@ -162,7 +162,7 @@ export function SlabSmithDetailsPage() {
         toast.success('Slabsmith session started');
       } catch (error) {
         console.error('Failed to start session:', error);
-        toast.error('Failed to start session');
+        // toast.error('Failed to start session');
         return;
       }
     }
@@ -337,7 +337,7 @@ export function SlabSmithDetailsPage() {
               ? new Date(fabData.templating_schedule_start_date).toLocaleDateString()
               : 'Not scheduled',
           },
-          { label: "Drafter Assigned", value: fabData.draft_data?.drafter_name || 'Unassigned' },
+          { label: "Drafter Assigned", value: fabData.slabsmith_data?.drafter_name || 'Unassigned' },
           { label: "Sales Person", value: fabData.sales_person_name || '—' },
           { label: "SlabSmith Needed", value: fabData.slab_smith_ag_needed ? 'Yes' : 'No' },
         ],
