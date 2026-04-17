@@ -35,9 +35,33 @@ import CreatePlanPage from './createPlanePage';
 
 const DAY_START_HOUR = 7;
 const DAY_END_HOUR = 19;
-const TOTAL_HOURS = DAY_END_HOUR - DAY_START_HOUR;
+const BREAK_START_HOUR = 12; // 12:00 PM
+const BREAK_END_HOUR = 13;   // 1:00 PM
+const BREAK_DURATION = BREAK_END_HOUR - BREAK_START_HOUR; // 1 hour
+const TOTAL_HOURS = DAY_END_HOUR - DAY_START_HOUR; // 12 hours (including break)
+const DISPLAY_HOURS = TOTAL_HOURS - BREAK_DURATION; // 11 hours (excluding break from display)
 const HOUR_HEIGHT = 80;
-const HOUR_WIDTH = 120;
+const HOUR_WIDTH = 160;
+
+// Helper function to calculate vertical position accounting for break
+// Events before break: normal position
+// Events after break: shifted down to show break gap
+const getTimePosition = (hour: number) => {
+  if (hour < BREAK_START_HOUR) {
+    return (hour - DAY_START_HOUR) * HOUR_HEIGHT;
+  }
+  // At or after break, add break space
+  return (hour - DAY_START_HOUR - BREAK_DURATION) * HOUR_HEIGHT;
+};
+
+// Helper function to calculate horizontal position accounting for break (for swapped view)
+const getHorizontalPosition = (hour: number) => {
+  if (hour < BREAK_START_HOUR) {
+    return (hour - DAY_START_HOUR) * HOUR_WIDTH;
+  }
+  // At or after break, add break space
+  return (hour - DAY_START_HOUR - BREAK_DURATION) * HOUR_WIDTH;
+};
 
 const FAB_TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   'standard': { bg: '#9eeb47', border: '#6b9e2f', text: '#1e293b' },
@@ -161,7 +185,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     if (viewMode === 'day') return [currentDate];
     if (viewMode === 'week') {
       const ws = startOfWeek(currentDate, { weekStartsOn: 1 });
-      return Array.from({ length: 5 }, (_, i) => addDays(ws, i));
+      return Array.from({ length: 7 }, (_, i) => addDays(ws, i));
     }
     return eachDayOfInterval({ start: startOfMonth(currentDate), end: endOfMonth(currentDate) });
   }, [currentDate, viewMode]);
@@ -183,7 +207,17 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
 
     const plans = plansResponse?.data?.grouped_plans ?? plansResponse?.grouped_plans ?? [];
     plans.forEach((gp: any) => {
-      const dateKey = format(new Date(gp.date), 'yyyy-MM-dd');
+      // Parse date in local timezone to match calendar display
+      // Use the full datetime string as-is (no timezone conversion)
+      let dateKey: string;
+      if (gp.date && typeof gp.date === 'string') {
+        // Extract just the date portion (YYYY-MM-DD) from datetime string
+        const datePart = gp.date.split('T')[0];
+        dateKey = datePart || format(new Date(gp.date), 'yyyy-MM-dd');
+      } else {
+        dateKey = format(new Date(gp.date), 'yyyy-MM-dd');
+      }
+      
       if (dateKey in grouped) grouped[dateKey] = gp.plans ?? [];
     });
     return grouped;
@@ -267,9 +301,10 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
       return sorted.map((ev, i) => {
         const start = new Date(ev.scheduled_start_date);
         const startH = start.getHours() + start.getMinutes() / 60;
-        const top = Math.max(0, (startH - DAY_START_HOUR) * HOUR_HEIGHT);
+        // Calculate position accounting for break
+        const top = getTimePosition(startH);
         const height = Math.max(HOUR_HEIGHT * 0.5, ev.estimated_hours * HOUR_HEIGHT);
-        return { ...ev, _top: top, _height: height, _col: cols[i], _maxCol: maxCol };
+        return { ...ev, _top: Math.max(0, top), _height: height, _col: cols[i], _maxCol: maxCol };
       });
     };
   }, []);
@@ -648,18 +683,28 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                         ))}
                       </div>
 
-                      <div className="relative flex pt-5" style={{ height: TOTAL_HOURS * HOUR_HEIGHT }}>
+                      <div className="relative flex pt-5" style={{ height: DISPLAY_HOURS * HOUR_HEIGHT }}>
                         <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] relative">
-                          {Array.from({ length: TOTAL_HOURS }, (_, i) => {
+                          {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                             const hour = DAY_START_HOUR + i;
+                            
+                            // Skip rendering labels inside break time
+                            if (hour > BREAK_START_HOUR && hour < BREAK_END_HOUR) {
+                              return null;
+                            }
+                            
                             const label = is12HourFormat
                               ? `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
                               : `${String(hour).padStart(2, '0')}:00`;
+                            
+                            // Calculate position accounting for break
+                            const position = getTimePosition(hour);
+                            
                             return (
                               <div
                                 key={hour}
                                 className="absolute w-full pr-3 flex items-start justify-end"
-                                style={{ top: i * HOUR_HEIGHT - 9, height: HOUR_HEIGHT }}
+                                style={{ top: position - 9, height: HOUR_HEIGHT }}
                               >
                                 <span className="text-[11px] font-medium text-[#7c8689] whitespace-nowrap">{label}</span>
                               </div>
@@ -677,16 +722,39 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                             <div
                               key={dk}
                               className="flex-1 min-w-[160px] border-r border-[#ecedf0] relative"
-                              style={{ height: TOTAL_HOURS * HOUR_HEIGHT }}
+                              style={{ height: DISPLAY_HOURS * HOUR_HEIGHT }}
                               onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(true); } : undefined}
                             >
-                              {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
-                                <div key={i} className="absolute w-full border-t border-[#ecedf0]" style={{ top: i * HOUR_HEIGHT }} />
-                              ))}
+                              {/* Hour grid lines */}
+                              {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
+                                const hour = DAY_START_HOUR + i;
+                                // Skip grid lines inside break time
+                                if (hour > BREAK_START_HOUR && hour < BREAK_END_HOUR) {
+                                  return null;
+                                }
+                                const position = getTimePosition(hour);
+                                return (
+                                  <div key={i} className="absolute w-full border-t border-[#ecedf0]" style={{ top: position }} />
+                                );
+                              })}
+                              
+                              {/* Break time indicator */}
+                              <div 
+                                className="absolute left-0 right-0 bg-gradient-to-b from-orange-100/50 to-orange-200/50 border-y-2 border-orange-300 pointer-events-none flex items-center justify-center"
+                                style={{ 
+                                  top: getTimePosition(BREAK_START_HOUR),
+                                  height: BREAK_DURATION * HOUR_HEIGHT 
+                                }}
+                              >
+                                <span className="text-[11px] font-semibold text-orange-600 uppercase tracking-wide">
+                                  Break Time
+                                </span>
+                              </div>
+                              
                               {isToday && <div className="absolute inset-0 bg-[#7a9705]/[0.02] pointer-events-none" />}
                               {positioned.map((ev) => renderEventCard(ev))}
                               {isToday && showTimeIndicator && (
-                                <div className="absolute left-0 right-0 z-10 pointer-events-none" style={{ top: currentTimeTop }}>
+                                <div className="absolute left-0 right-0 z-10 pointer-events-none" style={{ top: getTimePosition(currentTime.getHours() + currentTime.getMinutes() / 60) }}>
                                   <div className="relative flex items-center">
                                     <div
                                       className="absolute -left-[90px] flex items-center justify-center rounded-[4px] px-1 py-0.5 z-20"
@@ -710,22 +778,37 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                   {viewMode !== 'month' && isAxisSwapped && (
                     <div className="min-w-max">
                       <div className="flex border-b border-[#e2e4ed] bg-white sticky top-0 z-10">
+                        {/* Day column header */}
                         <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0]" />
-                        {Array.from({ length: TOTAL_HOURS }, (_, i) => {
-                          const hour = DAY_START_HOUR + i;
-                          const label = is12HourFormat
-                            ? `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
-                            : `${String(hour).padStart(2, '0')}:00`;
-                          return (
-                            <div
-                              key={hour}
-                              className="flex-1 border-r border-[#ecedf0] flex items-center justify-center py-3"
-                              style={{ minWidth: HOUR_WIDTH }}
-                            >
-                              <span className="text-[11px] font-medium text-[#7c8689] whitespace-nowrap">{label}</span>
-                            </div>
-                          );
-                        })}
+                        
+                        {/* Time header row */}
+                        <div className="relative" style={{ minWidth: DISPLAY_HOURS * HOUR_WIDTH, height: 50 }}>
+                          {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
+                            const hour = DAY_START_HOUR + i;
+                            
+                            // Skip rendering labels inside break time
+                            if (hour > BREAK_START_HOUR && hour < BREAK_END_HOUR) {
+                              return null;
+                            }
+                            
+                            const label = is12HourFormat
+                              ? `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
+                              : `${String(hour).padStart(2, '0')}:00`;
+                            
+                            // Calculate position accounting for break
+                            const position = getHorizontalPosition(hour);
+                            
+                            return (
+                              <div
+                                key={hour}
+                                className="absolute top-0 bottom-0 border-r border-[#ecedf0] flex items-center justify-center px-0.5"
+                                style={{ left: position, width: HOUR_WIDTH }}
+                              >
+                                <span className="text-[9px] font-medium text-[#7c8689] whitespace-nowrap">{label}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
 
                       {displayDays.map((day) => {
@@ -752,10 +835,10 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
 
                         return (
                           <div key={dk} className="flex border-b border-[#e2e4ed]" style={{ minHeight: rowHeight + 8 }}>
-                            <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] flex flex-col justify-center items-center py-3 gap-0.5 bg-white">
-                              <span className="text-[11px] text-[#7c8689] uppercase tracking-wide">{format(day, 'EEE')}</span>
+                            <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] flex flex-col justify-center items-center py-2 gap-0 bg-white">
+                              <span className="text-[10px] text-[#7c8689] uppercase tracking-wide">{format(day, 'EEE')}</span>
                               <span
-                                className={`text-[20px] font-semibold w-8 h-8 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'}`}
+                                className={`text-[18px] font-semibold w-8 h-8 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'}`}
                               >
                                 {format(day, 'd')}
                               </span>
@@ -763,19 +846,52 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
 
                             <div
                               className="relative"
-                              style={{ height: rowHeight, minWidth: TOTAL_HOURS * HOUR_WIDTH }}
+                              style={{ height: rowHeight, minWidth: DISPLAY_HOURS * HOUR_WIDTH }}
                               onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(false); } : undefined}
                             >
-                              {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
-                                <div key={i} className="absolute top-0 bottom-0 border-l border-[#ecedf0]" style={{ left: i * HOUR_WIDTH }} />
-                              ))}
+                              {/* Hour grid lines */}
+                              {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
+                                const hour = DAY_START_HOUR + i;
+                                // Skip grid lines inside break time
+                                if (hour > BREAK_START_HOUR && hour < BREAK_END_HOUR) {
+                                  return null;
+                                }
+                                const position = getHorizontalPosition(hour);
+                                return (
+                                  <div key={i} className="absolute top-0 bottom-0 border-l border-[#ecedf0]" style={{ left: position }} />
+                                );
+                              })}
+                              
+                              {/* Break time indicator */}
+                              <div 
+                                className="absolute top-0 bottom-0 bg-orange-100/40 border-x border-orange-300 pointer-events-none flex items-center justify-center"
+                                style={{ 
+                                  left: getHorizontalPosition(BREAK_START_HOUR),
+                                  width: BREAK_DURATION * HOUR_WIDTH 
+                                }}
+                              >
+                                <span className="text-[9px] font-semibold text-orange-700 uppercase tracking-wide">
+                                  Break
+                                </span>
+                              </div>
 
                               {lanes.map((lane, laneIdx) =>
                                 lane.map((ev) => {
                                   const startDt = new Date(ev.scheduled_start_date);
                                   const startH = startDt.getHours() + startDt.getMinutes() / 60;
-                                  const left = (startH - DAY_START_HOUR) * HOUR_WIDTH;
-                                  const width = ev.estimated_hours * HOUR_WIDTH;
+                                  const endH = startH + ev.estimated_hours;
+                                  
+                                  // Calculate positions accounting for break
+                                  const left = getHorizontalPosition(startH);
+                                  const right = getHorizontalPosition(endH);
+                                  
+                                  // If event spans across the break, add break width to the calculation
+                                  let width = right - left;
+                                  if (startH < BREAK_START_HOUR && endH > BREAK_START_HOUR) {
+                                    // Event spans across break - add break width
+                                    width += BREAK_DURATION * HOUR_WIDTH;
+                                  }
+                                  
                                   const { bg, border, text } = getColorForFab(ev.fab_id, ev.fab_type);
                                   return (
                                     <Tooltip key={ev.id} delayDuration={300}>

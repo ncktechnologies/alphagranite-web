@@ -28,7 +28,7 @@ export const MoveStageModal = ({ open, onClose, fabId }: MoveStageModalProps) =>
         { value: 'drafting', label: 'Drafting' },
         { value: 'sales_ct', label: 'Sales CT' },
         // { value: 'slab_smith_request', label: 'Slab Smith Request' },
-        // { value: 'cut_list', label: 'Final Programming' },
+        // { value: 'shop', label: 'Shop' },
         { value: 'cut_list', label: 'Cutting' },
         { value: 'revision', label: 'Revisions' },
     ];

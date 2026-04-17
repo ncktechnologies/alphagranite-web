@@ -47,6 +47,9 @@ import CreatePlanSheet from './createEvent';
 const TIME_SLOTS = (() => {
     const slots: { value: string; label: string }[] = [];
     for (let h = 6; h <= 22; h++) {
+        // Skip 12 PM (noon) - jump from 11 AM to 1 PM
+        if (h === 12) continue;
+        
         for (const m of [0, 15, 30, 45]) {
             if (h === 22 && m > 0) break;
             const hh = String(h).padStart(2, '0');

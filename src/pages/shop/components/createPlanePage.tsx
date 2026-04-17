@@ -25,6 +25,9 @@ import { useGetFabsQuery, useGetFabByIdQuery } from '@/store/api/job';
 export const TIME_SLOTS = (() => {
   const slots: { value: string; label: string }[] = [];
   for (let h = 6; h <= 22; h++) {
+    // Skip 12 PM (noon) - jump from 11 AM to 1 PM
+    if (h === 12) continue;
+    
     for (const m of [0, 15, 30, 45]) {
       if (h === 22 && m > 0) break;
       const hh = String(h).padStart(2, '0');
@@ -673,6 +676,10 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       }
     }
 
+    // Extract time in HH:mm format for select dropdowns
+    const startTimeStr = startDate && !isNaN(startDate.getTime()) ? format(startDate, 'HH:mm') : '';
+    const endTimeStr = endDate && !isNaN(endDate.getTime()) ? format(endDate, 'HH:mm') : '';
+
     const finalEntry: PlanEntry = {
       id: ev.id,
       fab_id: ev.fab_id != null ? String(ev.fab_id) : '',
@@ -680,9 +687,9 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       operator_id: ev.operator_id != null ? String(ev.operator_id) : '',
       notes: ev.notes || '',
       start_date: startDate,
-      start_time: startDate ? format(startDate, 'HH:mm') : '',
+      start_time: startTimeStr,
       end_date: endDate,
-      end_time: endDate ? format(endDate, 'HH:mm') : '',
+      end_time: endTimeStr,
       estimated_hours: ev.estimated_hours != null ? String(ev.estimated_hours) : '',
       planning_section_id: planningSectionId || prefillSectionIdStr || '',
       sequence: ev.sequence != null ? String(ev.sequence) : '1',

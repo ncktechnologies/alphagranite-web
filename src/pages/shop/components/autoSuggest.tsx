@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Calendar, ChevronDown, LoaderCircle, Plus, X, Sparkles } from 'lucide-react';
+import { ArrowLeft, Calendar, ChevronDown, LoaderCircle, Plus, X, Sparkles, Lock } from 'lucide-react';
 import { format } from 'date-fns';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -18,12 +18,23 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
-import { useCreateShopPlansMutation, useCreateShopSuggestionMutation, useUpdateShopPlanMutation } from '@/store/api';
+import {
+  useCreateShopPlansMutation,
+  useCreateShopSuggestionMutation,
+  useUpdateShopPlanMutation,
+  useGetAllShopPlansQuery,
+} from '@/store/api';
 import { useGetPlanningSectionsQuery, useGetWorkStationByPlanningSectionsQuery } from '@/store/api/workstation';
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetFabsQuery } from '@/store/api/job';
 import { usePlanSections } from '@/hooks/usePlanningSection';
 import { TIME_SLOTS } from './createPlanePage';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 // ── Field-to-keyword mapping ──────────────────────────────────────────────────
 const FAB_STAGE_FIELDS: { keyword: string; field: string; label: string }[] = [
@@ -32,10 +43,11 @@ const FAB_STAGE_FIELDS: { keyword: string; field: string; label: string }[] = [
   { keyword: 'edg', field: 'edging_linft', label: 'Edging' },
   { keyword: 'mit', field: 'miter_linft', label: 'Miter' },
   { keyword: 'cnc', field: 'cnc_linft', label: 'CNC' },
-  {keyword:'resurface', field: 'resurface_linft', label: 'Resurfacing' },
+  { keyword: 'resurface', field: 'resurface_linft', label: 'Resurfacing' },
 ];
 
 const TOUCHUP_KEYWORD = 'touch';
+const RESURFACE_KEYWORD = 'resurfac';
 
 interface AutoPlanEntry {
   id?: number;
@@ -46,8 +58,8 @@ interface AutoPlanEntry {
   estimated_hours: string;
   start_time: string;
   end_time: string;
-  end_date?: Date;           // actual end date (may differ from start date)
-  scheduled_time?: string;   // display string from API e.g. "Apr 10, 7:00 AM – Apr 13, 1:30 PM"
+  end_date?: Date;
+  scheduled_time?: string;
   planning_section_id?: string;
   stageName: string;
   date?: Date;
@@ -121,7 +133,6 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
     return `${format(entry.date!, 'MMM d')} · ${startLabel}–${endLabel}`;
   }, [hasSlot, entry.scheduled_time, entry.date, entry.start_time, entry.end_time]);
 
-  // Helper to combine date and time
   const combineDateAndTime = (date: Date | undefined, time: string): Date | null => {
     if (!date || !time) return null;
     const [hours, minutes] = time.split(':').map(Number);
@@ -130,7 +141,6 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
     return newDate;
   };
 
-  // When start/end times change, recalculate estimated hours
   const handleTimeUpdate = (startTime?: string, endTime?: string) => {
     const finalStart = startTime ?? entry.start_time;
     const finalEnd = endTime ?? entry.end_time;
@@ -149,7 +159,6 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
     }
   };
 
-  // When estimated hours change, recalculate end time
   const handleHoursChange = (hoursStr: string) => {
     const hours = parseFloat(hoursStr);
     if (!entry.date || !entry.start_time || isNaN(hours) || hours <= 0) {
@@ -166,7 +175,6 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
     onUpdate({ estimated_hours: hoursStr, end_time: endTime, end_date: endDateTime });
   };
 
-  // When date changes, recalculate end date if end_time is set and hours exist
   const handleDateChange = (newDate: Date) => {
     if (!entry.end_time || !entry.estimated_hours) {
       onUpdate({ date: newDate });
@@ -188,7 +196,6 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
 
   return (
     <Card className="border border-[#ecedf0] rounded-[12px] overflow-hidden">
-      {/* Header (same as before) */}
       <CardHeader className="pb-3 border-b border-[#ecedf0] cursor-pointer select-none px-4" onClick={onToggleExpand}>
         <div className="flex items-center gap-2 w-full">
           <div className="flex items-center gap-2 flex-1 min-w-0 overflow-hidden">
@@ -227,7 +234,6 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
 
       {isExpanded && (
         <CardContent className="pt-5 space-y-5">
-          {/* Planning Section + Est. Hours + Workstation */}
           <div className="grid grid-cols-3 gap-4">
             <div>
               <Label className="text-[14px] text-[#4b545d] font-semibold">Shop Activity</Label>
@@ -263,7 +269,6 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
             </div>
           </div>
 
-          {/* Operator + Date */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-[14px] text-[#4b545d] font-semibold">Operator *</Label>
@@ -295,7 +300,6 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
             </div>
           </div>
 
-          {/* Start Time, End Time */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-[14px] text-[#4b545d] font-semibold">Start Time</Label>
@@ -322,7 +326,6 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
             </div>
           </div>
 
-          {/* Proposals (unchanged) */}
           {proposals.length > 0 && (
             <div>
               <Label className="text-[13px] text-[#7c8689] mb-2 block">Available slots — click to apply</Label>
@@ -337,7 +340,6 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
             </div>
           )}
 
-          {/* Notes (unchanged) */}
           <div>
             <Label className="text-[14px] text-[#4b545d] font-semibold">Description / Notes</Label>
             <Textarea placeholder="Add any notes about this plan..." value={entry.notes} onChange={e => onUpdate({ notes: e.target.value })} className="mt-2 min-h-[80px] border-[#e2e4ed] rounded-[6px] text-[14px]" />
@@ -414,7 +416,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
 
   const { data: allFabsData, isLoading: isLoadingFabs } =
-    useGetFabsQuery({ limit: 1000, });
+    useGetFabsQuery({ limit: 1000 });
 
   const fabOptions = useMemo(() => {
     const fabs = allFabsData?.data || (Array.isArray(allFabsData) ? allFabsData : []);
@@ -431,6 +433,18 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     return fabs.find((fab: any) => String(fab.id) === selectedFabId) || null;
   }, [allFabsData, selectedFabId]);
 
+  // ── NEW: Check if selected FAB already has plans ──────────────────────────
+  const { data: existingPlansData, isFetching: isCheckingPlans } = useGetAllShopPlansQuery(
+    { fab_id: Number(selectedFabId), limit: 1, view: 'day' },
+    { skip: !selectedFabId }
+  );
+
+  const hasExistingPlans = useMemo(() => {
+    if (!existingPlansData) return false;
+    const total = existingPlansData?.data?.total ?? existingPlansData?.total ?? 0;
+    return total > 0;
+  }, [existingPlansData]);
+
   const { findSectionByKeyword } = usePlanSections();
   const employeesLoaded = employees.length > 0;
 
@@ -440,43 +454,36 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     ),
     [planningSections]
   );
-  const RESURFACE_KEYWORD = 'resurfac';
 
-const resurfaceSection = useMemo(
-  () => planningSections.find((ps: any) =>
-    (ps.name || ps.plan_name || ps.title || '').toLowerCase().includes(RESURFACE_KEYWORD)
-  ),
-  [planningSections]
-);
+  const resurfaceSection = useMemo(
+    () => planningSections.find((ps: any) =>
+      (ps.name || ps.plan_name || ps.title || '').toLowerCase().includes(RESURFACE_KEYWORD)
+    ),
+    [planningSections]
+  );
 
-const isResurfaceFab = (fab: any) =>
-  (fab?.fab_type || '').toLowerCase().includes(RESURFACE_KEYWORD);
+  const isResurfaceFab = (fab: any) =>
+    (fab?.fab_type || '').toLowerCase().includes(RESURFACE_KEYWORD);
 
   function getActiveStagesFromFab(fab: any) {
-  // Resurface FABs only get a single resurfacing stage
-  if (isResurfaceFab(fab)) {
-    if (!resurfaceSection) return [];
-    return [{
-      keyword: RESURFACE_KEYWORD,
-      field: 'total_sqft',
-      label:
-        resurfaceSection.name ||
-        resurfaceSection.plan_name ||
-        resurfaceSection.title ||
-        'Resurfacing',
-      section_id: resurfaceSection.id,
-    }];
+    if (isResurfaceFab(fab)) {
+      if (!resurfaceSection) return [];
+      return [{
+        keyword: RESURFACE_KEYWORD,
+        field: 'total_sqft',
+        label: resurfaceSection.name || resurfaceSection.plan_name || resurfaceSection.title || 'Resurfacing',
+        section_id: resurfaceSection.id,
+      }];
+    }
+    return FAB_STAGE_FIELDS
+      .map(s => {
+        const section = findSectionByKeyword(s.keyword);
+        return section ? { ...s, section_id: section.id } : null;
+      })
+      .filter((s): s is NonNullable<typeof s> =>
+        s !== null && typeof fab?.[s.field] === 'number' && fab[s.field] > 0
+      );
   }
-
-  return FAB_STAGE_FIELDS
-    .map(s => {
-      const section = findSectionByKeyword(s.keyword);
-      return section ? { ...s, section_id: section.id } : null;
-    })
-    .filter((s): s is NonNullable<typeof s> =>
-      s !== null && typeof fab?.[s.field] === 'number' && fab[s.field] > 0
-    );
-}
 
   const getNextAvailableSequence = (used: Set<number>) => {
     let seq = 1;
@@ -484,7 +491,6 @@ const isResurfaceFab = (fab: any) =>
     return seq;
   };
 
-  // When FAB changes, rebuild entries with unique sequences
   useEffect(() => {
     if (selectedEvent || !selectedFab) return;
 
@@ -512,7 +518,6 @@ const isResurfaceFab = (fab: any) =>
     setExpandedCards({});
   }, [selectedFab, selectedEvent, touchupSection, resurfaceSection]);
 
-  // Editing existing event
   useEffect(() => {
     if (!selectedEvent || !employeesLoaded) return;
     const ev: any = selectedEvent;
@@ -540,7 +545,6 @@ const isResurfaceFab = (fab: any) =>
     setExpandedCards({ 0: true });
   }, [selectedEvent, employeesLoaded]);
 
-  // ── Entry management ───────────────────────────────────────────────────────
   const addEntry = () => {
     setEntries(prev => {
       const hasTouchup = prev.some(e => e.isTouchup);
@@ -580,7 +584,6 @@ const isResurfaceFab = (fab: any) =>
       const newEntries = [...prev];
       const target = newEntries[idx];
 
-      // Handle sequence update with uniqueness & swapping
       if (patch.sequence !== undefined && !target.isTouchup) {
         const newSeq = Number(patch.sequence);
         if (!isNaN(newSeq)) {
@@ -592,16 +595,13 @@ const isResurfaceFab = (fab: any) =>
             newEntries[conflictIdx] = { ...newEntries[conflictIdx], sequence: String(oldSeq) };
             newEntries[idx] = { ...newEntries[idx], sequence: String(newSeq) };
             
-            // Reorder entries based on sequence (keep touchup at the end)
             const regularEntries = newEntries.filter(e => !e.isTouchup);
             const touchupEntry = newEntries.find(e => e.isTouchup);
-            
             const sortedRegular = [...regularEntries].sort((a, b) => {
               const seqA = Number(a.sequence) || 0;
               const seqB = Number(b.sequence) || 0;
               return seqA - seqB;
             });
-            
             return touchupEntry ? [...sortedRegular, touchupEntry] : sortedRegular;
           }
         }
@@ -615,7 +615,6 @@ const isResurfaceFab = (fab: any) =>
     });
   };
 
-  // Apply a proposed slot — stores start/end dates and the display string
   const applyProposal = (entryIdx: number, proposal: ProposedRange) => {
     const start = new Date(proposal.start);
     const end = new Date(proposal.end);
@@ -623,14 +622,13 @@ const isResurfaceFab = (fab: any) =>
       date: start,
       start_time: format(start, 'HH:mm'),
       end_time: format(end, 'HH:mm'),
-      end_date: end,                       // may be a different calendar day
-      scheduled_time: proposal.scheduled_time,   // ready-made display string from API
+      end_date: end,
+      scheduled_time: proposal.scheduled_time,
     });
   };
 
   const handleBack = () => { if (onBack) onBack(); else navigate(-1); };
 
-  // ── Submit ─────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     for (const entry of entries) {
@@ -662,7 +660,6 @@ const isResurfaceFab = (fab: any) =>
         let totalEst = 0;
         const stages = groups[fabId].map((entry, idx) => {
           const startDateStr = format(entry.date!, 'yyyy-MM-dd');
-          // Use the actual end date (may differ from start when slot spans multiple days)
           const endDateStr = entry.end_date
             ? format(entry.end_date, 'yyyy-MM-dd')
             : startDateStr;
@@ -735,11 +732,11 @@ const isResurfaceFab = (fab: any) =>
       onEventCreated?.();
       handleBack();
     } catch (error: any) {
-      // error handling
+      console.error(error);
+      toast.error(error?.data?.message || 'Failed to save plans');
     }
   };
 
-  // ── Auto-populate ──────────────────────────────────────────────────────────
   const handleAutoPopulate = async () => {
     for (const entry of entries) {
       if (!entry.operator_id) { toast.error('Please select an operator for each stage'); return; }
@@ -757,7 +754,7 @@ const isResurfaceFab = (fab: any) =>
           operator_id: Number(entry.operator_id),
           workstation_id: Number(entry.workstation_id),
           estimated_hours: parseFloat(entry.estimated_hours),
-          sequence: entry.isTouchup        // ← add this
+          sequence: entry.isTouchup
             ? entries.length
             : (Number(entry.sequence) || 0),
         })),
@@ -783,7 +780,6 @@ const isResurfaceFab = (fab: any) =>
       });
       setProposals(newProposals);
 
-      // Apply the first (earliest) proposal for each entry
       setEntries(prev => prev.map((entry, idx) => {
         const first = newProposals[idx]?.[0];
         if (!first) return entry;
@@ -801,7 +797,8 @@ const isResurfaceFab = (fab: any) =>
 
       toast.success('Earliest slots applied — pick an alternative below each stage if needed');
     } catch (error: any) {
-      // error handling
+      console.error(error);
+      toast.error(error?.data?.message || 'Failed to get suggestions');
     }
   };
 
@@ -815,7 +812,6 @@ const isResurfaceFab = (fab: any) =>
 
   return (
     <div className="bg-white min-h-screen">
-      {/* Header */}
       <div className="border-b border-[#dfdfdf]">
         <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
           <div className="flex items-center gap-4">
@@ -842,11 +838,8 @@ const isResurfaceFab = (fab: any) =>
         </div>
       </div>
 
-      {/* Content */}
       <div className="px-10 py-8 max-w-5xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-6">
-
-          {/* FAB selector */}
           <Card className="border border-[#ecedf0] rounded-[12px]">
             <CardContent className="pt-5">
               <Label className="text-[14px] text-[#4b545d] font-semibold">FAB ID *</Label>
@@ -867,7 +860,6 @@ const isResurfaceFab = (fab: any) =>
             </CardContent>
           </Card>
 
-          {/* FAB Details */}
           {selectedFabId && selectedFab && (
             <Card className="border border-[#ecedf0] rounded-[12px]">
               <CardHeader className="pb-3 border-b border-[#ecedf0]">
@@ -917,7 +909,6 @@ const isResurfaceFab = (fab: any) =>
             </Card>
           )}
 
-          {/* Plan Entry Cards */}
           {entries.map((entry, idx) => (
             <AutoPlanEntryCard
               key={idx}
@@ -938,7 +929,6 @@ const isResurfaceFab = (fab: any) =>
             />
           ))}
 
-          {/* Add Stage Button */}
           <button
             type="button"
             onClick={addEntry}
@@ -948,19 +938,35 @@ const isResurfaceFab = (fab: any) =>
             <span className="text-[14px] font-semibold">Add Another Stage</span>
           </button>
 
-          {/* Auto-populate Button */}
-          <button
-            type="button"
-            onClick={handleAutoPopulate}
-            disabled={isAutoScheduling}
-            className="w-full h-[44px] border border-[#9cc15e] rounded-[8px] flex items-center justify-center gap-2 text-[#5a7a00] bg-[#f0f4e8] hover:bg-[#e6f0d4] transition-colors disabled:opacity-60 text-[14px] font-semibold"
-          >
-            {isAutoScheduling
-              ? <><LoaderCircle className="h-4 w-4 animate-spin" />Finding earliest slots…</>
-              : <><Sparkles className="h-4 w-4" />Auto-populate Dates</>}
-          </button>
+          {/* Auto-populate Button with disable logic and tooltip */}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="w-full">
+                  <button
+                    type="button"
+                    onClick={handleAutoPopulate}
+                    disabled={isAutoScheduling || hasExistingPlans || isCheckingPlans}
+                    className="w-full h-[44px] border border-[#9cc15e] rounded-[8px] flex items-center justify-center gap-2 text-[#5a7a00] bg-[#f0f4e8] hover:bg-[#e6f0d4] transition-colors disabled:opacity-60 text-[14px] font-semibold"
+                  >
+                    {isAutoScheduling ? (
+                      <><LoaderCircle className="h-4 w-4 animate-spin" />Finding earliest slots…</>
+                    ) : hasExistingPlans ? (
+                      <><Lock className="h-4 w-4" />FAB already has plans</>
+                    ) : (
+                      <><Sparkles className="h-4 w-4" />Auto-populate Dates</>
+                    )}
+                  </button>
+                </span>
+              </TooltipTrigger>
+              {hasExistingPlans && (
+                <TooltipContent side="top" className="bg-gray-800 text-white text-xs">
+                  This FAB already has scheduled plans. Auto‑suggest is disabled.
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </TooltipProvider>
 
-          {/* Action Buttons */}
           <div className="flex items-center gap-3 pt-2 pb-8">
             <button
               type="button"
