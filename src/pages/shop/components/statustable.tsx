@@ -376,7 +376,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     // ------------------ Transform API data → ShopStatusRow tree ------------------
     const tableData: ShopStatusRow[] = useMemo(() => {
         return fabs.map((fab: any): ShopStatusRow => {
-            const rawDate = fab.shop_est_completion_date || fab.shop_date_schedule || fab.installation_date;
+            const rawDate = fab.shop_est_completion_date || fab.estimated_completion_date || fab.shop_date_schedule || fab.installation_date;
             const dayKey   = rawDate ? format(new Date(rawDate), 'yyyy-MM-dd') : 'unscheduled';
             const monthKey = rawDate ? format(new Date(rawDate), 'yyyy-MM')    : 'unscheduled';
 
@@ -417,7 +417,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 miter_progress: buildProgress(2),
                 cnc_progress: buildProgress(1),
                 touchup_progress: buildProgress(6),
-                shop_est_completion_date: fab.shop_est_completion_date,
+                shop_est_completion_date: fab.shop_est_completion_date || fab.estimated_completion_date,
                 cut_date_scheduled: (fab.plans || []).find((p: any) => p.planning_section_id === 7)?.scheduled_start_date,
                 install_date: fab.installation_date,
                 percent_complete: fab.percent_complete || 0,

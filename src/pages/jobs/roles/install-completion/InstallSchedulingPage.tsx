@@ -36,7 +36,12 @@ const transformFabToJob = (fab: Fab): IJob => {
         fab_id: String(fab.id),
         job_name: `${fab.job_details?.name}`,
         job_no: String(fab.job_details?.job_number),
-        date: fab.shop_est_completion_date || '',
+        date: (fab as any).shop_est_completion_date || (fab as any).estimated_completion_date,
+        shop_est_completion_date: (fab as any).shop_est_completion_date
+            ? formatDate((fab as any).shop_est_completion_date)
+            : (fab as any).estimated_completion_date
+                ? formatDate((fab as any).estimated_completion_date)
+                : '-',
         current_stage: fab.current_stage,
         sales_person_name: fab.sales_person_name || '',
         acct_name: fab.account_name || '',

@@ -1054,6 +1054,22 @@ const FabDetailsPage: React.FC = () => {
                         </CardContent>
                     </Card>
 
+                    {/* Shop Suggested Date */}
+                    <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
+                        <CardHeader className="pb-3 border-b border-[#e2e4ed]">
+                            <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
+                                <CalendarDays className="h-4 w-4 text-[#7c8689]" />
+                                Shop Suggested Date
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4">
+                            <InfoRow
+                                label="Shop Suggested Date"
+                                value={safeFormatDate(fab.estimated_completion_date, 'MMM dd, yyyy')}
+                            />
+                        </CardContent>
+                    </Card>
+
                     {/* Schedule Dates — read-only */}
                     <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
                         <CardHeader className="pb-3 border-b border-[#e2e4ed]">

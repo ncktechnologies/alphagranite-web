@@ -68,6 +68,7 @@ export interface ShopPlanRow {
     estimated_hours: number;
     scheduled_start_date: string;
     shop_est_completion_date?: string;
+    estimated_completion_date?: string;
     plan_notes: string | null;
     date_group: string;
     shop_office_date_scheduled?: string;
@@ -249,6 +250,8 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                             : undefined,
                         shop_est_completion_date: fab.shop_est_completion_date
                             ? format(new Date(fab.shop_est_completion_date), 'MM/dd/yyyy')
+                            : fab.estimated_completion_date
+                            ? format(new Date(fab.estimated_completion_date), 'MM/dd/yyyy')
                             : undefined,
                     });
                 });
@@ -267,6 +270,8 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                         : undefined,
                     shop_est_completion_date: fab.shop_est_completion_date
                         ? format(new Date(fab.shop_est_completion_date), 'MM/dd/yyyy')
+                        : fab.estimated_completion_date
+                        ? format(new Date(fab.estimated_completion_date), 'MM/dd/yyyy')
                         : undefined,
                 });
             }

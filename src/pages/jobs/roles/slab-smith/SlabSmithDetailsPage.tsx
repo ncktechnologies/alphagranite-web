@@ -58,6 +58,7 @@ export function SlabSmithDetailsPage() {
 
   const currentUser = useSelector((s: any) => s.user.user);
   const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
+  const isSuperAdmin = currentUser?.is_super_admin || false;
 
   // Queries
   const { data: fabData, isLoading: isFabLoading, refetch: refetchFab } = useGetFabByIdQuery(fabId, { skip: !fabId });
@@ -134,6 +135,13 @@ export function SlabSmithDetailsPage() {
   // Time tracking handlers
   const handleStart = useCallback(async (startDate: Date) => {
     if (fabId) {
+      // Authorization check: must be drafter_id (slab_smith) or super admin
+      const assignedSlabSmithId = slabSmithData?.drafter_id || (fabData as any)?.slabsmith_data?.drafter_id;
+      if (!isSuperAdmin && currentEmployeeId !== assignedSlabSmithId) {
+        toast.error('You are not authorized to start this SlabSmith session. Only the assigned SlabSmith or super admin can perform this action.');
+        return;
+      }
+
       try {
         let currentSlabSmithId = slabSmithData?.id;
         if (!currentSlabSmithId) {
@@ -171,9 +179,16 @@ export function SlabSmithDetailsPage() {
     setIsPaused(false);
     setHasEnded(false);
     setDraftStart(startDate);
-  }, [fabId, currentEmployeeId, manageSlabSmithSession, refetchSSSession, slabSmithData?.id, createSlabSmith, refetchSlabSmith, fabData?.total_sqft]);
+  }, [fabId, currentEmployeeId, isSuperAdmin, manageSlabSmithSession, refetchSSSession, slabSmithData?.id, slabSmithData?.drafter_id, (fabData as any)?.slabsmith_data?.drafter_id, createSlabSmith, refetchSlabSmith, fabData?.total_sqft]);
 
   const handlePause = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
+    // Authorization check: must be drafter_id (slab_smith) or super admin
+    const assignedSlabSmithId = slabSmithData?.drafter_id || (fabData as any)?.slabsmith_data?.drafter_id;
+    if (!isSuperAdmin && currentEmployeeId !== assignedSlabSmithId) {
+      toast.error('You are not authorized to pause this SlabSmith session. Only the assigned SlabSmith or super admin can perform this action.');
+      return;
+    }
+
     try {
       await manageSlabSmithSession({
         fab_id: fabId,
@@ -191,9 +206,16 @@ export function SlabSmithDetailsPage() {
       console.error('Failed to pause:', error);
       toast.error('Failed to pause');
     }
-  }, [fabId, manageSlabSmithSession, refetchSSSession]);
+  }, [fabId, currentEmployeeId, isSuperAdmin, manageSlabSmithSession, refetchSSSession, slabSmithData?.drafter_id, (fabData as any)?.slabsmith_data?.drafter_id]);
 
   const handleResume = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
+    // Authorization check: must be drafter_id (slab_smith) or super admin
+    const assignedSlabSmithId = slabSmithData?.drafter_id || (fabData as any)?.slabsmith_data?.drafter_id;
+    if (!isSuperAdmin && currentEmployeeId !== assignedSlabSmithId) {
+      toast.error('You are not authorized to resume this SlabSmith session. Only the assigned SlabSmith or super admin can perform this action.');
+      return;
+    }
+
     try {
       await manageSlabSmithSession({
         fab_id: fabId,
@@ -211,9 +233,16 @@ export function SlabSmithDetailsPage() {
       console.error('Failed to resume:', error);
       // toast.error('Failed to resume');
     }
-  }, [fabId, manageSlabSmithSession, refetchSSSession]);
+  }, [fabId, currentEmployeeId, isSuperAdmin, manageSlabSmithSession, refetchSSSession, slabSmithData?.drafter_id, (fabData as any)?.slabsmith_data?.drafter_id]);
 
   const handleOnHold = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
+    // Authorization check: must be drafter_id (slab_smith) or super admin
+    const assignedSlabSmithId = slabSmithData?.drafter_id || (fabData as any)?.slabsmith_data?.drafter_id;
+    if (!isSuperAdmin && currentEmployeeId !== assignedSlabSmithId) {
+      toast.error('You are not authorized to place this SlabSmith job on hold. Only the assigned SlabSmith or super admin can perform this action.');
+      return;
+    }
+
     try {
       await toggleFabOnHold({ fab_id: fabId, on_hold: true }).unwrap();
       if (data?.note) {
@@ -239,9 +268,16 @@ export function SlabSmithDetailsPage() {
       console.error('Failed to hold:', error);
       // toast.error('Failed to place on hold');
     }
-  }, [fabId, toggleFabOnHold, createFabNote, manageSlabSmithSession, refetchSSSession]);
+  }, [fabId, currentEmployeeId, isSuperAdmin, toggleFabOnHold, createFabNote, manageSlabSmithSession, refetchSSSession, slabSmithData?.drafter_id, (fabData as any)?.slabsmith_data?.drafter_id]);
 
   const handleEnd = useCallback(async (endDate: Date) => {
+    // Authorization check: must be drafter_id (slab_smith) or super admin
+    const assignedSlabSmithId = slabSmithData?.drafter_id || (fabData as any)?.slabsmith_data?.drafter_id;
+    if (!isSuperAdmin && currentEmployeeId !== assignedSlabSmithId) {
+      toast.error('You are not authorized to end this SlabSmith session. Only the assigned SlabSmith or super admin can perform this action.');
+      return;
+    }
+
     try {
       await manageSlabSmithSession({
         fab_id: fabId,
@@ -260,7 +296,7 @@ export function SlabSmithDetailsPage() {
       console.error('Failed to end:', error);
       // toast.error('Failed to end session');
     }
-  }, [fabId, manageSlabSmithSession, refetchSSSession]);
+  }, [fabId, currentEmployeeId, isSuperAdmin, manageSlabSmithSession, refetchSSSession, slabSmithData?.drafter_id, (fabData as any)?.slabsmith_data?.drafter_id]);
 
   const handleDeleteFile = async (fileId: number) => {
     if (!slabSmithData?.id) {
@@ -285,8 +321,8 @@ export function SlabSmithDetailsPage() {
     }
   }, [refetchFab, refetchDrafting, refetchSlabSmith, refetchSSSession]);
 
-  const shouldShowUploadSection = (isDrafting && !isPaused) || (fabData?.slabsmith_data?.files?.length > 0);
-  const canOpenSubmit = fabData?.slabsmith_data?.files?.length > 0 && !isPaused && isDrafting;
+  const shouldShowUploadSection = (isDrafting && !isPaused) || ((fabData as any)?.slabsmith_data?.files?.length > 0);
+  const canOpenSubmit = (fabData as any)?.slabsmith_data?.files?.length > 0 && !isPaused && isDrafting;
 
   const handleOpenSubmissionModal = async () => {
     setShowSubmissionModal(true);
@@ -337,7 +373,7 @@ export function SlabSmithDetailsPage() {
               ? new Date(fabData.templating_schedule_start_date).toLocaleDateString()
               : 'Not scheduled',
           },
-          { label: "Drafter Assigned", value: fabData.slabsmith_data?.drafter_name || 'Unassigned' },
+          { label: "Drafter Assigned", value: (fabData as any)?.slabsmith_data?.drafter_name || 'Unassigned' },
           { label: "Sales Person", value: fabData.sales_person_name || '—' },
           { label: "SlabSmith Needed", value: fabData.slab_smith_ag_needed ? 'Yes' : 'No' },
         ],
@@ -529,7 +565,7 @@ export function SlabSmithDetailsPage() {
                     {shouldShowUploadSection ? (
                       <Documents
                         onFileClick={handleFileClick}
-                        slabsmithData={fabData?.slabsmith_data}
+                        slabsmithData={(fabData as any)?.slabsmith_data}
                         draftingId={slabSmithData?.id}
                         showDeleteButton={!hasEnded && !isPaused}
                       />
