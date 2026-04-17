@@ -240,15 +240,15 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
       </CardHeader>
 
       {isExpanded && (
-        <CardContent className="pt-5 space-y-5 grid grid-cols-4 gap-4">
-          {/* FAB ID */}
-          <div className="col-span-1">
-            <Label className="text-[13px] text-[#4b545d]">FAB ID *</Label>
-            {idx === 0 ? (
+        <CardContent className="pt-5 space-y-5">
+          {/* FAB ID - Only show when no preselected FAB */}
+          {!effectivePrefillFabId && (
+            <div>
+              <Label className="text-[13px] text-[#4b545d]">FAB ID *</Label>
               <Select
                 value={entry.fab_id}
                 onValueChange={value => onUpdate({ fab_id: value })}
-                disabled={isLoadingFabs || (!!effectivePrefillFabId && !isEditing)}
+                disabled={isLoadingFabs}
               >
                 <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
                   <SelectValue placeholder={isLoadingFabs ? 'Loading FABs…' : 'Select FAB ID'} />
@@ -259,204 +259,207 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
                   ))}
                 </SelectContent>
               </Select>
-            ) : (
-              <Input
-                type="text"
-                value={entry.fab_id}
-                disabled
-                className="mt-2 h-[42px] bg-[#f9f9f9] border-[#e2e4ed] rounded-[6px] text-[13px]"
-              />
-            )}
-          </div>
+            </div>
+          )}
 
-          {/* Start Date */}
-          <div>
-            <Label className="text-[13px] text-[#4b545d]">Start Date *</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className={cn(
-                    'mt-2 w-full h-[42px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[13px] flex items-center gap-2',
-                    !entry.start_date && 'text-muted-foreground'
-                  )}
-                >
-                  <Calendar className="h-4 w-4 text-[#7a9705]" />
-                  {entry.start_date ? format(entry.start_date, 'PPP') : <span>Pick start date</span>}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={entry.start_date}
-                  onSelect={date => date && handleStartDateTimeChange(date, entry.start_time)}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* Start Time */}
-          <div>
-            <Label className="text-[13px] text-[#4b545d]">Start Time</Label>
-            <Select
-              value={entry.start_time}
-              onValueChange={value => handleStartDateTimeChange(entry.start_date, value)}
-            >
-              <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
-                <SelectValue placeholder="Select start" />
-              </SelectTrigger>
-              <SelectContent className="max-h-60">
-                {TIME_SLOTS.map(slot => (
-                  <SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Estimated Hours */}
-          <div>
-            <Label className="text-[13px] text-[#4b545d]">Est. Hours</Label>
-            <Input
-              type="number"
-              step="0.25"
-              min="0"
-              placeholder="Auto from end"
-              value={entry.estimated_hours}
-              onChange={e => updateFromEstimatedHours(e.target.value)}
-              className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]"
-            />
-          </div>
-
-          {/* End Date */}
-          <div>
-            <Label className="text-[13px] text-[#4b545d]">End Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <button
-                  type="button"
-                  className={cn(
-                    'mt-2 w-full h-[42px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[13px] flex items-center gap-2',
-                    !entry.end_date && 'text-muted-foreground'
-                  )}
-                >
-                  <Calendar className="h-4 w-4 text-[#7a9705]" />
-                  {entry.end_date ? format(entry.end_date, 'PPP') : <span>Pick end date</span>}
-                </button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <CalendarComponent
-                  mode="single"
-                  selected={entry.end_date}
-                  onSelect={date => date && updateFromEndDateTime(date, entry.end_time)}
-                  initialFocus
-                  disabled={date => entry.start_date ? date < entry.start_date : false}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          {/* End Time */}
-          <div>
-            <Label className="text-[13px] text-[#4b545d]">End Time</Label>
-            <Select
-              value={entry.end_time}
-              onValueChange={value => updateFromEndDateTime(entry.end_date, value)}
-            >
-              <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
-                <SelectValue placeholder="Select end" />
-              </SelectTrigger>
-              <SelectContent className="max-h-60">
-                {TIME_SLOTS.map(slot => (
-                  <SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Planning Section */}
-          <div>
-            <Label className="text-[13px] text-[#4b545d]">Shop Activity</Label>
-            <Select
-              value={entry.planning_section_id || undefined}
-              onValueChange={value => onUpdate({ planning_section_id: value, workstation_id: '', operator_id: '' })}
-              disabled={disableShopActivity}
-            >
-              <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
-                <SelectValue placeholder="Select section" />
-              </SelectTrigger>
-              <SelectContent>
-                {planningSections.map((ps: any) => (
-                  <SelectItem key={ps.id} value={String(ps.id)}>
-                    {ps.name || ps.plan_name || ps.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Workstation */}
-          <div>
-            <Label className="text-[13px] text-[#4b545d]">Workstation *</Label>
-            <Select
-              key={workstationReady ? 'ready' : 'loading'}
-              value={workstationReady ? (entry.workstation_id || undefined) : undefined}
-              onValueChange={value => onUpdate({ workstation_id: value, operator_id: '' })}
-              disabled={!entry.planning_section_id || isLoadingWorkstations}
-            >
-              <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
-                <SelectValue
-                  placeholder={
-                    isLoadingWorkstations ? 'Loading workstations…' :
-                      !entry.planning_section_id ? 'Select a section first' :
-                        workstationsForSection.length === 0 ? 'No workstations for this section' :
-                          'Select workstation'
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {workstationsForSection.map((ws: any) => (
-                  <SelectItem key={ws.id} value={String(ws.id)}>{ws.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Operator */}
-          <div>
-            <Label className="text-[13px] text-[#4b545d]">Operator *</Label>
-            <Select
-              value={entry.operator_id || undefined}
-              onValueChange={value => onUpdate({ operator_id: value })}
-              disabled={!entry.workstation_id}
-            >
-              <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
-                <SelectValue
-                  placeholder={
-                    !entry.workstation_id ? 'Select a workstation first' :
-                      filteredEmployees.length === 0 ? 'No operators assigned to this workstation' :
-                        'Select operator'
-                  }
-                />
-              </SelectTrigger>
-              <SelectContent>
-                {filteredEmployees.length === 0 ? (
-                  <div className="px-3 py-2 text-sm text-muted-foreground">
-                    No operators assigned to this workstation
-                  </div>
-                ) : (
-                  filteredEmployees.map((emp: any) => (
-                    <SelectItem key={emp.id} value={String(emp.id)}>
-                      {`${emp.first_name || emp.name || ''} ${emp.last_name || ''}`.trim() || emp.email}
+          {/* Row 1: Planning Section + Est. Hours + Workstation */}
+          <div className="grid grid-cols-3 gap-4">
+            {/* Planning Section */}
+            <div>
+              <Label className="text-[13px] text-[#4b545d]">Shop Activity</Label>
+              <Select
+                value={entry.planning_section_id || undefined}
+                onValueChange={value => onUpdate({ planning_section_id: value, workstation_id: '', operator_id: '' })}
+                disabled={disableShopActivity}
+              >
+                <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                  <SelectValue placeholder="Select section" />
+                </SelectTrigger>
+                <SelectContent>
+                  {planningSections.map((ps: any) => (
+                    <SelectItem key={ps.id} value={String(ps.id)}>
+                      {ps.name || ps.plan_name || ps.title}
                     </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Estimated Hours */}
+            <div className='hidden'>
+              <Label className="text-[13px] text-[#4b545d]">Est. Hours</Label>
+              <Input
+                type="number"
+                step="0.25"
+                min="0"
+                placeholder="Auto from end"
+                value={entry.estimated_hours}
+                onChange={e => updateFromEstimatedHours(e.target.value)}
+                className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]"
+              />
+            </div>
+
+            {/* Workstation */}
+            <div>
+              <Label className="text-[13px] text-[#4b545d]">Workstation *</Label>
+              <Select
+                key={workstationReady ? 'ready' : 'loading'}
+                value={workstationReady ? (entry.workstation_id || undefined) : undefined}
+                onValueChange={value => onUpdate({ workstation_id: value, operator_id: '' })}
+                disabled={!entry.planning_section_id || isLoadingWorkstations}
+              >
+                <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                  <SelectValue
+                    placeholder={
+                      isLoadingWorkstations ? 'Loading workstations…' :
+                        !entry.planning_section_id ? 'Select a section first' :
+                          workstationsForSection.length === 0 ? 'No workstations for this section' :
+                            'Select workstation'
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {workstationsForSection.map((ws: any) => (
+                    <SelectItem key={ws.id} value={String(ws.id)}>{ws.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+             <div>
+              <Label className="text-[13px] text-[#4b545d]">Operator *</Label>
+              <Select
+                value={entry.operator_id || undefined}
+                onValueChange={value => onUpdate({ operator_id: value })}
+                disabled={!entry.workstation_id}
+              >
+                <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                  <SelectValue
+                    placeholder={
+                      !entry.workstation_id ? 'Select a workstation first' :
+                        filteredEmployees.length === 0 ? 'No operators assigned to this workstation' :
+                          'Select operator'
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredEmployees.length === 0 ? (
+                    <div className="px-3 py-2 text-sm text-muted-foreground">
+                      No operators assigned to this workstation
+                    </div>
+                  ) : (
+                    filteredEmployees.map((emp: any) => (
+                      <SelectItem key={emp.id} value={String(emp.id)}>
+                        {`${emp.first_name || emp.name || ''} ${emp.last_name || ''}`.trim() || emp.email}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Row 2: Operator + Start Date + End Date */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Operator */}
+           
+
+            {/* Start Date */}
+            <div>
+              <Label className="text-[13px] text-[#4b545d]">Start Date *</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'mt-2 w-full h-[42px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[13px] flex items-center gap-2',
+                      !entry.start_date && 'text-muted-foreground'
+                    )}
+                  >
+                    <Calendar className="h-4 w-4 text-[#7a9705]" />
+                    {entry.start_date ? format(entry.start_date, 'PPP') : <span>Pick start date</span>}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={entry.start_date}
+                    onSelect={date => date && handleStartDateTimeChange(date, entry.start_time)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* End Date */}
+            <div>
+              <Label className="text-[13px] text-[#4b545d]">End Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    type="button"
+                    className={cn(
+                      'mt-2 w-full h-[42px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[13px] flex items-center gap-2',
+                      !entry.end_date && 'text-muted-foreground'
+                    )}
+                  >
+                    <Calendar className="h-4 w-4 text-[#7a9705]" />
+                    {entry.end_date ? format(entry.end_date, 'PPP') : <span>Pick end date</span>}
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={entry.end_date}
+                    onSelect={date => date && updateFromEndDateTime(date, entry.end_time)}
+                    initialFocus
+                    disabled={date => entry.start_date ? date < entry.start_date : false}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
+          {/* Row 3: Start Time + End Time */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Start Time */}
+            <div>
+              <Label className="text-[13px] text-[#4b545d]">Start Time</Label>
+              <Select
+                value={entry.start_time}
+                onValueChange={value => handleStartDateTimeChange(entry.start_date, value)}
+              >
+                <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                  <SelectValue placeholder="Select start" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {TIME_SLOTS.map(slot => (
+                    <SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* End Time */}
+            <div>
+              <Label className="text-[13px] text-[#4b545d]">End Time</Label>
+              <Select
+                value={entry.end_time}
+                onValueChange={value => updateFromEndDateTime(entry.end_date, value)}
+              >
+                <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
+                  <SelectValue placeholder="Select end" />
+                </SelectTrigger>
+                <SelectContent className="max-h-60">
+                  {TIME_SLOTS.map(slot => (
+                    <SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Notes – full width */}
-          <div className="col-span-4">
+          <div>
             <Label className="text-[13px] text-[#4b545d]">Description / Notes</Label>
             <Textarea
               placeholder="Add any notes about this plan..."
@@ -648,7 +651,18 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
 
     const ev = effectiveEvent;
     const startDate = ev.scheduled_start_date ? new Date(ev.scheduled_start_date) : undefined;
-    const endDate = ev.scheduled_end_date ? new Date(ev.scheduled_end_date) : undefined;
+    
+    // Derive end date: use scheduled_end_date if available, otherwise calculate from start + estimated_hours
+    let endDate: Date | undefined = undefined;
+    if (ev.scheduled_end_date) {
+      endDate = new Date(ev.scheduled_end_date);
+    } else if (startDate && ev.estimated_hours) {
+      // Calculate end date from start date + estimated hours
+      endDate = new Date(startDate.getTime() + ev.estimated_hours * 3_600_000);
+    } else if (startDate) {
+      // Fallback to start date
+      endDate = startDate;
+    }
 
     let planningSectionId = ev.planning_section_id != null ? String(ev.planning_section_id) : '';
     if (!planningSectionId) {

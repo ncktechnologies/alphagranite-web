@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -289,12 +290,30 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
         return '';
     };
 
+    const deriveEndDate = () => {
+        if (plan.scheduled_end_date) {
+            return parseDateString(plan.scheduled_end_date.split('T')[0]);
+        }
+        // If no end date but we have start date and estimated hours, calculate end date
+        if (plan.estimated_hours && plan.scheduled_start_date) {
+            try {
+                const startDate = new Date(plan.scheduled_start_date);
+                const endDate = new Date(startDate.getTime() + plan.estimated_hours * 3_600_000);
+                return parseDateString(format(endDate, 'yyyy-MM-dd'));
+            } catch { return undefined; }
+        }
+        // Fallback to start date
+        return parseDateString(plan.scheduled_start_date?.split('T')[0]);
+    };
+
     const buildDraft = () => ({
         workstation_id: String(plan.workstation_id ?? ''),
         operator_id: String(plan.operator_id ?? ''),
         start_date: parseDateString(plan.scheduled_start_date?.split('T')[0]),
         start_time: parseTimeFromISO(plan.scheduled_start_date),
+        end_date: deriveEndDate(),
         end_time: deriveEndTime(),
+        estimated_hours: plan.estimated_hours ? String(plan.estimated_hours) : '',
         notes: plan.notes ?? '',
         sequence: plan.sequence ?? 1,
     });
@@ -319,15 +338,18 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
     const handleSave = async () => {
         setIsSaving(true);
         try {
-            const dateStr = draft.start_date ? formatDate(draft.start_date) : '';
-            const scheduledStart = dateStr && draft.start_time ? `${dateStr}T${draft.start_time}:00` : undefined;
-            const scheduledEnd = dateStr && draft.end_time ? `${dateStr}T${draft.end_time}:00` : undefined;
+            const startDateStr = draft.start_date ? formatDate(draft.start_date) : '';
+            const endDateStr = draft.end_date ? formatDate(draft.end_date) : startDateStr; // fallback to start date
+            const scheduledStart = startDateStr && draft.start_time ? `${startDateStr}T${draft.start_time}:00` : undefined;
+            const scheduledEnd = endDateStr && draft.end_time ? `${endDateStr}T${draft.end_time}:00` : undefined;
 
+            // Use manual estimated_hours if provided, otherwise calculate from times
+            const manualHours = draft.estimated_hours ? parseFloat(draft.estimated_hours) : null;
             const diffMs = scheduledStart && scheduledEnd
                 ? new Date(scheduledEnd).getTime() - new Date(scheduledStart).getTime() : 0;
-            const estimatedHours = diffMs > 0
-                ? Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100
-                : plan.estimated_hours;
+            const estimatedHours = manualHours && manualHours > 0
+                ? manualHours
+                : (diffMs > 0 ? Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100 : plan.estimated_hours);
 
             await updateShopPlan({
                 plan_id: Number(plan.id),
@@ -497,6 +519,16 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                             />
                         </div>
 
+                        {/* End Date */}
+                        <div className="flex flex-col gap-1.5">
+                            <Label className="text-xs text-muted-foreground uppercase tracking-wide">End Date</Label>
+                            <DateTimePicker
+                                mode="date"
+                                value={draft.end_date}
+                                onChange={date => patch({ end_date: date })}
+                            />
+                        </div>
+
                         {/* Start / End Time */}
                         <div className="grid grid-cols-2 gap-3">
                             <div className="flex flex-col gap-1.5">
@@ -527,6 +559,20 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                                     </SelectContent>
                                 </Select>
                             </div>
+                        </div>
+
+                        {/* Estimated Hours */}
+                        <div className="flex flex-col gap-1.5">
+                            <Label className="text-xs text-muted-foreground uppercase tracking-wide">Est. Hours</Label>
+                            <Input
+                                type="number"
+                                step="0.25"
+                                min="0"
+                                placeholder="Auto-calculated from times"
+                                value={draft.estimated_hours}
+                                onChange={e => patch({ estimated_hours: e.target.value })}
+                                className="h-[38px] border-[#e2e4ed] text-sm"
+                            />
                         </div>
 
                         {/* Notes */}
@@ -759,7 +805,7 @@ const FabDetailsPage: React.FC = () => {
         { label: 'No. of Pieces', value: String(fab.no_of_pieces || 0) },
         { label: 'Total Sq Ft', value: fab.total_sqft ? `${Number(fab.total_sqft).toFixed(1)} SF` : 'N/A' },
         { label: 'Sales Person', value: fab.sales_person_name || 'N/A' },
-        { label: 'Current Stage', value: fab.shop_current_stage ? `${fab.current_stage || 'N/A'} (${fab.shop_current_stage})` : fab.current_stage || 'N/A' },
+        { label: 'Current Stage', value: fab.shop_current_stage ? `${(fab.current_stage || 'N/A').toUpperCase()} (${fab.shop_current_stage.toUpperCase()})` : (fab.current_stage || 'N/A').toUpperCase() },
         { label: '% Complete', value: `${(fab.percent_complete || 0).toFixed(1)}%` },
     ];
 
