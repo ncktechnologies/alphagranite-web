@@ -211,7 +211,7 @@ export function FinalProgrammingDetailsPage() {
       toast.success('Session resumed');
     } catch (error) {
       console.error('Failed to resume:', error);
-      toast.error('Failed to resume');
+      // toast.error('Failed to resume');
     }
   }, [fabData, fabId, currentEmployeeId, isSuperAdmin, manageFinalProgrammingSession, refetchFPSession]);
 
@@ -255,7 +255,7 @@ export function FinalProgrammingDetailsPage() {
       toast.success('Job placed on hold');
     } catch (error) {
       console.error('Failed to place on hold:', error);
-      toast.error('Failed to place on hold');
+      // toast.error('Failed to place on hold');
     }
   }, [fabId, toggleFabOnHold, createFabNote, manageFinalProgrammingSession, refetchFPSession, refetchFab]);
 

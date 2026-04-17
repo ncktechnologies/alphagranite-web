@@ -400,7 +400,7 @@ export function RevisionDetailsPage() {
       await refetchSession();
     } catch (error) {
       console.error('Failed to handle on hold:', error);
-      toast.error('Failed to update hold status');
+      // toast.error('Failed to update hold status');
     }
   };
 

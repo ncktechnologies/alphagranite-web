@@ -135,7 +135,7 @@ export const useSCTService = ({ fabId, skip = false }: SCTHookProps) => {
       toast.success("Revision request sent successfully");
       return result;
     } catch (error) {
-      toast.error("Failed to send revision request");
+      // toast.error("Failed to send revision request");
       throw error;
     }
   }, [updateSCTRevision]);

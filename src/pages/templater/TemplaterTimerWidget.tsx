@@ -96,7 +96,7 @@ export function TemplaterTimerWidget() {
             toast.success('Timer resumed');
             refetch();
         } catch (error: any) {
-            toast.error(error?.data?.message || 'Failed to resume timer');
+            // toast.error(error?.data?.message || 'Failed to resume timer');
         }
     };
 

@@ -160,7 +160,7 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
       onClose();
     } catch (error) {
       console.error('Error assigning CNC operator:', error);
-      toast.error(isReassign ? 'Failed to reassign CNC operator' : 'Failed to assign CNC operator');
+      // toast.error(isReassign ? 'Failed to reassign CNC operator' : 'Failed to assign CNC operator');
     } finally {
       setIsSubmitting(false);
     }

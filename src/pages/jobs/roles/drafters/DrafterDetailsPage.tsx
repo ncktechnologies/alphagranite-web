@@ -403,7 +403,7 @@ export function DrafterDetailsPage() {
       navigate('/job/draft');
     } catch (err) {
       console.error(err);
-      toast.error('Failed to finalize submission flow');
+      // toast.error('Failed to finalize submission flow');
     }
   };
 

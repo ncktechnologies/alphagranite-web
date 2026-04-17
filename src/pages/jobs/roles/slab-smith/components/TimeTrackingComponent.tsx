@@ -182,7 +182,7 @@ export const TimeTrackingComponent = ({
       setShowPauseModal(false);
     } catch (error) {
       console.error('Failed to pause:', error);
-      toast.error('Failed to pause slabsmith session');
+      // toast.error('Failed to pause slabsmith session');
     }
   };
 
@@ -212,7 +212,7 @@ export const TimeTrackingComponent = ({
       setShowResumeModal(false);
     } catch (error) {
       console.error('Failed to resume:', error);
-      toast.error('Failed to resume slabsmith session');
+      // toast.error('Failed to resume slabsmith session');
     }
   };
 
@@ -251,7 +251,7 @@ export const TimeTrackingComponent = ({
       setShowOnHoldModal(false);
     } catch (error) {
       console.error('Failed to put on hold:', error);
-      toast.error('Failed to put slabsmith session on hold');
+      // toast.error('Failed to put slabsmith session on hold');
     }
   };
 

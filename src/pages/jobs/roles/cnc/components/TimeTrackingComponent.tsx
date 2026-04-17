@@ -222,7 +222,7 @@ export const TimeTrackingComponent = ({
       setShowResumeModal(false);
     } catch (error) {
       console.error('Failed to resume:', error);
-      toast.error('Failed to resume CNC session');
+      // toast.error('Failed to resume CNC session');
     }
   };
 
@@ -261,7 +261,7 @@ export const TimeTrackingComponent = ({
       setShowOnHoldModal(false);
     } catch (error) {
       console.error('Failed to put on hold:', error);
-      toast.error('Failed to put CNC session on hold');
+      // toast.error('Failed to put CNC session on hold');
     }
   };
 

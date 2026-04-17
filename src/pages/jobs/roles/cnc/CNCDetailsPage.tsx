@@ -269,7 +269,7 @@ export function CNCDetailsPage() {
             toast.success(`Session ${actionPastTense[action]} successfully`);
         } catch (error) {
             console.error(`Failed to ${action} session:`, error);
-            toast.error(`Failed to ${action} session`);
+            // toast.error(`Failed to ${action} session`);
             throw error;
         }
     };
@@ -315,7 +315,7 @@ export function CNCDetailsPage() {
             await refetchSession();
         } catch (error) {
             console.error('Failed to resume session:', error);
-            toast.error('Failed to resume CNC session');
+            // toast.error('Failed to resume CNC session');
         }
     };
 
@@ -347,7 +347,7 @@ export function CNCDetailsPage() {
             await refetchSession();
         } catch (error) {
             console.error('Failed to handle on hold:', error);
-            toast.error('Failed to update hold status');
+            // toast.error('Failed to update hold status');
         }
     };
 
@@ -410,7 +410,7 @@ export function CNCDetailsPage() {
             navigate('/job/draft');
         } catch (err) {
             console.error(err);
-            toast.error('Failed to finalize submission flow');
+            // toast.error('Failed to finalize submission flow');
         }
     };
 

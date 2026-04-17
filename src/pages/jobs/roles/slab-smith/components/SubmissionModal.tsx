@@ -81,7 +81,7 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
         toast.success("SlabSmith entry created successfully");
       } catch (createError) {
         console.error('Failed to create slab smith:', createError);
-        toast.error('Failed to create slab smith entry');
+        // toast.error('Failed to create slab smith entry');
         return;
       }
     }

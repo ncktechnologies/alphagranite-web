@@ -45,7 +45,7 @@ export const MoveStageModal = ({ open, onClose, fabId }: MoveStageModalProps) =>
             onClose();
         } catch (error) {
             console.error('Failed to update stage:', error);
-            toast.error('Failed to update stage');
+            // toast.error('Failed to update stage');
         }
     };
 

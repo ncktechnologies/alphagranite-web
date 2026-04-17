@@ -110,7 +110,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                 }
             } catch (error) {
                 console.error("Failed to mark template as received:", error);
-                toast.error("Failed to mark template as received");
+                // toast.error("Failed to mark template as received");
                 form.setValue('templatereceived', false);
             }
         }

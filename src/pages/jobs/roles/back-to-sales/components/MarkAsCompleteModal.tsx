@@ -111,7 +111,7 @@ export const MarkAsCompleteModal = ({
       onClose();
     } catch (error: any) {
       console.error("Failed to submit:", error);
-      toast.error("Failed to submit data");
+      // toast.error("Failed to submit data");
     } finally {
       setIsSubmitting(false);
     }

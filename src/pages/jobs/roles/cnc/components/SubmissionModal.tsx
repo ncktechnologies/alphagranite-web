@@ -138,7 +138,7 @@ export const SubmissionModal = ({
       return sessionResponse;
     } catch (error: any) {
       console.error('Failed to end CNC session:', error);
-      toast.error(error?.data?.message || 'Failed to end CNC session');
+      // toast.error(error?.data?.message || 'Failed to end CNC session');
       return null;
     }
   };
@@ -198,7 +198,7 @@ export const SubmissionModal = ({
       navigate('/job/cnc');
     } catch (err: any) {
       console.error('Failed to submit CNC:', err);
-      toast.error(err?.data?.message || 'Failed to submit CNC');
+      // toast.error(err?.data?.message || 'Failed to submit CNC');
       onClose(false);
     } finally {
       setIsSubmitting(false);

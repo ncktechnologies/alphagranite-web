@@ -798,7 +798,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       toast.success('Earliest slots applied — pick an alternative below each stage if needed');
     } catch (error: any) {
       console.error(error);
-      toast.error(error?.data?.message || 'Failed to get suggestions');
+      // toast.error(error?.data?.message || 'Failed to get suggestions');
     }
   };
 

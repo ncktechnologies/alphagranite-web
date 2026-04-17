@@ -33,7 +33,7 @@ export const StationHeader = ({ role, onEdit, onStatusChange }: StationHeaderPro
       onStatusChange?.(); // refresh list
     } catch (error) {
       console.error('Failed to toggle workstation status:', error);
-      toast.error(`Failed to ${action} workstation`);
+      // toast.error(`Failed to ${action} workstation`);
     }
   };
 

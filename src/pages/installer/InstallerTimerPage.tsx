@@ -116,7 +116,7 @@ export function InstallerTimerPage() {
             toast.success('Timer resumed');
             refetch();
         } catch (error: any) {
-            toast.error(error?.data?.message || 'Failed to resume timer');
+            // toast.error(error?.data?.message || 'Failed to resume timer');
         }
     };
 

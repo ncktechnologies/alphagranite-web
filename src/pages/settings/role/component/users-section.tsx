@@ -111,7 +111,7 @@ const UsersSection = ({ role }: UsersSectionProps) => {
       setAssignDialogOpen(false);
     } catch (error: unknown) {
       const message = (error as { data?: { message?: string } })?.data?.message || 'Failed to assign users';
-      toast.error(message);
+      // toast.error(message);
     }
   };
 

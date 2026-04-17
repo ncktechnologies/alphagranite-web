@@ -209,7 +209,7 @@ export function SlabSmithDetailsPage() {
       toast.success('Session resumed');
     } catch (error) {
       console.error('Failed to resume:', error);
-      toast.error('Failed to resume');
+      // toast.error('Failed to resume');
     }
   }, [fabId, manageSlabSmithSession, refetchSSSession]);
 
@@ -237,7 +237,7 @@ export function SlabSmithDetailsPage() {
       toast.success('Job placed on hold');
     } catch (error) {
       console.error('Failed to hold:', error);
-      toast.error('Failed to place on hold');
+      // toast.error('Failed to place on hold');
     }
   }, [fabId, toggleFabOnHold, createFabNote, manageSlabSmithSession, refetchSSSession]);
 
@@ -258,7 +258,7 @@ export function SlabSmithDetailsPage() {
       toast.success('Session ended');
     } catch (error) {
       console.error('Failed to end:', error);
-      toast.error('Failed to end session');
+      // toast.error('Failed to end session');
     }
   }, [fabId, manageSlabSmithSession, refetchSSSession]);
 
@@ -273,7 +273,7 @@ export function SlabSmithDetailsPage() {
       refetchFab();
     } catch (error) {
       console.error('Failed to delete file:', error);
-      toast.error('Failed to delete file');
+      // toast.error('Failed to delete file');
     }
   };
 
