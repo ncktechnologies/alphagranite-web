@@ -89,7 +89,7 @@ export function OperatorDashboard() {
         if (viewMode === 'day') return [currentDate];
         if (viewMode === 'week') {
             const ws = startOfWeek(currentDate, { weekStartsOn: 1 });
-            return Array.from({ length: 5 }, (_, i) => addDays(ws, i));
+            return Array.from({ length: 7}, (_, i) => addDays(ws, i));
         }
         return eachDayOfInterval({ start: startOfMonth(currentDate), end: endOfMonth(currentDate) });
     }, [currentDate, viewMode]);
@@ -111,7 +111,7 @@ export function OperatorDashboard() {
         }
         if (viewMode === 'week') {
             const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-            const weekEnd = addDays(weekStart, 4); // 5 days (Mon‑Fri)
+            const weekEnd = addDays(weekStart, 4); // 7 days (Mon-Sun)
             const today = new Date();
             return today >= weekStart && today <= weekEnd;
         }

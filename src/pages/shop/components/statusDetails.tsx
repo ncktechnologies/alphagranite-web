@@ -49,7 +49,7 @@ const TIME_SLOTS = (() => {
     for (let h = 6; h <= 22; h++) {
         // Skip 12 PM (noon) - jump from 11 AM to 1 PM
         if (h === 12) continue;
-        
+
         for (const m of [0, 15, 30, 45]) {
             if (h === 22 && m > 0) break;
             const hh = String(h).padStart(2, '0');
@@ -91,7 +91,7 @@ const formatDate = (d: Date | undefined): string => {
 // Helper to parse date string for display (handles timezone correctly)
 const parseDateForDisplay = (s: string | undefined): Date | undefined => {
     if (!s || typeof s !== 'string' || s.trim() === '') return undefined;
-    
+
     try {
         // If it's in YYYY-MM-DD format, parse as local date to avoid UTC shift
         const parts = s.split('-');
@@ -99,14 +99,14 @@ const parseDateForDisplay = (s: string | undefined): Date | undefined => {
             const year = parseInt(parts[0], 10);
             const month = parseInt(parts[1], 10);
             const day = parseInt(parts[2], 10);
-            
+
             // Validate the parsed values
             if (isNaN(year) || isNaN(month) || isNaN(day)) return undefined;
             if (month < 1 || month > 12 || day < 1 || day > 31) return undefined;
-            
+
             return new Date(year, month - 1, day);
         }
-        
+
         // If it has time component (ISO string), extract just the date part
         if (s.includes('T')) {
             const datePart = s.split('T')[0];
@@ -115,14 +115,14 @@ const parseDateForDisplay = (s: string | undefined): Date | undefined => {
                 const year = parseInt(dateParts[0], 10);
                 const month = parseInt(dateParts[1], 10);
                 const day = parseInt(dateParts[2], 10);
-                
+
                 if (isNaN(year) || isNaN(month) || isNaN(day)) return undefined;
                 if (month < 1 || month > 12 || day < 1 || day > 31) return undefined;
-                
+
                 return new Date(year, month - 1, day);
             }
         }
-        
+
         // Fallback: try parsing normally
         const d = new Date(s);
         return isNaN(d.getTime()) ? undefined : d;
@@ -215,7 +215,7 @@ const ShopEstDateField: React.FC<{ value: string | undefined; fabId: number; onS
         return (
             <div className="space-y-2">
                 <p className="text-xs text-muted-foreground uppercase tracking-wide font-normal">Shop Est. Completion</p>
-                <DateTimePicker mode="date" value={editedDate} onChange={d => setEditedDate(d)}  />
+                <DateTimePicker mode="date" value={editedDate} onChange={d => setEditedDate(d)} />
                 <div className="flex gap-2">
                     <Button size="sm" className="flex-1 h-8 text-xs" onClick={handleSave} disabled={isSaving}>
                         {isSaving ? <LoaderCircle className="h-3 w-3 animate-spin" /> : 'Save'}
@@ -309,6 +309,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
         return parseDateString(plan.scheduled_start_date?.split('T')[0]);
     };
 
+
     const buildDraft = () => ({
         workstation_id: String(plan.workstation_id ?? ''),
         operator_id: String(plan.operator_id ?? ''),
@@ -316,7 +317,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
         start_time: parseTimeFromISO(plan.scheduled_start_date),
         end_date: deriveEndDate(),
         end_time: deriveEndTime(),
-        estimated_hours: plan.estimated_hours ? String(plan.estimated_hours) : '',
+        // estimated_hours: plan.estimated_hours ? String(plan.estimated_hours) : '',
         notes: plan.notes ?? '',
         sequence: plan.sequence ?? 1,
     });
@@ -350,9 +351,13 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
             const manualHours = draft.estimated_hours ? parseFloat(draft.estimated_hours) : null;
             const diffMs = scheduledStart && scheduledEnd
                 ? new Date(scheduledEnd).getTime() - new Date(scheduledStart).getTime() : 0;
-            const estimatedHours = manualHours && manualHours > 0
-                ? manualHours
-                : (diffMs > 0 ? Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100 : plan.estimated_hours);
+           let estimatedHours = plan.estimated_hours;
+if (scheduledStart && scheduledEnd) {
+    const diffMs = new Date(scheduledEnd).getTime() - new Date(scheduledStart).getTime();
+    if (diffMs > 0) {
+        estimatedHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
+    }
+}
 
             await updateShopPlan({
                 plan_id: Number(plan.id),
@@ -518,7 +523,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                                 mode="date"
                                 value={draft.start_date}
                                 onChange={date => patch({ start_date: date })}
-                                // minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
+                            // minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
                             />
                         </div>
 
@@ -664,34 +669,43 @@ const FabDetailsPage: React.FC = () => {
         if (!fab) return [];
         const sources: FileSource[] = [];
 
-        const mapFiles = (files: any[], stage: string, uploadedBy?: string): UnifiedFile[] =>
+        // Helper to convert API file array into UnifiedFile[]
+        const toUnifiedFiles = (files: any[]): UnifiedFile[] =>
             (files ?? []).map((f): UnifiedFile => ({
                 id: String(f.id),
                 name: f.name || f.filename || `File_${f.id}`,
                 size: parseInt(f.file_size) || f.size || 0,
                 type: f.file_type || f.mime_type || 'application/octet-stream',
                 url: f.file_url || f.url || '',
-                stage,
-                uploadedBy,
+                stage_name: f.stage_name ?? f.stage,   // ← keep backend's stage_name
+                stage: f.stage_name ?? f.stage,
+                file_design: f.file_design,
+                uploaded_by_name: f.uploaded_by_name ?? f.uploader_name,
+                uploadedBy: f.uploaded_by_name ?? f.uploader_name,
                 uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
                 _raw: f,
             }));
 
-        // Add FAB files from different stages
-        const draftFiles = mapFiles(fab.draft_data?.files ?? [], 'Drafting', fab.draft_data?.drafter_name);
-        if (draftFiles.length > 0) sources.push({ kind: 'raw', data: draftFiles });
-
-        const slabFiles = mapFiles(fab.slabsmith_data?.files ?? [], 'SlabSmith');
-        if (slabFiles.length > 0) sources.push({ kind: 'raw', data: slabFiles });
-
-        const salesCtFiles = mapFiles(fab.sales_ct_data?.files ?? [], 'Sales CT');
-        if (salesCtFiles.length > 0) sources.push({ kind: 'raw', data: salesCtFiles });
-
-        const cncFiles = mapFiles(fab.cnc_data?.files ?? [], 'CNC');
-        if (cncFiles.length > 0) sources.push({ kind: 'raw', data: cncFiles });
-
-        const topFiles = mapFiles(fab.files ?? [], 'General');
-        if (topFiles.length > 0) sources.push({ kind: 'raw', data: topFiles });
+        // Drafting files (from draft_data.files)
+        if (fab.draft_data?.files?.length) {
+            sources.push({ kind: 'raw', data: toUnifiedFiles(fab.draft_data.files) });
+        }
+        // SlabSmith files
+        if (fab.slabsmith_data?.files?.length) {
+            sources.push({ kind: 'raw', data: toUnifiedFiles(fab.slabsmith_data.files) });
+        }
+        // Sales CT files
+        if (fab.sales_ct_data?.files?.length) {
+            sources.push({ kind: 'raw', data: toUnifiedFiles(fab.sales_ct_data.files) });
+        }
+        // CNC files (if you later add cnc_data)
+        if (fab.cnc_data?.files?.length) {
+            sources.push({ kind: 'raw', data: toUnifiedFiles(fab.cnc_data.files) });
+        }
+        // Top-level files
+        if (fab.files?.length) {
+            sources.push({ kind: 'raw', data: toUnifiedFiles(fab.files) });
+        }
 
         return sources;
     })();
@@ -791,6 +805,12 @@ const FabDetailsPage: React.FC = () => {
 
     const jobInfo = [
         { label: 'FAB ID', value: String(fab.id) },
+        {
+            label: 'FAB ID',
+            value: fab.id
+                ? <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">{fab.id}</Link>
+                : (fab.id || 'N/A'),
+        },
         { label: 'FAB Type', value: <span className="uppercase">{fab.fab_type || 'N/A'}</span> },
         { label: 'Account', value: fab.account_name || 'N/A' },
         { label: 'Job Name', value: fab.job_details?.name || 'N/A' },
@@ -823,7 +843,7 @@ const FabDetailsPage: React.FC = () => {
                                 title={
                                     <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
                                         <a href={jobNameLink} className="hover:underline"
-                                         target="_blank"
+                                            target="_blank"
                                             rel="noreferrer"
                                         >
                                             {fab?.job_details?.name || `Job ${fab?.job_id}`}

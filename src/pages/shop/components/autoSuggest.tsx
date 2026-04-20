@@ -26,7 +26,7 @@ import {
 } from '@/store/api';
 import { useGetPlanningSectionsQuery, useGetWorkStationByPlanningSectionsQuery } from '@/store/api/workstation';
 import { useGetEmployeesQuery } from '@/store/api/employee';
-import { useGetFabsQuery } from '@/store/api/job';
+import { useGetFabsQuery, useGetFabByIdQuery } from '@/store/api/job';
 import { usePlanSections } from '@/hooks/usePlanningSection';
 import { TIME_SLOTS } from './createPlanePage';
 import {
@@ -434,14 +434,14 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   }, [allFabsData, selectedFabId]);
 
   // ── NEW: Check if selected FAB already has plans ──────────────────────────
-  const { data: existingPlansData, isFetching: isCheckingPlans } = useGetAllShopPlansQuery(
-    { fab_id: Number(selectedFabId), limit: 1, view: 'day' },
+  const { data: existingPlansData, isFetching: isCheckingPlans } = useGetFabByIdQuery(
+   selectedFabId,
     { skip: !selectedFabId }
   );
 
   const hasExistingPlans = useMemo(() => {
     if (!existingPlansData) return false;
-    const total = existingPlansData?.data?.total ?? existingPlansData?.total ?? 0;
+    const total = existingPlansData?.plans.length ?? 0;
     return total > 0;
   }, [existingPlansData]);
 
@@ -733,7 +733,6 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       handleBack();
     } catch (error: any) {
       console.error(error);
-      toast.error(error?.data?.message || 'Failed to save plans');
     }
   };
 

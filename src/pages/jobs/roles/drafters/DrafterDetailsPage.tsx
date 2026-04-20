@@ -675,7 +675,7 @@ export function DrafterDetailsPage() {
                       <div className="space-y-3">
                         <div className="flex items-center justify-between">
                           <h3 className="font-semibold text-sm">Uploaded files</h3>
-                          <Can action="create" on="Drafting">
+                          {/* <Can action="create" on="Drafting"> */}
                             <Button
                               variant="dashed"
                               size="sm"
@@ -686,7 +686,7 @@ export function DrafterDetailsPage() {
                               <Plus className="w-3.5 h-3.5" />
                               Add Files
                             </Button>
-                          </Can>
+                          {/* </Can> */}
                         </div>
                         <Documents
                           onFileClick={handleFileClick}
@@ -707,7 +707,7 @@ export function DrafterDetailsPage() {
                   {viewMode === 'activity' && (
                     <div className="flex justify-end gap-2 pt-2">
                       <BackButton fallbackUrl="/job/draft" label="Cancel" />
-                      <Can action="create" on="Drafting">
+                      {/* <Can action="create" on="Drafting"> */}
                         <Button
                           onClick={handleOpenSubmissionModal}
                           className="bg-green-600 hover:bg-green-700"
@@ -715,7 +715,7 @@ export function DrafterDetailsPage() {
                         >
                           Submit Draft
                         </Button>
-                      </Can>
+                      {/* </Can> */}
                     </div>
                   )}
                 </CardContent>

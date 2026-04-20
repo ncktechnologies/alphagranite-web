@@ -197,7 +197,9 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
         const rows: ShopPlanRow[] = [];
         fabs.forEach((fab: any) => {
             const plans = fab.plans || [];
-            const cutPlans = plans.filter((plan: any) => plan.planning_section_id === 7);
+            const CUT_SECTION_NAME = 'Resurfacing';
+const cutPlans = plans.filter((plan: any) => plan.planning_section_name === CUT_SECTION_NAME);
+            // const cutPlans = plans.filter((plan: any) => plan.planning_section_id === 7);
 
             // Base row with fields from the main fab object
             const baseRow = {
@@ -410,7 +412,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
             header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} />,
             cell: ({ row }) => <span className="text-sm text-text whitespace-nowrap">{row.original.fab_type}</span>,
             enableSorting: true,
-            size: 100,
+            size: 130,
         },
         {
             id: 'fab_id',

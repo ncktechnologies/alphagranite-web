@@ -81,17 +81,22 @@ interface ShopTableProps {
     isLoading?: boolean;
 }
 
-const computeGroupTotals = (rows: ShopPlanRow[]) => {
-    return rows.reduce((acc, row) => ({
-        pieces: acc.pieces + row.pieces,
-        total_sq_ft: acc.total_sq_ft + row.total_sq_ft,
-        total_cut_ln_ft: acc.total_cut_ln_ft + row.total_cut_ln_ft,
-        wl_ln_ft: acc.wl_ln_ft + row.wl_ln_ft,
-        sl_ln_ft: acc.sl_ln_ft + row.sl_ln_ft,
-        edging_ln_ft: acc.edging_ln_ft + row.edging_ln_ft,
-        cnc_ln_ft: acc.cnc_ln_ft + row.cnc_ln_ft,
-        milter_ln_ft: acc.milter_ln_ft + row.milter_ln_ft,
-    }), {
+const computeOverallTotals = (rows: ShopPlanRow[]) => {
+    const seen = new Set<string>();
+    return rows.reduce((acc, row) => {
+        if (!seen.has(row.fab_id)) {
+            seen.add(row.fab_id);
+            acc.pieces += row.pieces;
+            acc.total_sq_ft += row.total_sq_ft;
+            acc.total_cut_ln_ft += row.total_cut_ln_ft;
+            acc.wl_ln_ft += row.wl_ln_ft;
+            acc.sl_ln_ft += row.sl_ln_ft;
+            acc.edging_ln_ft += row.edging_ln_ft;
+            acc.cnc_ln_ft += row.cnc_ln_ft;
+            acc.milter_ln_ft += row.milter_ln_ft;
+        }
+        return acc;
+    }, {
         pieces: 0, total_sq_ft: 0, total_cut_ln_ft: 0,
         wl_ln_ft: 0, sl_ln_ft: 0, edging_ln_ft: 0, cnc_ln_ft: 0, milter_ln_ft: 0,
     });
@@ -284,47 +289,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
         return planRows;
     }, [planRows]);
 
-    const groupedRows = useMemo(() => {
-        const groups: Record<string, { rows: ShopPlanRow[]; dateDisplay: string }> = {};
-        filteredRows.forEach(r => {
-            const key = r.date_group;
-            const display = (key !== 'unscheduled' && r.scheduled_start_date)
-                ? format(new Date(r.scheduled_start_date), 'EEEE, MMMM d, yyyy')
-                : 'Unscheduled';
-            if (!groups[key]) groups[key] = { rows: [], dateDisplay: display };
-            groups[key].rows.push(r);
-        });
-
-        // Sort: unscheduled always first, then dates ascending
-        const sorted: Record<string, { rows: ShopPlanRow[]; dateDisplay: string }> = {};
-        Object.keys(groups)
-            .sort((a, b) => {
-                if (a === 'unscheduled') return -1;
-                if (b === 'unscheduled') return 1;
-                return a.localeCompare(b); // ISO date strings sort correctly
-            })
-            .forEach(k => { sorted[k] = groups[k]; });
-        return sorted;
-    }, [filteredRows]);
-
-    const overallTotals = useMemo(() => {
-        const seen = new Set<string>();
-        let pieces = 0, sqft = 0, totalCut = 0, wl = 0, sl = 0, edging = 0, cnc = 0, milter = 0;
-        filteredRows.forEach(r => {
-            if (!seen.has(r.fab_id)) {
-                seen.add(r.fab_id);
-                pieces += r.pieces;
-                sqft += r.total_sq_ft;
-                totalCut += r.total_cut_ln_ft;
-                wl += r.wl_ln_ft;
-                sl += r.sl_ln_ft;
-                edging += r.edging_ln_ft;
-                cnc += r.cnc_ln_ft;
-                milter += r.milter_ln_ft;
-            }
-        });
-        return { pieces, sqft, totalCut, wl, sl, edging, cnc, milter };
-    }, [filteredRows]);
+    const overallTotals = useMemo(() => computeOverallTotals(filteredRows), [filteredRows]);
 
     const handleFabIdClick = (fabId: string) => navigate("/sales/" + fabId);
 
@@ -596,11 +561,9 @@ const ShopTable: React.FC<ShopTableProps> = () => {
         },
     ], []);
 
-    const flatData = useMemo(() => Object.values(groupedRows).flatMap(g => g.rows), [groupedRows]);
-
     const table = useReactTable({
         columns,
-        data: flatData,
+        data: filteredRows,
         pageCount: Math.ceil(totalRecords / pagination.pageSize),
         getRowId: row => `${row.fab_id}_${row.plan_id}`,
         state: { pagination, sorting, rowSelection },
@@ -663,11 +626,11 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                                 </div>
                             </div>
 
-                            <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                            {/* <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                                 <PopoverTrigger asChild>
                                     <Button
                                         variant="outline"
-                                        className={cn('w-[200px] h-[34px] justify-start text-left font-normal', !dateRange && 'text-muted-foreground')}
+                                        className={cn('w-[200px] h-[34px] justify-start text-center font-normal', !dateRange && 'text-muted-foreground')}
                                         disabled={isApiLoading}
                                     >
                                         <CalendarDays className="mr-2 h-4 w-4" />
@@ -692,7 +655,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                                         <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
                                     </div>
                                 </PopoverContent>
-                            </Popover>
+                            </Popover> */}
 
                             <Select value={fabTypeFilter} onValueChange={setFabTypeFilter} disabled={isApiLoading}>
                                 <SelectTrigger className="w-auto h-[34px]">
@@ -718,7 +681,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                     </CardHeader>
 
                     <CardTable>
-                        <ScrollArea className="h-[calc(100vh-280px)]">
+                                                <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] [&>[data-radix-scroll-area-viewport]]:pb-1">       
                             <div className="relative">
                                 {(isApiLoading) ? (
                                     <div className="flex items-center justify-center h-64">
@@ -754,78 +717,45 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                                             ))}
                                         </thead>
                                         <tbody>
+                                            {/* Overall totals row */}
                                             {filteredRows.length > 0 && (
                                                 <tr className="bg-muted/30 font-medium border-b-2 border-border">
                                                     {table.getVisibleFlatColumns().map(column => {
                                                         const colId = column.id;
-                                                        const cls = "px-4 py-2 text-sm font-semibold border-r border-border";
-                                                        if (colId === 'month') return <td key={colId} className={cls}></td>;
+                                                        const cls = "px-3 p-2 text-sm font-semibold border-r border-border";
+                                                        if (colId === 'actions') return <td key={colId} className={cls}>Total</td>;
                                                         if (colId === 'pieces') return <td key={colId} className={cls}>{overallTotals.pieces}</td>;
-                                                        if (colId === 'total_sq_ft') return <td key={colId} className={cls}>{overallTotals.sqft.toFixed(2)}</td>;
-                                                        if (colId === 'wl_ln_ft') return <td key={colId} className={cls}>{overallTotals.wl.toFixed(2)}</td>;
-                                                        if (colId === 'sl_ln_ft') return <td key={colId} className={cls}>{overallTotals.sl.toFixed(2)}</td>;
-                                                        if (colId === 'edging_ln_ft') return <td key={colId} className={cls}>{overallTotals.edging.toFixed(2)}</td>;
-                                                        if (colId === 'cnc_ln_ft') return <td key={colId} className={cls}>{overallTotals.cnc.toFixed(2)}</td>;
-                                                        if (colId === 'milter_ln_ft') return <td key={colId} className={cls}>{overallTotals.milter.toFixed(2)}</td>;
-                                                        if (colId === 'total_cut_ln_ft') return <td key={colId} className={cls}>{overallTotals.totalCut.toFixed(2)}</td>;
+                                                        if (colId === 'total_sq_ft') return <td key={colId} className={cls}>{overallTotals.total_sq_ft.toFixed(2)}</td>;
+                                                        if (colId === 'wl_ln_ft') return <td key={colId} className={cls}>{overallTotals.wl_ln_ft.toFixed(2)}</td>;
+                                                        if (colId === 'sl_ln_ft') return <td key={colId} className={cls}>{overallTotals.sl_ln_ft.toFixed(2)}</td>;
+                                                        if (colId === 'edging_ln_ft') return <td key={colId} className={cls}>{overallTotals.edging_ln_ft.toFixed(2)}</td>;
+                                                        if (colId === 'cnc_ln_ft') return <td key={colId} className={cls}>{overallTotals.cnc_ln_ft.toFixed(2)}</td>;
+                                                        if (colId === 'milter_ln_ft') return <td key={colId} className={cls}>{overallTotals.milter_ln_ft.toFixed(2)}</td>;
+                                                        if (colId === 'total_cut_ln_ft') return <td key={colId} className={cls}>{overallTotals.total_cut_ln_ft.toFixed(2)}</td>;
                                                         return <td key={colId} className="px-4 py-2 text-sm border-r border-border"></td>;
                                                     })}
                                                 </tr>
                                             )}
 
-                                            {Object.entries(groupedRows).map(([dateKey, group]) => {
-                                                const groupTotals = computeGroupTotals(group.rows);
-                                                return (
-                                                    <Fragment key={dateKey}>
-                                                        <tr className="bg-blue-50">
-                                                            <td className="px-4 py-2 text-xs font-bold text-gray-900 text-start" colSpan={table.getVisibleFlatColumns().length}>
-                                                                {group.dateDisplay}
+                                            {/* Data rows - flat list without grouping */}
+                                            {table.getRowModel().rows.map(row => (
+                                                <tr key={row.id} className="border-b border-gray-200" data-fab-type={row.original.fab_type.toLowerCase()}>
+                                                    {row.getVisibleCells().map(cell => {
+                                                        const isLongText = cell.column.id === 'fab_info' || cell.column.id === 'notes';
+                                                        return (
+                                                            <td
+                                                                key={cell.id}
+                                                                className={`px-2 py-1 text-xs text-gray-700 break-words whitespace-normal`}
+                                                                style={{ width: cell.column.getSize() }}
+                                                            >
+                                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                             </td>
-                                                        </tr>
-                                                        <tr className="bg-gray-50 font-medium border-t border-b border-gray-200">
-                                                            {table.getVisibleFlatColumns().map(column => {
-                                                                const colId = column.id;
-                                                                const cls = "px-4 py-2 text-sm border-r border-border";
-                                                                if (colId === 'month' || colId === 'actions') return <td key={colId} className={cls}>Total</td>;
-                                                                if (colId === 'pieces') return <td key={colId} className={cls}>{groupTotals.pieces}</td>;
-                                                                if (colId === 'total_sq_ft') return <td key={colId} className={cls}>{groupTotals.total_sq_ft.toFixed(2)}</td>;
-                                                                if (colId === 'wl_ln_ft') return <td key={colId} className={cls}>{groupTotals.wl_ln_ft.toFixed(2)}</td>;
-                                                                if (colId === 'sl_ln_ft') return <td key={colId} className={cls}>{groupTotals.sl_ln_ft.toFixed(2)}</td>;
-                                                                if (colId === 'edging_ln_ft') return <td key={colId} className={cls}>{groupTotals.edging_ln_ft.toFixed(2)}</td>;
-                                                                if (colId === 'cnc_ln_ft') return <td key={colId} className={cls}>{groupTotals.cnc_ln_ft.toFixed(2)}</td>;
-                                                                if (colId === 'milter_ln_ft') return <td key={colId} className={cls}>{groupTotals.milter_ln_ft.toFixed(2)}</td>;
-                                                                if (colId === 'total_cut_ln_ft') return <td key={colId} className={cls}>{groupTotals.total_cut_ln_ft.toFixed(2)}</td>;
-                                                                return <td key={colId} className={cls}></td>;
-                                                            })}
-                                                        </tr>
-                                                        {group.rows.map(row => {
-                                                            const tableRow = table.getRowModel().rows.find(r => r.original.plan_id === row.plan_id && r.original.fab_id === row.fab_id);
-                                                            if (!tableRow) return null;
-                                                            return (
-                                                                <tr key={tableRow.id} className="border-b border-gray-200 " data-fab-type={row.fab_type.toLowerCase()}>
-                                                                    {tableRow.getVisibleCells().map(cell => {
-                                                                        if (cell.column.id === 'month') {
-                                                                            return <td key={cell.id} className="px-2 py-1 text-xs text-gray-700" style={{ width: cell.column.getSize() }}></td>;
-                                                                        }
-                                                                        const isLongText = cell.column.id === 'fab_info' || cell.column.id === 'notes';
-                                                                        return (
-                                                                            <td
-                                                                                key={cell.id}
-                                                                                className={`px-2 py-1 text-xs text-gray-700 break-words whitespace-normal`}
-                                                                                style={{ width: cell.column.getSize() }}
-                                                                            >
-                                                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                                            </td>
-                                                                        );
-                                                                    })}
-                                                                </tr>
-                                                            );
-                                                        })}
-                                                    </Fragment>
-                                                );
-                                            })}
+                                                        );
+                                                    })}
+                                                </tr>
+                                            ))}
 
-                                            {Object.keys(groupedRows).length === 0 && (
+                                            {filteredRows.length === 0 && (
                                                 <tr>
                                                     <td colSpan={table.getVisibleFlatColumns().length} className="px-4 py-8 text-center text-sm text-muted-foreground">
                                                         No cut plans found.

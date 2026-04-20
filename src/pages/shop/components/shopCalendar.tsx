@@ -41,7 +41,7 @@ const BREAK_DURATION = BREAK_END_HOUR - BREAK_START_HOUR; // 1 hour
 const TOTAL_HOURS = DAY_END_HOUR - DAY_START_HOUR; // 12 hours (including break)
 const DISPLAY_HOURS = TOTAL_HOURS - BREAK_DURATION; // 11 hours (excluding break from display)
 const HOUR_HEIGHT = 80;
-const HOUR_WIDTH = 160;
+const HOUR_WIDTH = 220;
 
 // Helper function to calculate vertical position accounting for break
 // Events before break: normal position
@@ -276,6 +276,17 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
   }, [currentTime]);
 
   const showTimeIndicator = currentTime.getHours() >= DAY_START_HOUR && currentTime.getHours() < DAY_END_HOUR;
+
+  // Calculate horizontal position accounting for break
+  const getHorizontalPosition = (hour: number): number => {
+    if (hour < BREAK_START_HOUR) {
+      // Before break - position normally
+      return (hour - DAY_START_HOUR) * HOUR_WIDTH;
+    } else {
+      // After break - shift left by break width to collapse the gap
+      return (hour - DAY_START_HOUR - BREAK_DURATION) * HOUR_WIDTH;
+    }
+  };
 
   // Memoize event positioning calculation
   const getEventsWithPositions = useMemo(() => {
@@ -787,7 +798,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                             const hour = DAY_START_HOUR + i;
                             
                             // Skip rendering labels inside break time
-                            if (hour > BREAK_START_HOUR && hour < BREAK_END_HOUR) {
+                            if (hour >= BREAK_START_HOUR && hour < BREAK_END_HOUR) {
                               return null;
                             }
                             
@@ -801,10 +812,10 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                             return (
                               <div
                                 key={hour}
-                                className="absolute top-0 bottom-0 border-r border-[#ecedf0] flex items-center justify-center px-0.5"
-                                style={{ left: position, width: HOUR_WIDTH }}
+                                className="absolute top-0 bottom-0 border-r border-[#ecedf0] flex items-center justify-center px-1"
+                                style={{ left: position, width: HOUR_WIDTH, overflow: 'visible' }}
                               >
-                                <span className="text-[9px] font-medium text-[#7c8689] whitespace-nowrap">{label}</span>
+                                <span className="text-[10px] font-medium text-[#7c8689] whitespace-nowrap text-center">{label}</span>
                               </div>
                             );
                           })}
@@ -853,7 +864,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                               {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                                 const hour = DAY_START_HOUR + i;
                                 // Skip grid lines inside break time
-                                if (hour > BREAK_START_HOUR && hour < BREAK_END_HOUR) {
+                                if (hour >= BREAK_START_HOUR && hour < BREAK_END_HOUR) {
                                   return null;
                                 }
                                 const position = getHorizontalPosition(hour);
@@ -861,19 +872,6 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                                   <div key={i} className="absolute top-0 bottom-0 border-l border-[#ecedf0]" style={{ left: position }} />
                                 );
                               })}
-                              
-                              {/* Break time indicator */}
-                              <div 
-                                className="absolute top-0 bottom-0 bg-orange-100/40 border-x border-orange-300 pointer-events-none flex items-center justify-center"
-                                style={{ 
-                                  left: getHorizontalPosition(BREAK_START_HOUR),
-                                  width: BREAK_DURATION * HOUR_WIDTH 
-                                }}
-                              >
-                                <span className="text-[9px] font-semibold text-orange-700 uppercase tracking-wide">
-                                  Break
-                                </span>
-                              </div>
 
                               {lanes.map((lane, laneIdx) =>
                                 lane.map((ev) => {

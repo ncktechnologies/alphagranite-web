@@ -351,9 +351,9 @@ export function Documents({
                     handleDeleteInternal(file.id);
                   }}
                 >
-                  <Can action="delete" on="Drafting">
+                  {/* <Can action="delete" on="Drafting"> */}
                     <X className="size-3" />
-                  </Can>
+                  {/* </Can> */}
                 </Button>
               )}
             </div>

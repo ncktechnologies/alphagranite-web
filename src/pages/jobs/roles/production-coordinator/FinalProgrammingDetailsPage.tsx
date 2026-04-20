@@ -506,7 +506,7 @@ export function FinalProgrammingDetailsPage() {
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold text-sm">Uploaded files</h3>
-                      <Can action="create" on="FinalProgramming">
+                      {/* <Can action="create" on="Final Programming"> */}
                         <Button
                           variant="dashed"
                           size="sm"
@@ -517,7 +517,7 @@ export function FinalProgrammingDetailsPage() {
                           <Plus className="w-3.5 h-3.5" />
                           Add Files
                         </Button>
-                      </Can>
+                      {/* </Can> */}
                     </div>
 
                     {shouldShowUploadSection ? (
@@ -541,7 +541,7 @@ export function FinalProgrammingDetailsPage() {
                   {/* Submit button */}
                   <div className="flex justify-end gap-2 pt-2">
                     <BackButton fallbackUrl="/job/final-programming" label="Cancel" />
-                    <Can action="create" on="Final Programming">
+                    {/* <Can action="create" on="Final Programming"> */}
                       <Button
                         onClick={handleOpenSubmissionModal}
                         className="bg-green-600 hover:bg-green-700"
@@ -549,7 +549,7 @@ export function FinalProgrammingDetailsPage() {
                       >
                         Submit Final Programming Work
                       </Button>
-                    </Can>
+                    {/* </Can> */}
                   </div>
                 </CardContent>
               </Card>

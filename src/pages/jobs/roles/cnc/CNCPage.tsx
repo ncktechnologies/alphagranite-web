@@ -18,7 +18,7 @@ export const transformFabToJob = (fab: Fab): IJob => {
         fab_id: String(fab.id),
         job_name: `${fab.job_details?.name}`,
         job_no: String(fab.job_details?.job_number),
-        date: fab.predraft_completed_date || '',
+        date: fab.shop_date_schedule || '',
         current_stage: fab.current_stage,
         sales_person_name: fab.sales_person_name || '',
         acct_name: fab.account_name || '',
@@ -94,9 +94,9 @@ const CNCPage = () => {
         if (tableState.dateFilter && tableState.dateFilter !== 'all') {
             if (tableState.dateFilter === 'custom') {
                 if (tableState.dateRange?.from)
-                    params.predraft_completed_start = format(tableState.dateRange.from, 'yyyy-MM-dd');
+                    params.shop_date_start = format(tableState.dateRange.from, 'yyyy-MM-dd');
                 if (tableState.dateRange?.to)
-                    params.predraft_completed_end = format(tableState.dateRange.to, 'yyyy-MM-dd');
+                    params.shop_date_end = format(tableState.dateRange.to, 'yyyy-MM-dd');
             } else {
                 params.date_filter = tableState.dateFilter;
             }
