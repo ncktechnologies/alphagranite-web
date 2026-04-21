@@ -663,7 +663,7 @@ export const CutListTable = ({ cutLists, path, isSuperAdmin = false, isLoading, 
                                 <SelectTrigger className="w-[180px] h-[34px]">
                                     <SelectValue placeholder="Sales Person" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="max-h-[200px] overflow-y-auto">
                                     <SelectItem value="all">All Sales Persons</SelectItem>
                                     <SelectItem value="no_sales_person">No Sales Person</SelectItem>
                                     {salesPersons.map((person) => (

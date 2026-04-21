@@ -135,7 +135,7 @@ export function AssignTechnicianModal({
                         <SelectValue placeholder="Select drafter (optional)" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="max-h-[200px] overflow-y-auto">
                       {isEmployeesLoading ? (
                         <SelectItem value="loading" disabled>Loading drafters...</SelectItem>
                       ) : (

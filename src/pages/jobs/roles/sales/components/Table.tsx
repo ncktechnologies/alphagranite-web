@@ -1131,7 +1131,7 @@ export const JobSalesTable = ({
                                 <SelectTrigger className="w-[150px] h-[34px]">
                                     <SelectValue placeholder="Fab Type" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="max-h-[200px] overflow-y-auto">
                                     <SelectItem value="all">All Fab Types</SelectItem>
                                     {fabTypes.map(type => (
                                         <SelectItem key={type} value={type} className="uppercase">{type}</SelectItem>
@@ -1211,7 +1211,7 @@ export const JobSalesTable = ({
                                     <SelectTrigger className="w-[170px] h-[34px]">
                                         <SelectValue placeholder="Go to stage" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="max-h-[200px] overflow-y-auto">
                                         <SelectItem value="all">All Stages</SelectItem>
                                         {Object.values(JOB_STAGES).map(stage => (
                                             <SelectItem key={stage.stage} value={stage.stage}>{stage.title}</SelectItem>
@@ -1229,7 +1229,7 @@ export const JobSalesTable = ({
                                 <SelectTrigger className="w-[180px] h-[34px]">
                                     <SelectValue placeholder={salesPersonFilterLabel} />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="max-h-[200px] overflow-y-auto">
                                     <SelectItem value="all">
                                         {salesPersonFilterLabel.includes("Templater") ? "All Templaters" : "All Sales Persons"}
                                     </SelectItem>
@@ -1249,7 +1249,7 @@ export const JobSalesTable = ({
                                 <SelectTrigger className="w-[180px] h-[34px]">
                                     <SelectValue placeholder="Filter by Templater" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="max-h-[200px] overflow-y-auto">
                                     <SelectItem value="all">All Templaters</SelectItem>
                                     <SelectItem value="no_templater">No Templater Assigned</SelectItem>
                                     {templaters.map(t => (

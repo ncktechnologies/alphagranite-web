@@ -26,7 +26,7 @@ const reviewChecklistSchema = z.object({
     customerInfo: z.boolean(),
     materialSpecs: z.boolean(),
     stoneType: z.boolean(),
-    stoneColour: z.boolean(),
+    stoneColor: z.boolean(),
     fabType: z.boolean(),
     notes: z.string().optional(),
 });
@@ -55,7 +55,7 @@ export function ReviewChecklistForm() {
             customerInfo: false,
             materialSpecs: false,
             stoneType: false,
-            stoneColour: false,
+            stoneColor: false,
             fabType: false,
         },
     });
@@ -63,7 +63,7 @@ export function ReviewChecklistForm() {
     const onSubmit = async (values: ReviewChecklistData) => {
         // Check if any checkboxes are checked (not all required)
         const anyChecked = values.customerInfo || values.materialSpecs || values.stoneType ||
-            values.stoneColour || values.fabType;
+            values.stoneColor || values.fabType;
 
         if (!anyChecked) {
             toast.error("Please check at least one checklist item");
@@ -75,10 +75,9 @@ export function ReviewChecklistForm() {
             customer_info_verified: values.customerInfo,
             material_specs_confirmed: values.materialSpecs,
             stone_type_confirmed: values.stoneType,
-            stone_colour_confirmed: values.stoneColour,
+            stone_colour_confirmed: values.stoneColor,
             fab_type_confirmed: values.fabType,
             reviewed_at: new Date().toISOString(),
-            reviewed_by: "Templating Coordinator" // Can be replaced with actual user info
         };
 
         // Handle notes submission if notes exist

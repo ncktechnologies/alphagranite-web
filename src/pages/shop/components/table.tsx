@@ -661,7 +661,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                                 <SelectTrigger className="w-auto h-[34px]">
                                     <SelectValue placeholder="FAB type" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="max-h-[200px] overflow-y-auto">
                                     <SelectItem value="all">All Types</SelectItem>
 
                                     {fabTypes.map((type) => (

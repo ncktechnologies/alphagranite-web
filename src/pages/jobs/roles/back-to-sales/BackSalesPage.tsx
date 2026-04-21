@@ -48,7 +48,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         sct_completed: (fab as any).sales_ct_data?.is_completed ? 'Yes' : 'No',
         slabsmith_used: (fab as any).slab_smith_used ? 'Yes' : 'No',
         // Add slab smith status fields for the column
-        slabsmith_ag_needed: fab.slab_smith_ag_needed,
+        slabsmith_ag_needed: fab.slab_smith_ag_needed ||  fab.slab_smith_cust_needed,
         slabsmith_completed_date: fab.slabsmith_completed_date,
 
         draft_revision_notes: '', // Will be populated from fab_notes

@@ -355,7 +355,7 @@ const ShopCalendarPage = () => {
               <SelectTrigger className="w-[133px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
                 <SelectValue placeholder="All FAB Types" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[200px] overflow-y-auto">
                 <SelectItem value="all">All FAB Types</SelectItem>
                 {availableFilters.fabTypes.map((type) => (
                   <SelectItem key={type} value={type}>{type}</SelectItem>
@@ -371,7 +371,7 @@ const ShopCalendarPage = () => {
               <SelectTrigger className="w-[146px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
                 <SelectValue placeholder="All Workstations" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[200px] overflow-y-auto">
                 <SelectItem value="all">All Workstations</SelectItem>
                 {availableFilters.workstations.map((ws) => (
                   <SelectItem key={ws} value={ws}>{ws}</SelectItem>
@@ -387,7 +387,7 @@ const ShopCalendarPage = () => {
               <SelectTrigger className="w-[137px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
                 <SelectValue placeholder="All Operators" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[200px] overflow-y-auto">
                 <SelectItem value="all">All Operators</SelectItem>
                 {availableFilters.operators.map((op) => (
                   <SelectItem key={op.id} value={String(op.id)}>

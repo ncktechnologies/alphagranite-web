@@ -38,7 +38,7 @@ export function WorkstationToggle({
                 <SelectTrigger className="w-[200px] h-[40px] border border-[#e2e4ed] rounded-[8px] text-[14px] font-medium focus:border-[#9cc15e] focus:ring-1 focus:ring-[#9cc15e]">
                     <SelectValue placeholder="Select workstation" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[200px] overflow-y-auto">
                     <SelectItem value="all">All Workstations</SelectItem>
                     {workstations.map((ws: any) => (
                         <SelectItem key={ws.id} value={ws.id.toString()}>

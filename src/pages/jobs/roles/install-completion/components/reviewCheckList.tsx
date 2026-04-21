@@ -303,7 +303,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
                       <SelectValue placeholder="Select an installer" />
                     </SelectTrigger>
                   </FormControl>
-                  <SelectContent>
+                  <SelectContent className="max-h-[200px] overflow-y-auto">
                     {employers.map((employer: any) => (
                       <SelectItem
                         key={employer.id}

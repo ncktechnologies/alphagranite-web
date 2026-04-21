@@ -71,6 +71,8 @@ const noteStageConfig: Record<string, { label: string; color: string }> = {
     cut_list: { label: 'Final Programming', color: 'text-purple-700' },
     cutting: { label: 'Cutting', color: 'text-orange-700' },
     install_scheduling: { label: 'Install Scheduling', color: 'text-teal-700' },
+    install_completion: { label: 'Install Completion', color: 'text-cyan-700' },
+    shop: { label: 'Shop', color: 'text-indigo-700' },
     general: { label: 'General', color: 'text-gray-700' },
 };
 
@@ -420,7 +422,7 @@ if (scheduledStart && scheduledEnd) {
                             <SelectTrigger className="h-7 w-auto text-xs border-[#e2e4ed]">
                                 <SelectValue placeholder="Seq" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="max-h-[200px] overflow-y-auto">
                                 {sequenceOptions.map(num => (
                                     <SelectItem key={num} value={String(num)}>Seq: {num}</SelectItem>
                                 ))}
@@ -465,7 +467,7 @@ if (scheduledStart && scheduledEnd) {
                                         }
                                     />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="max-h-[200px] overflow-y-auto">
                                     {workstationsForSection.length === 0 ? (
                                         <div className="px-3 py-2 text-sm text-muted-foreground">
                                             No workstations assigned to this stage
@@ -500,7 +502,7 @@ if (scheduledStart && scheduledEnd) {
                                         }
                                     />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="max-h-[200px] overflow-y-auto">
                                     {filteredEmployees.length === 0 ? (
                                         <div className="px-3 py-2 text-sm text-muted-foreground">
                                             No operators assigned to this workstation
@@ -545,7 +547,7 @@ if (scheduledStart && scheduledEnd) {
                                     <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
                                         <SelectValue placeholder="Start" />
                                     </SelectTrigger>
-                                    <SelectContent className="max-h-60">
+                                    <SelectContent className="max-h-[200px] overflow-y-auto">
                                         {TIME_SLOTS.map(s => (
                                             <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                                         ))}
@@ -558,7 +560,7 @@ if (scheduledStart && scheduledEnd) {
                                     <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
                                         <SelectValue placeholder="End" />
                                     </SelectTrigger>
-                                    <SelectContent className="max-h-60">
+                                    <SelectContent className="max-h-[200px] overflow-y-auto">
                                         {TIME_SLOTS
                                             .filter(s => !draft.start_time || s.value > draft.start_time)
                                             .map(s => (

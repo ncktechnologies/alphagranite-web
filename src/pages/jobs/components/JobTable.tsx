@@ -864,7 +864,12 @@ export const JobTable = ({
         { id: 'draft_revision_notes', header: ({ column }) => <DataGridColumnHeader title="Draft/Revision Notes" column={column} />, cell: ({ row }) => renderNotes(row, ['draft', 'revisions']), enableSorting: false, size: 180 },
         { id: 'draft_notes', header: ({ column }) => <DataGridColumnHeader title="Draft Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'drafting'), enableSorting: false, size: 180 },
         { id: 'revision_notes', header: ({ column }) => <DataGridColumnHeader title="Revision Notes" column={column} />, cell: ({ row }) => renderNotes(row, ['revision', 'revisions']), enableSorting: false, size: 180 },
-        { id: 'install_notes', header: ({ column }) => <DataGridColumnHeader title="Install Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'install_schedulling'), enableSorting: false, size: 180 },
+        { id: 'install_scheduling_notes', header: ({ column }) => <DataGridColumnHeader title="Install Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'install_schedulling'), enableSorting: false, size: 180 },
+        // { id: 'install_scheduling_notes', header: ({ column }) => <DataGridColumnHeader title="Install Scheduling Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'install_scheduling'), enableSorting: false, size: 180 },
+        { id: 'install_completion_notes', header: ({ column }) => <DataGridColumnHeader title="Install Completion Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'install_completion'), enableSorting: false, size: 180 },
+        { id: 'shop_status_notes', header: ({ column }) => <DataGridColumnHeader title="Shop Status Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'shop_status'), enableSorting: false, size: 180 },
+        { id: 'shop_notes', header: ({ column }) => <DataGridColumnHeader title="Shop Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'shop'), enableSorting: false, size: 180 },
+        { id: 'resurfacing_notes', header: ({ column }) => <DataGridColumnHeader title=" Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'install_scheduling'), enableSorting: false, size: 180 },
 
         // ── File ──────────────────────────────────────────────────────────────
         {
@@ -1202,7 +1207,7 @@ export const JobTable = ({
                                 <SelectTrigger className="w-[150px] h-[34px]">
                                     <SelectValue placeholder="Fab Type" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="max-h-[200px] overflow-y-auto">
                                     <SelectItem value="all">All Fab Types</SelectItem>
                                     {fabTypes.map(type => (
                                         <SelectItem key={type} value={type} className="uppercase">{type}</SelectItem>
@@ -1283,7 +1288,7 @@ export const JobTable = ({
                                     <SelectTrigger className="w-[170px] h-[34px]">
                                         <SelectValue placeholder="Go to stage" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="max-h-[200px] overflow-y-auto">
                                         <SelectItem value="all">All Stages</SelectItem>
                                         {Object.values(JOB_STAGES).map(stage => (
                                             <SelectItem key={stage.stage} value={stage.stage}>{stage.title}</SelectItem>
@@ -1301,7 +1306,7 @@ export const JobTable = ({
                                 <SelectTrigger className="w-[180px] h-[34px]">
                                     <SelectValue placeholder={salesPersonFilterLabel} />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="max-h-[200px] overflow-y-auto">
                                     <SelectItem value="all">
                                         {salesPersonFilterLabel.includes("Templater") ? "All Templaters" : "All Sales Persons"}
                                     </SelectItem>

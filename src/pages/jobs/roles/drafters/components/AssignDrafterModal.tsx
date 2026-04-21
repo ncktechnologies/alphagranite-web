@@ -165,7 +165,7 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
               <SelectTrigger>
                 <SelectValue placeholder="Select drafter" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[200px] overflow-y-auto">
                 {!employeesLoading &&
                   drafters.map((drafter) => (
                     <SelectItem key={drafter.id} value={drafter.id.toString()}>

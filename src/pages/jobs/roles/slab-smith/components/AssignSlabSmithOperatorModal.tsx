@@ -131,7 +131,7 @@ const AssignSlabSmithOperatorModal: React.FC<AssignSlabSmithOperatorModalProps> 
               <SelectTrigger>
                 <SelectValue placeholder="Select SlabSmith Drafter" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="max-h-[200px] overflow-y-auto">
                 {!employeesLoading &&
                   operators.map((operator: any) => {
                     const operatorId = String(operator.id);

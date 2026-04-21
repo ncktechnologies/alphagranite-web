@@ -195,7 +195,7 @@ export const DraftReviewDetailsPage = () => {
                 },
                 { label: "Drafter Assigned", value: fabData.draft_data?.drafter_name || 'Unassigned' },
                 { label: "Sales Person", value: fabData.sales_person_name || '—' },
-                { label: "SlabSmith Needed", value: fabData.slab_smith_ag_needed ? 'Yes' : 'No' },
+                { label: "SlabSmith Needed", value: fabData.slab_smith_ag_needed || fabData.slab_smith_cust_needed ? 'Yes' : 'No' },
             ],
         },
         {
@@ -407,7 +407,7 @@ export const DraftReviewDetailsPage = () => {
                     { value: 'block_drawing', label: 'Block Drawing' },
                     { value: 'layout', label: 'Layout' },
                     { value: 'ss_layout', label: 'SS Layout' },
-                    { value: 'shop_drawing', label: 'Shop Drawing' },
+                    // { value: 'shop_drawing', label: 'Shop Drawing' },
                     { value: 'photo_media', label: 'Photo/Media' },
                 ]}
                 additionalParams={{

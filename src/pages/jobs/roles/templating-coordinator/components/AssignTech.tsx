@@ -290,7 +290,7 @@ export function AssignTechnicianModal({
                         <SelectValue placeholder="Select technician" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="max-h-[200px] overflow-y-auto">
                       {technicians.map((technician: any) => (
                         <SelectItem key={technician.id} value={`${technician.id}`}>
                           {technician.name}

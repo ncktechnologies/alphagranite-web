@@ -325,7 +325,7 @@ export const RevisionModal = ({
                           <SelectValue placeholder="Select revision type" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="max-h-[200px] overflow-y-auto">
                         <SelectItem value="cad">CAD</SelectItem>
                         <SelectItem value="client">Client</SelectItem>
                         <SelectItem value="sales">Sales</SelectItem>

@@ -1509,7 +1509,7 @@ const NewFabIdForm = () => {
                                     } />
                                   </SelectTrigger>
                                 </FormControl>
-                                <SelectContent>
+                                <SelectContent className="max-h-[200px] overflow-y-auto">
                                   {isLoadingSalesPersons ? (
                                     <div className="px-3 py-2 text-sm text-gray-500 text-center">
                                       Loading sales persons...

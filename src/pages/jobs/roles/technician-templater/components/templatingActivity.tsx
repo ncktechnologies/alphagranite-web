@@ -26,6 +26,15 @@ const formSchema = z.object({
   notes: z.string().optional(),
   square_ft: z.string().optional(),
   revenue: z.string().optional(),
+}).superRefine((data, ctx) => {
+  // If "Completed" is checked, start_date must be provided
+  if (data.is_completed === true && !data.start_date) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Completed date is required when marked as completed",
+      path: ["start_date"],
+    });
+  }
 });
 
 interface TemplatingActivityFormProps {
@@ -164,6 +173,10 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
                       onCheckedChange={(checked) => {
                         if (checked) {
                           field.onChange(true);
+                        } else {
+                          field.onChange(null);
+                          // Clear completed date when unchecking
+                          form.setValue('start_date', '');
                         }
                       }}
                     />
@@ -178,6 +191,8 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
                       onCheckedChange={(checked) => {
                         if (checked) {
                           field.onChange(false);
+                        } else {
+                          field.onChange(null);
                         }
                       }}
                     />
@@ -186,6 +201,7 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
                     </label>
                   </div>
                 </div>
+                <FormMessage />
               </FormItem>
             )}
           />
@@ -211,7 +227,7 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
                         field.onChange(`${year}-${month}-${day}`);
                       }}
                       placeholder="Select scheduled date"
-                      // minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
+                    // minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
                     />
                   </FormControl>
                   <FormMessage />
@@ -281,7 +297,7 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
               Cancel
             </Button>
             <Can action="update" on="Templating">
-              <Button type="submit" disabled={isSubmitting}>
+              <Button type="submit" disabled={isSubmitting || !form.formState.isValid}>
                 {isSubmitting ? "Saving..." : "Save"}
               </Button>
             </Can>

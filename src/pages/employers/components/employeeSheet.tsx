@@ -299,7 +299,7 @@ const EmployeeFormSheet = ({
                                 </SelectValue>
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                            <SelectContent className="max-h-[200px] overflow-y-auto">
                               {departmentsData?.items?.map((dept) => (
                                 <SelectItem key={dept.id} value={String(dept.id)}>
                                   {dept.name}

@@ -258,7 +258,7 @@ export const FinalProgrammingTable = ({
                                 <SelectTrigger className="w-[150px] h-[34px]">
                                     <SelectValue placeholder="Fab Type" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="max-h-[200px] overflow-y-auto">
                                     <SelectItem value="all">All Fab Types</SelectItem>
                                     {fabTypes.map((type) => (
                                         <SelectItem key={type} value={type}>

@@ -189,7 +189,7 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
                             <SelectTrigger>
                                 <SelectValue placeholder={isPlanningSectionsLoading ? 'Loading sections...' : 'Select shop activity'} />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="max-h-[200px] overflow-y-auto">
                                 {planningSections.map((ps: any) => (
                                     <SelectItem key={ps.id} value={String(ps.id)}>
                                         {ps.name || ps.plan_name}

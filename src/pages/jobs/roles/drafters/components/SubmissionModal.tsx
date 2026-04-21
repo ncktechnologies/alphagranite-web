@@ -273,7 +273,7 @@ export const SubmissionModal = ({
                         <SelectValue placeholder="Select sales person" />
                       </SelectTrigger>
                     </FormControl>
-                    <SelectContent>
+                    <SelectContent className="max-h-[200px] overflow-y-auto">
                       {salesPersons.map((person: any) => (
                         <SelectItem key={person.id} value={`${person.id}`}>
                           {person.name}

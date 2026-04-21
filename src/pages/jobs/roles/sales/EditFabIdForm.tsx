@@ -831,7 +831,7 @@ const EditFabIdForm = () => {
                                                         <FormLabel>Job Name</FormLabel>
                                                         <Select onValueChange={(value) => { handleJobNameChange(value); field.onChange(value); }} value={field.value} disabled={isEffectiveJobsLoading}>
                                                             <FormControl><SelectTrigger><SelectValue placeholder={isEffectiveJobsLoading ? 'Loading...' : 'Select job name'} /></SelectTrigger></FormControl>
-                                                            <SelectContent>
+                                                            <SelectContent className="max-h-[200px] overflow-y-auto">
                                                                 {jobNames.map((jobName: string) => <SelectItem key={jobName} value={jobName}>{jobName}</SelectItem>)}
                                                                 {jobNames.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">{selectedAccountId ? 'No jobs found for this account' : 'No jobs found'}</div>}
                                                             </SelectContent>
@@ -849,7 +849,7 @@ const EditFabIdForm = () => {
                                                         <FormLabel>Job Number</FormLabel>
                                                         <Select onValueChange={(value) => { handleJobNumberChange(value); field.onChange(value); }} value={field.value} disabled={isEffectiveJobsLoading}>
                                                             <FormControl><SelectTrigger><SelectValue placeholder={isEffectiveJobsLoading ? 'Loading...' : 'Select job number'} /></SelectTrigger></FormControl>
-                                                            <SelectContent>
+                                                            <SelectContent className="max-h-[200px] overflow-y-auto">
                                                                 {jobNumbers.map((jobNumber: string) => <SelectItem key={jobNumber} value={jobNumber}>{jobNumber}</SelectItem>)}
                                                                 {jobNumbers.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">{selectedAccountId ? 'No jobs found for this account' : 'No jobs found'}</div>}
                                                             </SelectContent>
@@ -882,7 +882,7 @@ const EditFabIdForm = () => {
                                                                     <SelectValue placeholder={isLoadingStoneTypes ? 'Loading...' : 'Select stone type'} />
                                                                 </SelectTrigger>
                                                             </FormControl>
-                                                            <SelectContent>
+                                                            <SelectContent className="max-h-[200px] overflow-y-auto">
                                                                 {stoneTypes.map((type: string) => (
                                                                     <SelectItem key={type} value={type}>{type}</SelectItem>
                                                                 ))}
@@ -1015,7 +1015,7 @@ const EditFabIdForm = () => {
                                                         <FormLabel>Select Sales Person *</FormLabel>
                                                         <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingSalesPersons}>
                                                             <FormControl><SelectTrigger><SelectValue placeholder={isLoadingSalesPersons ? 'Loading sales persons...' : 'Select salesperson'} /></SelectTrigger></FormControl>
-                                                            <SelectContent>
+                                                            <SelectContent className="max-h-[200px] overflow-y-auto">
                                                                 {salesPersons.map((person: any) => <SelectItem key={person.id} value={person.name}>{person.name}</SelectItem>)}
                                                                 {salesPersons.length === 0 && <div className="px-3 py-2 text-sm text-gray-500 text-center">No sales persons found</div>}
                                                             </SelectContent>

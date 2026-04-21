@@ -135,7 +135,7 @@ export const JobForm = ({ mode, job, onBack, onSave }: JobFormProps) => {
                   <SelectTrigger>
                     <SelectValue placeholder="Select an account" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[200px] overflow-y-auto">
                     {isLoadingAccounts ? (
                       <SelectItem value="loading" disabled>Loading accounts...</SelectItem>
                     ) : (

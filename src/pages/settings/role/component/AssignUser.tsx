@@ -102,7 +102,7 @@ export const UserAssignment = ({ selectedUsers, onUserToggle }: UserAssignmentPr
             <SelectTrigger className="text-sm">
               <SelectValue placeholder={isLoading ? "Loading employees..." : "Select users to add..."} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-h-[200px] overflow-y-auto">
               {filteredUsers.map((employee) => {
                 const fullName = `${employee.first_name} ${employee.last_name}`;
                 return (

@@ -537,7 +537,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                   <SelectTrigger className="min-w-[133px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
                     <SelectValue placeholder="All FAB Types" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[200px] overflow-y-auto">
                     <SelectItem value="all">All FAB Types</SelectItem>
                     {fabTypes.map((t: string) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                   </SelectContent>
@@ -547,7 +547,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                   <SelectTrigger className="min-w-[146px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
                     <SelectValue placeholder="All Workstations" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[200px] overflow-y-auto">
                     <SelectItem value="all">All Workstations</SelectItem>
                     {workstations.map((w: any) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
                   </SelectContent>
@@ -557,7 +557,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                   <SelectTrigger className="min-w-[137px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
                     <SelectValue placeholder="All Operators" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-[200px] overflow-y-auto">
                     <SelectItem value="all">All Operators</SelectItem>
                     {operators.map((o: any) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
                   </SelectContent>

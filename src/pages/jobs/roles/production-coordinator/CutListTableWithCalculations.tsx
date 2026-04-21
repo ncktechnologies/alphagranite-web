@@ -661,7 +661,7 @@ export const CutListTableWithCalculations = ({
                                     <SelectTrigger className="w-[150px] h-[34px]">
                                         <SelectValue placeholder="Fab Type" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="max-h-[200px] overflow-y-auto">
                                         <SelectItem value="all">All Fab Types</SelectItem>
                                         {uniqueFabTypes.map((type) => (
                                             <SelectItem key={type} value={type}>{type}</SelectItem>
@@ -730,7 +730,7 @@ export const CutListTableWithCalculations = ({
                                     <SelectTrigger className="w-[180px] h-[34px]">
                                         <SelectValue placeholder="Sales Person" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="max-h-[200px] overflow-y-auto">
                                         <SelectItem value="all">All Sales Persons</SelectItem>
                                         <SelectItem value="no_sales_person">No Sales Person</SelectItem>
                                         {uniqueSalesPersons.map((person) => (
@@ -745,7 +745,7 @@ export const CutListTableWithCalculations = ({
                                         <SelectTrigger className="w-[170px] h-[34px]">
                                             <SelectValue placeholder="Go to stage" />
                                         </SelectTrigger>
-                                        <SelectContent className="w-48">
+                                        <SelectContent className="max-h-[200px] overflow-y-auto w-48">
                                             <SelectItem value="all">All Stages</SelectItem>
                                             {Object.values(JOB_STAGES).map((stage) => (
                                                 <SelectItem key={stage.stage} value={stage.stage}>{stage.title}</SelectItem>

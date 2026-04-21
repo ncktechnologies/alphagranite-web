@@ -328,7 +328,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
                     }
                   />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[200px] overflow-y-auto">
                   {workstationsForSection.map((ws: any) => (
                     <SelectItem key={ws.id} value={String(ws.id)}>{ws.name}</SelectItem>
                   ))}
@@ -352,7 +352,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
                     }
                   />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-[200px] overflow-y-auto">
                   {filteredEmployees.length === 0 ? (
                     <div className="px-3 py-2 text-sm text-muted-foreground">
                       No operators assigned to this workstation
@@ -431,7 +431,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
                 <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
                   <SelectValue placeholder="Select start" />
                 </SelectTrigger>
-                <SelectContent className="max-h-60">
+                <SelectContent className="max-h-[200px] overflow-y-auto">
                   {TIME_SLOTS.map(slot => (
                     <SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>
                   ))}
@@ -445,7 +445,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
                 <SelectTrigger className="mt-2 h-[42px] border-[#e2e4ed] rounded-[6px] text-[13px]">
                   <SelectValue placeholder="Select end" />
                 </SelectTrigger>
-                <SelectContent className="max-h-60">
+                <SelectContent className="max-h-[200px] overflow-y-auto">
                   {TIME_SLOTS.map(slot => (
                     <SelectItem key={slot.value} value={slot.value}>{slot.label}</SelectItem>
                   ))}

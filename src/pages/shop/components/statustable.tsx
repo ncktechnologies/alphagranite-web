@@ -999,7 +999,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                 <SelectTrigger className="w-auto h-[34px] border-[#e2e4ed]">
                                     <SelectValue placeholder="FAB type" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="max-h-[300px] overflow-y-auto">
                                     <SelectItem value="all">All Types</SelectItem>
                                     {fabTypes.map((type) => <SelectItem key={type} value={type}>{type}</SelectItem>)}
                                 </SelectContent>

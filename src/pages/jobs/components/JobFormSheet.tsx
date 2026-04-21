@@ -476,7 +476,7 @@ const JobFormSheet = ({
                             </SelectTrigger>
                           </FormControl>
 
-                          <SelectContent>
+                          <SelectContent className="max-h-[200px] overflow-y-auto">
                             {salesPersons.map((salesPerson) => (
                               <SelectItem
                                 key={salesPerson.id}
