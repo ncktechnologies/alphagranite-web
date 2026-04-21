@@ -338,19 +338,19 @@ export const DraftReviewDetailsPage = () => {
                                                 {isSlabSmithActivityComplete ? "Slab Smith Complete" : "Slab Smith Incomplete"}
                                             </Badge>
                                         )}
-                                        <Can action="update" on="SCT">
+                                        {/* <Can action="update" on="SCT"> */}
                                             <Button onClick={() => setShowMarkAsCompleteModal(true)}>
                                                 Mark as Complete
                                             </Button>
-                                        </Can>
-                                        <Can action="update" on="SCT">
+                                        {/* </Can> */}
+                                        {/* <Can action="update" on="SCT"> */}
                                             <Button
                                                 variant="outline"
                                                 onClick={() => setShowSubmissionModal(true)}
                                             >
                                                 Create Revision
                                             </Button>
-                                        </Can>
+                                        {/* </Can> */}
                                     </div>
                                 </CardHeader>
                             </Card>
@@ -366,7 +366,7 @@ export const DraftReviewDetailsPage = () => {
                                     <div>
                                         <div className="flex items-center justify-between mb-3">
                                             <h3 className="font-semibold text-sm">Uploaded files</h3>
-                                            <Can action="create" on="Drafting">
+                                            {/* <Can action="create" on="Drafting"> */}
                                                 <Button
                                                     variant="dashed"
                                                     size="sm"
@@ -377,7 +377,7 @@ export const DraftReviewDetailsPage = () => {
                                                     <Plus className="w-3.5 h-3.5" />
                                                     Add Files
                                                 </Button>
-                                            </Can>
+                                            {/* </Can> */}
                                         </div>
 
                                         <Documents

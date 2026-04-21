@@ -314,7 +314,7 @@ export function TemplatingPage() {
                         jobs={jobsData}
                         path="templating"
                         showScheduleFilter={true}
-                        isLoading={isLoading}
+                        isLoading={isLoading && !data}
                         useBackendPagination={true}
                         totalRecords={data?.total || 0}
                         tableState={tableState}

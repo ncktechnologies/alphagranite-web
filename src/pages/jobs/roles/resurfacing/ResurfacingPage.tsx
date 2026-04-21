@@ -211,7 +211,7 @@ export function ResurfacingPage() {
 
             <JobTable
                 jobs={jobsData}
-                isLoading={isLoading}
+                isLoading={isLoading && !data}
                 tableState={tableState}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}

@@ -170,7 +170,7 @@ const CNCPage = () => {
             <JobTable
                 jobs={jobsData}
                 path="cnc"
-                isLoading={isLoading}
+                isLoading={isLoading && !data}
                 useBackendPagination
                 totalRecords={data?.total || 0}
                 tableState={tableState}

@@ -236,7 +236,7 @@ export function SalesPage() {
                 <JobSalesTable
                     jobs={jobsData}
                     path='sales'
-                    isLoading={isLoading}
+                    isLoading={isLoading && !data}
                     // onRowClick={handleRowClick}
                     useBackendPagination={true}
                     totalRecords={data?.total || 0}

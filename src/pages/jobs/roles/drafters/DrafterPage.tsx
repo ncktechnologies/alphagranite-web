@@ -170,7 +170,7 @@ const DrafterPage = () => {
             <JobTable
                 jobs={jobsData}
                 path="draft"
-                isLoading={isLoading}
+                isLoading={isLoading && !data}
                 useBackendPagination
                 totalRecords={data?.total || 0}
                 tableState={tableState}

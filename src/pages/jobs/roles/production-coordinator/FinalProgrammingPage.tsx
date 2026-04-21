@@ -258,7 +258,7 @@ const FinalProgrammingPage = () => {
                 <JobTable
                     jobs={jobsData}
                     path='final-programming'
-                    isLoading={isLoading}
+                    isLoading={isLoading && !data}
                     // useBackendPagination={true}
                     // totalRecords={data?.total || 0}
                     // tableState={tableState}
@@ -289,7 +289,7 @@ const FinalProgrammingPage = () => {
                 <FinalProgrammingTable 
                     jobs={jobs}
                     path="/job/final-programming"
-                    isLoading={isLoading}
+                    isLoading={isLoading && !data}
                     onRowClick={handleRowClick}
                 />
             </div> */}

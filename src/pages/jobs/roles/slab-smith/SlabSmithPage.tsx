@@ -267,7 +267,7 @@ const SlabSmithPage = () => {
                     <JobTable
                         jobs={jobsData}
                         path='slab-smith'
-                        isLoading={isLoading}
+                        isLoading={isLoading && !data}
                         totalRecords={data?.total || 0}
                         useBackendPagination={true}
                         tableState={tableState}

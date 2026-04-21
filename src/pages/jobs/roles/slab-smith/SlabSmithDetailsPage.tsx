@@ -548,7 +548,7 @@ export function SlabSmithDetailsPage() {
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold text-sm">Uploaded files</h3>
-                      <Can action="create" on="SlabSmith">
+                      {/* <Can action="create" on="SlabSmith"> */}
                         <Button
                           variant="dashed"
                           size="sm"
@@ -559,7 +559,7 @@ export function SlabSmithDetailsPage() {
                           <Plus className="w-3.5 h-3.5" />
                           Add Files
                         </Button>
-                      </Can>
+                      {/* </Can> */}
                     </div>
 
                     {shouldShowUploadSection ? (

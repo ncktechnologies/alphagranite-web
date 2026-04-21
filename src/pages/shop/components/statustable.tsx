@@ -916,7 +916,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         </tr>
     );
 
-    const isLoading = isApiLoading || externalLoading;
+    const isLoading = (isApiLoading && !fabsData) || externalLoading;
 
     // Toggle helpers
     const toggleMonth = (mk: string) => setCollapsedMonths(prev => {

@@ -273,7 +273,7 @@ export function DraftRevisionPage() {
             <JobTable
                 jobs={jobsData}
                 path='revision'
-                isLoading={isLoading}
+                isLoading={isLoading && !data}
                 // onRowClick={handleRowClick}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}

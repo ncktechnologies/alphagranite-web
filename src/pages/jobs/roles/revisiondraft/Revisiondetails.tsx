@@ -801,7 +801,7 @@ export function RevisionDetailsPage() {
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold text-sm">Uploaded files</h3>
-                      <Can action="create" on="Drafting">
+                      {/* <Can action="create" on="Drafting"> */}
                         <Button
                           variant="dashed"
                           size="sm"
@@ -812,7 +812,7 @@ export function RevisionDetailsPage() {
                           <Plus className="w-3.5 h-3.5" />
                           Add Files
                         </Button>
-                      </Can>
+                      {/* </Can> */}
                     </div>
 
                     {shouldShowUploadSection ? (
@@ -834,7 +834,7 @@ export function RevisionDetailsPage() {
                   {/* Submit button */}
                   <div className="flex justify-end gap-2 pt-2">
                     <BackButton fallbackUrl="/job/revision" label="Cancel" />
-                    <Can action="create" on="Drafting">
+                    {/* <Can action="create" on="Drafting"> */}
                       <Button
                         onClick={() => setShowSubmissionModal(true)}
                         className="bg-purple-600 hover:bg-purple-700"
@@ -842,7 +842,7 @@ export function RevisionDetailsPage() {
                       >
                         Submit revision
                       </Button>
-                    </Can>
+                    {/* </Can> */}
                   </div>
                 </CardContent>
               </Card>

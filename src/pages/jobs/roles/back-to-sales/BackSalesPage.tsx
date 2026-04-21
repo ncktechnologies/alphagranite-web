@@ -228,7 +228,7 @@ export function AfterDraftSalesPage() {
             <JobTable
                 jobs={jobsData}
                 path='draft-review'
-                isLoading={isLoading}
+                isLoading={isLoading && !data}
                 // onRowClick={handleRowClick}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}

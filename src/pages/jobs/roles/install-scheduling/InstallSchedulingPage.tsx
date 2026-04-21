@@ -239,7 +239,7 @@ export function InstallSchedulingPage() {
             <JobTable
                 jobs={jobsData}
                 path="install-scheduling"
-                isLoading={isLoading}
+                isLoading={isLoading && !data}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}
                 tableState={tableState}

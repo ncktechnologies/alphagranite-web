@@ -208,7 +208,7 @@ export const FinalProgrammingTable = ({
         <DataGrid
             table={table}
             recordCount={totalRecords}
-            isLoading={isLoading}
+            isLoading={isLoading && !data}
             tableLayout={{
                 columnsPinnable: true,
                 columnsMovable: true,
