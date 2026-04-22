@@ -14,6 +14,7 @@ import GraySidebar from '@/pages/jobs/components/job-details.tsx/GraySidebar';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Can } from '@/components/permission';
 import { stageConfig } from '@/utils/note-utils';
+import { useGetOperatorQaFilesQuery } from '@/store/api/operator';
 
 // Helper function to get FAB status display
 const getFabStatusInfo = (statusId: number | undefined) => {
@@ -29,6 +30,10 @@ export function SalesDetailsPage() {
 
   const { data: response, isLoading, isError, error } = useGetFabByIdQuery(Number(id));
   const fab = (response as any)?.data ?? response;
+   const { data: qaFilesData, isLoading: isQaLoading, refetch: refetchQaFiles } = useGetOperatorQaFilesQuery(
+           { operator_id: operatorId, job_id: currentTask?.fab_id || 0 },
+           { skip: !currentTask?.fab_id || !operatorId }
+       );
 
   // Prepare clickable links
   const jobNameLink = fab?.job_details?.id ? `/job/details/${fab.job_details.id}` : '#';
@@ -38,51 +43,64 @@ export function SalesDetailsPage() {
 
   // Build file sources from actual API shape
   // Inside SalesDetailsPage, replace the fileSources building block:
+  // Map QA files to UnifiedFile format for FileGallery
+  const qaFiles: UnifiedFile[] = (qaFilesData?.data || []).map((file: any) => ({
+    id: String(file.id),
+    name: file.name || file.file_name,
+    size: file.file_size || file.size || 0,
+    type: file.file_type || file.mime_type || 'application/octet-stream',
+    url: file.file_url || file.url,
+    stage: 'QA',
+    uploadedBy: file.uploaded_by_name || 'Operator',
+    uploadedAt: file.created_at ? new Date(file.created_at) : undefined,
+    _raw: file,
+  }));
 
-const fileSources: FileSource[] = (() => {
-  if (!fab) return [];
-  const sources: FileSource[] = [];
+  const fileSources: FileSource[] = (() => {
+    if (!fab) return [];
+    const sources: FileSource[] = [];
 
-  // Helper to convert API file array into UnifiedFile[]
-  const toUnifiedFiles = (files: any[]): UnifiedFile[] =>
-    (files ?? []).map((f): UnifiedFile => ({
-      id: String(f.id),
-      name: f.name || f.filename || `File_${f.id}`,
-      size: parseInt(f.file_size) || f.size || 0,
-      type: f.file_type || f.mime_type || 'application/octet-stream',
-      url: f.file_url || f.url || '',
-      stage_name: f.stage_name ?? f.stage,   // ← keep backend's stage_name
-      stage: f.stage_name ?? f.stage,
-      file_design: f.file_design,
-      uploaded_by_name: f.uploaded_by_name ?? f.uploader_name,
-      uploadedBy: f.uploaded_by_name ?? f.uploader_name,
-      uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
-      _raw: f,
-    }));
+    // Helper to convert API file array into UnifiedFile[]
+    const toUnifiedFiles = (files: any[]): UnifiedFile[] =>
+      (files ?? []).map((f): UnifiedFile => ({
+        id: String(f.id),
+        name: f.name || f.filename || `File_${f.id}`,
+        size: parseInt(f.file_size) || f.size || 0,
+        type: f.file_type || f.mime_type || 'application/octet-stream',
+        url: f.file_url || f.url || '',
+        stage_name: f.stage_name ?? f.stage,   // ← keep backend's stage_name
+        stage: f.stage_name ?? f.stage,
+        file_design: f.file_design,
+        uploaded_by_name: f.uploaded_by_name ?? f.uploader_name,
+        uploadedBy: f.uploaded_by_name ?? f.uploader_name,
+        uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
+        _raw: f,
+      }));
 
-  // Drafting files (from draft_data.files)
-  if (fab.draft_data?.files?.length) {
-    sources.push({ kind: 'raw', data: toUnifiedFiles(fab.draft_data.files) });
-  }
-  // SlabSmith files
-  if (fab.slabsmith_data?.files?.length) {
-    sources.push({ kind: 'raw', data: toUnifiedFiles(fab.slabsmith_data.files) });
-  }
-  // Sales CT files
-  if (fab.sales_ct_data?.files?.length) {
-    sources.push({ kind: 'raw', data: toUnifiedFiles(fab.sales_ct_data.files) });
-  }
-  // CNC files (if you later add cnc_data)
-  if (fab.cnc_data?.files?.length) {
-    sources.push({ kind: 'raw', data: toUnifiedFiles(fab.cnc_data.files) });
-  }
-  // Top-level files
-  if (fab.files?.length) {
-    sources.push({ kind: 'raw', data: toUnifiedFiles(fab.files) });
-  }
+    // Drafting files (from draft_data.files)
+    if (fab.draft_data?.files?.length) {
+      sources.push({ kind: 'raw', data: toUnifiedFiles(fab.draft_data.files) });
+    }
+    // SlabSmith files
+    if (fab.slabsmith_data?.files?.length) {
+      sources.push({ kind: 'raw', data: toUnifiedFiles(fab.slabsmith_data.files) });
+    }
+    // Sales CT files
+    if (fab.sales_ct_data?.files?.length) {
+      sources.push({ kind: 'raw', data: toUnifiedFiles(fab.sales_ct_data.files) });
+    }
+    // CNC files (if you later add cnc_data)
+    if (fab.cnc_data?.files?.length) {
+      sources.push({ kind: 'raw', data: toUnifiedFiles(fab.cnc_data.files) });
+    }
+    // Top-level files
+    if (fab.files?.length) {
+      sources.push({ kind: 'raw', data: toUnifiedFiles(fab.files) });
+    }
+     if (qaFiles.length > 0) sources.push({ kind: 'raw', data: qaFiles });
 
-  return sources;
-})();
+    return sources;
+  })();
 
   const totalFileCount = fileSources.reduce((sum, s) => sum + (s.kind === 'raw' ? s.data.length : 0), 0);
 
@@ -96,11 +114,11 @@ const fileSources: FileSource[] = (() => {
           { label: 'Account', value: fab.account_name || '—' },
           {
             label: 'Fab ID',
-            value: 
+            value:
               // <Link to={`/sales/${fab.id}`} target="_blank" rel="noreferrer" className="text-primary hover:underline">
-                fab.id
-              // </Link>
-            
+              fab.id
+            // </Link>
+
           },
           { label: 'Area', value: fab.input_area || '—' },
           {
@@ -137,7 +155,7 @@ const fileSources: FileSource[] = (() => {
         type: 'notes',
         notes: Array.isArray(fab.fab_notes)
           ? fab.fab_notes.map((note: any) => {
-          
+
             const stage = note?.stage || 'general';
             const config = stageConfig[stage] || stageConfig.general;
             return {
@@ -285,16 +303,16 @@ const fileSources: FileSource[] = (() => {
                 </p>
               </CardHeading>
               <Can  >
-              <div className="space-y-4">
-                <Button
-                  onClick={() => navigate(`/sales/edit/${id}`)}
-                  className="w-full flex items-center gap-2"
-                >
-                  <Pencil className="h-4 w-4" />
-                  Edit FAB Details
-                </Button>
-                {/* <BackButton label="Back" className="w-full" /> */}
-              </div>
+                <div className="space-y-4">
+                  <Button
+                    onClick={() => navigate(`/sales/edit/${id}`)}
+                    className="w-full flex items-center gap-2"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Edit FAB Details
+                  </Button>
+                  {/* <BackButton label="Back" className="w-full" /> */}
+                </div>
               </Can>
             </CardHeader>
             <CardContent>

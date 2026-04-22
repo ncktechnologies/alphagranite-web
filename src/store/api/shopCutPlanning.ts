@@ -116,6 +116,67 @@ export interface ShopCutPlanSuccessResponse<T = any> {
   data: T;
 }
 
+// Timer Types
+export interface ShopCutPlanTimerActionRequest {
+  action: 'start' | 'pause' | 'resume' | 'stop';
+  note?: string | null;
+  timestamp?: string;
+  work_percentage?: number;
+}
+
+export interface TimerSession {
+  id: number;
+  status: 'idle' | 'running' | 'paused' | 'stopped';
+  session_start_at: string | null;
+  current_run_start_at: string | null;
+  current_pause_start_at: string | null;
+  stopped_at: string | null;
+}
+
+export interface TimerState {
+  shop_cut_plan_id: number;
+  operator_id: number;
+  operator_name: string;
+  workstation_id: number;
+  workstation_name: string;
+  session: TimerSession;
+  total_actual_seconds: number;
+  total_actual_hours: number;
+  estimated_hours: number;
+  work_percentage: number;
+}
+
+export interface TimerHistoryEvent {
+  id: number;
+  session_id: number;
+  action: string;
+  event_at: string;
+  note: string | null;
+}
+
+export interface TimerHistorySession {
+  id: number;
+  status: string;
+  session_start_at: string;
+  current_run_start_at: string | null;
+  current_pause_start_at: string | null;
+  stopped_at: string | null;
+  total_work_seconds: number;
+  total_pause_seconds: number;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export interface TimerHistoryResponse {
+  shop_cut_plan_id: number;
+  operator_id: number;
+  operator_name: string;
+  workstation_id: number;
+  workstation_name: string;
+  sessions: TimerHistorySession[];
+  events: TimerHistoryEvent[];
+}
+
 export const shopCutPlanningApi = createApi({
   reducerPath: "shopCutPlanningApi",
   baseQuery: axiosBaseQuery({ baseUrl }),
@@ -238,6 +299,46 @@ export const shopCutPlanningApi = createApi({
           "ShopCutPlan",
         ],
       }),
+
+      // Get shop cut plan timer state
+      getShopPlanTimerState: build.query<TimerState, { plan_id: number; workstation_id?: number; scheduled_start_date?: string }>({
+        query: ({ plan_id, workstation_id, scheduled_start_date }) => ({
+          url: `/api/v1/shop/plans/${plan_id}/timer`,
+          method: "GET",
+          params: {
+            ...(workstation_id ? { workstation_id } : {}),
+            ...(scheduled_start_date ? { scheduled_start_date } : {}),
+          },
+        }),
+        providesTags: (_result, _error, { plan_id }) => [{ type: "ShopCutPlan", id: plan_id }],
+        transformResponse: (response: any) => response.data || null,
+      }),
+
+      // Get shop cut plan timer history
+      getShopPlanTimerHistory: build.query<TimerHistoryResponse, { plan_id: number; workstation_id?: number }>({
+        query: ({ plan_id, workstation_id }) => ({
+          url: `/api/v1/shop/plans/${plan_id}/timer/history`,
+          method: "GET",
+          params: {
+            ...(workstation_id ? { workstation_id } : {}),
+          },
+        }),
+        providesTags: (_result, _error, { plan_id }) => [{ type: "ShopCutPlan", id: plan_id }],
+        transformResponse: (response: any) => response.data || null,
+      }),
+
+      // Manage shop cut plan timer (start, pause, resume, stop)
+      manageShopPlanTimer: build.mutation<any, { plan_id: number; data: ShopCutPlanTimerActionRequest }>({
+        query: ({ plan_id, data }) => ({
+          url: `/api/v1/shop/plans/${plan_id}/timer/action`,
+          method: "POST",
+          data,
+        }),
+        invalidatesTags: (_result, _error, { plan_id }) => [
+          { type: "ShopCutPlan", id: plan_id },
+          "ShopCutPlan",
+        ],
+      }),
     };
   },
 });
@@ -255,4 +356,7 @@ export const {
   useUnscheduleShopPlanMutation,
   useRescheduleShopPlanMutation,
   useCreateShopSuggestionMutation,
+  useGetShopPlanTimerStateQuery,
+  useGetShopPlanTimerHistoryQuery,
+  useManageShopPlanTimerMutation,
 } = shopCutPlanningApi;

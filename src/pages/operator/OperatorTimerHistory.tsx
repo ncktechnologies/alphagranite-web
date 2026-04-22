@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, Play, Pause, Square, CheckCircle, Clock } from 'lucide-react';
-import { useGetTimerHistoryQuery } from '@/store/api/operator';
+import { useGetShopPlanTimerHistoryQuery } from '@/store/api/shopCutPlanning';
 
 interface OperatorTimerHistoryProps {
-    fabId: number;
+    planId: number;
     workstationId?: number;
 }
 
@@ -50,13 +50,13 @@ const getActionBadge = (action: string) => {
     );
 };
 
-export const OperatorTimerHistory = ({ fabId, workstationId }: OperatorTimerHistoryProps) => {
+export const OperatorTimerHistory = ({ planId, workstationId }: OperatorTimerHistoryProps) => {
     const [isOpen, setIsOpen] = useState(false);
-    const { data: history, isLoading, error } = useGetTimerHistoryQuery(
-        { fab_id: fabId, workstation_id: workstationId },
-        { skip: !fabId }
+    const { data: history, isLoading, error } = useGetShopPlanTimerHistoryQuery(
+        { plan_id: planId, workstation_id: workstationId },
+        { skip: !planId }
     );
-
+console.log(history, "unirfmf")
     if (isLoading) {
         return (
             <Card className="mt-4">
@@ -78,7 +78,7 @@ export const OperatorTimerHistory = ({ fabId, workstationId }: OperatorTimerHist
     }
 
     // The API returns { data: { events: [...] } }, so we need to extract events
-    const events = history?.events || [];
+    const events = history?.data?.events || history?.events || [];
     if (!events.length) {
         return null;
     }

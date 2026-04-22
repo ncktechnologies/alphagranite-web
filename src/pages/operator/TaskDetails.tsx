@@ -13,12 +13,14 @@ import { OperatorTimerComponent } from './components/TimerComponent';
 import { SubmitWorkModal, type SubmitWorkData } from './components/SubmitWorkModal';
 import { OperatorTimerHistory } from './OperatorTimerHistory';
 import {
-    useGetTimerStateQuery,
-    useManageTimerMutation,
-    useGetTimerHistoryQuery,
     useGetCurrentOperatorTasksByIdQuery,
     useGetOperatorQaFilesQuery,
 } from '@/store/api/operator';
+import {
+    useGetShopPlanTimerStateQuery as useShopPlanTimerState,
+    useManageShopPlanTimerMutation as useShopPlanTimerAction,
+    useGetShopPlanTimerHistoryQuery as useShopPlanTimerHistory,
+} from '@/store/api/shopCutPlanning';
 import { useGetFabByIdQuery } from '@/store/api/job';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { OperatorMediaUpload } from './components/OperatorMediaUpload';
@@ -60,7 +62,7 @@ export function OperatorTaskDetails() {
     const [workPercentage, setWorkPercentage] = useState(0);
     const [showUploadDialog, setShowUploadDialog] = useState(false);
     const [activeFile, setActiveFile] = useState<UnifiedFile | null>(null);
-    const { data: taskData, isLoading: isTasksLoading } =
+    const { data: taskData, isLoading: isTasksLoading, refetch: refetchTask } =
         useGetCurrentOperatorTasksByIdQuery(
             { id: taskId, operator_id: operatorId, workstation_id: workstationId },
             { skip: !taskId || !operatorId || !workstationId }
@@ -74,13 +76,13 @@ export function OperatorTaskDetails() {
                 : (taskData as any).data
             : taskData ?? null;
 
-    // ─── fab_id is the correct ID for all timer & upload API calls ───────────
-    const fabId: number = currentTask?.fab_id || 1;
+    // ─── plan_id is the correct ID for all shop timer API calls ───────────
+    const planId: number = currentTask?.id || taskId;
 
     // Fetch QA files for this operator (uses fab_id as job_id param for the upload URL)
     const { data: qaFilesData, isLoading: isQaLoading, refetch: refetchQaFiles } = useGetOperatorQaFilesQuery(
-        { operator_id: operatorId, job_id: fabId },
-        { skip: !fabId || !operatorId }
+        { operator_id: operatorId, job_id: currentTask?.fab_id || 0 },
+        { skip: !currentTask?.fab_id || !operatorId }
     );
 
     // Map QA files to UnifiedFile format for FileGallery
@@ -97,48 +99,55 @@ export function OperatorTaskDetails() {
     }));
 
     // Fetch full FAB data to get all files
-    const { data: fabResponse } = useGetFabByIdQuery(fabId, { skip: !fabId });
+    const { data: fabResponse } = useGetFabByIdQuery(currentTask?.fab_id || 0, { skip: !currentTask?.fab_id });
     const fabData = (fabResponse as any)?.data ?? fabResponse;
 
     // Build file sources from actual API shape (following sales Details.tsx pattern)
-    const fileSources: FileSource[] = (() => {
-        if (!fabData) return [];
-        const sources: FileSource[] = [];
+     const fileSources: FileSource[] = (() => {
+    if (!fabData) return [];
+    const sources: FileSource[] = [];
 
-        const mapFiles = (files: any[], stage: string, uploadedBy?: string): UnifiedFile[] =>
-            (files ?? []).map((f): UnifiedFile => ({
-                id: String(f.id),
-                name: f.name || f.filename || `File_${f.id}`,
-                size: parseInt(f.file_size) || f.size || 0,
-                type: f.file_type || f.mime_type || 'application/octet-stream',
-                url: f.file_url || f.url || '',
-                stage,
-                uploadedBy,
-                uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
-                _raw: f,
-            }));
+    // Helper to convert API file array into UnifiedFile[]
+    const toUnifiedFiles = (files: any[]): UnifiedFile[] =>
+      (files ?? []).map((f): UnifiedFile => ({
+        id: String(f.id),
+        name: f.name || f.filename || `File_${f.id}`,
+        size: parseInt(f.file_size) || f.size || 0,
+        type: f.file_type || f.mime_type || 'application/octet-stream',
+        url: f.file_url || f.url || '',
+        stage_name: f.stage_name ?? f.stage,   // ← keep backend's stage_name
+        stage: f.stage_name ?? f.stage,
+        file_design: f.file_design,
+        uploaded_by_name: f.uploaded_by_name ?? f.uploader_name,
+        uploadedBy: f.uploaded_by_name ?? f.uploader_name,
+        uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
+        _raw: f,
+      }));
 
-        // Add FAB files from different stages
-        const draftFiles = mapFiles(fabData.draft_data?.files ?? [], 'Drafting', fabData.draft_data?.drafter_name);
-        if (draftFiles.length > 0) sources.push({ kind: 'raw', data: draftFiles });
+    // Drafting files (from draft_data.files)
+    if (fabData.draft_data?.files?.length) {
+      sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.draft_data.files) });
+    }
+    // SlabSmith files
+    if (fabData.slabsmith_data?.files?.length) {
+      sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.slabsmith_data.files) });
+    }
+    // Sales CT files
+    if (fabData.sales_ct_data?.files?.length) {
+      sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.sales_ct_data.files) });
+    }
+    // CNC files (if you later add cnc_data)
+    if (fabData.cnc_data?.files?.length) {
+      sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.cnc_data.files) });
+    }
+    // Top-level files
+    if (fabData.files?.length) {
+      sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.files) });
+    }
+     if (qaFiles.length > 0) sources.push({ kind: 'raw', data: qaFiles });
 
-        const slabFiles = mapFiles(fabData.slabsmith_data?.files ?? [], 'SlabSmith');
-        if (slabFiles.length > 0) sources.push({ kind: 'raw', data: slabFiles });
-
-        const salesCtFiles = mapFiles(fabData.sales_ct_data?.files ?? [], 'Sales CT');
-        if (salesCtFiles.length > 0) sources.push({ kind: 'raw', data: salesCtFiles });
-
-        const cncFiles = mapFiles(fabData.cnc_data?.files ?? [], 'CNC');
-        if (cncFiles.length > 0) sources.push({ kind: 'raw', data: cncFiles });
-
-        const topFiles = mapFiles(fabData.files ?? [], 'General');
-        if (topFiles.length > 0) sources.push({ kind: 'raw', data: topFiles });
-
-        // Add QA files (operator uploads - these are separate from FAB files but should show together)
-        if (qaFiles.length > 0) sources.push({ kind: 'raw', data: qaFiles });
-
-        return sources;
-    })();
+    return sources;
+  })();
 
     const totalFileCount = fileSources.reduce((sum, s) => sum + (s.kind === 'raw' ? s.data.length : 0), 0);
 
@@ -148,14 +157,14 @@ export function OperatorTaskDetails() {
         }
     }, [currentTask]);
 
-    // ─── Timer query — uses fab_id and workstation_id ────────────────────────────
+    // ─── Timer query — uses plan_id and workstation_id ────────────────────────────
     const { data: timerData, isLoading: isTimerLoading, refetch: refetchTimer } =
-        useGetTimerStateQuery(
-            { fab_id: fabId, workstation_id: workstationId, scheduled_start_date: scheduledStartDate ?? undefined },
-            { skip: !fabId }
+        useShopPlanTimerState(
+            { plan_id: planId, workstation_id: workstationId, scheduled_start_date: scheduledStartDate ?? undefined },
+            { skip: !planId }
         );
 
-    const [manageTimer] = useManageTimerMutation();
+    const [manageTimer] = useShopPlanTimerAction();
 
     useEffect(() => {
         if (timerData) {
@@ -165,15 +174,21 @@ export function OperatorTaskDetails() {
         }
     }, [timerData]);
 
-    // ─── Timer action helpers — all use fab_id ────────────────────────────────
+    // Also update work percentage from timer data if available
+    useEffect(() => {
+        if (timerData?.work_percentage !== undefined) {
+            setWorkPercentage(timerData.work_percentage);
+        }
+    }, [timerData]);
+
+    // ─── Timer action helpers — all use plan_id ────────────────────────────────
     const handleStart = async () => {
         try {
             await manageTimer({
-                fab_id: fabId,
+                plan_id: planId,
                 data: {
                     action: 'start',
                     timestamp: new Date().toISOString(),
-                    workstation_id: workstationId,
                     note: t('OPERATOR.TIMER.START_NOTE', 'Timer started from operator dashboard')
                 }
             }).unwrap();
@@ -188,42 +203,46 @@ export function OperatorTaskDetails() {
     };
 
     const handlePause = async () => {
+        // Show work percentage modal first, user will enter percentage and notes
+        setShowWorkPercentageModal(true);
+    };
+
+    const handleWorkPercentageSaved = async (percentage: number, notes?: string) => {
         try {
+            // Send pause action with work percentage and notes directly to timer API
             await manageTimer({
-                fab_id: fabId,
+                plan_id: planId,
                 data: {
                     action: 'pause',
                     timestamp: new Date().toISOString(),
-                    workstation_id: workstationId,
-                    note: t('OPERATOR.TIMER.PAUSE_NOTE', 'Timer paused')
+                    work_percentage: percentage,
+                    note: notes || t('OPERATOR.TIMER.PAUSE_NOTE', 'Timer paused')
                 }
             }).unwrap();
 
+            setWorkPercentage(percentage);
             setTimerState('paused');
             setServerSynced(false);
             await refetchTimer();
-
-            setShowWorkPercentageModal(true);
+            
+            // Refetch task data to update the UI
+            refetchTask();
+            
+            setShowWorkPercentageModal(false);
+            toast.success(t('OPERATOR.TIMER.PAUSED', 'Timer paused'));
         } catch (error: any) {
             console.error('Failed to pause timer:', error);
-            // toast.error(error?.data?.message || t('OPERATOR.TIMER.PAUSE_FAILED', 'Failed to pause timer'));
+            toast.error(error?.data?.message || t('OPERATOR.TIMER.PAUSE_FAILED', 'Failed to pause timer'));
         }
-    };
-
-    const handleWorkPercentageSaved = (percentage: number) => {
-        setWorkPercentage(percentage);
-        setShowWorkPercentageModal(false);
-        toast.success(t('OPERATOR.TIMER.PAUSED', 'Timer paused'));
     };
 
     const handleResume = async () => {
         try {
             await manageTimer({
-                fab_id: fabId,
+                plan_id: planId,
                 data: {
                     action: 'resume',
                     timestamp: new Date().toISOString(),
-                    workstation_id: workstationId,
                     note: t('OPERATOR.TIMER.RESUME_NOTE', 'Timer resumed')
                 }
             }).unwrap();
@@ -240,18 +259,18 @@ export function OperatorTaskDetails() {
     const handleSubmitWork = async (data: SubmitWorkData) => {
         try {
             await manageTimer({
-                fab_id: fabId,
+                plan_id: planId,
                 data: {
                     action: 'stop',
                     timestamp: new Date().toISOString(),
-                    workstation_id: workstationId,
-                    note: `${t('OPERATOR.SUBMIT_WORK_NOTE', 'Work submitted')} - ${data.work_percentage}% ${t('OPERATOR.COMPLETE', 'complete')}. ${data.notes || ''}`,
+                    work_percentage: data.work_percentage,
+                    note: data.notes || `${t('OPERATOR.SUBMIT_WORK_NOTE', 'Work submitted')} - ${data.work_percentage}% ${t('OPERATOR.COMPLETE', 'complete')}`,
                 }
             }).unwrap();
             setTimerState('stopped');
             setServerSynced(false);
             await refetchTimer();
-            toast.success(t('OPERATOR.SUBMIT_WORK_SUCCESS', 'Work submitted successfully!'));
+            // toast.success(t('OPERATOR.SUBMIT_WORK_SUCCESS', 'Work submitted successfully!'));
             setTimeout(() => navigate('/operator/dashboard'), 2000);
         } catch (error: any) {
             console.error('Failed to submit work:', error);
@@ -278,7 +297,7 @@ export function OperatorTaskDetails() {
         { label: t('LABEL.JOB_NAME'), value: currentTask?.job_name || '—' },
         {
             label: t('JOB.FAB_ID'),
-            value: fabId ? <Link to={`/sales/${fabId}`} className="text-primary hover:underline" target="_blank" rel="noreferrer">{fabId}</Link> : '—',
+            value: currentTask?.fab_id ? <Link to={`/sales/${currentTask.fab_id}`} className="text-primary hover:underline" target="_blank" rel="noreferrer">{currentTask.fab_id}</Link> : '—',
         },
         { label: t('JOB.FAB_TYPE'), value: <span className="uppercase">{currentTask?.fab_type || '—'}</span> },
         { label: t('JOB.AREA'), value: currentTask?.area || '—' },
@@ -440,7 +459,7 @@ export function OperatorTaskDetails() {
                     </Card>
 
                     {/* Timer History Card */}
-                    <OperatorTimerHistory fabId={fabId} workstationId={workstationId} />
+                    <OperatorTimerHistory planId={planId} workstationId={workstationId} />
                     
                 </div>
 
@@ -535,7 +554,7 @@ export function OperatorTaskDetails() {
                 onClose={() => setShowWorkPercentageModal(false)}
                 operatorId={operatorId}
                 workstationId={workstationId}
-                taskId={currentTask?.task_id || taskId}
+                taskId={currentTask?.id || taskId}
             />
 
             <SubmitWorkModal
@@ -548,7 +567,7 @@ export function OperatorTaskDetails() {
                 taskId={currentTask?.task_id || taskId}
                 operatorId={operatorId}
                 workstationId={workstationId}
-                fabId={fabId}
+                fabId={currentTask?.fab_id}
                 jobId={currentTask?.business_job?.id}
             />
 
@@ -556,12 +575,12 @@ export function OperatorTaskDetails() {
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                         <DialogTitle>
-                            {t('UPLOAD.QA.TITLE')} {fabId ? `FAB-${fabId}` : ''}
+                            {t('UPLOAD.QA.TITLE')} {currentTask?.fab_id ? `FAB-${currentTask.fab_id}` : ''}
                         </DialogTitle>
                     </DialogHeader>
                     {/* OperatorMediaUpload — jobId prop receives fab_id per API spec */}
                     <OperatorMediaUpload
-                        jobId={fabId}
+                        jobId={currentTask?.fab_id || 0}
                         onUploadComplete={() => {
                             setShowUploadDialog(false);
                             refetchQaFiles();

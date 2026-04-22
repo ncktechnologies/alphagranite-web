@@ -228,88 +228,13 @@ export const CutListTableWithCalculations = ({
     const uniqueFabTypes = useMemo(() => [...fabTypes].sort(), [fabTypes]);
     const uniqueSalesPersons = useMemo(() => [...salesPersons].sort(), [salesPersons]);
 
-    // ── Filtered data (client-side safety net — backend does the real filtering) ──
+    // ── Filtered data - NO client-side filtering, backend handles everything ──
     const filteredData = useMemo(() => {
         if (!calculatedCutLists || !Array.isArray(calculatedCutLists)) return [];
-
-        let result = calculatedCutLists;
-
-        // ✅ Typed search — mirrors what backend receives via `type` + `search` params
-        if (effectiveSearchQuery) {
-            const q = effectiveSearchQuery.toLowerCase();
-            result = result.filter((list) => {
-                if (effectiveSearchType === 'fab_id') return list.fab_id?.toLowerCase().includes(q);
-                if (effectiveSearchType === 'job_number') return list.job_no?.toLowerCase().includes(q);
-                if (effectiveSearchType === 'job_name') return list.job_name?.toLowerCase().includes(q);
-                return false;
-            });
-        }
-
-        if (effectiveDateFilter !== 'all') {
-            result = result.filter((list) => {
-                if (effectiveDateFilter === 'unscheduled') return !list.install_date || list.install_date === '';
-                if (effectiveDateFilter === 'scheduled') return list.install_date && list.install_date !== '';
-                if (!list.install_date) return false;
-
-                const installDate = new Date(list.install_date);
-                const today = new Date();
-
-                const startOfWeek = new Date(today);
-                startOfWeek.setDate(today.getDate() - today.getDay());
-                const endOfWeek = new Date(startOfWeek);
-                endOfWeek.setDate(startOfWeek.getDate() + 6);
-
-                const startOfNextWeek = new Date(endOfWeek);
-                startOfNextWeek.setDate(endOfWeek.getDate() + 1);
-                const endOfNextWeek = new Date(startOfNextWeek);
-                endOfNextWeek.setDate(startOfNextWeek.getDate() + 6);
-
-                const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-                const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-                const startOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 1);
-                const endOfNextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0);
-
-                switch (effectiveDateFilter) {
-                    case 'today': return installDate.toDateString() === today.toDateString();
-                    case 'this_week': return installDate >= startOfWeek && installDate <= endOfWeek;
-                    case 'this_month': return installDate >= startOfMonth && installDate <= endOfMonth;
-                    case 'next_week': return installDate >= startOfNextWeek && installDate <= endOfNextWeek;
-                    case 'next_month': return installDate >= startOfNextMonth && installDate <= endOfNextMonth;
-                    case 'custom':
-                        if (effectiveDateRange?.from && effectiveDateRange?.to) {
-                            const start = new Date(effectiveDateRange.from);
-                            const end = new Date(effectiveDateRange.to);
-                            end.setHours(23, 59, 59, 999);
-                            return installDate >= start && installDate <= end;
-                        }
-                        return true;
-                    default: return list.install_date?.includes(effectiveDateFilter);
-                }
-            });
-        }
-
-        if (effectiveFabTypeFilter !== 'all') {
-            result = result.filter((list) => list.fab_type === effectiveFabTypeFilter);
-        }
-
-        if (effectiveSalesPersonFilter !== 'all') {
-            if (effectiveSalesPersonFilter === 'no_sales_person') {
-                result = result.filter((list) => !list.sales_person || list.sales_person === '');
-            } else {
-                result = result.filter((list) => list.sales_person === effectiveSalesPersonFilter);
-            }
-        }
-
-        return result;
-    }, [
-        calculatedCutLists,
-        effectiveSearchQuery,
-        effectiveSearchType, // ✅ in dependency array
-        effectiveDateFilter,
-        effectiveFabTypeFilter,
-        effectiveSalesPersonFilter,
-        effectiveDateRange,
-    ]);
+        // Backend handles all filtering (search, date, fab type, sales person)
+        // Just return the data as-is from the API
+        return calculatedCutLists;
+    }, [calculatedCutLists]);
 
     // ── Handlers ──────────────────────────────────────────────────────────────
     const handleStageFilterChange = (stageValue: string) => {
@@ -690,8 +615,8 @@ export const CutListTableWithCalculations = ({
                                             <SelectItem value="last_month">Last Month</SelectItem>
                                             <SelectItem value="next_week">Next Week</SelectItem>
                                             <SelectItem value="next_month">Next Month</SelectItem>
-                                            <SelectItem value="unscheduled">Unscheduled</SelectItem>
-                                            <SelectItem value="scheduled">Scheduled</SelectItem>
+                                            {/* <SelectItem value="unscheduled">Unscheduled</SelectItem>
+                                            <SelectItem value="scheduled">Scheduled</SelectItem> */}
                                             <SelectItem value="custom">Custom</SelectItem>
                                         </SelectContent>
                                     </Select>
