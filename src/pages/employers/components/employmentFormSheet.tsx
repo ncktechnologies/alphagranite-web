@@ -187,7 +187,7 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
                                                                     <SelectValue placeholder="Select Department" />
                                                                 </SelectTrigger>
                                                             </FormControl>
-                                                            <SelectContent>
+                                                            <SelectContent className="max-h-[200px]">
                                                                 {departmentsData?.items?.map((dept) => (
                                                                     <SelectItem key={dept.id} value={String(dept.id)}>
                                                                         {dept.name}

@@ -331,7 +331,7 @@ const Employees = () => {
                                     <SelectTrigger className="w-[170px] h-[34px]">
                                         <SelectValue placeholder="Department" />
                                     </SelectTrigger>
-                                    <SelectContent className="w-40">
+                                    <SelectContent className="w-40 max-h-[200px]">
                                         <SelectItem value="all">All Departments</SelectItem>
                                         {departmentsData?.items?.map((dept: any) => (
                                             <SelectItem key={dept.id} value={String(dept.id)}>

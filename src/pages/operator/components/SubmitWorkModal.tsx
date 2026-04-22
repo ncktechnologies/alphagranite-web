@@ -16,7 +16,13 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Slider } from '@/components/ui/slider';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -180,7 +186,7 @@ export function SubmitWorkModal({
                             </div>
                         )}
 
-                        {/* Work percentage slider */}
+                        {/* Work percentage dropdown */}
                         <FormField
                             control={form.control}
                             name="work_percentage"
@@ -188,41 +194,22 @@ export function SubmitWorkModal({
                                 <FormItem>
                                     <FormLabel>Work Completed</FormLabel>
                                     <FormControl>
-                                        <div className="space-y-4">
-                                            <div className="flex items-center justify-center">
-                                                <span className="text-4xl font-bold text-[#111827] tabular-nums">
-                                                    {workPct}%
-                                                </span>
-                                            </div>
-                                            <Slider
-                                                min={0}
-                                                max={100}
-                                                step={5}
-                                                value={[workPct]}
-                                                onValueChange={([val]) => handlePercentageChange(val)}
-                                                className="w-full"
-                                            />
-                                            <div className="flex justify-between text-xs text-gray-400">
-                                                <span>0%</span>
-                                                <span>50%</span>
-                                                <span>100%</span>
-                                            </div>
-                                            <div className="grid grid-cols-5 gap-2">
-                                                {[25, 50, 75, 90, 100].map((val) => (
-                                                    <button
-                                                        key={val}
-                                                        type="button"
-                                                        onClick={() => handlePercentageChange(val)}
-                                                        className={`text-xs py-1.5 rounded-md border transition-colors ${
-                                                            workPct === val
-                                                                ? 'bg-[#111827] text-white border-[#111827]'
-                                                                : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                                                        }`}
-                                                    >
-                                                        {val}%
-                                                    </button>
-                                                ))}
-                                            </div>
+                                        <div className="space-y-2">
+                                            <Select
+                                                value={workPct.toString()}
+                                                onValueChange={(val) => handlePercentageChange(parseInt(val))}
+                                            >
+                                                <SelectTrigger className="w-full">
+                                                    <SelectValue placeholder="Select work percentage" />
+                                                </SelectTrigger>
+                                                <SelectContent className="max-h-[200px] ">
+                                                    {Array.from({ length: 11 }, (_, i) => i * 10).map((val) => (
+                                                        <SelectItem key={val} value={val.toString()}>
+                                                            {val}%
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                     </FormControl>
                                     <FormMessage />

@@ -6,10 +6,16 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 import { LoaderCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useUpdateOperatorTaskMutation } from '@/store/api/operator';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 interface WorkPercentageModalProps {
     open: boolean;
@@ -67,39 +73,23 @@ export function WorkPercentageModal({
                 </DialogHeader>
 
                 <div className="space-y-6 py-4">
-                    <div className="flex items-center justify-center">
-                        <span className="text-4xl font-bold text-[#111827] tabular-nums">
-                            {percentage}%
-                        </span>
-                    </div>
-                    <Slider
-                        min={0}
-                        max={100}
-                        step={5}
-                        value={[percentage]}
-                        onValueChange={([val]) => setPercentage(val)}
-                        className="w-full"
-                    />
-                    <div className="flex justify-between text-xs text-gray-400">
-                        <span>0%</span>
-                        <span>50%</span>
-                        <span>100%</span>
-                    </div>
-                    <div className="grid grid-cols-5 gap-2">
-                        {[25, 50, 75, 90, 100].map((val) => (
-                            <button
-                                key={val}
-                                type="button"
-                                onClick={() => setPercentage(val)}
-                                className={`text-xs py-1.5 rounded-md border transition-colors ${
-                                    percentage === val
-                                        ? 'bg-[#111827] text-white border-[#111827]'
-                                        : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
-                                }`}
-                            >
-                                {val}%
-                            </button>
-                        ))}
+                    <div className="flex flex-col gap-2">
+                        <label className="text-sm font-medium text-gray-700">Work Percentage</label>
+                        <Select
+                            value={percentage.toString()}
+                            onValueChange={(val) => setPercentage(parseInt(val))}
+                        >
+                            <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select work percentage" />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-[200px]">
+                                {Array.from({ length: 11 }, (_, i) => i * 10).map((val) => (
+                                    <SelectItem key={val} value={val.toString()}>
+                                        {val}%
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
 
