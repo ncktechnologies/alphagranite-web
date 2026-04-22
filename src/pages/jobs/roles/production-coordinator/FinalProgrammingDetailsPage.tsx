@@ -341,7 +341,7 @@ export function FinalProgrammingDetailsPage() {
         },
         { label: "Drafter Assigned", value: fabData?.draft_data?.drafter_name || 'Unassigned' },
         { label: "Sales Person", value: fabData?.sales_person_name || '—' },
-        { label: "SlabSmith Needed", value: fabData?.slab_smith_ag_needed ? 'Yes' : 'No' },
+        { label: "SlabSmith Needed", value: fabData?.slab_smith_ag_needed || fabData?.slab_smith_cust_needed ? 'Yes' : 'No' },
       ],
     },
     {
@@ -526,7 +526,7 @@ export function FinalProgrammingDetailsPage() {
                         draftingData={fabData?.draft_data}
                         slabsmithData={(fabData as any)?.slabsmith_data}
                         sctData={(fabData as any)?.sales_ct_data}
-                        // cncData={(fabData as any)?.cnc_data}
+                        cncData={(fabData as any)?.cnc_data}
                         draftingId={fabData?.draft_data?.id}
                         showDeleteButton={!hasEnded && !isPaused}
                       />

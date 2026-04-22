@@ -454,7 +454,7 @@ export function CNCDetailsPage() {
                 },
                 { label: 'Drafter Assigned', value: fabData.cnc_data?.drafter_name || 'Unassigned' },
                 { label: 'Sales Person', value: fabData.sales_person_name || '—' },
-                { label: 'SlabSmith Needed', value: fabData.slab_smith_ag_needed ? 'Yes' : 'No' },
+                { label: 'SlabSmith Needed', value: fabData.slab_smith_ag_needed || fabData.slab_smith_cust_needed ? 'Yes' : 'No' },
             ],
         },
         {
@@ -686,21 +686,23 @@ export function CNCDetailsPage() {
                                                 <div className="flex items-center justify-between">
                                                     <h3 className="font-semibold text-sm">Uploaded files</h3>
                                                     {/* <Can action="create" on="Drafting"> */}
-                                                        <Button
-                                                            variant="dashed"
-                                                            size="sm"
-                                                            onClick={() => setShowUploadModal(true)}
-                                                            disabled={!isDrafting || isPaused || hasEnded || isOnHold}
-                                                            className="flex items-center gap-1.5 text-xs"
-                                                        >
-                                                            <Plus className="w-3.5 h-3.5" />
-                                                            Add Files
-                                                        </Button>
+                                                    <Button
+                                                        variant="dashed"
+                                                        size="sm"
+                                                        onClick={() => setShowUploadModal(true)}
+                                                        disabled={!isDrafting || isPaused || hasEnded || isOnHold}
+                                                        className="flex items-center gap-1.5 text-xs"
+                                                    >
+                                                        <Plus className="w-3.5 h-3.5" />
+                                                        Add Files
+                                                    </Button>
                                                     {/* </Can> */}
                                                 </div>
                                                 <Documents
                                                     onFileClick={handleFileClick}
                                                     draftingData={fabData?.draft_data}
+                                                    slabsmithData={(fabData as any)?.slabsmith_data}
+                                                    sctData={(fabData as any)?.sales_ct_data}
                                                     draftingId={fabData?.cnc_data?.id}
                                                     showDeleteButton={!hasEnded && !isOnHold}
                                                     cncData={fabData?.cnc_data}
@@ -719,13 +721,13 @@ export function CNCDetailsPage() {
                                         <div className="flex justify-end gap-2 pt-2">
                                             <BackButton fallbackUrl="/job/draft" label="Cancel" />
                                             {/* <Can action="create" on="CNC"> */}
-                                                <Button
-                                                    onClick={handleOpenSubmissionModal}
-                                                    className="bg-green-600 hover:bg-green-700"
-                                                    disabled={!canOpenSubmit}
-                                                >
-                                                    Submit CNC
-                                                </Button>
+                                            <Button
+                                                onClick={handleOpenSubmissionModal}
+                                                className="bg-green-600 hover:bg-green-700"
+                                                disabled={!canOpenSubmit}
+                                            >
+                                                Submit CNC
+                                            </Button>
                                             {/* </Can> */}
                                         </div>
                                     )}

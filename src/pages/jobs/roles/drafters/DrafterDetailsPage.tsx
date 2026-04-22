@@ -444,7 +444,7 @@ export function DrafterDetailsPage() {
         },
         { label: 'Drafter Assigned', value: fabData.draft_data?.drafter_name || 'Unassigned' },
         { label: 'Sales Person', value: fabData.sales_person_name || '—' },
-        { label: 'SlabSmith Needed', value: fabData.slab_smith_ag_needed ? 'Yes' : 'No' },
+        { label: 'SlabSmith Needed', value: fabData.slab_smith_ag_needed || fabData.slab_smith_cust_needed ? 'Yes' : 'No' },
       ],
     },
     {
