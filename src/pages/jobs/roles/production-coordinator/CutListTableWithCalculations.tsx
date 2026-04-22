@@ -83,10 +83,10 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
     const fabWithExtraFields = fab as any;
 
     const calculateCostOfStone = (): number => {
-        if (fab.job_details?.project_value) {
-            return parseFloat(fab.job_details.project_value.toString()) * 0.6;
+        if (fab?.cost_of_stone) {
+            return parseFloat(fab.cost_of_stone.toString()) * 0.6;
         }
-        return (fab.total_sqft || 0) * 50;
+        return (fab.cost_of_stone || 0) * 50;
     };
 
     return {

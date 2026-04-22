@@ -30,10 +30,10 @@ export function SalesDetailsPage() {
 
   const { data: response, isLoading, isError, error } = useGetFabByIdQuery(Number(id));
   const fab = (response as any)?.data ?? response;
-   const { data: qaFilesData, isLoading: isQaLoading, refetch: refetchQaFiles } = useGetOperatorQaFilesQuery(
-           { operator_id: operatorId, job_id: currentTask?.fab_id || 0 },
-           { skip: !currentTask?.fab_id || !operatorId }
-       );
+  //  const { data: qaFilesData, isLoading: isQaLoading, refetch: refetchQaFiles } = useGetOperatorQaFilesQuery(
+  //          { operator_id: operatorId, job_id: currentTask?.fab_id || 0 },
+  //          { skip: !currentTask?.fab_id || !operatorId }
+  //      );
 
   // Prepare clickable links
   const jobNameLink = fab?.job_details?.id ? `/job/details/${fab.job_details.id}` : '#';
@@ -44,17 +44,17 @@ export function SalesDetailsPage() {
   // Build file sources from actual API shape
   // Inside SalesDetailsPage, replace the fileSources building block:
   // Map QA files to UnifiedFile format for FileGallery
-  const qaFiles: UnifiedFile[] = (qaFilesData?.data || []).map((file: any) => ({
-    id: String(file.id),
-    name: file.name || file.file_name,
-    size: file.file_size || file.size || 0,
-    type: file.file_type || file.mime_type || 'application/octet-stream',
-    url: file.file_url || file.url,
-    stage: 'QA',
-    uploadedBy: file.uploaded_by_name || 'Operator',
-    uploadedAt: file.created_at ? new Date(file.created_at) : undefined,
-    _raw: file,
-  }));
+  // const qaFiles: UnifiedFile[] = (qaFilesData?.data || []).map((file: any) => ({
+  //   id: String(file.id),
+  //   name: file.name || file.file_name,
+  //   size: file.file_size || file.size || 0,
+  //   type: file.file_type || file.mime_type || 'application/octet-stream',
+  //   url: file.file_url || file.url,
+  //   stage: 'QA',
+  //   uploadedBy: file.uploaded_by_name || 'Operator',
+  //   uploadedAt: file.created_at ? new Date(file.created_at) : undefined,
+  //   _raw: file,
+  // }));
 
   const fileSources: FileSource[] = (() => {
     if (!fab) return [];
@@ -97,7 +97,7 @@ export function SalesDetailsPage() {
     if (fab.files?.length) {
       sources.push({ kind: 'raw', data: toUnifiedFiles(fab.files) });
     }
-     if (qaFiles.length > 0) sources.push({ kind: 'raw', data: qaFiles });
+    //  if (qaFiles.length > 0) sources.push({ kind: 'raw', data: qaFiles });
 
     return sources;
   })();
