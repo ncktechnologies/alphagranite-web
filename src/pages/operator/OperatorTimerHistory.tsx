@@ -6,6 +6,7 @@ import { useGetTimerHistoryQuery } from '@/store/api/operator';
 
 interface OperatorTimerHistoryProps {
     fabId: number;
+    workstationId?: number;
 }
 
 const formatTimestamp = (timestamp: string) => {
@@ -49,10 +50,10 @@ const getActionBadge = (action: string) => {
     );
 };
 
-export const OperatorTimerHistory = ({ fabId }: OperatorTimerHistoryProps) => {
+export const OperatorTimerHistory = ({ fabId, workstationId }: OperatorTimerHistoryProps) => {
     const [isOpen, setIsOpen] = useState(false);
     const { data: history, isLoading, error } = useGetTimerHistoryQuery(
-        { fab_id: fabId },
+        { fab_id: fabId, workstation_id: workstationId },
         { skip: !fabId }
     );
 

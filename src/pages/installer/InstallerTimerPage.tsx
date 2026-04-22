@@ -341,6 +341,7 @@ export function InstallerTimerPage() {
                 jobId={Number(job_id)}
                 installerId={installer_id!}
                 onPauseSuccess={handlePauseSuccess}
+                jobNumber={jobData?.job_number}
             />
 
             <InstallerStopModal
@@ -349,6 +350,7 @@ export function InstallerTimerPage() {
                 jobId={Number(job_id)}
                 installerId={installer_id!}
                 onStopSuccess={handleStopSuccess}
+                jobNumber={jobData?.job_number}
             />
             {/* ── Delete confirmation ──────────────────────────────────────────── */}
             <Popup

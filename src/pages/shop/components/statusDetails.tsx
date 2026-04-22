@@ -431,7 +431,7 @@ if (scheduledStart && scheduledEnd) {
                     ) : (
                         <>
                             <Badge variant="outline" className="text-xs font-normal">
-                                Seq: {plan.sequence ?? 1}
+                                Seq: {plan.sequence ?? null}
                             </Badge>
                             <Button
                                 variant="ghost" size="icon"
@@ -493,6 +493,7 @@ if (scheduledStart && scheduledEnd) {
                             >
                                 <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
                                     <SelectValue
+                                    
                                         placeholder={
                                             !draft.workstation_id
                                                 ? 'Select a workstation first'
@@ -540,7 +541,7 @@ if (scheduledStart && scheduledEnd) {
                         </div>
 
                         {/* Start / End Time */}
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="">
                             <div className="flex flex-col gap-1.5">
                                 <Label className="text-xs text-muted-foreground uppercase tracking-wide">Start Time</Label>
                                 <Select value={draft.start_time} onValueChange={v => patch({ start_time: v })}>
@@ -822,7 +823,7 @@ const FabDetailsPage: React.FC = () => {
                 ? <Link to={`/job/details/${fab.job_details.id}`} className="text-primary hover:underline">{fab.job_details.job_number}</Link>
                 : (fab.job_details?.job_number || 'N/A'),
         },
-        { label: 'Input Area', value: fab.input_area || 'N/A' },
+        { label: 'Area', value: fab.input_area || 'N/A' },
         { label: 'Stone Type', value: fab.stone_type_name || 'N/A' },
         { label: 'Stone Color', value: fab.stone_color_name || 'N/A' },
         { label: 'Stone Thickness', value: fab.stone_thickness_value || 'N/A' },

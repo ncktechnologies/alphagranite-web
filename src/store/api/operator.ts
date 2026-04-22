@@ -74,6 +74,7 @@ export interface OperatorJobTimerActionRequest {
     action: 'start' | 'pause' | 'resume' | 'stop' | 'onHold';
     timestamp?: string;
     note?: string;
+    workstation_id?: number;
 }
 
 // Create API
@@ -160,11 +161,14 @@ export const operatorApi = createApi({
 
         // Get timer state
         // GET /api/v1/operators/me/jobs/{fab_id}/timer
-        getTimerState: builder.query<TimerState, { fab_id: number; scheduled_start_date?: string }>({
-            query: ({ fab_id, scheduled_start_date }) => ({
+        getTimerState: builder.query<TimerState, { fab_id: number; workstation_id?: number; scheduled_start_date?: string }>({
+            query: ({ fab_id, workstation_id, scheduled_start_date }) => ({
                 url: `/api/v1/operators/me/jobs/${fab_id}/timer`,
                 method: 'GET',
-                params: scheduled_start_date ? { scheduled_start_date } : undefined,
+                params: {
+                    ...(workstation_id ? { workstation_id } : {}),
+                    ...(scheduled_start_date ? { scheduled_start_date } : {}),
+                },
             }),
             providesTags: (_result, _error, { fab_id }) => [{ type: 'Timer', id: fab_id }],
             transformResponse: (response: any) => response.data || null,
@@ -172,10 +176,11 @@ export const operatorApi = createApi({
 
         // Get timer history
         // GET /api/v1/operators/me/jobs/{fab_id}/timer/history
-        getTimerHistory: builder.query<TimerHistory[], { fab_id: number }>({
-            query: ({ fab_id }) => ({
+        getTimerHistory: builder.query<TimerHistory[], { fab_id: number; workstation_id?: number }>({
+            query: ({ fab_id, workstation_id }) => ({
                 url: `/api/v1/operators/me/jobs/${fab_id}/timer/history`,
-                method: 'GET'
+                method: 'GET',
+                params: workstation_id ? { workstation_id } : undefined,
             }),
             providesTags: (_result, _error, { fab_id }) => [{ type: 'Timer', id: fab_id }],
             transformResponse: (response: any) => response.data || response,

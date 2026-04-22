@@ -29,11 +29,12 @@ interface PauseModalProps {
     open: boolean;
     onClose: (success?: boolean) => void;
     jobId: number;
+    jobNumber?: string; // Optional job number for display
     templaterId: number;
     onPauseSuccess?: () => void; // Optional callback after successful pause
 }
 
-export const PauseModal = ({ open, onClose, jobId, templaterId, onPauseSuccess }: PauseModalProps) => {
+export const PauseModal = ({ open, onClose, jobId, jobNumber, templaterId, onPauseSuccess }: PauseModalProps) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [pauseTimer] = usePauseTemplaterTimerMutation();
 
@@ -73,7 +74,7 @@ export const PauseModal = ({ open, onClose, jobId, templaterId, onPauseSuccess }
                         <DialogTitle className="text-[15px] font-semibold py-2">
                             Pause Timer
                             <span className="ml-3 text-sm font-normal text-gray-500">
-                                Job ID: {jobId}
+                                Job No: {jobNumber || jobId}
                             </span>
                         </DialogTitle>
                     </div>

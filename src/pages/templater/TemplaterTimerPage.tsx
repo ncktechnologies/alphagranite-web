@@ -342,6 +342,7 @@ export function TemplaterTimerPage() {
                 jobId={Number(job_id)}
                 templaterId={templater_id!}
                 onPauseSuccess={handlePauseSuccess}
+                jobNumber={jobData?.job_number}
             />
 
             <StopModal
@@ -350,6 +351,7 @@ export function TemplaterTimerPage() {
                 jobId={Number(job_id)}
                 templaterId={templater_id!}
                 onStopSuccess={handleStopSuccess}
+                jobNumber={jobData?.job_number}
             />
             {/* ── Delete confirmation ──────────────────────────────────────────── */}
             <Popup

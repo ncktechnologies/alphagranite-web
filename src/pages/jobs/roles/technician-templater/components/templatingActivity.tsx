@@ -207,7 +207,6 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
           />
 
           {/* Editable Info */}
-          <div className="grid grid-cols-2 gap-6">
             {/* Scheduled Date */}
             <FormField
               control={form.control}
@@ -262,7 +261,6 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
                 </FormItem>
               )}
             />
-          </div>
 
           {/* Square Ft */}
           <FormField

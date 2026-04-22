@@ -27,7 +27,7 @@ import { X, Plus } from 'lucide-react';
 import { Can } from '@/components/permission';
 import { useTabClosingWarning } from '@/hooks';
 import { BackButton } from '@/components/common/BackButton';
-import { getFileStage, EnhancedFileMetadata } from '@/utils/file-labeling';
+import { getFileStage } from '@/utils/file-labeling';
 import { formatBytes } from '@/hooks/use-file-upload';
 import {
   Select,
@@ -479,7 +479,7 @@ export function DrafterDetailsPage() {
     }
   ] : [];
 
-  const filesForSubmission: EnhancedFileMetadata[] = allFilesForDisplay.map(file => ({
+  const filesForSubmission: [] = allFilesForDisplay.map(file => ({
     id: file.id!,
     name: file.name,
     size: file.size,

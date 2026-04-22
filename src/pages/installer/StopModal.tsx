@@ -31,9 +31,10 @@ interface InstallerStopModalProps {
   jobId: number;
   installerId: number;
   onStopSuccess?: () => void;
+  jobNumber?: string;
 }
 
-export const InstallerStopModal = ({ open, onClose, jobId, installerId, onStopSuccess }: InstallerStopModalProps) => {
+export const InstallerStopModal = ({ open, onClose, jobId, jobNumber, installerId, onStopSuccess }: InstallerStopModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stopTimer] = useStopInstallerTimerMutation();
 
@@ -74,7 +75,7 @@ export const InstallerStopModal = ({ open, onClose, jobId, installerId, onStopSu
             <DialogTitle className="text-[15px] font-semibold py-2">
               Submit Job
               <span className="ml-3 text-sm font-normal text-gray-500">
-                Job ID: {jobId}
+                Job No: {jobNumber || jobId}
               </span>
             </DialogTitle>
           </div>

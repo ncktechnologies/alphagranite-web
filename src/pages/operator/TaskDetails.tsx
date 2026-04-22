@@ -148,10 +148,10 @@ export function OperatorTaskDetails() {
         }
     }, [currentTask]);
 
-    // ─── Timer query — uses fab_id ────────────────────────────────────────────
+    // ─── Timer query — uses fab_id and workstation_id ────────────────────────────
     const { data: timerData, isLoading: isTimerLoading, refetch: refetchTimer } =
         useGetTimerStateQuery(
-            { fab_id: fabId, scheduled_start_date: scheduledStartDate ?? undefined },
+            { fab_id: fabId, workstation_id: workstationId, scheduled_start_date: scheduledStartDate ?? undefined },
             { skip: !fabId }
         );
 
@@ -173,6 +173,7 @@ export function OperatorTaskDetails() {
                 data: {
                     action: 'start',
                     timestamp: new Date().toISOString(),
+                    workstation_id: workstationId,
                     note: t('OPERATOR.TIMER.START_NOTE', 'Timer started from operator dashboard')
                 }
             }).unwrap();
@@ -193,6 +194,7 @@ export function OperatorTaskDetails() {
                 data: {
                     action: 'pause',
                     timestamp: new Date().toISOString(),
+                    workstation_id: workstationId,
                     note: t('OPERATOR.TIMER.PAUSE_NOTE', 'Timer paused')
                 }
             }).unwrap();
@@ -221,6 +223,7 @@ export function OperatorTaskDetails() {
                 data: {
                     action: 'resume',
                     timestamp: new Date().toISOString(),
+                    workstation_id: workstationId,
                     note: t('OPERATOR.TIMER.RESUME_NOTE', 'Timer resumed')
                 }
             }).unwrap();
@@ -241,6 +244,7 @@ export function OperatorTaskDetails() {
                 data: {
                     action: 'stop',
                     timestamp: new Date().toISOString(),
+                    workstation_id: workstationId,
                     note: `${t('OPERATOR.SUBMIT_WORK_NOTE', 'Work submitted')} - ${data.work_percentage}% ${t('OPERATOR.COMPLETE', 'complete')}. ${data.notes || ''}`,
                 }
             }).unwrap();
@@ -436,7 +440,7 @@ export function OperatorTaskDetails() {
                     </Card>
 
                     {/* Timer History Card */}
-                    <OperatorTimerHistory fabId={fabId} />
+                    <OperatorTimerHistory fabId={fabId} workstationId={workstationId} />
                     
                 </div>
 

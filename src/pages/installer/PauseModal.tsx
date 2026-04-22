@@ -30,9 +30,10 @@ interface InstallerPauseModalProps {
     jobId: number;
     installerId: number;
     onPauseSuccess?: () => void;
+    jobNumber?: string; // Optional job number for display
 }
 
-export const InstallerPauseModal = ({ open, onClose, jobId, installerId, onPauseSuccess }: InstallerPauseModalProps) => {
+export const InstallerPauseModal = ({ open, onClose, jobId, jobNumber, installerId, onPauseSuccess }: InstallerPauseModalProps) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [pauseTimer] = usePauseInstallerTimerMutation();
 
@@ -72,7 +73,7 @@ export const InstallerPauseModal = ({ open, onClose, jobId, installerId, onPause
                         <DialogTitle className="text-[15px] font-semibold py-2">
                             Pause Timer
                             <span className="ml-3 text-sm font-normal text-gray-500">
-                                Job ID: {jobId}
+                                Job No: {jobNumber || jobId}
                             </span>
                         </DialogTitle>
                     </div>

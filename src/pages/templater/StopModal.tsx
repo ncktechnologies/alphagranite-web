@@ -30,11 +30,12 @@ interface StopModalProps {
   open: boolean;
   onClose: (success?: boolean) => void;
   jobId: number;
+  jobNumber?: string;
   templaterId: number;
   onStopSuccess?: () => void;
 }
 
-export const StopModal = ({ open, onClose, jobId, templaterId, onStopSuccess }: StopModalProps) => {
+export const StopModal = ({ open, onClose, jobId, jobNumber, templaterId, onStopSuccess }: StopModalProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [stopTimer] = useStopTemplaterTimerMutation();
 
@@ -74,7 +75,7 @@ export const StopModal = ({ open, onClose, jobId, templaterId, onStopSuccess }: 
             <DialogTitle className="text-[15px] font-semibold py-2">
               Submit Job
               <span className="ml-3 text-sm font-normal text-gray-500">
-                Job ID: {jobId}
+                Job No: {jobNumber || jobId}
               </span>
             </DialogTitle>
           </div>
