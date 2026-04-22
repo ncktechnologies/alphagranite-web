@@ -114,7 +114,7 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
 
   const handleSubmit = async () => {
     if (!operatorId) {
-      toast.error('Please select a CNC operator');
+      toast.error('Please select a CNC Programmer');
       return;
     }
 
@@ -139,7 +139,7 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
             total_sqft_required_to_draft: parseFloat(sqftPerFab[reassignFabId] || '0'),
           },
         }).unwrap();
-        toast.success(`CNC operator reassigned for FAB ${reassignFabId}`);
+        toast.success(`CNC Programmer reassigned for FAB ${reassignFabId}`);
       } else {
         // Create CNC assignment - API requires drafter_id and items array
         const requestData = {
@@ -153,13 +153,13 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
         };
         
         await createCNCDrafting(requestData).unwrap();
-        toast.success(`Successfully assigned CNC operator to ${fabIds.length} FAB(s)`);
+        toast.success(`Successfully assigned CNC Programmer to ${fabIds.length} FAB(s)`);
       }
 
       onAssignSuccess?.();
       onClose();
     } catch (error) {
-      console.error('Error assigning CNC operator:', error);
+      console.error('Error assigning CNC Programmer:', error);
       // toast.error(isReassign ? 'Failed to reassign CNC operator' : 'Failed to assign CNC operator');
     } finally {
       setIsSubmitting(false);
@@ -170,16 +170,16 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{isReassign ? 'Reassign CNC Operator' : `Assign CNC Operator to ${fabIds.length} FAB(s)`}</DialogTitle>
+          <DialogTitle>{isReassign ? 'Reassign CNC Programmer' : `Assign CNC Programmer to ${fabIds.length} FAB(s)`}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
           {/* CNC Operator selection */}
           <div>
-            <Label>Select CNC Operator</Label>
+            <Label>Select CNC Programmer</Label>
             <Select value={operatorId} onValueChange={setOperatorId}>
               <SelectTrigger>
-                <SelectValue placeholder="Select CNC operator" />
+                <SelectValue placeholder="Select CNC Programmer" />
               </SelectTrigger>
               <SelectContent className="max-h-[200px] overflow-y-auto">
                 {!employeesLoading &&
@@ -243,7 +243,7 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting || !operatorId || (isReassign && cncLoading)}>
-            {isSubmitting ? (isReassign ? 'Reassigning...' : 'Assigning...') : isReassign ? 'Reassign CNC Operator' : 'Assign CNC Operator'}
+            {isSubmitting ? (isReassign ? 'Reassigning...' : 'Assigning...') : isReassign ? 'Reassign CNC Programmer' : 'Assign CNC Programmer'}
           </Button>
         </div>
       </DialogContent>

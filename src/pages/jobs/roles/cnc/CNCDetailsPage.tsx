@@ -196,14 +196,14 @@ export function CNCDetailsPage() {
     const handleStart = async (startDate: Date) => {
         const hasDraftingAssignment = cncData?.id || fabData?.cnc_data?.id;
         if (!hasDraftingAssignment) {
-            toast.error('Cannot start CNC session - no cnc operator found found');
+            toast.error('Cannot start CNC session - no cnc programmer found found');
             return;
         }
 
         // Authorization check: must be CNC drafter_id or super admin
         const assignedDrafterId = cncData?.drafter_id || fabData?.cnc_data?.drafter_id;
         if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
-            toast.error('You are not authorized to start this CNC session. Only the assigned CNC operator or super admin can perform this action.');
+            toast.error('You are not authorized to start this CNC session. Only the assigned CNC programmer or super admin can perform this action.');
             return;
         }
 
@@ -245,7 +245,7 @@ export function CNCDetailsPage() {
         // Authorization check: must be CNC drafter_id or super admin
         const assignedDrafterId = cncData?.drafter_id || fabData?.cnc_data?.drafter_id;
         if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
-            toast.error(`You are not authorized to ${action === 'pause' ? 'pause' : action === 'end' ? 'end' : 'update'} this CNC session. Only the assigned CNC operator or super admin can perform this action.`);
+            toast.error(`You are not authorized to ${action === 'pause' ? 'pause' : action === 'end' ? 'end' : 'update'} this CNC session. Only the assigned CNC programmer or super admin can perform this action.`);
             return;
         }
 
@@ -279,7 +279,7 @@ export function CNCDetailsPage() {
         // Authorization check: must be CNC drafter_id or super admin
         const assignedDrafterId = cncData?.drafter_id || fabData?.cnc_data?.drafter_id;
         if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
-            toast.error('You are not authorized to pause this CNC session. Only the assigned CNC operator or super admin can perform this action.');
+            toast.error('You are not authorized to pause this CNC session. Only the assigned CNC programmer or super admin can perform this action.');
             return;
         }
 
@@ -292,7 +292,7 @@ export function CNCDetailsPage() {
         // Authorization check: must be CNC drafter_id or super admin
         const assignedDrafterId = cncData?.drafter_id || fabData?.cnc_data?.drafter_id;
         if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
-            toast.error('You are not authorized to resume this CNC session. Only the assigned CNC operator or super admin can perform this action.');
+            toast.error('You are not authorized to resume this CNC session. Only the assigned CNC programmer or super admin can perform this action.');
             return;
         }
 
@@ -323,7 +323,7 @@ export function CNCDetailsPage() {
         // Authorization check: must be CNC drafter_id or super admin
         const assignedDrafterId = cncData?.drafter_id || fabData?.cnc_data?.drafter_id;
         if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
-            toast.error('You are not authorized to end this CNC session. Only the assigned CNC operator or super admin can perform this action.');
+            toast.error('You are not authorized to end this CNC session. Only the assigned CNC programmer or super admin can perform this action.');
             return;
         }
 
@@ -454,7 +454,22 @@ export function CNCDetailsPage() {
                 },
                 { label: 'Drafter Assigned', value: fabData.cnc_data?.drafter_name || 'Unassigned' },
                 { label: 'Sales Person', value: fabData.sales_person_name || '—' },
-                { label: 'SlabSmith Needed', value: fabData.slab_smith_ag_needed || fabData.slab_smith_cust_needed ? 'Yes' : 'No' },
+                // { label: 'SlabSmith Needed', value: fabData.slab_smith_ag_needed || fabData.slab_smith_cust_needed ? 'Yes' : 'No' },
+                {
+                    label: 'SlabSmith Needed',
+                    value: (() => {
+                        const custNeeded = fabData.slab_smith_cust_needed;
+                        const agNeeded = fabData.slab_smith_ag_needed;
+
+                        if (custNeeded === false && agNeeded === false) return 'Not Needed';
+
+                        const types = [];
+                        if (custNeeded === true) types.push('Cust');
+                        if (agNeeded === true) types.push('AG');
+
+                        return types.join(' & ') || 'Unknown';
+                    })()
+                },
             ],
         },
         {

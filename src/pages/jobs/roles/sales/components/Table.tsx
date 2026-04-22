@@ -579,7 +579,7 @@ export const JobSalesTable = ({
         {
             id: "cnc_operator",
             accessorKey: "cnc_operator",
-            header: ({ column }) => <DataGridColumnHeader title="CNC OPERATOR" column={column} />,
+            header: ({ column }) => <DataGridColumnHeader title="CNC Programmer" column={column} />,
             cell: ({ row }) => {
                 const cncOperator = row.original.cnc_operator;
                 const hasOperator = cncOperator && cncOperator !== '-';
@@ -717,23 +717,44 @@ export const JobSalesTable = ({
         {
             id: "slabsmith_status",
             accessorFn: (row) => {
-                const needed = (row as any).slabsmith_ag_needed ?? (row as any)._rawFabData?.slabsmith_ag_needed;
+                const custNeeded = (row as any).slab_smith_cust_needed ?? (row as any)._rawFabData?.slab_smith_cust_needed;
+                const agNeeded = (row as any).slab_smith_ag_needed ?? (row as any)._rawFabData?.slab_smith_ag_needed;
                 const completed = (row as any).slabsmith_completed_date ?? (row as any)._rawFabData?.slabsmith_completed_date;
-                if (needed === false) return 'Not Needed';
-                if (needed === true) return completed ? 'Completed' : 'Not Completed';
+                
+                if (custNeeded === false && agNeeded === false) return 'Not Needed';
+                
+                const types = [];
+                if (custNeeded === true) types.push('Cust');
+                if (agNeeded === true) types.push('AG');
+                
+                const neededType = types.join(' & ');
+                if (neededType) return completed ? `Completed (${neededType})` : `${neededType} - Not Completed`;
                 return 'Unknown';
             },
             header: ({ column }) => <DataGridColumnHeader className="uppercase" title="SlabSmith Status" column={column} />,
             cell: ({ row }) => {
-                const needed = (row.original as any).slabsmith_ag_needed ?? (row.original as any)._rawFabData?.slabsmith_ag_needed;
+                const custNeeded = (row.original as any).slab_smith_cust_needed ?? (row.original as any)._rawFabData?.slab_smith_cust_needed;
+                const agNeeded = (row.original as any).slab_smith_ag_needed ?? (row.original as any)._rawFabData?.slab_smith_ag_needed;
                 const completed = (row.original as any).slabsmith_completed_date ?? (row.original as any)._rawFabData?.slabsmith_completed_date;
-                if (needed === false) return <span className="text-sm text-gray-500">Not Needed</span>;
-                if (needed === true) return completed
-                    ? <span className="text-sm text-green-600 font-medium">Completed</span>
-                    : <span className="text-sm text-red-600 font-medium">Not Completed</span>;
-                return <span className="text-sm">Unknown</span>;
+                
+                if (custNeeded === false && agNeeded === false) {
+                    return <span className="text-sm text-gray-500">Not Needed</span>;
+                }
+                
+                const types = [];
+                if (custNeeded === true) types.push('Cust');
+                if (agNeeded === true) types.push('AG');
+                
+                const neededType = types.join(' & ');
+                
+                if (neededType) {
+                    return completed
+                        ? <span className="text-sm text-green-600 font-medium">Completed ({neededType})</span>
+                        : <span className="text-sm text-orange-600 font-medium">{neededType} - Not Completed</span>;
+                }
+                return <span className="text-sm text-gray-500">Unknown</span>;
             },
-            size: 140,
+            size: 180,
             enableSorting: true,
         },
 

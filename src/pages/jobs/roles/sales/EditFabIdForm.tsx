@@ -309,14 +309,6 @@ const EditFabIdForm = () => {
     const selectedAccount = accountsData?.find((account: any) => account.name === accountValue);
     const selectedAccountId = selectedAccount?.id;
 
-    // Clear stone color search and value when stone type changes
-    // useEffect(() => {
-    //     if (isInitialLoadCompleteRef.current) {
-    //         setStoneColorSearch('');
-    //         form.setValue('stoneColor', '', { shouldValidate: false });
-    //     }
-    // }, [selectedStoneTypeId, form]);
-
     // Watch for job name and number changes
     const jobNameValue = form.watch('jobName');
     const jobNumberValue = form.watch('jobNumber');
@@ -1025,7 +1017,7 @@ const EditFabIdForm = () => {
                                                 )}
                                             />
                                         </div>
-                                        {/* Checkboxes */}
+                                        {/* Checkboxes - NOW DISABLED */}
                                         <div>
                                             {(checkboxLogicError || isCurrentStateImpossible(form.getValues())) && (
                                                 <Alert className="mb-4 border-red-200 bg-red-50">
@@ -1047,6 +1039,7 @@ const EditFabIdForm = () => {
                                                                     onCheckedChange={(checked) =>
                                                                         handleCheckboxToggle('templateNotNeeded', checked === true, field.onChange)
                                                                     }
+                                                                    disabled={true}
                                                                 />
                                                             </FormControl>
                                                             <FormLabel className="font-normal">Template not needed</FormLabel>
@@ -1064,6 +1057,7 @@ const EditFabIdForm = () => {
                                                                     onCheckedChange={(checked) =>
                                                                         handleCheckboxToggle('draftNotNeeded', checked === true, field.onChange)
                                                                     }
+                                                                    disabled={true}
                                                                 />
                                                             </FormControl>
                                                             <FormLabel className="font-normal">Draft not needed</FormLabel>
@@ -1081,6 +1075,7 @@ const EditFabIdForm = () => {
                                                                     onCheckedChange={(checked) =>
                                                                         handleCheckboxToggle('slabSmithCustNotNeeded', checked === true, field.onChange)
                                                                     }
+                                                                    disabled={true}
                                                                 />
                                                             </FormControl>
                                                             <FormLabel className="font-normal">SlabSmith (Cust) not needed</FormLabel>
@@ -1099,6 +1094,7 @@ const EditFabIdForm = () => {
                                                                     onCheckedChange={(checked) =>
                                                                         handleCheckboxToggle('slabSmithAGNotNeeded', checked === true, field.onChange)
                                                                     }
+                                                                    disabled={true}
                                                                 />
                                                             </FormControl>
                                                             <FormLabel className="font-normal">Slab smith (AG) not needed</FormLabel>
@@ -1116,6 +1112,7 @@ const EditFabIdForm = () => {
                                                                     onCheckedChange={(checked) =>
                                                                         handleCheckboxToggle('sctNotNeeded', checked === true, field.onChange)
                                                                     }
+                                                                    disabled={true}
                                                                 />
                                                             </FormControl>
                                                             <FormLabel className="font-normal">SCT not needed</FormLabel>
@@ -1133,6 +1130,7 @@ const EditFabIdForm = () => {
                                                                     onCheckedChange={(checked) =>
                                                                         handleCheckboxToggle('finalProgrammingNotNeeded', checked === true, field.onChange)
                                                                     }
+                                                                    disabled={true}
                                                                 />
                                                             </FormControl>
                                                             <FormLabel className="font-normal">Final programing not needed</FormLabel>

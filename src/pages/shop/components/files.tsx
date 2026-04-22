@@ -1,6 +1,5 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { formatBytes } from '@/hooks/use-file-upload';
 import {
@@ -12,19 +11,23 @@ import {
   Eye,
 } from 'lucide-react';
 import { Drafting, useDeleteFileMutation } from '@/store/api/job';
-import { Can } from '@/components/permission';
-import { getFileStage, getStageBadge, WORKFLOW_STAGES } from '@/utils/file-labeling';
+import {
+  getFileStage,
+  getStageBadge,
+  normalizeStageKey,
+  WORKFLOW_STAGES,
+} from '@/utils/file-labeling';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
 
 // Helper function to convert file_design value to label
 const getFileDesignLabel = (value: string): string => {
   const designMap: Record<string, string> = {
-    'block_drawing': 'Block Drawing',
-    'layout': 'Layout',
-    'ss_layout': 'SS Layout',
-    'shop_drawing': 'Shop Drawing',
-    'photo_media': 'Photo / Media',
+    block_drawing: 'Block Drawing',
+    layout: 'Layout',
+    ss_layout: 'SS Layout',
+    shop_drawing: 'Shop Drawing',
+    photo_media: 'Photo / Media',
   };
   return designMap[value] || value;
 };
@@ -35,13 +38,11 @@ interface FileMetadata {
   size: number;
   type: string;
   url: string;
-  stage?: any; // FileLabel from file-labeling utils
-  // workflow stage key (e.g. "final_programming")
+  stage?: any;
   stage_name?: string;
   file_design?: string;
-  // Human readable name of uploader
   uploaded_by_name?: string;
-  uploadedBy?: string; // legacy
+  uploadedBy?: string;
   uploadedAt?: Date;
 }
 
@@ -51,21 +52,38 @@ interface UploadBoxProps {
   onDeleteFile?: (fileId: string) => void;
   draftingId?: number;
   uploadedFileMetas?: any[];
-  currentStage?: string; // Current workflow stage for context
-  slabsmithData?: any; // SlabSmith data containing files
-  sctData?: any; // SCT data containing files
-  cncData?: any; // CNC data containing files
-  showDeleteButton?: boolean; // Control delete button visibility
+  currentStage?: string;
+  slabsmithData?: any;
+  sctData?: any;
+  cncData?: any;
+  showDeleteButton?: boolean;
 }
 
-// Helper function to compare if two objects have the same files data
-const areFilesEqual = (files1: any[], files2: any[]) => {
-  if (files1.length !== files2.length) return false;
-  return files1.every((file, index) =>
-    file.id === files2[index]?.id &&
-    file.name === files2[index]?.name
-  );
-};
+// ─── Resolve stage label + className (mirrors FileGallery) ───────────────────
+function resolveStage(file: FileMetadata): { label: string; className: string } {
+  // 1. Get raw stage from backend (stage_name > stage > fallback)
+  const rawStage = file.stage_name || file.stage || 'general';
+
+  // 2. Normalise to match WORKFLOW_STAGES keys (e.g. "CNC" → "cnc", "Cut List" → "cut_list")
+  const normalisedKey = normalizeStageKey(rawStage);
+
+  // 3. Try to find exact match in WORKFLOW_STAGES
+  let stageObj = WORKFLOW_STAGES[normalisedKey];
+
+  // 4. If not found, use filename-based detection (pass normalised key as currentStage hint)
+  if (!stageObj) {
+    stageObj = getFileStage(file.name, { currentStage: normalisedKey });
+  }
+
+  // 5. Get badge (safe against undefined)
+  const badge = getStageBadge(stageObj);
+
+  // 6. Return label (use rawStage for display if badge label is fallback)
+  return {
+    label: badge.label === 'Unknown' ? rawStage.replace(/_/g, ' ') : badge.label,
+    className: badge.className,
+  };
+}
 
 export function Documents({
   onFileClick,
@@ -77,15 +95,15 @@ export function Documents({
   slabsmithData,
   sctData,
   cncData,
-  showDeleteButton = true
+  showDeleteButton = true,
 }: UploadBoxProps) {
   const { t } = useTranslation();
 
-  // Use useMemo to compute files instead of useState/useEffect
+  // useMemo to compute files
   const files = useMemo(() => {
     const allFiles: FileMetadata[] = [];
 
-    // Extract files from draftingData
+    // Drafting files
     if (draftingData) {
       if (draftingData.files && Array.isArray(draftingData.files) && draftingData.files.length > 0) {
         try {
@@ -106,35 +124,16 @@ export function Documents({
             file_design: file.file_design ?? undefined,
             uploaded_by_name: file.uploaded_by_name ?? file.uploader_name,
             uploadedBy: file.uploaded_by_name ?? file.uploader_name ?? '',
-            uploadedAt: file.created_at || file.uploaded_at ? new Date(file.created_at || file.uploaded_at) : new Date()
+            uploadedAt: file.created_at || file.uploaded_at ? new Date(file.created_at || file.uploaded_at) : new Date(),
           }));
           allFiles.push(...actualFiles);
         } catch (error) {
           console.error('Error processing files array:', error);
         }
       }
-      // Fallback to file_ids string
-      // else if (draftingData.file_ids) {
-      //   try {
-      //     const fileIdsArray = draftingData.file_ids.split(',').filter(id => id.trim() !== '');
-      //     const mockFiles = fileIdsArray.map((id, index) => ({
-      //       id: id.trim(),
-      //       name: `${index + 1}.pdf`,
-      //       size: 1024000 + index * 512000,
-      //       type: 'application/pdf',
-      //       url: '/images/app/upload-file.svg',
-      //       stage: currentStage ? WORKFLOW_STAGES[currentStage] : WORKFLOW_STAGES.drafting,
-      //       stage_name: currentStage ?? WORKFLOW_STAGES.drafting.stage,
-      //       uploadedAt: new Date()
-      //     }));
-      //     allFiles.push(...mockFiles);
-      //   } catch (error) {
-      //     console.error('Error parsing file_ids:', error);
-      //   }
-      // }
     }
 
-    // Add newly uploaded files
+    // Uploaded files
     if (uploadedFileMetas && uploadedFileMetas.length > 0) {
       const newFiles = uploadedFileMetas.map((meta: any) => ({
         id: String(meta.id),
@@ -147,12 +146,12 @@ export function Documents({
         file_design: meta.file_design ?? undefined,
         uploaded_by_name: meta.uploaded_by_name ?? meta.uploadedBy ?? 'Current User',
         uploadedBy: meta.uploaded_by_name ?? meta.uploadedBy ?? 'Current User',
-        uploadedAt: meta.uploadedAt || new Date()
+        uploadedAt: meta.uploadedAt || new Date(),
       }));
       allFiles.push(...newFiles);
     }
 
-    // Extract files from slabsmithData
+    // SlabSmith files
     if (slabsmithData) {
       if (slabsmithData.files && Array.isArray(slabsmithData.files) && slabsmithData.files.length > 0) {
         try {
@@ -170,7 +169,7 @@ export function Documents({
             file_design: file.file_design ?? undefined,
             uploaded_by_name: file.uploaded_by_name ?? file.uploader_name ?? '-',
             uploadedBy: file.uploaded_by_name ?? file.uploader_name ?? '-',
-            uploadedAt: file.created_at ? new Date(file.created_at) : new Date()
+            uploadedAt: file.created_at ? new Date(file.created_at) : new Date(),
           }));
           allFiles.push(...slabSmithFiles);
         } catch (error) {
@@ -179,7 +178,7 @@ export function Documents({
       }
     }
 
-    // Extract files from sctData
+    // SCT files
     if (sctData) {
       if (sctData.files && Array.isArray(sctData.files) && sctData.files.length > 0) {
         try {
@@ -197,7 +196,7 @@ export function Documents({
             file_design: file.file_design ?? undefined,
             uploaded_by_name: file.uploaded_by_name ?? file.uploader_name ?? '-',
             uploadedBy: file.uploaded_by_name ?? file.uploader_name ?? '-',
-            uploadedAt: file.created_at ? new Date(file.created_at) : new Date()
+            uploadedAt: file.created_at ? new Date(file.created_at) : new Date(),
           }));
           allFiles.push(...sctFiles);
         } catch (error) {
@@ -206,7 +205,7 @@ export function Documents({
       }
     }
 
-    // Extract files from cncData
+    // CNC files
     if (cncData) {
       if (cncData.files && Array.isArray(cncData.files) && cncData.files.length > 0) {
         try {
@@ -224,7 +223,7 @@ export function Documents({
             file_design: file.file_design ?? undefined,
             uploaded_by_name: file.uploaded_by_name ?? file.uploader_name ?? '-',
             uploadedBy: file.uploaded_by_name ?? file.uploader_name ?? '-',
-            uploadedAt: file.created_at ? new Date(file.created_at) : new Date()
+            uploadedAt: file.created_at ? new Date(file.created_at) : new Date(),
           }));
           allFiles.push(...cncFiles);
         } catch (error) {
@@ -234,7 +233,7 @@ export function Documents({
     }
 
     return allFiles;
-  }, [draftingData, uploadedFileMetas, currentStage, slabsmithData, sctData, cncData]); // Only recompute when these change
+  }, [draftingData, uploadedFileMetas, currentStage, slabsmithData, sctData, cncData]);
 
   const getFileIcon = useCallback((file: FileMetadata) => {
     const { type } = file;
@@ -252,25 +251,20 @@ export function Documents({
     if (onFileClick) onFileClick(file);
   }, [onFileClick]);
 
-  // Universal delete handler - just needs file_id
   const [deleteFile] = useDeleteFileMutation();
 
   const handleDeleteInternal = useCallback(async (fileId: string) => {
     try {
       await deleteFile({ file_id: fileId }).unwrap();
       toast.success('File deleted successfully');
-
-      // Call parent callback if provided
       if (onDeleteFile) {
         onDeleteFile(fileId);
       }
     } catch (error) {
       console.error('Failed to delete file:', error);
-      // toast.error('Failed to delete file');
     }
   }, [deleteFile, onDeleteFile]);
 
-  // If no files, show a message
   if (files.length === 0) {
     return (
       <div className="border-none">
@@ -282,56 +276,48 @@ export function Documents({
   return (
     <div className="border-none">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {files.map((file) => (
-          <div
-            key={file.id}
-            className={cn(
-              'relative rounded-lg border p-4 transition-colors border-muted-foreground/25 hover:border-muted-foreground/50'
-            )}
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex flex-col items-center gap-3 w-full">
-                <div className="size-8 flex items-center justify-center  rounded">
+        {files.map((file) => {
+          const { label: stageLabel, className: stageCls } = resolveStage(file);
+          return (
+            <div
+              key={file.id}
+              className={cn(
+                'relative rounded-lg border p-4 transition-colors border-muted-foreground/25 hover:border-muted-foreground/50 bg-white'
+              )}
+            >
+              {/* Delete button - absolutely positioned top-right */}
+              {showDeleteButton && (
+                <button
+                  className="absolute top-4 right-4 size-6 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-md hover:bg-gray-100"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteInternal(file.id);
+                  }}
+                  title="Delete file"
+                >
+                  <X className="size-3" />
+                </button>
+              )}
+
+              {/* Content - no longer includes delete button in flow */}
+              <div className="flex flex-col items-center gap-3 mb-3">
+                <div className="size-8 flex items-center justify-center rounded">
                   {getFileIcon(file)}
                 </div>
-                <div className="flex-1 min-w-0 w-full">
-                  <p className="text-[14px] text-black font-bold flex-1 truncate" title={file.name}>
+                <div className="flex-1 min-w-0 w-full text-left">
+                  <p className="text-[14px] text-black font-bold truncate" title={file.name}>
                     {file.name}
                   </p>
-                  <div className="flex flex-wrap items-center gap-2 mt-1">
-                    <p className="text-xs text-muted-foreground">
+                  <div className="flex flex-wrap justify-start items-center gap-2 mt-1">
+                    <span className="text-xs text-muted-foreground">
                       {formatBytes(file.size)}
-                    </p>
-                    {(() => {
-                      // Determine stage key from file metadata
-                      const stageKey = file.stage_name || getFileStage(file.name, { isDrafting: false }).stage;
-
-                      if (!stageKey) {
-                        // No stage information available – return null to show nothing
-                        return null;
-                      }
-
-                      // Try to get the badge from the mapping
-                      const badge = getStageBadge(stageKey as any);
-
-                      // Use badge label if available, otherwise format the stageKey as a readable label
-                      const label = badge?.label || stageKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                      // Use badge className if available, otherwise a default badge style
-                      const className = badge?.className || 'bg-gray-100 text-gray-800 text-xs px-2 py-0.5 rounded';
-
-                      return (
-                        <span className={className}>
-                          {label}
-                        </span>
-                      );
-                    })()}
-
+                    </span>
+                    <span className={cn('w-fit', stageCls)}>{stageLabel}</span>
                     {file.file_design && (
                       <span className="text-xs text-muted-foreground bg-gray-100 px-2 py-0.5 rounded">
                         {getFileDesignLabel(file.file_design)}
                       </span>
                     )}
-
                     {file.uploaded_by_name && (
                       <span className="text-xs text-muted-foreground bg-blue-50 px-2 py-0.5 rounded">
                         {file.uploaded_by_name}
@@ -341,57 +327,21 @@ export function Documents({
                 </div>
               </div>
 
-              {showDeleteButton && (
+              {/* View button at bottom */}
+              <div className="flex justify-start">
                 <Button
+                  onClick={() => handleViewFile(file)}
                   variant="ghost"
-                  size="icon"
-                  className="size-6 text-muted-foreground hover:text-destructive shrink-0"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleDeleteInternal(file.id);
-                  }}
+                  size="sm"
+                  className="h-8 w-8 p-0"
+                  title="View file"
                 >
-                  {/* <Can action="delete" on="Drafting"> */}
-                    <X className="size-3" />
-                  {/* </Can> */}
+                  <Eye className="w-4 h-4 text-blue-500" />
                 </Button>
-              )}
+              </div>
             </div>
-
-            <div className="flex items-center gap-1">
-              {/* View/Eye Icon Button */}
-              <Button
-                onClick={() => handleViewFile(file)}
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0"
-                title="View file"
-              >
-                <Eye className="w-4 h-4 text-blue-500" />
-              </Button>
-
-
-              {/* {showDeleteButton && onDeleteFile && draftingId && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-6 text-muted-foreground hover:text-destructive shrink-0"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (onDeleteFile && draftingId) {
-                        onDeleteFile(file.id);
-                      }
-                    }}
-                    disabled={!onDeleteFile || !draftingId}
-                  >
-                    <Can action="delete" on="Drafting">
-                      <X className="size-3" />
-                    </Can>
-                  </Button>
-                )} */}
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

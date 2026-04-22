@@ -444,7 +444,22 @@ export function DrafterDetailsPage() {
         },
         { label: 'Drafter Assigned', value: fabData.draft_data?.drafter_name || 'Unassigned' },
         { label: 'Sales Person', value: fabData.sales_person_name || '—' },
-        { label: 'SlabSmith Needed', value: fabData.slab_smith_ag_needed || fabData.slab_smith_cust_needed ? 'Yes' : 'No' },
+        // { label: 'SlabSmith Needed', value: fabData.slab_smith_ag_needed || fabData.slab_smith_cust_needed ? 'Yes' : 'No' },
+        {
+          label: 'SlabSmith Needed',
+          value: (() => {
+            const custNeeded = fabData.slab_smith_cust_needed;
+            const agNeeded = fabData.slab_smith_ag_needed;
+
+            if (custNeeded === false && agNeeded === false) return 'Not Needed';
+
+            const types = [];
+            if (custNeeded === true) types.push('Cust');
+            if (agNeeded === true) types.push('AG');
+
+            return types.join(' & ') || 'Unknown';
+          })()
+        },
       ],
     },
     {
@@ -676,16 +691,16 @@ export function DrafterDetailsPage() {
                         <div className="flex items-center justify-between">
                           <h3 className="font-semibold text-sm">Uploaded files</h3>
                           {/* <Can action="create" on="Drafting"> */}
-                            <Button
-                              variant="dashed"
-                              size="sm"
-                              onClick={() => setShowUploadModal(true)}
-                              disabled={!isDrafting || isPaused || hasEnded || isOnHold}
-                              className="flex items-center gap-1.5 text-xs"
-                            >
-                              <Plus className="w-3.5 h-3.5" />
-                              Add Files
-                            </Button>
+                          <Button
+                            variant="dashed"
+                            size="sm"
+                            onClick={() => setShowUploadModal(true)}
+                            disabled={!isDrafting || isPaused || hasEnded || isOnHold}
+                            className="flex items-center gap-1.5 text-xs"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            Add Files
+                          </Button>
                           {/* </Can> */}
                         </div>
                         <Documents
@@ -708,13 +723,13 @@ export function DrafterDetailsPage() {
                     <div className="flex justify-end gap-2 pt-2">
                       <BackButton fallbackUrl="/job/draft" label="Cancel" />
                       {/* <Can action="create" on="Drafting"> */}
-                        <Button
-                          onClick={handleOpenSubmissionModal}
-                          className="bg-green-600 hover:bg-green-700"
-                          disabled={!canOpenSubmit}
-                        >
-                          Submit Draft
-                        </Button>
+                      <Button
+                        onClick={handleOpenSubmissionModal}
+                        className="bg-green-600 hover:bg-green-700"
+                        disabled={!canOpenSubmit}
+                      >
+                        Submit Draft
+                      </Button>
                       {/* </Can> */}
                     </div>
                   )}

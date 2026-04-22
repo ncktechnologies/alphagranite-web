@@ -195,7 +195,23 @@ export const DraftReviewDetailsPage = () => {
                 },
                 { label: "Drafter Assigned", value: fabData.draft_data?.drafter_name || 'Unassigned' },
                 { label: "Sales Person", value: fabData.sales_person_name || '—' },
-                { label: "SlabSmith Needed", value: fabData.slab_smith_ag_needed || fabData.slab_smith_cust_needed ? 'Yes' : 'No' },
+                // { label: "SlabSmith Needed", value: fabData.slab_smith_ag_needed || fabData.slab_smith_cust_needed ? 'Yes' : 'No' },
+                {
+                    label: 'SlabSmith Needed',
+                    value: (() => {
+                        const custNeeded = fabData.slab_smith_cust_needed;
+                        const agNeeded = fabData.slab_smith_ag_needed;
+
+                        if (custNeeded === false && agNeeded === false) return 'Not Needed';
+
+                        const types = [];
+                        if (custNeeded === true) types.push('Cust');
+                        if (agNeeded === true) types.push('AG');
+
+                        return types.join(' & ') || 'Unknown';
+                    })()
+                },
+
             ],
         },
         {
@@ -339,17 +355,17 @@ export const DraftReviewDetailsPage = () => {
                                             </Badge>
                                         )}
                                         {/* <Can action="update" on="SCT"> */}
-                                            <Button onClick={() => setShowMarkAsCompleteModal(true)}>
-                                                Mark as Complete
-                                            </Button>
+                                        <Button onClick={() => setShowMarkAsCompleteModal(true)}>
+                                            Mark as Complete
+                                        </Button>
                                         {/* </Can> */}
                                         {/* <Can action="update" on="SCT"> */}
-                                            <Button
-                                                variant="outline"
-                                                onClick={() => setShowSubmissionModal(true)}
-                                            >
-                                                Create Revision
-                                            </Button>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => setShowSubmissionModal(true)}
+                                        >
+                                            Create Revision
+                                        </Button>
                                         {/* </Can> */}
                                     </div>
                                 </CardHeader>
@@ -367,16 +383,16 @@ export const DraftReviewDetailsPage = () => {
                                         <div className="flex items-center justify-between mb-3">
                                             <h3 className="font-semibold text-sm">Uploaded files</h3>
                                             {/* <Can action="create" on="Drafting"> */}
-                                                <Button
-                                                    variant="dashed"
-                                                    size="sm"
-                                                    onClick={() => setShowUploadModal(true)}
-                                                    // disabled={isUploadDisabled}
-                                                    className="flex items-center gap-1.5 text-xs"
-                                                >
-                                                    <Plus className="w-3.5 h-3.5" />
-                                                    Add Files
-                                                </Button>
+                                            <Button
+                                                variant="dashed"
+                                                size="sm"
+                                                onClick={() => setShowUploadModal(true)}
+                                                // disabled={isUploadDisabled}
+                                                className="flex items-center gap-1.5 text-xs"
+                                            >
+                                                <Plus className="w-3.5 h-3.5" />
+                                                Add Files
+                                            </Button>
                                             {/* </Can> */}
                                         </div>
 

@@ -87,7 +87,22 @@ export function InstallSchedulingDetailsPage() {
                 },
                 { label: "Drafter Assigned", value: fab.draft_data?.drafter_name || 'Unassigned' },
                 { label: "Sales Person", value: fab.sales_person_name || '—' },
-                { label: "SlabSmith Needed", value: fab.slab_smith_ag_needed || fab.slab_smith_cust_needed ? 'Yes' : 'No' },
+                // { label: "SlabSmith Needed", value: fab.slab_smith_ag_needed || fab.slab_smith_cust_needed ? 'Yes' : 'No' },
+                {
+                    label: 'SlabSmith Needed',
+                    value: (() => {
+                        const custNeeded = fab.slab_smith_cust_needed;
+                        const agNeeded = fab.slab_smith_ag_needed;
+
+                        if (custNeeded === false && agNeeded === false) return 'Not Needed';
+
+                        const types = [];
+                        if (custNeeded === true) types.push('Cust');
+                        if (agNeeded === true) types.push('AG');
+
+                        return types.join(' & ') || 'Unknown';
+                    })()
+                },
             ],
         },
         {

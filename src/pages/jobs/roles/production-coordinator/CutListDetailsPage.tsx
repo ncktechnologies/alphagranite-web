@@ -95,7 +95,21 @@ export function CutListDetailsPage() {
           },
           { label: 'Drafter Assigned', value: draftData?.drafter_name || 'Unassigned' },
           { label: 'Sales Person', value: fabData.sales_person_name || '—' },
-          { label: 'SlabSmith Needed', value: fabData.slab_smith_ag_needed || fabData.slab_smith_cust_needed ? 'Yes' : 'No' },
+          { 
+            label: 'SlabSmith Needed', 
+            value: (() => {
+              const custNeeded = fabData.slab_smith_cust_needed;
+              const agNeeded = fabData.slab_smith_ag_needed;
+              
+              if (custNeeded === false && agNeeded === false) return 'Not Needed';
+              
+              const types = [];
+              if (custNeeded === true) types.push('Cust');
+              if (agNeeded === true) types.push('AG');
+              
+              return types.join(' & ') || 'Unknown';
+            })()
+          },
         ],
       },
       {

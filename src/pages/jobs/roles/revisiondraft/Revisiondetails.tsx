@@ -610,7 +610,22 @@ export function RevisionDetailsPage() {
         },
         { label: "Drafter Assigned", value: fabData?.draft_data?.drafter_name || 'Unassigned' },
         { label: "Sales Person", value: fabData?.sales_person_name || '—' },
-        { label: "SlabSmith Needed", value: fabData?.slab_smith_ag_needed ? 'Yes' : 'No' },
+        // { label: "SlabSmith Needed", value: fabData?.slab_smith_ag_needed ? 'Yes' : 'No' },
+        {
+          label: 'SlabSmith Needed',
+          value: (() => {
+            const custNeeded = fabData.slab_smith_cust_needed;
+            const agNeeded = fabData.slab_smith_ag_needed;
+
+            if (custNeeded === false && agNeeded === false) return 'Not Needed';
+
+            const types = [];
+            if (custNeeded === true) types.push('Cust');
+            if (agNeeded === true) types.push('AG');
+
+            return types.join(' & ') || 'Unknown';
+          })()
+        },
       ],
     },
     {
@@ -640,7 +655,7 @@ export function RevisionDetailsPage() {
       title: "FAB Notes",
       type: "notes",
       notes: getAllFabNotes(fabData?.fab_notes || []).map(note => {
-      
+
         const stage = note.stage || 'general';
         const config = stageConfig[stage] || stageConfig.general;
         return {
@@ -802,16 +817,16 @@ export function RevisionDetailsPage() {
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold text-sm">Uploaded files</h3>
                       {/* <Can action="create" on="Drafting"> */}
-                        <Button
-                          variant="dashed"
-                          size="sm"
-                          onClick={() => setShowUploadModal(true)}
-                          disabled={!isDrafting || isPaused || hasEnded || isOnHold}
-                          className="flex items-center gap-1.5 text-xs"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          Add Files
-                        </Button>
+                      <Button
+                        variant="dashed"
+                        size="sm"
+                        onClick={() => setShowUploadModal(true)}
+                        disabled={!isDrafting || isPaused || hasEnded || isOnHold}
+                        className="flex items-center gap-1.5 text-xs"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        Add Files
+                      </Button>
                       {/* </Can> */}
                     </div>
 
@@ -835,13 +850,13 @@ export function RevisionDetailsPage() {
                   <div className="flex justify-end gap-2 pt-2">
                     <BackButton fallbackUrl="/job/revision" label="Cancel" />
                     {/* <Can action="create" on="Drafting"> */}
-                      <Button
-                        onClick={() => setShowSubmissionModal(true)}
-                        className="bg-purple-600 hover:bg-purple-700"
-                        disabled={!canOpenSubmit}
-                      >
-                        Submit revision
-                      </Button>
+                    <Button
+                      onClick={() => setShowSubmissionModal(true)}
+                      className="bg-purple-600 hover:bg-purple-700"
+                      disabled={!canOpenSubmit}
+                    >
+                      Submit revision
+                    </Button>
                     {/* </Can> */}
                   </div>
                 </CardContent>

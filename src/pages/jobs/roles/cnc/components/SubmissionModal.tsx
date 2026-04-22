@@ -147,8 +147,8 @@ export const SubmissionModal = ({
     let cncId = cnc?.id ?? cnc?.data?.id;
     
     if (!cncId) {
-      console.error('CNC record does not exist. Please assign CNC operator first.');
-      toast.error('CNC assignment not found. Please assign a CNC operator first.');
+      console.error('CNC record does not exist. Please assign CNC programmer first.');
+      toast.error('CNC assignment not found. Please assign a CNC programmer first.');
       return;
     }
 
