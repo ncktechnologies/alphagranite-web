@@ -29,7 +29,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useGetAllShopPlansQuery, useGetFabTypesQuery, useGetWorkstationsQuery, useGetEmployeesQuery } from '@/store/api';
+import { useGetAllShopPlansQuery, useGetFabTypesQuery, useGetWorkstationsQuery, useGetEmployeesQuery, useGetPlanningSectionsQuery } from '@/store/api';
 import { formatTime } from '@/utils/date-utils';
 import CreatePlanPage from './createPlanePage';
 
@@ -127,6 +127,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
   const [filterFabType, setFilterFabType] = useState('');
   const [filterWorkstation, setFilterWorkstation] = useState('');
   const [filterOperator, setFilterOperator] = useState('');
+  const [filterPlanningSection, setFilterPlanningSection] = useState('');
 
   const isSearchLocked = !!lockedFabId;
 
@@ -150,9 +151,10 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     if (filterFabType) params.fab_type = filterFabType;
     if (filterWorkstation) params.workstation_id = Number(filterWorkstation);
     if (filterOperator) params.operator_id = Number(filterOperator);
+    if (filterPlanningSection) params.planning_section_id = Number(filterPlanningSection);
 
     return params;
-  }, [currentDate, viewMode, lockedFabId, searchFabId, searchType, filterFabType, filterWorkstation, filterOperator]);
+  }, [currentDate, viewMode, lockedFabId, searchFabId, searchType, filterFabType, filterWorkstation, filterOperator, filterPlanningSection]);
 
   const { data: plansResponse, isLoading } = useGetAllShopPlansQuery(queryParams);
 
@@ -162,6 +164,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
   const { data: fabTypesData } = useGetFabTypesQuery();
   const { data: workstationsData } = useGetWorkstationsQuery();
   const { data: employeesData } = useGetEmployeesQuery();
+  const { data: planningSectionsData } = useGetPlanningSectionsQuery();
 
   const fabTypes = useMemo(() => {
     if (Array.isArray(fabTypesData)) return fabTypesData.map((f: any) => f.name || f).sort();
@@ -180,6 +183,11 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
       .map((e: any) => ({ id: String(e.id), name: `${e.first_name || ''} ${e.last_name || ''}`.trim() || e.email }))
       .sort((a: any, b: any) => a.name.localeCompare(b.name));
   }, [employeesData]);
+
+  const planningSections = useMemo(() => {
+    const arr = (planningSectionsData as any)?.data || (Array.isArray(planningSectionsData) ? planningSectionsData : []);
+    return arr.map((s: any) => ({ id: String(s.id), name: s.name || `Section ${s.id}` }));
+  }, [planningSectionsData]);
 
   const displayDays = useMemo(() => {
     if (viewMode === 'day') return [currentDate];
@@ -560,6 +568,16 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                   <SelectContent className="max-h-[200px] overflow-y-auto">
                     <SelectItem value="all">All Operators</SelectItem>
                     {operators.map((o: any) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+
+                <Select value={filterPlanningSection || 'all'} onValueChange={(v) => setFilterPlanningSection(v === 'all' ? '' : v)}>
+                  <SelectTrigger className="min-w-[150px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
+                    <SelectValue placeholder="All Sections" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px] overflow-y-auto">
+                    <SelectItem value="all">All Plans</SelectItem>
+                    {planningSections.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </>
