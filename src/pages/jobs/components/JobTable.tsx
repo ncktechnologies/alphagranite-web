@@ -820,7 +820,7 @@ export const JobTable = ({
                 
                 const neededType = types.join(' & ');
                 if (neededType) return completed ? `Completed (${neededType})` : `${neededType} - Not Completed`;
-                return 'Unknown';
+                return '-';
             },
             header: ({ column }) => <DataGridColumnHeader className="uppercase" title="SlabSmith Status" column={column} />,
             cell: ({ row }) => {
