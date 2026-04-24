@@ -224,8 +224,27 @@ export const shopCutPlanningApi = createApi({
               ...(queryParams.type && { type: queryParams.type }),
               ...(queryParams.planning_section_id !== undefined && { planning_section_id: queryParams.planning_section_id }),
               ...(queryParams.workstation_id !== undefined && { workstation_id: queryParams.workstation_id }),
-              ...(queryParams.operator_id !== undefined && { operator_id: queryParams.operator_id }),
+              // Handle operator_id as repeated query params: ?operator_id=1&operator_id=5&operator_id=8
+              ...(queryParams.operator_id && {
+                operator_id: Array.isArray(queryParams.operator_id) 
+                  ? queryParams.operator_id 
+                  : queryParams.operator_id
+              }),
               ...(queryParams.fab_type && { fab_type: queryParams.fab_type }),
+            },
+            // Serialize arrays as repeated query parameters
+            paramsSerializer: {
+              serialize: (params: any) => {
+                const searchParams = new URLSearchParams();
+                Object.entries(params).forEach(([key, value]) => {
+                  if (Array.isArray(value)) {
+                    value.forEach((val) => searchParams.append(key, String(val)));
+                  } else if (value !== undefined && value !== null) {
+                    searchParams.append(key, String(value));
+                  }
+                });
+                return searchParams.toString();
+              }
             }
           };
         },

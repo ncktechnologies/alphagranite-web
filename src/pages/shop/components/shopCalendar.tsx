@@ -1,7 +1,10 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, X, Search, Rows3, Columns3, Lock } from 'lucide-react';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Check, ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, X, Search, Rows3, Columns3, Lock } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   format,
   addDays,
@@ -15,7 +18,6 @@ import {
   getMonth,
 } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -126,7 +128,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
   const [searchType, setSearchType] = useState<'fab_id' | 'job_number'>('fab_id');
   const [filterFabType, setFilterFabType] = useState('');
   const [filterWorkstation, setFilterWorkstation] = useState('');
-  const [filterOperator, setFilterOperator] = useState('');
+  const [filterOperator, setFilterOperator] = useState<string[]>([]);
   const [filterPlanningSection, setFilterPlanningSection] = useState('');
 
   const isSearchLocked = !!lockedFabId;
@@ -150,16 +152,19 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     // Add other filters
     if (filterFabType) params.fab_type = filterFabType;
     if (filterWorkstation) params.workstation_id = Number(filterWorkstation);
-    if (filterOperator) params.operator_id = Number(filterOperator);
+    if (filterOperator.length > 0) params.operator_id = filterOperator.map(id => Number(id));
     if (filterPlanningSection) params.planning_section_id = Number(filterPlanningSection);
 
     return params;
   }, [currentDate, viewMode, lockedFabId, searchFabId, searchType, filterFabType, filterWorkstation, filterOperator, filterPlanningSection]);
 
-  const { data: plansResponse, isLoading } = useGetAllShopPlansQuery(queryParams);
+  const { data: plansResponse, isLoading, isFetching } = useGetAllShopPlansQuery(queryParams);
 
   // Store the selected plan event directly from the calendar (no need to fetch again)
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
+
+  // Multi-select popover state for operators
+  const [operatorPopoverOpen, setOperatorPopoverOpen] = useState(false);
 
   const { data: fabTypesData } = useGetFabTypesQuery();
   const { data: workstationsData } = useGetWorkstationsQuery();
@@ -353,7 +358,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
             >
               <div className="px-3 py-2 h-full flex flex-col justify-start overflow-hidden">
                 <p className="text-[13px] font-semibold truncate" style={{ color: text }}>
-                  Fab ID {event.fab_id}
+                   {event.fab_id} {event.plan_name ? `• ${event.plan_name}` : ''} {event.operator_name ? `• ${event.operator_name}` : ''}
                 </p>
                 <p className="text-[11px] truncate mt-0.5" style={{ color: text, opacity: 0.7 }}>
                   {event.fab_type || event.percent_complete != null ? `${event.percent_complete ?? 0}%` : ''}
@@ -561,15 +566,50 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                   </SelectContent>
                 </Select>
 
-                <Select value={filterOperator || 'all'} onValueChange={(v) => setFilterOperator(v === 'all' ? '' : v)}>
-                  <SelectTrigger className="min-w-[137px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
-                    <SelectValue placeholder="All Operators" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px] overflow-y-auto">
-                    <SelectItem value="all">All Operators</SelectItem>
-                    {operators.map((o: any) => <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+                <Popover open={operatorPopoverOpen} onOpenChange={setOperatorPopoverOpen}>
+                  <PopoverTrigger asChild>
+                    <button className="min-w-[137px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
+                      <span className="truncate">
+                        {filterOperator.length === 0 ? 'All Operators' : `${filterOperator.length} selected`}
+                      </span>
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[220px] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search operators..." />
+                      <CommandList>
+                        <CommandEmpty>No operators found.</CommandEmpty>
+                        <CommandGroup>
+                          {operators.map((o: any) => {
+                            const isSelected = filterOperator.includes(o.id);
+                            return (
+                              <CommandItem
+                                key={o.id}
+                                onSelect={() => {
+                                  if (isSelected) {
+                                    setFilterOperator(filterOperator.filter((id) => id !== o.id));
+                                  } else {
+                                    setFilterOperator([...filterOperator, o.id]);
+                                  }
+                                }}
+                              >
+                                <div
+                                  className={cn(
+                                    "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                                    isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
+                                  )}
+                                >
+                                  <Check className={cn("h-4 w-4")} />
+                                </div>
+                                <span className="truncate">{o.name}</span>
+                              </CommandItem>
+                            );
+                          })}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
 
                 <Select value={filterPlanningSection || 'all'} onValueChange={(v) => setFilterPlanningSection(v === 'all' ? '' : v)}>
                   <SelectTrigger className="min-w-[150px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
@@ -577,7 +617,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                   </SelectTrigger>
                   <SelectContent className="max-h-[200px] overflow-y-auto">
                     <SelectItem value="all">All Plans</SelectItem>
-                    {planningSections.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    {planningSections.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name || s.plan_name || s.title || ''}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </>
@@ -640,6 +680,15 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                 <p className="font-semibold text-[16px] leading-[24px] text-[#7c8689] whitespace-nowrap">
                   Total Scheduled Plans
                   {isSearchLocked && <span className="ml-2 text-[#7a9705]">. {lockedFabId}</span>}
+                  {isFetching && !isLoading && (
+                    <span className="ml-2 inline-flex items-center gap-1.5">
+                      <svg className="animate-spin h-3.5 w-3.5 text-[#7a9705]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span className="text-[12px] font-medium text-[#7a9705]">Refreshing...</span>
+                    </span>
+                  )}
                 </p>
                 <p className="font-semibold text-[20px] leading-[24px] text-black">
                   {isLoading ? '–' : totalPlans}
@@ -652,7 +701,22 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                 <p className="text-[#7c8689]">Loading calendar events…</p>
               </div>
             ) : (
-              <TooltipProvider>
+              <>
+                {/* Refetch indicator overlay */}
+                {isFetching && !isLoading && (
+                  <div className="relative">
+                    <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none rounded-[8px]">
+                      <div className="bg-white border border-[#e2e4ed] rounded-[8px] px-4 py-2 shadow-sm flex items-center gap-2">
+                        <svg className="animate-spin h-4 w-4 text-[#7a9705]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span className="text-[13px] font-medium text-[#4b545d]">Updating calendar...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <TooltipProvider>
                 <div className="border border-[#ecedf0] rounded-[8px] overflow-x-auto">
                   {/* Month view */}
                   {viewMode === 'month' && (
@@ -925,7 +989,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                                           onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(ev); }}
                                         >
                                           <div className="px-2 py-1 h-full flex flex-col justify-center overflow-hidden">
-                                            <p className="text-[12px] font-semibold truncate" style={{ color: text }}>Fab ID {ev.fab_id}</p>
+                                            <p className="text-[12px] font-semibold truncate" style={{ color: text }}> {ev.fab_id} {ev.plan_name ? `• ${ev.plan_name}` : ''} {ev.operator_name ? `• ${ev.operator_name}` : ''}</p>
                                             <p className="text-[10px] truncate" style={{ color: text, opacity: 0.7 }}>{ev.percent_complete ?? 0}%</p>
                                           </div>
                                         </div>
@@ -955,7 +1019,8 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                     </div>
                   )}
                 </div>
-              </TooltipProvider>
+                </TooltipProvider>
+              </>
             )}
           </div>
         </div>
