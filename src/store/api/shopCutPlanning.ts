@@ -206,46 +206,49 @@ export const shopCutPlanningApi = createApi({
       getAllShopPlans: build.query<ShopCutPlanListResponse, ShopCutPlanListParams | void>({
         query: (params) => {
           const queryParams = params || {};
+          
+          // Build params object
+          const paramsObj: any = {
+            // New preferred parameters
+            ...(queryParams.view && { view: queryParams.view }),
+            ...(queryParams.reference_date && { reference_date: queryParams.reference_date }),
+            // Legacy parameters (backward compatibility)
+            ...(queryParams.month !== undefined && { month: queryParams.month }),
+            ...(queryParams.year !== undefined && { year: queryParams.year }),
+            // Other filters
+            ...(queryParams.fab_id !== undefined && { fab_id: queryParams.fab_id }),
+            ...(queryParams.skip !== undefined && { skip: queryParams.skip }),
+            ...(queryParams.limit !== undefined && { limit: queryParams.limit }),
+            ...(queryParams.search && { search: queryParams.search }),
+            ...(queryParams.type && { type: queryParams.type }),
+            ...(queryParams.planning_section_id !== undefined && { planning_section_id: queryParams.planning_section_id }),
+            ...(queryParams.workstation_id !== undefined && { workstation_id: queryParams.workstation_id }),
+            ...(queryParams.fab_type && { fab_type: queryParams.fab_type }),
+          };
+
+          // Handle operator_id as repeated query params manually
+          if (queryParams.operator_id) {
+            const operatorIds = Array.isArray(queryParams.operator_id) 
+              ? queryParams.operator_id 
+              : [queryParams.operator_id];
+            
+            // Build query string manually for operator_id
+            const queryString = new URLSearchParams(paramsObj);
+            operatorIds.forEach((id: number) => {
+              queryString.append('operator_id', String(id));
+            });
+            
+            return {
+              url: "/api/v1/shop/plans",
+              method: "get",
+              params: queryString.toString(),
+            };
+          }
+
           return {
             url: "/api/v1/shop/plans",
             method: "get",
-            params: {
-              // New preferred parameters
-              ...(queryParams.view && { view: queryParams.view }),
-              ...(queryParams.reference_date && { reference_date: queryParams.reference_date }),
-              // Legacy parameters (backward compatibility)
-              ...(queryParams.month !== undefined && { month: queryParams.month }),
-              ...(queryParams.year !== undefined && { year: queryParams.year }),
-              // Other filters
-              ...(queryParams.fab_id !== undefined && { fab_id: queryParams.fab_id }),
-              ...(queryParams.skip !== undefined && { skip: queryParams.skip }),
-              ...(queryParams.limit !== undefined && { limit: queryParams.limit }),
-              ...(queryParams.search && { search: queryParams.search }),
-              ...(queryParams.type && { type: queryParams.type }),
-              ...(queryParams.planning_section_id !== undefined && { planning_section_id: queryParams.planning_section_id }),
-              ...(queryParams.workstation_id !== undefined && { workstation_id: queryParams.workstation_id }),
-              // Handle operator_id as repeated query params: ?operator_id=1&operator_id=5&operator_id=8
-              ...(queryParams.operator_id && {
-                operator_id: Array.isArray(queryParams.operator_id) 
-                  ? queryParams.operator_id 
-                  : queryParams.operator_id
-              }),
-              ...(queryParams.fab_type && { fab_type: queryParams.fab_type }),
-            },
-            // Serialize arrays as repeated query parameters
-            paramsSerializer: {
-              serialize: (params: any) => {
-                const searchParams = new URLSearchParams();
-                Object.entries(params).forEach(([key, value]) => {
-                  if (Array.isArray(value)) {
-                    value.forEach((val) => searchParams.append(key, String(val)));
-                  } else if (value !== undefined && value !== null) {
-                    searchParams.append(key, String(value));
-                  }
-                });
-                return searchParams.toString();
-              }
-            }
+            params: paramsObj
           };
         },
         transformResponse: (response: any) => response.data || response,

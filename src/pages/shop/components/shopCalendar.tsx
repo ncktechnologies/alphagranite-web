@@ -191,7 +191,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
 
   const planningSections = useMemo(() => {
     const arr = (planningSectionsData as any)?.data || (Array.isArray(planningSectionsData) ? planningSectionsData : []);
-    return arr.map((s: any) => ({ id: String(s.id), name: s.name || `Section ${s.id}` }));
+    return arr.map((s: any) => ({ id: String(s.id), name: s.plan_name || `Section ${s.id}` }));
   }, [planningSectionsData]);
 
   const displayDays = useMemo(() => {
