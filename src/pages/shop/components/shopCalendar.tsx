@@ -221,17 +221,54 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     const plans = plansResponse?.data?.grouped_plans ?? plansResponse?.grouped_plans ?? [];
     plans.forEach((gp: any) => {
       // Parse date in local timezone to match calendar display
-      // Use the full datetime string as-is (no timezone conversion)
       let dateKey: string;
       if (gp.date && typeof gp.date === 'string') {
-        // Extract just the date portion (YYYY-MM-DD) from datetime string
         const datePart = gp.date.split('T')[0];
         dateKey = datePart || format(new Date(gp.date), 'yyyy-MM-dd');
       } else {
         dateKey = format(new Date(gp.date), 'yyyy-MM-dd');
       }
       
-      if (dateKey in grouped) grouped[dateKey] = gp.plans ?? [];
+      if (dateKey in grouped) {
+        const events = gp.plans ?? [];
+        // Split events that extend beyond DAY_END_HOUR to next day
+        events.forEach((event: any) => {
+          const startDate = new Date(event.scheduled_start_date);
+          const startHour = startDate.getHours() + startDate.getMinutes() / 60;
+          const endHour = startHour + event.estimated_hours;
+          
+          // If event ends after day end, split it
+          if (endHour > DAY_END_HOUR) {
+            // Add first part to current day (truncated at DAY_END_HOUR)
+            const hoursOnCurrentDay = DAY_END_HOUR - startHour;
+            grouped[dateKey].push({
+              ...event,
+              estimated_hours: hoursOnCurrentDay,
+              _isSplitPart: true,
+              _originalHours: event.estimated_hours,
+            });
+            
+            // Add second part to next day
+            const nextDayDate = addDays(startDate, 1);
+            const nextDayDateKey = format(nextDayDate, 'yyyy-MM-dd');
+            const hoursOnNextDay = endHour - DAY_END_HOUR;
+            
+            if (nextDayDateKey in grouped) {
+              // Create a new event starting at DAY_START_HOUR on next day
+              grouped[nextDayDateKey].push({
+                ...event,
+                scheduled_start_date: format(nextDayDate, 'yyyy-MM-dd') + 'T' + String(DAY_START_HOUR).padStart(2, '0') + ':00:00',
+                estimated_hours: hoursOnNextDay,
+                _isSplitPart: true,
+                _originalHours: event.estimated_hours,
+              });
+            }
+          } else {
+            // Event fits in one day, add normally
+            grouped[dateKey].push(event);
+          }
+        });
+      }
     });
     return grouped;
   }, [plansResponse, displayDays, monthWeeks, viewMode]);
@@ -360,6 +397,11 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                 <p className="text-[13px] font-semibold truncate" style={{ color: text }}>
                    {event.fab_id} {event.plan_name ? `• ${event.plan_name}` : ''} {event.operator_name ? `• ${event.operator_name}` : ''}
                 </p>
+                {event._isSplitPart && (
+                  <p className="text-[9px] italic mt-0.5" style={{ color: text, opacity: 0.6 }}>
+                    (Continued from previous day)
+                  </p>
+                )}
                 <p className="text-[11px] truncate mt-0.5" style={{ color: text, opacity: 0.7 }}>
                   {event.fab_type || event.percent_complete != null ? `${event.percent_complete ?? 0}%` : ''}
                 </p>
