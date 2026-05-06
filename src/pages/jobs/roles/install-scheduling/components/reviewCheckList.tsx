@@ -36,6 +36,7 @@ import {
 import { Can } from "@/components/permission";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { useGetSalesPersonsQuery } from "@/store/api";
+import Popup from "@/components/ui/popup"; // Import Popup component
 
 // ---------- Helper functions ----------
 const formatDate = (date: Date | undefined): string => {
@@ -73,11 +74,13 @@ type InstallChecklistData = z.infer<typeof installChecklistSchema>;
 
 interface InstallChecklistFormProps {
   fabId?: number;
-  showCompletionFields?: boolean; // New prop to control visibility of completion fields
+  showCompletionFields?: boolean;
 }
 
 export function InstallChecklistForm({ fabId, showCompletionFields = false }: InstallChecklistFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingValues, setPendingValues] = useState<InstallChecklistData | null>(null);
   const navigate = useNavigate();
 
   // Fetch employers for installer dropdown
@@ -132,7 +135,8 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
     }
   }, [fabData, installData, form]);
 
-  const onSubmit = async (values: InstallChecklistData) => {
+  // Actual submission logic (extracted from original onSubmit)
+  const doSubmit = async (values: InstallChecklistData) => {
     if (!fabId) {
       toast.error("No FAB ID provided. Cannot save.");
       return;
@@ -242,7 +246,6 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
           someSuccess = true;
         } catch (stageError) {
           console.error("Error updating FAB stage:", stageError);
-          // Don't block the whole operation, just warn
           toast.warning("Install date saved, but failed to update stage automatically.");
         }
       }
@@ -250,7 +253,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
       // 5. Final feedback
       if (someSuccess) {
         toast.success(isCompleted ? "Install checklist completed and saved!" : "Changes saved successfully");
-        navigate(-1); // Go back to previous page
+        navigate(-1);
       } else {
         toast.warning("No data was saved");
       }
@@ -262,149 +265,215 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
     }
   };
 
+  // Form submit handler with confirmation modal for install_completed
+  const onSubmit = async (values: InstallChecklistData) => {
+    // If install_completed is checked, show confirmation modal first
+    if (values.install_completed) {
+      setPendingValues(values);
+      setShowConfirmModal(true);
+      return;
+    }
+    // Otherwise, proceed directly
+    await doSubmit(values);
+  };
+
+  const handleConfirmProceed = async () => {
+    if (pendingValues) {
+      await doSubmit(pendingValues);
+    }
+    setShowConfirmModal(false);
+    setPendingValues(null);
+  };
+
+  const handleCancelProceed = () => {
+    setShowConfirmModal(false);
+    setPendingValues(null);
+  };
+
+  // Format the end date for modal message
+  const getEndDateDisplay = () => {
+  if (!pendingValues) return "";
+  const endDate = pendingValues.scheduled_end_date;
+  if (endDate) {
+    return new Date(endDate).toLocaleDateString();
+  }
+  // No date picked → show today's date with a note
+  const today = new Date().toLocaleDateString();
+  return `${today} ( set automatically to today's date )`;
+};
+
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <Can action="update" on="Pre-draft Review">
-          {/* Install completed checkbox - only shown when showCompletionFields is true */}
-          {showCompletionFields && (
+    <>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <Can action="update" on="Pre-draft Review">
+            {/* Install completed checkbox - only shown when showCompletionFields is true */}
+            {showCompletionFields && (
+              <FormField
+                control={form.control}
+                name="install_completed"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center space-x-3">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                    <FormLabel className="text-base font-semibold text-text">
+                      Install completed
+                    </FormLabel>
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Installer dropdown */}
             <FormField
               control={form.control}
-              name="install_completed"
+              name="installer_id"
               render={({ field }) => (
-                <FormItem className="flex flex-row items-center space-x-3">
-                  <FormControl>
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                  <FormLabel className="text-base font-semibold text-text">
-                    Install completed
-                  </FormLabel>
+                <FormItem>
+                  <FormLabel>Installer</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    value={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select an installer" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent className="max-h-[200px] overflow-y-auto">
+                      {employers.map((employer: any) => (
+                        <SelectItem
+                          key={employer.id}
+                          value={String(employer.id)}
+                        >
+                          {employer.name ?? employer.full_name ?? `Employer #${employer.id}`}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
                 </FormItem>
               )}
             />
-          )}
 
-          {/* Installer dropdown */}
-          <FormField
-            control={form.control}
-            name="installer_id"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Installer</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  value={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select an installer" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent className="max-h-[200px] overflow-y-auto">
-                    {employers.map((employer: any) => (
-                      <SelectItem
-                        key={employer.id}
-                        value={String(employer.id)}
-                      >
-                        {employer.name ?? employer.full_name ?? `Employer #${employer.id}`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Scheduled install date */}
-          <FormField
-            control={form.control}
-            name="scheduled_install_date"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Scheduled install date</FormLabel>
-                <DateTimePicker
-                  mode="date"
-                  value={parseDateString(field.value)}
-                  onChange={(date) => field.onChange(formatDate(date))}
-                />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* Scheduled end date - only shown when showCompletionFields is true and install_completed is true */}
-          {showCompletionFields && installCompleted && (
+            {/* Scheduled install date */}
             <FormField
               control={form.control}
-              name="scheduled_end_date"
+              name="scheduled_install_date"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Scheduled end date</FormLabel>
+                  <FormLabel>Scheduled install date</FormLabel>
                   <DateTimePicker
                     mode="date"
                     value={parseDateString(field.value)}
                     onChange={(date) => field.onChange(formatDate(date))}
-                    // minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
                   />
                   <FormMessage />
                 </FormItem>
               )}
             />
-          )}
 
-          {/* Notes field */}
-          <FormField
-            control={form.control}
-            name="fab_notes"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Notes</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Type here..."
-                    className="min-h-[100px] resize-none"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            {/* Scheduled end date - only shown when showCompletionFields is true and install_completed is true */}
+            {showCompletionFields && installCompleted && (
+              <FormField
+                control={form.control}
+                name="scheduled_end_date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Actual end date</FormLabel>
+                    <DateTimePicker
+                      mode="date"
+                      value={parseDateString(field.value)}
+                      onChange={(date) => field.onChange(formatDate(date))}
+                    />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-          />
-        </Can>
 
-        <Separator className="my-4" />
-
-        <div className="space-y-3 mt-6">
-          <Can action="update" on="Pre-draft Review">
-            <Button
-              className="w-full py-6 text-base"
-              type="submit"
-              disabled={isSubmitting}
-            >
-              {isSubmitting ? (
-                <span className="flex items-center gap-2">
-                  <LoaderCircle className="w-4 h-4 animate-spin" />
-                  Processing...
-                </span>
-              ) : (
-                "Save Changes"
+            {/* Notes field */}
+            <FormField
+              control={form.control}
+              name="fab_notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Notes</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Type here..."
+                      className="min-h-[100px] resize-none"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
-            </Button>
+            />
           </Can>
+
+          <Separator className="my-4" />
+
+          <div className="space-y-3 mt-6">
+            <Can action="update" on="Pre-draft Review">
+              <Button
+                className="w-full py-6 text-base"
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center gap-2">
+                    <LoaderCircle className="w-4 h-4 animate-spin" />
+                    Processing...
+                  </span>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
+            </Can>
+            <Button
+              variant="outline"
+              type="button"
+              className="w-full text-secondary font-bold py-6 text-base"
+              onClick={() => navigate(-1)}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      </Form>
+
+      {/* Confirmation Modal */}
+      <Popup
+        isOpen={showConfirmModal}
+        onClose={handleCancelProceed}
+        title="Confirm Install Completion"
+        description={`The install completion date is set to ${getEndDateDisplay()}. Are you sure you want to mark this install as completed and proceed?`}
+        centered
+        className="h-auto max-w-[500px] px-3"
+      >
+        <div className="flex justify-center space-x-3 my-3">
           <Button
             variant="outline"
-            type="button"
-            className="w-full text-secondary font-bold py-6 text-base"
-            onClick={() => navigate(-1)}
+            onClick={handleCancelProceed}
+            className="w-[200px] text-red-500"
           >
             Cancel
           </Button>
+          <Button
+            
+            onClick={handleConfirmProceed}
+            disabled={isSubmitting}
+            className="w-[140px]"
+          >
+            {isSubmitting ? "Processing..." : "Proceed"}
+          </Button>
         </div>
-      </form>
-    </Form>
+      </Popup>
+    </>
   );
 }

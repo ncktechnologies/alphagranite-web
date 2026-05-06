@@ -125,7 +125,8 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
         limit: pagination.pageSize,
         ...(searchQuery && { search: searchQuery }),
         ...(fabTypeFilter !== 'all' && { fab_type: fabTypeFilter }),
-    }), [searchQuery, fabTypeFilter, pagination.pageIndex, pagination.pageSize]);
+        ...(searchType && { type: searchType }),
+    }), [searchQuery, fabTypeFilter, searchType, pagination.pageIndex, pagination.pageSize]);
 
     const { data: fabsData, isLoading: isApiLoading } = useGetFabsQuery(queryParams);
 

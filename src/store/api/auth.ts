@@ -19,7 +19,7 @@ import type {
 // const baseUrl = `${import.meta.env.VITE_ALPHA_GRANITE_BASE_URL}`
 const baseUrl = `${(import.meta as any).env?.VITE_ALPHA_GRANITE_BASE_URL || ''}`
 
-  const token = localStorage.getItem('t\oken') ?? '';
+  const token = localStorage.getItem('token') ?? '';
 
 export const authApi = createApi({
     reducerPath: "authApi",
