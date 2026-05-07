@@ -230,7 +230,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                 cnc_ln_ft: fab.cnc_linft || 0,
                 milter_ln_ft: fab.miter_linft || 0,
                 total_cut_ln_ft: fab.total_cut_lnft || 0,
-                percent_complete: fab.percent_complete || 0,
+                percent_complete: fab.percentage_completion || 0,
                 _rawPlans: plans,
             };
 

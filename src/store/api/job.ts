@@ -950,7 +950,7 @@ export const jobApi = createApi({
                             // Existing filters
                             ...(queryParams.job_id !== undefined && { job_id: queryParams.job_id }),
                             ...(queryParams.fab_type && { fab_type: queryParams.fab_type }),
-                            
+
                             ...(queryParams.sales_person_id !== undefined && { sales_person_id: queryParams.sales_person_id }),
                             ...(queryParams.templater_id !== undefined && { templater_id: queryParams.templater_id }),
                             ...(queryParams.status_id !== undefined && { status_id: queryParams.status_id }),
@@ -960,7 +960,7 @@ export const jobApi = createApi({
                             // Search filter
                             ...(queryParams.search && { search: queryParams.search }),
                             // Search type filter (fab_id, job_number, job_name)
-                            
+
                             // Schedule date filters
                             ...(queryParams.schedule_start_date && { schedule_start_date: queryParams.schedule_start_date }),
                             ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
@@ -2426,6 +2426,20 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Fab"],
             }),
+            createInstallCompletion: build.mutation<any, { fab_id: number; install_date?: string; completion_date?: string; is_completed?: boolean; installer_id: number }>({
+                query: ({ fab_id, install_date, completion_date, installer_id }) => ({
+                    url: `/install-completion`,
+                    method: "POST",
+                    data: {
+                        fab_id,
+                        install_date,
+                        completion_date,
+                        installer_id,
+                        is_completed: true
+                    }
+                }),
+                invalidatesTags: ["Fab"],
+            }),
 
             getInstallSchedulingByFabId: build.query<any, number>({
                 query: (fab_id) => ({
@@ -2538,6 +2552,7 @@ export const {
     useCreateInstallSchedulingMutation,
     useUpdateInstallSchedulingMutation,
     useGetInstallSchedulingByFabIdQuery,
+    useCreateInstallCompletionMutation,
     // Job Media hooks
     useGetJobMediaQuery,
     useUploadJobMediaMutation,

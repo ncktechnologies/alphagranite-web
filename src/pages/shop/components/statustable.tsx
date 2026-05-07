@@ -420,7 +420,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 shop_est_completion_date: fab.shop_est_completion_date || fab.estimated_completion_date,
                 cut_date_scheduled: (fab.plans || []).find((p: any) => p.planning_section_id === 7)?.scheduled_start_date,
                 install_date: fab.installation_date,
-                percent_complete: fab.percent_complete || 0,
+                percent_complete: fab.percentage_completion || 0,
                 notes: fab.notes ? (Array.isArray(fab.notes) ? fab.notes.join(', ') : fab.notes) : null,
                 plans: fab.plans || [],
                 date_group: dayKey,

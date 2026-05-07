@@ -32,6 +32,7 @@ import {
   useUpdateInstallSchedulingMutation,
   useGetInstallSchedulingByFabIdQuery,
   useUpdateFabStageMutation,
+  useCreateInstallCompletionMutation
 } from "@/store/api/job";
 import { Can } from "@/components/permission";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
@@ -92,6 +93,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
   const [createInstallScheduling] = useCreateInstallSchedulingMutation();
   const [updateInstallScheduling] = useUpdateInstallSchedulingMutation();
   const [updateFabStage] = useUpdateFabStageMutation();
+  const [createInstallCompletion] = useCreateInstallCompletionMutation();
 
   // Queries
   const { data: fabData } = useGetFabByIdQuery(fabId || 0, { skip: !fabId });

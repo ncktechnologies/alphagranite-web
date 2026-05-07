@@ -73,7 +73,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         est_completion_date: (fab as any).est_completion_date
             ? formatDate((fab as any).est_completion_date)
             : '-',
-        percent_complete: (fab as any).percent_complete ?? undefined,
+        percent_complete: (fab as any).percentage_completion ?? undefined,
         completion_date: (fab as any).completion_date
             ? formatDate((fab as any).completion_date)
             : undefined,
