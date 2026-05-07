@@ -412,7 +412,7 @@ const JobStatusTable: React.FC<JobStatusTableProps> = ({ isLoading: externalLoad
             accessorKey: 'installed',
             header: ({ column }) => <DataGridColumnHeader title="INSTALLED" column={column} />,
             cell: ({ row }) => <YesNoBadge value={row.original.installed} />,
-            size: 100,
+            size: 120,
         },
     ], []);
 

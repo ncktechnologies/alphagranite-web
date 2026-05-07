@@ -988,7 +988,7 @@ export const JobTable = ({
                 const val = (row.original as any).percent_complete;
                 return <span className="text-xs">{val != null ? `${val}%` : '-'}</span>;
             },
-            size: 100,
+            size: 140,
             enableSorting: true,
         },
 

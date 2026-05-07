@@ -836,7 +836,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 return null;
             },
             enableSorting: true,
-            size: 120,
+            size: 140,
         },
     ], []);
 
