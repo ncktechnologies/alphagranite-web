@@ -268,7 +268,7 @@ export function TemplaterTimerPage() {
                             </CardHeading>
 
                             <CardToolbar>
-                                <Can action="create" on="jobs">
+                                {/* <Can action="create" on="jobs"> */}
                                     <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
                                         <DialogTrigger asChild>
                                             <Button>
@@ -287,7 +287,7 @@ export function TemplaterTimerPage() {
                                             />
                                         </DialogContent>
                                     </Dialog>
-                                </Can>
+                                {/* </Can> */}
                             </CardToolbar>
                         </CardHeader>
 

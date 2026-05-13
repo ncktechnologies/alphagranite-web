@@ -76,7 +76,7 @@ export function JobDetailsPage() {
       { label: 'Job Name', value: job.name },
       { label: 'Account', value: job.account_name || 'N/A' },
       { label: 'Account Number', value: job.account_number || 'N/A' },
-      { label: 'Project Value', value: job.project_value ? `$${job.project_value.toLocaleString()}` : 'N/A' },
+      ...(isSuperAdmin ? [{ label: 'Project Value', value: job.project_value ? `$${job.project_value.toLocaleString()}` : 'N/A' }] : []),
       { label: 'Sales Person', value: job.sales_person_name || 'N/A' },
       { label: 'Priority', value: job.priority || 'N/A' },
       { label: 'Status', value: getStatusText(job.status_id) },
@@ -248,50 +248,51 @@ export function JobDetailsPage() {
           </Card>
 
           {/* Accounting Notes */}
-          <Card className="my-4">
-            <CardHeader>
-              <CardHeading className="flex flex-col items-start py-4">
-                <CardTitle className="text-[#111827] leading-[32px] text-2xl font-bold">
-                  Accounting note
-                </CardTitle>
-                <p className="text-sm text-[#4B5563]">Accounting notes for this job</p>
-              </CardHeading>
-            </CardHeader>
-            <CardContent>
-              {notesLoading ? (
-                <div className="space-y-4">
-                  {[1, 2].map((i) => (
-                    <div key={i} className="p-4 border rounded-lg bg-gray-50 flex flex-col gap-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-4 w-full" />
-                    </div>
-                  ))}
-                </div>
-              ) : jobNotes?.data?.notes?.length > 0 ? (
-                <div className="space-y-4">
-                  {jobNotes.data.notes.map((note: any) => (
-                    <div
-                      key={note.id}
-                      className="p-4 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex justify-between items-start mb-2">
-                        <span className="font-semibold text-sm text-blue-600">{note.creator_name}</span>
-                        <span className="text-xs text-gray-500">
-                          {new Date(note.created_at).toLocaleString()}
-                        </span>
+          {isSuperAdmin &&
+            <Card className="my-4">
+              <CardHeader>
+                <CardHeading className="flex flex-col items-start py-4">
+                  <CardTitle className="text-[#111827] leading-[32px] text-2xl font-bold">
+                    Accounting note
+                  </CardTitle>
+                  <p className="text-sm text-[#4B5563]">Accounting notes for this job</p>
+                </CardHeading>
+              </CardHeader>
+              <CardContent>
+                {notesLoading ? (
+                  <div className="space-y-4">
+                    {[1, 2].map((i) => (
+                      <div key={i} className="p-4 border rounded-lg bg-gray-50 flex flex-col gap-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-4 w-full" />
                       </div>
-                      <p className="text-sm text-gray-700 whitespace-pre-wrap">{note.note}</p>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed">
-                  <p className="text-gray-500 text-sm">No accounting notes available</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
+                    ))}
+                  </div>
+                ) : jobNotes?.data?.notes?.length > 0 ? (
+                  <div className="space-y-4">
+                    {jobNotes.data.notes.map((note: any) => (
+                      <div
+                        key={note.id}
+                        className="p-4 border rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <span className="font-semibold text-sm text-blue-600">{note.creator_name}</span>
+                          <span className="text-xs text-gray-500">
+                            {new Date(note.created_at).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{note.note}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-6 bg-gray-50 rounded-lg border border-dashed">
+                    <p className="text-gray-500 text-sm">No accounting notes available</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          }
           {/* FABs */}
           <Card className="my-4">
             <CardHeader>
@@ -371,7 +372,7 @@ export function JobDetailsPage() {
               </CardHeading>
 
               <CardToolbar>
-                <Can action="create" on="jobs">
+                {/* <Can action="create" on="jobs"> */}
                   <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
                     <DialogTrigger asChild>
                       <Button>
@@ -390,7 +391,7 @@ export function JobDetailsPage() {
                       />
                     </DialogContent>
                   </Dialog>
-                </Can>
+                {/* </Can> */}
               </CardToolbar>
             </CardHeader>
 
@@ -421,14 +422,14 @@ export function JobDetailsPage() {
 
               {/* Upload prompt when empty and no upload button visible */}
               {!mediaLoading && (!mediaFiles || mediaFiles.length === 0) && (
-                <Can action="create" on="jobs">
+                // <Can action="create" on="jobs">
                   <div className="mt-4 flex justify-center">
                     <Button onClick={() => setShowUploadDialog(true)}>
                       <Plus className="h-4 w-4 mr-2" />
                       Upload First File
                     </Button>
                   </div>
-                </Can>
+                // </Can>
               )}
             </CardContent>
           </Card>
@@ -441,22 +442,22 @@ export function JobDetailsPage() {
               <Card className="border-none py-6">
                 <CardHeader className="border-b pb-4 flex-col items-start">
                   <CardTitle className="font-semibold text-text">Actions</CardTitle>
-                <p className="text-sm text-text-foreground">Available actions for this job</p>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <Button
-                    onClick={() => navigate('/create-jobs')}
-                    className="w-full flex items-center gap-2"
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                    Back to Jobs
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                  <p className="text-sm text-text-foreground">Available actions for this job</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <Button
+                      onClick={() => navigate('/create-jobs')}
+                      className="w-full flex items-center gap-2"
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      Back to Jobs
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
-        </div>
         )}
       </div>
 

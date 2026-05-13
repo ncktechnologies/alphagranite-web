@@ -58,6 +58,7 @@ interface ExtendedJob extends Omit<Job, 'project_value'> {
   account_id?: number;
   need_to_invoice?: boolean;
   notes?: string | Array<{ note: string }>; 
+  invoiced_at:string;
   // Add any other fields that come from API
 }
 

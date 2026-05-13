@@ -267,7 +267,7 @@ export function InstallerTimerPage() {
                             </CardHeading>
 
                             <CardToolbar>
-                                <Can action="create" on="jobs">
+                                {/* <Can action="create" on="jobs"> */}
                                     <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
                                         <DialogTrigger asChild>
                                             <Button>
@@ -286,7 +286,7 @@ export function InstallerTimerPage() {
                                             />
                                         </DialogContent>
                                     </Dialog>
-                                </Can>
+                                {/* </Can> */}
                             </CardToolbar>
                         </CardHeader>
 
@@ -317,14 +317,14 @@ export function InstallerTimerPage() {
 
                             {/* Upload prompt when empty and no upload button visible */}
                             {!mediaLoading && (!mediaFiles || mediaFiles.length === 0) && (
-                                <Can action="create" on="jobs">
+                                // <Can action="create" on="jobs">
                                     <div className="mt-4 flex justify-center">
                                         <Button onClick={() => setShowUploadDialog(true)}>
                                             <Plus className="h-4 w-4 mr-2" />
                                             Upload First File
                                         </Button>
                                     </div>
-                                </Can>
+                                // </Can>
                             )}
                         </CardContent>
                     </Card>
