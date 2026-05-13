@@ -326,9 +326,9 @@ export function JobDetailsPage() {
                           <span className="text-sm font-semibold text-blue-600">{fab.id}</span>
                         </div>
                         <div>
-                          <h4 className="font-semibold">{fab.fab_type}</h4>
+                          <h4 className="font-semibold">{fab.input_area}</h4>
                           <p className="text-sm text-gray-600">
-                            {fab.total_sqft} sq ft · {fab.stone_type_name || 'N/A'} · {fab.stone_color_name || 'N/A'} . {fab.input_area || 'N/A'}
+                            {fab.total_sqft} sq ft · {fab.stone_type_name || 'N/A'} · {fab.stone_color_name || 'N/A'} . {fab.fab_type || 'N/A'}
                           </p>
                           <div className="flex items-center space-x-2 mt-1">
                             <Badge

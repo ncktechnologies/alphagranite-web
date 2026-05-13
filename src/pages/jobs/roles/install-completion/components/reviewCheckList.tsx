@@ -265,7 +265,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <Can action="update" on="Pre-draft Review">
+        <Can action="update" on="jobs">
           {/* Install completed checkbox - only shown when showCompletionFields is true */}
           {showCompletionFields && (
             <FormField

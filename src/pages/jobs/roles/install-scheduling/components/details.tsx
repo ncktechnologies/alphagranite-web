@@ -11,6 +11,7 @@ import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { InstallChecklistForm } from './reviewCheckList';
 import { BackButton } from '@/components/common/BackButton';
 import { stageConfig } from '@/utils/note-utils';
+import { Can } from '@/components/permission';
 
 // Helper function to get all fab notes (unfiltered)
 const getAllFabNotes = (fabNotes: any[]) => fabNotes || [];
@@ -65,24 +66,24 @@ export function InstallSchedulingDetailsPage() {
                 }))
                 : [],
         },
-      {
-           title: 'FAB Notes',
-           type: 'notes',
-           notes: getAllFabNotes(fab?.fab_notes || []).map(note => {
-             
-             const stage = note.stage || 'general';
-             const config = stageConfig[stage] || stageConfig.general;
-             return {
-               id: note.id,
-               avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
-               content: note?.note || '',
-               author: note.created_by_name || 'Unknown',
-               timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
-               category: config.label,
-               categoryColor: config.color,
-             };
-           })
-         },
+        {
+            title: 'FAB Notes',
+            type: 'notes',
+            notes: getAllFabNotes(fab?.fab_notes || []).map(note => {
+
+                const stage = note.stage || 'general';
+                const config = stageConfig[stage] || stageConfig.general;
+                return {
+                    id: note.id,
+                    avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+                    content: note?.note || '',
+                    author: note.created_by_name || 'Unknown',
+                    timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
+                    category: config.label,
+                    categoryColor: config.color,
+                };
+            })
+        },
     ];
 
     if (isLoading) {
@@ -217,19 +218,22 @@ export function InstallSchedulingDetailsPage() {
                 </div>
 
                 {/* RIGHT: Review checklist */}
-                <div className='border-l'>
-                    <Card className='border-none py-6'>
-                        <CardHeader className='border-b pb-4 flex-col items-start'>
-                            <CardTitle className='font-semibold text-text'>FAB ID</CardTitle>
-                            <p className="text-sm text-text-foreground">
-                                Review and approve install scheduling details
-                            </p>
-                        </CardHeader>
-                        <CardContent>
-                            <InstallChecklistForm fabId={fab.id} showCompletionFields={isCompletionRoute} />
-                        </CardContent>
-                    </Card>
-                </div>
+                <Can action="update" on="jobs">
+
+                    <div className='border-l'>
+                        <Card className='border-none py-6'>
+                            <CardHeader className='border-b pb-4 flex-col items-start'>
+                                <CardTitle className='font-semibold text-text'>FAB ID</CardTitle>
+                                <p className="text-sm text-text-foreground">
+                                    Review and approve install scheduling details
+                                </p>
+                            </CardHeader>
+                            <CardContent>
+                                <InstallChecklistForm fabId={fab.id} showCompletionFields={isCompletionRoute} />
+                            </CardContent>
+                        </Card>
+                    </div>
+                </Can>
             </div>
         </Container>
     );

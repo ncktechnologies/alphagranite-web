@@ -11,6 +11,7 @@ import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { InstallChecklistForm } from './reviewCheckList';
 import { BackButton } from '@/components/common/BackButton';
 import { stageConfig } from '@/utils/note-utils';
+import { Can } from '@/components/permission';
 
 // Helper function to get all fab notes (unfiltered)
 const getAllFabNotes = (fabNotes: any[]) => {
@@ -266,15 +267,18 @@ export function InstallSchedulingDetailsPage() {
                     )}
 
                     {/* Install Checklist Form */}
-                    <Card>
-                        <CardHeader className="border-b pb-4">
-                            <CardTitle className="font-semibold text-text">Install Scheduling Review</CardTitle>
-                            <p className="text-sm text-text-foreground">Review and approve install scheduling details</p>
-                        </CardHeader>
-                        <CardContent>
-                            <InstallChecklistForm fabId={fab.id} showCompletionFields={isCompletionRoute} />
-                        </CardContent>
-                    </Card>
+                    <Can action="update" on="jobs">
+
+                        <Card>
+                            <CardHeader className="border-b pb-4">
+                                <CardTitle className="font-semibold text-text">Install Scheduling Review</CardTitle>
+                                <p className="text-sm text-text-foreground">Review and approve install scheduling details</p>
+                            </CardHeader>
+                            <CardContent>
+                                <InstallChecklistForm fabId={fab.id} showCompletionFields={isCompletionRoute} />
+                            </CardContent>
+                        </Card>
+                    </Can>
                 </main>
             </div>
         </div>
