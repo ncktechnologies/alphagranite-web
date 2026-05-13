@@ -49,7 +49,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         template_received: fab.template_received ? 'Yes' : 'No',
         template_needed: fab.template_needed ? 'No' : 'Yes',
         total_sq_ft: String(fab.total_sqft || "-"),
-        revenue: fab.job_details?.project_value || "-",
+        revenue: fab.revenue ? String(fab.revenue) : "-",
         gp: (fab as any).gp ?? "-",
         revised: '',
         sct_completed: '',

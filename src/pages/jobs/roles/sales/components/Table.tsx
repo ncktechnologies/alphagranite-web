@@ -367,7 +367,7 @@ export const JobSalesTable = ({
         {
             id: 'actions',
             header: '',
-            cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(row.original)} />,
+            cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(row.original)} pageRole={pageRole} />,
             enableSorting: false,
             size: 60,
         },

@@ -54,6 +54,7 @@ interface ExtendedJob extends Omit<Job, 'project_value'> {
   account_name?: string;
   account_id?: number;
   need_to_invoice?: boolean;
+  notes?: string | Array<{ note: string }>;
   // Add any other fields that come from API
 }
 
@@ -77,6 +78,7 @@ export const JobsSection = () => {
     limit: pagination.pageSize,
     ...(searchQuery && { search: searchQuery }),
     ...(selectedStatus !== 'all' && { status_id: parseInt(selectedStatus) }),
+    include_notes: true, // Include notes in the API response
   });
   const { data: accountsData } = useGetAccountsQuery({ limit: 1000 });
 
@@ -101,6 +103,7 @@ export const JobsSection = () => {
       status: job.status_id === 1 ? 'Active' : job.status_id === 2 ? 'Inactive' : job.status_id === 3 ? 'Completed' : 'N/A',
       need_to_invoice: job.need_to_invoice, // Add the need_to_invoice field from API
       account_name: job.account_id ? accountNameMap.get(job.account_id) || 'N/A' : 'N/A',
+      notes: job.notes || [],
       // The API already provides sales_person_name, so don't override it
       // sales_person_name is already included from the spread operator
     } as ExtendedJob));
@@ -309,7 +312,35 @@ export const JobsSection = () => {
         enableSorting: false,
         size: 150,
       },
+      {
+        id: 'notes',
+        accessorKey: 'notes',
+        accessorFn: (row) => {
+          if (typeof row.notes === 'string') return row.notes;
+          if (Array.isArray(row.notes) && row.notes.length > 0) {
+            const firstNote = row.notes[0];
+            return typeof firstNote === 'string' ? firstNote : firstNote?.note || '';
+          }
+          return '';
+        },
+        header: ({ column }) => <DataGridColumnHeader title="NOTES" column={column} />,
+        cell: ({ row }) => {
+          const notes = row.original.notes;
+          if (typeof notes === 'string') {
+            return <span className="text-xs">{notes}</span>;
+          }
 
+          if (Array.isArray(notes) && notes.length > 0) {
+            const firstNote = notes[0];
+            const noteText = typeof firstNote === 'string' ? firstNote : firstNote?.note;
+            return <span className="text-xs">{noteText || '-'}</span>;
+          }
+
+          return <span className="text-xs">-</span>;
+        },
+        size: 150,
+        enableSorting: true,
+      },
     ],
     [],
   );

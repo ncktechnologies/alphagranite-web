@@ -57,6 +57,7 @@ interface ExtendedJob extends Omit<Job, 'project_value'> {
   account_name?: string;
   account_id?: number;
   need_to_invoice?: boolean;
+  notes?: string | Array<{ note: string }>; 
   // Add any other fields that come from API
 }
 
@@ -98,6 +99,7 @@ export const NeedToInvoicePage = () => {
     ...(searchQuery && { search: searchQuery }),
     ...(selectedStatus !== 'all' && { status_id: parseInt(selectedStatus) }),
     need_to_invoice: true, // Filter to show only jobs that need invoicing
+      include_notes: true, // Include notes in the response
   });
 
   const { data: invoicedJobsData, isLoading: isInvoicedLoading, refetch: refetchInvoiced } = useGetJobsQuery({
@@ -106,6 +108,7 @@ export const NeedToInvoicePage = () => {
     ...(invoicedSearchQuery && { search: invoicedSearchQuery }),
     ...(invoicedSelectedStatus !== 'all' && { status_id: parseInt(invoicedSelectedStatus) }),
     is_invoiced: true, // Filter to show only invoiced jobs
+      include_notes: true, // Include notes in the response
   });
 
   const [toggleNeedToInvoice] = useToggleNeedToInvoiceMutation();
@@ -312,6 +315,35 @@ export const NeedToInvoicePage = () => {
       ),
       enableSorting: true,
       size: 150,
+    },
+    {
+      id: 'notes',
+      accessorKey: 'notes',
+      accessorFn: (row) => {
+        if (typeof row.notes === 'string') return row.notes;
+        if (Array.isArray(row.notes) && row.notes.length > 0) {
+          const firstNote = row.notes[0];
+          return typeof firstNote === 'string' ? firstNote : firstNote?.note || '';
+        }
+        return '';
+      },
+      header: ({ column }) => <DataGridColumnHeader title="NOTES" column={column} />,
+      cell: ({ row }) => {
+        const notes = row.original.notes;
+        if (typeof notes === 'string') {
+          return <span className="text-xs">{notes}</span>;
+        }
+
+        if (Array.isArray(notes) && notes.length > 0) {
+          const firstNote = notes[0];
+          const noteText = typeof firstNote === 'string' ? firstNote : firstNote?.note;
+          return <span className="text-xs">{noteText || '-'}</span>;
+        }
+
+        return <span className="text-xs">-</span>;
+      },
+      size: 150,
+      enableSorting: true,
     },
   ], []);
 
@@ -525,6 +557,9 @@ export const NeedToInvoicePage = () => {
             table={needToInvoiceTable}
             recordCount={jobsData?.total || 0}
             isLoading={isLoading}
+            groupByDate
+            dateKey="invoiced_at"
+            dateGrouping="date"
             tableLayout={{
               columnsPinnable: true,
               columnsMovable: true,
@@ -589,6 +624,9 @@ export const NeedToInvoicePage = () => {
             table={invoicedTable}
             recordCount={invoicedJobsData?.total || 0}
             isLoading={isInvoicedLoading}
+            groupByDate
+            dateKey="invoiced_at"
+            dateGrouping="date"
             tableLayout={{
               columnsPinnable: true,
               columnsMovable: true,

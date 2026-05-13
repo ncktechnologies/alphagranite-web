@@ -325,6 +325,7 @@ export interface JobListParams {
     schedule_due_date?: string;
     need_to_invoice?: boolean;
     is_invoiced?: boolean;
+    include_notes?: boolean; // Add this parameter to include notes in the response
 }
 
 export interface ToggleInvoiceRequest {
@@ -871,6 +872,7 @@ export const jobApi = createApi({
                             ...(queryParams.schedule_due_date && { schedule_due_date: queryParams.schedule_due_date }),
                             ...(queryParams.need_to_invoice !== undefined && { need_to_invoice: queryParams.need_to_invoice }),
                             ...(queryParams.is_invoiced !== undefined && { is_invoiced: queryParams.is_invoiced }),
+                            ...(queryParams.include_notes !== undefined && { include_notes: queryParams.include_notes }),
                         }
                     };
                 },
@@ -2426,7 +2428,7 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Fab"],
             }),
-            createInstallCompletion: build.mutation<any, { fab_id: number; install_date?: string; completion_date?: string; is_completed?: boolean; installer_id: number }>({
+            createInstallCompletion: build.mutation<any, { fab_id: number; install_date?: string; completion_date?: string; is_completed?: boolean; installer_id: number }>( {
                 query: ({ fab_id, install_date, completion_date, installer_id }) => ({
                     url: `/install-completion`,
                     method: "POST",
@@ -2440,10 +2442,28 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Fab"],
             }),
+            updateInstallCompletion: build.mutation<any, { fab_id: number; data: { is_completed?: boolean; completion_date?: string; installer_id?: number; install_date?: string } }>( {
+                query: ({ fab_id, data }) => ({
+                    url: `/install-completion`,
+                    method: "PUT",
+                    data: {
+                        fab_id,
+                        ...data
+                    }
+                }),
+                invalidatesTags: ["Fab"],
+            }),
 
             getInstallSchedulingByFabId: build.query<any, number>({
                 query: (fab_id) => ({
                     url: `/install-scheduling/fab/${fab_id}`,
+                    method: "GET"
+                }),
+                providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
+            }),
+            getInstallCompletionByFabId: build.query<any, number>({
+                query: (fab_id) => ({
+                    url: `/install-completion/fab/${fab_id}`,
                     method: "GET"
                 }),
                 providesTags: (_result, _error, fab_id) => [{ type: "Fab", id: fab_id }],
@@ -2553,6 +2573,8 @@ export const {
     useUpdateInstallSchedulingMutation,
     useGetInstallSchedulingByFabIdQuery,
     useCreateInstallCompletionMutation,
+    useUpdateInstallCompletionMutation,
+    useGetInstallCompletionByFabIdQuery,
     // Job Media hooks
     useGetJobMediaQuery,
     useUploadJobMediaMutation,

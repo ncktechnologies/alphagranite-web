@@ -31,8 +31,10 @@ import {
   useCreateInstallSchedulingMutation,
   useUpdateInstallSchedulingMutation,
   useGetInstallSchedulingByFabIdQuery,
+  useGetInstallCompletionByFabIdQuery,
   useUpdateFabStageMutation,
-  useCreateInstallCompletionMutation
+  useCreateInstallCompletionMutation,
+  useUpdateInstallCompletionMutation
 } from "@/store/api/job";
 import { Can } from "@/components/permission";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
@@ -94,10 +96,15 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
   const [updateInstallScheduling] = useUpdateInstallSchedulingMutation();
   const [updateFabStage] = useUpdateFabStageMutation();
   const [createInstallCompletion] = useCreateInstallCompletionMutation();
+  const [updateInstallCompletion] = useUpdateInstallCompletionMutation();
 
   // Queries
   const { data: fabData } = useGetFabByIdQuery(fabId || 0, { skip: !fabId });
   const { data: installData } = useGetInstallSchedulingByFabIdQuery(
+    fabId || 0,
+    { skip: !fabId }
+  );
+   const { data: completionData } = useGetInstallCompletionByFabIdQuery(
     fabId || 0,
     { skip: !fabId }
   );
@@ -121,8 +128,9 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
     if (fabData?.data || installData) {
       const fab = fabData?.data;
       const install = installData?.data ?? installData;
+      const completion = completionData?.data ?? completionData;
       form.reset({
-        install_completed: install?.is_completed === true,
+        install_completed: completion?.is_completed === true,
         fab_notes: fab?.fab_notes || "",
         installer_id: install?.installer_id
           ? String(install.installer_id)
@@ -178,6 +186,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
 
       // 2. Ensure an install scheduling record exists
       let installId = installData?.data?.id ?? installData?.id;
+      let createdScheduling = false;
 
       if ((hasInstallDate || hasInstaller || isCompleted || hasEndDate) && !installId) {
         try {
@@ -185,6 +194,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
             fab_id: fabId,
           }).unwrap();
           installId = createResponse?.data?.id ?? createResponse?.id;
+          createdScheduling = true;
 
           if (!installId) {
             throw new Error(
@@ -193,6 +203,23 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
           }
         } catch (createError) {
           console.error("Error creating install record:", createError);
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      if (createdScheduling && hasInstaller) {
+        try {
+          await createInstallCompletion({
+            fab_id: fabId,
+            installer_id: Number(values.installer_id),
+            install_date: values.scheduled_install_date,
+            completion_date: values.scheduled_end_date || formatDate(new Date()),
+          }).unwrap();
+          someSuccess = true;
+        } catch (completionError) {
+          console.error("Error creating install completion:", completionError);
+          toast.error("Failed to save install completion");
           setIsSubmitting(false);
           return;
         }
@@ -233,6 +260,26 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
           someSuccess = true;
         } catch (updateError) {
           console.error("Error updating install scheduling:", updateError);
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
+      if (!createdScheduling && hasInstaller && isCompleted) {
+        try {
+          await updateInstallCompletion({
+            fab_id: fabId,
+            data: {
+              installer_id: Number(values.installer_id),
+              completion_date: values.scheduled_end_date || formatDate(new Date()),
+              is_completed: true,
+              install_date: values.scheduled_install_date,
+            },
+          }).unwrap();
+          someSuccess = true;
+        } catch (completionError) {
+          console.error("Error updating install completion:", completionError);
+          toast.error("Failed to update install completion");
           setIsSubmitting(false);
           return;
         }

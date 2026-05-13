@@ -1,6 +1,6 @@
 import { Row } from '@tanstack/react-table';
 import { toast } from 'sonner';
-import { EllipsisVertical, Eye, MessageSquare } from 'lucide-react';
+import { EllipsisVertical, Eye, MessageSquare, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -14,6 +14,7 @@ import { useState, useContext, createContext, lazy, Suspense } from 'react';
 import { IJob } from '../../components/job';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
 import { useCreateFabNoteMutation } from '@/store/api/job';
+import { useNavigate } from 'react-router-dom';
 
 // Create a context to manage the current stage view state at a higher level
 interface CurrentStageContextType {
@@ -42,11 +43,13 @@ const LazyMoveStageModal = lazy(() => import('./components/MoveStageModal').then
 interface ActionsCellProps {
   row: Row<IJob>;
   onView?: () => void;
+  pageRole?: 'templater' | 'installer';
 }
 
-function ActionsCell({ row, onView }: ActionsCellProps) {
+function ActionsCell({ row, onView, pageRole }: ActionsCellProps) {
   const bulletin = row.original;
   const isSuperAdmin = useIsSuperAdmin();
+  const navigate = useNavigate();
 
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const [isMoveStageModalOpen, setIsMoveStageModalOpen] = useState(false);
@@ -58,6 +61,12 @@ function ActionsCell({ row, onView }: ActionsCellProps) {
 
   const handleAddNote = () => {
     setIsNotesModalOpen(true);
+  };
+
+  const handleGoToClock = () => {
+    if (bulletin.job_id) {
+      navigate(`/jobs/${bulletin.job_id}/installer/timer`);
+    }
   };
   
   const context = useCurrentStage();
@@ -96,6 +105,15 @@ function ActionsCell({ row, onView }: ActionsCellProps) {
               <MessageSquare className="mr-2 h-4 w-4" />
               Add Note
             </DropdownMenuItem>
+            {pageRole === 'installer' && (
+              <DropdownMenuItem onClick={(e) => {
+                e.stopPropagation();
+                handleGoToClock();
+              }}>
+                <Clock className="mr-2 h-4 w-4" />
+                Go to Clock
+              </DropdownMenuItem>
+            )}
 
             {/* {isSuperAdmin && (
               <>

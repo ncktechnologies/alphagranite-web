@@ -381,7 +381,7 @@ export const JobTable = ({
         {
             id: 'actions',
             header: '',
-            cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(row.original)} />,
+            cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(row.original)} pageRole={pageRole} />,
             enableSorting: false,
             size: 60,
         },
@@ -938,13 +938,29 @@ export const JobTable = ({
         {
             id: 'notes',
             accessorKey: 'notes',
-            accessorFn: (row) => typeof row.notes === 'string' ? row.notes : '',
+            accessorFn: (row) => {
+                if (typeof row.notes === 'string') return row.notes;
+                if (Array.isArray(row.notes) && row.notes.length > 0) {
+                    const firstNote = row.notes[0];
+                    return typeof firstNote === 'string' ? firstNote : firstNote?.note || '';
+                }
+                return '';
+            },
             header: ({ column }) => <DataGridColumnHeader title="NOTES" column={column} />,
-            cell: ({ row }) => (
-                <span className="text-xs">
-                    {typeof row.original.notes === 'string' ? row.original.notes : '-'}
-                </span>
-            ),
+            cell: ({ row }) => {
+                const notes = row.original.notes;
+                if (typeof notes === 'string') {
+                    return <span className="text-xs">{notes}</span>;
+                }
+
+                if (Array.isArray(notes) && notes.length > 0) {
+                    const firstNote = notes[0];
+                    const noteText = typeof firstNote === 'string' ? firstNote : firstNote?.note;
+                    return <span className="text-xs">{noteText || '-'}</span>;
+                }
+
+                return <span className="text-xs">-</span>;
+            },
             size: 150,
             enableSorting: true,
         },
