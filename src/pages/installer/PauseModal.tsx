@@ -9,6 +9,7 @@ import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { usePauseInstallerTimerMutation } from '@/store/api/jobTimers';
 import { Textarea } from '@/components/ui/textarea';
+import { useTranslation } from '@/hooks/useTranslation';
 
 const pauseSchema = z.object({
     sqftInstalled: z
@@ -30,10 +31,11 @@ interface InstallerPauseModalProps {
     jobId: number;
     installerId: number;
     onPauseSuccess?: () => void;
-    jobNumber?: string; // Optional job number for display
+    jobNumber?: string;
 }
 
 export const InstallerPauseModal = ({ open, onClose, jobId, jobNumber, installerId, onPauseSuccess }: InstallerPauseModalProps) => {
+    const { t } = useTranslation();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [pauseTimer] = usePauseInstallerTimerMutation();
 
@@ -55,11 +57,11 @@ export const InstallerPauseModal = ({ open, onClose, jobId, jobNumber, installer
                 sqft_not_installed: values.sqftNotInstalled,
                 note: values.note,
             }).unwrap();
-            toast.success('Timer paused successfully');
+            toast.success(t('INSTALLER.PAUSE.SUCCESS'));
             onClose(true);
             if (onPauseSuccess) onPauseSuccess();
         } catch (error: any) {
-            toast.error(error?.data?.message || 'Failed to pause timer');
+            toast.error(error?.data?.message || t('INSTALLER.PAUSE.FAILED'));
         } finally {
             setIsSubmitting(false);
         }
@@ -71,9 +73,9 @@ export const InstallerPauseModal = ({ open, onClose, jobId, jobNumber, installer
                 <DialogHeader>
                     <div className="border-b">
                         <DialogTitle className="text-[15px] font-semibold py-2">
-                            Pause Timer
+                            {t('INSTALLER.PAUSE.TITLE')}
                             <span className="ml-3 text-sm font-normal text-gray-500">
-                                Job No: {jobNumber || jobId}
+                                {t('INSTALLER.PAUSE.JOB_NO')} {jobNumber || jobId}
                             </span>
                         </DialogTitle>
                     </div>
@@ -86,11 +88,11 @@ export const InstallerPauseModal = ({ open, onClose, jobId, jobNumber, installer
                             name="sqftInstalled"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Sqft Installed</FormLabel>
+                                    <FormLabel>{t('INSTALLER.PAUSE.SQFT_INSTALLED')}</FormLabel>
                                     <FormControl>
                                         <Input
                                             type="number"
-                                            placeholder="Enter square feet installed"
+                                            placeholder={t('INSTALLER.PAUSE.SQFT_INSTALLED_PLACEHOLDER')}
                                             {...field}
                                             value={field.value ?? ''}
                                         />
@@ -105,11 +107,11 @@ export const InstallerPauseModal = ({ open, onClose, jobId, jobNumber, installer
                             name="sqftNotInstalled"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Sqft Not Installed</FormLabel>
+                                    <FormLabel>{t('INSTALLER.PAUSE.SQFT_NOT_INSTALLED')}</FormLabel>
                                     <FormControl>
                                         <Input
                                             type="number"
-                                            placeholder="Enter square feet not installed"
+                                            placeholder={t('INSTALLER.PAUSE.SQFT_NOT_INSTALLED_PLACEHOLDER')}
                                             {...field}
                                             value={field.value ?? ''}
                                         />
@@ -124,9 +126,9 @@ export const InstallerPauseModal = ({ open, onClose, jobId, jobNumber, installer
                             name="note"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Note (optional)</FormLabel>
+                                    <FormLabel>{t('INSTALLER.PAUSE.NOTE_OPTIONAL')}</FormLabel>
                                     <FormControl>
-                                        <Textarea placeholder="Add a note..." {...field} />
+                                        <Textarea placeholder={t('INSTALLER.PAUSE.NOTE_PLACEHOLDER')} {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -135,10 +137,10 @@ export const InstallerPauseModal = ({ open, onClose, jobId, jobNumber, installer
 
                         <div className="flex justify-end gap-3 pt-4 border-t">
                             <Button type="button" variant="outline" onClick={() => onClose(false)}>
-                                Cancel
+                                {t('COMMON.CANCEL')}
                             </Button>
                             <Button type="submit" disabled={isSubmitting}>
-                                {isSubmitting ? 'Pausing...' : 'Confirm Pause'}
+                                {isSubmitting ? t('INSTALLER.PAUSE.PAUSING') : t('INSTALLER.PAUSE.CONFIRM')}
                             </Button>
                         </div>
                     </form>

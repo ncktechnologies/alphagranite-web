@@ -26,8 +26,10 @@ import { JobMediaUpload } from '../jobs/components/JobMediaUpload';
 import { Skeleton } from '@/components/ui/skeleton';
 import Popup from '@/components/ui/popup';
 import { FileViewer } from '../jobs/roles/drafters/components';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export function InstallerTimerPage() {
+    const { t } = useTranslation();
     const { job_id } = useParams<{ job_id: string }>();
     const navigate = useNavigate();
 
@@ -39,9 +41,7 @@ export function InstallerTimerPage() {
     const [fileToDelete, setFileToDelete] = useState<{ id: number; name: string } | null>(null);
     const [activeFile, setActiveFile] = useState<any | null>(null);
 
-    // Fetch job details for header
     const { data: jobData } = useGetJobByIdQuery(Number(job_id), { skip: !job_id });
-
     const { data: mediaFiles, isLoading: mediaLoading, refetch: refetchMedia } = useGetJobMediaQuery(
         { job_id: job_id },
         { skip: !job_id },
@@ -60,7 +60,7 @@ export function InstallerTimerPage() {
         { job_id: Number(job_id), installer_id: installer_id! },
         {
             skip: shouldSkip,
-            pollingInterval: isRunning ? 5000 : 0, // Poll every 5s when running
+            pollingInterval: isRunning ? 5000 : 0,
         }
     );
     const [deleteJobMedia, { isLoading: isDeleting }] = useDeleteJobMediaMutation();
@@ -69,20 +69,15 @@ export function InstallerTimerPage() {
     const [pauseTimer] = usePauseInstallerTimerMutation();
     const [resumeTimer] = useResumeInstallerTimerMutation();
 
-    // Sync timer state from server
     useEffect(() => {
         if (timerState) {
             const session = timerState.session;
             if (session) {
-                // Use total_actual_seconds for cumulative time across all sessions
-                // This includes all work time from previous sessions + current session
                 const totalSeconds = timerState.total_actual_seconds || session.total_work_seconds || 0;
                 setElapsedTime(totalSeconds);
                 setIsRunning(session.status === 'running');
                 setIsPaused(session.status === 'paused');
                 setIsStopped(session.status === 'stopped');
-
-
             } else {
                 setIsStopped(false);
                 setElapsedTime(0);
@@ -92,17 +87,14 @@ export function InstallerTimerPage() {
         }
     }, [timerState]);
 
-    // Note: OperatorTimerComponent has its own internal interval for smooth ticking
-    // We don't need a separate interval here - the component handles it via onTimeUpdate
-
     const handleStart = async () => {
         if (!installer_id) return;
         try {
             await startTimer({ job_id: Number(job_id), installer_id }).unwrap();
-            toast.success('Timer started');
+            toast.success(t('INSTALLER.TIMER.START_SUCCESS'));
             refetch();
         } catch (error: any) {
-            // toast.error(error?.data?.message || 'Failed to start timer');
+            toast.error(error?.data?.message || t('INSTALLER.TIMER.START_FAILED'));
         }
     };
 
@@ -113,10 +105,10 @@ export function InstallerTimerPage() {
         if (!installer_id) return;
         try {
             await resumeTimer({ job_id: Number(job_id), installer_id }).unwrap();
-            toast.success('Timer resumed');
+            toast.success(t('INSTALLER.TIMER.RESUME_SUCCESS'));
             refetch();
         } catch (error: any) {
-            // toast.error(error?.data?.message || 'Failed to resume timer');
+            toast.error(error?.data?.message || t('INSTALLER.TIMER.RESUME_FAILED'));
         }
     };
 
@@ -142,17 +134,16 @@ export function InstallerTimerPage() {
         if (!fileToDelete || !job_id) return;
         try {
             await deleteJobMedia({ job_id: job_id, file_id: fileToDelete.id }).unwrap();
-            toast.success('File deleted successfully');
+            toast.success(t('COMMON.FILE_DELETED'));
             refetchMedia();
         } catch {
-            toast.error('Failed to delete file');
+            toast.error(t('COMMON.FILE_DELETE_FAILED'));
         } finally {
             setDeleteConfirmationOpen(false);
             setFileToDelete(null);
         }
     };
 
-    // Prepare clickable links
     const jobNameLink = jobData?.id ? `/job/details/${jobData.id}` : '#';
     const jobNumberLink = jobData?.job_number
         ? `https://alphagraniteaustin.moraware.net/sys/search?search=${jobData.job_number}`
@@ -162,13 +153,14 @@ export function InstallerTimerPage() {
         return (
             <div className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <div className="text-center">
-                    <h2 className="text-lg font-semibold text-red-600">Missing information</h2>
-                    <p className="text-gray-600">Unable to identify the job or installer.</p>
-                    <Button onClick={() => navigate(-1)} className="mt-4">Go Back</Button>
+                    <h2 className="text-lg font-semibold text-red-600">{t('INSTALLER.TIMER.MISSING_INFO_TITLE')}</h2>
+                    <p className="text-gray-600">{t('INSTALLER.TIMER.MISSING_INFO_DESCRIPTION')}</p>
+                    <Button onClick={() => navigate(-1)} className="mt-4">{t('COMMON.BACK')}</Button>
                 </div>
             </div>
         );
     }
+
     if (activeFile) {
         return (
             <div className="fixed inset-0 z-50 bg-white overflow-auto">
@@ -179,7 +171,6 @@ export function InstallerTimerPage() {
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50">
-            {/* Sticky toolbar - matching details page layout */}
             <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
                 <div className="px-3 sm:px-4 lg:px-6">
                     <Toolbar className="py-2 sm:py-3">
@@ -187,9 +178,7 @@ export function InstallerTimerPage() {
                             <ToolbarHeading
                                 title={
                                     <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
-                                        <a href={jobNameLink} className="hover:underline"
-                                            target="_blank"
-                                            rel="noreferrer">
+                                        <a href={jobNameLink} className="hover:underline" target="_blank" rel="noreferrer">
                                             {jobData?.name || `Job ${job_id}`}
                                         </a>
                                         <span className="mx-1 text-gray-400">·</span>
@@ -203,7 +192,7 @@ export function InstallerTimerPage() {
                                         </a>
                                     </div>
                                 }
-                                description="Installer Timer"
+                                description={t('INSTALLER.TIMER.DESCRIPTION')}
                             />
                             <div className="flex items-center gap-2 flex-shrink-0">
                                 <BackButton />
@@ -213,12 +202,10 @@ export function InstallerTimerPage() {
                 </div>
             </div>
 
-            {/* Main content */}
             <div className="container mx-auto px-4 py-8">
                 <div className="max-w-5xl mx-auto">
                     {isTimerLoading ? (
                         <div className="space-y-6">
-                            {/* Timer skeleton */}
                             <div className="bg-white rounded-lg border shadow-sm p-8 space-y-4">
                                 <div className="flex justify-center">
                                     <Skeleton className="h-32 w-48 rounded-full" />
@@ -228,7 +215,6 @@ export function InstallerTimerPage() {
                                     <Skeleton className="h-10 w-24" />
                                 </div>
                             </div>
-                            {/* Submit button skeleton */}
                             <div className="flex justify-center">
                                 <Skeleton className="h-10 w-32" />
                             </div>
@@ -252,44 +238,40 @@ export function InstallerTimerPage() {
                                         size="xl"
                                         disabled={!job_id || !installer_id}
                                     >
-                                        Submit
+                                        {t('COMMON.SUBMIT')}
                                     </Button>
                                 </div>
                             )}
                         </>
                     )}
-                    {/* ── Media Files ─────────────────────────────────────────────────── */}
+
                     <Card className="my-4">
                         <CardHeader>
                             <CardHeading className="flex flex-col items-start py-4">
-                                <CardTitle>Media Files</CardTitle>
-                                <p className="text-sm text-[#4B5563]">Photos and videos associated with this job</p>
+                                <CardTitle>{t('JOB.MEDIA_TITLE')}</CardTitle>
+                                <p className="text-sm text-[#4B5563]">{t('JOB.MEDIA_DESCRIPTION')}</p>
                             </CardHeading>
-
                             <CardToolbar>
-                                {/* <Can action="create" on="jobs"> */}
-                                    <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-                                        <DialogTrigger asChild>
-                                            <Button>
-                                                <Camera className="h-4 w-4 mr-2" />
-                                                Upload Media
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                                            <DialogHeader>
-                                                <DialogTitle>Upload Media Files</DialogTitle>
-                                            </DialogHeader>
-                                            <JobMediaUpload
-                                                jobId={job_id}
-                                                onUploadComplete={refetchMedia}
-                                                onClose={() => setShowUploadDialog(false)}
-                                            />
-                                        </DialogContent>
-                                    </Dialog>
-                                {/* </Can> */}
+                                <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+                                    <DialogTrigger asChild>
+                                        <Button>
+                                            <Camera className="h-4 w-4 mr-2" />
+                                            {t('UPLOAD.MEDIA.TITLE')}
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                                        <DialogHeader>
+                                            <DialogTitle>{t('UPLOAD.MEDIA.TITLE')}</DialogTitle>
+                                        </DialogHeader>
+                                        <JobMediaUpload
+                                            jobId={job_id}
+                                            onUploadComplete={refetchMedia}
+                                            onClose={() => setShowUploadDialog(false)}
+                                        />
+                                    </DialogContent>
+                                </Dialog>
                             </CardToolbar>
                         </CardHeader>
-
                         <CardContent>
                             {mediaLoading ? (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -311,23 +293,20 @@ export function InstallerTimerPage() {
                                         handleDeleteClick({ id: Number(file.id), name: file.name })
                                     }
                                     deletePermissionSubject="jobs"
-                                    emptyMessage="No media files uploaded yet."
+                                    emptyMessage={t('JOB.MEDIA_EMPTY')}
                                 />
                             )}
-
-                            {/* Upload prompt when empty and no upload button visible */}
                             {!mediaLoading && (!mediaFiles || mediaFiles.length === 0) && (
-                                // <Can action="create" on="jobs">
-                                    <div className="mt-4 flex justify-center">
-                                        <Button onClick={() => setShowUploadDialog(true)}>
-                                            <Plus className="h-4 w-4 mr-2" />
-                                            Upload First File
-                                        </Button>
-                                    </div>
-                                // </Can>
+                                <div className="mt-4 flex justify-center">
+                                    <Button onClick={() => setShowUploadDialog(true)}>
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        {t('UPLOAD.MEDIA.FIRST_FILE')}
+                                    </Button>
+                                </div>
                             )}
                         </CardContent>
                     </Card>
+
                     <InstallerTimerHistory
                         jobId={Number(job_id)}
                         installerId={installer_id!}
@@ -352,17 +331,17 @@ export function InstallerTimerPage() {
                 onStopSuccess={handleStopSuccess}
                 jobNumber={jobData?.job_number}
             />
-            {/* ── Delete confirmation ──────────────────────────────────────────── */}
+
             <Popup
                 isOpen={deleteConfirmationOpen}
                 onClose={() => {
                     setDeleteConfirmationOpen(false);
                     setFileToDelete(null);
                 }}
-                title="Delete File"
-                description={`Are you sure you want to delete "${fileToDelete?.name}"? This action cannot be undone.`}
+                title={t('COMMON.DELETE_FILE_TITLE')}
+                description={t('COMMON.DELETE_FILE_CONFIRMATION', { name: fileToDelete?.name || '' })}
                 centered
-                className='h-auto '
+                className='h-auto'
             >
                 <div className="flex justify-end space-x-3 my-3">
                     <Button
@@ -373,7 +352,7 @@ export function InstallerTimerPage() {
                         }}
                         className="w-[200px]"
                     >
-                        Cancel
+                        {t('COMMON.CANCEL')}
                     </Button>
                     <Button
                         variant="destructive"
@@ -381,7 +360,7 @@ export function InstallerTimerPage() {
                         disabled={isDeleting}
                         className="w-[140px]"
                     >
-                        {isDeleting ? 'Deleting…' : 'Delete'}
+                        {isDeleting ? t('COMMON.DELETING') : t('COMMON.DELETE')}
                     </Button>
                 </div>
             </Popup>
