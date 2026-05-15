@@ -71,7 +71,7 @@ export interface JobStatusRow {
     install_confirmed: boolean;
     installed: boolean;
      revenue: number;
-    cost_of_stone: number;
+    cost_of_stone: number | null;
 }
 
 // ─────────────────────────────────────────────────────────

@@ -127,7 +127,7 @@ export interface Fab {
     sales_person_name?: string;
     revenue?: number;
     gp?: number;
-    cost_of_stone?: number;
+    cost_of_stone: number | null;
     cost_of_stone_id?: number;
     // Shop scheduling
     shop_date_schedule?: string;
