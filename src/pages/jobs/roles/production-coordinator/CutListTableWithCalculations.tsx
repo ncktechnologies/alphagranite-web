@@ -105,7 +105,7 @@ export const calculateCutListData = (fab: Fab): CalculatedCutListData => {
         cnc_ln_ft: fabWithExtraFields.cnc_linft || 0,
         milter_ln_ft: fabWithExtraFields.miter_linft || 0,
         saw_cut_lnft: fabWithExtraFields.saw_cut_lnft || 0,
-        cost_of_stone: fabWithExtraFields.cost_of_stone || null,
+        cost_of_stone: fabWithExtraFields.cost_of_stone || 0,
         revenue: fabWithExtraFields.revenue || 0,
         fp_completed: fabWithExtraFields.final_programming_complete ? 'Yes' : 'No',
         cip: '',

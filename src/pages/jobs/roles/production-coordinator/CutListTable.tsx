@@ -57,7 +57,7 @@ export interface CutList {
     edging_ln_ft: number;
     cnc_ln_ft: number;
     milter_ln_ft: number;
-    cost_of_stone: number | null;
+    cost_of_stone: number;
     revenue: number;
     fp_completed: string;
     cip: string;
