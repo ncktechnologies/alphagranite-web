@@ -628,7 +628,7 @@ const EditFabIdForm = () => {
                 input_area: values.area,
                 total_sqft: parseFloat(values.totalSqFt) || 0,
                 revenue: parseFloat(values.revenue) || 0,
-                cost_of_stone: parseFloat(values.cost_of_stone) || 0,
+                cost_of_stone: values.cost_of_stone && values.cost_of_stone.trim() !== '' ? parseFloat(values.cost_of_stone) : null,
                 notes: values.notes?.trim() || undefined,
                 template_needed: !values.templateNotNeeded,
                 drafting_needed: !values.draftNotNeeded,
