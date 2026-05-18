@@ -43,7 +43,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         input_area: fab.input_area || '',
         no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
         total_sq_ft: String(fab.total_sqft || "-"),
-        revenue: fab.job_details?.project_value || "-",
+        revenue: fab.revenue || "-",
         gp: "-",
         sct_completed: (fab as any).sales_ct_data?.is_completed ? 'Yes' : 'No',
         slabsmith_used: (fab as any).slab_smith_used ? 'Yes' : 'No',

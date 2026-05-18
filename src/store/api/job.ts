@@ -2444,7 +2444,7 @@ export const jobApi = createApi({
             }),
             updateInstallCompletion: build.mutation<any, { fab_id: number; data: { is_completed?: boolean; completion_date?: string; installer_id?: number; install_date?: string } }>( {
                 query: ({ fab_id, data }) => ({
-                    url: `/install-completion`,
+                    url: `/install-completion/${fab_id}`,
                     method: "PUT",
                     data: {
                         fab_id,
