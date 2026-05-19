@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from '@/components/ui/form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,14 +11,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/useTranslation';
 
 const pauseSchema = z.object({
-    sqftInstalled: z
-        .string()
-        .optional()
-        .transform(val => (val === '' ? undefined : Number(val))),
-    sqftNotInstalled: z
-        .string()
-        .optional()
-        .transform(val => (val === '' ? undefined : Number(val))),
     note: z.string().optional(),
 });
 
@@ -42,8 +33,7 @@ export const InstallerPauseModal = ({ open, onClose, jobId, jobNumber, installer
     const form = useForm<PauseData>({
         resolver: zodResolver(pauseSchema),
         defaultValues: {
-            sqftInstalled: '',
-            sqftNotInstalled: '',
+            note: '',
         }
     });
 
@@ -53,9 +43,9 @@ export const InstallerPauseModal = ({ open, onClose, jobId, jobNumber, installer
             await pauseTimer({
                 job_id: jobId,
                 installer_id: installerId,
-                sqft_installed: values.sqftInstalled,
-                sqft_not_installed: values.sqftNotInstalled,
-                note: values.note,
+                sqft_installed: undefined,   // explicitly not sent
+                sqft_not_installed: undefined,
+                note: "Lunch break",
             }).unwrap();
             toast.success(t('INSTALLER.PAUSE.SUCCESS'));
             onClose(true);
@@ -83,45 +73,8 @@ export const InstallerPauseModal = ({ open, onClose, jobId, jobNumber, installer
 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 p-4">
-                        <FormField
-                            control={form.control}
-                            name="sqftInstalled"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('INSTALLER.PAUSE.SQFT_INSTALLED')}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="number"
-                                            placeholder={t('INSTALLER.PAUSE.SQFT_INSTALLED_PLACEHOLDER')}
-                                            {...field}
-                                            value={field.value ?? ''}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
-                            control={form.control}
-                            name="sqftNotInstalled"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('INSTALLER.PAUSE.SQFT_NOT_INSTALLED')}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="number"
-                                            placeholder={t('INSTALLER.PAUSE.SQFT_NOT_INSTALLED_PLACEHOLDER')}
-                                            {...field}
-                                            value={field.value ?? ''}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-
-                        <FormField
+                        {/* Only optional note field remains */}
+                        {/* <FormField
                             control={form.control}
                             name="note"
                             render={({ field }) => (
@@ -133,7 +86,7 @@ export const InstallerPauseModal = ({ open, onClose, jobId, jobNumber, installer
                                     <FormMessage />
                                 </FormItem>
                             )}
-                        />
+                        /> */}
 
                         <div className="flex justify-end gap-3 pt-4 border-t">
                             <Button type="button" variant="outline" onClick={() => onClose(false)}>
