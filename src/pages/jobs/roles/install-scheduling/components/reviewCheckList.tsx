@@ -147,172 +147,154 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
 
   // Actual submission logic (extracted from original onSubmit)
   const doSubmit = async (values: InstallChecklistData) => {
-    if (!fabId) {
-      toast.error("No FAB ID provided. Cannot save.");
-      return;
+  if (!fabId) {
+    toast.error("No FAB ID provided. Cannot save.");
+    return;
+  }
+
+  const hasNotes = !!values.fab_notes?.trim();
+  const hasInstallDate = !!values.scheduled_install_date;
+  const hasInstaller = !!values.installer_id;
+  const isCompleted = values.install_completed;
+  const hasEndDate = !!values.scheduled_end_date;
+
+  if (!hasNotes && !hasInstallDate && !hasInstaller && !isCompleted && !hasEndDate) {
+    toast.warning("No changes to save.");
+    return;
+  }
+
+  setIsSubmitting(true);
+  let someSuccess = false;
+
+  try {
+    // 1. Save fab note if provided (independent, can be done anytime)
+    if (hasNotes) {
+      try {
+        await createFabNote({
+          fab_id: fabId,
+          note: values.fab_notes!.trim(),
+          stage: "install_scheduling",
+        }).unwrap();
+        someSuccess = true;
+      } catch (noteError) {
+        console.error("Error creating fab note:", noteError);
+        toast.error("Failed to save note");
+        setIsSubmitting(false);
+        return;
+      }
     }
 
-    const hasNotes = !!values.fab_notes?.trim();
-    const hasInstallDate = !!values.scheduled_install_date;
-    const hasInstaller = !!values.installer_id;
-    const isCompleted = values.install_completed;
-    const hasEndDate = !!values.scheduled_end_date;
+    // 2. Ensure an install scheduling record exists (without setting is_completed yet)
+    let installId = installData?.data?.id ?? installData?.id;
+    let createdScheduling = false;
 
-    if (!hasNotes && !hasInstallDate && !hasInstaller && !isCompleted && !hasEndDate) {
-      toast.warning("No changes to save.");
-      return;
+    if ((hasInstallDate || hasInstaller || isCompleted || hasEndDate) && !installId) {
+      try {
+        const createResponse = await createInstallScheduling({ fab_id: fabId }).unwrap();
+        installId = createResponse?.data?.id ?? createResponse?.id;
+        createdScheduling = true;
+        if (!installId) {
+          throw new Error("Could not obtain install scheduling ID after creation");
+        }
+      } catch (createError) {
+        console.error("Error creating install record:", createError);
+        toast.error("Failed to create install scheduling record");
+        setIsSubmitting(false);
+        return;
+      }
     }
 
-    setIsSubmitting(true);
-    let someSuccess = false;
+    // 3. If install_completed === true, handle completion record FIRST (before updating scheduling)
+    if (isCompleted) {
+      // Prepare completion payload
+      const completionPayload = {
+        fab_id: fabId,
+        installer_id: hasInstaller ? Number(values.installer_id) : undefined,
+        completion_date: hasEndDate ? values.scheduled_end_date! : formatDate(new Date()),
+        install_date: hasInstallDate ? values.scheduled_install_date : undefined,
+        is_completed: true,
+      };
 
-    try {
-      // 1. Save fab note if provided
-      if (hasNotes) {
-        try {
-          await createFabNote({
-            fab_id: fabId,
-            note: values.fab_notes!.trim(),
-            stage: "install_scheduling",
-          }).unwrap();
-          someSuccess = true;
-        } catch (noteError) {
-          console.error("Error creating fab note:", noteError);
-          toast.error("Failed to save note");
-          setIsSubmitting(false);
-          return;
-        }
-      }
+      const existingCompletion = completionData?.data ?? completionData;
 
-      // 2. Ensure an install scheduling record exists
-      let installId = installData?.data?.id ?? installData?.id;
-      let createdScheduling = false;
-
-      if ((hasInstallDate || hasInstaller || isCompleted || hasEndDate) && !installId) {
-        try {
-          const createResponse = await createInstallScheduling({
-            fab_id: fabId,
-          }).unwrap();
-          installId = createResponse?.data?.id ?? createResponse?.id;
-          createdScheduling = true;
-
-          if (!installId) {
-            throw new Error(
-              "Could not obtain install scheduling ID after creation"
-            );
-          }
-        } catch (createError) {
-          console.error("Error creating install record:", createError);
-          setIsSubmitting(false);
-          return;
-        }
-      }
-
-      if (createdScheduling && hasInstaller) {
-        try {
-          await createInstallCompletion({
-            fab_id: fabId,
-            installer_id: Number(values.installer_id),
-            install_date: values.scheduled_install_date,
-            completion_date: values.scheduled_end_date || formatDate(new Date()),
-          }).unwrap();
-          someSuccess = true;
-        } catch (completionError) {
-          console.error("Error creating install completion:", completionError);
-          toast.error("Failed to save install completion");
-          setIsSubmitting(false);
-          return;
-        }
-      }
-
-      // 3. Build the install scheduling payload
-      if (installId && (hasInstallDate || hasInstaller || isCompleted || hasEndDate)) {
-        try {
-          const payload: Record<string, unknown> = {};
-
-          if (hasInstaller) {
-            payload.installer_id = Number(values.installer_id);
-          }
-
-          if (hasInstallDate) {
-            payload.scheduled_install_date = values.scheduled_install_date;
-          }
-
-          if (hasEndDate) {
-            payload.scheduled_end_date = values.scheduled_end_date;
-          }
-
-          if (isCompleted) {
-            payload.is_completed = true;
-            // If no end date provided, set to now (optional)
-            if (!hasEndDate) {
-              payload.scheduled_end_date = formatDate(new Date());
-            }
-          } else {
-            payload.is_completed = false;
-          }
-
-          await updateInstallScheduling({
-            install_scheduling_id: installId,
-            data: payload,
-          }).unwrap();
-
-          someSuccess = true;
-        } catch (updateError) {
-          console.error("Error updating install scheduling:", updateError);
-          setIsSubmitting(false);
-          return;
-        }
-      }
-
-      if (!createdScheduling && hasInstaller && isCompleted) {
-        try {
+      try {
+        if (existingCompletion?.id) {
           await updateInstallCompletion({
             fab_id: fabId,
-            data: {
-              installer_id: Number(values.installer_id),
-              completion_date: values.scheduled_end_date || formatDate(new Date()),
-              is_completed: true,
-              install_date: values.scheduled_install_date,
-            },
+            data: completionPayload,
           }).unwrap();
-          someSuccess = true;
-        } catch (completionError) {
-          console.error("Error updating install completion:", completionError);
-          toast.error("Failed to update install completion");
-          setIsSubmitting(false);
-          return;
+        } else {
+          await createInstallCompletion(completionPayload).unwrap();
         }
+        someSuccess = true;
+      } catch (completionError) {
+        console.error("Failed to save install completion:", completionError);
+        toast.error("Cannot mark install as completed without saving completion details.");
+        setIsSubmitting(false);
+        return; // CRITICAL: Stop here – do NOT update scheduling with is_completed=true
       }
-
-      // 4. If a scheduled_install_date was provided, move FAB stage to "install_completion" (if not already there)
-      if (hasInstallDate && fabData?.data?.current_stage !== "install_completion") {
-        try {
-          await updateFabStage({
-            fab_id: fabId,
-            data: { current_stage: "install_completion" },
-          }).unwrap();
-          someSuccess = true;
-        } catch (stageError) {
-          console.error("Error updating FAB stage:", stageError);
-          toast.warning("Install date saved, but failed to update stage automatically.");
-        }
-      }
-
-      // 5. Final feedback
-      if (someSuccess) {
-        toast.success(isCompleted ? "Install checklist completed and saved!" : "Changes saved successfully");
-        navigate(-1);
-      } else {
-        toast.warning("No data was saved");
-      }
-    } catch (error) {
-      console.error("Unexpected error:", error);
-      toast.error("An unexpected error occurred");
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+
+    // 4. Now update the install scheduling record (with is_completed if applicable)
+    if (installId && (hasInstallDate || hasInstaller || isCompleted || hasEndDate)) {
+      try {
+        const payload: Record<string, unknown> = {};
+
+        if (hasInstaller) {
+          payload.installer_id = Number(values.installer_id);
+        }
+        if (hasInstallDate) {
+          payload.scheduled_install_date = values.scheduled_install_date;
+        }
+        // For end date: if completed but no explicit end date, use today
+        if (hasEndDate || isCompleted) {
+          payload.scheduled_end_date = isCompleted && !hasEndDate
+            ? formatDate(new Date())
+            : values.scheduled_end_date;
+        }
+        payload.is_completed = isCompleted || false;
+
+        await updateInstallScheduling({
+          install_scheduling_id: installId,
+          data: payload,
+        }).unwrap();
+        someSuccess = true;
+      } catch (updateError) {
+        console.error("Error updating install scheduling:", updateError);
+        toast.error("Failed to update install scheduling");
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    // 5. If a scheduled_install_date was provided, move FAB stage to "install_completion" (if not already there)
+    if (hasInstallDate && fabData?.data?.current_stage !== "install_completion") {
+      try {
+        await updateFabStage({
+          fab_id: fabId,
+          data: { current_stage: "install_completion" },
+        }).unwrap();
+        someSuccess = true;
+      } catch (stageError) {
+        console.error("Error updating FAB stage:", stageError);
+        toast.warning("Install date saved, but failed to update stage automatically.");
+      }
+    }
+
+    // 6. Final feedback
+    if (someSuccess) {
+      toast.success(isCompleted ? "Install checklist completed and saved!" : "Changes saved successfully");
+      navigate(-1);
+    } else {
+      toast.warning("No data was saved");
+    }
+  } catch (error) {
+    console.error("Unexpected error:", error);
+    toast.error("An unexpected error occurred");
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   // Form submit handler with confirmation modal for install_completed
   const onSubmit = async (values: InstallChecklistData) => {
