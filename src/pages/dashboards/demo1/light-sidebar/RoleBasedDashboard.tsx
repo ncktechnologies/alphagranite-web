@@ -43,8 +43,8 @@ export function RoleBasedDashboard() {
       'Cut List': '/job/cut-list',
       'Resurface Scheduling': '/job/resurfacing',
       'Revisions': '/job/revision',
-      'Install Scheduling': '/job/install-scheduling',
-      'Install Completion': '/job/install-completion',
+      'Install Scheduling': '/job/install-to-schedule',
+      'Install Completion': '/job/install-scheduled',
       'shop-overview': '/shop',
     };
     return routeMap[widgetId] || '/job';

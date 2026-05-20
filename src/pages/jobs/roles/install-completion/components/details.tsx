@@ -30,7 +30,7 @@ export function InstallSchedulingDetailsPage() {
 
     const { id } = useParams<{ id: string }>();
     const { data: fab, isLoading, isError, error } = useGetFabByIdQuery(Number(id));
-    const isCompletionRoute = location.pathname.includes('install-completion');
+    const isCompletionRoute = location.pathname.includes('install-scheduled');
 
     // Prepare clickable links
     const jobNameLink = fab?.job_details?.id ? `/job/details/${fab.job_details.id}` : '#';

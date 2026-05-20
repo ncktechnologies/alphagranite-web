@@ -196,7 +196,7 @@ export function InstallSchedulingPage() {
 
 
     const handleDetails = (id: string) => {
-        navigate(`/app/jobs/install-scheduling/${id}`);
+        navigate(`/app/jobs/install-to-schedule/${id}`);
     };
     const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
 
@@ -238,7 +238,7 @@ export function InstallSchedulingPage() {
 
             <JobTable
                 jobs={jobsData}
-                path="install-scheduling"
+                path="install-to-schedule"
                 isLoading={isLoading && !data}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}

@@ -46,8 +46,8 @@ export function JobDashboardPage() {
       'Cut List': '/job/cut-list',
       'Resurface Scheduling': '/job/resurfacing',
       'Revisions': '/job/revision',
-      'Install Scheduling': '/job/install-scheduling',
-      'Install Completion': '/job/install-completion',
+      'Install Scheduling': '/job/install-to-schedule',
+      'Install Completion': '/job/install-scheduled',
       'CNC': '/job/cnc',
     };
     return routeMap[widgetId] || '/job';

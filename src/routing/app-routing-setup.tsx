@@ -323,7 +323,7 @@ export function AppRoutingSetup() {
             }
           />
           <Route
-            path="/job/install-scheduling"
+            path="/job/install-to-schedule"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <InstallSchedulingPage/>
@@ -332,7 +332,7 @@ export function AppRoutingSetup() {
             }
           />
           <Route
-            path="/job/install-completion"
+            path="/job/install-scheduled"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <InstallCompletionPage/>
@@ -341,7 +341,7 @@ export function AppRoutingSetup() {
             }
           />
            <Route
-            path="/job/install-scheduling/:id"
+            path="/job/install-to-schedule/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <InstallSchedulingDetailsPage/>
@@ -350,7 +350,7 @@ export function AppRoutingSetup() {
             }
           />
           <Route
-            path="/job/install-completion/:id"
+            path="/job/install-scheduled/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
                 <InstallSchedulingDetailsPage/>

@@ -195,7 +195,7 @@ export function InstallCompletionPage() {
 
 
     const handleDetails = (id: string) => {
-        navigate(`/app/jobs/install-scheduling/${id}`);
+        navigate(`/app/jobs/install-to-schedule/${id}`);
     };
     const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
 
@@ -237,7 +237,7 @@ export function InstallCompletionPage() {
 
             <JobTable
                 jobs={jobsData}
-                path="install-completion"
+                path="install-scheduled"
                 isLoading={isLoading && !data}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}
