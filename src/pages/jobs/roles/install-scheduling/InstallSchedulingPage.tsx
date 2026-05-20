@@ -36,7 +36,8 @@ const transformFabToJob = (fab: Fab): IJob => {
         fab_id: String(fab.id),
         job_name: `${fab.job_details?.name}`,
         job_no: String(fab.job_details?.job_number),
-        date: (fab as any).install_details?.scheduled_install_date || '',
+        // date: (fab as any).install_details?.scheduled_install_date || '',
+        date: (fab as any).shop_est_completion_date ?  (fab as any).shop_est_completion_date : (fab as any).estimated_completion_date,
         shop_est_completion_date: (fab as any).shop_est_completion_date
             ? formatDate((fab as any).shop_est_completion_date)
             : (fab as any).estimated_completion_date
@@ -221,7 +222,7 @@ export function InstallSchedulingPage() {
         <Container className="border-t">
             <Toolbar>
                 <ToolbarHeading
-                    title="Install Scheduling"
+                    title="Install To Schedule"
                     description="Manage installation schedules and operations"
                 />
             </Toolbar>
