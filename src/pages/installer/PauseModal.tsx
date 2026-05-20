@@ -88,11 +88,11 @@ export const InstallerPauseModal = ({ open, onClose, jobId, jobNumber, installer
                             )}
                         /> */}
 
-                        <div className="flex justify-end gap-3 pt-4 border-t">
-                            <Button type="button" variant="outline" onClick={() => onClose(false)}>
+                        <div className="flex justify-center gap-3 pt-4 w-full">
+                            <Button type="button" variant="outline" onClick={() => onClose(false)} size='lg'>
                                 {t('COMMON.CANCEL')}
                             </Button>
-                            <Button type="submit" disabled={isSubmitting}>
+                            <Button type="submit" disabled={isSubmitting} size='lg'>
                                 {isSubmitting ? t('INSTALLER.PAUSE.PAUSING') : t('INSTALLER.PAUSE.CONFIRM')}
                             </Button>
                         </div>
