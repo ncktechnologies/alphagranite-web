@@ -94,7 +94,8 @@ export function InstallerTimerPage() {
             toast.success(t('INSTALLER.TIMER.START_SUCCESS'));
             refetch();
         } catch (error: any) {
-            toast.error(error?.data?.message || t('INSTALLER.TIMER.START_FAILED'));
+            // toast.error(error?.data?.message || t('INSTALLER.TIMER.START_FAILED'));
+            console.log("Failed to start")
         }
     };
 
@@ -108,7 +109,7 @@ export function InstallerTimerPage() {
             toast.success(t('INSTALLER.TIMER.RESUME_SUCCESS'));
             refetch();
         } catch (error: any) {
-            toast.error(error?.data?.message || t('INSTALLER.TIMER.RESUME_FAILED'));
+            // toast.error(error?.data?.message || t('INSTALLER.TIMER.RESUME_FAILED'));
         }
     };
 
