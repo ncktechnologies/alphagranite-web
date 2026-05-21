@@ -69,6 +69,7 @@ import { TemplaterTimerPage } from '@/pages/templater/TemplaterTimerPage';
 import { InstallerTimerPage } from '@/pages/installer/InstallerTimerPage';
 import { JobStatusTable } from '@/pages/jobs/roles/report/JobStatus';
 import JobStatusPage from '@/pages/jobs/roles/report/JobStatusPage';
+import { InstallerScheduleCards } from '@/pages/installer/InstallerDashboard';
 
 export function AppRoutingSetup() {
   return (
@@ -83,9 +84,9 @@ export function AppRoutingSetup() {
           <Route path="/settings/permissions" element={<PermissionsSection />} />
           <Route path="/settings/stone-types" element={<StoneTypesSection />} />
           <Route path="/create-jobs" element={<JobsSection />} />
-          <Route path="/report-status" element={<JobStatusPage/>} />
+          <Route path="/report-status" element={<JobStatusPage />} />
           <Route path="/need-to-invoice" element={<NeedToInvoicePage />} />
-          
+
           {/* Job Dashboard Route */}
           <Route path="/job" element={<JobDashboardPage />} />
 
@@ -113,7 +114,7 @@ export function AppRoutingSetup() {
             path="/sales"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <SalesPage/>
+              <SalesPage />
               // </ProtectedRoute>
             }
           />
@@ -121,7 +122,7 @@ export function AppRoutingSetup() {
             path="/sales/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <SalesDetailsPage/>
+              <SalesDetailsPage />
               // </ProtectedRoute>
             }
           />
@@ -129,7 +130,7 @@ export function AppRoutingSetup() {
             path="/sales/edit/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <EditFabIdForm/>
+              <EditFabIdForm />
               // </ProtectedRoute>
             }
           />
@@ -137,7 +138,7 @@ export function AppRoutingSetup() {
             path="/job/templating"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <TemplatingPage/>
+              <TemplatingPage />
               // </ProtectedRoute>
             }
           />
@@ -145,33 +146,33 @@ export function AppRoutingSetup() {
             path="/job/templating-technician"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <TechnicianPage/>
+              <TechnicianPage />
               // </ProtectedRoute>
             }
           />
-           <Route
+          <Route
             path="/job/templating/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <FabIdDetailsPage/>
+              <FabIdDetailsPage />
               // </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/job/templating-details/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <TemplatingDetailsPage/>
+              <TemplatingDetailsPage />
               // </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/sales/new-fab-id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <NewFabIdForm/>
+              <NewFabIdForm />
               // </ProtectedRoute>
             }
           />
@@ -179,15 +180,15 @@ export function AppRoutingSetup() {
             path="/job/predraft"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <PredraftPage/>
+              <PredraftPage />
               // </ProtectedRoute>
             }
           />
-           <Route
+          <Route
             path="/job/predraft/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <PreDraftDetailsPage/>
+              <PreDraftDetailsPage />
               // </ProtectedRoute>
             }
           />
@@ -203,53 +204,53 @@ export function AppRoutingSetup() {
             path="/job/draft"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <DrafterPage/>
+              <DrafterPage />
               // </ProtectedRoute>
             }
           />
-           <Route
+          <Route
             path="/job/draft/:id"
             element={
-                <DrafterDetailsPage/>
+              <DrafterDetailsPage />
             }
           />
           <Route
             path="/job/cnc"
             element={
-                <CNCPage/>
+              <CNCPage />
             }
           />
           <Route
             path="/job/cnc/:id"
             element={
-                <CNCDetailsPage/>
+              <CNCDetailsPage />
             }
           />
           <Route
             path="/job/draft-review"
             element={
-                <AfterDraftSalesPage/>
+              <AfterDraftSalesPage />
             }
           />
-           <Route
+          <Route
             path="/job/draft-review/:id"
             element={
-                <DraftReviewDetailsPage/>
+              <DraftReviewDetailsPage />
             }
           />
           <Route
             path="/job/revision"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <DraftRevisionPage/>
+              <DraftRevisionPage />
               // </ProtectedRoute>
             }
           />
-           <Route
+          <Route
             path="/job/revision/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <RevisionDetailsPage/>
+              <RevisionDetailsPage />
               // </ProtectedRoute>
             }
           />
@@ -257,7 +258,7 @@ export function AppRoutingSetup() {
             path="/job/slab-smith"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <SlabSmithPage/>
+              <SlabSmithPage />
               // </ProtectedRoute>
             }
           />
@@ -265,7 +266,7 @@ export function AppRoutingSetup() {
             path="/job/slab-smith/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <SlabSmithDetailsPage/>
+              <SlabSmithDetailsPage />
               // </ProtectedRoute>
             }
           />
@@ -273,34 +274,34 @@ export function AppRoutingSetup() {
             path="/job/cut-list"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <CutListPage/>
+              <CutListPage />
               // </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/job/cut-list/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <CutListDetailsPage/>
+              <CutListDetailsPage />
               // </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/job/final-programming"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <FinalProgrammingPage/>
+              <FinalProgrammingPage />
               // </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/job/final-programming/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <FinalProgrammingDetailsPage/>
+              <FinalProgrammingDetailsPage />
               // </ProtectedRoute>
             }
           />
@@ -308,17 +309,17 @@ export function AppRoutingSetup() {
             path="/job/resurfacing"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <ResurfacingPage/>
-                
+              <ResurfacingPage />
+
               // </ProtectedRoute>
             }
           />
-           <Route
+          <Route
             path="/job/resurfacing/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <ResurfacingDetailsPage/>
-                
+              <ResurfacingDetailsPage />
+
               // </ProtectedRoute>
             }
           />
@@ -326,26 +327,32 @@ export function AppRoutingSetup() {
             path="/job/install-to-schedule"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <InstallSchedulingPage/>
-                
+              <InstallSchedulingPage />
+
               // </ProtectedRoute>
             }
+          />
+          <Route
+            path="/installer/dashboard"
+            element={
+              <InstallerScheduleCards/>
+            }            
           />
           <Route
             path="/job/install-scheduled"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <InstallCompletionPage/>
-                
+              <InstallCompletionPage />
+
               // </ProtectedRoute>
             }
           />
-           <Route
+          <Route
             path="/job/install-to-schedule/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <InstallSchedulingDetailsPage/>
-                
+              <InstallSchedulingDetailsPage />
+
               // </ProtectedRoute>
             }
           />
@@ -353,8 +360,8 @@ export function AppRoutingSetup() {
             path="/job/install-scheduled/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <InstallSchedulingDetailsPage/>
-                
+              <InstallSchedulingDetailsPage />
+
               // </ProtectedRoute>
             }
           />
@@ -362,7 +369,7 @@ export function AppRoutingSetup() {
             path="/shop"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <ShopPage/>
+              <ShopPage />
               // </ProtectedRoute>
             }
           />
@@ -370,37 +377,37 @@ export function AppRoutingSetup() {
             path="/shop/settings"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <SettingsPage/>
+              <SettingsPage />
               // </ProtectedRoute>
             }
           />
-           <Route
+          <Route
             path="/shop/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <ShopDetailsPage/>
+              <ShopDetailsPage />
               // </ProtectedRoute>
             }
           />
-           <Route
+          <Route
             path="/shop/calendar"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <ShopCalendarPage/>
+              <ShopCalendarPage />
               // </ProtectedRoute>
             }
           />
           <Route
             path='/shop/create-plan'
             element={
-            <CreatePlanPage/>
+              <CreatePlanPage />
             }
           />
-            <Route
+          <Route
             path="/shop/auto-schedule"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <CreateAutoPlanPage/>
+              <CreateAutoPlanPage />
               // </ProtectedRoute>
             }
           />
@@ -408,16 +415,16 @@ export function AppRoutingSetup() {
             path="/status"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <WJPlanPage/>
+              <WJPlanPage />
               // </ProtectedRoute>
             }
           />
-          <Route path="/shop/fab/:fabId" element={<FabDetailsPage/>} />
+          <Route path="/shop/fab/:fabId" element={<FabDetailsPage />} />
           <Route
             path="/resurfacing-status"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <ResurfacingStatusPage/>
+              <ResurfacingStatusPage />
               // </ProtectedRoute>
             }
           />
@@ -425,7 +432,7 @@ export function AppRoutingSetup() {
             path="/resurfacing-status/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <ResurfacingStatusDetailsPage/>
+              <ResurfacingStatusDetailsPage />
               // </ProtectedRoute>
             }
           />
@@ -433,7 +440,7 @@ export function AppRoutingSetup() {
             path="/shop/wj/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <WjDetailsPage/>
+              <WjDetailsPage />
               // </ProtectedRoute>
             }
           />
@@ -441,7 +448,7 @@ export function AppRoutingSetup() {
             path="/shop/edging"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <EdgingPlanPage/>
+              <EdgingPlanPage />
               // </ProtectedRoute>
             }
           />
@@ -449,7 +456,7 @@ export function AppRoutingSetup() {
             path="/shop/edging/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <EdgingDetailsPage/>
+              <EdgingDetailsPage />
               // </ProtectedRoute>
             }
           />
@@ -457,7 +464,7 @@ export function AppRoutingSetup() {
             path="/shop/miter"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <MilterPlanPage/>
+              <MilterPlanPage />
               // </ProtectedRoute>
             }
           />
@@ -465,11 +472,11 @@ export function AppRoutingSetup() {
             path="/shop/miter/:id"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-                <MiterDetailsPage/>
+              <MiterDetailsPage />
               // </ProtectedRoute>
             }
           />
-          
+
           {/* Operator Routes */}
           <Route
             path="/operator/dashboard"

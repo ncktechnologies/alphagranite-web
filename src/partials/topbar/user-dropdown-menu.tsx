@@ -100,7 +100,7 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
             </div>
           </div>
           <Badge variant="primary" appearance="light" size="sm">
-            {user.role}
+            {user?.role}
           </Badge>
         </div>
 

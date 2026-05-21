@@ -29,6 +29,8 @@ import { Link } from 'react-router';
 import { Can } from '@/components/permission';
 import { useSelector } from 'react-redux';
 import { OperatorDashboard } from '@/pages/operator';
+import { InstallerScheduleCards } from '@/pages/installer/InstallerDashboard';
+
 export function Demo1LightSidebarPage() {
   const [isOpen, setIsOpen] = useState(false);
   const [date, setDate] = useState<DateRange | undefined>({
@@ -41,42 +43,61 @@ export function Demo1LightSidebarPage() {
   const [timePeriod, setTimePeriod] = useState('all');
   const isSuperAdmin = useIsSuperAdmin();
 
-
   // ✅ Check roles array from backend response
   const currentUser = useSelector((s: any) => s.user.user);
   const userRoles = currentUser?.roles || [];
   const isOperator = userRoles.some((r: any) =>
     r.name?.toLowerCase() === 'operator'
   );
-
-  console.log(isOperator)
+  const isInstaller = userRoles.some((r: any) =>
+    r.name === 'Install Scheduler'
+  );
+console.log(userRoles)
   const handleDateRangeApply = () => {
-    setDate(tempDateRange); // Save the temporary date range to the main state
-    setIsOpen(false); // Close the popover
+    setDate(tempDateRange);
+    setIsOpen(false);
   };
 
   const handleDateRangeReset = () => {
-    setTempDateRange(undefined); // Reset the temporary date range
+    setTempDateRange(undefined);
   };
 
   const handleTimePeriodChange = (newTimePeriod: string) => {
     setTimePeriod(newTimePeriod);
   };
 
-  const defaultStartDate = new Date(); // Default start date fallback
   const isUserSuperAdmin = useIsSuperAdmin();
+
   if (isOperator) {
     return <OperatorDashboard />;
   }
-  return (
-    <Fragment>
-      <Container>
-        {isUserSuperAdmin ?
+
+  // Installer view – self‑contained cards (no props needed)
+  if (isInstaller) {
+    return (
+      <Fragment>
+        <Container>
           <Toolbar>
             <ToolbarHeading
               title="Dashboard"
-            // description="Central Hub for Personal Customization"
+              // description="Upcoming installations assigned to you"
             />
+          </Toolbar>
+        </Container>
+        <Container>
+          <InstallerScheduleCards />
+        </Container>
+      </Fragment>
+    );
+  }
+
+  // Default view (superadmin or regular user)
+  return (
+    <Fragment>
+      <Container>
+        {isUserSuperAdmin ? (
+          <Toolbar>
+            <ToolbarHeading title="Dashboard" />
             <ToolbarActions>
               <Select value={timePeriod} onValueChange={handleTimePeriodChange}>
                 <SelectTrigger className="w-32 h-8 text-sm">
@@ -91,30 +112,29 @@ export function Demo1LightSidebarPage() {
               </Select>
             </ToolbarActions>
           </Toolbar>
-          :
-          <Toolbar className=' '>
+        ) : (
+          <Toolbar className=" ">
             <ToolbarHeading title="Dashboard" description="" />
             <ToolbarActions>
               <Can action="create" on="FAB IDs">
                 <Link to="/sales/new-fab-id">
-                  <Button className="">
+                  <Button>
                     <Plus />
                     New FAB ID
                   </Button>
                 </Link>
               </Can>
-
             </ToolbarActions>
           </Toolbar>
-        }
+        )}
       </Container>
       <Container>
-        {/* Super admins see the full admin dashboard, regular users see role-based dashboard */}
-        {isSuperAdmin ?
+        {/* Super admins see the full admin dashboard, regular users see role‑based dashboard */}
+        {isSuperAdmin ? (
           <Demo1LightSidebarContent timePeriod={timePeriod} />
-          :
+        ) : (
           <RoleBasedDashboard />
-        }
+        )}
       </Container>
     </Fragment>
   );
