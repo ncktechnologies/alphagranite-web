@@ -147,7 +147,7 @@ export function InstallerScheduleCards() {
     };
 
     const handleCardClick = (jobId: string) => {
-        navigate(`/app/jobs/install-to-schedule/${jobId}`);
+        navigate(`/jobs/${jobId}/installer/timer`);
     };
 
     // Loading skeletons
