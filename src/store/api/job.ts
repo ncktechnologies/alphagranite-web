@@ -985,6 +985,7 @@ export const jobApi = createApi({
                             ...(queryParams.sct_completed_start && { sct_completed_start: queryParams.sct_completed_start }),
                             ...(queryParams.sct_completed_end && { sct_completed_end: queryParams.sct_completed_end }),
                             ...(queryParams.type && { type: queryParams.type }),
+                            ...(queryParams.user_level && { user_level: queryParams.user_level }),  
                         }
                     };
                 },

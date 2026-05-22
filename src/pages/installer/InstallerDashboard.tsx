@@ -114,6 +114,7 @@ export function InstallerScheduleCards() {
             skip,
             limit: pagination.pageSize,
             current_stage: 'install_completion',
+            user_level: 'installer'
         };
         if (searchQuery) {
             params.search = searchQuery;
