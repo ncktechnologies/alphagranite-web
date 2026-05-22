@@ -238,6 +238,8 @@
   "TIMER.PAUSED": "Paused",
   "TIMER.STOPPED": "Stopped",
   "TIMER.READY_TO_START": "Ready to Start",
+  "TIMER.DAYS": "days",
+  "TIMER.DAY": "day",
 
   "SUBMISSION.TITLE": "Submit Work",
   "SUBMISSION.DESCRIPTION": "Submission Description",

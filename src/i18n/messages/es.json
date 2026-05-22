@@ -226,7 +226,9 @@
   "TIMER.PAUSED": "Pausado",
   "TIMER.STOPPED": "Detenido",
   "TIMER.READY_TO_START": "Listo para Iniciar",
-  
+  "TIMER.DAYS": "días",
+  "TIMER.DAY": "día",
+
   "SUBMISSION.TITLE": "Enviar Trabajo",
   "SUBMISSION.DESCRIPTION": "Descripción del Envío",
   "SUBMISSION.NOTES": "Notas Adicionales",
