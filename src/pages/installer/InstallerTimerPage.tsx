@@ -107,7 +107,7 @@ export function InstallerTimerPage() {
     const handleResume = async () => {
         if (!installer_id) return;
         try {
-            await resumeTimer({ job_id: Number(job_id), installer_id }).unwrap();
+            await resumeTimer({ job_id: Number(job_id), installer_id, fab_id: fabId }).unwrap();
             toast.success(t('INSTALLER.TIMER.RESUME_SUCCESS'));
             refetch();
         } catch (error: any) {

@@ -40,6 +40,10 @@ export const InstallerStopModal = ({ open, onClose, jobId, jobNumber, installerI
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [stopTimer] = useStopInstallerTimerMutation();
 
+    // Replace with your actual auth hook
+    const currentUserId = 42; // TODO: use real auth, e.g. useAuth().user.id
+    const isAuthorized = currentUserId === installerId;
+
     const form = useForm<StopData>({
         resolver: zodResolver(stopSchema),
         defaultValues: {
@@ -56,9 +60,10 @@ export const InstallerStopModal = ({ open, onClose, jobId, jobNumber, installerI
                 job_id: jobId,
                 installer_id: installerId,
                 fab_id: fabId,
-                sqft_installed: values.sqftInstalled,
-                sqft_not_installed: values.sqftNotInstalled,
-                note: values.note,
+                // If not authorized, do not send the extra fields
+                sqft_installed: isAuthorized ? values.sqftInstalled : undefined,
+                sqft_not_installed: isAuthorized ? values.sqftNotInstalled : undefined,
+                note: isAuthorized ? values.note : undefined,
             }).unwrap();
             toast.success(t('INSTALLER.STOP.SUCCESS'));
             onClose(true);
@@ -86,57 +91,62 @@ export const InstallerStopModal = ({ open, onClose, jobId, jobNumber, installerI
 
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 p-4">
-                        <FormField
-                            control={form.control}
-                            name="sqftInstalled"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('INSTALLER.STOP.SQFT_INSTALLED')}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="number"
-                                            placeholder={t('INSTALLER.STOP.SQFT_INSTALLED_PLACEHOLDER')}
-                                            {...field}
-                                            value={field.value ?? ''}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                        {/* Only show these fields if the user is the assigned installer */}
+                        {isAuthorized && (
+                            <>
+                                <FormField
+                                    control={form.control}
+                                    name="sqftInstalled"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>{t('INSTALLER.STOP.SQFT_INSTALLED')}</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    placeholder={t('INSTALLER.STOP.SQFT_INSTALLED_PLACEHOLDER')}
+                                                    {...field}
+                                                    value={field.value ?? ''}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
-                        <FormField
-                            control={form.control}
-                            name="sqftNotInstalled"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('INSTALLER.STOP.SQFT_NOT_INSTALLED')}</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="number"
-                                            placeholder={t('INSTALLER.STOP.SQFT_NOT_INSTALLED_PLACEHOLDER')}
-                                            {...field}
-                                            value={field.value ?? ''}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                                <FormField
+                                    control={form.control}
+                                    name="sqftNotInstalled"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>{t('INSTALLER.STOP.SQFT_NOT_INSTALLED')}</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    placeholder={t('INSTALLER.STOP.SQFT_NOT_INSTALLED_PLACEHOLDER')}
+                                                    {...field}
+                                                    value={field.value ?? ''}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
 
-                        <FormField
-                            control={form.control}
-                            name="note"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>{t('INSTALLER.STOP.NOTE_OPTIONAL')}</FormLabel>
-                                    <FormControl>
-                                        <Textarea placeholder={t('INSTALLER.STOP.NOTE_PLACEHOLDER')} {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
+                                <FormField
+                                    control={form.control}
+                                    name="note"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>{t('INSTALLER.STOP.NOTE_OPTIONAL')}</FormLabel>
+                                            <FormControl>
+                                                <Textarea placeholder={t('INSTALLER.STOP.NOTE_PLACEHOLDER')} {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </>
+                        )}
 
                         <div className="flex justify-end gap-3 pt-4 border-t">
                             <Button type="button" variant="outline" onClick={() => onClose(false)}>

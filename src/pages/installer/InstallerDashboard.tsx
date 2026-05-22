@@ -143,11 +143,11 @@ export function InstallerScheduleCards() {
     };
 
     // Navigations
-    const handleCardClick = (jobId: string, fabId:string) => {
+    const handleCardClick = (jobId: number, fabId: string) => {
         navigate(`/jobs/${jobId}/installer/timer?fab_id=${fabId}`);
     };
 
-    const handleJobNumberClick = (e: React.MouseEvent, jobId: string, fabId: string) => {
+    const handleJobNumberClick = (e: React.MouseEvent, jobId: number, fabId: string) => {
         e.stopPropagation();
         navigate(`/jobs/${jobId}/installer/timer?fab_id=${fabId}   `);
     };
@@ -306,7 +306,7 @@ export function InstallerScheduleCards() {
                 {jobs.map((job) => (
                     <div
                         key={job.id}
-                        onClick={() => handleCardClick(job.id, job.fab_id)}
+                        onClick={() => handleCardClick(job.job_id, job.fab_id)}
                         className="bg-white rounded-xl border border-[#e6e8f0] shadow-sm p-5 cursor-pointer transition-all hover:shadow-md hover:border-[#667f01]/30"
                     >
                         <div className="flex gap-4 justify-between mb-2">
