@@ -20,10 +20,9 @@ import {
     PopoverTrigger,
 } from '@/components/ui/popover';
 import { useTableState } from '@/hooks/use-table-state';
-import { useGetFabsCompletionQuery, useGetFabsQuery } from '@/store/api/job';
+import { useGetFabsQuery } from '@/store/api/job';
 import { formatForDisplay } from '@/utils/date-utils';
 import { IJob } from '../jobs/components/job';
-import { current } from '@reduxjs/toolkit';
 
 // Helper: format date to "08 Oct, 2025"
 const formatDate = (dateString?: string): string => {
@@ -49,7 +48,6 @@ const transformFabToJobCard = (fab: any): IJob => ({
     install_date: fab.install_details?.scheduled_install_date
         ? formatDate(fab.install_details.scheduled_install_date)
         : '-',
-    // Minimal other fields to satisfy IJob interface
     fab_type: fab.fab_type,
     job_name: '',
     date: '',
@@ -86,10 +84,9 @@ const transformFabToJobCard = (fab: any): IJob => ({
 export function InstallerScheduleCards() {
     const navigate = useNavigate();
 
-    // Use the same table state hook as JobTable – includes searchType, dateRange, etc.
     const tableState = useTableState({
         tableId: 'installer-cards',
-        defaultPagination: { pageIndex: 0, pageSize: 9 }, // 3x3 grid
+        defaultPagination: { pageIndex: 0, pageSize: 9 },
         defaultDateFilter: 'all',
         persistState: false,
     });
@@ -107,13 +104,11 @@ export function InstallerScheduleCards() {
         setDateRange,
     } = tableState;
 
-    // Local state for custom date picker
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(dateRange);
 
     const skip = pagination.pageIndex * pagination.pageSize;
 
-    // Build query params for the API (matches JobTable logic)
     const queryParams = useMemo(() => {
         const params: any = {
             skip,
@@ -146,11 +141,21 @@ export function InstallerScheduleCards() {
         setPagination({ ...pagination, pageIndex: newPageIndex });
     };
 
+    // Navigations
     const handleCardClick = (jobId: string) => {
         navigate(`/jobs/${jobId}/installer/timer`);
     };
 
-    // Loading skeletons
+    const handleJobNumberClick = (e: React.MouseEvent, jobId: string) => {
+        e.stopPropagation();
+        navigate(`/jobs/${jobId}/installer/timer`);
+    };
+
+    const handleFabIdClick = (e: React.MouseEvent, fabId: string) => {
+        e.stopPropagation();
+        navigate(`/sales/${fabId}`);
+    };
+
     if (isLoading) {
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
@@ -172,7 +177,6 @@ export function InstallerScheduleCards() {
         );
     }
 
-    // Error state
     if (isError) {
         return (
             <div className="text-center py-12 mt-6">
@@ -181,14 +185,9 @@ export function InstallerScheduleCards() {
         );
     }
 
-    // Empty state
-
-
     return (
         <div>
-            {/* Filter bar – exactly as in JobTable */}
             <div className="flex items-center gap-2.5 flex-wrap mt-6 mb-6">
-                {/* Search input with type selector */}
                 <div className="relative flex items-center">
                     <Select value={searchType || 'fab_id'} onValueChange={(v) => setSearchType(v as any)}>
                         <SelectTrigger className="w-[140px] h-[34px] rounded-e-none border-r-0">
@@ -221,7 +220,6 @@ export function InstallerScheduleCards() {
                     </div>
                 </div>
 
-                {/* Date filter (same as JobTable) */}
                 <div className="flex items-center gap-2">
                     <Select
                         value={dateFilter}
@@ -297,14 +295,12 @@ export function InstallerScheduleCards() {
             </div>
 
             {/* Cards grid */}
-            {jobs.length === 0 &&
-
+            {jobs.length === 0 && (
                 <div className="text-center py-12 mt-6">
                     <p className="text-gray-500">No jobs found for installation scheduling.</p>
                 </div>
+            )}
 
-
-            }
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {jobs.map((job) => (
                     <div
@@ -313,11 +309,18 @@ export function InstallerScheduleCards() {
                         className="bg-white rounded-xl border border-[#e6e8f0] shadow-sm p-5 cursor-pointer transition-all hover:shadow-md hover:border-[#667f01]/30"
                     >
                         <div className="flex gap-4 justify-between mb-2">
-                            <div>
+                            <div
+                                onClick={(e) => handleJobNumberClick(e, job.job_id)}
+                                className="cursor-pointer hover:opacity-80"
+                            >
                                 <p className="text-sm text-[#7c8689]">Job Number</p>
                                 <p className="text-2xl font-semibold text-[#1379f0]">{job.job_no}</p>
                             </div>
-                            <div>
+                            {/* Fab ID - click leads to fab details */}
+                            <div
+                                onClick={(e) => handleFabIdClick(e, job.fab_id)}
+                                className="cursor-pointer hover:opacity-80"
+                            >
                                 <p className="text-sm text-[#7c8689]">Fab ID</p>
                                 <p className="text-2xl font-semibold text-[#1379f0]">{job.fab_id}</p>
                             </div>

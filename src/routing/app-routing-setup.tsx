@@ -332,12 +332,7 @@ export function AppRoutingSetup() {
               // </ProtectedRoute>
             }
           />
-          <Route
-            path="/installer/dashboard"
-            element={
-              <InstallerScheduleCards/>
-            }            
-          />
+          
           <Route
             path="/job/install-scheduled"
             element={
