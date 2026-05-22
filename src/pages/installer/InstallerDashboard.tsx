@@ -49,12 +49,12 @@ const transformFabToJobCard = (fab: any): IJob => ({
         ? formatDate(fab.install_details.scheduled_install_date)
         : '-',
     fab_type: fab.fab_type,
-    job_name: '',
+    job_name: fab.job_details?.name,
     date: '',
     shop_est_completion_date: '',
     current_stage: fab.current_stage,
     sales_person_name: '',
-    acct_name: '',
+    acct_name: fab.account_name,
     template_received: '',
     template_needed: '',
     revenue: '',
@@ -186,7 +186,7 @@ export function InstallerScheduleCards() {
     }
 
     return (
-        <div>
+        <div className="pb-6">
             <div className="flex items-center gap-2.5 flex-wrap mt-6 mb-6">
                 <div className="relative flex items-center">
                     <Select value={searchType || 'fab_id'} onValueChange={(v) => setSearchType(v as any)}>
@@ -330,16 +330,24 @@ export function InstallerScheduleCards() {
 
                         <div className="space-y-3">
                             <div className="flex justify-between items-center">
+                                <span className="text-sm text-[#7c8689]">Job Name</span>
+                                <span className="text-sm font-semibold text-[#4b545d]">{job.job_name || '-'}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
+                                <span className="text-sm text-[#7c8689]">Account Name</span>
+                                <span className="text-sm font-semibold text-[#4b545d]">{job.acct_name || '-'}</span>
+                            </div>
+                            <div className="flex justify-between items-center">
                                 <span className="text-sm text-[#7c8689]">Area</span>
-                                <span className="text-sm font-medium text-[#4b545d]">{job.input_area || '-'}</span>
+                                <span className="text-sm font-semibold text-[#4b545d]">{job.input_area || '-'}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-[#7c8689]">Total SQ FT</span>
-                                <span className="text-sm font-medium text-[#4b545d]">{job.total_sq_ft}</span>
+                                <span className="text-sm font-semibold text-[#4b545d]">{job.total_sq_ft}</span>
                             </div>
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-[#7c8689]">Installation Date</span>
-                                <span className="text-sm font-medium text-[#4b545d]">{job.install_date || '-'}</span>
+                                <span className="text-sm font-semibold text-[#4b545d]">{job.install_date || '-'}</span>
                             </div>
                         </div>
                     </div>
