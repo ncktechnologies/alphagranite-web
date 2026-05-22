@@ -23,9 +23,10 @@ interface InstallerPauseModalProps {
     installerId: number;
     onPauseSuccess?: () => void;
     jobNumber?: string;
+    fabId?: number;
 }
 
-export const InstallerPauseModal = ({ open, onClose, jobId, jobNumber, installerId, onPauseSuccess }: InstallerPauseModalProps) => {
+export const InstallerPauseModal = ({ open, onClose, jobId, fabId, jobNumber, installerId, onPauseSuccess }: InstallerPauseModalProps) => {
     const { t } = useTranslation();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [pauseTimer] = usePauseInstallerTimerMutation();
@@ -46,6 +47,7 @@ export const InstallerPauseModal = ({ open, onClose, jobId, jobNumber, installer
                 sqft_installed: undefined,   // explicitly not sent
                 sqft_not_installed: undefined,
                 note: "Lunch break",
+                fab_id:fabId
             }).unwrap();
             toast.success(t('INSTALLER.PAUSE.SUCCESS'));
             onClose(true);

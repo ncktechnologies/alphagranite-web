@@ -32,9 +32,10 @@ interface InstallerStopModalProps {
     installerId: number;
     onStopSuccess?: () => void;
     jobNumber?: string;
+    fabId?: number;
 }
 
-export const InstallerStopModal = ({ open, onClose, jobId, jobNumber, installerId, onStopSuccess }: InstallerStopModalProps) => {
+export const InstallerStopModal = ({ open, onClose, jobId, jobNumber, installerId, onStopSuccess, fabId }: InstallerStopModalProps) => {
     const { t } = useTranslation();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [stopTimer] = useStopInstallerTimerMutation();
@@ -54,6 +55,7 @@ export const InstallerStopModal = ({ open, onClose, jobId, jobNumber, installerI
             await stopTimer({
                 job_id: jobId,
                 installer_id: installerId,
+                fab_id: fabId,
                 sqft_installed: values.sqftInstalled,
                 sqft_not_installed: values.sqftNotInstalled,
                 note: values.note,

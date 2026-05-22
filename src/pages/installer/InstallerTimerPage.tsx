@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 import { ArrowLeft, Camera, Plus } from 'lucide-react';
@@ -29,6 +29,8 @@ import { FileViewer } from '../jobs/roles/drafters/components';
 import { useTranslation } from '@/hooks/useTranslation';
 
 export function InstallerTimerPage() {
+    const [searchParams] = useSearchParams();
+    const fabId = Number(searchParams.get('fab_id'));
     const { t } = useTranslation();
     const { job_id } = useParams<{ job_id: string }>();
     const navigate = useNavigate();
@@ -90,7 +92,7 @@ export function InstallerTimerPage() {
     const handleStart = async () => {
         if (!installer_id) return;
         try {
-            await startTimer({ job_id: Number(job_id), installer_id }).unwrap();
+            await startTimer({ job_id: Number(job_id), installer_id, fab_id: fabId }).unwrap();
             toast.success(t('INSTALLER.TIMER.START_SUCCESS'));
             refetch();
         } catch (error: any) {
@@ -322,6 +324,7 @@ export function InstallerTimerPage() {
                 installerId={installer_id!}
                 onPauseSuccess={handlePauseSuccess}
                 jobNumber={jobData?.job_number}
+                fabId={fabId}
             />
 
             <InstallerStopModal
@@ -331,6 +334,7 @@ export function InstallerTimerPage() {
                 installerId={installer_id!}
                 onStopSuccess={handleStopSuccess}
                 jobNumber={jobData?.job_number}
+                fabId={fabId}
             />
 
             <Popup

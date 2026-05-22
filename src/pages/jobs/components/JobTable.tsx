@@ -437,14 +437,14 @@ export const JobTable = ({
                 const { job_id, job_no, fab_id } = row.original;
                 if (pageRole === 'templater' && job_id) {
                     return (
-                        <Link to={`/jobs/${job_id}/templater/timer`} className="text-xs text-blue-600 hover:underline">
+                        <Link to={`/jobs/${job_id}/templater/timer?fab_id=${fab_id}`} className="text-xs text-blue-600 hover:underline">
                             {job_no}
                         </Link>
                     );
                 }
                 if (pageRole === 'installer' && job_id) {
                     return (
-                        <Link to={`/jobs/${job_id}/installer/timer`} className="text-xs text-blue-600 hover:underline">
+                        <Link to={`/jobs/${job_id}/installer/timer?fab_id=${fab_id}`} className="text-xs text-blue-600 hover:underline">
                             {job_no}
                         </Link>
                     );

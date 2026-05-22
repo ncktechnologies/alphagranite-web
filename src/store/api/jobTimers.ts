@@ -54,11 +54,11 @@ export const installerTimerApi = createApi({
     tagTypes: ['InstallerTimer'],
     endpoints: (builder) => ({
         // Start timer
-        startInstallerTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number; installer_id: number }>({
-            query: ({ job_id, installer_id }) => ({
+        startInstallerTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number; installer_id: number, fab_id?: number }>({
+            query: ({ job_id, installer_id, fab_id }) => ({
                 url: `/api/v1/job-timers/installer/jobs/${job_id}/timer/start`,
                 method: 'POST',
-                params: { installer_id },
+                params: { installer_id, fab_id },
             }),
             invalidatesTags: (_result, _error, { job_id, installer_id }) => [
                 { type: 'InstallerTimer', id: `${job_id}_${installer_id}` }
@@ -75,16 +75,17 @@ export const installerTimerApi = createApi({
                 sqft_installed?: number; 
                 sqft_not_installed?: number; 
                 note?: string; 
+                fab_id?: number;
             }
         >({
-            query: ({ job_id, installer_id, sqft_installed, sqft_not_installed, note }) => ({
+            query: ({ job_id, installer_id, sqft_installed, sqft_not_installed, note, fab_id }) => ({
                 url: `/api/v1/job-timers/installer/jobs/${job_id}/timer/pause`,
                 method: 'POST',
-                params: { installer_id },
+                params: { installer_id, fab_id },
                 data: {
                     ...(sqft_installed !== undefined && { sqft_installed }),
                     ...(sqft_not_installed !== undefined && { sqft_not_installed }),
-                    ...(note !== undefined && { note })
+                    ...(note !== undefined && { note }),
                 },
             }),
             invalidatesTags: (_result, _error, { job_id, installer_id }) => [
@@ -94,11 +95,11 @@ export const installerTimerApi = createApi({
         }),
 
         // Resume timer
-        resumeInstallerTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number; installer_id: number }>({
-            query: ({ job_id, installer_id }) => ({
+        resumeInstallerTimer: builder.mutation<SuccessResponse<JobTimerState>, { job_id: number; installer_id: number, fab_id?: number }>({
+            query: ({ job_id, installer_id, fab_id }) => ({
                 url: `/api/v1/job-timers/installer/jobs/${job_id}/timer/resume`,
                 method: 'POST',
-                params: { installer_id },
+                params: { installer_id, fab_id },
             }),
             invalidatesTags: (_result, _error, { job_id, installer_id }) => [
                 { type: 'InstallerTimer', id: `${job_id}_${installer_id}` }
@@ -115,12 +116,13 @@ export const installerTimerApi = createApi({
                 sqft_installed?: number; 
                 sqft_not_installed?: number; 
                 note?: string; 
+                fab_id?: number;
             }
         >({
-            query: ({ job_id, installer_id, sqft_installed, sqft_not_installed, note }) => ({
+            query: ({ job_id, installer_id, sqft_installed, sqft_not_installed, note, fab_id }) => ({
                 url: `/api/v1/job-timers/installer/jobs/${job_id}/timer/stop`,
                 method: 'POST',
-                params: { installer_id },
+                params: { installer_id, fab_id },
                 data: {
                     ...(sqft_installed !== undefined && { sqft_installed }),
                     ...(sqft_not_installed !== undefined && { sqft_not_installed }),
