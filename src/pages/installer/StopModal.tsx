@@ -10,6 +10,7 @@ import { toast } from 'sonner';
 import { useStopInstallerTimerMutation } from '@/store/api/jobTimers';
 import { Textarea } from '@/components/ui/textarea';
 import { useTranslation } from '@/hooks/useTranslation';
+import { useSelector } from 'react-redux';
 
 const stopSchema = z.object({
     sqftInstalled: z
@@ -40,8 +41,8 @@ export const InstallerStopModal = ({ open, onClose, jobId, jobNumber, installerI
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [stopTimer] = useStopInstallerTimerMutation();
 
-    // Replace with your actual auth hook
-    const currentUserId = 42; // TODO: use real auth, e.g. useAuth().user.id
+     const currentUser = useSelector((s: any) => s.user.user);
+    const currentUserId = currentUser?.id;
     const isAuthorized = currentUserId === installerId;
 
     const form = useForm<StopData>({
