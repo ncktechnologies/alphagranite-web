@@ -44,6 +44,7 @@ export const InstallerStopModal = ({ open, onClose, jobId, jobNumber, installerI
      const currentUser = useSelector((s: any) => s.user.user);
     const currentUserId = currentUser?.id;
     const isAuthorized = currentUserId === installerId;
+     console.log(isAuthorized, "check")
 
     const form = useForm<StopData>({
         resolver: zodResolver(stopSchema),

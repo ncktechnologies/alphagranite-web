@@ -8,6 +8,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 interface InstallerTimerHistoryProps {
     jobId: number;
     installerId: number;
+    fabId?: number;
 }
 
 const formatTimestamp = (timestamp: string) => {
@@ -51,11 +52,11 @@ const getActionBadge = (action: string, t: (key: string) => string) => {
     );
 };
 
-export const InstallerTimerHistory = ({ jobId, installerId }: InstallerTimerHistoryProps) => {
+export const InstallerTimerHistory = ({ jobId, installerId, fabId }: InstallerTimerHistoryProps) => {
     const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const { data: history, isLoading, error } = useGetInstallerTimerHistoryQuery(
-        { job_id: jobId, installer_id: installerId },
+        { job_id: jobId, installer_id: installerId, fab_id: fabId },
         { skip: !jobId || !installerId }
     );
 

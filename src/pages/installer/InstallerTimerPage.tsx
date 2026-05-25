@@ -12,7 +12,7 @@ import {
     useResumeInstallerTimerMutation,
     useStopInstallerTimerMutation,
 } from '@/store/api/jobTimers';
-import { useDeleteJobMediaMutation, useGetJobByIdQuery, useGetJobMediaQuery } from '@/store/api/job';
+import { useDeleteJobMediaMutation, useGetFabByIdQuery, useGetJobByIdQuery, useGetJobMediaQuery } from '@/store/api/job';
 import { InstallerTimerHistory } from './InstallerTimerHistory';
 import { InstallerStopModal } from './StopModal';
 import { InstallerPauseModal } from './PauseModal';
@@ -48,7 +48,8 @@ export function InstallerTimerPage() {
         { job_id: job_id },
         { skip: !job_id },
     );
-
+    const { data: fabDetails } = useGetFabByIdQuery(fabId, { skip: !fabId });
+    const installerIdFromFab = fabDetails?.install_details?.installer_id;
     const [elapsedTime, setElapsedTime] = useState(0);
     const [isRunning, setIsRunning] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
@@ -59,7 +60,7 @@ export function InstallerTimerPage() {
 
     const shouldSkip = !job_id || !installer_id;
     const { data: timerState, refetch, isLoading: isTimerLoading } = useGetInstallerTimerStateQuery(
-        { job_id: Number(job_id), installer_id: installer_id! },
+        { job_id: Number(job_id), installer_id: installer_id!, fab_id: fabId },
         {
             skip: shouldSkip,
             pollingInterval: isRunning ? 5000 : 0,
@@ -313,6 +314,7 @@ export function InstallerTimerPage() {
                     <InstallerTimerHistory
                         jobId={Number(job_id)}
                         installerId={installer_id!}
+                        fabId={fabId}
                     />
                 </div>
             </div>
@@ -331,7 +333,7 @@ export function InstallerTimerPage() {
                 open={stopModalOpen}
                 onClose={() => setStopModalOpen(false)}
                 jobId={Number(job_id)}
-                installerId={installer_id!}
+                installerId={installerIdFromFab!}
                 onStopSuccess={handleStopSuccess}
                 jobNumber={jobData?.job_number}
                 fabId={fabId}

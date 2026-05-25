@@ -136,11 +136,11 @@ export const installerTimerApi = createApi({
         }),
 
         // Get timer state
-        getInstallerTimerState: builder.query<JobTimerState, { job_id: number; installer_id: number }>({
-            query: ({ job_id, installer_id }) => ({
+        getInstallerTimerState: builder.query<JobTimerState, { job_id: number; installer_id: number, fab_id?: number }>({
+            query: ({ job_id, installer_id, fab_id }) => ({
                 url: `/api/v1/job-timers/installer/jobs/${job_id}/timer`,
                 method: 'GET',
-                params: { installer_id },
+                params: { installer_id, fab_id },
             }),
             providesTags: (_result, _error, { job_id, installer_id }) => [
                 { type: 'InstallerTimer', id: `${job_id}_${installer_id}` }
@@ -149,11 +149,11 @@ export const installerTimerApi = createApi({
         }),
 
         // Get timer history
-        getInstallerTimerHistory: builder.query<any, { job_id: number; installer_id: number }>({
-            query: ({ job_id, installer_id }) => ({
+        getInstallerTimerHistory: builder.query<any, { job_id: number; installer_id: number, fab_id?: number }>({
+            query: ({ job_id, installer_id, fab_id }) => ({
                 url: `/api/v1/job-timers/installer/jobs/${job_id}/timer/history`,
                 method: 'GET',
-                params: { installer_id },
+                params: { installer_id, fab_id },
             }),
             providesTags: (_result, _error, { job_id, installer_id }) => [
                 { type: 'InstallerTimer', id: `${job_id}_${installer_id}` }
