@@ -37,7 +37,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         job_name: `${fab.job_details?.name}`,
         job_no: String(fab.job_details?.job_number),
         // date: (fab as any).shop_est_completion_date ?  (fab as any).shop_est_completion_date : (fab as any).estimated_completion_date,
-        date: (fab as any).shop_est_completion_date ?  (fab as any).shop_est_completion_date : (fab as any).estimated_completion_date,
+        date: (fab as any).install_details.scheduled_install_date,
         shop_est_completion_date: (fab as any).shop_est_completion_date
             ? formatDate((fab as any).shop_est_completion_date)
             : (fab as any).estimated_completion_date
