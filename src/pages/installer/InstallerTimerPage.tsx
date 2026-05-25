@@ -60,7 +60,7 @@ export function InstallerTimerPage() {
 
     const shouldSkip = !job_id || !installer_id;
     const { data: timerState, refetch, isLoading: isTimerLoading } = useGetInstallerTimerStateQuery(
-        { job_id: Number(job_id), installer_id: installer_id!, fab_id: fabId },
+        { job_id: Number(job_id), installer_id: installer_id!},
         {
             skip: shouldSkip,
             pollingInterval: isRunning ? 5000 : 0,

@@ -63,9 +63,9 @@ export const InstallerStopModal = ({ open, onClose, jobId, jobNumber, installerI
                 installer_id: installerId,
                 fab_id: fabId,
                 // If not authorized, do not send the extra fields
-                sqft_installed: isAuthorized ? values.sqftInstalled : undefined,
-                sqft_not_installed: isAuthorized ? values.sqftNotInstalled : undefined,
-                note: isAuthorized ? values.note : undefined,
+                sqft_installed: values.sqftInstalled ,
+                sqft_not_installed: values.sqftNotInstalled,
+                note: values.note,
             }).unwrap();
             toast.success(t('INSTALLER.STOP.SUCCESS'));
             onClose(true);
