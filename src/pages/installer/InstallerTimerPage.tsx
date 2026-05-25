@@ -93,7 +93,7 @@ export function InstallerTimerPage() {
     const handleStart = async () => {
         if (!installer_id) return;
         try {
-            await startTimer({ job_id: Number(job_id), installer_id, fab_id: fabId }).unwrap();
+            await startTimer({ job_id: Number(job_id), installer_id }).unwrap();
             toast.success(t('INSTALLER.TIMER.START_SUCCESS'));
             refetch();
         } catch (error: any) {
