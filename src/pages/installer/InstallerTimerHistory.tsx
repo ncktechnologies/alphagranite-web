@@ -56,7 +56,7 @@ export const InstallerTimerHistory = ({ jobId, installerId, fabId }: InstallerTi
     const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const { data: history, isLoading, error } = useGetInstallerTimerHistoryQuery(
-        { job_id: jobId, installer_id: installerId, fab_id: fabId },
+        { job_id: jobId, installer_id: installerId },
         { skip: !jobId || !installerId }
     );
 

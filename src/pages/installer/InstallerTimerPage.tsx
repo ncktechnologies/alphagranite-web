@@ -108,7 +108,7 @@ export function InstallerTimerPage() {
     const handleResume = async () => {
         if (!installer_id) return;
         try {
-            await resumeTimer({ job_id: Number(job_id), installer_id, fab_id: fabId }).unwrap();
+            await resumeTimer({ job_id: Number(job_id), installer_id }).unwrap();
             toast.success(t('INSTALLER.TIMER.RESUME_SUCCESS'));
             refetch();
         } catch (error: any) {
@@ -314,7 +314,7 @@ export function InstallerTimerPage() {
                     <InstallerTimerHistory
                         jobId={Number(job_id)}
                         installerId={installer_id!}
-                        fabId={fabId}
+                        // fabId={fabId}
                     />
                 </div>
             </div>
@@ -326,7 +326,7 @@ export function InstallerTimerPage() {
                 installerId={installer_id!}
                 onPauseSuccess={handlePauseSuccess}
                 jobNumber={jobData?.job_number}
-                fabId={fabId}
+                // fabId={fabId}
             />
 
             <InstallerStopModal
@@ -336,7 +336,7 @@ export function InstallerTimerPage() {
                 installerId={installerIdFromFab!}
                 onStopSuccess={handleStopSuccess}
                 jobNumber={jobData?.job_number}
-                fabId={fabId}
+                // fabId={fabId}
             />
 
             <Popup
