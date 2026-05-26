@@ -1042,7 +1042,7 @@ export const JobTable = ({
         {
             id: 'install_confirmed',
             accessorKey: 'install_confirmed',
-            header: ({ column }) => <DataGridColumnHeader title="INSTALL CONFIRMED" column={column} />,
+            header: ({ column }) => <DataGridColumnHeader title="INSTALL Completed" column={column} />,
             cell: ({ row }) => {
                 const confirmed = (row.original as any).install_confirmed;
                 if (confirmed === true || confirmed === 'Yes') return <span className="text-xs font-medium text-green-600">Yes</span>;

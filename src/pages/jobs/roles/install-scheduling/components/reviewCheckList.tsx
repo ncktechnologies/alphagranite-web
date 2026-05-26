@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -34,7 +34,7 @@ import {
   useGetInstallCompletionByFabIdQuery,
   useUpdateFabStageMutation,
   useCreateInstallCompletionMutation,
-  useUpdateInstallCompletionMutation
+  useUpdateInstallCompletionMutation,
 } from "@/store/api/job";
 import { Can } from "@/components/permission";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
@@ -82,23 +82,21 @@ interface InstallChecklistFormProps {
   showCompletionFields?: boolean;
 }
 
-// ------------------ Simplified Extra Crew Selection (no popover) ------------------
-interface ExtraCrewListProps {
-  options: Array<{ id: string; name: string }>;
-  selectedIds: Set<string>;
-  onToggle: (id: string, checked: boolean) => void;
-  maxSelections?: number;
-}
-
+// Extra Crew List component (unchanged)
 const ExtraCrewList = ({
   options,
   selectedIds,
   onToggle,
   maxSelections = 3,
-}: ExtraCrewListProps) => {
+}: {
+  options: Array<{ id: string; name: string }>;
+  selectedIds: Set<string>;
+  onToggle: (id: string, checked: boolean) => void;
+  maxSelections?: number;
+}) => {
   const [search, setSearch] = useState("");
-  
-  const filteredOptions = useMemo(() => 
+
+  const filteredOptions = useMemo(() =>
     options.filter(opt =>
       opt.name.toLowerCase().includes(search.toLowerCase())
     ),
@@ -157,24 +155,21 @@ const ExtraCrewList = ({
     </div>
   );
 };
-// -----------------------------------------------------------------
 
 export function InstallChecklistForm({ fabId, showCompletionFields = false }: InstallChecklistFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [pendingValues, setPendingValues] = useState<InstallChecklistData | null>(null);
   const navigate = useNavigate();
-  
-  const hasLoadedInitialData = useRef(false);
 
   // Extra crew state
   const [selectedExtraCrewIds, setSelectedExtraCrewIds] = useState<Set<string>>(new Set());
 
-  // Fetch employers
+  // Fetch employers (installers)
   const { data: employersData } = useGetSalesPersonsQuery();
   const employers = Array.isArray(employersData) ? employersData : [];
 
-  const extraCrewOptions = useMemo(() => 
+  const extraCrewOptions = useMemo(() =>
     employers.map((emp: any) => ({
       id: String(emp.id),
       name: emp.name ?? emp.full_name ?? `Crew #${emp.id}`,
@@ -190,13 +185,13 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
   const [createInstallCompletion] = useCreateInstallCompletionMutation();
   const [updateInstallCompletion] = useUpdateInstallCompletionMutation();
 
-  // Queries
-  const { data: fabData } = useGetFabByIdQuery(fabId || 0, { skip: !fabId });
-  const { data: installData } = useGetInstallSchedulingByFabIdQuery(
+  // Queries (always enabled when fabId exists)
+  const { data: fabData, refetch: refetchFab } = useGetFabByIdQuery(fabId || 0, { skip: !fabId });
+  const { data: installData, refetch: refetchInstall } = useGetInstallSchedulingByFabIdQuery(
     fabId || 0,
     { skip: !fabId }
   );
-  const { data: completionData } = useGetInstallCompletionByFabIdQuery(
+  const { data: completionData, refetch: refetchCompletion } = useGetInstallCompletionByFabIdQuery(
     fabId || 0,
     { skip: !fabId }
   );
@@ -214,12 +209,9 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
 
   const installCompleted = form.watch("install_completed");
 
-  // ---- ONE-TIME initial data load ----
+  // Reset form whenever fabId or any of the fetched data changes
   useEffect(() => {
-    if (hasLoadedInitialData.current) return;
-    if (!fabData?.data && !installData) return;
-
-    hasLoadedInitialData.current = true;
+    if (!fabId) return;
 
     const fab = fabData?.data;
     const install = installData?.data ?? installData;
@@ -229,16 +221,21 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
       install_completed: completion?.is_completed === true,
       fab_notes: fab?.fab_notes || "",
       installer_id: install?.installer_id ? String(install.installer_id) : "",
-      scheduled_install_date: install?.scheduled_install_date ? install.scheduled_install_date.split("T")[0] : "",
-      scheduled_end_date: install?.scheduled_end_date ? install.scheduled_end_date.split("T")[0] : "",
+      scheduled_install_date: install?.scheduled_install_date
+        ? install.scheduled_install_date.split("T")[0]
+        : "",
+      scheduled_end_date: install?.scheduled_end_date
+        ? install.scheduled_end_date.split("T")[0]
+        : "",
     });
 
+    // Populate extra crew IDs
     const crewSet = new Set<string>();
     if (install?.extra_crew_1_id && install.extra_crew_1_id !== 0) crewSet.add(String(install.extra_crew_1_id));
     if (install?.extra_crew_2_id && install.extra_crew_2_id !== 0) crewSet.add(String(install.extra_crew_2_id));
     if (install?.extra_crew_3_id && install.extra_crew_3_id !== 0) crewSet.add(String(install.extra_crew_3_id));
     setSelectedExtraCrewIds(crewSet);
-  }, [fabData, installData, completionData, form]);
+  }, [fabId, fabData, installData, completionData, form]);
 
   const toggleExtraCrew = useCallback((userId: string, checked: boolean) => {
     if (checked) {
@@ -269,7 +266,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
 
   const doSubmit = useCallback(async (values: InstallChecklistData) => {
     if (!fabId) {
-      toast.error("No FAB ID provided. Cannot save.");
+      toast.error("No FAB ID provided.");
       return;
     }
 
@@ -289,6 +286,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
     let someSuccess = false;
 
     try {
+      // 1. Notes
       if (hasNotes) {
         await createFabNote({
           fab_id: fabId,
@@ -298,13 +296,48 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
         someSuccess = true;
       }
 
+      // 2. Install scheduling – get or create
       let installId = installData?.data?.id ?? installData?.id;
-      if ((hasInstallDate || hasInstaller || isCompleted || hasEndDate || hasExtraCrew) && !installId) {
-        const createResponse = await createInstallScheduling({ fab_id: fabId }).unwrap();
-        installId = createResponse?.data?.id ?? createResponse?.id;
-        if (!installId) throw new Error("Could not obtain install scheduling ID after creation");
+      if (!installId && (hasInstallDate || hasInstaller || isCompleted || hasEndDate || hasExtraCrew)) {
+        const createRes = await createInstallScheduling({ fab_id: fabId }).unwrap();
+        installId = createRes?.data?.id ?? createRes?.id;
+        if (!installId) throw new Error("Failed to create install scheduling");
+        someSuccess = true;
+        await refetchInstall();
       }
 
+      // 3. COMPLETION – ensure we have a record with an ID
+      let completionId = completionData?.data?.id;
+      console.log("Completion ID:", completionData?.data?.id);
+      // If no completion record exists, create a stub (incomplete)
+      if (installId && !completionId) {
+        const stubPayload = {
+          fab_id: fabId,
+          is_completed: false,
+          installer_id: hasInstaller ? Number(values.installer_id) : undefined,
+          install_date: hasInstallDate ? values.scheduled_install_date : undefined,
+        };
+        const createCompRes = await createInstallCompletion(stubPayload).unwrap();
+        completionId = createCompRes?.data?.id ?? createCompRes?.id;
+        someSuccess = true;
+        await refetchCompletion();
+      }
+
+      // 4. Update install scheduling details
+      if (installId && (hasInstallDate || hasInstaller || hasExtraCrew || hasEndDate || isCompleted)) {
+        const schedulePayload: any = { ...getExtraCrewPayload() };
+        if (hasInstaller) schedulePayload.installer_id = Number(values.installer_id);
+        if (hasInstallDate) schedulePayload.scheduled_install_date = values.scheduled_install_date;
+        if (hasEndDate) schedulePayload.scheduled_end_date = values.scheduled_end_date;
+        if (isCompleted && !hasEndDate) {
+          schedulePayload.scheduled_end_date = formatDate(new Date());
+        }
+        schedulePayload.is_completed = isCompleted || false;
+        await updateInstallScheduling({ install_scheduling_id: installId, data: schedulePayload }).unwrap();
+        someSuccess = true;
+      }
+
+      // 5. COMPLETION – if marked completed, update OR create (never call update without ID)
       if (isCompleted) {
         const completionPayload = {
           fab_id: fabId,
@@ -313,46 +346,38 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
           install_date: hasInstallDate ? values.scheduled_install_date : undefined,
           is_completed: true,
         };
-        const existingCompletion = completionData?.data ?? completionData;
-        if (existingCompletion?.id) {
-          await updateInstallCompletion({ fab_id: fabId, data: completionPayload }).unwrap();
+
+        if (completionId) {
+          // Safe: we have an ID – update
+          await updateInstallCompletion({ fab_id: completionId, data: completionPayload }).unwrap();
+          someSuccess = true;
         } else {
-          await createInstallCompletion(completionPayload).unwrap();
+          // No ID found – create a completed record directly
+          const createCompRes = await createInstallCompletion(completionPayload).unwrap();
+          completionId = createCompRes?.data?.id ?? createCompRes?.id;
+          someSuccess = true;
         }
-        someSuccess = true;
       }
 
-      if (installId && (hasInstallDate || hasInstaller || isCompleted || hasEndDate || hasExtraCrew)) {
-        const payload: Record<string, unknown> = { ...getExtraCrewPayload() };
-        if (hasInstaller) payload.installer_id = Number(values.installer_id);
-        if (hasInstallDate) payload.scheduled_install_date = values.scheduled_install_date;
-        if (hasEndDate || isCompleted) {
-          payload.scheduled_end_date = isCompleted && !hasEndDate ? formatDate(new Date()) : values.scheduled_end_date;
-        }
-        payload.is_completed = isCompleted || false;
-        await updateInstallScheduling({ install_scheduling_id: installId, data: payload }).unwrap();
-        someSuccess = true;
-      }
-
+      // 6. Stage transition
+      // 6. Stage transition – only if stage is not already install_completion
       if (hasInstallDate && fabData?.data?.current_stage !== "install_completion") {
         await updateFabStage({ fab_id: fabId, data: { current_stage: "install_completion" } }).unwrap();
         someSuccess = true;
       }
 
       if (someSuccess) {
-        toast.success(isCompleted ? "Install checklist completed and saved!" : "Changes saved successfully");
+        toast.success(isCompleted ? "Install completed and saved!" : "Changes saved successfully");
         navigate(-1);
       } else {
         toast.warning("No data was saved");
       }
     } catch (error) {
-      console.error("Unexpected error:", error);
-      toast.error("An unexpected error occurred");
+      console.error("ERROR in doSubmit:", error);
     } finally {
       setIsSubmitting(false);
     }
-  }, [fabId, selectedExtraCrewIds, createFabNote, createInstallScheduling, updateInstallScheduling, updateFabStage, createInstallCompletion, updateInstallCompletion, installData, completionData, fabData, getExtraCrewPayload, navigate]);
-
+  }, [fabId, selectedExtraCrewIds, createFabNote, createInstallScheduling, updateInstallScheduling, updateFabStage, createInstallCompletion, updateInstallCompletion, installData, completionData, getExtraCrewPayload, navigate, refetchInstall, refetchCompletion]);
   const onSubmit = useCallback(async (values: InstallChecklistData) => {
     if (values.install_completed) {
       setPendingValues(values);
@@ -402,7 +427,6 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
               />
             )}
 
-            {/* Installer dropdown - height fixed */}
             <FormField
               control={form.control}
               name="installer_id"
@@ -428,7 +452,6 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
               )}
             />
 
-            {/* Extra Crew – Scrollable checkbox list (no popover) */}
             <FormItem>
               <FormLabel>Extra Crew (max 3)</FormLabel>
               <ExtraCrewList
@@ -440,7 +463,6 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
               <FormMessage />
             </FormItem>
 
-            {/* Scheduled install date */}
             <FormField
               control={form.control}
               name="scheduled_install_date"
@@ -477,7 +499,6 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
               />
             )}
 
-            {/* Notes field */}
             <FormField
               control={form.control}
               name="fab_notes"
@@ -515,7 +536,6 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
         </form>
       </Form>
 
-      {/* Confirmation Modal */}
       <Popup
         isOpen={showConfirmModal}
         onClose={handleCancelProceed}
