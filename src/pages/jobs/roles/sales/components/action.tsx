@@ -66,7 +66,7 @@ function ActionsCell({ row, onView, pageRole }: ActionsCellProps) {
   };
 
   const handleGoToClock = () => {
-    if (bulletin.job_id) {
+    if (gobulletin.job_id) {
       navigate(`/jobs/${bulletin.job_id}/installer/timer`);
     }
   };
@@ -106,7 +106,7 @@ function ActionsCell({ row, onView, pageRole }: ActionsCellProps) {
               <MessageSquare className="mr-2 h-4 w-4" />
               Add Note
             </DropdownMenuItem>
-            {pageRole === 'installer' && (
+            {/* {pageRole === 'installer' && (
               <DropdownMenuItem onClick={(e) => {
                 e.stopPropagation();
                 handleGoToClock();
@@ -114,7 +114,7 @@ function ActionsCell({ row, onView, pageRole }: ActionsCellProps) {
                 <Clock className="mr-2 h-4 w-4" />
                 Go to Clock
               </DropdownMenuItem>
-            )}
+            )} */}
 
             {isSuperAdmin && (
               <>
