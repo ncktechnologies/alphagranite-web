@@ -985,7 +985,7 @@ export const jobApi = createApi({
                             ...(queryParams.sct_completed_start && { sct_completed_start: queryParams.sct_completed_start }),
                             ...(queryParams.sct_completed_end && { sct_completed_end: queryParams.sct_completed_end }),
                             ...(queryParams.type && { type: queryParams.type }),
-                            ...(queryParams.user_level && { user_level: queryParams.user_level }),  
+                            ...(queryParams.user_level && { user_level: queryParams.user_level }),
                         }
                     };
                 },
@@ -2429,7 +2429,7 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Fab"],
             }),
-            createInstallCompletion: build.mutation<any, { fab_id: number; install_date?: string; completion_date?: string; is_completed?: boolean; installer_id: number }>( {
+            createInstallCompletion: build.mutation<any, { fab_id: number; install_date?: string; completion_date?: string; is_completed?: boolean; installer_id: number }>({
                 query: ({ fab_id, install_date, completion_date, installer_id }) => ({
                     url: `/install-completion`,
                     method: "POST",
@@ -2443,7 +2443,7 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Fab"],
             }),
-            updateInstallCompletion: build.mutation<any, { fab_id: number; data: { is_completed?: boolean; completion_date?: string; installer_id?: number; install_date?: string } }>( {
+            updateInstallCompletion: build.mutation<any, { fab_id: number; data: { is_completed?: boolean; completion_date?: string; installer_id?: number; install_date?: string } }>({
                 query: ({ fab_id, data }) => ({
                     url: `/install-completion/${fab_id}`,
                     method: "PUT",
@@ -2454,7 +2454,14 @@ export const jobApi = createApi({
                 }),
                 invalidatesTags: ["Fab"],
             }),
-
+            unMarkInstallCompleted: build.mutation<any, { fab_id: number }>({
+                query: ({ fab_id }) => ({
+                    url: `/install-completion/fab/${fab_id}/unmark`,
+                    method: "PATCH",
+                    // no body
+                }),
+                invalidatesTags: ["Fab"],
+            }),
             getInstallSchedulingByFabId: build.query<any, number>({
                 query: (fab_id) => ({
                     url: `/install-scheduling/fab/${fab_id}`,
@@ -2576,6 +2583,7 @@ export const {
     useCreateInstallCompletionMutation,
     useUpdateInstallCompletionMutation,
     useGetInstallCompletionByFabIdQuery,
+    useUnMarkInstallCompletedMutation,
     // Job Media hooks
     useGetJobMediaQuery,
     useUploadJobMediaMutation,

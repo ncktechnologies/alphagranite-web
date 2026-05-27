@@ -1,6 +1,6 @@
 import { Row } from '@tanstack/react-table';
 import { toast } from 'sonner';
-import { EllipsisVertical, Eye, MessageSquare, Clock } from 'lucide-react';
+import { EllipsisVertical, Eye, MessageSquare, Clock, Undo } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,8 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useState, useContext, createContext, lazy, Suspense } from 'react';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
-// import { NotesModal } from '@/components/common/NotesModal';
-import { useCreateFabNoteMutation } from '@/store/api/job';
+import { useCreateFabNoteMutation, useUnMarkInstallCompletedMutation } from '@/store/api/job';
 import { IJob } from '@/pages/jobs/components/job';
 import { useNavigate } from 'react-router-dom';
 
@@ -34,13 +33,8 @@ export const useCurrentStage = () => {
   return context; // might be null
 };
 
-
-// import { MoveStageModal } from './components/MoveStageModal';
-
 const LazyNotesModal = lazy(() => import('@/components/common/NotesModal').then(module => ({ default: module.NotesModal })));
 const LazyMoveStageModal = lazy(() => import('./MoveStageModal').then(module => ({ default: module.MoveStageModal })));
-
-// ... (keep existing imports)
 
 interface ActionsCellProps {
   row: Row<IJob>;
@@ -56,6 +50,8 @@ function ActionsCell({ row, onView, pageRole }: ActionsCellProps) {
   const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
   const [isMoveStageModalOpen, setIsMoveStageModalOpen] = useState(false);
   const [createFabNote, { isLoading: isSubmittingNote }] = useCreateFabNoteMutation();
+  const [unMarkInstallCompleted, { isLoading: isUnmarking }] = useUnMarkInstallCompletedMutation();
+
 
   const handleViewDetails = () => {
     if (onView) onView();
@@ -66,10 +62,22 @@ function ActionsCell({ row, onView, pageRole }: ActionsCellProps) {
   };
 
   const handleGoToClock = () => {
-    if (gobulletin.job_id) {
+    if (bulletin.job_id) {
       navigate(`/jobs/${bulletin.job_id}/installer/timer`);
     }
   };
+
+  const handleUnmarkInstallCompletion = async () => {
+    try {
+      await unMarkInstallCompleted({ fab_id: bulletin.id }).unwrap();
+      toast.success('Install completion unmarked successfully');
+      // Optionally refresh the page or refetch data
+    } catch (error) {
+      console.error('Error unmarking install completion:', error);
+      toast.error('Failed to unmark install completion');
+    }
+  };
+
   const context = useCurrentStage();
   const currentStage = context?.currentStage ?? undefined;
 
@@ -78,7 +86,7 @@ function ActionsCell({ row, onView, pageRole }: ActionsCellProps) {
       await createFabNote({
         fab_id: parseInt(fabId),
         note,
-        stage:currentStage
+        stage: currentStage
       }).unwrap();
     } catch (error) {
       console.error('Error creating note:', error);
@@ -106,15 +114,6 @@ function ActionsCell({ row, onView, pageRole }: ActionsCellProps) {
               <MessageSquare className="mr-2 h-4 w-4" />
               Add Note
             </DropdownMenuItem>
-            {/* {pageRole === 'installer' && (
-              <DropdownMenuItem onClick={(e) => {
-                e.stopPropagation();
-                handleGoToClock();
-              }}>
-                <Clock className="mr-2 h-4 w-4" />
-                Go to Clock
-              </DropdownMenuItem>
-            )} */}
 
             {isSuperAdmin && (
               <>
@@ -126,6 +125,18 @@ function ActionsCell({ row, onView, pageRole }: ActionsCellProps) {
                   <Eye className="mr-2 h-4 w-4" />
                   Move Stage
                 </DropdownMenuItem>
+                { bulletin.install_details?.is_completed && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleUnmarkInstallCompletion();
+                    }}
+                    disabled={isUnmarking}
+                  >
+                    <Undo className="mr-2 h-4 w-4" />
+                    Unmark Install Completion
+                  </DropdownMenuItem>
+                )}
               </>
             )}
           </DropdownMenuContent>
