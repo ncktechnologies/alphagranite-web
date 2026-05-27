@@ -316,6 +316,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
           is_completed: false,
           installer_id: hasInstaller ? Number(values.installer_id) : undefined,
           install_date: hasInstallDate ? values.scheduled_install_date : undefined,
+          completion_date: hasEndDate ? values.scheduled_end_date! : formatDate(new Date()),
         };
         const createCompRes = await createInstallCompletion(stubPayload).unwrap();
         completionId = createCompRes?.data?.id ?? createCompRes?.id;
