@@ -86,6 +86,7 @@ interface JobTableProps {
     showDateFilter?: boolean;
     dateGrouping?: 'date' | 'month' | 'none'; // Optional: group by date, month, or none
     onDateGroupingChange?: (grouping: 'date' | 'month' | 'none') => void;
+    customActionsColumn?: (job: IJob) => React.ReactNode;
 }
 
 export const JobTable = ({
@@ -126,6 +127,7 @@ export const JobTable = ({
     pageRole,
     dateGrouping = 'date',
     onDateGroupingChange,
+    customActionsColumn,
 }: JobTableProps) => {
     const [localSelectedRows, setLocalSelectedRows] = useState<string[]>([]);
     const [localPagination, setLocalPagination] = useState<PaginationState>({
@@ -381,7 +383,9 @@ export const JobTable = ({
         {
             id: 'actions',
             header: '',
-            cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(row.original)} pageRole={pageRole} />,
+            cell: ({ row }) => customActionsColumn
+                ? customActionsColumn(row.original)
+                : <ActionsCell row={row} onView={() => handleView(row.original)} pageRole={pageRole} />,
             enableSorting: false,
             size: 60,
         },
@@ -494,6 +498,34 @@ export const JobTable = ({
             },
             size: 400,
             enableSorting: false,
+        },
+        // Stone Cost
+        {
+            id: "stone_cost",
+            accessorKey: "stone_cost",
+            header: ({ column }) => <DataGridColumnHeader title="Cost Of Stone" column={column} />,
+            cell: ({ row }) => {
+                const cost = row.original.stone_cost;
+                return <span className="text-xs">${cost?.toFixed(2) ?? '0.00'}</span>;
+            },
+            size: 120,
+            enableSorting: true,
+        },
+        // Consumed
+        {
+            id: "consumed",
+            accessorKey: "consumed",
+            header: ({ column }) => <DataGridColumnHeader title="Consumed" column={column} />,
+            cell: ({ row }) => {
+                const consumed = row.original.consumed;
+                return (
+                    <span className={`text-xs font-medium ${consumed ? 'text-green-600' : 'text-gray-500'}`}>
+                        {consumed ? 'Yes' : 'No'}
+                    </span>
+                );
+            },
+            size: 100,
+            enableSorting: true,
         },
         // ── Templater ────────────────────────────────────────────────────────
         {
@@ -811,13 +843,13 @@ export const JobTable = ({
                 const custNeeded = (row as any).slab_smith_cust_needed ?? (row as any)._rawFabData?.slab_smith_cust_needed;
                 const agNeeded = (row as any).slab_smith_ag_needed ?? (row as any)._rawFabData?.slab_smith_ag_needed;
                 const completed = (row as any).slabsmith_completed_date ?? (row as any)._rawFabData?.slabsmith_completed_date;
-                
+
                 if (custNeeded === false && agNeeded === false) return 'Not Needed';
-                
+
                 const types = [];
                 if (custNeeded === true) types.push('Cust');
                 if (agNeeded === true) types.push('AG');
-                
+
                 const neededType = types.join(' & ');
                 if (neededType) return completed ? `Completed (${neededType})` : `${neededType} - Not Completed`;
                 return '-';
@@ -827,17 +859,17 @@ export const JobTable = ({
                 const custNeeded = (row.original as any).slab_smith_cust_needed ?? (row.original as any)._rawFabData?.slab_smith_cust_needed;
                 const agNeeded = (row.original as any).slab_smith_ag_needed ?? (row.original as any)._rawFabData?.slab_smith_ag_needed;
                 const completed = (row.original as any).slabsmith_completed_date ?? (row.original as any)._rawFabData?.slabsmith_completed_date;
-                
+
                 if (custNeeded === false && agNeeded === false) {
                     return <span className="text-sm text-gray-500">Not Needed</span>;
                 }
-                
+
                 const types = [];
                 if (custNeeded === true) types.push('Cust');
                 if (agNeeded === true) types.push('AG');
-                
+
                 const neededType = types.join(' & ');
-                
+
                 if (neededType) {
                     return completed
                         ? <span className="text-sm text-green-600 font-medium">Completed ({neededType})</span>

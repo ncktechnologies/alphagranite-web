@@ -169,6 +169,18 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     order: 11,
     data: { icon: 'icon-1.svg', bgColor: 'bg-[#13D6C6]' }
   },
+  // Cost Of Stone (13)
+  {
+    id: 'Cost Of Stone',
+    title: 'Cost Of Stone',
+    requiredPermission: 'Cost Of Stone',
+    requiredAction: 'read',
+    component: 'StatWidget',
+    category: 'stats',
+    domain: 'job',
+    order: 12,
+    data: { icon: 'dollar-sign.svg', bgColor: 'bg-[#F5A623]' }
+  },
 
   // FAB Widgets
   {

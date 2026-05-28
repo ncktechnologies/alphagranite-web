@@ -147,6 +147,7 @@ export interface IJob {
   install_date?: string;
   install_confirmed?: boolean | string;
   shop_status?: string;
+  stone_cost?: number | string;
 }
 
 

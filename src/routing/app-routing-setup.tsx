@@ -70,6 +70,7 @@ import { InstallerTimerPage } from '@/pages/installer/InstallerTimerPage';
 import { JobStatusTable } from '@/pages/jobs/roles/report/JobStatus';
 import JobStatusPage from '@/pages/jobs/roles/report/JobStatusPage';
 import { InstallerScheduleCards } from '@/pages/installer/InstallerDashboard';
+import CostOfStonePage from '@/pages/jobs/roles/cost_of_stone.tsx/CostOfStonePage';
 
 export function AppRoutingSetup() {
   return (
@@ -218,6 +219,12 @@ export function AppRoutingSetup() {
             path="/job/cnc"
             element={
               <CNCPage />
+            }
+          />
+          <Route
+            path="/job/cost-of-stone"
+            element={
+              <CostOfStonePage />
             }
           />
           <Route

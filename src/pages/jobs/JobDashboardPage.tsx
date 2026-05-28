@@ -49,6 +49,7 @@ export function JobDashboardPage() {
       'Install Scheduling': '/job/install-to-schedule',
       'Install Completion': '/job/install-scheduled',
       'CNC': '/job/cnc',
+      'Cost Of Stone': '/job/cost-of-stone',
     };
     return routeMap[widgetId] || '/job';
   };
