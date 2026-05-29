@@ -179,7 +179,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     category: 'stats',
     domain: 'job',
     order: 12,
-    data: { icon: 'dollar-sign.svg', bgColor: 'bg-[#F5A623]' }
+    data: { icon: 'money.svg', bgColor: 'bg-[#F5A623]' }
   },
 
   // FAB Widgets

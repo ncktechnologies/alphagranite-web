@@ -530,7 +530,7 @@ export function OperatorTaskDetails() {
                     {/* Extra QA card */}
                     <Card className="mt-6">
                         <CardHeader>
-                            <CardTitle className="text-lg font-semibold">{t('QA.DOCUMENTATION')}</CardTitle>
+                            <CardTitle className="text-lg font-semibold">{t('QA.SHOP_UPLOADS')}</CardTitle>
                             <p className="text-sm text-muted-foreground">{t('QA.DOCUMENTATION_DESCRIPTION')}</p>
                         </CardHeader>
                         <CardContent>
@@ -539,7 +539,7 @@ export function OperatorTaskDetails() {
                                 className="w-full gap-2 bg-[#7a9705] hover:bg-[#6a8505] text-white"
                                 size="lg"
                             >
-                                <Camera className="h-5 w-5" /> Upload QA Files
+                                <Camera className="h-5 w-5" /> Upload Shop Files
                             </Button>
                         </CardContent>
                     </Card>

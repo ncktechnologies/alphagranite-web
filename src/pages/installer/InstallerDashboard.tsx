@@ -87,7 +87,7 @@ export function InstallerScheduleCards() {
     const tableState = useTableState({
         tableId: 'installer-cards',
         defaultPagination: { pageIndex: 0, pageSize: 9 },
-        defaultDateFilter: 'all',
+        defaultDateFilter: 'today',
         persistState: false,
     });
 
@@ -234,14 +234,9 @@ export function InstallerScheduleCards() {
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="today">Today</SelectItem>
-                            <SelectItem value="this_week">This Week</SelectItem>
-                            <SelectItem value="last_week">Last Week</SelectItem>
-                            <SelectItem value="this_month">This Month</SelectItem>
-                            <SelectItem value="last_month">Last Month</SelectItem>
-                            <SelectItem value="next_week">Next Week</SelectItem>
-                            <SelectItem value="next_month">Next Month</SelectItem>
+                            <SelectItem value="next_day">Next Day</SelectItem>
+                            <SelectItem value="previous_job">Previous Job</SelectItem>
                             <SelectItem value="all">All Date</SelectItem>
-                            <SelectItem value="custom">Custom</SelectItem>
                         </SelectContent>
                     </Select>
 
@@ -317,6 +312,13 @@ export function InstallerScheduleCards() {
                                 <p className="text-sm text-[#7c8689]">Job Number</p>
                                 <p className="text-2xl font-semibold text-[#1379f0]">{job.job_no}</p>
                             </div>
+                            
+                            <div
+                                className="hover:opacity-80"
+                            >
+                                <p className="text-sm text-[#7c8689]">Job Name</p>
+                                <p className="text-2xl font-semibold text-[#1379f0]">{job.job_name || '-'}</p>
+                            </div>
                             {/* Fab ID - click leads to fab details */}
                             <div
                                 onClick={(e) => handleFabIdClick(e, job.fab_id)}
@@ -330,10 +332,7 @@ export function InstallerScheduleCards() {
                         <div className="border-t border-[#dbdfe9] my-3" />
 
                         <div className="space-y-3">
-                            <div className="flex justify-between items-center">
-                                <span className="text-sm text-[#7c8689]">Job Name</span>
-                                <span className="text-sm font-semibold text-[#4b545d]">{job.job_name || '-'}</span>
-                            </div>
+                            
                             <div className="flex justify-between items-center">
                                 <span className="text-sm text-[#7c8689]">Account Name</span>
                                 <span className="text-sm font-semibold text-[#4b545d]">{job.acct_name || '-'}</span>

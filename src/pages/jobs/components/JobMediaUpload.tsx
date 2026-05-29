@@ -22,6 +22,7 @@ export function JobMediaUpload({ jobId, onUploadComplete, onClose }: JobMediaUpl
     { value: 'final_programming' },
     { value: 'sales_ct' },
     { value: 'revision' },
+    { value: 'install'},
   ];
 
   const fileTypes = [

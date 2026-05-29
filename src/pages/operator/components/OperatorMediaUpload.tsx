@@ -23,12 +23,7 @@ export function OperatorMediaUpload({ jobId, onUploadComplete, onClose }: Operat
   const operatorId = currentUser?.employee_id || currentUser?.id;
 
   const stages = [
-    { value: 'cutting' },
-    { value: 'Edging' },
-    { value: 'programming' },
-    { value: 'final_programming' },
-    { value: 'sales_ct' },
-    { value: 'revision' },
+    { value: 'fabrication', label: 'Fabrication' },
   ];
 
   const fileTypes = [
@@ -46,10 +41,6 @@ export function OperatorMediaUpload({ jobId, onUploadComplete, onClose }: Operat
       uploadMutation={uploadQa}
       stages={stages}
       fileTypes={fileTypes}
-      defaultStage="qa"
-      defaultFileType="media"
-      showFileTypeSelect={false}
-      showStageSelect={false}
       additionalParams={{
         operator_id: operatorId,
       }}

@@ -20,6 +20,7 @@ export const WORKFLOW_STAGES: Record<string, FileLabel> = {
   'final_programming': { stage: 'final_programming', label: 'Final Programming', color: 'text-purple-700', bgColor: 'bg-purple-100' },
   'cnc': { stage: 'cnc', label: 'CNC', color: 'text-cyan-700', bgColor: 'bg-cyan-100' },
   'cutting': { stage: 'cutting', label: 'Cutting', color: 'text-orange-700', bgColor: 'bg-orange-100' },
+  'install':{stage: 'install', label: 'Install', color: 'text-green-700', bgColor: 'bg-green-100' },
   // 'general': { stage: 'general', label: 'General', color: 'text-gray-700', bgColor: 'bg-gray-100' }
 };
 

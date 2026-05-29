@@ -142,6 +142,7 @@
   "QA.DOCUMENTATION_DESCRIPTION": "Uploaded photos and files",
   "QA.UPLOAD_FILES": "Upload Files",
   "QA.NO_FILES": "No QA files uploaded yet.",
+  "QA.SHOP_UPLOADS": "Shop Uploads",
 
   "TIMER.CONTROLS": "Timer Controls",
   "TIMER.CONTROLS_DESCRIPTION": "Start, pause, or resume your work session",

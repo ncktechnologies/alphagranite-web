@@ -130,6 +130,7 @@
   "QA.DOCUMENTATION_DESCRIPTION": "Fotos y archivos subidos",
   "QA.UPLOAD_FILES": "Subir Archivos",
   "QA.NO_FILES": "Aún no se han subido archivos QA.",
+  "QA.SHOP_UPLOADS": "Cargas de Taller",
   
   "TIMER.CONTROLS": "Controles del Temporizador",
   "TIMER.CONTROLS_DESCRIPTION": "Inicie, pause o reanude su sesión de trabajo",
