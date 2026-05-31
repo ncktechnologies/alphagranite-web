@@ -229,8 +229,8 @@ export function SignInPage() {
         </Button>
 
         <div className="flex items-center justify-center">
-          <span className="text-text">Forgot Password?</span>
-          <Link to="/auth/forgot-password" className="text-sm text-primary pl-2 hover:underline">
+          <span className="text-[16px]">Forgot Password?</span>
+          <Link to="/auth/forgot-password" className="text-[16px] text-primary pl-2 hover:underline">
             Reset Password
           </Link>
         </div>
