@@ -92,7 +92,7 @@ export function OperatorTaskDetails() {
         size: file.file_size || file.size || 0,
         type: file.file_type || file.mime_type || 'application/octet-stream',
         url: file.file_url || file.url,
-        stage: 'QA',
+        stage: file.stage_name ?? file.stage,
         uploadedBy: file.uploaded_by_name || 'Operator',
         uploadedAt: file.created_at ? new Date(file.created_at) : undefined,
         _raw: file,
