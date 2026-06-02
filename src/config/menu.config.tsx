@@ -101,6 +101,7 @@ export const MENU_SIDEBAR: MenuConfig = [
           // { title: 'View Job Widgets', path: '/job' },
           { title: 'Shop Planning', path: '/shop' },
           { title: 'Shop Status', path: '/status' },
+          { title: 'Shop Revision', path: '/revision' },
           { title: 'Resurfacing Status', path: '/resurfacing-status' },
 
         ],

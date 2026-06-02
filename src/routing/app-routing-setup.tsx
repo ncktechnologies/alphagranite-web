@@ -61,6 +61,8 @@ import CreatePlanPage from '@/pages/shop/components/createPlanePage';
 import CreateAutoPlanPage from '@/pages/shop/components/autoSuggest';
 import ResurfacingStatusPage from '@/pages/shop/resurfacing/page';
 import { FabDetailsPage } from '@/pages/shop/components/statusDetails';
+import ShopRevisionPage from '@/pages/shop/revisions/ShopRevisionPage';
+import ShopRevisionDetailsPage from '@/pages/shop/revisions/ShopRevisionDetailsPage';
 import { InstallCompletionPage } from '@/pages/jobs/roles/install-completion';
 import { ResurfacingStatusDetailsPage } from '@/pages/jobs/roles/resurfacing-completion/components/details';
 // import ShopCalendarPage from '@/pages/shop/calendarPage';
@@ -422,6 +424,8 @@ export function AppRoutingSetup() {
             }
           />
           <Route path="/shop/fab/:fabId" element={<FabDetailsPage />} />
+          <Route path="/revision" element={<ShopRevisionPage />} />
+          <Route path="/revision/:fabId" element={<ShopRevisionDetailsPage />} />
           <Route
             path="/resurfacing-status"
             element={

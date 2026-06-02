@@ -6,3 +6,4 @@ export * from "./actionMenu"
 export * from "./job"
 export * from "./workstation";
 export * from "./shopCutPlanning";
+export * from "./shopRevision";

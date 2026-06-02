@@ -30,6 +30,9 @@ import { FileViewer } from '../jobs/roles/drafters/components';
 import { FileGallery, type FileSource, type UnifiedFile } from '@/pages/jobs/components/FileGallery';
 import { WorkPercentageModal } from './components/WorkPercentageModal';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
+import { Textarea } from '@/components/ui/textarea';
+import { useCreateShopRevisionMutation } from '@/store/api/shopRevision';
+import { useGetShopRevisionFabsQuery, useGetShopRevisionsByFabIdQuery } from '@/store/api/shopRevision';
 
 // Helper for status display
 const getStatusInfo = (statusId: number | undefined, t: any) => {
@@ -61,7 +64,10 @@ export function OperatorTaskDetails() {
 
     const [workPercentage, setWorkPercentage] = useState(0);
     const [showUploadDialog, setShowUploadDialog] = useState(false);
+    const [showRevisionDialog, setShowRevisionDialog] = useState(false);
+    const [revisionNote, setRevisionNote] = useState('');
     const [activeFile, setActiveFile] = useState<UnifiedFile | null>(null);
+
     const { data: taskData, isLoading: isTasksLoading, refetch: refetchTask } =
         useGetCurrentOperatorTasksByIdQuery(
             { id: taskId, operator_id: operatorId, workstation_id: workstationId },
@@ -75,6 +81,27 @@ export function OperatorTaskDetails() {
                 ? (taskData as any).data[0]
                 : (taskData as any).data
             : taskData ?? null;
+
+    const currentFabId = Number(currentTask?.fab_id || 0);
+
+    const [createShopRevision, { isLoading: isCreatingRevision }] = useCreateShopRevisionMutation();
+    const { data: revisionFabsData } = useGetShopRevisionFabsQuery();
+    const { data: fabRevisionsData } = useGetShopRevisionsByFabIdQuery(currentFabId, {
+        skip: !currentFabId,
+    });
+
+    const hasPendingShopRevision = (() => {
+        if (!currentFabId) return false;
+
+        const revisionFabs = Array.isArray(revisionFabsData) ? revisionFabsData : [];
+        const fabFromSummary = revisionFabs.find((row: any) => Number(row.fab_id) === currentFabId);
+        if (fabFromSummary?.has_pending_shop_revision !== undefined) {
+            return Boolean(fabFromSummary.has_pending_shop_revision);
+        }
+
+        const revisions = Array.isArray(fabRevisionsData) ? fabRevisionsData : [];
+        return revisions.some((rev: any) => !rev.revision_completed);
+    })();
 
     // ─── plan_id is the correct ID for all shop timer API calls ───────────
     const planId: number = currentTask?.id || taskId;
@@ -282,6 +309,47 @@ export function OperatorTaskDetails() {
         setActiveFile(file);
     };
 
+    const handleCreateShopRevision = async () => {
+        if (!currentTask?.fab_id || !operatorId) {
+            toast.error('Missing FAB or operator information.');
+            return;
+        }
+        if (!revisionNote.trim()) {
+            toast.warning('Please enter a revision note.');
+            return;
+        }
+
+        try {
+            if (timerState === 'running') {
+                await manageTimer({
+                    plan_id: planId,
+                    data: {
+                        action: 'pause',
+                        timestamp: new Date().toISOString(),
+                        work_percentage: workPercentage,
+                        note: 'Paused automatically before creating shop revision',
+                    },
+                }).unwrap();
+                setTimerState('paused');
+                setServerSynced(false);
+            }
+
+            await createShopRevision({
+                fab_id: Number(currentTask.fab_id),
+                revision_note: revisionNote.trim(),
+                requested_by: Number(operatorId),
+                assigned_to: Number(operatorId),
+                revision_completed: false,
+            }).unwrap();
+            toast.success('Shop revision created successfully.');
+            setRevisionNote('');
+            setShowRevisionDialog(false);
+            await refetchTimer();
+        } catch (error: any) {
+            toast.error(error?.data?.message || 'Failed to create shop revision.');
+        }
+    };
+
     // Prepare data for toolbar
     const jobName = currentTask?.business_job?.name || `Job ${currentTask?.business_job?.id}`;
     const jobNumber = currentTask?.business_job?.job_number || currentTask?.fab_number;
@@ -477,6 +545,7 @@ export function OperatorTaskDetails() {
                                     onClick={handleStart}
                                     className="w-full gap-2 bg-[#7a9705] hover:bg-[#6a8505] text-white"
                                     size="lg"
+                                    disabled={hasPendingShopRevision}
                                 >
                                     <Play className="h-5 w-5" /> {t('OPERATOR.START_WORK')}
                                 </Button>
@@ -490,6 +559,7 @@ export function OperatorTaskDetails() {
                                         variant="outline"
                                         className="w-full gap-2 border-[#ef4444] text-[#ef4444] hover:bg-red-50"
                                         size="lg"
+                                        disabled={hasPendingShopRevision}
                                     >
                                         <Square className="h-5 w-5" /> {t('OPERATOR.ON_HOLD')}
                                     </Button>
@@ -497,6 +567,7 @@ export function OperatorTaskDetails() {
                                         onClick={handlePause}
                                         className="w-full gap-2 bg-[#f5cd4b] hover:bg-[#f0c520] text-black"
                                         size="lg"
+                                        disabled={hasPendingShopRevision}
                                     >
                                         <Pause className="h-5 w-5" /> {t('OPERATOR.PAUSE')}
                                     </Button>
@@ -509,6 +580,7 @@ export function OperatorTaskDetails() {
                                     onClick={handleResume}
                                     className="w-full gap-2 bg-[#7a9705] hover:bg-[#6a8505] text-white"
                                     size="lg"
+                                    disabled={hasPendingShopRevision}
                                 >
                                     <Play className="h-5 w-5" /> {t('OPERATOR.RESUME')}
                                 </Button>
@@ -520,6 +592,7 @@ export function OperatorTaskDetails() {
                                     onClick={() => setShowSubmitModal(true)}
                                     className="w-full gap-2 bg-red-600 hover:bg-red-700 text-white"
                                     size="lg"
+                                    disabled={hasPendingShopRevision}
                                 >
                                     <CheckCircle2 className="h-5 w-5" /> Complete
                                 </Button>
@@ -535,6 +608,14 @@ export function OperatorTaskDetails() {
                         </CardHeader>
                         <CardContent>
                             <Button
+                                onClick={() => setShowRevisionDialog(true)}
+                                variant="outline"
+                                className="w-full gap-2 mb-3"
+                                size="lg"
+                            >
+                                Create Shop Revision
+                            </Button>
+                            <Button
                                 onClick={() => setShowUploadDialog(true)}
                                 className="w-full gap-2 bg-[#7a9705] hover:bg-[#6a8505] text-white"
                                 size="lg"
@@ -543,6 +624,11 @@ export function OperatorTaskDetails() {
                             </Button>
                         </CardContent>
                     </Card>
+                    {hasPendingShopRevision && (
+                        <p className="text-sm text-orange-700 mt-3">
+                            Timer actions are disabled because this FAB has a pending shop revision.
+                        </p>
+                    )}
                 </div>
             </div>
 
@@ -588,6 +674,39 @@ export function OperatorTaskDetails() {
                         }}
                         onClose={() => setShowUploadDialog(false)}
                     />
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showRevisionDialog} onOpenChange={setShowRevisionDialog}>
+                <DialogContent className="max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>
+                            Create Shop Revision {currentTask?.fab_id ? `for FAB-${currentTask.fab_id}` : ''}
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                        <Textarea
+                            value={revisionNote}
+                            onChange={(e) => setRevisionNote(e.target.value)}
+                            placeholder="Enter revision details for this FAB..."
+                            className="min-h-[120px] resize-none"
+                        />
+                        <div className="flex justify-end gap-2">
+                            <Button
+                                variant="outline"
+                                onClick={() => setShowRevisionDialog(false)}
+                                disabled={isCreatingRevision}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleCreateShopRevision}
+                                disabled={isCreatingRevision || !revisionNote.trim()}
+                            >
+                                {isCreatingRevision ? 'Creating...' : 'Create Revision'}
+                            </Button>
+                        </div>
+                    </div>
                 </DialogContent>
             </Dialog>
         </>

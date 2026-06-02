@@ -7,6 +7,7 @@ import { actionMenuApi } from "./api/actionMenu";
 import { jobApi } from "./api/job";
 import { operatorApi } from "./api/operator";
 import { shopCutPlanningApi } from "./api/shopCutPlanning";
+import { shopRevisionApi } from "./api/shopRevision";
 
 
 export const store = configureStore({
@@ -19,6 +20,7 @@ export const store = configureStore({
         [jobApi.reducerPath]: jobApi.reducer,
         [operatorApi.reducerPath]: operatorApi.reducer,
         [shopCutPlanningApi.reducerPath]: shopCutPlanningApi.reducer,
+        [shopRevisionApi.reducerPath]: shopRevisionApi.reducer,
 
     },
     middleware: (getDefaultMiddleware) =>
@@ -31,6 +33,7 @@ export const store = configureStore({
             jobApi.middleware,
             operatorApi.middleware,
             shopCutPlanningApi.middleware,
+            shopRevisionApi.middleware,
 
         ),
 });

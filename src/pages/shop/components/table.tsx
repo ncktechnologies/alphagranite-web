@@ -36,7 +36,6 @@ import { useGetFabsQuery, useGetFabTypesQuery } from '@/store/api/job';
 import ActionsCell from './action';
 import { useNavigate } from 'react-router';
 import { Link } from 'react-router';
-import CreatePlanSheet from './createEvent';
 import PlanSectionCell from './planSectionCell';
 import { useTableState } from '@/hooks/use-table-state';
 
@@ -116,10 +115,6 @@ const ShopTable: React.FC<ShopTableProps> = () => {
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [salesPersonFilter, setSalesPersonFilter] = useState<string>('all');
-    const [planSheetOpen, setPlanSheetOpen] = useState(false);
-    const [selectedFabForSheet, setSelectedFabForSheet] = useState<string>('');
-    const [selectedDateForSheet, setSelectedDateForSheet] = useState<Date | null>(null);
-    const [selectedEventForSheet, setSelectedEventForSheet] = useState<any | null>(null);
     const navigate = useNavigate();
 
     // Extract state from tableState hook
@@ -146,10 +141,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
     };
     const handleAutoSchedule = (fabId: string) => navigate(`/shop/auto-schedule?fabId=${fabId}`);
     const handleCreatePlan = (fabId: string) => {
-        setSelectedFabForSheet(fabId);
-        setSelectedDateForSheet(null);
-        setSelectedEventForSheet(null);
-        setPlanSheetOpen(true);
+        navigate(`/shop/create-plan?fabId=${fabId}`);
     };
 
     const queryParams = useMemo(() => ({
@@ -774,16 +766,6 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                     </CardFooter>
                 </Card>
             </DataGrid>
-
-            <CreatePlanSheet
-                open={planSheetOpen}
-                onOpenChange={setPlanSheetOpen}
-                selectedDate={selectedDateForSheet}
-                selectedTimeSlot={null}
-                selectedEvent={selectedEventForSheet}
-                prefillFabId={selectedFabForSheet}
-                onEventCreated={() => { refetch(); }}
-            />
         </>
     );
 };

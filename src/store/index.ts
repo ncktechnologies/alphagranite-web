@@ -14,6 +14,7 @@ import { actionMenuApi } from "./api/actionMenu";
 import { jobApi } from "./api/job";
 import { workstationApi } from "./api/workstation";
 import { shopCutPlanningApi } from "./api/shopCutPlanning";
+import { shopRevisionApi } from "./api/shopRevision";
 import { operatorApi } from "./api/operator";
 import { installerTimerApi, templaterTimerApi } from "./api/jobTimers";
 
@@ -37,6 +38,7 @@ const rootReducer = combineReducers({
     [jobApi.reducerPath]: jobApi.reducer,
     [workstationApi.reducerPath]: workstationApi.reducer,
     [shopCutPlanningApi.reducerPath]: shopCutPlanningApi.reducer,
+    [shopRevisionApi.reducerPath]: shopRevisionApi.reducer,
     [operatorApi.reducerPath]: operatorApi.reducer,
     [templaterTimerApi.reducerPath]: templaterTimerApi.reducer,
     [installerTimerApi.reducerPath]: installerTimerApi.reducer,
@@ -65,6 +67,7 @@ const store = configureStore({
                 jobApi.middleware,
                 workstationApi.middleware,
                 shopCutPlanningApi.middleware,
+                shopRevisionApi.middleware,
                 operatorApi.middleware,
                 templaterTimerApi.middleware,
                 installerTimerApi.middleware,
