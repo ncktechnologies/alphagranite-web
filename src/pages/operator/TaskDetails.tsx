@@ -632,6 +632,8 @@ export function OperatorTaskDetails() {
                                 onClick={() => setShowUploadDialog(true)}
                                 className="w-full gap-2 bg-[#7a9705] hover:bg-[#6a8505] text-white"
                                 size="lg"
+                                disabled={hasPendingShopRevision}
+                                title={hasPendingShopRevision ? "Cannot upload files while a pending revision exists" : ""}
                             >
                                 <Camera className="h-5 w-5" /> Upload Shop Files
                             </Button>
