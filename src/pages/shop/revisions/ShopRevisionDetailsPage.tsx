@@ -4,36 +4,86 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { useCompleteShopRevisionMutation, useGetShopRevisionsByFabIdQuery } from '@/store/api/shopRevision';
-import { useGetFabByIdQuery } from '@/store/api/job';
+import {
+  useCompleteShopRevisionMutation,
+  useGetShopRevisionsByFabIdQuery,
+} from '@/store/api/shopRevision';
+import {
+  useAddFilesToCNCDraftingMutation,
+  useAddFilesToDraftingMutation,
+  useGetFabByIdQuery,
+} from '@/store/api/job';
+import { useGetOperatorQaFilesQuery } from '@/store/api/operator';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { format } from 'date-fns';
 import { useMemo, useState } from 'react';
-import { useParams } from 'react-router';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { FileGallery, type FileSource, type UnifiedFile } from '@/pages/jobs/components/FileGallery';
 import { FileViewer } from '@/pages/jobs/roles/drafters/components';
-import { Link } from 'react-router';
-import { useNavigate } from 'react-router';
+import { UniversalUploadModal } from '@/components/universal-upload';
+import { useSelector } from 'react-redux';
+
+interface ExtendedUnifiedFile extends UnifiedFile {
+  uploaded_by_id?: number;
+}
 
 const ShopRevisionDetailsPage = () => {
   const { fabId } = useParams<{ fabId: string }>();
   const numericFabId = Number(fabId);
   const navigate = useNavigate();
+
+  const currentUser = useSelector((s: any) => s.user.user);
+  const currentOperatorId = currentUser?.employee_id || currentUser?.id || 0;
+
   const [selectedRevisionId, setSelectedRevisionId] = useState<number | null>(null);
   const [markChecked, setMarkChecked] = useState(false);
   const [activeFile, setActiveFile] = useState<UnifiedFile | null>(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
-  const { data: revisionsData, isLoading } = useGetShopRevisionsByFabIdQuery(numericFabId, {
+  // Data fetching
+  const { data: revisionsData, isLoading: revisionsLoading } = useGetShopRevisionsByFabIdQuery(numericFabId, {
     skip: !numericFabId,
   });
-  const { data: fabResponse } = useGetFabByIdQuery(numericFabId, { skip: !numericFabId });
+  const { data: fabResponse, refetch: refetchFab } = useGetFabByIdQuery(numericFabId, { skip: !numericFabId });
   const [completeRevision, { isLoading: isCompleting }] = useCompleteShopRevisionMutation();
+
+  // Upload mutations
+  const [uploadToCNC] = useAddFilesToCNCDraftingMutation();
+  const [uploadToDrafting] = useAddFilesToDraftingMutation();
 
   const revisions = useMemo(() => (Array.isArray(revisionsData) ? revisionsData : []), [revisionsData]);
   const fab = (fabResponse as any)?.data ?? fabResponse;
 
-  const revisionFiles: UnifiedFile[] = useMemo(() => {
+  // Get appropriate entity IDs
+  const cncId = fab?.cnc_data?.id;
+  const draftingId = fab?.draft_data?.id;
+  const canUpload = !!(cncId || draftingId);
+  const uploadMutation = cncId ? uploadToCNC : uploadToDrafting;
+  const entityId = cncId || draftingId || 0;
+  const additionalParams = cncId
+    ? { cnc_id: cncId, stage_name: 'shop revision', operator_id: currentOperatorId }
+    : { drafting_id: draftingId, stage_name: 'shop revision', operator_id: currentOperatorId };
+
+  // Selected revision
+  const selectedRevision = useMemo(() => {
+    if (!revisions.length) return null;
+    if (selectedRevisionId) {
+      return revisions.find((r) => r.id === selectedRevisionId) ?? revisions[0];
+    }
+    return revisions[0];
+  }, [revisions, selectedRevisionId]);
+
+  const selectedRequesterId = selectedRevision?.requested_by || 0;
+
+  // QA files for the selected revision's requester
+  const { data: qaFilesData, refetch: refetchQaFiles } = useGetOperatorQaFilesQuery(
+    { operator_id: selectedRequesterId, job_id: numericFabId },
+    { skip: !numericFabId || !selectedRequesterId }
+  );
+
+  // All FAB shop‑revision files (any operator)
+  const allFabRevisionFiles: ExtendedUnifiedFile[] = useMemo(() => {
     if (!fab) return [];
     const rawFiles = [
       ...(fab.files || []),
@@ -42,10 +92,12 @@ const ShopRevisionDetailsPage = () => {
       ...(fab.sales_ct_data?.files || []),
       ...(fab.cnc_data?.files || []),
     ];
-
     return rawFiles
-      .filter((f: any) => (f.stage_name || f.stage) === 'shop_revision')
-      .map((f: any): UnifiedFile => ({
+      .filter((f: any) => {
+        const stage = (f.stage_name || f.stage || '').toLowerCase();
+        return stage === 'shop_revision' || stage === 'shop revision';
+      })
+      .map((f: any): ExtendedUnifiedFile => ({
         id: String(f.id),
         name: f.name || f.filename || `File_${f.id}`,
         size: parseInt(f.file_size) || f.size || 0,
@@ -56,18 +108,39 @@ const ShopRevisionDetailsPage = () => {
         file_design: f.file_design,
         uploaded_by_name: f.uploaded_by_name ?? f.uploader_name,
         uploadedBy: f.uploaded_by_name ?? f.uploader_name,
+        uploaded_by_id: f.uploaded_by ?? f.operator_id ?? f.uploaded_by_id,
         uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
         _raw: f,
       }));
   }, [fab]);
 
-  const selectedRevision = useMemo(() => {
-    if (!revisions.length) return null;
-    if (selectedRevisionId) {
-      return revisions.find((r) => r.id === selectedRevisionId) ?? revisions[0];
-    }
-    return revisions[0];
-  }, [revisions, selectedRevisionId]);
+  const fabFilesForSelected = allFabRevisionFiles;
+  const qaFilesForSelected: ExtendedUnifiedFile[] = useMemo(() => {
+    if (!qaFilesData?.data) return [];
+    return (qaFilesData.data as any[])
+      .filter((file: any) => {
+        const stage = (file.stage_name || file.stage || '').toLowerCase();
+        return stage === 'shop_revision' || stage === 'shop revision';
+      })
+      .map((file: any): ExtendedUnifiedFile => ({
+        id: String(file.id),
+        name: file.name || file.file_name,
+        size: file.file_size || file.size || 0,
+        type: file.file_type || file.mime_type || 'application/octet-stream',
+        url: file.file_url || file.url,
+        stage: file.stage_name || file.stage,
+        uploadedBy: file.uploaded_by_name || 'Operator',
+        uploaded_by_id: file.uploaded_by ?? file.operator_id ?? file.uploaded_by_id,
+        uploadedAt: file.created_at ? new Date(file.created_at) : undefined,
+        _raw: file,
+      }));
+  }, [qaFilesData]);
+
+  const mergedFiles = useMemo(
+    () => [...fabFilesForSelected, ...qaFilesForSelected],
+    [fabFilesForSelected, qaFilesForSelected]
+  );
+  const fileSources: FileSource[] = mergedFiles.length > 0 ? [{ kind: 'raw', data: mergedFiles }] : [];
 
   const handleSelectRevision = (id: number) => {
     setSelectedRevisionId(id);
@@ -86,7 +159,14 @@ const ShopRevisionDetailsPage = () => {
     }
   };
 
-  const fileSources: FileSource[] = revisionFiles.length > 0 ? [{ kind: 'raw', data: revisionFiles }] : [];
+  const handleUploadComplete = () => {
+    setShowUploadModal(false);
+    refetchFab();
+    if (selectedRequesterId) {
+      refetchQaFiles();
+    }
+    toast.success('Shop revision files uploaded successfully');
+  };
 
   const fabInfo = [
     { label: 'FAB ID', value: String(fab?.id || fabId || '—') },
@@ -96,12 +176,14 @@ const ShopRevisionDetailsPage = () => {
         <Link to={`/job/details/${fab.job_details.id}`} className="text-primary hover:underline">
           {fab?.job_details?.job_number || '—'}
         </Link>
-      ) : (fab?.job_details?.job_number || '—'),
+      ) : (
+        fab?.job_details?.job_number || '—'
+      ),
     },
     { label: 'JOB NAME', value: fab?.job_details?.name || '—' },
     { label: 'FAB TYPE', value: fab?.fab_type || '—' },
     { label: 'ACCOUNT', value: fab?.account_name || '—' },
-    { label: 'CURRENT STAGE', value: fab?.current_stage || '—' },
+    { label: 'Shop CURRENT STAGE', value: fab?.shop_current_stage || '—' },
     { label: 'NO. OF PIECES', value: fab?.no_of_pieces ?? '—' },
     { label: 'TOTAL SQ FT', value: fab?.total_sqft ?? '—' },
     { label: 'STONE TYPE', value: fab?.stone_type_name || '—' },
@@ -135,6 +217,7 @@ const ShopRevisionDetailsPage = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-6">
+        {/* Left column (8 cols) */}
         <div className="lg:col-span-8 space-y-6">
           <Card>
             <CardHeader>
@@ -153,15 +236,37 @@ const ShopRevisionDetailsPage = () => {
           </Card>
 
           <Card>
-            <CardHeader>
-              <CardTitle>FAB Revision Files</CardTitle>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Shop Revision Files</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  {selectedRevision
+                    ? `Files uploaded by ${selectedRevision.requested_by_name || `Operator ${selectedRevision.requested_by}`}`
+                    : 'Select a revision to view its files'}
+                </p>
+              </div>
+              {canUpload ? (
+                <Button onClick={() => setShowUploadModal(true)} size="sm">
+                  Upload Files
+                </Button>
+              ) : (
+                <Button size="sm" disabled title="No CNC or Drafting ID available for upload">
+                  Upload Unavailable
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               <FileGallery
                 sources={fileSources}
                 onFileClick={(file) => setActiveFile(file)}
                 defaultLayout="card"
-                emptyMessage="No shop revision files uploaded for this FAB."
+                emptyMessage={
+                  !selectedRevision
+                    ? 'No revision selected.'
+                    : mergedFiles.length === 0
+                    ? `No files uploaded yet for this revision by ${selectedRevision.requested_by_name || 'requester'}.`
+                    : 'No shop revision files found.'
+                }
               />
             </CardContent>
           </Card>
@@ -171,7 +276,7 @@ const ShopRevisionDetailsPage = () => {
               <CardTitle>Revision History</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {isLoading ? (
+              {revisionsLoading ? (
                 <p className="text-sm text-muted-foreground">Loading revisions...</p>
               ) : revisions.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No revisions found for this FAB.</p>
@@ -186,11 +291,18 @@ const ShopRevisionDetailsPage = () => {
                   >
                     <div className="flex items-center justify-between gap-2">
                       <p className="font-medium text-sm">Revision #{revision.id}</p>
-                      <span className={`text-xs ${revision.revision_completed ? 'text-green-700' : 'text-orange-700'}`}>
+                      <span
+                        className={`text-xs ${
+                          revision.revision_completed ? 'text-green-700' : 'text-orange-700'
+                        }`}
+                      >
                         {revision.revision_completed ? 'Completed' : 'Pending'}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{revision.revision_note}</p>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Requested by: {revision.requested_by_name || `Operator ${revision.requested_by}`}
+                    </p>
                   </button>
                 ))
               )}
@@ -198,9 +310,10 @@ const ShopRevisionDetailsPage = () => {
           </Card>
         </div>
 
+        {/* Right column (4 cols) – Revision Details */}
         <Card className="lg:col-span-4 border-l shadow-sm">
           <CardHeader>
-            <CardTitle>Revision Details</CardTitle>  {/* Changed from "Revision Form" */}
+            <CardTitle>Revision Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {!selectedRevision ? (
@@ -217,16 +330,22 @@ const ShopRevisionDetailsPage = () => {
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">Requested By</p>
-                  <p className="text-sm">{selectedRevision.requested_by_name || selectedRevision.requested_by || '—'}</p>
+                  <p className="text-sm">
+                    {selectedRevision.requested_by_name || selectedRevision.requested_by || '—'}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">Assigned To</p>
-                  <p className="text-sm">{selectedRevision.assigned_to_name || selectedRevision.assigned_to || '—'}</p>
+                  <p className="text-sm">
+                    {selectedRevision.assigned_to_name || selectedRevision.assigned_to || '—'}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">Created At</p>
                   <p className="text-sm">
-                    {selectedRevision.created_at ? format(new Date(selectedRevision.created_at), 'MMM dd, yyyy h:mm a') : '—'}
+                    {selectedRevision.created_at
+                      ? format(new Date(selectedRevision.created_at), 'MMM dd, yyyy h:mm a')
+                      : '—'}
                   </p>
                 </div>
                 {selectedRevision.revision_completed && selectedRevision.completed_at && (
@@ -275,6 +394,27 @@ const ShopRevisionDetailsPage = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Conditional Upload Modal */}
+      {canUpload && (
+        <UniversalUploadModal
+          open={showUploadModal}
+          onOpenChange={setShowUploadModal}
+          title="Upload Shop Revision Files"
+          entityId={entityId}
+          uploadMutation={uploadMutation}
+          disabled={false}
+          stages={[{ value: 'shop revision', label: 'Shop Revision' }]}
+          fileTypes={[
+            { value: 'drawing', label: 'Drawing' },
+            { value: 'document', label: 'Document' },
+            { value: 'photo', label: 'Photo' },
+            { value: 'other', label: 'Other' },
+          ]}
+          additionalParams={additionalParams}
+          onUploadComplete={handleUploadComplete}
+        />
+      )}
     </div>
   );
 };

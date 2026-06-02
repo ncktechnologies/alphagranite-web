@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Camera, CheckCircle2, Play, Pause, Square } from 'lucide-react';
+import { Camera, CheckCircle2, Play, Pause, Square, AlertTriangle } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 
@@ -119,7 +119,7 @@ export function OperatorTaskDetails() {
         size: file.file_size || file.size || 0,
         type: file.file_type || file.mime_type || 'application/octet-stream',
         url: file.file_url || file.url,
-        stage: file.stage_name || file.stage || 'QA Upload',
+        stage: file.stage_name || file.stage,
         uploadedBy: file.uploaded_by_name || 'Operator',
         uploadedAt: file.created_at ? new Date(file.created_at) : undefined,
         _raw: file,
@@ -130,51 +130,51 @@ export function OperatorTaskDetails() {
     const fabData = (fabResponse as any)?.data ?? fabResponse;
 
     // Build file sources from actual API shape (following sales Details.tsx pattern)
-     const fileSources: FileSource[] = (() => {
-    if (!fabData) return [];
-    const sources: FileSource[] = [];
+    const fileSources: FileSource[] = (() => {
+        if (!fabData) return [];
+        const sources: FileSource[] = [];
 
-    // Helper to convert API file array into UnifiedFile[]
-    const toUnifiedFiles = (files: any[]): UnifiedFile[] =>
-      (files ?? []).map((f): UnifiedFile => ({
-        id: String(f.id),
-        name: f.name || f.filename || `File_${f.id}`,
-        size: parseInt(f.file_size) || f.size || 0,
-        type: f.file_type || f.mime_type || 'application/octet-stream',
-        url: f.file_url || f.url || '',
-        stage_name: f.stage_name ?? f.stage,   // ← keep backend's stage_name
-        stage: f.stage_name ?? f.stage,
-        file_design: f.file_design,
-        uploaded_by_name: f.uploaded_by_name ?? f.uploader_name,
-        uploadedBy: f.uploaded_by_name ?? f.uploader_name,
-        uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
-        _raw: f,
-      }));
+        // Helper to convert API file array into UnifiedFile[]
+        const toUnifiedFiles = (files: any[]): UnifiedFile[] =>
+            (files ?? []).map((f): UnifiedFile => ({
+                id: String(f.id),
+                name: f.name || f.filename || `File_${f.id}`,
+                size: parseInt(f.file_size) || f.size || 0,
+                type: f.file_type || f.mime_type || 'application/octet-stream',
+                url: f.file_url || f.url || '',
+                stage_name: f.stage_name ?? f.stage,
+                stage: f.stage_name ?? f.stage,
+                file_design: f.file_design,
+                uploaded_by_name: f.uploaded_by_name ?? f.uploader_name,
+                uploadedBy: f.uploaded_by_name ?? f.uploader_name,
+                uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
+                _raw: f,
+            }));
 
-    // Drafting files (from draft_data.files)
-    if (fabData.draft_data?.files?.length) {
-      sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.draft_data.files) });
-    }
-    // SlabSmith files
-    if (fabData.slabsmith_data?.files?.length) {
-      sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.slabsmith_data.files) });
-    }
-    // Sales CT files
-    if (fabData.sales_ct_data?.files?.length) {
-      sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.sales_ct_data.files) });
-    }
-    // CNC files (if you later add cnc_data)
-    if (fabData.cnc_data?.files?.length) {
-      sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.cnc_data.files) });
-    }
-    // Top-level files
-    if (fabData.files?.length) {
-      sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.files) });
-    }
-     if (qaFiles.length > 0) sources.push({ kind: 'raw', data: qaFiles });
+        // Drafting files (from draft_data.files)
+        if (fabData.draft_data?.files?.length) {
+            sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.draft_data.files) });
+        }
+        // SlabSmith files
+        if (fabData.slabsmith_data?.files?.length) {
+            sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.slabsmith_data.files) });
+        }
+        // Sales CT files
+        if (fabData.sales_ct_data?.files?.length) {
+            sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.sales_ct_data.files) });
+        }
+        // CNC files (if you later add cnc_data)
+        if (fabData.cnc_data?.files?.length) {
+            sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.cnc_data.files) });
+        }
+        // Top-level files
+        if (fabData.files?.length) {
+            sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.files) });
+        }
+        if (qaFiles.length > 0) sources.push({ kind: 'raw', data: qaFiles });
 
-    return sources;
-  })();
+        return sources;
+    })();
 
     const totalFileCount = fileSources.reduce((sum, s) => sum + (s.kind === 'raw' ? s.data.length : 0), 0);
 
@@ -251,10 +251,10 @@ export function OperatorTaskDetails() {
             setTimerState('paused');
             setServerSynced(false);
             await refetchTimer();
-            
+
             // Refetch task data to update the UI
             refetchTask();
-            
+
             setShowWorkPercentageModal(false);
             toast.success(t('OPERATOR.TIMER.PAUSED', 'Timer paused'));
         } catch (error: any) {
@@ -528,15 +528,26 @@ export function OperatorTaskDetails() {
 
                     {/* Timer History Card */}
                     <OperatorTimerHistory planId={planId} workstationId={workstationId} />
-                    
                 </div>
 
                 {/* Right column (4 columns) – Timer Controls */}
                 <div className="lg:col-span-4">
+                    {/* Pending Revision Warning Banner (prominent) */}
+                    {hasPendingShopRevision && (
+                        <div className="mb-4 p-3 bg-amber-50 border-l-4 border-amber-500 rounded-md flex items-start gap-2">
+                            <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                            <div className="text-sm text-amber-800">
+                                <p className="font-medium">Pending Shop Revision</p>
+                                <p className="text-amber-700">
+                                    Timer actions and creating a new revision are disabled until the current pending revision is marked as complete.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
                     <Card className="border-l shadow-sm">
                         <CardHeader className="border-b pb-4">
                             <CardTitle className="text-lg font-semibold">Timer</CardTitle>
-                            {/* <p className="text-sm text-muted-foreground">{t('TIMER.CONTROLS_DESCRIPTION')}</p> */}
                         </CardHeader>
                         <CardContent className="space-y-4 pt-6">
                             {/* Start button (idle state) */}
@@ -612,6 +623,8 @@ export function OperatorTaskDetails() {
                                 variant="outline"
                                 className="w-full gap-2 mb-3"
                                 size="lg"
+                                disabled={hasPendingShopRevision}
+                                title={hasPendingShopRevision ? "Cannot create a new revision while a pending revision exists" : ""}
                             >
                                 Create Shop Revision
                             </Button>
@@ -624,11 +637,6 @@ export function OperatorTaskDetails() {
                             </Button>
                         </CardContent>
                     </Card>
-                    {hasPendingShopRevision && (
-                        <p className="text-sm text-orange-700 mt-3">
-                            Timer actions are disabled because this FAB has a pending shop revision.
-                        </p>
-                    )}
                 </div>
             </div>
 
@@ -684,12 +692,18 @@ export function OperatorTaskDetails() {
                             Create Shop Revision {currentTask?.fab_id ? `for FAB-${currentTask.fab_id}` : ''}
                         </DialogTitle>
                     </DialogHeader>
+                    {hasPendingShopRevision && (
+                        <div className="mb-2 p-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
+                            ⚠️ A pending revision already exists. Please complete it before creating a new one.
+                        </div>
+                    )}
                     <div className="space-y-4">
                         <Textarea
                             value={revisionNote}
                             onChange={(e) => setRevisionNote(e.target.value)}
                             placeholder="Enter revision details for this FAB..."
                             className="min-h-[120px] resize-none"
+                            disabled={hasPendingShopRevision}
                         />
                         <div className="flex justify-end gap-2">
                             <Button
@@ -701,7 +715,7 @@ export function OperatorTaskDetails() {
                             </Button>
                             <Button
                                 onClick={handleCreateShopRevision}
-                                disabled={isCreatingRevision || !revisionNote.trim()}
+                                disabled={isCreatingRevision || !revisionNote.trim() || hasPendingShopRevision}
                             >
                                 {isCreatingRevision ? 'Creating...' : 'Create Revision'}
                             </Button>

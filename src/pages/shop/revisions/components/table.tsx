@@ -136,6 +136,11 @@ export const ShopRevisionTable = () => {
     getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    meta: {
+      getRowAttributes: (row: any) => ({
+        'data-fab-type': row.original.fab_type?.toLowerCase()
+      })
+    }
   });
 
   return (
@@ -217,7 +222,7 @@ export const ShopRevisionTable = () => {
                   </tr>
                 ) : (
                   table.getRowModel().rows.map((row) => (
-                    <tr key={row.id} className="border-b border-border">
+                    <tr key={row.id} className="border-b border-border" data-fab-type={row.original.fab_type?.toLowerCase()}>
                       {row.getVisibleCells().map((cell) => (
                         <td key={cell.id} className="px-4 py-2 text-sm border-r border-border last:border-r-0">
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
