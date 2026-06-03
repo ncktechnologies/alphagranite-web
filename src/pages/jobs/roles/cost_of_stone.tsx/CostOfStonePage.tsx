@@ -22,7 +22,7 @@ const transformToJob = (item: any): IJob => ({
     sales_person_name: '',                   // not provided in this endpoint
     total_sq_ft: String(item.total_sqft ?? '0'),
     revenue: String(item.revenue ?? '0'),
-    stone_cost: item.cost_of_stone ?? 0,
+    stone_cost: item.cost_of_stone ,
     // consumed field is not in response; we'll pass false and handle consume via mutation
     // Add required IJob fields with defaults
     acct_name: '',

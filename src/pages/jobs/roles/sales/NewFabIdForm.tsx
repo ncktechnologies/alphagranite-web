@@ -1473,7 +1473,7 @@ const NewFabIdForm = () => {
                         />
 
                         {/* Cost of Stone */}
-                        <FormField
+                        {/* <FormField
                           control={form.control}
                           name="cost_of_stone"
                           render={({ field }) => (
@@ -1492,7 +1492,7 @@ const NewFabIdForm = () => {
                               <FormMessage />
                             </FormItem>
                           )}
-                        />
+                        /> */}
 
                         {/* Sales Person */}
                         <FormField

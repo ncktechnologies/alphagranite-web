@@ -31,7 +31,7 @@ export const EditStoneCostModal: React.FC<EditStoneCostModalProps> = ({
 
   useEffect(() => {
     if (open && fab) {
-      setCostOfStone(fab.cost_of_stone?.toString() ?? '0');
+      setCostOfStone(fab.cost_of_stone?.toString() ?? '');
     }
   }, [open, fab]);
 

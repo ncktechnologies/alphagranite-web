@@ -506,7 +506,7 @@ export const JobTable = ({
             header: ({ column }) => <DataGridColumnHeader title="Cost Of Stone" column={column} />,
             cell: ({ row }) => {
                 const cost = row.original.stone_cost;
-                return <span className="text-xs">${cost?.toFixed(2) ?? '0.00'}</span>;
+                return <span className="text-xs">{cost?.toFixed(2) ?? '-'}</span>;
             },
             size: 120,
             enableSorting: true,
