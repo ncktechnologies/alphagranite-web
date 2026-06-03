@@ -30,6 +30,7 @@ export interface ShopRevisionFabSummary {
   latest_revision_note?: string;
   latest_revision_created_at?: string;
   latest_pending_revision?: ShopRevision | null;
+  created_at?: string;
 }
 
 export interface CreateShopRevisionPayload {

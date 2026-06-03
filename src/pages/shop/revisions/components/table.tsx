@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useGetShopRevisionFabsQuery, type ShopRevisionFabSummary } from '@/store/api/shopRevision';
+import { format } from 'date-fns';
 
 export const ShopRevisionTable = () => {
   const navigate = useNavigate();
@@ -71,13 +72,6 @@ export const ShopRevisionTable = () => {
       size: 90,
     },
     {
-      id: 'job_id',
-      accessorFn: (r) => r.job_id,
-      header: ({ column }) => <DataGridColumnHeader title="JOB ID" column={column} />,
-      cell: ({ row }) => <span className="text-sm">{row.original.job_id || '—'}</span>,
-      size: 90,
-    },
-    {
       id: 'job_number',
       accessorFn: (r) => r.job_number,
       header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
@@ -123,8 +117,19 @@ export const ShopRevisionTable = () => {
       cell: ({ row }) => (
         <span className="text-sm">{row.original.latest_pending_revision?.revision_note || row.original.latest_revision_note || '—'}</span>
       ),
-      size: 280,
+      size: 260,
     },
+    {
+      id:'created_at',
+      accessorFn: (r) => r.created_at,
+      header: ({ column }) => <DataGridColumnHeader title="CREATED AT" column={column} />,
+      cell: ({ row }) => (
+        <span className="text-sm">
+          {row.original.latest_pending_revision.created_at ? format(new Date(row.original.latest_pending_revision.created_at), 'MMM dd, yyyy h:mm a') : '—'}
+        </span>
+      ),
+      size: 180,
+    }
   ], [navigate]);
 
   const table = useReactTable({
