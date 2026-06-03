@@ -6,16 +6,17 @@ interface JobMediaUploadProps {
   jobId: number;
   onUploadComplete?: () => void;
   onClose?: () => void;
+  comStages?: { value: string }[]; // Optional stages for upload categorization
 }
 
 /**
  * Job Media Upload Component
  * Uses UniversalUpload internally for consistent behavior across the app
  */
-export function JobMediaUpload({ jobId, onUploadComplete, onClose }: JobMediaUploadProps) {
+export function JobMediaUpload({ jobId, onUploadComplete, onClose, comStages }: JobMediaUploadProps) {
   const [uploadMedia] = useUploadJobMediaMutation();
 
-  const stages = [
+  const stages = comStages || [
     { value: 'templating' },
     { value: 'drafting' },
     { value: 'programming' },

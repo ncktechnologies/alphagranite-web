@@ -264,8 +264,8 @@ const ShopRevisionDetailsPage = () => {
                   !selectedRevision
                     ? 'No revision selected.'
                     : mergedFiles.length === 0
-                    ? `No files uploaded yet for this revision by ${selectedRevision.requested_by_name || 'requester'}.`
-                    : 'No shop revision files found.'
+                      ? `No files uploaded yet for this revision by ${selectedRevision.requested_by_name || 'requester'}.`
+                      : 'No shop revision files found.'
                 }
               />
             </CardContent>
@@ -284,17 +284,15 @@ const ShopRevisionDetailsPage = () => {
                 revisions.map((revision) => (
                   <button
                     key={revision.id}
-                    className={`w-full text-left border rounded-md p-3 transition ${
-                      selectedRevision?.id === revision.id ? 'border-green-600 bg-green-50/50' : 'border-border'
-                    }`}
+                    className={`w-full text-left border rounded-md p-3 transition ${selectedRevision?.id === revision.id ? 'border-green-600 bg-green-50/50' : 'border-border'
+                      }`}
                     onClick={() => handleSelectRevision(revision.id)}
                   >
                     <div className="flex items-center justify-between gap-2">
                       <p className="font-medium text-sm">Revision #{revision.id}</p>
                       <span
-                        className={`text-xs ${
-                          revision.revision_completed ? 'text-green-700' : 'text-orange-700'
-                        }`}
+                        className={`text-xs ${revision.revision_completed ? 'text-green-700' : 'text-orange-700'
+                          }`}
                       >
                         {revision.revision_completed ? 'Completed' : 'Pending'}
                       </span>
@@ -386,8 +384,8 @@ const ShopRevisionDetailsPage = () => {
                   {selectedRevision.revision_completed
                     ? 'Already Completed'
                     : isCompleting
-                    ? 'Marking...'
-                    : 'Mark as Complete'}
+                      ? 'Marking...'
+                      : 'Mark as Complete'}
                 </Button>
               </>
             )}
@@ -406,10 +404,11 @@ const ShopRevisionDetailsPage = () => {
           disabled={false}
           stages={[{ value: 'shop revision', label: 'Shop Revision' }]}
           fileTypes={[
-            { value: 'drawing', label: 'Drawing' },
-            { value: 'document', label: 'Document' },
-            { value: 'photo', label: 'Photo' },
-            { value: 'other', label: 'Other' },
+            { value: 'block_drawing', label: 'Block Drawing' },
+            { value: 'layout', label: 'Layout' },
+            { value: 'ss_layout', label: 'SS Layout' },
+            { value: 'shop_drawing', label: 'Shop Drawing' },
+            { value: 'photo_media', label: 'Photo Media' },
           ]}
           additionalParams={additionalParams}
           onUploadComplete={handleUploadComplete}

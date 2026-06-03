@@ -271,6 +271,7 @@ export function InstallerTimerPage() {
                                             jobId={job_id}
                                             onUploadComplete={refetchMedia}
                                             onClose={() => setShowUploadDialog(false)}
+                                            comStages={[{ value: 'install', label: 'Install' }]}
                                         />
                                     </DialogContent>
                                 </Dialog>
