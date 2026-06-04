@@ -207,7 +207,7 @@ export const ProfileFormSection = ({ onSave, onCancel }: ProfileFormSectionProps
                                 </FormItem>
                             )}
                         />
-                        <FormField
+                        {/* <FormField
                             control={form.control}
                             name="gender"
                             render={({ field }) => (
@@ -227,7 +227,7 @@ export const ProfileFormSection = ({ onSave, onCancel }: ProfileFormSectionProps
                                     <FormMessage />
                                 </FormItem>
                             )}
-                        />
+                        /> */}
 
                         <FormField
                             control={form.control}

@@ -219,7 +219,7 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
                                                 </FormItem>
                                             )} />
                                             
-                                            <FormField
+                                            {/* <FormField
                                                 control={form.control}
                                                 name="gender"
                                                 render={({ field }) => (
@@ -239,7 +239,7 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
                                                         <FormMessage />
                                                     </FormItem>
                                                 )}
-                                            />
+                                            /> */}
                                         </div>
                                     </div>
                                 </ScrollArea>

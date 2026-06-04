@@ -120,10 +120,10 @@ const ProfileSection = () => {
                 <span className="text-xs uppercase text-[#9094A4]">Department</span>
                 <div className="font-semibold">{profile?.department_name}</div>
               </div>
-              <div className="flex flex-col space-y-1">
+              {/* <div className="flex flex-col space-y-1">
                 <span className="text-xs uppercase text-[#9094A4]">Gender</span>
                 <div className="font-semibold capitalize">{profile?.gender || 'Not provided'}</div>
-              </div>
+              </div> */}
             </div>
 
 

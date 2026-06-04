@@ -255,7 +255,7 @@ const DepartmentTable = ({ employees }: employeeProps) => {
                                     <SelectItem value="pending">Pending</SelectItem>
                                 </SelectContent>
                             </Select>
-                            <Select>
+                            {/* <Select>
                                 <SelectTrigger className="w-[100px] h-[34px]">
                                     <SelectValue placeholder="Gender" />
                                 </SelectTrigger>
@@ -263,7 +263,7 @@ const DepartmentTable = ({ employees }: employeeProps) => {
                                     <SelectItem value="latest">Male</SelectItem>
                                     <SelectItem value="older">Female</SelectItem>
                                 </SelectContent>
-                            </Select>
+                            </Select> */}
                         </div>
                     </CardHeading>
                     <CardToolbar>

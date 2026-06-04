@@ -6,7 +6,7 @@ export const getCompleteProfileSchema = () => {
     last_name: z.string().min(1, { message: 'Last name is required.' }),
     email: z.string().email({ message: 'Please enter a valid email address.' }),
     department: z.string().min(1, { message: 'Please select a department.' }),
-    gender: z.string().min(1, { message: 'Please select your gender.' }),
+    gender: z.string().optional(),
     phone: z
       .string()
       .optional()

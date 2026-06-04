@@ -269,7 +269,7 @@ const UsersSection = ({ role }: UsersSectionProps) => {
                   <SelectItem value="pending">Pending</SelectItem>
                 </SelectContent>
               </Select>
-              <Select>
+              {/* <Select>
                 <SelectTrigger className="w-[100px] h-[34px]">
                   <SelectValue placeholder="Gender" />
                 </SelectTrigger>
@@ -277,7 +277,7 @@ const UsersSection = ({ role }: UsersSectionProps) => {
                   <SelectItem value="latest">Male</SelectItem>
                   <SelectItem value="older">Female</SelectItem>
                 </SelectContent>
-              </Select>
+              </Select> */}
             </div>
           </CardHeading>
           <CardToolbar>
