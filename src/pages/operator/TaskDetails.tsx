@@ -338,7 +338,7 @@ export function OperatorTaskDetails() {
                 fab_id: Number(currentTask.fab_id),
                 revision_note: revisionNote.trim(),
                 requested_by: Number(operatorId),
-                assigned_to: Number(operatorId),
+                assigned_to: null,
                 revision_completed: false,
             }).unwrap();
             toast.success('Shop revision created successfully.');

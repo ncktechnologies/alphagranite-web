@@ -23,6 +23,7 @@ import { FileGallery, type FileSource, type UnifiedFile } from '@/pages/jobs/com
 import { FileViewer } from '@/pages/jobs/roles/drafters/components';
 import { UniversalUploadModal } from '@/components/universal-upload';
 import { useSelector } from 'react-redux';
+import { SCTTimer } from '@/pages/jobs/roles/back-to-sales/components/SCTTimer';
 
 interface ExtendedUnifiedFile extends UnifiedFile {
   uploaded_by_id?: number;
@@ -314,10 +315,16 @@ const ShopRevisionDetailsPage = () => {
             <CardTitle>Revision Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+
             {!selectedRevision ? (
               <p className="text-sm text-muted-foreground">Select a revision to view details.</p>
             ) : (
               <>
+                <SCTTimer
+                  startTime={selectedRevision?.created_at || null}
+                  endTime={selectedRevision?.completed_at || null}
+                  text="Time in Shop Revision:"
+                />
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">FAB ID</p>
                   <p className="text-sm font-medium">{selectedRevision.fab_id}</p>

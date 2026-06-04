@@ -3,9 +3,10 @@ import { useState, useEffect, useRef } from 'react';
 interface SCTTimerProps {
   startTime: string | null;  // UTC timestamp without timezone
   endTime: string | null;    // UTC timestamp or null
+  text?: string;             // Optional text to display before the duration
 }
 
-export const SCTTimer = ({ startTime, endTime }: SCTTimerProps) => {
+export const SCTTimer = ({ startTime, endTime, text }: SCTTimerProps) => {
   const [duration, setDuration] = useState<string>('');
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -89,7 +90,7 @@ export const SCTTimer = ({ startTime, endTime }: SCTTimerProps) => {
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-md border border-gray-200 w-auto max-w-64">
       <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-        Time in SCT:
+        {text || 'Time in SCT:'}
       </span>
       <span className="text-sm font-semibold text-gray-900 whitespace-nowrap">
         {duration}

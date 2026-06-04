@@ -85,6 +85,12 @@ export const ShopRevisionTable = () => {
       cell: ({ row }) => <span className="text-sm">{row.original.job_name || '—'}</span>,
       size: 180,
     },
+    {id: 'account_name',
+      accessorFn: (r) => r.account_name,
+      header: ({ column }) => <DataGridColumnHeader title="ACCOUNT NAME" column={column} />,
+      cell: ({ row }) => <span className="text-sm">{row.original.account_name || '—'}</span>,
+      size: 180,
+    },  
     {
       id: 'fab_type',
       accessorFn: (r) => r.fab_type,

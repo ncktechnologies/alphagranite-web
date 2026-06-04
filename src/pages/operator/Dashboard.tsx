@@ -216,6 +216,8 @@ export function OperatorDashboard() {
     // ─────────────────────────────────────────────────────────────────────────
     const renderEventCard = useCallback((event: any) => {
         const { bg, border, text } = getColorForFabType(event.fab_type);
+        const finalBorderColor = event.has_pending_shop_revision ? '#ff0000' : border;
+
         const startTime = event.scheduled_start_date
             ? format(new Date(event.scheduled_start_date), 'h:mma')
             : null;
@@ -233,7 +235,7 @@ export function OperatorDashboard() {
                     top: event._top + 2,
                     height: event._height,
                     backgroundColor: bg,
-                    borderColor: border,
+                   borderColor: finalBorderColor,
                 }}
                 onClick={(e) => { e.stopPropagation(); handleEventClick(event); }}
             >
@@ -492,11 +494,13 @@ export function OperatorDashboard() {
                                                 <div className="space-y-1">
                                                     {events.slice(0, 3).map((event: any) => {
                                                         const { bg, border, text } = getColorForFabType(event.fab_type);
+                                                        const cardBorderColor = event.has_pending_shop_revision ? '#ff0000' : border;
+
                                                         return (
                                                             <div
                                                                 key={event.task_id || event.id}
                                                                 className="text-[11px] px-2 py-1 rounded cursor-pointer truncate"
-                                                                style={{ backgroundColor: bg, borderColor: border, color: text, borderWidth: 1 }}
+                                                                style={{ backgroundColor: bg, borderColor: cardBorderColor, color: text, borderWidth: 1 }}
                                                                 onClick={() => handleEventClick(event)}
                                                             >
                                                                 <div className="font-medium truncate">
