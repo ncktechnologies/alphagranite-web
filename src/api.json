@@ -6624,6 +6624,24 @@
             "description": "Filter by sct_completed_date on or before this date (YYYY-MM-DD)"
           },
           {
+            "name": "user_level",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Requester user level flag; when 'installer', apply install_completion crew/date visibility",
+              "title": "User Level"
+            },
+            "description": "Requester user level flag; when 'installer', apply install_completion crew/date visibility"
+          },
+          {
             "name": "search",
             "in": "query",
             "required": false,
@@ -8445,6 +8463,166 @@
             "description": "Field to apply search to: fab_id, job_number, job_name"
           }
         ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/fabs/cost-of-stone": {
+      "get": {
+        "tags": [
+          "Fabs"
+        ],
+        "summary": "Get Fabs Cost Of Stone Queue",
+        "description": "Queue endpoint for entering cost_of_stone values.\n\nIncludes FABs where:\n1) cost_of_stone is blank (NULL/empty string), but not 0\n2) sct_completed is true\nReturns rows grouped by sct_completed_date.",
+        "operationId": "get_fabs_cost_of_stone_queue_api_v1_fabs_cost_of_stone_get",
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Number of records to skip",
+              "default": 0,
+              "title": "Skip"
+            },
+            "description": "Number of records to skip"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 1000,
+              "minimum": 1,
+              "description": "Number of records to return",
+              "default": 100,
+              "title": "Limit"
+            },
+            "description": "Number of records to return"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search value",
+              "title": "Search"
+            },
+            "description": "Search value"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Field to apply search to: fab_id, job_number, fab_info",
+              "title": "Type"
+            },
+            "description": "Field to apply search to: fab_id, job_number, fab_info"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/fabs/{fab_id}/cost-of-stone": {
+      "patch": {
+        "tags": [
+          "Fabs"
+        ],
+        "summary": "Update Fab Cost Of Stone",
+        "description": "Update only cost_of_stone for a FAB row in the cost-of-stone queue.",
+        "operationId": "update_fab_cost_of_stone_api_v1_fabs__fab_id__cost_of_stone_patch",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FabUpdate"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -12601,6 +12779,223 @@
         ]
       }
     },
+    "/api/v1/shop-revisions": {
+      "get": {
+        "tags": [
+          "Shop Revisions",
+          "Shop Revisions"
+        ],
+        "summary": "Get Shop Revisions",
+        "description": "Get all pending shop revision rows.",
+        "operationId": "get_shop_revisions_api_v1_shop_revisions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_List_dict__"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Shop Revisions",
+          "Shop Revisions"
+        ],
+        "summary": "Create Shop Revision",
+        "description": "Create a new shop revision request.",
+        "operationId": "create_shop_revision_api_v1_shop_revisions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShopRevisionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_ShopRevisionResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/shop-revisions/fab/{fab_id}": {
+      "get": {
+        "tags": [
+          "Shop Revisions",
+          "Shop Revisions"
+        ],
+        "summary": "Get Shop Revisions By Fab",
+        "description": "Get all shop revisions for a FAB, pending and completed.",
+        "operationId": "get_shop_revisions_by_fab_api_v1_shop_revisions_fab__fab_id__get",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_List_dict__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/shop-revisions/fabs": {
+      "get": {
+        "tags": [
+          "Shop Revisions",
+          "Shop Revisions"
+        ],
+        "summary": "Get Fabs With Pending Shop Revisions",
+        "description": "Get all FABs that still have at least one pending shop revision.",
+        "operationId": "get_fabs_with_pending_shop_revisions_api_v1_shop_revisions_fabs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_List_dict__"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/shop-revisions/{revision_id}/complete": {
+      "patch": {
+        "tags": [
+          "Shop Revisions",
+          "Shop Revisions"
+        ],
+        "summary": "Complete Shop Revision",
+        "description": "Mark a shop revision as completed.",
+        "operationId": "complete_shop_revision_api_v1_shop_revisions__revision_id__complete_patch",
+        "parameters": [
+          {
+            "name": "revision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Revision Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ShopRevisionUpdate"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Revision Data"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_ShopRevisionResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/cost-of-stone": {
       "post": {
         "tags": [
@@ -12907,6 +13302,54 @@
         ]
       }
     },
+    "/api/v1/install-completion/fab/{fab_id}/unmark": {
+      "patch": {
+        "tags": [
+          "Install Scheduling"
+        ],
+        "summary": "Unmark Install Completion",
+        "description": "Unmark (uncheck) install completion for a fab by reverting is_completed to False.",
+        "operationId": "unmark_install_completion_api_v1_install_completion_fab__fab_id__unmark_patch",
+        "parameters": [
+          {
+            "name": "fab_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Fab Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_InstallCompletionResponse_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
     "/api/v1/install-completion": {
       "post": {
         "tags": [
@@ -13080,18 +13523,6 @@
             }
           },
           {
-            "name": "installer_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "description": "Installer user ID",
-              "title": "Installer Id"
-            },
-            "description": "Installer user ID"
-          },
-          {
             "name": "fab_id",
             "in": "query",
             "required": false,
@@ -13166,18 +13597,6 @@
               "type": "integer",
               "title": "Job Id"
             }
-          },
-          {
-            "name": "installer_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "description": "Installer user ID",
-              "title": "Installer Id"
-            },
-            "description": "Installer user ID"
           },
           {
             "name": "fab_id",
@@ -13256,18 +13675,6 @@
             }
           },
           {
-            "name": "installer_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "description": "Installer user ID",
-              "title": "Installer Id"
-            },
-            "description": "Installer user ID"
-          },
-          {
             "name": "fab_id",
             "in": "query",
             "required": false,
@@ -13342,18 +13749,6 @@
               "type": "integer",
               "title": "Job Id"
             }
-          },
-          {
-            "name": "installer_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "description": "Installer user ID",
-              "title": "Installer Id"
-            },
-            "description": "Installer user ID"
           },
           {
             "name": "fab_id",
@@ -13432,18 +13827,6 @@
             }
           },
           {
-            "name": "installer_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "description": "Installer user ID",
-              "title": "Installer Id"
-            },
-            "description": "Installer user ID"
-          },
-          {
             "name": "fab_id",
             "in": "query",
             "required": false,
@@ -13509,18 +13892,6 @@
               "type": "integer",
               "title": "Job Id"
             }
-          },
-          {
-            "name": "installer_id",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "exclusiveMinimum": 0,
-              "description": "Installer user ID",
-              "title": "Installer Id"
-            },
-            "description": "Installer user ID"
           },
           {
             "name": "fab_id",
@@ -14576,6 +14947,1912 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/redos": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Ag Redo Report",
+        "description": "Return AG REDO FAB rows with complete report fields.",
+        "operationId": "get_ag_redo_report_api_v1_reports_redos_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_list_dict__"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/owner/weekly-fabrication-labor-cost": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Owner Weekly Fabrication Labor Cost Report",
+        "description": "Weekly fabrication labor cost analysis with monthly and annual summaries.",
+        "operationId": "get_owner_weekly_fabrication_labor_cost_report_api_v1_reports_owner_weekly_fabrication_labor_cost_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2100,
+              "minimum": 2000,
+              "title": "Year"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 12,
+              "minimum": 1,
+              "title": "Month"
+            }
+          },
+          {
+            "name": "total_employees",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Display header value for total employees",
+              "default": 40,
+              "title": "Total Employees"
+            },
+            "description": "Display header value for total employees"
+          },
+          {
+            "name": "overhead_per_week",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Default overhead amount per week",
+              "default": 38512.69,
+              "title": "Overhead Per Week"
+            },
+            "description": "Default overhead amount per week"
+          },
+          {
+            "name": "week_ending_weekday",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 6,
+              "minimum": 0,
+              "description": "Week ending day: Monday=0 ... Sunday=6",
+              "default": 4,
+              "title": "Week Ending Weekday"
+            },
+            "description": "Week ending day: Monday=0 ... Sunday=6"
+          },
+          {
+            "name": "payroll_overrides_json",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional JSON object keyed by week-ending date (YYYY-MM-DD) for external payroll values. Supported fields: head_count, shop_management, wages_basic_shop_yard, overtime_shop_yard, cost_of_overtime_pct, total_labor_cost, regular_hours, overtime_hours, overhead_per_week. Use _default object for defaults.",
+              "title": "Payroll Overrides Json"
+            },
+            "description": "Optional JSON object keyed by week-ending date (YYYY-MM-DD) for external payroll values. Supported fields: head_count, shop_management, wages_basic_shop_yard, overtime_shop_yard, cost_of_overtime_pct, total_labor_cost, regular_hours, overtime_hours, overhead_per_week. Use _default object for defaults."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/owner/weekly-installer-labor-cost": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Owner Weekly Installer Labor Cost Report",
+        "description": "Weekly installer labor cost analysis with monthly and annual summaries.",
+        "operationId": "get_owner_weekly_installer_labor_cost_report_api_v1_reports_owner_weekly_installer_labor_cost_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2100,
+              "minimum": 2000,
+              "title": "Year"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 12,
+              "minimum": 1,
+              "title": "Month"
+            }
+          },
+          {
+            "name": "total_employees",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "Display header value for total employees",
+              "default": 40,
+              "title": "Total Employees"
+            },
+            "description": "Display header value for total employees"
+          },
+          {
+            "name": "overhead_per_week",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "description": "Default overhead amount per week",
+              "default": 38512.69,
+              "title": "Overhead Per Week"
+            },
+            "description": "Default overhead amount per week"
+          },
+          {
+            "name": "week_ending_weekday",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 6,
+              "minimum": 0,
+              "description": "Week ending day: Monday=0 ... Sunday=6",
+              "default": 4,
+              "title": "Week Ending Weekday"
+            },
+            "description": "Week ending day: Monday=0 ... Sunday=6"
+          },
+          {
+            "name": "payroll_overrides_json",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional JSON object keyed by week-ending date (YYYY-MM-DD) for external payroll values. Supported fields: sub_contractor_head_count, wages_sub_contractor, head_count, wages_basic_installer, overtime_installer, overtime_pct, total_labor_cost, regular_hours, overtime_hours, overhead_per_week. Use _default object for defaults.",
+              "title": "Payroll Overrides Json"
+            },
+            "description": "Optional JSON object keyed by week-ending date (YYYY-MM-DD) for external payroll values. Supported fields: sub_contractor_head_count, wages_sub_contractor, head_count, wages_basic_installer, overtime_installer, overtime_pct, total_labor_cost, regular_hours, overtime_hours, overhead_per_week. Use _default object for defaults."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/owner/overview": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Owner Overview Report",
+        "description": "Owner summary KPIs across jobs, fabs, finance, and install pipeline.",
+        "operationId": "get_owner_overview_report_api_v1_reports_owner_overview_get",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive start date filter",
+              "title": "Start Date"
+            },
+            "description": "Inclusive start date filter"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive end date filter",
+              "title": "End Date"
+            },
+            "description": "Inclusive end date filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/owner/redo-analysis": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Owner Redo Analysis Report",
+        "description": "Analyze redo/revision volume and hotspots by stage, account, and job.",
+        "operationId": "get_owner_redo_analysis_report_api_v1_reports_owner_redo_analysis_get",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive start date filter",
+              "title": "Start Date"
+            },
+            "description": "Inclusive start date filter"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive end date filter",
+              "title": "End Date"
+            },
+            "description": "Inclusive end date filter"
+          },
+          {
+            "name": "top_n",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "description": "Top N groups to return",
+              "default": 10,
+              "title": "Top N"
+            },
+            "description": "Top N groups to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/owner/shop-status": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Owner Shop Status Report",
+        "description": "Current shop load by stage with aging and stalled-work indicators.",
+        "operationId": "get_owner_shop_status_report_api_v1_reports_owner_shop_status_get",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive start date filter",
+              "title": "Start Date"
+            },
+            "description": "Inclusive start date filter"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive end date filter",
+              "title": "End Date"
+            },
+            "description": "Inclusive end date filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/owner/install-performance": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Owner Install Performance Report",
+        "description": "Installer-focused output and labor efficiency based on completion and timer data.",
+        "operationId": "get_owner_install_performance_report_api_v1_reports_owner_install_performance_get",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive start date filter",
+              "title": "Start Date"
+            },
+            "description": "Inclusive start date filter"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive end date filter",
+              "title": "End Date"
+            },
+            "description": "Inclusive end date filter"
+          },
+          {
+            "name": "top_n",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Top installer rows to return",
+              "default": 25,
+              "title": "Top N"
+            },
+            "description": "Top installer rows to return"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/owner/weekly-trends": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Owner Weekly Trends Report",
+        "description": "Weekly trendline for owner review: new fabs, completed installs, revenue, and GP.",
+        "operationId": "get_owner_weekly_trends_report_api_v1_reports_owner_weekly_trends_get",
+        "parameters": [
+          {
+            "name": "weeks",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 52,
+              "minimum": 4,
+              "description": "How many trailing weeks to include",
+              "default": 12,
+              "title": "Weeks"
+            },
+            "description": "How many trailing weeks to include"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/owner/installation-template": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Owner Installation Template Report",
+        "description": "Combined Installation and Template report for table-based owner view.",
+        "operationId": "get_owner_installation_template_report_api_v1_reports_owner_installation_template_get",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive start date filter",
+              "title": "Start Date"
+            },
+            "description": "Inclusive start date filter"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive end date filter",
+              "title": "End Date"
+            },
+            "description": "Inclusive end date filter"
+          },
+          {
+            "name": "activity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(both|installation|template)$",
+              "default": "both",
+              "title": "Activity"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 2000,
+              "minimum": 1,
+              "default": 250,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/owner/monthly-install-completion": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Owner Monthly Install Completion Report",
+        "description": "Monthly install completion report modeled after legacy spreadsheet format.",
+        "operationId": "get_owner_monthly_install_completion_report_api_v1_reports_owner_monthly_install_completion_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2100,
+              "minimum": 2000,
+              "title": "Year"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 12,
+              "minimum": 1,
+              "title": "Month"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/owner/daily-install-completion": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Owner Daily Install Completion Report",
+        "description": "Daily install completion report across a date range, grouped by install date.",
+        "operationId": "get_owner_daily_install_completion_report_api_v1_reports_owner_daily_install_completion_get",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive start date filter",
+              "title": "Start Date"
+            },
+            "description": "Inclusive start date filter"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive end date filter",
+              "title": "End Date"
+            },
+            "description": "Inclusive end date filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/owner/monthly-cut-completion": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Owner Monthly Cut Completion Report",
+        "description": "Monthly cut completion report modeled after legacy spreadsheet format.",
+        "operationId": "get_owner_monthly_cut_completion_report_api_v1_reports_owner_monthly_cut_completion_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2100,
+              "minimum": 2000,
+              "title": "Year"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 12,
+              "minimum": 1,
+              "title": "Month"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/daily-install-completion": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Daily Install Completion Report",
+        "description": "Daily install completion report based on scheduled install dates with optional filters and daily/grand totals.",
+        "operationId": "get_daily_install_completion_report_api_v1_reports_daily_install_completion_get",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive start date filter",
+              "title": "Start Date"
+            },
+            "description": "Inclusive start date filter"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive end date filter",
+              "title": "End Date"
+            },
+            "description": "Inclusive end date filter"
+          },
+          {
+            "name": "job_number",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional job number filter",
+              "title": "Job Number"
+            },
+            "description": "Optional job number filter"
+          },
+          {
+            "name": "fab_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional FAB ID filter",
+              "title": "Fab Id"
+            },
+            "description": "Optional FAB ID filter"
+          },
+          {
+            "name": "installer_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional installer user ID filter",
+              "title": "Installer Id"
+            },
+            "description": "Optional installer user ID filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/monthly-cut-completion": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Monthly Cut Completion Report",
+        "description": "Monthly cut completion report with summary and detailed entries.",
+        "operationId": "get_monthly_cut_completion_report_api_v1_reports_monthly_cut_completion_get",
+        "parameters": [
+          {
+            "name": "month",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Month number (1-12) or month name (e.g. April)",
+              "title": "Month"
+            },
+            "description": "Month number (1-12) or month name (e.g. April)"
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2100,
+              "minimum": 2000,
+              "title": "Year"
+            }
+          },
+          {
+            "name": "fab_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional FAB type filter",
+              "title": "Fab Type"
+            },
+            "description": "Optional FAB type filter"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/owner/turnaround-times": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Owner Turnaround Times Report",
+        "description": "Turnaround-times report with full stage dates/days and stage statistics.",
+        "operationId": "get_owner_turnaround_times_report_api_v1_reports_owner_turnaround_times_get",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 2100,
+              "minimum": 2000,
+              "title": "Year"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "maximum": 12,
+              "minimum": 1,
+              "title": "Month"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 10000,
+              "minimum": 1,
+              "default": 2000,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "threshold_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional threshold used to list jobs that exceeded the specified days in each stage and total days",
+              "title": "Threshold Days"
+            },
+            "description": "Optional threshold used to list jobs that exceeded the specified days in each stage and total days"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/owner/service-level": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Owner Service Level Report",
+        "description": "Service-level report with KPI widgets, stage heat map, and Fab-level bottleneck rows.",
+        "operationId": "get_owner_service_level_report_api_v1_reports_owner_service_level_get",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive start date filter",
+              "title": "Start Date"
+            },
+            "description": "Inclusive start date filter"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive end date filter",
+              "title": "End Date"
+            },
+            "description": "Inclusive end date filter"
+          },
+          {
+            "name": "date_basis",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(created|scheduled|completed)$",
+              "default": "completed",
+              "title": "Date Basis"
+            }
+          },
+          {
+            "name": "sla_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "description": "SLA threshold in days",
+              "default": 14,
+              "title": "Sla Days"
+            },
+            "description": "SLA threshold in days"
+          },
+          {
+            "name": "breach_limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 5000,
+              "minimum": 1,
+              "default": 500,
+              "title": "Breach Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/owner/installer-rates": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Installer Rates",
+        "operationId": "get_installer_rates_api_v1_reports_owner_installer_rates_get",
+        "parameters": [
+          {
+            "name": "installer_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "exclusiveMinimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Installer Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_list_dict__"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Create Installer Rate",
+        "operationId": "create_installer_rate_api_v1_reports_owner_installer_rates_post",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InstallerRateUpsert"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/owner/management-packet": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Get Owner Management Packet",
+        "operationId": "get_owner_management_packet_api_v1_reports_owner_management_packet_get",
+        "parameters": [
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive start date filter",
+              "title": "Start Date"
+            },
+            "description": "Inclusive start date filter"
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive end date filter",
+              "title": "End Date"
+            },
+            "description": "Inclusive end date filter"
+          },
+          {
+            "name": "weeks",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 52,
+              "minimum": 4,
+              "description": "How many trailing weeks to include",
+              "default": 12,
+              "title": "Weeks"
+            },
+            "description": "How many trailing weeks to include"
+          },
+          {
+            "name": "top_n",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "description": "Top N for hotspot/installer blocks",
+              "default": 10,
+              "title": "Top N"
+            },
+            "description": "Top N for hotspot/installer blocks"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/owner/end-of-month-status/send-test": {
+      "post": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Send End Of Month Status Report Test",
+        "operationId": "send_end_of_month_status_report_test_api_v1_reports_owner_end_of_month_status_send_test_post",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 2100,
+                  "minimum": 2000
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Target year; defaults to previous month year",
+              "title": "Year"
+            },
+            "description": "Target year; defaults to previous month year"
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 12,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Target month; defaults to previous month",
+              "title": "Month"
+            },
+            "description": "Target month; defaults to previous month"
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Optional recipient email(s), comma-separated",
+              "title": "Email"
+            },
+            "description": "Optional recipient email(s), comma-separated"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessResponse_dict_"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ]
+      }
+    },
+    "/api/v1/reports/owner/export/{report_key}": {
+      "get": {
+        "tags": [
+          "Reports"
+        ],
+        "summary": "Export Owner Report",
+        "operationId": "export_owner_report_api_v1_reports_owner_export__report_key__get",
+        "parameters": [
+          {
+            "name": "report_key",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Report Key"
+            }
+          },
+          {
+            "name": "export_format",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(csv|xlsx|json)$",
+              "default": "csv",
+              "title": "Export Format"
+            }
+          },
+          {
+            "name": "layout",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(default|client)$",
+              "default": "default",
+              "title": "Layout"
+            }
+          },
+          {
+            "name": "start_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start Date"
+            }
+          },
+          {
+            "name": "end_date",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End Date"
+            }
+          },
+          {
+            "name": "date_basis",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(created|scheduled|completed)$",
+              "default": "completed",
+              "title": "Date Basis"
+            }
+          },
+          {
+            "name": "sla_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 14,
+              "title": "Sla Days"
+            }
+          },
+          {
+            "name": "weeks",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 52,
+              "minimum": 4,
+              "default": 12,
+              "title": "Weeks"
+            }
+          },
+          {
+            "name": "top_n",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 50,
+              "minimum": 1,
+              "default": 10,
+              "title": "Top N"
+            }
+          },
+          {
+            "name": "year",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 2100,
+                  "minimum": 2000
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Year"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 12,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Month"
+            }
+          },
+          {
+            "name": "total_employees",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 40,
+              "title": "Total Employees"
+            }
+          },
+          {
+            "name": "overhead_per_week",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "number",
+              "minimum": 0,
+              "default": 38512.69,
+              "title": "Overhead Per Week"
+            }
+          },
+          {
+            "name": "week_ending_weekday",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 6,
+              "minimum": 0,
+              "default": 4,
+              "title": "Week Ending Weekday"
+            }
+          },
+          {
+            "name": "payroll_overrides_json",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Payroll Overrides Json"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+
                 }
               }
             }
@@ -19040,14 +21317,19 @@
             "schema": {
               "anyOf": [
                 {
-                  "type": "integer"
+                  "type": "array",
+                  "items": {
+                    "type": "integer"
+                  }
                 },
                 {
                   "type": "null"
                 }
               ],
+              "description": "Operator ID filter. Pass multiple values as repeated query params, e.g. operator_id=1&operator_id=2",
               "title": "Operator Id"
-            }
+            },
+            "description": "Operator ID filter. Pass multiple values as repeated query params, e.g. operator_id=1&operator_id=2"
           },
           {
             "name": "status_id",
@@ -24558,6 +26840,17 @@
             "title": "Cost Of Stone",
             "description": "Cost of stone amount"
           },
+          "has_pending_shop_revision": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Pending Shop Revision"
+          },
           "predraft_completed_date": {
             "anyOf": [
               {
@@ -25698,6 +27991,17 @@
             ],
             "title": "Cost Of Stone",
             "description": "Cost of stone amount"
+          },
+          "has_pending_shop_revision": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Pending Shop Revision"
           },
           "predraft_completed_date": {
             "anyOf": [
@@ -27035,8 +29339,15 @@
             "title": "Install Date"
           },
           "completion_date": {
-            "type": "string",
-            "format": "date-time",
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Completion Date"
           },
           "total_sqft_installed": {
@@ -27230,6 +29541,50 @@
             "exclusiveMinimum": 0,
             "title": "Fab Id"
           },
+          "installer_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Installer Id"
+          },
+          "extra_crew_1_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Crew 1 Id"
+          },
+          "extra_crew_2_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Crew 2 Id"
+          },
+          "extra_crew_3_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Crew 3 Id"
+          },
           "scheduled_install_date": {
             "anyOf": [
               {
@@ -27303,6 +29658,72 @@
               }
             ],
             "title": "Installer Name"
+          },
+          "extra_crew_1_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Crew 1 Id"
+          },
+          "extra_crew_1_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Crew 1 Name"
+          },
+          "extra_crew_2_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Crew 2 Id"
+          },
+          "extra_crew_2_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Crew 2 Name"
+          },
+          "extra_crew_3_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Crew 3 Id"
+          },
+          "extra_crew_3_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Crew 3 Name"
           },
           "scheduled_install_date": {
             "anyOf": [
@@ -27392,7 +29813,6 @@
         "required": [
           "id",
           "fab_id",
-          "installer_id",
           "scheduled_install_date",
           "scheduled_end_date",
           "actual_install_date",
@@ -27417,6 +29837,39 @@
               }
             ],
             "title": "Installer Id"
+          },
+          "extra_crew_1_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Crew 1 Id"
+          },
+          "extra_crew_2_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Crew 2 Id"
+          },
+          "extra_crew_3_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extra Crew 3 Id"
           },
           "scheduled_install_date": {
             "anyOf": [
@@ -27541,6 +29994,49 @@
         },
         "type": "object",
         "title": "InstallerJobTimerCommandRequest"
+      },
+      "InstallerRateUpsert": {
+        "properties": {
+          "installer_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Installer Id"
+          },
+          "hourly_rate": {
+            "type": "number",
+            "exclusiveMinimum": 0,
+            "title": "Hourly Rate"
+          },
+          "effective_from": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Effective From"
+          },
+          "effective_to": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Effective To"
+          },
+          "is_active": {
+            "type": "boolean",
+            "title": "Is Active",
+            "default": true
+          }
+        },
+        "type": "object",
+        "required": [
+          "installer_id",
+          "hourly_rate",
+          "effective_from"
+        ],
+        "title": "InstallerRateUpsert"
       },
       "InvoiceToggleRequest": {
         "properties": {
@@ -30191,6 +32687,19 @@
               }
             ],
             "title": "Timestamp"
+          },
+          "work_percentage": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Percentage"
           }
         },
         "type": "object",
@@ -30218,6 +32727,19 @@
               }
             ],
             "title": "Notes"
+          },
+          "work_percentage": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 100,
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Work Percentage"
           },
           "stage": {
             "$ref": "#/components/schemas/ShopCutPlanStageCreate"
@@ -30265,6 +32787,185 @@
           "window_end"
         ],
         "title": "ShopPlanSuggestionsRequest"
+      },
+      "ShopRevisionCreate": {
+        "properties": {
+          "fab_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0,
+            "title": "Fab Id"
+          },
+          "revision_note": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Revision Note"
+          },
+          "requested_by": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Requested By"
+          },
+          "assigned_to": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned To"
+          },
+          "revision_completed": {
+            "type": "boolean",
+            "title": "Revision Completed",
+            "default": false
+          }
+        },
+        "type": "object",
+        "required": [
+          "fab_id",
+          "revision_note"
+        ],
+        "title": "ShopRevisionCreate"
+      },
+      "ShopRevisionResponse": {
+        "properties": {
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "fab_id": {
+            "type": "integer",
+            "title": "Fab Id"
+          },
+          "revision_note": {
+            "type": "string",
+            "title": "Revision Note"
+          },
+          "requested_by": {
+            "type": "integer",
+            "title": "Requested By"
+          },
+          "assigned_to": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned To"
+          },
+          "revision_completed": {
+            "type": "boolean",
+            "title": "Revision Completed"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated At"
+          },
+          "updated_by": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updated By"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "fab_id",
+          "revision_note",
+          "requested_by",
+          "assigned_to",
+          "revision_completed",
+          "completed_at",
+          "created_at",
+          "updated_at",
+          "updated_by"
+        ],
+        "title": "ShopRevisionResponse"
+      },
+      "ShopRevisionUpdate": {
+        "properties": {
+          "revision_note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Note"
+          },
+          "assigned_to": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "exclusiveMinimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Assigned To"
+          },
+          "revision_completed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Revision Completed"
+          }
+        },
+        "type": "object",
+        "title": "ShopRevisionUpdate"
       },
       "SlabSmithCreate": {
         "properties": {
@@ -32054,6 +34755,34 @@
         ],
         "title": "SuccessResponse[SalesCTResponse]"
       },
+      "SuccessResponse_ShopRevisionResponse_": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ShopRevisionResponse"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[ShopRevisionResponse]"
+      },
       "SuccessResponse_SlabSmithResponse_": {
         "properties": {
           "success": {
@@ -32367,6 +35096,39 @@
           "message"
         ],
         "title": "SuccessResponse[list[RevisionResponse]]"
+      },
+      "SuccessResponse_list_dict__": {
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "title": "Success",
+            "default": true
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "data": {
+            "anyOf": [
+              {
+                "items": {
+                  "additionalProperties": true,
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Data"
+          }
+        },
+        "type": "object",
+        "required": [
+          "message"
+        ],
+        "title": "SuccessResponse[list[dict]]"
       },
       "TableNamesResponse": {
         "properties": {

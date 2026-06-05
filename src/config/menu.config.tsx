@@ -106,6 +106,28 @@ export const MENU_SIDEBAR: MenuConfig = [
 
         ],
   },
+  {
+    title: 'Report',
+    icon: 'building.svg',
+    path: '/report',
+    children: [
+      { title: 'Redos', path: '/report/redos' },
+      { title: 'Weekly Fabrication Cost', path: '/report/weekly-fabrication-cost' },
+      { title: 'Weekly Installer Cost', path: '/report/weekly-installer-cost' },
+      { title: 'Owner Overview', path: '/report/owner-overview' },
+      { title: 'Redo Analysis', path: '/report/redo-analysis' },
+      { title: 'Shop Status', path: '/report/shop-status' },
+      { title: 'Install Performance', path: '/report/install-performance' },
+      { title: 'Weekly Trends', path: '/report/weekly-trends' },
+      // { title: 'Installation Template', path: '/report/installation-template' },
+      // { title: 'Monthly Install Comp.', path: '/report/monthly-install-completion' },
+      // { title: 'Daily Install Comp.', path: '/report/daily-install-completion' },
+      // { title: 'Monthly Cut Comp.', path: '/report/monthly-cut-completion' },
+      // { title: 'Turnaround Times', path: '/report/turnaround-times' },
+      // { title: 'Service Level', path: '/report/service-level' },
+      // { title: 'Installer Rates', path: '/report/installer-rates' },
+    ],
+  },
   // {
   //   title: 'Operator',
   //   icon: 'shop.svg',

@@ -73,6 +73,7 @@ import { JobStatusTable } from '@/pages/jobs/roles/report/JobStatus';
 import JobStatusPage from '@/pages/jobs/roles/report/JobStatusPage';
 import { InstallerScheduleCards } from '@/pages/installer/InstallerDashboard';
 import CostOfStonePage from '@/pages/jobs/roles/cost_of_stone.tsx/CostOfStonePage';
+import ReportPage from '@/pages/reports/ReportPage';
 
 export function AppRoutingSetup() {
   return (
@@ -482,6 +483,9 @@ export function AppRoutingSetup() {
               // </ProtectedRoute>
             }
           />
+          
+          {/* Reports Route */}
+          <Route path="/report/:reportId" element={<ReportPage />} />
 
           {/* Operator Routes */}
           <Route
