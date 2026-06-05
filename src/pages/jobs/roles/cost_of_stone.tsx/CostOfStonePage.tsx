@@ -16,7 +16,7 @@ const transformToJob = (item: any): IJob => ({
     id: item.fab_id,
     fab_id: String(item.fab_id),
     job_no: item.job_number || '',
-    job_name: item.fab_info || '',           // fab_info acts as job name
+    job_name: item.job_name || '',           // fab_info acts as job name
     date: item.sct_completed_date?.split('T')[0] || '',
     fab_type: item.fab_type || '',
     sales_person_name: '',                   // not provided in this endpoint
