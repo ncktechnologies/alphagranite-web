@@ -245,7 +245,7 @@ export function SidebarMenu() {
         <AccordionMenuItem
           key={index}
           value={item.path || ''}
-          className="text-[16px]"
+          className="text-[14px]"
         >
           <Link to={item.path || '#'}>{item.title}</Link>
         </AccordionMenuItem>

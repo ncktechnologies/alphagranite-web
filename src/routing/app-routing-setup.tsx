@@ -488,8 +488,8 @@ export function AppRoutingSetup() {
           
           {/* Reports Route */}
           <Route path="/report/:reportId" element={<ReportPage />} />
-          {/* <Route path="/report/redos" element={<RedosReport />} /> */}
-          {/* <Route path="/report/weekly-fabrication-cost" element={<WeeklyFabricationCostReport />} /> */}
+          <Route path="/report/redos" element={<RedosReport />} />
+          <Route path="/report/weekly-fabrication-cost" element={<WeeklyFabricationCostReport />} />
 
 
 
