@@ -74,6 +74,8 @@ import JobStatusPage from '@/pages/jobs/roles/report/JobStatusPage';
 import { InstallerScheduleCards } from '@/pages/installer/InstallerDashboard';
 import CostOfStonePage from '@/pages/jobs/roles/cost_of_stone.tsx/CostOfStonePage';
 import ReportPage from '@/pages/reports/ReportPage';
+import { RedosReport } from '@/pages/reports/RedosReport';
+import { WeeklyFabricationCostReport } from '@/pages/reports/WeeklyFabCost';
 
 export function AppRoutingSetup() {
   return (
@@ -486,6 +488,10 @@ export function AppRoutingSetup() {
           
           {/* Reports Route */}
           <Route path="/report/:reportId" element={<ReportPage />} />
+          {/* <Route path="/report/redos" element={<RedosReport />} /> */}
+          {/* <Route path="/report/weekly-fabrication-cost" element={<WeeklyFabricationCostReport />} /> */}
+
+
 
           {/* Operator Routes */}
           <Route
