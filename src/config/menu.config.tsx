@@ -107,7 +107,7 @@ export const MENU_SIDEBAR: MenuConfig = [
         ],
   },
   {
-    title: 'Report',
+    title: 'Reports',
     icon: 'building.svg',
     path: '/report',
     children: [
