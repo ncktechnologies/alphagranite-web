@@ -10,6 +10,7 @@ import { Card, CardHeader, CardToolbar, CardTable, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
+import { UpdateRedoModal } from './component/RedoModal';
 
 interface RedoItem {
     fab_id: number;
@@ -20,8 +21,10 @@ interface RedoItem {
     sqft: number;
     total_cost: number | null;
     reason: string | null;
-    person_name:string | null;
+    person_name: string | null;
     department: string | null;
+    no_of_pieces: number | null;
+    department_options?: string[];
 }
 
 // Fab type color map (exactly as in original ReportRenderer)
@@ -74,9 +77,25 @@ export function RedosReport() {
             total_cost: rawData.reduce((sum, r) => sum + (r.total_cost || 0), 0),
         };
     }, [rawData]);
+    const [updateModalOpen, setUpdateModalOpen] = useState(false);
+    const [selectedRow, setSelectedRow] = useState(null);
 
     const columns = useMemo<ColumnDef<RedoItem>[]>(() => [
-         {
+        {
+            id: 'action',
+            header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
+            cell: ({ row }) => {
+                // Do not show edit button on totals row
+                if (row.original._isTotalRow) return null;
+                return (
+                    <Button size="sm" onClick={() => { setSelectedRow(row.original); setUpdateModalOpen(true); }}>
+                        Edit
+                    </Button>
+                );
+            },
+            size: 80,
+        },
+        {
             accessorKey: 'fab_created_date',
             header: ({ column }) => <DataGridColumnHeader title="CREATED DATE" column={column} />,
             cell: ({ row }) => formatDate(row.original.fab_created_date),
@@ -118,12 +137,25 @@ export function RedosReport() {
             },
             size: 450,
         },
-        
+        {
+            accessorKey: 'no_of_pieces',
+            header: ({ column }) => <DataGridColumnHeader title="NO OF PIECES" column={column} />,
+            cell: ({ row }) => row.original.no_of_pieces?.toString() ?? '-',
+            size: 80,
+        },
         {
             accessorKey: 'sqft',
             header: ({ column }) => <DataGridColumnHeader title="SQFT" column={column} />,
             cell: ({ row }) => row.original.sqft.toFixed(2),
             size: 80,
+        },
+        {
+            accessorKey: 'cost_per_sqft',
+            header: ({ column }) => <DataGridColumnHeader title="COST PER SQFT" column={column} />,
+            cell: ({ row }) => row.original.cost_per_sqft !== null && row.original.cost_per_sqft !== undefined
+                ? `$${row.original.cost_per_sqft.toFixed(2)}`
+                : '-',
+            size: 120,
         },
         {
             accessorKey: 'total_cost',
@@ -264,6 +296,28 @@ export function RedosReport() {
                     <CardFooter><DataGridPagination /></CardFooter>
                 </Card>
             </DataGrid>
+            {/* Update Modal */}
+            <UpdateRedoModal
+                open={updateModalOpen}
+                onClose={() => {
+                    setUpdateModalOpen(false);
+                    setSelectedRow(null);
+                }}
+                fabId={selectedRow?.fab_id ?? 0}
+                initialData={selectedRow ? {
+                    no_of_pieces: selectedRow.no_of_pieces ?? undefined,
+                    sqft: selectedRow.sqft,
+                     cost_per_sqft: selectedRow.cost_per_sqft ?? undefined,
+                    total_cost: selectedRow.total_cost ?? undefined,
+                    department: selectedRow.department ?? undefined,
+                    person_name: selectedRow.person_name ?? undefined,
+                    reason: selectedRow.reason ?? undefined,
+                    department_options: selectedRow.department_options ?? [],
+                } : undefined}
+                onUpdateSuccess={() => {
+                    // Refetch data if needed – the mutation invalidates tags, so it should auto-refetch
+                }}
+            />
         </div>
     );
 }

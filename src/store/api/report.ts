@@ -157,6 +157,31 @@ export const reportApi = createApi({
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
+            // Add inside endpoints builder
+            updateRedo: build.mutation<any, { fab_id: number; data: any }>({
+                query: ({ fab_id, data }) => ({
+                    url: `/api/v1/reports/redos/${fab_id}`,
+                    method: "patch",
+                    data,
+                }),
+                invalidatesTags: ["Report"],
+            }),
+            updateMonthlyInstallCompletion: build.mutation<any, { fab_id: number; data: any }>({
+                query: ({ fab_id, data }) => ({
+                    url: `/api/v1/reports/owner/monthly-install-completion/${fab_id}`,
+                    method: "patch",
+                    data,
+                }),
+                invalidatesTags: ["Report"],
+            }),
+            updateDailyInstallCompletion: build.mutation<any, { fab_id: number; data: any }>({
+                query: ({ fab_id, data }) => ({
+                    url: `/api/v1/reports/owner/daily-install-completion/${fab_id}`,
+                    method: "patch",
+                    data,
+                }),
+                invalidatesTags: ["Report"],
+            }),
         };
     },
 });
@@ -179,4 +204,7 @@ export const {
     useGetTurnaroundTimesQuery,
     useGetServiceLevelQuery,
     useGetInstallerRatesQuery,
+    useUpdateRedoMutation,
+    useUpdateMonthlyInstallCompletionMutation,
+    useUpdateDailyInstallCompletionMutation,
 } = reportApi;
