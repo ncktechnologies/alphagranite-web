@@ -37,6 +37,9 @@ interface WeeklyData {
     overhead_per_week: number;
 }
 
+const $ = (v: number) => `$${v.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+const num = (v: number, d = 2) => v.toFixed(d);
+
 export function WeeklyFabricationCostReport() {
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth() + 1;
@@ -72,84 +75,113 @@ export function WeeklyFabricationCostReport() {
         {
             accessorKey: 'completed_sqft',
             header: ({ column }) => <DataGridColumnHeader title="COMPLETED SQFT" column={column} />,
-            cell: ({ row }) => row.original.completed_sqft.toFixed(2),
+            cell: ({ row }) => num(row.original.completed_sqft),
             size: 120,
         },
         {
             accessorKey: 'cut_sqft_saw',
             header: ({ column }) => <DataGridColumnHeader title="CUT SQFT (SAW)" column={column} />,
-            cell: ({ row }) => row.original.cut_sqft_saw.toFixed(2),
+            cell: ({ row }) => num(row.original.cut_sqft_saw),
             size: 120,
         },
         {
             accessorKey: 'wj_sqft',
             header: ({ column }) => <DataGridColumnHeader title="WJ SQFT" column={column} />,
-            cell: ({ row }) => row.original.wj_sqft.toFixed(2),
+            cell: ({ row }) => num(row.original.wj_sqft),
             size: 90,
         },
         {
             accessorKey: 'gross_revenue',
             header: ({ column }) => <DataGridColumnHeader title="GROSS REVENUE" column={column} />,
-            cell: ({ row }) => `$${row.original.gross_revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+            cell: ({ row }) => $(row.original.gross_revenue),
             size: 130,
         },
         {
             accessorKey: 'gross_profit',
             header: ({ column }) => <DataGridColumnHeader title="GROSS PROFIT" column={column} />,
-            cell: ({ row }) => `$${row.original.gross_profit.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+            cell: ({ row }) => $(row.original.gross_profit),
             size: 130,
         },
         {
             accessorKey: 'total_labor_cost',
             header: ({ column }) => <DataGridColumnHeader title="LABOR COST" column={column} />,
-            cell: ({ row }) => `$${row.original.total_labor_cost.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
+            cell: ({ row }) => $(row.original.total_labor_cost),
             size: 110,
         },
         {
             accessorKey: 'total_hours',
             header: ({ column }) => <DataGridColumnHeader title="TOTAL HOURS" column={column} />,
-            cell: ({ row }) => row.original.total_hours.toFixed(2),
+            cell: ({ row }) => num(row.original.total_hours),
             size: 100,
         },
         {
             accessorKey: 'labor_cost_per_sq_ft',
             header: ({ column }) => <DataGridColumnHeader title="LABOR $/SQFT" column={column} />,
-            cell: ({ row }) => `$${row.original.labor_cost_per_sq_ft.toFixed(2)}`,
+            cell: ({ row }) => $(row.original.labor_cost_per_sq_ft),
             size: 110,
         },
         {
             accessorKey: 'gross_revenue_per_sqft_fabricated',
             header: ({ column }) => <DataGridColumnHeader title="REVENUE/SQFT" column={column} />,
-            cell: ({ row }) => `$${row.original.gross_revenue_per_sqft_fabricated.toFixed(2)}`,
+            cell: ({ row }) => $(row.original.gross_revenue_per_sqft_fabricated),
             size: 120,
         },
         {
             accessorKey: 'shop_total_cost_per_sqft',
             header: ({ column }) => <DataGridColumnHeader title="TOTAL COST/SQFT" column={column} />,
-            cell: ({ row }) => `$${row.original.shop_total_cost_per_sqft.toFixed(2)}`,
+            cell: ({ row }) => $(row.original.shop_total_cost_per_sqft),
             size: 130,
         },
     ], []);
 
+    // Build data with totals row only on first page
+    const dataWithTotal = useMemo(() => {
+        if (!totals) return weeklyData;
+        if (pagination.pageIndex !== 0) return weeklyData;
+        const totalRow: any = {
+            week_ending: 'MONTH TOTAL',
+            number_of_days: totals.number_of_days,
+            completed_sqft: totals.completed_sqft,
+            cut_sqft_saw: totals.cut_sqft_saw,
+            wj_sqft: totals.wj_sqft,
+            gross_revenue: totals.gross_revenue,
+            gross_profit: totals.gross_profit,
+            total_labor_cost: totals.total_labor_cost,
+            total_hours: totals.total_hours,
+            labor_cost_per_sq_ft: totals.labor_cost_per_sq_ft,
+            gross_revenue_per_sqft_fabricated: totals.gross_revenue_per_sqft_fabricated,
+            shop_total_cost_per_sqft: totals.shop_total_cost_per_sqft,
+        };
+        return [totalRow, ...weeklyData];
+    }, [totals, weeklyData, pagination.pageIndex]);
+
     const table = useReactTable({
         columns,
-        data: weeklyData,
+        data: dataWithTotal,
         state: { pagination },
         onPaginationChange: setPagination,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
+        meta: {
+            getRowAttributes: (row) => {
+                if (row.original.week_ending === 'MONTH TOTAL') {
+                    return { className: 'bg-[#f0f7e0] font-semibold [&>td]:border-0' };
+                }
+                return {};
+            },
+        },
     });
-
-    const formatCurrency = (value: number) => `$${value.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
     if (isLoading) return <div className="p-5">Loading fabrication cost report...</div>;
     if (isError) return <div className="p-5 text-red-500">Error loading report.</div>;
+
+    const monthName = new Date(year, month - 1, 1).toLocaleString('default', { month: 'long' });
 
     return (
         <div className="p-5">
             <DataGrid
                 table={table}
-                recordCount={weeklyData.length}
+                recordCount={dataWithTotal.length}
                 tableLayout={{
                     columnsPinnable: true,
                     columnsMovable: true,
@@ -161,7 +193,7 @@ export function WeeklyFabricationCostReport() {
                 <Card>
                     <CardHeader className="py-3.5 border-b flex flex-row items-center justify-between">
                         <h2 className="text-lg font-semibold">
-                            Weekly Fabrication Labor Cost – {new Date(year, month - 1, 1).toLocaleString('default', { month: 'long' })} {year}
+                            Weekly Fabrication Labor Cost – {monthName} {year}
                         </h2>
                         <CardToolbar>
                             <div className="flex items-center gap-2">
@@ -222,39 +254,25 @@ export function WeeklyFabricationCostReport() {
                                         ))}
                                     </thead>
                                     <tbody>
-                                        {/* Totals row – first row, no cell borders, background color */}
-                                        {totals && (
-                                            <tr className="bg-[#f0f7e0] font-semibold">
-                                                <td className="px-3 py-2 text-sm">MONTH TOTAL</td>
-                                                <td className="px-3 py-2 text-sm">{totals.number_of_days}</td>
-                                                <td className="px-3 py-2 text-sm">{totals.completed_sqft.toFixed(2)}</td>
-                                                <td className="px-3 py-2 text-sm">{totals.cut_sqft_saw.toFixed(2)}</td>
-                                                <td className="px-3 py-2 text-sm">{totals.wj_sqft.toFixed(2)}</td>
-                                                <td className="px-3 py-2 text-sm">{formatCurrency(totals.gross_revenue)}</td>
-                                                <td className="px-3 py-2 text-sm">{formatCurrency(totals.gross_profit)}</td>
-                                                <td className="px-3 py-2 text-sm">{formatCurrency(totals.total_labor_cost)}</td>
-                                                <td className="px-3 py-2 text-sm">{totals.total_hours.toFixed(2)}</td>
-                                                <td className="px-3 py-2 text-sm">{formatCurrency(totals.labor_cost_per_sq_ft)}</td>
-                                                <td className="px-3 py-2 text-sm">{formatCurrency(totals.gross_revenue_per_sqft_fabricated)}</td>
-                                                <td className="px-3 py-2 text-sm">{formatCurrency(totals.shop_total_cost_per_sqft)}</td>
-                                            </tr>
-                                        )}
-
-                                        {/* Data rows – with borders and standard DataGrid cell styling */}
-                                        {table.getRowModel().rows.map((row) => (
-                                            <tr key={row.id} className="border-b border-gray-200">
-                                                {row.getVisibleCells().map((cell) => (
-                                                    <td
-                                                        key={cell.id}
-                                                        className="px-2 py-1 text-xs text-gray-700 break-words whitespace-normal border-r border-gray-200"
-                                                        style={{ width: cell.column.getSize() }}
-                                                    >
-                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                    </td>
-                                                ))}
-                                            </tr>
-                                        ))}
-
+                                        {table.getRowModel().rows.map((row) => {
+                                            const isTotalRow = row.original.week_ending === 'MONTH TOTAL';
+                                            return (
+                                                <tr key={row.id} className={!isTotalRow ? 'border-b border-gray-200' : ''}>
+                                                    {row.getVisibleCells().map((cell) => (
+                                                        <td
+                                                            key={cell.id}
+                                                            className={cn(
+                                                                'px-2 py-1 text-xs text-gray-700 break-words whitespace-normal',
+                                                                !isTotalRow && 'border-r border-gray-200'
+                                                            )}
+                                                            style={{ width: cell.column.getSize() }}
+                                                        >
+                                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                        </td>
+                                                    ))}
+                                                </tr>
+                                            );
+                                        })}
                                         {weeklyData.length === 0 && (
                                             <tr>
                                                 <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-muted-foreground">

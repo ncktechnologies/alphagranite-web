@@ -47,17 +47,6 @@ import { cn } from '@/lib/utils';
 
 // ---------- Configuration (removed redos and weekly-fabrication-cost) ----------
 const reportConfig: Record<string, { hook: any; title: string; groupBy?: string }> = {
-    'weekly-installer-cost': { hook: useGetWeeklyInstallerLaborCostQuery, title: 'Weekly Installer Labor Cost' },
-    'owner-overview': { hook: useGetOwnerOverviewQuery, title: 'Owner Overview' },
-    'redo-analysis': { hook: useGetRedoAnalysisQuery, title: 'Redo Analysis' },
-    'shop-status': { hook: useGetShopStatusReportQuery, title: 'Shop Status' },
-    'install-performance': { hook: useGetInstallPerformanceQuery, title: 'Install Performance' },
-    'weekly-trends': { hook: useGetWeeklyTrendsQuery, title: 'Weekly Trends' },
-    'installation-template': { hook: useGetInstallationTemplateReportQuery, title: 'Installation Template', groupBy: 'installer' },
-    'monthly-install-completion': { hook: useGetMonthlyInstallCompletionQuery, title: 'Monthly Install Completion' },
-    'daily-install-completion': { hook: useGetDailyInstallCompletionQuery, title: 'Daily Install Completion' },
-    'monthly-cut-completion': { hook: useGetMonthlyCutCompletionQuery, title: 'Monthly Cut Completion' },
-    'turnaround-times': { hook: useGetTurnaroundTimesQuery, title: 'Turnaround Times' },
     'service-level': { hook: useGetServiceLevelQuery, title: 'Service Level' },
     'installer-rates': { hook: useGetInstallerRatesQuery, title: 'Installer Rates' },
 };

@@ -76,6 +76,20 @@ import CostOfStonePage from '@/pages/jobs/roles/cost_of_stone.tsx/CostOfStonePag
 import ReportPage from '@/pages/reports/ReportPage';
 import { RedosReport } from '@/pages/reports/RedosReport';
 import { WeeklyFabricationCostReport } from '@/pages/reports/WeeklyFabCost';
+import { WeeklyInstallerCostReport } from '@/pages/reports/WeeklyInstallerCost';
+import { InstallPerformance } from '@/pages/reports/InstallPerformance';
+import { ShopStatusReport } from '@/pages/reports/ShopStatus';
+import { TurnaroundTimesReport } from '@/pages/reports/TurnaroundTimes';
+import { MonthlyCutCompletionReport } from '@/pages/reports/MonthlyCut';
+import { DailyInstallCompletionReport } from '@/pages/reports/DailyInstallationCut';
+import { MonthlyInstallCompletionReport } from '@/pages/reports/MonthlyInstallCompletion';
+import { WeeklyTrendsReport } from '@/pages/reports/WeeklyTrends';
+import { InstallationTemplateReport } from '@/pages/reports/InstallationTemplates';
+import { OwnerOverview } from '@/pages/reports/OwnerOverview';
+import { OwnerOverviewReport } from '@/pages/reports/OwnerReview';
+import { RedoAnalysisReport } from '@/pages/reports/RedoAnalysis';
+import { InstallerRatesReport } from '@/pages/reports/InstallerRates';
+import { ServiceLevelReport } from '@/pages/reports/ServiceLevel';
 
 export function AppRoutingSetup() {
   return (
@@ -487,9 +501,24 @@ export function AppRoutingSetup() {
           />
           
           {/* Reports Route */}
-          <Route path="/report/:reportId" element={<ReportPage />} />
+          {/* <Route path="/report/:reportId" element={<ReportPage />} /> */}
+          <Route path="/report/installer-rates" element={<InstallerRatesReport />} />
           <Route path="/report/redos" element={<RedosReport />} />
           <Route path="/report/weekly-fabrication-cost" element={<WeeklyFabricationCostReport />} />
+          <Route path="/report/weekly-installer-cost" element={<WeeklyInstallerCostReport />} />
+          <Route path="/report/install-performance" element={<InstallPerformance/>} />
+          <Route path="/report/shop-status" element={<ShopStatusReport />} />
+          <Route path="/report/turnaround-times" element={<TurnaroundTimesReport />} />
+          <Route path='/report/monthly-cut-completion' element={<MonthlyCutCompletionReport />} />
+          <Route path='/report/daily-install-completion' element={<DailyInstallCompletionReport />} />
+          <Route path='/report/monthly-install-completion' element={<MonthlyInstallCompletionReport />} />
+          <Route path='/report/weekly-trends' element={<WeeklyTrendsReport />} />
+          <Route path="/report/installation-template" element={<InstallationTemplateReport />} />
+          <Route path="/report/owner-overview" element={<OwnerOverviewReport />} />
+          <Route path="/report/redo-analysis" element={<RedoAnalysisReport />} />
+          <Route path="/report/service-level" element={<ServiceLevelReport />} />
+
+
 
 
 
