@@ -16,19 +16,16 @@ import {
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 
-// ── Schema — all measurement fields added ─────────────────────────────────────
+// Schema: all measurement fields are required (can be "0")
 const submissionSchema = z.object({
-  // existing
-  totalSqft:    z.string().optional(),
-  noOfPieces:   z.string().optional(),
+  totalSqft:    z.string().min(1, "Total Sq Ft is required"),
+  noOfPieces:   z.string().min(1, "No. of Pieces is required"),
   draftNotes:   z.string().optional(),
-  // new — mi\
-  // rrors UpdateFabIdModal fields
-  wjLinFt:      z.string().optional(),
-  edgingLinFt:  z.string().optional(),
-  cncLinFt:     z.string().optional(),
-  miterLinFt:   z.string().optional(),
-  sawCutLnft:   z.string().optional(),
+  wjLinFt:      z.string().min(1, "WJ Lin Ft is required"),
+  edgingLinFt:  z.string().min(1, "Edging Lin Ft is required"),
+  cncLinFt:     z.string().min(1, "CNC Lin Ft is required"),
+  miterLinFt:   z.string().min(1, "Miter Lin Ft is required"),
+  sawCutLnft:   z.string().min(1, "Saw Cut Ln Ft is required"),
 });
 
 type SubmissionData = z.infer<typeof submissionSchema>;
@@ -95,14 +92,11 @@ export function SubmissionModal({
     if (!fpId) {
       try {
         await updateFab({ id: fabId, data: { final_programming_needed: true } }).unwrap();
-        // toast.info('Initializing final programming session...');
       } catch (updateError) {
         console.error('Failed to update FAB for final programming:', updateError);
-        // toast.error('Failed to initialize final programming session');
         return;
       }
       fpId = drafting?.id ?? drafting?.data?.id;
-      // if (!fpId) toast.warning('Proceeding without session ID - files may not be saved');
     }
 
     if (!isConfirmed) {
@@ -125,21 +119,20 @@ export function SubmissionModal({
         }
       }
 
-      // 2. Update FAB with all measurement fields
-      const fabUpdateData: Record<string, any> = {};
-      if (values.totalSqft)   fabUpdateData.total_sqft    = parseFloat(values.totalSqft);
-      if (values.noOfPieces)  fabUpdateData.no_of_pieces  = parseInt(values.noOfPieces);
-      if (values.wjLinFt)     fabUpdateData.wj_linft      = parseFloat(values.wjLinFt);
-      if (values.edgingLinFt) fabUpdateData.edging_linft  = parseFloat(values.edgingLinFt);
-      if (values.cncLinFt)    fabUpdateData.cnc_linft     = parseFloat(values.cncLinFt);
-      if (values.miterLinFt)  fabUpdateData.miter_linft   = parseFloat(values.miterLinFt);
-      if (values.sawCutLnft)  fabUpdateData.saw_cut_lnft  = parseFloat(values.sawCutLnft);
+      // 2. Update FAB with all measurement fields (all are now guaranteed to have a value)
+      const fabUpdateData: Record<string, any> = {
+        total_sqft:    parseFloat(values.totalSqft),
+        no_of_pieces:  parseInt(values.noOfPieces),
+        wj_linft:      parseFloat(values.wjLinFt),
+        edging_linft:  parseFloat(values.edgingLinFt),
+        cnc_linft:     parseFloat(values.cncLinFt),
+        miter_linft:   parseFloat(values.miterLinFt),
+        saw_cut_lnft:  parseFloat(values.sawCutLnft),
+      };
 
-      if (Object.keys(fabUpdateData).length > 0) {
-        await updateFab({ id: fabId, data: fabUpdateData }).unwrap();
-      }
+      await updateFab({ id: fabId, data: fabUpdateData }).unwrap();
 
-      // 3. Complete the final programming (mark as done)
+      // 3. Complete final programming
       await completeFinalProgramming({
         fab_id: fabId,
         data: {
@@ -170,17 +163,14 @@ export function SubmissionModal({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleFinalSubmit)} className="space-y-6 py-4">
-
-            {/* ── Row 1: Pieces + Total Sq Ft + WJ Lin Ft ─────────────────── */}
             <div>
-              
               <div className="grid grid-cols-3 gap-4">
                 <FormField
                   control={form.control}
                   name="noOfPieces"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>No. of Pieces</FormLabel>
+                      <FormLabel>No. of Pieces *</FormLabel>
                       <FormControl>
                         <Input placeholder="0" type="number" step="1" {...field} />
                       </FormControl>
@@ -193,7 +183,7 @@ export function SubmissionModal({
                   name="totalSqft"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Total Sq Ft</FormLabel>
+                      <FormLabel>Total Sq Ft *</FormLabel>
                       <FormControl>
                         <Input placeholder="0.00" type="number" step="0.01" {...field} />
                       </FormControl>
@@ -206,7 +196,7 @@ export function SubmissionModal({
                   name="wjLinFt"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>WJ Lin Ft</FormLabel>
+                      <FormLabel>WJ Lin Ft *</FormLabel>
                       <FormControl>
                         <Input placeholder="0.00" type="number" step="0.01" {...field} />
                       </FormControl>
@@ -217,16 +207,14 @@ export function SubmissionModal({
               </div>
             </div>
 
-            {/* ── Row 2: Edging + CNC + Miter + Saw Cut ───────────────────── */}
             <div>
-              
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <FormField
                   control={form.control}
                   name="edgingLinFt"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Edging Lin Ft</FormLabel>
+                      <FormLabel>Edging Lin Ft *</FormLabel>
                       <FormControl>
                         <Input placeholder="0.00" type="number" step="0.01" {...field} />
                       </FormControl>
@@ -239,7 +227,7 @@ export function SubmissionModal({
                   name="cncLinFt"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>CNC Lin Ft</FormLabel>
+                      <FormLabel>CNC Lin Ft *</FormLabel>
                       <FormControl>
                         <Input placeholder="0.00" type="number" step="0.01" {...field} />
                       </FormControl>
@@ -252,7 +240,7 @@ export function SubmissionModal({
                   name="miterLinFt"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Miter Lin Ft</FormLabel>
+                      <FormLabel>Miter Lin Ft *</FormLabel>
                       <FormControl>
                         <Input placeholder="0.00" type="number" step="0.01" {...field} />
                       </FormControl>
@@ -265,7 +253,7 @@ export function SubmissionModal({
                   name="sawCutLnft"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Saw Cut Ln Ft</FormLabel>
+                      <FormLabel>Saw Cut Ln Ft *</FormLabel>
                       <FormControl>
                         <Input placeholder="0.00" type="number" step="0.01" {...field} />
                       </FormControl>
@@ -276,13 +264,12 @@ export function SubmissionModal({
               </div>
             </div>
 
-            {/* ── Notes ───────────────────────────────────────────────────── */}
             <FormField
               control={form.control}
               name="draftNotes"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Notes</FormLabel>
+                  <FormLabel>Notes (optional)</FormLabel>
                   <FormControl>
                     <Textarea
                       placeholder="Add notes about the final programming work..."
@@ -295,7 +282,6 @@ export function SubmissionModal({
               )}
             />
 
-            {/* ── File Summary ─────────────────────────────────────────────── */}
             {uploadedFiles.length > 0 && (
               <div className="rounded-md border p-4">
                 <h3 className="font-medium text-sm mb-2">Files to be submitted</h3>
@@ -312,7 +298,6 @@ export function SubmissionModal({
               </div>
             )}
 
-            {/* ── Confirmation checkbox ─────────────────────────────────── */}
             <div className="flex items-start space-x-2 pt-2">
               <Checkbox
                 id="confirm-completion"
@@ -324,11 +309,10 @@ export function SubmissionModal({
                 htmlFor="confirm-completion"
                 className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
-                Final programming completed
+                Final programming completed *
               </label>
             </div>
 
-            {/* ── Action buttons ────────────────────────────────────────── */}
             <div className="flex justify-end space-x-3 pt-4">
               <Button
                 type="button"
