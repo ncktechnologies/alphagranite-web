@@ -11,8 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
+import { UpdateMonthlyInstallModal } from './component/MonthlyInstallModal';
 
-// Fab type color map (if fab_type column exists)
 const fabTypeColorMap: Record<string, string> = {
     standard: '#9eeb47',
     'fab only': '#5bd1d7',
@@ -33,15 +33,37 @@ export function MonthlyInstallCompletionReport() {
     const [year, setYear] = useState(currentYear);
     const [month, setMonth] = useState(currentMonth);
     const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
+    const [updateModalOpen, setUpdateModalOpen] = useState(false);
+    const [selectedRow, setSelectedRow] = useState<any>(null);
 
-    const { data, isLoading } = useGetMonthlyInstallCompletionQuery({ year, month });
+    const { data, isLoading, refetch } = useGetMonthlyInstallCompletionQuery({ year, month });
     const rows = useMemo(() => data?.data?.rows ?? [], [data]);
     const summary = useMemo(() => data?.data?.summary ?? null, [data]);
 
     const columns = useMemo<ColumnDef<any>[]>(() => {
         if (!rows.length) return [];
         const first = rows[0];
-        return Object.keys(first).map(key => ({
+        const keys = Object.keys(first);
+
+        // Action column at the beginning
+        const actionCol: ColumnDef<any> = {
+            id: 'actions',
+            header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
+            cell: ({ row }) => {
+                if (!row.original.fab_id) return null;
+                return (
+                    <Button size="sm" onClick={() => {
+                        setSelectedRow(row.original);
+                        setUpdateModalOpen(true);
+                    }}>
+                        Edit
+                    </Button>
+                );
+            },
+            size: 80,
+        };
+
+        const dataCols = keys.map(key => ({
             accessorKey: key,
             header: ({ column }) => <DataGridColumnHeader title={key.replace(/_/g, ' ').toUpperCase()} column={column} />,
             size: key === 'job_name' || key === 'fab_info' ? 250 : 130,
@@ -52,6 +74,8 @@ export function MonthlyInstallCompletionReport() {
                 return <span className="text-sm">{val ?? '-'}</span>;
             },
         }));
+
+        return [actionCol, ...dataCols];
     }, [rows]);
 
     const table = useReactTable({
@@ -203,6 +227,25 @@ export function MonthlyInstallCompletionReport() {
                     </CardFooter>
                 </Card>
             </DataGrid>
+
+            {/* Edit Modal */}
+            <UpdateMonthlyInstallModal
+                open={updateModalOpen}
+                onClose={() => {
+                    setUpdateModalOpen(false);
+                    setSelectedRow(null);
+                }}
+                fabId={selectedRow?.fab_id ?? 0}
+                initialData={selectedRow ? {
+                    revenue: selectedRow.revenue,
+                    sq_ft: selectedRow.sq_ft,
+                    revenue_per_sq_ft: selectedRow.revenue_per_sq_ft,
+                    installer_name: selectedRow.installer_name,
+                } : undefined}
+                onUpdateSuccess={() => {
+                    refetch(); // Refetch after update to show changes
+                }}
+            />
         </div>
     );
 }

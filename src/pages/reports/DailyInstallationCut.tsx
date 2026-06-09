@@ -15,6 +15,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { cn } from '@/lib/utils';
+import { UpdateDailyInstallModal } from './component/DailyMonthlyInstall';
 
 const fabTypeColorMap: Record<string, string> = {
     standard: '#9eeb47',
@@ -37,7 +38,7 @@ export function DailyInstallCompletionReport() {
     const [month, setMonth] = useState(new Date());
     const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
     const [updateModalOpen, setUpdateModalOpen] = useState(false);
-    const [selectedRow, setSelectedRow] = useState<DailyInstallRow | null>(null);
+    const [selectedRow, setSelectedRow] = useState<any>(null);
 
     const queryParams = useMemo(() => {
         if (!dateRange?.from) return undefined;
@@ -56,12 +57,11 @@ export function DailyInstallCompletionReport() {
         const first = rows[0];
         const keys = Object.keys(first);
         
-        // Define columns in desired order, with action first
+        // Action column first
         const actionCol: ColumnDef<any> = {
             id: 'actions',
             header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
             cell: ({ row }) => {
-                // Only show edit button if we have a fab_id
                 if (!row.original.fab_id) return null;
                 return (
                     <Button size="sm" onClick={() => {
@@ -99,11 +99,10 @@ export function DailyInstallCompletionReport() {
         getPaginationRowModel: getPaginationRowModel(),
         meta: {
             getRowAttributes: (row) => {
-                if (row.original.fab_type) {
-                    const bgColor = getFabColor(row.original.fab_type);
-                    if (bgColor !== 'transparent') {
-                        return { style: { backgroundColor: bgColor } };
-                    }
+                const fabType = row.original.fab_type?.toLowerCase();
+                const bgColor = getFabColor(fabType);
+                if (bgColor !== 'transparent') {
+                    return { style: { backgroundColor: bgColor } };
                 }
                 return {};
             },
@@ -163,7 +162,7 @@ export function DailyInstallCompletionReport() {
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Revenue / SQFT</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.revenue_per_sq_ft.toFixed(2)}</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.revenue_per_sq_ft?.toFixed(2) ?? '0.00'}</p>
                     </Card>
                 </div>
             )}
@@ -252,7 +251,7 @@ export function DailyInstallCompletionReport() {
                     installer_name: selectedRow.installer_name,
                 } : undefined}
                 onUpdateSuccess={() => {
-                    refetch(); // Refetch data after update
+                    refetch();
                 }}
             />
         </div>
