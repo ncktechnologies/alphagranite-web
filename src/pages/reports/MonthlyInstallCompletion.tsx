@@ -12,6 +12,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 
+// Fab type color map (if fab_type column exists)
+const fabTypeColorMap: Record<string, string> = {
+    standard: '#9eeb47',
+    'fab only': '#5bd1d7',
+    'cust redo': '#f0bf4c',
+    resurface: '#d094ea',
+    'fast track': '#f59794',
+    'ag redo': '#f5cc94',
+};
+
+const getFabColor = (fabType: string | undefined): string => {
+    if (!fabType) return 'transparent';
+    return fabTypeColorMap[fabType.toLowerCase()] || 'transparent';
+};
+
 export function MonthlyInstallCompletionReport() {
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth() + 1;
@@ -39,30 +54,154 @@ export function MonthlyInstallCompletionReport() {
         }));
     }, [rows]);
 
-    const table = useReactTable({ columns, data: rows, state: { pagination }, onPaginationChange: setPagination, getCoreRowModel: getCoreRowModel(), getPaginationRowModel: getPaginationRowModel() });
+    const table = useReactTable({
+        columns,
+        data: rows,
+        state: { pagination },
+        onPaginationChange: setPagination,
+        getCoreRowModel: getCoreRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        meta: {
+            getRowAttributes: (row) => {
+                if (row.original.fab_type) {
+                    const bgColor = getFabColor(row.original.fab_type);
+                    if (bgColor !== 'transparent') {
+                        return { style: { backgroundColor: bgColor } };
+                    }
+                }
+                return {};
+            },
+        },
+    });
 
-    if (isLoading) return <div className="p-5">Loading...</div>;
+    if (isLoading) return <div className="p-5 text-[#7c8689]">Loading monthly install completion report...</div>;
+
+    const monthName = new Date(year, month - 1, 1).toLocaleString('default', { month: 'long' });
 
     return (
-        <div className="p-5">
-            <div className="flex justify-between items-center mb-4">
-                <h1 className="text-2xl font-semibold">Monthly Install Completion</h1>
-                <div className="flex gap-2">
-                    <Select value={String(year)} onValueChange={(v) => setYear(parseInt(v))}><SelectTrigger className="w-24"><SelectValue /></SelectTrigger><SelectContent>{[2024,2025,2026,2027].map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}</SelectContent></Select>
-                    <Select value={String(month)} onValueChange={(v) => setMonth(parseInt(v))}><SelectTrigger className="w-32"><SelectValue /></SelectTrigger><SelectContent>{Array.from({length:12},(_,i)=>i+1).map(m => <SelectItem key={m} value={String(m)}>{new Date(2000,m-1,1).toLocaleString('default',{month:'long'})}</SelectItem>)}</SelectContent></Select>
-                    <Button variant="outline" onClick={() => exportTableToCSV(table, `monthly-install-${year}-${month}`)}>Export CSV</Button>
+        <div className="flex flex-col gap-5 p-5">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+                <h1 className="text-2xl font-semibold text-[#4b545d]">Monthly Install Completion</h1>
+                <div className="flex items-center gap-2">
+                    <Select value={String(year)} onValueChange={(v) => setYear(parseInt(v))}>
+                        <SelectTrigger className="w-[100px] h-[34px] border-[#e2e4ed]">
+                            <SelectValue placeholder="Year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {[2024, 2025, 2026, 2027].map(y => (
+                                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Select value={String(month)} onValueChange={(v) => setMonth(parseInt(v))}>
+                        <SelectTrigger className="w-[130px] h-[34px] border-[#e2e4ed]">
+                            <SelectValue placeholder="Month" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                                <SelectItem key={m} value={String(m)}>
+                                    {new Date(2000, m - 1, 1).toLocaleString('default', { month: 'long' })}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
             </div>
+
+            {/* Summary Widgets */}
             {summary && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                    <Card className="p-4"><div className="text-sm">Pieces</div><div className="text-2xl font-bold">{summary.pieces}</div></Card>
-                    <Card className="p-4"><div className="text-sm">SQ FT</div><div className="text-2xl font-bold">{summary.sq_ft.toFixed(2)}</div></Card>
-                    <Card className="p-4"><div className="text-sm">Revenue</div><div className="text-2xl font-bold">${summary.revenue.toFixed(2)}</div></Card>
-                    <Card className="p-4"><div className="text-sm">Revenue/SQFT</div><div className="text-2xl font-bold">${summary.revenue_per_sq_ft.toFixed(2)}</div></Card>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Pieces</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.pieces.toLocaleString()}</p>
+                    </Card>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">SQ FT</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.sq_ft.toFixed(2)}</p>
+                    </Card>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Revenue</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
+                    </Card>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Revenue / SQFT</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.revenue_per_sq_ft.toFixed(2)}</p>
+                    </Card>
                 </div>
             )}
-            <DataGrid table={table} recordCount={rows.length} tableLayout={{ cellBorder: true }}>
-                <Card><CardHeader className="py-3 border-b"><CardToolbar /></CardHeader><CardTable><ScrollArea className="h-[calc(100vh-300px)]"><DataGridTable /><ScrollBar orientation="horizontal" /></ScrollArea></CardTable><CardFooter><DataGridPagination /></CardFooter></Card>
+
+            {/* Data Table */}
+            <DataGrid table={table} recordCount={rows.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
+                <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
+                    <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
+                        <p className="text-base font-semibold text-[#4b545d]">{monthName} {year} – Install Details</p>
+                        <CardToolbar>
+                            <Button variant="outline" size="sm" className="h-[34px] border-[#e2e4ed]" onClick={() => exportTableToCSV(table, `monthly-install-${year}-${month}`)}>
+                                Export CSV
+                            </Button>
+                        </CardToolbar>
+                    </CardHeader>
+                    <CardTable>
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-300px)] bg-white">
+                            <div className="relative">
+                                <table className="w-full border-collapse table-fixed">
+                                    <thead className="sticky top-0 z-10 bg-white">
+                                        {table.getHeaderGroups().map(headerGroup => (
+                                            <tr key={headerGroup.id}>
+                                                {headerGroup.headers.map(header => (
+                                                    <th
+                                                        key={header.id}
+                                                        className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] border-b border-[#e2e4ed] bg-gray-50"
+                                                        style={{ width: header.getSize() }}
+                                                    >
+                                                        {flexRender(header.column.columnDef.header, header.getContext())}
+                                                        {header.column.getCanResize() && (
+                                                            <div
+                                                                onDoubleClick={() => header.column.resetSize()}
+                                                                onMouseDown={header.getResizeHandler()}
+                                                                onTouchStart={header.getResizeHandler()}
+                                                                className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                            />
+                                                        )}
+                                                    </th>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                    </thead>
+                                    <tbody>
+                                        {table.getRowModel().rows.map(row => {
+                                            const rowAttrs = table.options.meta?.getRowAttributes?.(row) || {};
+                                            return (
+                                                <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50" {...rowAttrs}>
+                                                    {row.getVisibleCells().map(cell => (
+                                                        <td
+                                                            key={cell.id}
+                                                            className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
+                                                            style={{ width: cell.column.getSize() }}
+                                                        >
+                                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                        </td>
+                                                    ))}
+                                                </tr>
+                                            );
+                                        })}
+                                        {rows.length === 0 && (
+                                            <tr>
+                                                <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
+                                                    No data available.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <ScrollBar orientation="horizontal" />
+                        </ScrollArea>
+                    </CardTable>
+                    <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">
+                        <DataGridPagination />
+                    </CardFooter>
+                </Card>
             </DataGrid>
         </div>
     );
