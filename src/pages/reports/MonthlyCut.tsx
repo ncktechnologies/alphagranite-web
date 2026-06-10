@@ -46,24 +46,24 @@ export function MonthlyCutCompletionReport() {
         const keys = Object.keys(first);
 
         // Action column at the beginning
-        const actionCol: ColumnDef<any> = {
-            id: 'actions',
-            header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
-            cell: ({ row }) => {
-                // Use monthly_cut_id or cut_id – check the actual field name from API
-                const cutId = row.original.fab_id ?? row.original.cut_id;
-                if (!cutId) return null;
-                return (
-                    <Button size="sm" onClick={() => {
-                        setSelectedRow(row.original);
-                        setUpdateModalOpen(true);
-                    }}>
-                        Edit
-                    </Button>
-                );
-            },
-            size: 80,
-        };
+        // const actionCol: ColumnDef<any> = {
+        //     id: 'actions',
+        //     header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
+        //     cell: ({ row }) => {
+        //         // Use monthly_cut_id or cut_id – check the actual field name from API
+        //         const cutId = row.original.fab_id ?? row.original.cut_id;
+        //         if (!cutId) return null;
+        //         return (
+        //             <Button size="sm" onClick={() => {
+        //                 setSelectedRow(row.original);
+        //                 setUpdateModalOpen(true);
+        //             }}>
+        //                 Edit
+        //             </Button>
+        //         );
+        //     },
+        //     size: 80,
+        // };
 
         const dataCols = keys.map(key => {
             let headerTitle = key.replace(/_/g, ' ').toUpperCase();
@@ -84,7 +84,7 @@ export function MonthlyCutCompletionReport() {
             };
         });
 
-        return [actionCol, ...dataCols];
+        return [...dataCols];
     }, [rows]);
 
     const table = useReactTable({

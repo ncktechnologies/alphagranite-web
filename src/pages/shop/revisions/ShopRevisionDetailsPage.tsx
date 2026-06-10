@@ -47,7 +47,7 @@ const ShopRevisionDetailsPage = () => {
   const [revisionFeedback, setRevisionFeedback] = useState('');
 
   // Data fetching
-  const { data: revisionsData, isLoading: revisionsLoading } = useGetShopRevisionsByFabIdQuery(numericFabId, {
+  const { data: revisionsData, isLoading: revisionsLoading, refetch: refetchRevisions } = useGetShopRevisionsByFabIdQuery(numericFabId, {
     skip: !numericFabId,
   });
   const { data: fabResponse, refetch: refetchFab } = useGetFabByIdQuery(numericFabId, { skip: !numericFabId });
@@ -165,6 +165,7 @@ const ShopRevisionDetailsPage = () => {
       setMarkChecked(false);
       setRevisionFeedback('');
       setShowCompleteFeedbackDialog(false);
+      refetchRevisions();
       refetchFab();
     } catch (error: any) {
       toast.error(error?.data?.message || 'Failed to complete revision.');

@@ -46,22 +46,22 @@ export function MonthlyInstallCompletionReport() {
         const keys = Object.keys(first);
 
         // Action column at the beginning
-        const actionCol: ColumnDef<any> = {
-            id: 'actions',
-            header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
-            cell: ({ row }) => {
-                if (!row.original.fab_id) return null;
-                return (
-                    <Button size="sm" onClick={() => {
-                        setSelectedRow(row.original);
-                        setUpdateModalOpen(true);
-                    }}>
-                        Edit
-                    </Button>
-                );
-            },
-            size: 80,
-        };
+        // const actionCol: ColumnDef<any> = {
+        //     id: 'actions',
+        //     header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
+        //     cell: ({ row }) => {
+        //         if (!row.original.fab_id) return null;
+        //         return (
+        //             <Button size="sm" onClick={() => {
+        //                 setSelectedRow(row.original);
+        //                 setUpdateModalOpen(true);
+        //             }}>
+        //                 Edit
+        //             </Button>
+        //         );
+        //     },
+        //     size: 80,
+        // };
 
         const dataCols = keys.map(key => ({
             accessorKey: key,
@@ -75,7 +75,7 @@ export function MonthlyInstallCompletionReport() {
             },
         }));
 
-        return [actionCol, ...dataCols];
+        return [...dataCols];
     }, [rows]);
 
     const table = useReactTable({
