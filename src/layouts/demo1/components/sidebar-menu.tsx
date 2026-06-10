@@ -23,9 +23,7 @@ export function SidebarMenu() {
   const { pathname } = useLocation();
   const permissions = useAllPermissions();
   const isSuperAdmin = useIsSuperAdmin();
-  const { data: shopRevisionCount = 0 } = useGetShopRevisionCountQuery(undefined, {
-    pollingInterval: 15000,
-  });
+  const { data: shopRevisionCount = 0 } = useGetShopRevisionCountQuery();
 
   // Memoize matchPath to prevent unnecessary re-renders
   const matchPath = useCallback(

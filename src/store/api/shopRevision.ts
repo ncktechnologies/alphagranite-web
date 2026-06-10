@@ -54,7 +54,7 @@ export interface ShopRevisionSuccessResponse<T = any> {
 export const shopRevisionApi = createApi({
   reducerPath: "shopRevisionApi",
   baseQuery: axiosBaseQuery({ baseUrl }),
-  tagTypes: ["ShopRevision"],
+  tagTypes: ["ShopRevision", "Task"],
   endpoints: (builder) => ({
     createShopRevision: builder.mutation<ShopRevisionSuccessResponse<ShopRevision>, CreateShopRevisionPayload>({
       query: (data) => ({
@@ -102,7 +102,7 @@ export const shopRevisionApi = createApi({
         method: "PATCH",
         data: { revision_feedback },
       }),
-      invalidatesTags: ["ShopRevision"],
+      invalidatesTags: ["ShopRevision", { type: "Task" }],
     }),
   }),
 });

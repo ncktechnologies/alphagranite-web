@@ -87,13 +87,9 @@ export function OperatorTaskDetails() {
     const currentFabId = Number(currentTask?.fab_id || 0);
 
     const [createShopRevision, { isLoading: isCreatingRevision }] = useCreateShopRevisionMutation();
-    const { data: revisionFabsData } = useGetShopRevisionFabsQuery(undefined, {
-        pollingInterval: 15000,
-    });
+    const { data: revisionFabsData } = useGetShopRevisionFabsQuery();
     const { data: fabRevisionsData, isLoading: isRevisionsLoading } = useGetShopRevisionsByFabIdQuery(currentFabId, {
         skip: !currentFabId,
-        pollingInterval: 15000,
-        refetchOnMountOrArgChange: true,
     });
 
     const revisions: any[] = Array.isArray(fabRevisionsData) ? fabRevisionsData : [];
