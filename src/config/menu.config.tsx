@@ -67,65 +67,69 @@ import { RiBuilding2Line, RiBuildingLine, RiNodeTree, RiNotification3Line, RiShi
 export const MENU_SIDEBAR: MenuConfig = [
   {
     title: 'Dashboard',
-    icon: "dashboard.svg",
-    path: '/'
+    icon: 'dashboard.svg',
+    path: '/',
+    permissionKey: 'dashboard',
   },
   { heading: 'Menu' },
   {
     title: 'Employees',
     icon:'user-profile.svg',
-    path: '/employees'
+    path: '/employees',
+    permissionKey: 'employees',
   },
   {
     title: 'Department',
     icon: 'profile.svg',
-    path: '/departments'
+    path: '/departments',
+    permissionKey: 'department',
   },
    {
     title: 'Jobs',
     icon: 'building.svg',
     path: '/job', // Changed from '/job/sales' to '/job' for dashboard
+    permissionKey: 'jobs',
     children: [
-          { title: 'View Job Widgets', path: '/job' },
-          { title: 'Manage Jobs', path: '/create-jobs' },
-          { title: 'View All Fabs', path: '/sales' },
-          { title: 'Need to Invoice', path: '/need-to-invoice' },
-          { title: 'Job Status', path: '/report-status' },
+          { title: 'View Job Widgets', path: '/job', permissionKey: 'job_widgets' },
+          { title: 'Manage Jobs', path: '/create-jobs', permissionKey: 'manage_jobs' },
+          { title: 'View All Fabs', path: '/sales', permissionKey: 'view_all_fabs' },
+          { title: 'Need to Invoice', path: '/need-to-invoice', permissionKey: 'need_to_invoice' },
+          { title: 'Job Status', path: '/report-status', permissionKey: 'job_status' },
         ],
   },
   {
     title: 'Shop',
     icon: 'shop.svg',
     path: '/shop',
+    permissionKey: 'shop',
     children: [
-          // { title: 'View Job Widgets', path: '/job' },
-          { title: 'Shop Planning', path: '/shop' },
-          { title: 'Shop Status', path: '/status' },
-          { title: 'Shop Revision', path: '/revision' },
-          { title: 'Resurfacing Status', path: '/resurfacing-status' },
-
+          { title: 'Shop Planning', path: '/shop', permissionKey: 'shop_planning' },
+          { title: 'Shop Status', path: '/status', permissionKey: 'shop_status' },
+          { title: 'Shop Revision', path: '/revision', permissionKey: 'shop_revision' },
+          { title: 'Resurfacing Status', path: '/resurfacing-status', permissionKey: 'shop_resurfacing_status' },
         ],
   },
   {
     title: 'Reports',
     icon: 'building.svg',
     path: '/report',
+    permissionKey: 'reports',
     children: [
-      { title: 'Redos', path: '/report/redos' },
-      { title: 'Weekly Fabrication Cost', path: '/report/weekly-fabrication-cost' },
-      { title: 'Weekly Installer Cost', path: '/report/weekly-installer-cost' },
-      { title: 'Owner Overview', path: '/report/owner-overview' },
-      { title: 'Redo Analysis', path: '/report/redo-analysis' },
-      { title: 'Shop Status', path: '/report/shop-status' },
-      { title: 'Install Performance', path: '/report/install-performance' },
-      { title: 'Weekly Trends', path: '/report/weekly-trends' },
-      { title: 'Installation Template', path: '/report/installation-template' },
-      { title: 'Monthly Install Comp.', path: '/report/monthly-install-completion' },
-      { title: 'Daily Install Comp.', path: '/report/daily-install-completion' },
-      { title: 'Monthly Cut Comp.', path: '/report/monthly-cut-completion' },
-      { title: 'Turnaround Times', path: '/report/turnaround-times' },
-      { title: 'Service Level', path: '/report/service-level' },
-      { title: 'Installer Rates', path: '/report/installer-rates' },
+      { title: 'Redos', path: '/report/redos', permissionKey: 'redos' },
+      { title: 'Weekly Fabrication Cost', path: '/report/weekly-fabrication-cost', permissionKey: 'weekly_fabrication_cost' },
+      { title: 'Weekly Installer Cost', path: '/report/weekly-installer-cost', permissionKey: 'weekly_installer_cost' },
+      { title: 'Owner Overview', path: '/report/owner-overview', permissionKey: 'owner_overview' },
+      { title: 'Redo Analysis', path: '/report/redo-analysis', permissionKey: 'redo_analysis' },
+      { title: 'Shop Status', path: '/report/shop-status', permissionKey: 'report_shop_status' },
+      { title: 'Install Performance', path: '/report/install-performance', permissionKey: 'install_performance' },
+      { title: 'Weekly Trends', path: '/report/weekly-trends', permissionKey: 'weekly_trends' },
+      { title: 'Installation Template', path: '/report/installation-template', permissionKey: 'installation_template' },
+      { title: 'Monthly Install Comp.', path: '/report/monthly-install-completion', permissionKey: 'monthly_install_completion' },
+      { title: 'Daily Install Comp.', path: '/report/daily-install-completion', permissionKey: 'daily_install_completion' },
+      { title: 'Monthly Cut Comp.', path: '/report/monthly-cut-completion', permissionKey: 'monthly_cut_completion' },
+      { title: 'Turnaround Times', path: '/report/turnaround-times', permissionKey: 'turnaround_times' },
+      { title: 'Service Level', path: '/report/service-level', permissionKey: 'service_level' },
+      { title: 'Installer Rates', path: '/report/installer-rates', permissionKey: 'installer_rates' },
     ],
   },
   // {
@@ -136,59 +140,58 @@ export const MENU_SIDEBAR: MenuConfig = [
   {
     title: 'Settings',
     icon: 'settings.svg',
-    path: '/settings/profile'
+    path: '/settings/profile',
+    permissionKey: 'settings',
   },
 ];
 
 export const SETTINGS_NAV:MenuConfig = [
-  
   {
-    title: "Profile",
+    title: 'Profile',
     icon: RiUser3Line,
-    path:'/settings/profile'
+    path:'/settings/profile',
+    permissionKey: 'settings_profile',
   },
   // Super admin only sections
   {
-    title: "Roles & Permissions",
+    title: 'Roles & Permissions',
     icon: RiNodeTree,
     path:'/settings/roles',
-    superAdminOnly: true
+    superAdminOnly: true,
+    permissionKey: 'roles_permissions',
   },
   {
-    title: "Permissions Management",
+    title: 'Permissions Management',
     icon: RiShieldKeyholeLine,
     path:'/settings/permissions',
-    superAdminOnly: true
+    superAdminOnly: true,
+    permissionKey: 'permissions_management',
   },
   {
-    title: "Notifications",
-    icon: RiNotification3Line,
-    path:'/settings/notifications',
-    superAdminOnly: true
-  },
-  {
-    title: "Stone Types & Colors",
+    title: 'Stone Types & Colors',
     icon: Diamond,
     path:'/settings/stone-types',
-    superAdminOnly: true
+    permissionKey: 'stone_types_colors',
   }
 ];
 export const SHOP_NAV:MenuConfig = [
-  
   {
-    title: "Shop settings",
+    title: 'Shop settings',
     icon: Users,
-    path:'/shop/settings'
+    path:'/shop/settings',
+    permissionKey: 'shop_settings',
   },
   {
-    title: "Roles & Permissions",
+    title: 'Roles & Permissions',
     icon: Users,
-    path:'/settings/roles'
+    path:'/settings/roles',
+    permissionKey: 'roles_permissions',
   },
   {
-    title: "Notifications",
+    title: 'Notifications',
     icon: Users,
-    path:'/settings/notifications'
+    path:'/settings/notifications',
+    permissionKey: 'notifications',
   }
 ];
 export const roles: Role[] = [

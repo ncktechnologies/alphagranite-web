@@ -50,24 +50,24 @@ export const PermissionsTable = ({
                 Module
               </TableHead>
               <TableHead className="min-w-24 text-secondary-foreground font-normal text-center h-10">
-                Create
+                Write
               </TableHead>
               <TableHead className="min-w-24 text-secondary-foreground font-normal text-center h-10">
                 Read
               </TableHead>
-              <TableHead className="min-w-24 text-secondary-foreground font-normal text-center h-10">
+              {/* <TableHead className="min-w-24 text-secondary-foreground font-normal text-center h-10">
                 Update
               </TableHead>
               <TableHead className="min-w-24 text-secondary-foreground font-normal text-center h-10">
                 Delete
-              </TableHead>
+              </TableHead> */}
             </TableRow>
           </TableHeader>
           <TableBody>
             {actionMenus?.map((actionMenu) => (
               <TableRow key={actionMenu.code} className="">
                 <TableCell className="py-2.5!">{actionMenu.name}</TableCell>
-                {(['create', 'read', 'update', 'delete'] as const).map((action) => (
+                {(['create', 'read'] as const).map((action) => (
                   <TableCell key={action} className="py-2.5! text-center ">
                     <Checkbox
                       checked={permissions[actionMenu.code]?.[action] || false}

@@ -1,9 +1,9 @@
 import { ChevronDown } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
-import { MenuConfig } from '@/config/types';
+import { MenuConfig, MenuItem } from '@/config/types';
 import { cn } from '@/lib/utils';
 import { useMenu } from '@/hooks/use-menu';
-import { useIsSuperAdmin } from '@/hooks/use-permission';
+import { useIsSuperAdmin, useAllPermissions } from '@/hooks/use-permission';
 import {
   Menubar,
   MenubarContent,
@@ -19,14 +19,93 @@ const NavbarMenu = ({ items }: { items: MenuConfig }) => {
   const { pathname } = useLocation();
   const { isActive, hasActiveChild } = useMenu(pathname);
   const isSuperAdmin = useIsSuperAdmin();
+  const permissions = useAllPermissions();
 
-  // Filter menu items based on super admin status
-  const filteredItems = items.filter(item => {
-    // If item doesn't have superAdminOnly property, show it to everyone
-    if (!item.superAdminOnly) return true;
-    // If item is superAdminOnly, only show it to super admins
-    return isSuperAdmin;
-  });
+  const normalizePermissionKey = (key: string) =>
+    key
+      .toString()
+      .trim()
+      .replace(/[^a-zA-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .toLowerCase();
+
+  const getPermissionKey = (item: MenuItem): string | null => {
+    if (item.permissionKey) return item.permissionKey;
+    if (item.title) return item.title;
+    if (item.path) {
+      const pathSegments = item.path.split('/').filter(Boolean);
+      if (pathSegments.length) return pathSegments.join('_');
+    }
+    return null;
+  };
+
+  const hasReadPermission = (item: MenuItem): boolean => {
+    if (isSuperAdmin) return true;
+    const permissionKey = getPermissionKey(item);
+    if (!permissionKey) return false;
+
+    // Special case: stone_types_colors requires EITHER stone_type OR stone_color permission
+    if (permissionKey === 'stone_types_colors') {
+      const stoneTypeKeysToTry = ['stone_type', 'Stone Type', 'stone_types'];
+      const stoneColorKeysToTry = ['stone_color', 'Stone Color', 'stone_colors'];
+      
+      let hasStoneTypeRead = false;
+      let hasStoneColorRead = false;
+      
+      for (const key of stoneTypeKeysToTry) {
+        const perm = permissions[normalizePermissionKey(key) as keyof typeof permissions];
+        if (perm?.can_read === true) {
+          hasStoneTypeRead = true;
+          break;
+        }
+      }
+      
+      for (const key of stoneColorKeysToTry) {
+        const perm = permissions[normalizePermissionKey(key) as keyof typeof permissions];
+        if (perm?.can_read === true) {
+          hasStoneColorRead = true;
+          break;
+        }
+      }
+      
+      return hasStoneTypeRead || hasStoneColorRead;
+    }
+
+    const keysToTry = [
+      permissionKey,
+      normalizePermissionKey(permissionKey),
+      permissionKey.toLowerCase(),
+      permissionKey.replace(/_/g, ' '),
+      normalizePermissionKey(permissionKey.replace(/_/g, ' ')),
+    ];
+
+    for (const key of keysToTry) {
+      const permission = permissions[key as keyof typeof permissions];
+      if (permission?.can_read === true) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  const filterMenuByPermissions = (items: MenuConfig): MenuConfig => {
+    return items.filter(item => {
+      // If item has superAdminOnly, only show to super admins
+      if (item.superAdminOnly && !isSuperAdmin) return false;
+      
+      // If item has permissionKey, check if user has permission
+      if (item.permissionKey) {
+        return hasReadPermission(item);
+      }
+
+      // If no permissionKey, show it
+      return true;
+    });
+  };
+
+  // Filter menu items based on super admin status and permissions
+  const filteredItems = filterMenuByPermissions(items);
 
   const buildMenu = (items: MenuConfig) => {
     return items.map((item, index) => {
@@ -82,7 +161,8 @@ const NavbarMenu = ({ items }: { items: MenuConfig }) => {
   };
 
   const buildSubMenu = (items: MenuConfig) => {
-    return items.map((item, index) => {
+    const filteredSubItems = filterMenuByPermissions(items);
+    return filteredSubItems.map((item, index) => {
       if (item.children) {
         return (
           <MenubarSub key={index}>

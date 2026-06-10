@@ -6,6 +6,7 @@ export interface MenuItem {
   icon?: LucideIcon | RemixiconComponentType | string;
   path?: string;
   rootPath?: string;
+  permissionKey?: string;
   childrenIndex?: number;
   heading?: string;
   children?: MenuConfig;

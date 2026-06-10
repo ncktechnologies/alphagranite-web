@@ -30,59 +30,142 @@ export function SidebarMenu() {
     [pathname],
   );
 
-  // Map menu paths to permission codes
-  // Note: Dashboard and Settings are always visible to all users
-  // Dashboard shows role-based widgets filtered by permissions
-  // Settings shows only Profile for non-super admin users
-  const getMenuCode = (path: string): string | null => {
-    if (path === '/') return null; // Dashboard - always visible
-    if (path.startsWith('/employees')) return 'employees';
-    if (path.startsWith('/departments')) return 'department';
-    if (path.startsWith('/job')) return 'jobs';
-    if (path.startsWith('/shop')) return 'shop';
-    if (path.startsWith('/settings')) return null; // Settings - always visible
+  const normalizePermissionKey = (key: string) =>
+    key
+      .toString()
+      .trim()
+      .replace(/[^a-zA-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .toLowerCase();
+
+  const getPermissionKey = (item: MenuItem): string | null => {
+    if (item.permissionKey) return item.permissionKey;
+    if (item.title) return item.title;
+    if (item.path) {
+      const pathSegments = item.path.split('/').filter(Boolean);
+      if (pathSegments.length) return pathSegments.join('_');
+    }
     return null;
   };
 
-  // Filter menu items based on permissions
-  const filterMenuByPermissions = useCallback((items: MenuConfig): MenuConfig => {
-    return items.filter(item => {
-      // Always show headings and separators
-      if (item.heading || item.separator) return true;
+  const hasReadPermission = (item: MenuItem): boolean => {
+    if (isSuperAdmin) return true;
+    const permissionKey = getPermissionKey(item);
+    if (!permissionKey) return false;
+
+    // Special case: stone_types_colors requires EITHER stone_type OR stone_color permission
+    if (permissionKey === 'stone_types_colors') {
+      const stoneTypeKeysToTry = ['stone_type', 'Stone Type', 'stone_types'];
+      const stoneColorKeysToTry = ['stone_color', 'Stone Color', 'stone_colors'];
       
-      // Always show Dashboard and Settings for all users
-      if (item.path === '/' || item.path?.startsWith('/settings')) return true;
+      let hasStoneTypeRead = false;
+      let hasStoneColorRead = false;
       
-      // Super admins see everything else
-      if (isSuperAdmin) return true;
-      
-      // Check permission for this menu item
-      if (item.path) {
-        const menuCode = getMenuCode(item.path);
-        if (menuCode && permissions[menuCode]) {
-          // User has at least read permission
-          return permissions[menuCode].can_read;
+      for (const key of stoneTypeKeysToTry) {
+        const perm = permissions[normalizePermissionKey(key) as keyof typeof permissions];
+        if (perm?.can_read === true) {
+          hasStoneTypeRead = true;
+          break;
         }
       }
       
-      // If item has children, check if any children are accessible
-      if (item.children) {
-        const filteredChildren = filterMenuByPermissions(item.children);
-        return filteredChildren.length > 0;
+      for (const key of stoneColorKeysToTry) {
+        const perm = permissions[normalizePermissionKey(key) as keyof typeof permissions];
+        if (perm?.can_read === true) {
+          hasStoneColorRead = true;
+          break;
+        }
       }
       
-      // Default: hide if no permission found
-      return false;
-    }).map(item => {
-      // If item has children, filter them too
-      if (item.children) {
-        return {
-          ...item,
-          children: filterMenuByPermissions(item.children)
-        };
+      return hasStoneTypeRead || hasStoneColorRead;
+    }
+
+    const keysToTry = [
+      permissionKey,
+      normalizePermissionKey(permissionKey),
+      permissionKey.toLowerCase(),
+      permissionKey.replace(/_/g, ' '),
+      normalizePermissionKey(permissionKey.replace(/_/g, ' ')),
+    ];
+
+    for (const key of keysToTry) {
+      const permission = permissions[key as keyof typeof permissions];
+      if (permission?.can_read === true) {
+        return true;
       }
-      return item;
-    });
+    }
+
+    return false;
+  };
+
+  const filterMenuByPermissions = useCallback((items: MenuConfig, parentPermissionKey?: string): MenuConfig => {
+    return items.reduce<MenuConfig>((filtered, item) => {
+      // Always keep headings and separators
+      if (item.heading || item.separator) {
+        filtered.push(item);
+        return filtered;
+      }
+
+      // Always show Dashboard for all users
+      if (item.path === '/') {
+        filtered.push(item);
+        return filtered;
+      }
+
+      if (!isSuperAdmin && ['Employees', 'Department'].includes(item.title || '')) {
+        return filtered;
+      }
+
+      if (item.superAdminOnly && !isSuperAdmin) {
+        return filtered;
+      }
+
+      let children: MenuConfig | undefined;
+      if (item.children) {
+        // Pass current item's permissionKey to children for context
+        const currentPermKey = getPermissionKey(item);
+        children = filterMenuByPermissions(item.children, currentPermKey);
+      }
+
+      // For children of stone_types_colors, use parent's combined permission
+      let itemHasPermission: boolean;
+      if (parentPermissionKey === 'stone_types_colors') {
+        const stoneTypeKeysToTry = ['stone_type', 'Stone Type', 'stone_types'];
+        const stoneColorKeysToTry = ['stone_color', 'Stone Color', 'stone_colors'];
+        
+        let hasStoneTypeRead = false;
+        let hasStoneColorRead = false;
+        
+        for (const key of stoneTypeKeysToTry) {
+          const perm = permissions[normalizePermissionKey(key) as keyof typeof permissions];
+          if (perm?.can_read === true) {
+            hasStoneTypeRead = true;
+            break;
+          }
+        }
+        
+        for (const key of stoneColorKeysToTry) {
+          const perm = permissions[normalizePermissionKey(key) as keyof typeof permissions];
+          if (perm?.can_read === true) {
+            hasStoneColorRead = true;
+            break;
+          }
+        }
+        
+        itemHasPermission = hasStoneTypeRead || hasStoneColorRead;
+      } else {
+        itemHasPermission = hasReadPermission(item);
+      }
+
+      const hasAccessibleChildren = children?.length ? true : false;
+
+      if (!itemHasPermission && !hasAccessibleChildren) {
+        return filtered;
+      }
+
+      filtered.push(item.children ? { ...item, children } : item);
+      return filtered;
+    }, []);
   }, [permissions, isSuperAdmin]);
 
   // Memoize filtered menu
