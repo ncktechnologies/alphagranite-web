@@ -82,7 +82,20 @@ export const shopRevisionApi = createApi({
       transformResponse: (response: any) => response?.data ?? response ?? [],
       providesTags: (_result, _error, fab_id) => [{ type: "ShopRevision", id: fab_id }],
     }),
-
+    getShopRevisionCount: builder.query<number, void>({
+      query: () => ({
+        url: "/api/v1/shop-revisions/count",
+        method: "GET",
+      }),
+      transformResponse: (response: any) => {
+        if (typeof response === 'number') return response;
+        if (typeof response?.data === 'number') return response.data;
+        if (typeof response?.data?.count === 'number') return response.data.count;
+        if (typeof response?.count === 'number') return response.count;
+        return 0;
+      },
+      providesTags: ["ShopRevision"],
+    }),
     completeShopRevision: builder.mutation<ShopRevisionSuccessResponse<ShopRevision>, { revision_id: number; revision_feedback?: string }>({
       query: ({ revision_id, revision_feedback }) => ({
         url: `/api/v1/shop-revisions/${revision_id}/complete`,
@@ -98,5 +111,6 @@ export const {
   useCreateShopRevisionMutation,
   useGetShopRevisionFabsQuery,
   useGetShopRevisionsByFabIdQuery,
+  useGetShopRevisionCountQuery,
   useCompleteShopRevisionMutation,
 } = shopRevisionApi;

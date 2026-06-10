@@ -17,11 +17,13 @@ import {
 } from '@/components/ui/accordion-menu';
 import { Badge } from '@/components/ui/badge';
 import { useAllPermissions, useIsSuperAdmin } from '@/hooks/use-permission';
+import { useGetShopRevisionCountQuery } from '@/store/api/shopRevision';
 
 export function SidebarMenu() {
   const { pathname } = useLocation();
   const permissions = useAllPermissions();
   const isSuperAdmin = useIsSuperAdmin();
+  const { data: shopRevisionCount = 0 } = useGetShopRevisionCountQuery();
 
   // Memoize matchPath to prevent unnecessary re-renders
   const matchPath = useCallback(
@@ -324,6 +326,7 @@ export function SidebarMenu() {
         </AccordionMenuSub>
       );
     } else {
+      const badgeText = item.badge ?? (item.path?.endsWith('/revision') ? String(shopRevisionCount) : undefined);
       return (
         <AccordionMenuItem
           key={index}
@@ -331,6 +334,15 @@ export function SidebarMenu() {
           className="text-[14px]"
         >
           <Link to={item.path || '#'}>{item.title}</Link>
+          {badgeText !== undefined && (
+            <Badge
+              variant="secondary"
+              size="sm"
+              className="ms-auto me-[-10px] bg-[#667F01] text-white"
+            >
+              {badgeText}
+            </Badge>
+          )}
         </AccordionMenuItem>
       );
     }
