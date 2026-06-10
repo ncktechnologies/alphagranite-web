@@ -249,19 +249,7 @@ export function RoleBasedDashboard() {
       );
     }
     
-    // Render store widgets with title for non-super-admins
-    if (storeWidgets.length > 0) {
-      elements.push(
-        <div key="store-widgets">
-          {!isSuperAdmin && (
-            <div className="mb-6">
-              <h2 className="text-xl font-bold text-gray-800 mb-4">Store</h2>
-            </div>
-          )}
-          {renderWidgetSection(storeWidgets)}
-        </div>
-      );
-    }
+    
     
     return elements;
   };
@@ -296,33 +284,7 @@ export function RoleBasedDashboard() {
           </div>
         )}
 
-        {/* FAB, Statistics, and Finance Section */}
-        {(sectionWidgetsByCategory.fab.length > 0 ||
-          sectionWidgetsByCategory.chart.length > 0 ||
-          sectionWidgetsByCategory.finance.length > 0) && (
-            <div className="grid lg:grid-cols-3 gap-5 lg:gap-7.5 items-stretch mt-5">
-              {sectionWidgetsByCategory.fab
-                .filter(w => w.id === 'newly-assigned-fab')
-                .map(renderWidget)}
-              {sectionWidgetsByCategory.chart
-                .filter(w => w.id === 'overall-statistics')
-                .map(renderWidget)}
-              {sectionWidgetsByCategory.finance.map(renderWidget)}
-            </div>
-          )}
-
-        {/* Earnings Chart and Paused Jobs Section */}
-        {(sectionWidgetsByCategory.chart.some(w => w.id === 'earnings-chart') ||
-          sectionWidgetsByCategory.fab.some(w => w.id === 'paused-jobs')) && (
-            <div className="grid lg:grid-cols-3 gap-5 lg:gap-7.5 items-stretch mt-5">
-              {sectionWidgetsByCategory.chart
-                .filter(w => w.id === 'earnings-chart')
-                .map(renderWidget)}
-              {sectionWidgetsByCategory.fab
-                .filter(w => w.id === 'paused-jobs')
-                .map(renderWidget)}
-            </div>
-          )}
+      
       </>
     );
   };

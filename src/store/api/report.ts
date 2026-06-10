@@ -182,6 +182,15 @@ export const reportApi = createApi({
                 }),
                 invalidatesTags: ["Report"],
             }),
+            // in reportApi.ts (mutations section)
+            updateMonthlyCutCompletion: build.mutation<any, { cut_id: number; data: any }>({
+                query: ({ cut_id, data }) => ({
+                    url: `/api/v1/reports/owner/monthly-cut-completion/${cut_id}`,
+                    method: "patch",
+                    data,
+                }),
+                invalidatesTags: ["Report"],
+            }),
         };
     },
 });
@@ -207,4 +216,5 @@ export const {
     useUpdateRedoMutation,
     useUpdateMonthlyInstallCompletionMutation,
     useUpdateDailyInstallCompletionMutation,
+    useUpdateMonthlyCutCompletionMutation,
 } = reportApi;

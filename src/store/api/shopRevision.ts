@@ -8,9 +8,13 @@ export interface ShopRevision {
   id: number;
   fab_id: number;
   revision_note: string;
+  revision_feedback?: string;
   requested_by: number;
+  requested_by_name?: string;
   assigned_to: number;
+  assigned_to_name?: string;
   revision_completed: boolean;
+  completed_at?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -79,10 +83,11 @@ export const shopRevisionApi = createApi({
       providesTags: (_result, _error, fab_id) => [{ type: "ShopRevision", id: fab_id }],
     }),
 
-    completeShopRevision: builder.mutation<ShopRevisionSuccessResponse<ShopRevision>, number>({
-      query: (revision_id) => ({
+    completeShopRevision: builder.mutation<ShopRevisionSuccessResponse<ShopRevision>, { revision_id: number; revision_feedback?: string }>({
+      query: ({ revision_id, revision_feedback }) => ({
         url: `/api/v1/shop-revisions/${revision_id}/complete`,
         method: "PATCH",
+        data: { revision_feedback },
       }),
       invalidatesTags: ["ShopRevision"],
     }),

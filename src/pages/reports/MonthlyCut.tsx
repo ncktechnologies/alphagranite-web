@@ -11,8 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
+import { UpdateMonthlyCutModal } from './component/MonthlyCutModal';
 
-// Fab type color map (if fab_type column exists)
 const fabTypeColorMap: Record<string, string> = {
     standard: '#9eeb47',
     'fab only': '#5bd1d7',
@@ -33,25 +33,58 @@ export function MonthlyCutCompletionReport() {
     const [year, setYear] = useState(currentYear);
     const [month, setMonth] = useState(currentMonth);
     const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
+    const [updateModalOpen, setUpdateModalOpen] = useState(false);
+    const [selectedRow, setSelectedRow] = useState<any>(null);
 
-    const { data, isLoading } = useGetMonthlyCutCompletionQuery({ year, month });
+    const { data, isLoading, refetch } = useGetMonthlyCutCompletionQuery({ year, month });
     const rows = useMemo(() => data?.data?.rows ?? [], [data]);
     const summary = useMemo(() => data?.data?.summary ?? null, [data]);
 
     const columns = useMemo<ColumnDef<any>[]>(() => {
         if (!rows.length) return [];
         const first = rows[0];
-        return Object.keys(first).map(key => ({
-            accessorKey: key,
-            header: ({ column }) => <DataGridColumnHeader title={key.replace(/_/g, ' ').toUpperCase()} column={column} />,
-            size: key === 'job_name' || key === 'fab_info' ? 250 : 130,
+        const keys = Object.keys(first);
+
+        // Action column at the beginning
+        const actionCol: ColumnDef<any> = {
+            id: 'actions',
+            header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
             cell: ({ row }) => {
-                let val = row.original[key];
-                if (key.includes('date') && val) val = format(new Date(val), 'MMM dd, yyyy');
-                if (typeof val === 'number') val = val.toLocaleString();
-                return <span className="text-sm">{val ?? '-'}</span>;
+                // Use monthly_cut_id or cut_id – check the actual field name from API
+                const cutId = row.original.fab_id ?? row.original.cut_id;
+                if (!cutId) return null;
+                return (
+                    <Button size="sm" onClick={() => {
+                        setSelectedRow(row.original);
+                        setUpdateModalOpen(true);
+                    }}>
+                        Edit
+                    </Button>
+                );
             },
-        }));
+            size: 80,
+        };
+
+        const dataCols = keys.map(key => {
+            let headerTitle = key.replace(/_/g, ' ').toUpperCase();
+            // Customize "pieces" field label
+            if (key === 'pieces' || key === 'no_of_pieces') {
+                headerTitle = 'NO OF PIECES';
+            }
+            return {
+                accessorKey: key,
+                header: ({ column }) => <DataGridColumnHeader title={headerTitle} column={column} />,
+                size: key === 'job_name' || key === 'fab_info' ? 250 : 130,
+                cell: ({ row }) => {
+                    let val = row.original[key];
+                    if (key.includes('date') && val) val = format(new Date(val), 'MMM dd, yyyy');
+                    if (typeof val === 'number') val = val.toLocaleString();
+                    return <span className="text-sm">{val ?? '-'}</span>;
+                },
+            };
+        });
+
+        return [actionCol, ...dataCols];
     }, [rows]);
 
     const table = useReactTable({
@@ -112,7 +145,7 @@ export function MonthlyCutCompletionReport() {
             {summary && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Pieces</p>
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">NO OF Pieces</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.pieces.toLocaleString()}</p>
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
@@ -203,6 +236,22 @@ export function MonthlyCutCompletionReport() {
                     </CardFooter>
                 </Card>
             </DataGrid>
+
+            {/* Edit Modal */}
+            <UpdateMonthlyCutModal
+                open={updateModalOpen}
+                onClose={() => {
+                    setUpdateModalOpen(false);
+                    setSelectedRow(null);
+                }}
+                cutId={selectedRow?.fab_id ?? selectedRow?.cut_id ?? 0}
+                initialData={selectedRow ? {
+                    revenue: selectedRow.revenue,
+                    cost_of_stone: selectedRow.cost_of_stone,
+                    revenue_per_sq_ft: selectedRow.revenue_per_sq_ft,
+                } : undefined}
+                onUpdateSuccess={() => refetch()}
+            />
         </div>
     );
 }
