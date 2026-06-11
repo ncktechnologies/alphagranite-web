@@ -195,7 +195,7 @@ export function ReviewChecklistForm() {
 
                     <div className="space-y-3 mt-6">
                         {!isScheduled && (
-                            <Can action="update" on="Templating">
+                            <Can action="create" on="Templating">
                                 <Button className="w-full py-6 text-base" type="submit" disabled={isSubmitting}>
                                     {isSubmitting ? (
                                         <span className="flex items-center gap-2">

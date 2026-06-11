@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { useIsSuperAdmin } from '@/hooks/use-permission';
+import { useIsSuperAdmin, usePermission } from '@/hooks/use-permission'; // 👈 import usePermission
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
@@ -39,12 +39,10 @@ const transformFabToJob = (fab: Fab): IJob => {
         date: fab.templating_actual_end_date ? fab.templating_actual_end_date : fab.template_completed_date,
         current_stage: fab.current_stage,
         sales_person_name: fab.sales_person_name || '',
-        // Optional fields with default values
         acct_name: fab.account_name || '',
         input_area: fab.input_area || '',
         template_received: fab.template_received ? 'Yes' : 'No',
         template_needed: fab.template_needed ? 'No' : 'Yes',
-        // no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
         total_sq_ft: String(fab.total_sqft || "-"),
         revenue: fab.job_details?.project_value || "-",
         gp: "-",
@@ -67,25 +65,24 @@ const transformFabToJob = (fab: Fab): IJob => {
 
 export function PredraftPage() {
     const navigate = useNavigate();
-    const isUserSuperAdmin = useIsSuperAdmin();
+    const isSuperAdmin = useIsSuperAdmin();
+
+    // 👇 Get permissions for the 'predraft' menu
+    const permissions = usePermission('Pre-draft Review');
+
+    // Determine what actions the user is allowed to do
+    const canAddNote = isSuperAdmin || permissions.can_create;      // Add Note menu item
+    const canToggleOnHold = isSuperAdmin || permissions.can_create; // On Hold toggle column
 
     // Fetch sales persons data for filter dropdown
     const { data: salesPersonsData } = useGetSalesPersonsQuery();
 
     // Extract sales persons - keep full objects with id and name
     const salesPersons = useMemo(() => {
-        if (!salesPersonsData) {
-            return [];
-        }
-
-        // Handle both possible response formats
+        if (!salesPersonsData) return [];
         let rawData: any[] = [];
-        if (Array.isArray(salesPersonsData)) {
-            rawData = salesPersonsData;
-        } else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData) {
-            rawData = (salesPersonsData as any).data || [];
-        }
-
+        if (Array.isArray(salesPersonsData)) rawData = salesPersonsData;
+        else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData) rawData = (salesPersonsData as any).data || [];
         return rawData;
     }, [salesPersonsData]);
 
@@ -102,59 +99,33 @@ export function PredraftPage() {
         persistState: false,
     });
 
-    // Calculate skip value for pagination
     const skip = tableState.pagination.pageIndex * tableState.pagination.pageSize;
 
-    // Build query params for backend
     const queryParams = useMemo(() => {
         const params: any = {
             skip,
             limit: tableState.pagination.pageSize,
-            current_stage: 'pre_draft_review', // Pre-draft review stage
+            current_stage: 'pre_draft_review',
         };
-
-        if (tableState.searchQuery) {
-            params.search = tableState.searchQuery;
-        }
-        if (tableState.searchType) {
-            params.type = tableState.searchType;
-        }
-        if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') {
-            params.fab_type = tableState.fabTypeFilter;
-        }
-
-        // Add sales person filter using ID
+        if (tableState.searchQuery) params.search = tableState.searchQuery;
+        if (tableState.searchType) params.type = tableState.searchType;
+        if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') params.fab_type = tableState.fabTypeFilter;
         if (tableState.salesPersonFilter && tableState.salesPersonFilter !== 'all') {
-            if (tableState.salesPersonFilter === 'no_sales_person') {
-                // Filter for fabs without a sales person - backend should handle empty/null
-                params.sales_person_name = '';
-            } else {
-                // Find the sales person object by name and get the ID
+            if (tableState.salesPersonFilter === 'no_sales_person') params.sales_person_name = '';
+            else {
                 const selectedSalesPerson = salesPersons.find((sp: any) => sp.name === tableState.salesPersonFilter);
-                if (selectedSalesPerson && selectedSalesPerson.id) {
-                    params.sales_person_id = selectedSalesPerson.id;
-                }
+                if (selectedSalesPerson?.id) params.sales_person_id = selectedSalesPerson.id;
             }
         }
-
         if (tableState.dateFilter && tableState.dateFilter !== 'all') {
-            // For custom date range, use schedule_start_date and schedule_due_date
             if (tableState.dateFilter === 'custom') {
-                if (tableState.dateRange?.from) {
-                    // Use local date string (YYYY-MM-DD)
-                    params.template_completed_start = format(tableState.dateRange.from, 'yyyy-MM-dd');
-                }
-                if (tableState.dateRange?.to) {
-                    params.template_completed_end = format(tableState.dateRange.to, 'yyyy-MM-dd');
-                }
-                // Don't send date_filter when using custom range
+                if (tableState.dateRange?.from) params.template_completed_start = format(tableState.dateRange.from, 'yyyy-MM-dd');
+                if (tableState.dateRange?.to) params.template_completed_end = format(tableState.dateRange.to, 'yyyy-MM-dd');
             } else {
-                // For other filters (today, this_week, etc.), use date_filter
                 params.date_filter = tableState.dateFilter;
             }
         }
-
-        console.log('Pre-draft Query Params:', params); // Debug log
+        console.log('Pre-draft Query Params:', params);
         return params;
     }, [
         skip,
@@ -164,27 +135,23 @@ export function PredraftPage() {
         tableState.salesPersonFilter,
         tableState.dateFilter,
         tableState.dateRange,
-        tableState.searchType
+        tableState.searchType,
+        salesPersons
     ]);
 
-    // Fetch data with backend pagination and filtering
     const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
 
     const handleRowClick = (fabId: string) => {
         navigate(`/job/predraft/${fabId}`);
     };
 
-    // Transform Fab data to IJob format
     const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
 
     if (isLoading && !data) {
         return (
             <Container>
                 <Toolbar>
-                    <ToolbarHeading
-                        title="Pre-draft review"
-                        description=""
-                    />
+                    <ToolbarHeading title="Pre-draft review" description="" />
                 </Toolbar>
                 <div className="space-y-4 mt-4">
                     <Skeleton className="h-16 w-full" />
@@ -199,10 +166,7 @@ export function PredraftPage() {
         return (
             <Container>
                 <Toolbar>
-                    <ToolbarHeading
-                        title="Pre-draft review"
-                        description=""
-                    />
+                    <ToolbarHeading title="Pre-draft review" description="" />
                 </Toolbar>
                 <Alert variant="destructive" className="mt-4">
                     <AlertCircle className="h-4 w-4" />
@@ -214,8 +178,6 @@ export function PredraftPage() {
             </Container>
         );
     }
-
-    console.log('Pre-draft Data:', data); // Debug log
 
     return (
         <Container>
@@ -229,14 +191,15 @@ export function PredraftPage() {
                 jobs={jobsData}
                 path='predraft'
                 isLoading={isLoading && !data}
-                // onRowClick={handleRowClick}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}
                 tableState={tableState}
                 showSalesPersonFilter={true}
-                showScheduleFilter={false} // Remove separate schedule filter
+                showScheduleFilter={false}
                 salesPersons={salesPersons}
-                visibleColumns={['template_needed', 'template_received', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'pre_draft_notes', 'review_completed', 'on_hold']}
+                visibleColumns={['template_needed', 'template_received', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'pre_draft_notes', 'review_completed']}
+                canAddNote={canAddNote}
+                canToggleOnHold={canToggleOnHold}
             />
         </Container>
     );

@@ -18,7 +18,7 @@ import { useNavigate } from 'react-router-dom';
 
 // Create a context to manage the current stage view state at a higher level
 interface CurrentStageContextType {
-  currentStage: string | null;    
+  currentStage: string | null;
   openCurrentStageView: (fabId: string, jobName: string) => void;
 }
 
@@ -44,9 +44,10 @@ interface ActionsCellProps {
   row: Row<IJob>;
   onView?: () => void;
   pageRole?: 'templater' | 'installer';
+  canAddNote?: boolean;
 }
 
-function ActionsCell({ row, onView, pageRole }: ActionsCellProps) {
+function ActionsCell({ row, onView, pageRole, canAddNote = false}: ActionsCellProps) {
   const bulletin = row.original;
   const isSuperAdmin = useIsSuperAdmin();
   const navigate = useNavigate();
@@ -68,16 +69,16 @@ function ActionsCell({ row, onView, pageRole }: ActionsCellProps) {
       navigate(`/jobs/${bulletin.job_id}/installer/timer`);
     }
   };
-  
+
   const context = useCurrentStage();
   const currentStage = context?.currentStage ?? undefined;
-  
+
   const handleNoteSubmit = async (note: string, fabId: string, stage?: string) => {
     try {
       await createFabNote({
         fab_id: parseInt(fabId),
         note,
-        stage:currentStage,
+        stage: currentStage,
       }).unwrap();
     } catch (error) {
       console.error('Error creating note:', error);
@@ -98,13 +99,15 @@ function ActionsCell({ row, onView, pageRole }: ActionsCellProps) {
             <DropdownMenuItem onClick={handleViewDetails}>
               View details
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={(e) => {
-              e.stopPropagation();
-              handleAddNote();
-            }}>
-              <MessageSquare className="mr-2 h-4 w-4" />
-              Add Note
-            </DropdownMenuItem>
+            {canAddNote && (
+              <DropdownMenuItem onClick={(e) => {
+                e.stopPropagation();
+                handleAddNote();
+              }}>
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Add Note
+              </DropdownMenuItem>
+            )}
             {/* {pageRole === 'installer' && (
               <DropdownMenuItem onClick={(e) => {
                 e.stopPropagation();

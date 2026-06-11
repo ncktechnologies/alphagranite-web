@@ -294,7 +294,7 @@ export function TemplatingActivityForm({ fabId, revenue }: TemplatingActivityFor
             <Button type="button" variant="outline" onClick={() => navigate('/job/templating')}>
               Cancel
             </Button>
-            <Can action="update" on="Templating">
+            <Can action="create" on="Templating">
               <Button type="submit" disabled={isSubmitting || !form.formState.isValid}>
                 {isSubmitting ? "Saving..." : "Save"}
               </Button>
