@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { UpdateRedoModal } from './component/RedoModal';
+import { getFabIdLink, getJobNumberLink, renderLink } from '@/lib/reportLinks';
 
 interface RedoItem {
     fab_id: number;
@@ -110,11 +111,21 @@ export function RedosReport() {
         {
             accessorKey: 'fab_id',
             header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
+            cell: ({ row }) => {
+                const fabId = row.original.fab_id;
+                const link = getFabIdLink(fabId);
+                return renderLink(link);
+            },
             size: 80,
         },
         {
             accessorKey: 'job_number',
             header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
+            cell: ({ row }) => {
+                const jobNumber = row.original.job_number;
+                const link = getJobNumberLink(jobNumber);
+                return renderLink(link);
+            },
             size: 100,
         },
         {
@@ -307,8 +318,7 @@ export function RedosReport() {
                 initialData={selectedRow ? {
                     no_of_pieces: selectedRow.no_of_pieces ?? undefined,
                     sqft: selectedRow.sqft,
-                     cost_per_sqft: selectedRow.cost_per_sqft ?? undefined,
-                    total_cost: selectedRow.total_cost ?? undefined,
+                    cost_per_sqft: selectedRow.cost_per_sqft ?? undefined,
                     department: selectedRow.department ?? undefined,
                     person_name: selectedRow.person_name ?? undefined,
                     reason: selectedRow.reason ?? undefined,
