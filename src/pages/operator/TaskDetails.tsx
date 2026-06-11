@@ -690,6 +690,12 @@ export function OperatorTaskDetails() {
                                         <p className="text-xs text-muted-foreground">Revision Note</p>
                                         <p className="text-sm">{selectedRevision.revision_note || '—'}</p>
                                     </div>
+                                    {selectedRevision.revision_feedback && (
+                                        <div className="space-y-1">
+                                            <p className="text-xs text-muted-foreground">Revision Feedback</p>
+                                            <p className="text-sm">{selectedRevision.revision_feedback}</p>
+                                        </div>
+                                    )}
                                     <div className="space-y-1">
                                         <p className="text-xs text-muted-foreground">Requested By</p>
                                         <p className="text-sm">{selectedRevision.requested_by_name || selectedRevision.requested_by || '—'}</p>
