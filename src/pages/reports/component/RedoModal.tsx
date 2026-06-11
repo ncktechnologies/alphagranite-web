@@ -16,11 +16,10 @@ interface UpdateRedoModalProps {
     no_of_pieces?: number;
     sqft?: number;
     cost_per_sqft?: number;
-    total_cost?: number;
     department?: string;
     person_name?: string;
     reason?: string;
-    department_options?: string[] | string; // allow string for safety
+    department_options?: string[] | string;
   };
   onUpdateSuccess?: () => void;
 }
@@ -42,15 +41,6 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
 
   const [updateRedo] = useUpdateRedoMutation();
 
-  const computedTotalCost = useMemo(() => {
-    const sqftNum = parseFloat(sqft);
-    const costNum = parseFloat(costPerSqft);
-    if (!isNaN(sqftNum) && !isNaN(costNum) && sqftNum > 0 && costNum > 0) {
-      return (costNum * sqftNum * 2.1).toFixed(2);
-    }
-    return '';
-  }, [sqft, costPerSqft]);
-
   useEffect(() => {
     if (open && initialData) {
       setNoOfPieces(initialData.no_of_pieces?.toString() ?? '');
@@ -62,15 +52,12 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
     }
   }, [open, initialData]);
 
-  // Safely parse department_options to array
   const departmentOptions = useMemo(() => {
     const opts = initialData?.department_options;
     if (Array.isArray(opts)) return opts;
     if (typeof opts === 'string') return opts.split(',').map(s => s.trim());
     return [];
   }, [initialData?.department_options]);
-
-  console.log('departmentOptions array:', departmentOptions); // debug
 
   const handleSubmit = async () => {
     if (!fabId) {
@@ -82,7 +69,7 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
     if (noOfPieces !== '') payload.no_of_pieces = parseFloat(noOfPieces);
     if (sqft !== '') payload.sqft = parseFloat(sqft);
     if (costPerSqft !== '') payload.cost_per_sqft = parseFloat(costPerSqft);
-    if (computedTotalCost !== '') payload.total_cost = parseFloat(computedTotalCost);
+    // Do NOT include total_cost – backend calculates it
     if (department) payload.department = department;
     if (personName) payload.person_name = personName;
     if (reason) payload.reason = reason;
@@ -110,7 +97,7 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Update Redo – FAB #{fabId}</DialogTitle>
+          <DialogTitle>Update Redo – FAB {fabId}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -141,29 +128,17 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="costPerSqft">Cost per SQFT</Label>
-              <Input
-                id="costPerSqft"
-                type="number"
-                min="0"
-                step="0.01"
-                value={costPerSqft}
-                onChange={(e) => setCostPerSqft(e.target.value)}
-                placeholder="Cost per sq ft"
-              />
-            </div>
-            <div>
-              <Label htmlFor="totalCost">Total Cost (calculated)</Label>
-              <Input
-                id="totalCost"
-                type="text"
-                value={computedTotalCost ? `$${computedTotalCost}` : '—'}
-                disabled
-                className="bg-gray-100"
-              />
-            </div>
+          <div>
+            <Label htmlFor="costPerSqft">Cost per SQFT</Label>
+            <Input
+              id="costPerSqft"
+              type="number"
+              min="0"
+              step="0.01"
+              value={costPerSqft}
+              onChange={(e) => setCostPerSqft(e.target.value)}
+              placeholder="Cost per sq ft"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-4">

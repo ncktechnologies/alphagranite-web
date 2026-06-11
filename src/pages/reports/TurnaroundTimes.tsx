@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
+import { getFabIdLink, getJobNumberLink, renderLink } from '@/lib/reportLinks';
 
 // Fab type color map (if fab_type column exists)
 const fabTypeColorMap: Record<string, string> = {
@@ -25,6 +26,15 @@ const fabTypeColorMap: Record<string, string> = {
 const getFabColor = (fabType: string | undefined): string => {
     if (!fabType) return 'transparent';
     return fabTypeColorMap[fabType.toLowerCase()] || 'transparent';
+};
+const parseFabInfo = (info: string) => {
+    if (!info) return { leftLine1: [], leftLine2: [], right: [] };
+    const parts = info.split(' - ').filter(p => p.trim());
+    return {
+        leftLine1: parts.slice(0, 3),
+        leftLine2: parts.slice(3, 6),
+        right: parts.slice(6),
+    };
 };
 
 export function TurnaroundTimesReport() {
@@ -45,15 +55,65 @@ export function TurnaroundTimesReport() {
         return Object.keys(first).map(key => ({
             accessorKey: key,
             header: ({ column }) => <DataGridColumnHeader title={key.replace(/_/g, ' ').toUpperCase()} column={column} />,
-            size: key === 'fab_info' ? 300 : 100,
+            size: key === 'fab_info' ? 450 : 100,
             cell: ({ row }) => {
                 let val = row.original[key];
-                if (key.includes('date') && val) val = format(new Date(val), 'MMM dd, yyyy');
+                if (key === 'fab_id' && val) {
+                    const link = getFabIdLink(Number(val));
+                   return renderLink(link);
+                }
+                // Job number link (external)
+                if (key === 'job_number' && val) {
+                    const link = getJobNumberLink(String(val));
+                    return renderLink(link);
+                }
+                // Handle fab_info specially
+                if (key === 'fab_info' && typeof val === 'string') {
+                    const { leftLine1, leftLine2, right } = parseFabInfo(val);
+                    return (
+                        <div className="flex gap-4 text-xs max-w-[500px]">
+                            <div className="flex-1 min-w-0">
+                                {leftLine1.length > 0 && (
+                                    <div className=" text-gray-600" title={leftLine1.join(' - ')}>
+                                        {leftLine1.join(' - ')}
+                                    </div>
+                                )}
+                                {leftLine2.length > 0 && (
+                                    <div className=" text-gray-600" title={leftLine2.join(' - ')}>
+                                        {leftLine2.join(' - ')}
+                                    </div>
+                                )}
+                                {leftLine1.length === 0 && leftLine2.length === 0 && (
+                                    <div className=" text-gray-400 italic">No details</div>
+                                )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                {right.length ? (
+                                    <div className=" text-gray-600" title={right.join(' - ')}>
+                                        {right.join(' - ')}
+                                    </div>
+                                ) : (
+                                    <div className="truncate text-gray-400 italic"></div>
+                                )}
+                            </div>
+                        </div>
+                    );
+                }
+                // Date formatting
+                if (key.includes('date') && val) {
+                    try {
+                        val = format(new Date(val), 'MMM dd, yyyy');
+                    } catch (e) {
+                        // keep original
+                    }
+                }
+                // Number formatting
                 if (typeof val === 'number') val = val.toFixed(1);
                 return <span className="text-sm">{val ?? '-'}</span>;
             },
         }));
     }, [rows]);
+
 
     const table = useReactTable({
         columns,
