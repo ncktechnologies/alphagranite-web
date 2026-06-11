@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { formatStage } from './OwnerOverview';
+import { getJobNumberLink, renderLink } from '@/lib/reportLinks';
 
 interface RedoStageRow {
     stage: string;
@@ -30,9 +31,9 @@ interface JobRow {
 
 export function RedoAnalysisReport() {
     const { data, isLoading } = useGetRedoAnalysisQuery();
-    const [stagePagination, setStagePagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
-    const [accountPagination, setAccountPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
-    const [jobPagination, setJobPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
+    const [stagePagination, setStagePagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
+    const [accountPagination, setAccountPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
+    const [jobPagination, setJobPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
 
     const summary = useMemo(() => data?.data?.summary ?? null, [data]);
     const redoByStage: RedoStageRow[] = useMemo(() => data?.data?.redo_by_stage ?? [], [data]);
@@ -56,7 +57,16 @@ export function RedoAnalysisReport() {
     ], []);
 
     const jobColumns = useMemo<ColumnDef<JobRow>[]>(() => [
-        { accessorKey: 'job_number', header: ({ column }) => <DataGridColumnHeader title="JOB #" column={column} />, size: 120 },
+        {
+            accessorKey: 'job_number',
+            header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
+            cell: ({ row }) => {
+                const jobNumber = row.original.job_number;
+                const link = getJobNumberLink(jobNumber);
+                return renderLink(link);
+            },
+            size: 100,
+        },
         { accessorKey: 'job_name', header: ({ column }) => <DataGridColumnHeader title="JOB NAME" column={column} />, size: 250 },
         { accessorKey: 'redo_count', header: ({ column }) => <DataGridColumnHeader title="REDO COUNT" column={column} />, size: 120 },
     ], []);
@@ -78,7 +88,7 @@ export function RedoAnalysisReport() {
                     </CardToolbar>
                 </CardHeader>
                 <CardTable>
-                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[300px] bg-white">
+                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[500px] bg-white">
                         <table className="w-full border-collapse table-fixed">
                             <thead className="sticky top-0 z-10 bg-white">
                                 {table.getHeaderGroups().map(headerGroup => (

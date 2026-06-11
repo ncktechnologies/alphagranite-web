@@ -311,7 +311,7 @@ export function ServiceLevelReport() {
                     <Card className="p-4"><div className="text-sm text-[#7c8689]">Overdue (Red)</div><div className="text-2xl font-semibold text-red-600">{widgets.overdue_red}</div></Card>
                     <Card className="p-4"><div className="text-sm text-[#7c8689]">Avg Cycle Time</div><div className="text-2xl font-semibold">{widgets.avg_cycle_time_days?.toFixed(1)} days</div></Card>
                     {widgets.oldest_open_job && (
-                        <Card className="p-4"><div className="text-sm text-[#7c8689]">Oldest Open Job</div><div className="text-lg font-semibold">FAB #{widgets.oldest_open_job.fab_id}</div><div className="text-xs">{widgets.oldest_open_job.current_stage} – {widgets.oldest_open_job.age_days} days</div></Card>
+                        <Card className="p-4"><div className="text-sm text-[#7c8689]">Oldest Open Job</div><div className="text-lg font-semibold">FAB Id{widgets.oldest_open_job.fab_id}</div><div className="text-xs">{widgets.oldest_open_job.current_stage} – {widgets.oldest_open_job.age_days} days</div></Card>
                     )}
                 </div>
             )}

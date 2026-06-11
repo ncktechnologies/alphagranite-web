@@ -73,7 +73,7 @@ export function RedosReport() {
     const totals = useMemo(() => {
         if (!rawData.length) return null;
         return {
-            fab_id: 'TOTAL',
+            fab_type: 'TOTAL',
             sqft: rawData.reduce((sum, r) => sum + r.sqft, 0),
             total_cost: rawData.reduce((sum, r) => sum + (r.total_cost || 0), 0),
         };
@@ -200,13 +200,13 @@ export function RedosReport() {
         if (!totals) return rawData;
         if (pagination.pageIndex !== 0) return rawData;
         const totalRow: any = {
-            fab_id: 'TOTAL',
+            fab_created_date: 'TOTAL',
             sqft: totals.sqft,
             total_cost: totals.total_cost,
-            fab_type: '',
+            fab_id: '',
             job_number: '',
             fab_info: '',
-            fab_created_date: '',
+            fab_type: '',
             reason: '',
             _isTotalRow: true,
         };
@@ -324,9 +324,9 @@ export function RedosReport() {
                     reason: selectedRow.reason ?? undefined,
                     department_options: selectedRow.department_options ?? [],
                 } : undefined}
-                onUpdateSuccess={() => {
-                    // Refetch data if needed – the mutation invalidates tags, so it should auto-refetch
-                }}
+                // onUpdateSuccess={() => {
+                //     // Refetch data if needed – the mutation invalidates tags, so it should auto-refetch
+                // }}
             />
         </div>
     );

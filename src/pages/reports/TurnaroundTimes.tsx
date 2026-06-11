@@ -108,7 +108,7 @@ export function TurnaroundTimesReport() {
                     }
                 }
                 // Number formatting
-                if (typeof val === 'number') val = val.toFixed(1);
+                // if (typeof val === 'number') val = val.toFixed(1);
                 return <span className="text-sm">{val ?? '-'}</span>;
             },
         }));
@@ -178,7 +178,7 @@ export function TurnaroundTimesReport() {
                                 {stage.replace(/_/g, ' ')}
                             </p>
                             <p className="text-2xl font-semibold mt-2 text-[#4b545d]">
-                                {typeof days === 'number' ? days.toFixed(1) : days} days
+                                {typeof days === 'number' ? Math.floor(days) : days} days
                             </p>
                         </Card>
                     ))}
