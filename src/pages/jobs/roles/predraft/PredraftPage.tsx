@@ -67,7 +67,6 @@ export function PredraftPage() {
     const navigate = useNavigate();
     const isSuperAdmin = useIsSuperAdmin();
 
-    // 👇 Get permissions for the 'predraft' menu
     const permissions = usePermission('Pre-draft Review');
 
     // Determine what actions the user is allowed to do
@@ -200,6 +199,7 @@ export function PredraftPage() {
                 visibleColumns={['template_needed', 'template_received', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'pre_draft_notes', 'review_completed']}
                 canAddNote={canAddNote}
                 canToggleOnHold={canToggleOnHold}
+            
             />
         </Container>
     );

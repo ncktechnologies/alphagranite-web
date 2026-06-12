@@ -6,13 +6,20 @@ import { CutListTableWithCalculations } from './CutListTableWithCalculations';
 import { useGetFabsQuery, useGetFabTypesQuery, useCreateFabNoteMutation } from '@/store/api/job';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { DateRange } from 'react-day-picker';
-
+import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission'; // 👈 import permission hooks
 
 const CutListPage = () => {
-    const [searchQuery, setSearchQuery] = useState('');
-    // ✅ 1. Declare searchType state here in the parent — this is what gets sent to the backend
-    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id');
+    const isSuperAdmin = useIsSuperAdmin();
 
+    const permissions = usePermission('Cut List');
+
+    // Determine what actions the user is allowed to do
+    const canAddNote = isSuperAdmin || permissions.can_create;      // Add Note menu item
+    const canToggleOnHold = isSuperAdmin || permissions.can_create; // On Hold toggle column
+    const canExport = isSuperAdmin || permissions.can_read;         // Export CSV button (optional)
+
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id');
     const [dateFilter, setDateFilter] = useState('all');
     const [fabTypeFilter, setFabTypeFilter] = useState('all');
     const [salesPersonFilter, setSalesPersonFilter] = useState('all');
@@ -55,46 +62,35 @@ const CutListPage = () => {
         );
     }, [salesPersonsData]);
 
-    // ✅ 2. Include searchType + searchQuery together in buildQueryParams
-    //       When searchQuery is set, `params.type` = searchType is sent to backend
     const buildQueryParams = useMemo(() => {
         const params: any = {
             current_stage: 'cut_list',
             page: pagination.pageIndex + 1,
             per_page: pagination.pageSize,
         };
-
         if (searchQuery) {
             params.search = searchQuery;
-            params.type = searchType; // ← backend receives this as the search type
+            params.type = searchType;
         }
-
         if (fabTypeFilter !== 'all') params.fab_type = fabTypeFilter;
-
         if (salesPersonFilter !== 'all' && salesPersonFilter !== 'no_sales_person') {
             const salesPersonId = salesPersonMap.get(salesPersonFilter);
             if (salesPersonId) params.sales_person_id = salesPersonId;
         }
-
         if (dateFilter !== 'all') params.date_filter = dateFilter;
-
         if (dateFilter === 'custom' && dateRange?.from && dateRange?.to) {
             params.shop_date_start = format(dateRange.from, 'yyyy-MM-dd');
             params.shop_date_end = format(dateRange.to, 'yyyy-MM-dd');
         }
-
         return params;
-    // ✅ 3. searchType is in the dependency array — query re-fires when type changes
     }, [searchQuery, searchType, dateFilter, fabTypeFilter, salesPersonFilter, salesPersonMap, dateRange, pagination]);
 
     const { data: fabsData, isLoading: isFabsLoading, refetch } = useGetFabsQuery(buildQueryParams);
 
     const { fabs, stageTotals, totalRevenue } = useMemo(() => {
         if (!fabsData) return { fabs: [], stageTotals: null, totalRevenue: 0 };
-
         let rawData: any[] = [];
         let stageTotals: any = null;
-
         if (Array.isArray(fabsData)) {
             rawData = fabsData;
         } else if (typeof fabsData === 'object' && 'data' in fabsData) {
@@ -106,9 +102,7 @@ const CutListPage = () => {
                 stageTotals = responseData.stage_totals || null;
             }
         }
-
         const revenueTotal = rawData.reduce((sum: number, fab: any) => sum + Number(fab.revenue || 0), 0);
-
         if (!stageTotals) {
             stageTotals = {
                 total_sqft: rawData.reduce((sum: number, fab: any) => sum + (fab.total_sqft || 0), 0),
@@ -119,7 +113,6 @@ const CutListPage = () => {
                 no_of_pieces: rawData.reduce((sum: number, fab: any) => sum + (fab.no_of_pieces || 0), 0),
             };
         }
-
         return { fabs: rawData, stageTotals, totalRevenue: revenueTotal };
     }, [fabsData]);
 
@@ -174,6 +167,10 @@ const CutListPage = () => {
                     onAddNote={handleNoteSubmit}
                     onToggleSuccess={refetch}
                     totalCount={fabsData?.total}
+                    // 👇 Pass permission props
+                    canAddNote={canAddNote}
+                    canToggleOnHold={canToggleOnHold}
+                    canExport={canExport}
                 />
             </Container>
         </>

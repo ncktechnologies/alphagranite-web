@@ -301,7 +301,7 @@ export function CutListDetailsPage() {
                     <CardTitle className="text-sm sm:text-base">Cutlist activity</CardTitle>
                     <p className="text-xs text-gray-500 mt-0.5">Review drafting work and schedule for cutting</p>
                   </div>
-                  <Can action="update" on="Cut List">
+                  <Can action="create" on="Cut List">
                     <Button
                       onClick={() => setShowScheduleModal(true)}
                     // variant={isScheduled ? 'outline' : 'default'}

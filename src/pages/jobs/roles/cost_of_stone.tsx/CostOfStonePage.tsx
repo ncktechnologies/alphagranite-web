@@ -10,21 +10,21 @@ import { toast } from 'sonner';
 import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
 import { EditStoneCostModal } from './EditCostOfStone';
+import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission';
 
 // Transform the actual API response to match IJob
 const transformToJob = (item: any): IJob => ({
     id: item.fab_id,
     fab_id: String(item.fab_id),
     job_no: item.job_number || '',
-    job_name: item.job_name || '',           // fab_info acts as job name
+    job_name: item.job_name || '',
     date: item.sct_completed_date?.split('T')[0] || '',
     fab_type: item.fab_type || '',
-    sales_person_name: '',                   // not provided in this endpoint
+    sales_person_name: '',
     total_sq_ft: String(item.total_sqft ?? '0'),
     revenue: String(item.revenue ?? '0'),
-    stone_cost: item.cost_of_stone ,
-    // consumed field is not in response; we'll pass false and handle consume via mutation
-    // Add required IJob fields with defaults
+    stone_cost: item.cost_of_stone,
+    // Required fields with defaults
     acct_name: '',
     no_of_pieces: '-',
     gp: '-',
@@ -41,14 +41,21 @@ const transformToJob = (item: any): IJob => ({
     job_id: 0,
     on_hold: false,
     status_id: 1,
-    // Store extra field for editability
+    // Extra field for editability from API
     is_cost_of_stone_editable: item.is_cost_of_stone_editable ?? true,
 });
 
-// Mutation for consuming stone cost – create this if needed
-
-
 const CostOfStonePage = () => {
+    const isSuperAdmin = useIsSuperAdmin();
+
+    // 👇 Get permissions for the 'cost_of_stone' menu (adjust as needed)
+    const permissions = usePermission('Cost Of Stone');
+
+    // Determine what actions the user is allowed to do
+    const canAddNote = isSuperAdmin || permissions.can_create;          // Add Note menu item
+    const canToggleOnHold = isSuperAdmin || permissions.can_create;     // On Hold toggle column
+    const canEditStoneCost = isSuperAdmin || permissions.can_create;    // Edit Cost button (custom action)
+
     const { data: salesPersonsData } = useGetSalesPersonsQuery();
     const salesPersons = useMemo(() => {
         if (!salesPersonsData) return [];
@@ -68,7 +75,6 @@ const CostOfStonePage = () => {
 
     const skip = tableState.pagination.pageIndex * tableState.pagination.pageSize;
 
-    // Build query params (adjust to your endpoint's expected filters)
     const queryParams = useMemo(() => {
         const params: any = {
             skip,
@@ -78,9 +84,6 @@ const CostOfStonePage = () => {
         if (tableState.searchType) params.type = tableState.searchType;
         if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all')
             params.fab_type = tableState.fabTypeFilter;
-        if (tableState.salesPersonFilter && tableState.salesPersonFilter !== 'all') {
-            // Sales person filter may not be supported by this endpoint; ignore or adapt
-        }
         if (tableState.dateFilter && tableState.dateFilter !== 'all') {
             if (tableState.dateFilter === 'custom' && tableState.dateRange?.from) {
                 params.start_date = format(tableState.dateRange.from, 'yyyy-MM-dd');
@@ -97,15 +100,11 @@ const CostOfStonePage = () => {
         tableState.searchQuery,
         tableState.searchType,
         tableState.fabTypeFilter,
-        tableState.salesPersonFilter,
         tableState.dateFilter,
         tableState.dateRange,
     ]);
 
-    // The query hook – adjust based on how your RTK query returns data
     const { data, isLoading, refetch } = useGetFabsCostOfStoneQuery(queryParams);
-
-    // Extract the actual data array from the nested response
     const rawData = data?.data || [];
     const totalRecords = data?.total || 0;
 
@@ -114,19 +113,14 @@ const CostOfStonePage = () => {
 
     const jobsData = useMemo(() => rawData.map(transformToJob), [rawData]);
 
-    // Totals (only for current page)
     const totalStoneCost = jobsData.reduce((sum, job) => sum + (job.stone_cost || 0), 0);
-  
 
     return (
         <Container>
             <Toolbar>
                 <ToolbarHeading title="Cost of Stone" description="" />
                 <div className="ml-auto flex items-center gap-4">
-                    {/* <div className="text-sm">
-                        Total Stone Cost: <strong>${totalStoneCost.toFixed(2)}</strong>
-                    </div> */}
-                 
+                    {/* optional totals could go here */}
                 </div>
             </Toolbar>
 
@@ -137,20 +131,22 @@ const CostOfStonePage = () => {
                 useBackendPagination
                 totalRecords={totalRecords}
                 tableState={tableState}
-                showSalesPersonFilter={false}   // endpoint may not support it
-                // enableMultiSelect
-                // selectedRows={selectedRows}
-                // setSelectedRows={setSelectedRows}
+                showSalesPersonFilter={false}
                 visibleColumns={['fab_id', 'job_no', 'job_name', 'total_sq_ft', 'revenue', 'stone_cost']}
+                // 👇 Pass permission props for Add Note and On Hold toggle
+                canAddNote={canAddNote}
+                canToggleOnHold={canToggleOnHold}
                 customActionsColumn={(job) => {
                     const isEditable = (job as any).is_cost_of_stone_editable;
+                    // Show the edit button only if the user has permission AND the record is editable
+                    const canEdit = canEditStoneCost && isEditable;
                     return (
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => setEditingFab(job)}
-                            disabled={!isEditable}
-                            title={!isEditable ? "Stone cost cannot be edited for this FAB" : "Edit cost"}
+                            disabled={!canEdit}
+                            title={!canEdit ? (isEditable ? "You don't have permission to edit stone cost" : "Stone cost cannot be edited for this FAB") : "Edit cost"}
                         >
                             Edit Cost
                         </Button>

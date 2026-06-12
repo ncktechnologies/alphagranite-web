@@ -141,8 +141,6 @@ interface CutListTableWithCalculationsProps {
     setPagination?: (pagination: { pageIndex: number; pageSize: number }) => void;
     searchQuery?: string;
     setSearchQuery?: (query: string) => void;
-    // ✅ searchType is now a controlled prop (owned by parent, sent to backend)
-    //    Falls back to local state if not provided
     searchType?: 'fab_id' | 'job_number' | 'job_name';
     setSearchType?: (type: 'fab_id' | 'job_number' | 'job_name') => void;
     dateFilter?: string;
@@ -155,6 +153,9 @@ interface CutListTableWithCalculationsProps {
     setDateRange?: (range: DateRange | undefined) => void;
     onAddNote?: (fabId: string, note: string) => void;
     onToggleSuccess?: () => void;
+    canAddNote?: boolean;
+    canToggleOnHold?: boolean;
+    canExport?: boolean;
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -172,8 +173,8 @@ export const CutListTableWithCalculations = ({
     setPagination,
     searchQuery,
     setSearchQuery,
-    searchType,         // ✅ from parent
-    setSearchType,      // ✅ from parent
+    searchType,
+    setSearchType,
     dateFilter,
     setDateFilter,
     fabTypeFilter,
@@ -184,13 +185,16 @@ export const CutListTableWithCalculations = ({
     setDateRange,
     onAddNote,
     onToggleSuccess,
+    // Permission props (default to false)
+    canAddNote = false,
+    canToggleOnHold = false,
+    canExport = false,
 }: CutListTableWithCalculationsProps) => {
     const [toggleFabOnHold] = useToggleFabOnHoldMutation();
 
     // ── Local fallback state ──────────────────────────────────────────────────
     const [localPagination, setLocalPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 25 });
     const [localSearchQuery, setLocalSearchQuery] = useState('');
-    // ✅ Local fallback — only used when parent does NOT pass searchType prop
     const [localSearchType, setLocalSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id');
     const [localDateFilter, setLocalDateFilter] = useState<string>('all');
     const [localFabTypeFilter, setLocalFabTypeFilter] = useState<string>('all');
@@ -209,7 +213,6 @@ export const CutListTableWithCalculations = ({
     const setEffectivePagination = setPagination || setLocalPagination;
     const effectiveSearchQuery = searchQuery !== undefined ? searchQuery : localSearchQuery;
     const setEffectiveSearchQuery = setSearchQuery || setLocalSearchQuery;
-    // ✅ If parent passes searchType use it; otherwise use local fallback
     const effectiveSearchType = searchType !== undefined ? searchType : localSearchType;
     const setEffectiveSearchType = setSearchType || setLocalSearchType;
     const effectiveDateFilter = dateFilter !== undefined ? dateFilter : localDateFilter;
@@ -231,8 +234,6 @@ export const CutListTableWithCalculations = ({
     // ── Filtered data - NO client-side filtering, backend handles everything ──
     const filteredData = useMemo(() => {
         if (!calculatedCutLists || !Array.isArray(calculatedCutLists)) return [];
-        // Backend handles all filtering (search, date, fab type, sales person)
-        // Just return the data as-is from the API
         return calculatedCutLists;
     }, [calculatedCutLists]);
 
@@ -277,228 +278,225 @@ export const CutListTableWithCalculations = ({
     };
 
     // ── Columns ───────────────────────────────────────────────────────────────
-    const baseColumns = useMemo<ColumnDef<CalculatedCutListData>[]>(() => [
-        {
-            id: 'actions',
-            header: '',
-            cell: ({ row }) => (
-                <div className="flex items-center gap-2">
-                    <ActionsCell
-                        row={row as any}
-                        onView={() => handleView(row.original.fab_id)}
-                        onAddNote={handleAddNote}
-                    />
-                </div>
-            ),
-            enableSorting: false,
-            size: 120,
-        },
-        {
-            id: 'fab_type', accessorKey: 'fab_type',
-            header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} />,
-            cell: ({ row }) => <span className="text-sm uppercase">{row.original.fab_type}</span>,
-        },
-        {
-            id: 'fab_id', accessorKey: 'fab_id',
-            header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
-            cell: ({ row }) => <span className="text-sm">{row.original.fab_id}</span>,
-        },
-        {
-            id: 'job_name', accessorKey: 'job_name',
-            header: ({ column }) => <DataGridColumnHeader title="JOB NAME" column={column} />,
-            cell: ({ row }) => <span className="text-sm truncate block max-w-[200px]">{row.original.job_name}</span>,
-        },
-        {
-            id: 'job_no', accessorKey: 'job_no',
-            header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
-            cell: ({ row }) => row.original.job_id ? (
-                <Link
-                    to={`/job/details/${row.original.job_id}`}
-                    className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
-                >
-                    {row.original.job_no}
-                </Link>
-            ) : <span className="text-sm">{row.original.job_no}</span>,
-        },
-        {
-            id: 'fab_info',
-            header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
-            cell: ({ row }) => {
-                const { jobInfo, materialInfo, stoneInfo } = generateFabInfo(row.original);
-                return (
-                    <div className="flex gap-4 text-xs max-w-[400px]">
-                        {jobInfo.length > 0 && (
-                            <div className="flex-1 min-w-0">
-                                <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>{jobInfo.join(' - ')}</div>
-                                {stoneInfo.length > 0 && (
-                                    <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>{stoneInfo.join(' - ')}</div>
-                                )}
-                            </div>
-                        )}
-                        {materialInfo.length > 0 && (
-                            <div className="flex-1 min-w-0">
-                                <div className="truncate text-gray-600" title={materialInfo.join(' - ')}>{materialInfo.join(' - ')}</div>
-                            </div>
-                        )}
-                    </div>
-                );
-            },
-            size: 300,
-        },
-        {
-            id: 'fp_completed', accessorKey: 'fp_completed',
-            header: ({ column }) => <DataGridColumnHeader title="FP COMPLETED DATE" column={column} />,
-            cell: ({ row }) => (
-                <span className="text-sm">
-                    {row.original.final_programming_completed_date
-                        ? new Date(row.original.final_programming_completed_date).toLocaleDateString()
-                        : 'Not Completed'}
-                </span>
-            ),
-        },
-        {
-            id: 'shop_ready', accessorKey: 'shop_ready',
-            header: ({ column }) => <DataGridColumnHeader title="SHOP READY" column={column} />,
-            cell: ({ row }) => (
-                <span className="text-sm">
-                    {row.original.shop_ready === 'Yes'
-                        ? 'Yes'
-                        : '-'}
-                </span>
-            ),
-        },
-        {
-            id: 'no_of_pcs', accessorKey: 'no_of_pcs',
-            header: ({ column }) => <DataGridColumnHeader title="NO OF PCS" column={column} />,
-            cell: ({ row }) => <span className="text-sm block">{row.original.no_of_pcs.toLocaleString()}</span>,
-        },
-        {
-            id: 'total_sq_ft', accessorKey: 'total_sq_ft',
-            header: ({ column }) => <DataGridColumnHeader title="TOTAL SQ FT" column={column} />,
-            cell: ({ row }) => <span className="text-sm block">{row.original.total_sq_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
-        },
-        {
-            id: 'wl_ln_ft', accessorKey: 'wl_ln_ft',
-            header: ({ column }) => <DataGridColumnHeader title="WJ:LIN FT" column={column} />,
-            cell: ({ row }) => <span className="text-sm block">{row.original.wl_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
-        },
-        {
-            id: 'edging_ln_ft', accessorKey: 'edging_ln_ft',
-            header: ({ column }) => <DataGridColumnHeader title="EDGING: LIN FT" column={column} />,
-            cell: ({ row }) => <span className="text-sm block">{row.original.edging_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
-        },
-        {
-            id: 'cnc_ln_ft', accessorKey: 'cnc_ln_ft',
-            header: ({ column }) => <DataGridColumnHeader title="CNC: LIN FT" column={column} />,
-            cell: ({ row }) => <span className="text-sm block">{row.original.cnc_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
-        },
-        {
-            id: 'milter_ln_ft', accessorKey: 'milter_ln_ft',
-            header: ({ column }) => <DataGridColumnHeader title="MITER:LIN FT" column={column} />,
-            cell: ({ row }) => <span className="text-sm block">{row.original.milter_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
-        },
-        {
-            id: 'saw_cut_lnft', accessorKey: 'saw_cut_lnft',
-            header: ({ column }) => <DataGridColumnHeader title="SAW:LIN FT" column={column} />,
-            cell: ({ row }) => <span className="text-sm">{row.original.saw_cut_lnft?.toFixed(2) ?? '0.00'}</span>,
-            enableSorting: true,
-        },
-        {
-            id: 'cost_of_stone', accessorKey: 'cost_of_stone',
-            header: ({ column }) => <DataGridColumnHeader title="COST OF STONE" column={column} />,
-            cell: ({ row }) => <span className="text-sm block">${row.original.cost_of_stone.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
-        },
-        {
-            id: 'revenue', accessorKey: 'revenue',
-            header: ({ column }) => <DataGridColumnHeader title="REVENUE" column={column} />,
-            cell: ({ row }) => <span className="text-sm block">${row.original.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
-        },
-
-        {
-            id: 'cip', accessorKey: 'cip',
-            header: ({ column }) => <DataGridColumnHeader title="GP" column={column} />,
-            cell: ({ row }) => <span className="text-sm">{row.original.cip}</span>,
-        },
-        {
-            id: 'sales_person', accessorKey: 'sales_person',
-            header: ({ column }) => <DataGridColumnHeader title="SALES PERSON" column={column} />,
-            cell: ({ row }) => <span className="text-sm">{row.original.sales_person || 'N/A'}</span>,
-        },
-
-        {
-            id: 'fab_notes', accessorKey: 'fab_notes',
-            header: ({ column }) => <DataGridColumnHeader title="Cut List Notes" column={column} />,
-            cell: ({ row }) => {
-                const fabNotes = Array.isArray(row.original.fab_notes)
-                    ? row.original.fab_notes
-                    : Array.isArray(row.original.notes) ? row.original.notes : [];
-                const cuttingNotes = fabNotes.filter(n => n.stage === 'cut_list');
-                if (cuttingNotes.length === 0) return <span className="text-xs text-gray-500 italic">No notes</span>;
-                const latest = cuttingNotes[0];
-                return (
-                    <div className="text-xs max-w-xs" title={latest.note}>
-                        <div className="font-medium text-orange-700 truncate">C:</div>
-                        <div className="truncate">{latest.note}</div>
-                        <div className="text-gray-500 text-xs">by {latest.created_by_name || 'Unknown'}</div>
-                    </div>
-                );
-            },
-            enableSorting: false,
-            size: 180,
-        },
-        {
-            id: 'on_hold',
-            accessorKey: 'status_id',
-            accessorFn: (row: CalculatedCutListData) => {
-                if (optimisticUpdates[row.fab_id] !== undefined) return optimisticUpdates[row.fab_id];
-                return row.status_id === 0;
-            },
-            header: ({ column }) => <DataGridColumnHeader title="ON HOLD" column={column} />,
-            cell: ({ row }) => {
-                const fabId = parseInt(row.original.fab_id);
-                const isLoadingRow = loadingStates[fabId] || false;
-                const isChecked = optimisticUpdates[row.original.fab_id] !== undefined
-                    ? optimisticUpdates[row.original.fab_id]
-                    : row.original.status_id === 0;
-                return (
-                    <div className="flex justify-center items-center">
-                        <Switch
-                            className={`data-[state=checked]:bg-red-600 ${isLoadingRow ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            checked={isChecked}
-                            disabled={isLoadingRow}
-                            onCheckedChange={async (checked) => {
-                                if (isLoadingRow) return;
-                                const fabIdStr = row.original.fab_id;
-                                setOptimisticUpdates(prev => ({ ...prev, [fabIdStr]: checked }));
-                                setLoadingStates(prev => ({ ...prev, [fabId]: true }));
-                                try {
-                                    await toggleFabOnHold({ fab_id: fabId, on_hold: checked }).unwrap();
-                                    if (onToggleSuccess) onToggleSuccess();
-                                    setTimeout(() => {
-                                        setOptimisticUpdates(prev => { const s = { ...prev }; delete s[fabIdStr]; return s; });
-                                    }, 500);
-                                } catch (error) {
-                                    console.error('Failed to toggle on hold status:', error);
-                                    setOptimisticUpdates(prev => { const s = { ...prev }; delete s[fabIdStr]; return s; });
-                                } finally {
-                                    setLoadingStates(prev => { const s = { ...prev }; delete s[fabId]; return s; });
-                                }
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                            aria-label="Toggle on hold"
+    const baseColumns = useMemo<ColumnDef<CalculatedCutListData>[]>(() => {
+        const cols: ColumnDef<CalculatedCutListData>[] = [
+            {
+                id: 'actions',
+                header: '',
+                cell: ({ row }) => (
+                    <div className="flex items-center gap-2">
+                        <ActionsCell
+                            row={row as any}
+                            onView={() => handleView(row.original.fab_id)}
+                            onAddNote={canAddNote ? handleAddNote : undefined}
                         />
-                        {isLoadingRow && (
-                            <div className="ml-2">
-                                <div className="h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
-                            </div>
-                        )}
                     </div>
-                );
+                ),
+                enableSorting: false,
+                size: 120,
             },
-            enableSorting: false,
-            size: 80,
-        },
-    ], [path, optimisticUpdates, loadingStates]);
+            {
+                id: 'fab_type', accessorKey: 'fab_type',
+                header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} />,
+                cell: ({ row }) => <span className="text-sm uppercase">{row.original.fab_type}</span>,
+            },
+            {
+                id: 'fab_id', accessorKey: 'fab_id',
+                header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
+                cell: ({ row }) => <span className="text-sm">{row.original.fab_id}</span>,
+            },
+            {
+                id: 'job_name', accessorKey: 'job_name',
+                header: ({ column }) => <DataGridColumnHeader title="JOB NAME" column={column} />,
+                cell: ({ row }) => <span className="text-sm truncate block max-w-[200px]">{row.original.job_name}</span>,
+            },
+            {
+                id: 'job_no', accessorKey: 'job_no',
+                header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
+                cell: ({ row }) => row.original.job_id ? (
+                    <Link to={`/job/details/${row.original.job_id}`} className="text-sm text-blue-600 hover:underline">
+                        {row.original.job_no}
+                    </Link>
+                ) : <span className="text-sm">{row.original.job_no}</span>,
+            },
+            {
+                id: 'fab_info',
+                header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
+                cell: ({ row }) => {
+                    const { jobInfo, materialInfo, stoneInfo } = generateFabInfo(row.original);
+                    return (
+                        <div className="flex gap-4 text-xs max-w-[400px]">
+                            {jobInfo.length > 0 && (
+                                <div className="flex-1 min-w-0">
+                                    <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>{jobInfo.join(' - ')}</div>
+                                    {stoneInfo.length > 0 && (
+                                        <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>{stoneInfo.join(' - ')}</div>
+                                    )}
+                                </div>
+                            )}
+                            {materialInfo.length > 0 && (
+                                <div className="flex-1 min-w-0">
+                                    <div className="truncate text-gray-600" title={materialInfo.join(' - ')}>{materialInfo.join(' - ')}</div>
+                                </div>
+                            )}
+                        </div>
+                    );
+                },
+                size: 300,
+            },
+            {
+                id: 'fp_completed', accessorKey: 'fp_completed',
+                header: ({ column }) => <DataGridColumnHeader title="FP COMPLETED DATE" column={column} />,
+                cell: ({ row }) => (
+                    <span className="text-sm">
+                        {row.original.final_programming_completed_date
+                            ? new Date(row.original.final_programming_completed_date).toLocaleDateString()
+                            : 'Not Completed'}
+                    </span>
+                ),
+            },
+            {
+                id: 'shop_ready', accessorKey: 'shop_ready',
+                header: ({ column }) => <DataGridColumnHeader title="SHOP READY" column={column} />,
+                cell: ({ row }) => <span className="text-sm">{row.original.shop_ready === 'Yes' ? 'Yes' : '-'}</span>,
+            },
+            {
+                id: 'no_of_pcs', accessorKey: 'no_of_pcs',
+                header: ({ column }) => <DataGridColumnHeader title="NO OF PCS" column={column} />,
+                cell: ({ row }) => <span className="text-sm block">{row.original.no_of_pcs.toLocaleString()}</span>,
+            },
+            {
+                id: 'total_sq_ft', accessorKey: 'total_sq_ft',
+                header: ({ column }) => <DataGridColumnHeader title="TOTAL SQ FT" column={column} />,
+                cell: ({ row }) => <span className="text-sm block">{row.original.total_sq_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+            },
+            {
+                id: 'wl_ln_ft', accessorKey: 'wl_ln_ft',
+                header: ({ column }) => <DataGridColumnHeader title="WJ:LIN FT" column={column} />,
+                cell: ({ row }) => <span className="text-sm block">{row.original.wl_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+            },
+            {
+                id: 'edging_ln_ft', accessorKey: 'edging_ln_ft',
+                header: ({ column }) => <DataGridColumnHeader title="EDGING: LIN FT" column={column} />,
+                cell: ({ row }) => <span className="text-sm block">{row.original.edging_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+            },
+            {
+                id: 'cnc_ln_ft', accessorKey: 'cnc_ln_ft',
+                header: ({ column }) => <DataGridColumnHeader title="CNC: LIN FT" column={column} />,
+                cell: ({ row }) => <span className="text-sm block">{row.original.cnc_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+            },
+            {
+                id: 'milter_ln_ft', accessorKey: 'milter_ln_ft',
+                header: ({ column }) => <DataGridColumnHeader title="MITER:LIN FT" column={column} />,
+                cell: ({ row }) => <span className="text-sm block">{row.original.milter_ln_ft.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+            },
+            {
+                id: 'saw_cut_lnft', accessorKey: 'saw_cut_lnft',
+                header: ({ column }) => <DataGridColumnHeader title="SAW:LIN FT" column={column} />,
+                cell: ({ row }) => <span className="text-sm">{row.original.saw_cut_lnft?.toFixed(2) ?? '0.00'}</span>,
+                enableSorting: true,
+            },
+            {
+                id: 'cost_of_stone', accessorKey: 'cost_of_stone',
+                header: ({ column }) => <DataGridColumnHeader title="COST OF STONE" column={column} />,
+                cell: ({ row }) => <span className="text-sm block">${row.original.cost_of_stone.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+            },
+            {
+                id: 'revenue', accessorKey: 'revenue',
+                header: ({ column }) => <DataGridColumnHeader title="REVENUE" column={column} />,
+                cell: ({ row }) => <span className="text-sm block">${row.original.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>,
+            },
+            {
+                id: 'cip', accessorKey: 'cip',
+                header: ({ column }) => <DataGridColumnHeader title="GP" column={column} />,
+                cell: ({ row }) => <span className="text-sm">{row.original.cip}</span>,
+            },
+            {
+                id: 'sales_person', accessorKey: 'sales_person',
+                header: ({ column }) => <DataGridColumnHeader title="SALES PERSON" column={column} />,
+                cell: ({ row }) => <span className="text-sm">{row.original.sales_person || 'N/A'}</span>,
+            },
+            {
+                id: 'fab_notes', accessorKey: 'fab_notes',
+                header: ({ column }) => <DataGridColumnHeader title="Cut List Notes" column={column} />,
+                cell: ({ row }) => {
+                    const fabNotes = Array.isArray(row.original.fab_notes)
+                        ? row.original.fab_notes
+                        : Array.isArray(row.original.notes) ? row.original.notes : [];
+                    const cuttingNotes = fabNotes.filter(n => n.stage === 'cut_list');
+                    if (cuttingNotes.length === 0) return <span className="text-xs text-gray-500 italic">No notes</span>;
+                    const latest = cuttingNotes[0];
+                    return (
+                        <div className="text-xs max-w-xs" title={latest.note}>
+                            <div className="font-medium text-orange-700 truncate">C:</div>
+                            <div className="truncate">{latest.note}</div>
+                            <div className="text-gray-500 text-xs">by {latest.created_by_name || 'Unknown'}</div>
+                        </div>
+                    );
+                },
+                enableSorting: false,
+                size: 180,
+            },
+        ];
+
+        // Conditionally add the On Hold column if user has permission
+        if (canToggleOnHold) {
+            cols.push({
+                id: 'on_hold',
+                accessorKey: 'status_id',
+                accessorFn: (row: CalculatedCutListData) => {
+                    if (optimisticUpdates[row.fab_id] !== undefined) return optimisticUpdates[row.fab_id];
+                    return row.status_id === 0;
+                },
+                header: ({ column }) => <DataGridColumnHeader title="ON HOLD" column={column} />,
+                cell: ({ row }) => {
+                    const fabId = parseInt(row.original.fab_id);
+                    const isLoadingRow = loadingStates[fabId] || false;
+                    const isChecked = optimisticUpdates[row.original.fab_id] !== undefined
+                        ? optimisticUpdates[row.original.fab_id]
+                        : row.original.status_id === 0;
+                    return (
+                        <div className="flex justify-center items-center">
+                            <Switch
+                                className={`data-[state=checked]:bg-red-600 ${isLoadingRow ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                checked={isChecked}
+                                disabled={isLoadingRow}
+                                onCheckedChange={async (checked) => {
+                                    if (isLoadingRow) return;
+                                    const fabIdStr = row.original.fab_id;
+                                    setOptimisticUpdates(prev => ({ ...prev, [fabIdStr]: checked }));
+                                    setLoadingStates(prev => ({ ...prev, [fabId]: true }));
+                                    try {
+                                        await toggleFabOnHold({ fab_id: fabId, on_hold: checked }).unwrap();
+                                        if (onToggleSuccess) onToggleSuccess();
+                                        setTimeout(() => {
+                                            setOptimisticUpdates(prev => { const s = { ...prev }; delete s[fabIdStr]; return s; });
+                                        }, 500);
+                                    } catch (error) {
+                                        console.error('Failed to toggle on hold status:', error);
+                                        setOptimisticUpdates(prev => { const s = { ...prev }; delete s[fabIdStr]; return s; });
+                                    } finally {
+                                        setLoadingStates(prev => { const s = { ...prev }; delete s[fabId]; return s; });
+                                    }
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                                aria-label="Toggle on hold"
+                            />
+                            {isLoadingRow && (
+                                <div className="ml-2">
+                                    <div className="h-4 w-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                                </div>
+                            )}
+                        </div>
+                    );
+                },
+                enableSorting: false,
+                size: 80,
+            });
+        }
+
+        return cols;
+    }, [path, optimisticUpdates, loadingStates, canAddNote, canToggleOnHold, handleView, handleAddNote, toggleFabOnHold, onToggleSuccess]);
 
     // ── Table instance ────────────────────────────────────────────────────────
     const table = useReactTable({
@@ -516,7 +514,7 @@ export const CutListTableWithCalculations = ({
         manualPagination: true,
         manualFiltering: true,
         manualSorting: true,
-         enableColumnResizing: true,
+        enableColumnResizing: true,
         columnResizeMode: 'onEnd',
         meta: {
             getRowAttributes: (row: any) => ({ 'data-fab-type': row.original.fab_type?.toLowerCase() }),
@@ -539,17 +537,11 @@ export const CutListTableWithCalculations = ({
                         <CardHeading>
                             <div className="flex items-center gap-2.5 flex-wrap">
 
-                                {/* ── Typed Search ─────────────────────────────────────────────────────
-                                    The Select value (effectiveSearchType) is lifted to the parent and
-                                    included in buildQueryParams as `params.type` so the backend
-                                    knows which field to search against.
-                                ─────────────────────────────────────────────────────────────────────── */}
+                                {/* Typed Search */}
                                 <div className="relative flex items-center">
                                     <Select
                                         value={effectiveSearchType}
-                                        onValueChange={(v) =>
-                                            setEffectiveSearchType(v as 'fab_id' | 'job_number' | 'job_name')
-                                        }
+                                        onValueChange={(v) => setEffectiveSearchType(v as 'fab_id' | 'job_number' | 'job_name')}
                                     >
                                         <SelectTrigger className="w-[140px] h-[34px] rounded-e-none border-r-0">
                                             <SelectValue placeholder="Search by" />
@@ -581,7 +573,7 @@ export const CutListTableWithCalculations = ({
                                     </div>
                                 </div>
 
-                                {/* ── Fab Type Filter ───────────────────────────────── */}
+                                {/* Fab Type Filter */}
                                 <Select value={effectiveFabTypeFilter} onValueChange={setEffectiveFabTypeFilter}>
                                     <SelectTrigger className="w-[150px] h-[34px]">
                                         <SelectValue placeholder="Fab Type" />
@@ -594,7 +586,7 @@ export const CutListTableWithCalculations = ({
                                     </SelectContent>
                                 </Select>
 
-                                {/* ── Date Filter ───────────────────────────────────── */}
+                                {/* Date Filter */}
                                 <div className="flex items-center gap-2">
                                     <Select
                                         value={effectiveDateFilter}
@@ -615,8 +607,6 @@ export const CutListTableWithCalculations = ({
                                             <SelectItem value="last_month">Last Month</SelectItem>
                                             <SelectItem value="next_week">Next Week</SelectItem>
                                             <SelectItem value="next_month">Next Month</SelectItem>
-                                            {/* <SelectItem value="unscheduled">Unscheduled</SelectItem>
-                                            <SelectItem value="scheduled">Scheduled</SelectItem> */}
                                             <SelectItem value="custom">Custom</SelectItem>
                                         </SelectContent>
                                     </Select>
@@ -650,7 +640,7 @@ export const CutListTableWithCalculations = ({
                                     )}
                                 </div>
 
-                                {/* ── Sales Person Filter ───────────────────────────── */}
+                                {/* Sales Person Filter */}
                                 <Select value={effectiveSalesPersonFilter} onValueChange={setEffectiveSalesPersonFilter}>
                                     <SelectTrigger className="w-[180px] h-[34px]">
                                         <SelectValue placeholder="Sales Person" />
@@ -664,7 +654,7 @@ export const CutListTableWithCalculations = ({
                                     </SelectContent>
                                 </Select>
 
-                                {/* ── Stage Filter (super admin only) ───────────────── */}
+                                {/* Stage Filter (super admin only) */}
                                 {isSuperAdmin && (
                                     <Select onValueChange={handleStageFilterChange}>
                                         <SelectTrigger className="w-[170px] h-[34px]">
@@ -682,9 +672,11 @@ export const CutListTableWithCalculations = ({
                         </CardHeading>
 
                         <CardToolbar>
-                            <Button variant="outline" onClick={() => exportTableToCSV(table, 'CutList')}>
-                                Export CSV
-                            </Button>
+                            {canExport && (
+                                <Button variant="outline" onClick={() => exportTableToCSV(table, 'CutList')}>
+                                    Export CSV
+                                </Button>
+                            )}
                         </CardToolbar>
                     </CardHeader>
 

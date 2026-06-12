@@ -542,39 +542,41 @@ export function SlabSmithDetailsPage() {
 
               <Card>
                 <CardContent className="p-3 sm:p-4 lg:p-5 space-y-5">
-                  <TimeTrackingComponent
-                    isDrafting={isDrafting}
-                    isPaused={isPaused}
-                    totalTime={totalTime}
-                    onStart={handleStart}
-                    onPause={handlePause}
-                    onResume={handleResume}
-                    onEnd={handleEnd}
-                    onOnHold={handleOnHold}
-                    onTimeUpdate={setTotalTime}
-                    hasEnded={hasEnded}
-                    sessionData={ssSessionData}
-                    isFabOnHold={fabData?.status_id === 0}
-                  />
+                  <Can action="create" on="SlabSmith Request">
 
+                    <TimeTrackingComponent
+                      isDrafting={isDrafting}
+                      isPaused={isPaused}
+                      totalTime={totalTime}
+                      onStart={handleStart}
+                      onPause={handlePause}
+                      onResume={handleResume}
+                      onEnd={handleEnd}
+                      onOnHold={handleOnHold}
+                      onTimeUpdate={setTotalTime}
+                      hasEnded={hasEnded}
+                      sessionData={ssSessionData}
+                      isFabOnHold={fabData?.status_id === 0}
+                    />
+                  </Can>
                   <Separator />
 
                   {/* File section */}
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold text-sm">Uploaded files</h3>
-                      {/* <Can action="create" on="SlabSmith"> */}
-                      <Button
-                        variant="dashed"
-                        size="sm"
-                        onClick={() => setShowUploadModal(true)}
-                        disabled={!isDrafting || isPaused || hasEnded}
-                        className="flex items-center gap-1.5 text-xs"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        Add Files
-                      </Button>
-                      {/* </Can> */}
+                      <Can action="create" on="SlabSmith Request">
+                        <Button
+                          variant="dashed"
+                          size="sm"
+                          onClick={() => setShowUploadModal(true)}
+                          disabled={!isDrafting || isPaused || hasEnded}
+                          className="flex items-center gap-1.5 text-xs"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Add Files
+                        </Button>
+                      </Can>
                     </div>
 
                     {shouldShowUploadSection ? (

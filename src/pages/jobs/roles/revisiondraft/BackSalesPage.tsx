@@ -12,11 +12,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { AssignDrafterModal } from '../drafters/components/AssignDrafterModal';
-
+import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission'; // 👈 import permission hooks
 
 // Transform Fab data to match IJob interface
 const transformFabToJob = (fab: Fab): IJob => {
-    const fabData = fab as any; // Cast to any to access API-specific properties
+    const fabData = fab as any;
     return {
         id: fab.id,
         fab_type: fab.fab_type,
@@ -26,22 +26,16 @@ const transformFabToJob = (fab: Fab): IJob => {
         date: fab.draft_completed_date || '',
         current_stage: fab.current_stage,
         sales_person_name: fab.sales_person_name || '',
-        // Optional fields with default values
         acct_name: fab.account_name || '',
         input_area: fab.input_area || '',
         no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
         total_sq_ft: String(fab.total_sqft || "-"),
-        // revenue: fab.job_details?.project_value || "-",
-        // gp: "-",
         revision_completed: fabData.sales_ct_data?.is_revision_completed ? 'Yes' : 'No',
         revisor: fabData.draft_data?.drafter_name || '',
         revision_number: fabData.sales_ct_data?.current_revision_count ? `#${fabData.sales_ct_data.current_revision_count}` : '#1',
         revision_reason: fabData.sales_ct_data?.revision_reason || fabData.sales_ct_data?.draft_note || 'N/A',
         revision_type: fabData.sales_ct_data?.revision_type || '-',
         sct_completed: '',
-        // template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
-        // template_received: '',
-        // templater: fab.technician_name || '-',
         draft_completed: '',
         review_completed: '',
         file: (fabData.files && fabData.files.length > 0) ? fabData.files[0]?.name || 'File' : 'No File',
@@ -59,25 +53,26 @@ const transformFabToJob = (fab: Fab): IJob => {
 
 export function DraftRevisionPage() {
     const navigate = useNavigate();
+    const isSuperAdmin = useIsSuperAdmin();
+
+    const permissions = usePermission('Revisions');
+
+    const canAddNote = isSuperAdmin || permissions.can_create;           // Add Note menu item
+    const canToggleOnHold = isSuperAdmin || permissions.can_create;      // On Hold toggle column
+    const canAssignDrafter = isSuperAdmin || permissions.can_create;     // Toolbar "Assign Drafter" button
+    const canReassignDrafter = isSuperAdmin || permissions.can_create;   // Reassign button inside drafter column
+    const canReassignRevisor = isSuperAdmin || permissions.can_create;   // Reassign button inside revisor column
 
     // Fetch sales persons data for filter dropdown
     const { data: salesPersonsData } = useGetSalesPersonsQuery();
 
     // Extract sales persons
     const salesPersons = useMemo(() => {
-        if (!salesPersonsData) {
-            return [];
-        }
-
-        // Handle both possible response formats
+        if (!salesPersonsData) return [];
         let rawData: any[] = [];
-        if (Array.isArray(salesPersonsData)) {
-            rawData = salesPersonsData;
-        } else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData) {
+        if (Array.isArray(salesPersonsData)) rawData = salesPersonsData;
+        else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData)
             rawData = (salesPersonsData as any).data || [];
-        }
-
-        // Extract sales persons - keep full objects with id and name
         return rawData;
     }, [salesPersonsData]);
 
@@ -94,7 +89,6 @@ export function DraftRevisionPage() {
         persistState: false,
     });
 
-    // Calculate skip value for pagination
     const skip = tableState.pagination.pageIndex * tableState.pagination.pageSize;
 
     // Build query params for backend
@@ -102,67 +96,44 @@ export function DraftRevisionPage() {
         const params: any = {
             skip,
             limit: tableState.pagination.pageSize,
-            current_stage: 'revision', // Revision stage
+            current_stage: 'revision',
         };
-
-        if (tableState.searchQuery) {
-            params.search = tableState.searchQuery;
-        }
-        if (tableState.searchType) {
-            params.type = tableState.searchType;
-        }
-
-        if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') {
+        if (tableState.searchQuery) params.search = tableState.searchQuery;
+        if (tableState.searchType) params.type = tableState.searchType;
+        if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all')
             params.fab_type = tableState.fabTypeFilter;
-        }
-
-        // Add sales person filter using ID
         if (tableState.salesPersonFilter && tableState.salesPersonFilter !== 'all') {
-            if (tableState.salesPersonFilter === 'no_sales_person') {
-                // Filter for fabs without a sales person
-                params.sales_person_name = '';
-            } else {
-                // Find the sales person object by name and get the ID
+            if (tableState.salesPersonFilter === 'no_sales_person') params.sales_person_name = '';
+            else {
                 const selectedSalesPerson = salesPersons.find((sp: any) => sp.name === tableState.salesPersonFilter);
-                if (selectedSalesPerson && selectedSalesPerson.id) {
-                    params.sales_person_id = selectedSalesPerson.id;
-                }
+                if (selectedSalesPerson?.id) params.sales_person_id = selectedSalesPerson.id;
             }
         }
-
         if (tableState.dateFilter && tableState.dateFilter !== 'all') {
-            // For custom date range, use schedule_start_date and schedule_due_date
             if (tableState.dateFilter === 'custom') {
-                if (tableState.dateRange?.from) {
-                    // Use local date string (YYYY-MM-DD)
+                if (tableState.dateRange?.from)
                     params.sct_completed_start = format(tableState.dateRange.from, 'yyyy-MM-dd');
-                }
-                if (tableState.dateRange?.to) {
+                if (tableState.dateRange?.to)
                     params.sct_completed_end = format(tableState.dateRange.to, 'yyyy-MM-dd');
-                }
-                // Don't send date_filter when using custom range
             } else {
-                // For other filters (today, this_week, etc.), use date_filter
                 params.date_filter = tableState.dateFilter;
             }
         }
-
-        console.log('Revision Query Params:', params); // Debug log
+        console.log('Revision Query Params:', params);
         return params;
     }, [
         skip,
         tableState.pagination.pageSize,
         tableState.searchQuery,
+        tableState.searchType,
         tableState.fabTypeFilter,
         tableState.salesPersonFilter,
         tableState.dateFilter,
         tableState.dateRange,
-        tableState.searchType
+        salesPersons,
     ]);
 
-    // Fetch data with backend pagination and filtering
     const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
-
 
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
     const [showAssignModal, setShowAssignModal] = useState(false);
@@ -196,13 +167,13 @@ export function DraftRevisionPage() {
     };
 
     const handleReassignDrafterClick = (job: IJob) => {
-        setReassignFabId(job.fab_id); // just pass the FAB ID
+        setReassignFabId(job.fab_id);
         setSelectedRows([]);
         setShowAssignModal(true);
     };
 
     const handleReassignRevisorClick = (job: IJob) => {
-        setReassignFabId(job.fab_id); // just pass the FAB ID
+        setReassignFabId(job.fab_id);
         setSelectedRows([]);
         setShowAssignModal(true);
     };
@@ -213,15 +184,12 @@ export function DraftRevisionPage() {
     };
     const handleAssignSuccess = () => {
         setSelectedRows([]);
-        // Optionally refetch: tableState.refetch?.()
     };
-
 
     const handleRowClick = (fabId: string) => {
         navigate(`/job/revision/${fabId}`);
     };
 
-    // Transform Fab data to IJob format
     const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
 
     if (isLoading && !data) {
@@ -260,13 +228,11 @@ export function DraftRevisionPage() {
         );
     }
 
-    console.log('Revision Data:', data); // Debug log
-
     return (
         <Container>
             <Toolbar>
                 <ToolbarHeading
-                    title="Revision "
+                    title="Revision"
                     description="View and manage revision tasks"
                 />
             </Toolbar>
@@ -274,7 +240,6 @@ export function DraftRevisionPage() {
                 jobs={jobsData}
                 path='revision'
                 isLoading={isLoading && !data}
-                // onRowClick={handleRowClick}
                 useBackendPagination={true}
                 totalRecords={data?.total || 0}
                 tableState={tableState}
@@ -287,7 +252,12 @@ export function DraftRevisionPage() {
                 onAssignDrafterClick={handleAssignDrafterClick}
                 onReassignDrafterClick={handleReassignDrafterClick}
                 onReassignRevisorClick={handleReassignRevisorClick}
-                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'revision_reason', 'total_sq_ft', 'draft_notes', 'sales_person_name', 'revisor', 'revision_type', 'revision_notes', 'revision_completed', 'revision_note', 'on_hold']}
+                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'revision_reason', 'total_sq_ft', 'draft_notes', 'sales_person_name', 'revisor', 'revision_type', 'revision_notes', 'revision_completed', 'revision_note']}
+                canAddNote={canAddNote}
+                canToggleOnHold={canToggleOnHold}
+                canAssignDrafter={canAssignDrafter}
+                canReassignDrafter={canReassignDrafter}
+                canReassignRevisor={canReassignRevisor}
             />
             <AssignDrafterModal
                 open={showAssignModal}

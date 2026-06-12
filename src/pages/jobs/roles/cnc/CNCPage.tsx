@@ -9,6 +9,7 @@ import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
 import { useMemo, useState } from 'react';
 import { AssignDrafterModal } from './components/AssignDrafterModal';
+import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission';
 
 // Transform Fab data to match IJob interface
 export const transformFabToJob = (fab: Fab): IJob => {
@@ -45,6 +46,14 @@ export const transformFabToJob = (fab: Fab): IJob => {
 
 const CNCPage = () => {
     const navigate = useNavigate();
+    const isSuperAdmin = useIsSuperAdmin();
+
+    const permissions = usePermission('CNC');
+
+    const canAddNote = isSuperAdmin || permissions.can_create;          // Add Note menu item
+    const canToggleOnHold = isSuperAdmin || permissions.can_create;     // On Hold toggle column
+    const canAssignCNC = isSuperAdmin || permissions.can_create;        // Toolbar "Assign CNC" button
+    const canReassignCNC = isSuperAdmin || permissions.can_create;      // Reassign button inside cnc_operator column
 
     // Fetch sales persons
     const { data: salesPersonsData } = useGetSalesPersonsQuery();
@@ -54,7 +63,6 @@ const CNCPage = () => {
         if (Array.isArray(salesPersonsData)) rawData = salesPersonsData;
         else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData)
             rawData = (salesPersonsData as any).data || [];
-        // Keep full objects with id and name
         return rawData;
     }, [salesPersonsData]);
 
@@ -111,6 +119,7 @@ const CNCPage = () => {
         tableState.salesPersonFilter,
         tableState.dateFilter,
         tableState.dateRange,
+        salesPersons,
     ]);
 
     const { data, isLoading } = useGetFabsCncQuery(queryParams);
@@ -148,7 +157,7 @@ const CNCPage = () => {
     };
 
     const handleReassignCNCClick = (job: IJob) => {
-        setReassignFabId(job.fab_id); // just pass the FAB ID
+        setReassignFabId(job.fab_id);
         setSelectedRows([]);
         setShowAssignModal(true);
     };
@@ -159,7 +168,6 @@ const CNCPage = () => {
     };
     const handleAssignSuccess = () => {
         setSelectedRows([]);
-        // Optionally refetch: tableState.refetch?.()
     };
 
     return (
@@ -193,10 +201,13 @@ const CNCPage = () => {
                     'revenue',
                     'gp',
                     'cnc_notes',
-                    // 'draft_completed',
-                    'on_hold',
                     'cnc_operator'
                 ]}
+                
+                canAddNote={canAddNote}
+                canToggleOnHold={canToggleOnHold}
+                canAssignCNC={canAssignCNC}
+                canReassignCNC={canReassignCNC}
             />
             <AssignDrafterModal
                 open={showAssignModal}
