@@ -40,9 +40,10 @@ interface ActionsCellProps {
   row: Row<IJob>;
   onView?: () => void;
   pageRole?: 'templater' | 'installer';
+  canAddNote?: boolean; // 👈 new prop
 }
 
-function ActionsCell({ row, onView, pageRole }: ActionsCellProps) {
+function ActionsCell({ row, onView, pageRole, canAddNote = false }: ActionsCellProps) {
   const bulletin = row.original;
   const isSuperAdmin = useIsSuperAdmin();
   const navigate = useNavigate();
@@ -107,14 +108,18 @@ function ActionsCell({ row, onView, pageRole }: ActionsCellProps) {
             <DropdownMenuItem onClick={handleViewDetails}>
               View details
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={(e) => {
-              e.stopPropagation();
-              handleAddNote();
-            }}>
-              <MessageSquare className="mr-2 h-4 w-4" />
-              Add Note
-            </DropdownMenuItem>
+            {/* 👇 Only show Add Note if user has permission */}
+            {canAddNote && (
+              <DropdownMenuItem onClick={(e) => {
+                e.stopPropagation();
+                handleAddNote();
+              }}>
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Add Note
+              </DropdownMenuItem>
+            )}
 
+            {/* Super admin items remain unchanged */}
             {isSuperAdmin && (
               <>
                 <DropdownMenuSeparator />
@@ -125,7 +130,7 @@ function ActionsCell({ row, onView, pageRole }: ActionsCellProps) {
                   <Eye className="mr-2 h-4 w-4" />
                   Move Stage
                 </DropdownMenuItem>
-                { bulletin.install_details?.is_completed && (
+                {bulletin.install_details?.is_completed && (
                   <DropdownMenuItem
                     onClick={(e) => {
                       e.stopPropagation();

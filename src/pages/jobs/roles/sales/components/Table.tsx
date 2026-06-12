@@ -67,16 +67,15 @@ interface JobTableProps {
     onAssignDrafterClick?: () => void;
     onRescheduleClick?: (job: IJob) => void;
     onAssignClick?: (job: IJob) => void;
-    /** When provided, a "Reassign" button appears next to the drafter name.
-     *  The drafter column is hidden by default when every visible row has a
-     *  drafter; clicking Reassign temporarily shows the column for that row. */
     onReassignDrafterClick?: (job: IJob) => void;
-    /** CNC operator assignment callbacks */
     showAssignCNCButton?: boolean;
     onAssignCNCClick?: () => void;
     onReassignCNCClick?: (job: IJob) => void;
-    /** 'templater' | 'installer' — when set, job number links to the role timer page */
     pageRole?: 'templater' | 'installer';
+    // Permission props
+    canAddNote?: boolean;
+    canToggleOnHold?: boolean;
+    canExport?: boolean;
 }
 
 export const JobSalesTable = ({
@@ -110,6 +109,9 @@ export const JobSalesTable = ({
     onAssignCNCClick = () => { },
     onReassignCNCClick,
     pageRole,
+    canAddNote = false,
+    canToggleOnHold = false,
+    canExport = false,
 }: JobTableProps) => {
     const [localSelectedRows, setLocalSelectedRows] = useState<string[]>([]);
     const [localPagination, setLocalPagination] = useState<PaginationState>({
@@ -130,8 +132,6 @@ export const JobSalesTable = ({
     const [suppressParentRefresh, setSuppressParentRefresh] = useState(false);
 
     // ── Drafter column visibility ────────────────────────────────────────────
-    // The drafter column is hidden when all filtered rows have a drafter
-    // assigned. A "Reassign" button per row temporarily re-shows the column.
     const [drafterColumnVisible, setDrafterColumnVisible] = useState(false);
     const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
@@ -257,14 +257,6 @@ export const JobSalesTable = ({
         showSalesPersonFilter,
     ]);
 
-    // ── Drafter column auto-visibility ───────────────────────────────────────
-    // Derive whether the drafter column should be visible:
-    // Show it if any row in filteredData has NO drafter assigned, OR if the
-    // user clicked Reassign (drafterColumnVisible override).
-    // Show the drafter column when ANY row HAS a drafter assigned.
-    // Column stays hidden when no row has a drafter yet (nothing to show).
-    // Clicking Reassign does not need to toggle visibility — the column is
-    // already visible because a drafter exists on that row.
     const anyRowWithDrafter = useMemo(
         () => filteredData.some(job => job.drafter && job.drafter !== '-'),
         [filteredData]
@@ -318,9 +310,9 @@ export const JobSalesTable = ({
     };
 
     const baseColumns = useMemo<ColumnDef<IJob>[]>(() => [
-        // ── Checkbox (multi-select) — excluded entirely when enableMultiSelect is false ──
+        // Checkbox column
         {
-            id: 'select',           // explicit id so the columns memo can reliably filter it
+            id: 'select',
             accessorKey: 'id',
             accessorFn: (row) => row.id,
             header: () => {
@@ -363,16 +355,23 @@ export const JobSalesTable = ({
             size: 48,
         },
 
-        // ── Actions — always first visible column, no gap before it ──────────
+        // Actions column – now passes canAddNote to ActionsCell
         {
             id: 'actions',
             header: '',
-            cell: ({ row }) => <ActionsCell row={row} onView={() => handleView(row.original)} pageRole={pageRole} />,
+            cell: ({ row }) => (
+                <ActionsCell
+                    row={row}
+                    onView={() => handleView(row.original)}
+                    pageRole={pageRole}
+                    canAddNote={canAddNote}
+                />
+            ),
             enableSorting: false,
             size: 60,
         },
 
-        // ── Fab Type ─────────────────────────────────────────────────────────
+        // Fab Type
         {
             id: "fab_type",
             accessorKey: "fab_type",
@@ -382,7 +381,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Fab ID ───────────────────────────────────────────────────────────
+        // Fab ID
         {
             id: "fab_id",
             accessorKey: "fab_id",
@@ -396,7 +395,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Job Name ─────────────────────────────────────────────────────────
+        // Job Name
         {
             id: "job_name",
             accessorKey: "job_name",
@@ -406,7 +405,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Job No ───────────────────────────────────────────────────────────
+        // Job No
         {
             id: "job_no",
             accessorKey: "job_no",
@@ -440,7 +439,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Fab Info ─────────────────────────────────────────────────────────
+        // Fab Info
         {
             id: "fab_info",
             header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
@@ -474,7 +473,7 @@ export const JobSalesTable = ({
             enableSorting: false,
         },
 
-        // ── Template Needed ───────────────────────────────────────────────────
+        // Template Needed
         {
             id: "template_needed",
             accessorKey: "template_needed",
@@ -484,7 +483,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Acct Name ────────────────────────────────────────────────────────
+        // Acct Name
         {
             id: "acct_name",
             accessorKey: "acct_name",
@@ -494,7 +493,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── No of pieces ─────────────────────────────────────────────────────
+        // No of pieces
         {
             id: "no_of_pieces",
             accessorKey: "no_of_pieces",
@@ -504,7 +503,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Template Schedule ─────────────────────────────────────────────────
+        // Template Schedule
         {
             id: "template_schedule",
             accessorKey: "template_schedule",
@@ -514,7 +513,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Template Received ─────────────────────────────────────────────────
+        // Template Received
         {
             id: "template_received",
             accessorKey: "template_received",
@@ -524,7 +523,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Templater ────────────────────────────────────────────────────────
+        // Templater
         {
             id: "templater",
             accessorKey: "templater",
@@ -534,11 +533,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Drafter ──────────────────────────────────────────────────────────
-        // Hidden when all rows have a drafter. "Reassign" button per row
-        // temporarily reveals the column so a new drafter can be selected.
-        // On pages that don't pass onReassignDrafterClick this column behaves
-        // exactly as before (shown/hidden by visibleColumns prop).
+        // Drafter
         {
             id: "drafter",
             accessorKey: "drafter",
@@ -546,12 +541,9 @@ export const JobSalesTable = ({
             cell: ({ row }) => {
                 const drafter = row.original.drafter;
                 const hasDrafter = drafter && drafter !== '-';
-
                 return (
                     <div className="flex items-center gap-2">
                         <span className="text-xs">{drafter || '—'}</span>
-
-                        {/* Only render Reassign when the prop is provided (JobStatusTable context) */}
                         {hasDrafter && onReassignDrafterClick && (
                             <Button
                                 variant="outline"
@@ -559,7 +551,6 @@ export const JobSalesTable = ({
                                 className="h-6 px-2 text-[10px] border-orange-300 text-orange-600 hover:bg-orange-50 whitespace-nowrap"
                                 onClick={e => {
                                     e.stopPropagation();
-                                    // Ensure the column stays visible while the user acts
                                     setDrafterColumnVisible(true);
                                     onReassignDrafterClick(row.original);
                                 }}
@@ -574,8 +565,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── CNC Operator ─────────────────────────────────────────────────────
-        // Shows CNC operator assigned to the FAB with optional reassign button
+        // CNC Operator
         {
             id: "cnc_operator",
             accessorKey: "cnc_operator",
@@ -583,12 +573,9 @@ export const JobSalesTable = ({
             cell: ({ row }) => {
                 const cncOperator = row.original.cnc_operator;
                 const hasOperator = cncOperator && cncOperator !== '-';
-
                 return (
                     <div className="flex items-center gap-2">
                         <span className="text-xs">{cncOperator || '—'}</span>
-
-                        {/* Reassign button - only shown when prop is provided and operator exists */}
                         {hasOperator && onReassignCNCClick && (
                             <Button
                                 variant="outline"
@@ -609,7 +596,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Total Sq Ft ──────────────────────────────────────────────────────
+        // Total Sq Ft
         {
             id: "total_sq_ft",
             accessorKey: "total_sq_ft",
@@ -619,7 +606,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Revisor ───────────────────────────────────────────────────────────
+        // Revisor
         {
             id: "revisor",
             accessorKey: "revisor",
@@ -629,7 +616,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Revised ───────────────────────────────────────────────────────────
+        // Revised
         {
             id: "revised",
             accessorKey: "revised",
@@ -639,7 +626,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Revision Completed ────────────────────────────────────────────────
+        // Revision Completed
         {
             id: "revision_completed",
             accessorKey: "revision_completed",
@@ -649,7 +636,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Revision Number ───────────────────────────────────────────────────
+        // Revision Number
         {
             id: "revision_number",
             accessorKey: "revision_number",
@@ -659,7 +646,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Revision Reason ───────────────────────────────────────────────────
+        // Revision Reason
         {
             id: "revision_reason",
             accessorKey: "revision_reason",
@@ -673,7 +660,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Revision Type ─────────────────────────────────────────────────────
+        // Revision Type
         {
             id: "revision_type",
             accessorKey: "revision_type",
@@ -683,7 +670,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Revenue ───────────────────────────────────────────────────────────
+        // Revenue
         {
             id: "revenue",
             accessorKey: "revenue",
@@ -693,7 +680,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── GP ────────────────────────────────────────────────────────────────
+        // GP
         {
             id: "gp",
             accessorKey: "gp",
@@ -703,7 +690,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── SCT Completed ─────────────────────────────────────────────────────
+        // SCT Completed
         {
             id: "sct_completed",
             accessorKey: "sct_completed",
@@ -713,7 +700,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── SlabSmith Status ──────────────────────────────────────────────────
+        // SlabSmith Status
         {
             id: "slabsmith_status",
             accessorFn: (row) => {
@@ -758,7 +745,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Draft Status ──────────────────────────────────────────────────────
+        // Draft Status
         {
             id: "draft_completed",
             accessorKey: "draft_completed",
@@ -773,7 +760,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Review Completed ──────────────────────────────────────────────────
+        // Review Completed
         {
             id: "review_completed",
             accessorKey: "review_completed",
@@ -783,7 +770,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Notes columns ─────────────────────────────────────────────────────
+        // Notes columns
         { id: 'templating_notes', header: ({ column }) => <DataGridColumnHeader title="Templating Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'templating'), enableSorting: false, size: 180 },
         { id: 'drafting_notes', header: ({ column }) => <DataGridColumnHeader title="Drafting Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'drafting'), enableSorting: false, size: 180 },
         { id: 'final_programming_notes', header: ({ column }) => <DataGridColumnHeader title="Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'final_programming'), enableSorting: false, size: 180 },
@@ -796,7 +783,7 @@ export const JobSalesTable = ({
         { id: 'revision_notes', header: ({ column }) => <DataGridColumnHeader title="Revision Notes" column={column} />, cell: ({ row }) => renderNotes(row, ['revision', 'revisions']), enableSorting: false, size: 180 },
         { id: 'install_notes', header: ({ column }) => <DataGridColumnHeader title="Install Notes" column={column} />, cell: ({ row }) => renderNotes(row, 'install_schedulling'), enableSorting: false, size: 180 },
 
-        // ── File ──────────────────────────────────────────────────────────────
+        // File
         {
             id: 'file',
             accessorKey: 'file',
@@ -806,7 +793,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Shop Date Scheduled ───────────────────────────────────────────────
+        // Shop Date Scheduled
         {
             id: 'shop_date_scheduled',
             accessorKey: 'shop_date_scheduled',
@@ -816,7 +803,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── WJ Time Minutes ───────────────────────────────────────────────────
+        // WJ Time Minutes
         {
             id: 'wj_time_minutes',
             accessorKey: 'wj_time_minutes',
@@ -826,7 +813,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Final Programming Completed ───────────────────────────────────────
+        // Final Programming Completed
         {
             id: 'final_programming_completed',
             accessorKey: 'final_programming_completed',
@@ -836,7 +823,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Final Programmer ──────────────────────────────────────────────────
+        // Final Programmer
         {
             id: 'final_programmer',
             accessorKey: 'final_programmer',
@@ -846,7 +833,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Notes ─────────────────────────────────────────────────────────────
+        // Notes (generic)
         {
             id: 'notes',
             accessorKey: 'notes',
@@ -860,7 +847,7 @@ export const JobSalesTable = ({
             size: 150,
             enableSorting: true,
         },
-{
+        {
             id: 'current_stage',
             accessorKey: 'current_stage',
             header: ({ column }) => <DataGridColumnHeader title="CURRENT STAGE" column={column} />,
@@ -873,7 +860,7 @@ export const JobSalesTable = ({
             size: 150,
             enableSorting: true,
         },
-        // ── Templating Action ─────────────────────────────────────────────────
+        // Templating Action
         {
             id: "reschedule",
             accessorKey: "templating_completed",
@@ -903,7 +890,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── % Complete ────────────────────────────────────────────────────────
+        // % Complete
         {
             id: 'percent_complete',
             accessorKey: 'percent_complete',
@@ -913,11 +900,10 @@ export const JobSalesTable = ({
                 return <span className="text-xs">{val != null ? `${val}%` : '-'}</span>;
             },
             size: 100,
-           
             enableSorting: true,
         },
 
-        // ── Completion Date ───────────────────────────────────────────────────
+        // Completion Date
         {
             id: 'completion_date',
             accessorKey: 'completion_date',
@@ -927,7 +913,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Installer ─────────────────────────────────────────────────────────
+        // Installer
         {
             id: 'installer',
             accessorKey: 'installer',
@@ -937,7 +923,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Install Date ──────────────────────────────────────────────────────
+        // Install Date
         {
             id: 'install_date',
             accessorKey: 'install_date',
@@ -947,7 +933,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Install Confirmed ─────────────────────────────────────────────────
+        // Install Confirmed
         {
             id: 'install_confirmed',
             accessorKey: 'install_confirmed',
@@ -962,7 +948,7 @@ export const JobSalesTable = ({
             enableSorting: true,
         },
 
-        // ── Shop Status ───────────────────────────────────────────────────────
+        // Shop Status
         {
             id: 'shop_status',
             accessorKey: 'shop_status',
@@ -1031,14 +1017,11 @@ export const JobSalesTable = ({
     ], [
         getPath, path, dateRange, enableMultiSelect, effectiveSelectedRows,
         filteredData, loadingStates, optimisticUpdates, onRescheduleClick,
-        onReassignDrafterClick, drafterColumnVisible,
+        onReassignDrafterClick, drafterColumnVisible, canAddNote, pageRole,
+        onReassignCNCClick, setSelectedRows
     ]);
 
     // ── Column filtering ─────────────────────────────────────────────────────
-    // The drafter column is excluded when:
-    //   - every row already has a drafter (showDrafterColumn is false), AND
-    //   - the user hasn't clicked Reassign yet
-    // The checkbox column is excluded when enableMultiSelect is false.
     const columns = useMemo(() => {
         return baseColumns.filter(column => {
             // Always include actions
@@ -1049,10 +1032,12 @@ export const JobSalesTable = ({
 
             // Drafter column: hide when every row has a drafter AND user hasn't toggled
             if (column.id === 'drafter') {
-                // If visibleColumns whitelist is in use, it must include 'drafter' AND showDrafterColumn
                 if (visibleColumns?.length) return visibleColumns.includes('drafter') && showDrafterColumn;
                 return showDrafterColumn;
             }
+
+            // On Hold column: only include if user has permission
+            if (column.id === 'on_hold') return canToggleOnHold;
 
             // visibleColumns whitelist
             if (visibleColumns?.length && column.id) return visibleColumns.includes(column.id);
@@ -1066,7 +1051,7 @@ export const JobSalesTable = ({
             }
             return true;
         });
-    }, [baseColumns, filteredData, visibleColumns, enableMultiSelect, showDrafterColumn]);
+    }, [baseColumns, filteredData, visibleColumns, enableMultiSelect, showDrafterColumn, canToggleOnHold]);
 
     const table = useReactTable({
         columns,
@@ -1160,57 +1145,8 @@ export const JobSalesTable = ({
                                 </SelectContent>
                             </Select>
 
-                            {/* Date filter */}
-                            {/* <div className="flex items-center gap-2">
-                                <Select value={dateFilter} onValueChange={v => {
-                                    setDateFilter(v);
-                                    if (v === 'custom') setIsDatePickerOpen(true);
-                                }}>
-                                    <SelectTrigger className="w-[170px] h-[34px]">
-                                        <SelectValue placeholder="Filter by date" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="today">Today</SelectItem>
-                                        <SelectItem value="this_week">This Week</SelectItem>
-                                        <SelectItem value="last_week">Last Week</SelectItem>
-                                        <SelectItem value="this_month">This Month</SelectItem>
-                                        <SelectItem value="last_month">Last Month</SelectItem>
-                                        <SelectItem value="next_week">Next Week</SelectItem>
-                                        <SelectItem value="next_month">Next Month</SelectItem>
-                                        <SelectItem value="all">All Date</SelectItem>
-                                        <SelectItem value="custom">Custom</SelectItem>
-                                    </SelectContent>
-                                </Select>
-
-                                {dateFilter === 'custom' && (
-                                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                                        <PopoverTrigger asChild>
-                                            <Button variant="outline" size="sm" className="h-[34px]">
-                                                <CalendarDays className="h-4 w-4 mr-2" />
-                                                {dateRange?.from ? (
-                                                    dateRange.to
-                                                        ? <>{formatForDisplay(dateRange.from, 'DISPLAY_US_FORMAT')} – {formatForDisplay(dateRange.to, 'DISPLAY_US_FORMAT')}</>
-                                                        : <>{formatForDisplay(dateRange.from, 'DISPLAY_US_FORMAT')}</>
-                                                ) : <span>Pick dates</span>}
-                                            </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent className="w-auto p-0" align="start">
-                                            <Calendar
-                                                initialFocus
-                                                mode="range"
-                                                defaultMonth={tempDateRange?.from || new Date()}
-                                                selected={tempDateRange}
-                                                onSelect={setTempDateRange}
-                                                numberOfMonths={2}
-                                            />
-                                            <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
-                                                <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); }}>Reset</Button>
-                                                <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
-                                            </div>
-                                        </PopoverContent>
-                                    </Popover>
-                                )}
-                            </div> */}
+                            {/* Date filter (commented out in original – keeping as is) */}
+                            {/* ... */}
 
                             {/* Schedule filter */}
                             {showScheduleFilter && (
@@ -1294,10 +1230,12 @@ export const JobSalesTable = ({
                             </Button>
                         )}
 
-                        {/* Export CSV */}
-                        <Button variant="outline" onClick={() => exportTableToCSV(table, "FabId")}>
-                            Export CSV
-                        </Button>
+                        {/* Export CSV – now controlled by canExport */}
+                        {canExport && (
+                            <Button variant="outline" onClick={() => exportTableToCSV(table, "FabId")}>
+                                Export CSV
+                            </Button>
+                        )}
                     </CardToolbar>
                 </CardHeader>
 

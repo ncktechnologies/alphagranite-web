@@ -240,7 +240,7 @@ const FinalProgrammingPage = () => {
                     onReassignDrafterClick={handleReassignDrafterClick}
                     canAddNote={canAddNote}
                     canToggleOnHold={canToggleOnHold}
-                    canAssignDrafter={canAssignDrafter}
+                    canAssignDrafter={canReassignDrafter}
                     canReassignDrafter={canReassignDrafter}
                 />
                 <AssignDrafterModal

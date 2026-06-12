@@ -48,6 +48,7 @@ import { useToggleNeedToInvoiceMutation, useMarkJobInvoicedMutation } from '@/st
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission';
 
 // Update the ExtendedJob interface to include API fields
 interface ExtendedJob extends Omit<Job, 'project_value'> {
@@ -57,12 +58,18 @@ interface ExtendedJob extends Omit<Job, 'project_value'> {
   account_name?: string;
   account_id?: number;
   need_to_invoice?: boolean;
-  notes?: string | Array<{ note: string }>; 
-  invoiced_at:string;
+  notes?: string | Array<{ note: string }>;
+  invoiced_at: string;
   // Add any other fields that come from API
 }
 
 export const NeedToInvoicePage = () => {
+  const isSuperAdmin = useIsSuperAdmin();
+  const permissions = usePermission('Need to Invoice'); 
+
+  // Determine if the user can manage invoice requirements (view toggle, add notes, mark invoiced)
+  const canManageInvoice = isSuperAdmin || permissions.can_create;
+
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 25,
@@ -100,7 +107,7 @@ export const NeedToInvoicePage = () => {
     ...(searchQuery && { search: searchQuery }),
     ...(selectedStatus !== 'all' && { status_id: parseInt(selectedStatus) }),
     need_to_invoice: true, // Filter to show only jobs that need invoicing
-      include_notes: true, // Include notes in the response
+    include_notes: true,
   });
 
   const { data: invoicedJobsData, isLoading: isInvoicedLoading, refetch: refetchInvoiced } = useGetJobsQuery({
@@ -109,7 +116,7 @@ export const NeedToInvoicePage = () => {
     ...(invoicedSearchQuery && { search: invoicedSearchQuery }),
     ...(invoicedSelectedStatus !== 'all' && { status_id: parseInt(invoicedSelectedStatus) }),
     is_invoiced: true, // Filter to show only invoiced jobs
-      include_notes: true, // Include notes in the response
+    include_notes: true,
   });
 
   const [toggleNeedToInvoice] = useToggleNeedToInvoiceMutation();
@@ -119,15 +126,12 @@ export const NeedToInvoicePage = () => {
   // Transform API data to match table structure
   const jobs = useMemo(() => {
     if (!jobsData) return [];
-    return jobsData?.data.map((job: any) => ({
+    return jobsData.data.map((job: any) => ({
       ...job,
-      // Only transform what's necessary
       project_value: job.project_value || 'N/A',
       updated_at: job.updated_at || 'N/A',
       status: job.status_id === 1 ? 'Active' : job.status_id === 2 ? 'Inactive' : job.status_id === 3 ? 'Completed' : 'N/A',
-      // The API already provides sales_person_name, so don't override it
-      // sales_person_name is already included from the spread operator
-      need_to_invoice: job.need_to_invoice, // Add the need_to_invoice field from API
+      need_to_invoice: job.need_to_invoice,
     } as ExtendedJob));
   }, [jobsData]);
 
@@ -136,13 +140,10 @@ export const NeedToInvoicePage = () => {
     if (!invoicedJobsData) return [];
     return invoicedJobsData.data.map((job: any) => ({
       ...job,
-      // Only transform what's necessary
       project_value: job.project_value || 'N/A',
       updated_at: job.updated_at || 'N/A',
       status: job.status_id === 1 ? 'Active' : job.status_id === 2 ? 'Inactive' : job.status_id === 3 ? 'Completed' : 'N/A',
-      // The API already provides sales_person_name, so don't override it
-      // sales_person_name is already included from the spread operator
-      need_to_invoice: job.need_to_invoice, // Add the need_to_invoice field from API
+      need_to_invoice: job.need_to_invoice,
     } as ExtendedJob));
   }, [invoicedJobsData]);
 
@@ -164,20 +165,28 @@ export const NeedToInvoicePage = () => {
     setIsSheetOpen(true);
   };
 
-  // Handle toggling invoice requirement with note
-  const handleToggleInvoiceWithNote = async (job: ExtendedJob, note?: string) => {
+  // Handle adding a note (without toggling invoice)
+  const handleAddNote = async (job: ExtendedJob, note: string) => {
     try {
-      const payload: ToggleInvoiceRequest = {
-        job_id: job.id,
-        note: note || undefined
-      };
-
-      await addJobNotes(payload).unwrap();
-      toast.success(`Note added successfully`);
+      await addJobNotes({ job_id: job.id, note }).unwrap();
+      toast.success('Note added successfully');
       refetch();
       setIsNoteModalOpen(false);
       setNoteText('');
       setCurrentJobForNote(null);
+    } catch (error) {
+      console.error('Error adding note:', error);
+      toast.error('Failed to add note');
+    }
+  };
+
+  // Handle toggling invoice requirement without note
+  const handleToggleWithoutNote = async (job: ExtendedJob) => {
+    try {
+      const payload: ToggleInvoiceRequest = { job_id: job.id };
+      await toggleNeedToInvoice(payload).unwrap();
+      toast.success(`Invoice requirement ${job.need_to_invoice ? 'disabled' : 'enabled'} successfully`);
+      refetch();
     } catch (error) {
       console.error('Error toggling invoice requirement:', error);
       toast.error(`Failed to ${job.need_to_invoice ? 'disable' : 'enable'} invoice requirement`);
@@ -189,22 +198,6 @@ export const NeedToInvoicePage = () => {
     setCurrentJobForNote(job);
     setNoteText('');
     setIsNoteModalOpen(true);
-  };
-
-  // Handle toggling invoice requirement without note
-  const handleToggleWithoutNote = async (job: ExtendedJob) => {
-    try {
-      const payload: ToggleInvoiceRequest = {
-        job_id: job.id
-      };
-
-      await toggleNeedToInvoice(payload).unwrap();
-      toast.success(`Invoice requirement ${job.need_to_invoice ? 'disabled' : 'enabled'} successfully`);
-      refetch();
-    } catch (error) {
-      console.error('Error toggling invoice requirement:', error);
-      toast.error(`Failed to ${job.need_to_invoice ? 'disable' : 'enable'} invoice requirement`);
-    }
   };
 
   // Handle marking job as invoiced
@@ -234,21 +227,15 @@ export const NeedToInvoicePage = () => {
     {
       id: 'name',
       accessorFn: (row) => row.name,
-      header: ({ column }) => (
-        <DataGridColumnHeader title="JOB NAME" column={column} />
-      ),
-      cell: ({ row }) => (
-        <span className="text-sm text-text">{row.original.name}</span>
-      ),
+      header: ({ column }) => <DataGridColumnHeader title="JOB NAME" column={column} />,
+      cell: ({ row }) => <span className="text-sm text-text">{row.original.name}</span>,
       enableSorting: true,
       size: 200,
     },
     {
       id: 'job_number',
       accessorFn: (row) => row.job_number,
-      header: ({ column }) => (
-        <DataGridColumnHeader title="JOB NUMBER" column={column} />
-      ),
+      header: ({ column }) => <DataGridColumnHeader title="JOB NUMBER" column={column} />,
       cell: ({ row }) => (
         <Link
           to={`/job/details/${row.original.id}`}
@@ -264,9 +251,7 @@ export const NeedToInvoicePage = () => {
     {
       id: 'project_value',
       accessorFn: (row) => row.project_value,
-      header: ({ column }) => (
-        <DataGridColumnHeader title="PROJECT VALUE" column={column} />
-      ),
+      header: ({ column }) => <DataGridColumnHeader title="PROJECT VALUE" column={column} />,
       cell: ({ row }) => (
         <span className="text-sm text-text">
           {row.original.project_value ? `$${row.original.project_value}` : 'N/A'}
@@ -278,9 +263,7 @@ export const NeedToInvoicePage = () => {
     {
       id: 'created_at',
       accessorFn: (row) => row.created_at,
-      header: ({ column }) => (
-        <DataGridColumnHeader title="CREATED AT" column={column} />
-      ),
+      header: ({ column }) => <DataGridColumnHeader title="CREATED AT" column={column} />,
       cell: ({ row }) => (
         <span className="text-sm text-text">
           {new Date(row.original.created_at).toLocaleDateString()}
@@ -292,9 +275,7 @@ export const NeedToInvoicePage = () => {
     {
       id: 'sales_person_name',
       accessorFn: (row) => row.sales_person_name,
-      header: ({ column }) => (
-        <DataGridColumnHeader title="SALES PERSON" column={column} />
-      ),
+      header: ({ column }) => <DataGridColumnHeader title="SALES PERSON" column={column} />,
       cell: ({ row }) => (
         <span className="text-sm text-text">
           {row.original.sales_person_name || 'N/A'}
@@ -306,9 +287,7 @@ export const NeedToInvoicePage = () => {
     {
       id: 'account_name',
       accessorFn: (row) => row.account_name,
-      header: ({ column }) => (
-        <DataGridColumnHeader title="ACCOUNT NAME" column={column} />
-      ),
+      header: ({ column }) => <DataGridColumnHeader title="ACCOUNT NAME" column={column} />,
       cell: ({ row }) => (
         <span className="text-sm text-text">
           {row.original.account_name || 'N/A'}
@@ -331,16 +310,12 @@ export const NeedToInvoicePage = () => {
       header: ({ column }) => <DataGridColumnHeader title="NOTES" column={column} />,
       cell: ({ row }) => {
         const notes = row.original.notes;
-        if (typeof notes === 'string') {
-          return <span className="text-xs">{notes}</span>;
-        }
-
+        if (typeof notes === 'string') return <span className="text-xs">{notes}</span>;
         if (Array.isArray(notes) && notes.length > 0) {
           const firstNote = notes[0];
           const noteText = typeof firstNote === 'string' ? firstNote : firstNote?.note;
           return <span className="text-xs">{noteText || '-'}</span>;
         }
-
         return <span className="text-xs">-</span>;
       },
       size: 150,
@@ -348,27 +323,30 @@ export const NeedToInvoicePage = () => {
     },
   ], []);
 
-  // Columns for the "Need to Invoice" table
-  const needToInvoiceColumns = useMemo<ColumnDef<ExtendedJob>[]>(() => [
-    ...commonColumns,
-    {
-      id: 'need_to_invoice',
-      accessorFn: (row) => row.need_to_invoice,
-      header: ({ column }) => (
-        <DataGridColumnHeader title="NEED TO INVOICE" column={column} />
-      ),
-      cell: ({ row }) => (
-        <div className="flex justify-center">
-          <Switch
-            checked={row.original.need_to_invoice}
-            onCheckedChange={() => handleToggleWithoutNote(row.original)}
-          />
-        </div>
-      ),
-      enableSorting: false,
-      size: 150,
-    },
-    {
+  // Columns for the "Need to Invoice" table – conditionally include the invoice toggle column
+  const needToInvoiceColumns = useMemo<ColumnDef<ExtendedJob>[]>(() => {
+    const baseColumns: ColumnDef<ExtendedJob>[] = [...commonColumns];
+
+    if (canManageInvoice) {
+      baseColumns.push({
+        id: 'need_to_invoice',
+        accessorFn: (row) => row.need_to_invoice,
+        header: ({ column }) => <DataGridColumnHeader title="NEED TO INVOICE" column={column} />,
+        cell: ({ row }) => (
+          <div className="flex justify-center">
+            <Switch
+              checked={row.original.need_to_invoice}
+              onCheckedChange={() => handleToggleWithoutNote(row.original)}
+            />
+          </div>
+        ),
+        enableSorting: false,
+        size: 150,
+      });
+    }
+
+    // Actions column with permission‑controlled items
+    baseColumns.push({
       id: 'actions',
       header: '',
       cell: ({ row }) => (
@@ -381,36 +359,35 @@ export const NeedToInvoicePage = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => handleView(row.original)}>
-              View
-            </DropdownMenuItem>
-            {/* <DropdownMenuItem onClick={() => handleEdit(row.original)}>
-              Edit
-            </DropdownMenuItem> */}
-            <DropdownMenuItem onClick={() => handleOpenNoteModal(row.original)}>
-              Add Note
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => handleMarkJobInvoiced(row.original)}>
-              Mark Invoiced
-            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleView(row.original)}>View</DropdownMenuItem>
+            {canManageInvoice && (
+              <>
+                <DropdownMenuItem onClick={() => handleOpenNoteModal(row.original)}>
+                  Add Note
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => handleMarkJobInvoiced(row.original)}>
+                  Mark Invoiced
+                </DropdownMenuItem>
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),
       enableSorting: false,
       size: 60,
-    },
-  ], [commonColumns, handleToggleWithoutNote, handleOpenNoteModal, handleView, handleEdit, handleMarkJobInvoiced]);
+    });
 
-  // Columns for the "Invoiced" table
+    return baseColumns;
+  }, [commonColumns, canManageInvoice, handleToggleWithoutNote, handleOpenNoteModal, handleView, handleMarkJobInvoiced]);
+
+  // Columns for the "Invoiced" table – usually no write actions needed
   const invoicedColumns = useMemo<ColumnDef<ExtendedJob>[]>(() => [
     ...commonColumns,
     {
       id: 'invoiced_status',
       accessorFn: (row) => 'Invoiced',
-      header: ({ column }) => (
-        <DataGridColumnHeader title="INVOICED STATUS" column={column} />
-      ),
+      header: ({ column }) => <DataGridColumnHeader title="INVOICED STATUS" column={column} />,
       cell: ({ row }) => (
         <div className="flex justify-center">
           <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
@@ -434,21 +411,22 @@ export const NeedToInvoicePage = () => {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => handleView(row.original)}>
-              View
-            </DropdownMenuItem>
-            {/* <DropdownMenuItem onClick={() => handleEdit(row.original)}>
-              Edit
-            </DropdownMenuItem> */}
+            <DropdownMenuItem onClick={() => handleView(row.original)}>View</DropdownMenuItem>
+            {/* Optionally allow adding notes even for invoiced jobs */}
+            {canManageInvoice && (
+              <DropdownMenuItem onClick={() => handleOpenNoteModal(row.original)}>
+                Add Note
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),
       enableSorting: false,
       size: 60,
     },
-  ], [commonColumns, handleView, handleEdit]);
+  ], [commonColumns, canManageInvoice, handleView, handleOpenNoteModal]);
 
-  // Create the table instances with useReactTable hook at the top level
+  // Create the table instances
   const needToInvoiceTable = useReactTable({
     columns: needToInvoiceColumns,
     data: jobs,
@@ -470,7 +448,7 @@ export const NeedToInvoicePage = () => {
   const invoicedTable = useReactTable({
     columns: invoicedColumns,
     data: invoicedJobs,
-    pageCount: invoicedJobsData ? Math.ceil(invoicedJobsData.length / invoicedPagination.pageSize) : -1,
+    pageCount: invoicedJobsData ? Math.ceil(invoicedJobsData.total / invoicedPagination.pageSize) : -1,
     getRowId: (row: ExtendedJob) => String(row.id),
     state: { pagination: invoicedPagination, sorting: invoicedSorting, rowSelection: invoicedRowSelection },
     columnResizeMode: 'onChange',
@@ -496,7 +474,7 @@ export const NeedToInvoicePage = () => {
         onSubmitSuccess={() => { refetch(); refetchInvoiced(); }}
       />
 
-      {/* Note Modal - Moved outside of table to prevent re-renders */}
+      {/* Note Modal */}
       <Dialog open={isNoteModalOpen} onOpenChange={(open) => {
         if (!open) {
           setIsNoteModalOpen(false);
@@ -516,7 +494,7 @@ export const NeedToInvoicePage = () => {
               <Textarea
                 id="note"
                 value={noteText}
-                onChange={(e) => setNoteText(e.target.value)} // This is the main input field
+                onChange={(e) => setNoteText(e.target.value)}
                 placeholder="Enter any issues with invoicing..."
                 rows={4}
               />
@@ -533,7 +511,7 @@ export const NeedToInvoicePage = () => {
                 Cancel
               </Button>
               <Button
-                onClick={() => currentJobForNote && handleToggleInvoiceWithNote(currentJobForNote, noteText)}
+                onClick={() => currentJobForNote && handleAddNote(currentJobForNote, noteText)}
                 disabled={!currentJobForNote}
               >
                 Save Note

@@ -55,10 +55,14 @@ interface ExtendedJob extends Omit<Job, 'project_value'> {
   account_id?: number;
   need_to_invoice?: boolean;
   notes?: string | Array<{ note: string }>;
-  // Add any other fields that come from API
 }
 
-export const JobsSection = () => {
+interface JobsSectionProps {
+  /** Permission to show and use the "Need to Invoice" toggle column */
+  canToggleInvoice?: boolean;
+}
+
+export const JobsSection = ({ canToggleInvoice = false }: JobsSectionProps) => {
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 25,
@@ -78,7 +82,7 @@ export const JobsSection = () => {
     limit: pagination.pageSize,
     ...(searchQuery && { search: searchQuery }),
     ...(selectedStatus !== 'all' && { status_id: parseInt(selectedStatus) }),
-    include_notes: true, // Include notes in the API response
+    include_notes: true,
   });
   const { data: accountsData } = useGetAccountsQuery({ limit: 1000 });
 
@@ -96,16 +100,13 @@ export const JobsSection = () => {
     if (!jobsData) return [];
     return jobsData.data.map((job: any) => ({
       ...job,
-      // Only transform what's necessary
       project_value: job.project_value || 'N/A',
       sq_ft: job.sq_ft || 'N/A',
       updated_at: job.updated_at || 'N/A',
       status: job.status_id === 1 ? 'Active' : job.status_id === 2 ? 'Inactive' : job.status_id === 3 ? 'Completed' : 'N/A',
-      need_to_invoice: job.need_to_invoice, // Add the need_to_invoice field from API
+      need_to_invoice: job.need_to_invoice,
       account_name: job.account_id ? accountNameMap.get(job.account_id) || 'N/A' : 'N/A',
       notes: job.notes || [],
-      // The API already provides sales_person_name, so don't override it
-      // sales_person_name is already included from the spread operator
     } as ExtendedJob));
   }, [jobsData, accountNameMap]);
 
@@ -144,205 +145,178 @@ export const JobsSection = () => {
     setPagination(prev => ({ ...prev, pageIndex: 0 }));
   }, [searchQuery, selectedStatus]);
 
+  // Define columns – conditionally include the "need_to_invoice" column
   const columns = useMemo<ColumnDef<ExtendedJob>[]>(
-    () => [
-      {
-        id: 'actions',
-        header: '',
-        cell: ({ row }) => (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-8 w-8 p-0">
-                <span className="sr-only">Open menu</span>
-                <Ellipsis className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => handleView(row.original)}>
-                View
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleEdit(row.original)}>
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ),
-        enableSorting: false,
-        size: 60,
-      },
-      {
-        id: 'name',
-        accessorFn: (row) => row.name,
-        header: ({ column }) => (
-          <DataGridColumnHeader title="JOB NAME" column={column} />
-        ),
-        cell: ({ row }) => (
-          <span className="text-sm text-text">{row.original.name}</span>
-        ),
-        enableSorting: true,
-        size: 200,
-      },
-      {
-        id: 'job_number',
-        accessorFn: (row) => row.job_number,
-        header: ({ column }) => (
-          <DataGridColumnHeader title="JOB NUMBER" column={column} />
-        ),
-        cell: ({ row }) => (
-          <Link
-            to={`/job/details/${row.original.id}`}
-            rel="noopener noreferrer"
-            className="text-sm text-primary hover:underline"
-          >
-            {row.original.job_number}
-          </Link>
-        ),
-        enableSorting: true,
-        size: 150,
-      },
-      {
-        id: 'project_value',
-        accessorFn: (row) => row.project_value,
-        header: ({ column }) => (
-          <DataGridColumnHeader title="PROJECT VALUE" column={column} />
-        ),
-        cell: ({ row }) => (
-          <span className="text-sm text-text">
-            {row.original.project_value ? `$${row.original.project_value}` : 'N/A'}
-          </span>
-        ),
-        enableSorting: true,
-        size: 150,
-      },
-      {
-        id: 'sq_ft',
-        accessorFn: (row) => row.sq_ft,
-        header: ({ column }) => (
-          <DataGridColumnHeader title="SQUARE FOOT" column={column} />
-        ),
-        cell: ({ row }) => (
-          <span className="text-sm text-text">
-            {row.original.sq_ft || 'N/A'}
-          </span>
-        ),
-        enableSorting: true,
-        size: 130,
-      },
-      {
-        id: 'created_at',
-        accessorFn: (row) => row.created_at,
-        header: ({ column }) => (
-          <DataGridColumnHeader title="CREATED AT" column={column} />
-        ),
-        cell: ({ row }) => (
-          <span className="text-sm text-text">
-            {new Date(row.original.created_at).toLocaleDateString()}
-          </span>
-        ),
-        enableSorting: true,
-        size: 150,
-      },
-      {
-        id: 'account_name',
-        accessorFn: (row) => row.account_name,
-        header: ({ column }) => (
-          <DataGridColumnHeader title="ACCOUNT NAME" column={column} />
-        ),
-        cell: ({ row }) => (
-          <span className="text-sm text-text">
-            {row.original.account_name || 'N/A'}
-          </span>
-        ),
-        enableSorting: true,
-        size: 150,
-      },
-      {
-        id: 'sales_person_name',
-        accessorFn: (row) => row.sales_person_name,
-        header: ({ column }) => (
-          <DataGridColumnHeader title="SALES PERSON" column={column} />
-        ),
-        cell: ({ row }) => (
-          <span className="text-sm text-text">
-            {row.original.sales_person_name || 'N/A'}
-          </span>
-        ),
-        enableSorting: true,
-        size: 150,
-      },
-      {
-        id: 'status',
-        accessorFn: (row) => row.status,
-        header: ({ column }) => (
-          <DataGridColumnHeader title="STATUS" column={column} />
-        ),
-        cell: ({ row }) => (
-          <span className="text-sm text-text">{row.original.status || 'N/A'}</span>
-        ),
-        enableSorting: true,
-        size: 120,
-      },
-      {
-        id: 'need_to_invoice',
-        accessorFn: (row) => row.need_to_invoice,
-        header: ({ column }) => (
-          <DataGridColumnHeader title="NEED TO INVOICE" column={column} />
-        ),
-        cell: ({ row }) => (
-          <div className="flex justify-center">
-            <Switch
-              checked={row.original.need_to_invoice}
-              onCheckedChange={async (checked) => {
-                try {
-                  // Send the toggle request with an empty note since this is just a toggle
-                  await toggleNeedToInvoice({ job_id: row.original.id }).unwrap();
-                  toast.success(`Invoice requirement ${checked ? 'enabled' : 'disabled'} successfully`);
-                  refetch();
-                } catch (error) {
-                  console.error('Error toggling invoice requirement:', error);
-                  toast.error(`Failed to ${checked ? 'enable' : 'disable'} invoice requirement`);
-                }
-              }}
-            />
-          </div>
-        ),
-        enableSorting: false,
-        size: 150,
-      },
-      {
-        id: 'notes',
-        accessorKey: 'notes',
-        accessorFn: (row) => {
-          if (typeof row.notes === 'string') return row.notes;
-          if (Array.isArray(row.notes) && row.notes.length > 0) {
-            const firstNote = row.notes[0];
-            return typeof firstNote === 'string' ? firstNote : firstNote?.note || '';
-          }
-          return '';
+    () => {
+      const baseColumns: ColumnDef<ExtendedJob>[] = [
+        {
+          id: 'actions',
+          header: '',
+          cell: ({ row }) => (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <span className="sr-only">Open menu</span>
+                  <Ellipsis className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                <DropdownMenuItem onClick={() => handleView(row.original)}>
+                  View
+                </DropdownMenuItem>
+                <Can on="Manage Jobs" action="create">
+                  <DropdownMenuItem onClick={() => handleEdit(row.original)}>
+                    Edit
+                  </DropdownMenuItem>
+                </Can>
+                <DropdownMenuSeparator />
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ),
+          enableSorting: false,
+          size: 60,
         },
-        header: ({ column }) => <DataGridColumnHeader title="NOTES" column={column} />,
-        cell: ({ row }) => {
-          const notes = row.original.notes;
-          if (typeof notes === 'string') {
-            return <span className="text-xs">{notes}</span>;
-          }
-
-          if (Array.isArray(notes) && notes.length > 0) {
-            const firstNote = notes[0];
-            const noteText = typeof firstNote === 'string' ? firstNote : firstNote?.note;
-            return <span className="text-xs">{noteText || '-'}</span>;
-          }
-
-          return <span className="text-xs">-</span>;
+        {
+          id: 'name',
+          accessorFn: (row) => row.name,
+          header: ({ column }) => <DataGridColumnHeader title="JOB NAME" column={column} />,
+          cell: ({ row }) => <span className="text-sm text-text">{row.original.name}</span>,
+          enableSorting: true,
+          size: 200,
         },
-        size: 150,
-        enableSorting: true,
-      },
-    ],
-    [],
+        {
+          id: 'job_number',
+          accessorFn: (row) => row.job_number,
+          header: ({ column }) => <DataGridColumnHeader title="JOB NUMBER" column={column} />,
+          cell: ({ row }) => (
+            <Link
+              to={`/job/details/${row.original.id}`}
+              rel="noopener noreferrer"
+              className="text-sm text-primary hover:underline"
+            >
+              {row.original.job_number}
+            </Link>
+          ),
+          enableSorting: true,
+          size: 150,
+        },
+        {
+          id: 'project_value',
+          accessorFn: (row) => row.project_value,
+          header: ({ column }) => <DataGridColumnHeader title="PROJECT VALUE" column={column} />,
+          cell: ({ row }) => (
+            <span className="text-sm text-text">
+              {row.original.project_value ? `$${row.original.project_value}` : 'N/A'}
+            </span>
+          ),
+          enableSorting: true,
+          size: 150,
+        },
+        {
+          id: 'sq_ft',
+          accessorFn: (row) => row.sq_ft,
+          header: ({ column }) => <DataGridColumnHeader title="SQUARE FOOT" column={column} />,
+          cell: ({ row }) => <span className="text-sm text-text">{row.original.sq_ft || 'N/A'}</span>,
+          enableSorting: true,
+          size: 130,
+        },
+        {
+          id: 'created_at',
+          accessorFn: (row) => row.created_at,
+          header: ({ column }) => <DataGridColumnHeader title="CREATED AT" column={column} />,
+          cell: ({ row }) => (
+            <span className="text-sm text-text">
+              {new Date(row.original.created_at).toLocaleDateString()}
+            </span>
+          ),
+          enableSorting: true,
+          size: 150,
+        },
+        {
+          id: 'account_name',
+          accessorFn: (row) => row.account_name,
+          header: ({ column }) => <DataGridColumnHeader title="ACCOUNT NAME" column={column} />,
+          cell: ({ row }) => <span className="text-sm text-text">{row.original.account_name || 'N/A'}</span>,
+          enableSorting: true,
+          size: 150,
+        },
+        {
+          id: 'sales_person_name',
+          accessorFn: (row) => row.sales_person_name,
+          header: ({ column }) => <DataGridColumnHeader title="SALES PERSON" column={column} />,
+          cell: ({ row }) => <span className="text-sm text-text">{row.original.sales_person_name || 'N/A'}</span>,
+          enableSorting: true,
+          size: 150,
+        },
+        {
+          id: 'status',
+          accessorFn: (row) => row.status,
+          header: ({ column }) => <DataGridColumnHeader title="STATUS" column={column} />,
+          cell: ({ row }) => <span className="text-sm text-text">{row.original.status || 'N/A'}</span>,
+          enableSorting: true,
+          size: 120,
+        },
+        {
+          id: 'notes',
+          accessorKey: 'notes',
+          accessorFn: (row) => {
+            if (typeof row.notes === 'string') return row.notes;
+            if (Array.isArray(row.notes) && row.notes.length > 0) {
+              const firstNote = row.notes[0];
+              return typeof firstNote === 'string' ? firstNote : firstNote?.note || '';
+            }
+            return '';
+          },
+          header: ({ column }) => <DataGridColumnHeader title="NOTES" column={column} />,
+          cell: ({ row }) => {
+            const notes = row.original.notes;
+            if (typeof notes === 'string') {
+              return <span className="text-xs">{notes}</span>;
+            }
+            if (Array.isArray(notes) && notes.length > 0) {
+              const firstNote = notes[0];
+              const noteText = typeof firstNote === 'string' ? firstNote : firstNote?.note;
+              return <span className="text-xs">{noteText || '-'}</span>;
+            }
+            return <span className="text-xs">-</span>;
+          },
+          size: 150,
+          enableSorting: true,
+        },
+      ];
+
+      // Conditionally add the "need_to_invoice" column if user has permission
+      if (canToggleInvoice) {
+        baseColumns.push({
+          id: 'need_to_invoice',
+          accessorFn: (row) => row.need_to_invoice,
+          header: ({ column }) => <DataGridColumnHeader title="NEED TO INVOICE" column={column} />,
+          cell: ({ row }) => (
+            <div className="flex justify-center">
+              <Switch
+                checked={row.original.need_to_invoice}
+                onCheckedChange={async (checked) => {
+                  try {
+                    await toggleNeedToInvoice({ job_id: row.original.id }).unwrap();
+                    toast.success(`Invoice requirement ${checked ? 'enabled' : 'disabled'} successfully`);
+                    refetch();
+                  } catch (error) {
+                    console.error('Error toggling invoice requirement:', error);
+                    toast.error(`Failed to ${checked ? 'enable' : 'disable'} invoice requirement`);
+                  }
+                }}
+              />
+            </div>
+          ),
+          enableSorting: false,
+          size: 150,
+        });
+      }
+
+      return baseColumns;
+    },
+    [canToggleInvoice, toggleNeedToInvoice, refetch]
   );
 
   const table = useReactTable({
@@ -422,7 +396,7 @@ export const JobsSection = () => {
                 </div>
               </CardHeading>
               <CardToolbar>
-                <Can action="create" on="jobs">
+                <Can action="create" on="Manage Jobs">
                   <Button onClick={handleCreateNew}>
                     <Plus className="mr-2 h-4 w-4" />
                     New Job

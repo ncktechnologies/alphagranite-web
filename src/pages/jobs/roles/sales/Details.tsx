@@ -302,7 +302,7 @@ export function SalesDetailsPage() {
                   Drafting, SlabSmith, and all other files for this fabrication
                 </p>
               </CardHeading>
-              <Can  >
+              <Can on='View all FABS' action='create'>
                 <div className="space-y-4">
                   <Button
                     onClick={() => navigate(`/sales/edit/${id}`)}
