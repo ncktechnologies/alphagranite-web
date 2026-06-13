@@ -110,14 +110,6 @@ export const MENU_SIDEBAR: MenuConfig = [
         ],
   },
   {
-<<<<<<< HEAD
-    title: 'MCP Workspace',
-    icon: Plug,
-    path: '/mcp/ask',
-    children: [
-      { title: 'Ask', path: '/mcp/ask' },
-      { title: 'Tool Catalog', path: '/mcp/tools' },
-=======
     title: 'Reports',
     icon: 'building.svg',
     path: '/report',
@@ -138,8 +130,15 @@ export const MENU_SIDEBAR: MenuConfig = [
       { title: 'Turnaround Times', path: '/report/turnaround-times', permissionKey: 'turnaround_times' },
       { title: 'Service Level', path: '/report/service-level', permissionKey: 'service_level' },
       { title: 'Installer Rates', path: '/report/installer-rates', permissionKey: 'installer_rates' },
->>>>>>> origin/dev
     ],
+  },
+  {
+        title: 'MCP Workspace',
+    icon: Plug,
+    path: '/mcp/ask',
+    children: [
+      { title: 'Ask', path: '/mcp/ask' },
+      { title: 'Tool Catalog', path: '/mcp/tools' },]
   },
   // {
   //   title: 'Operator',
