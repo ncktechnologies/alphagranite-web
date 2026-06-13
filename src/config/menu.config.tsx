@@ -106,6 +106,15 @@ export const MENU_SIDEBAR: MenuConfig = [
 
         ],
   },
+  {
+    title: 'MCP Workspace',
+    icon: Plug,
+    path: '/mcp/ask',
+    children: [
+      { title: 'Ask', path: '/mcp/ask' },
+      { title: 'Tool Catalog', path: '/mcp/tools' },
+    ],
+  },
   // {
   //   title: 'Operator',
   //   icon: 'shop.svg',

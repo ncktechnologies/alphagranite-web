@@ -73,6 +73,8 @@ import { JobStatusTable } from '@/pages/jobs/roles/report/JobStatus';
 import JobStatusPage from '@/pages/jobs/roles/report/JobStatusPage';
 import { InstallerScheduleCards } from '@/pages/installer/InstallerDashboard';
 import CostOfStonePage from '@/pages/jobs/roles/cost_of_stone.tsx/CostOfStonePage';
+import { AskPage } from '@/routes/mcp/AskPage';
+import { ToolCatalogPage } from '@/routes/mcp/ToolCatalogPage';
 
 export function AppRoutingSetup() {
   return (
@@ -86,6 +88,9 @@ export function AppRoutingSetup() {
           <Route path="/settings/notifications" element={<NotificationsSection />} />
           <Route path="/settings/permissions" element={<PermissionsSection />} />
           <Route path="/settings/stone-types" element={<StoneTypesSection />} />
+          <Route path="/mcp" element={<Navigate to="/mcp/ask" replace />} />
+          <Route path="/mcp/ask" element={<AskPage />} />
+          <Route path="/mcp/tools" element={<ToolCatalogPage />} />
           <Route path="/create-jobs" element={<JobsSection />} />
           <Route path="/report-status" element={<JobStatusPage />} />
           <Route path="/need-to-invoice" element={<NeedToInvoicePage />} />
