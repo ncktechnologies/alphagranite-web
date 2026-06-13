@@ -4,6 +4,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import {
   useCompleteShopRevisionMutation,
   useGetShopRevisionsByFabIdQuery,
@@ -41,9 +43,11 @@ const ShopRevisionDetailsPage = () => {
   const [markChecked, setMarkChecked] = useState(false);
   const [activeFile, setActiveFile] = useState<UnifiedFile | null>(null);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showCompleteFeedbackDialog, setShowCompleteFeedbackDialog] = useState(false);
+  const [revisionFeedback, setRevisionFeedback] = useState('');
 
   // Data fetching
-  const { data: revisionsData, isLoading: revisionsLoading } = useGetShopRevisionsByFabIdQuery(numericFabId, {
+  const { data: revisionsData, isLoading: revisionsLoading, refetch: refetchRevisions } = useGetShopRevisionsByFabIdQuery(numericFabId, {
     skip: !numericFabId,
   });
   const { data: fabResponse, refetch: refetchFab } = useGetFabByIdQuery(numericFabId, { skip: !numericFabId });
@@ -150,11 +154,19 @@ const ShopRevisionDetailsPage = () => {
 
   const handleComplete = async () => {
     if (!selectedRevision || !markChecked) return;
+    setShowCompleteFeedbackDialog(true);
+  };
+
+  const handleConfirmComplete = async () => {
+    if (!selectedRevision) return;
     try {
-      await completeRevision(selectedRevision.id).unwrap();
+      await completeRevision({ revision_id: selectedRevision.id, revision_feedback: revisionFeedback.trim() }).unwrap();
       toast.success('Revision marked as complete.');
       setMarkChecked(false);
-      navigate('/revision');
+      setRevisionFeedback('');
+      setShowCompleteFeedbackDialog(false);
+      refetchRevisions();
+      refetchFab();
     } catch (error: any) {
       toast.error(error?.data?.message || 'Failed to complete revision.');
     }
@@ -333,6 +345,12 @@ const ShopRevisionDetailsPage = () => {
                   <p className="text-xs text-muted-foreground">Revision Note</p>
                   <p className="text-sm">{selectedRevision.revision_note || '—'}</p>
                 </div>
+                {selectedRevision.revision_feedback && (
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground">Revision Feedback</p>
+                    <p className="text-sm">{selectedRevision.revision_feedback}</p>
+                  </div>
+                )}
                 <div className="space-y-1">
                   <p className="text-xs text-muted-foreground">Requested By</p>
                   <p className="text-sm">
@@ -421,6 +439,36 @@ const ShopRevisionDetailsPage = () => {
           onUploadComplete={handleUploadComplete}
         />
       )}
+
+      <Dialog open={showCompleteFeedbackDialog} onOpenChange={setShowCompleteFeedbackDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Revision Feedback</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <p className="text-sm text-muted-foreground">
+              Please enter the revision feedback before completing this shop revision.
+            </p>
+            <Textarea
+              value={revisionFeedback}
+              onChange={(e) => setRevisionFeedback(e.target.value)}
+              placeholder="Enter revision feedback..."
+              className="min-h-[140px]"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowCompleteFeedbackDialog(false)}>
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmComplete}
+                disabled={isCompleting || !revisionFeedback.trim()}
+              >
+                {isCompleting ? 'Submitting...' : 'Submit Feedback & Complete'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

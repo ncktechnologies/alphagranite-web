@@ -372,7 +372,7 @@ export function JobDetailsPage() {
               </CardHeading>
 
               <CardToolbar>
-                {/* <Can action="create" on="jobs"> */}
+                <Can action="create" on="Manage Jobs">
                   <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
                     <DialogTrigger asChild>
                       <Button>
@@ -391,7 +391,7 @@ export function JobDetailsPage() {
                       />
                     </DialogContent>
                   </Dialog>
-                {/* </Can> */}
+                </Can>
               </CardToolbar>
             </CardHeader>
 
@@ -422,21 +422,22 @@ export function JobDetailsPage() {
 
               {/* Upload prompt when empty and no upload button visible */}
               {!mediaLoading && (!mediaFiles || mediaFiles.length === 0) && (
-                // <Can action="create" on="jobs">
+                <Can action="create" on="Manage Jobs">
                   <div className="mt-4 flex justify-center">
                     <Button onClick={() => setShowUploadDialog(true)}>
                       <Plus className="h-4 w-4 mr-2" />
                       Upload First File
                     </Button>
                   </div>
-                // </Can>
+                </Can>
               )}
             </CardContent>
           </Card>
         </Container>
 
         {/* ── RIGHT COLUMN ────────────────────────────────────────────────── */}
-        {isSuperAdmin && (
+        <Can action="read" on="Manage Jobs">
+
           <div className="lg:col-span-4 w-full lg:w-[300px] xl:w-[350px] ultra:w-[400px]">
             <div className="border-l">
               <Card className="border-none py-6">
@@ -458,7 +459,7 @@ export function JobDetailsPage() {
               </Card>
             </div>
           </div>
-        )}
+        </Can>
       </div>
 
       {/* ── Delete confirmation ──────────────────────────────────────────── */}

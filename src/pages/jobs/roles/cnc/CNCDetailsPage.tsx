@@ -674,25 +674,27 @@ export function CNCDetailsPage() {
                             {/* ── Time tracking + files ──────────────────────────────────── */}
                             <Card>
                                 <CardContent className="p-3 sm:p-4 lg:p-5 space-y-5">
-                                    <TimeTrackingComponent
-                                        isDrafting={isDrafting}
-                                        isPaused={isPaused}
-                                        totalTime={totalTime}
-                                        draftStart={draftStart}
-                                        draftEnd={draftEnd}
-                                        sessionData={sessionData}
-                                        isFabOnHold={fabData?.status_id === 0}
-                                        onStart={handleStart}
-                                        onPause={handlePause}
-                                        onResume={handleResume}
-                                        onEnd={handleEnd}
-                                        onOnHold={handleOnHold}
-                                        onTimeUpdate={setTotalTime}
-                                        hasEnded={hasEnded}
-                                        uploadedFilesCount={allFilesForDisplay.length}
-                                    />
+                                    <Can action="create" on="CNC">
+                                        <TimeTrackingComponent
+                                            isDrafting={isDrafting}
+                                            isPaused={isPaused}
+                                            totalTime={totalTime}
+                                            draftStart={draftStart}
+                                            draftEnd={draftEnd}
+                                            sessionData={sessionData}
+                                            isFabOnHold={fabData?.status_id === 0}
+                                            onStart={handleStart}
+                                            onPause={handlePause}
+                                            onResume={handleResume}
+                                            onEnd={handleEnd}
+                                            onOnHold={handleOnHold}
+                                            onTimeUpdate={setTotalTime}
+                                            hasEnded={hasEnded}
+                                            uploadedFilesCount={allFilesForDisplay.length}
+                                        />
 
-                                    <Separator />
+                                        <Separator />
+                                    </Can>
 
                                     {/* File upload section */}
                                     <div>
@@ -700,18 +702,18 @@ export function CNCDetailsPage() {
                                             <div className="space-y-3">
                                                 <div className="flex items-center justify-between">
                                                     <h3 className="font-semibold text-sm">Uploaded files</h3>
-                                                    {/* <Can action="create" on="Drafting"> */}
-                                                    <Button
-                                                        variant="dashed"
-                                                        size="sm"
-                                                        onClick={() => setShowUploadModal(true)}
-                                                        disabled={!isDrafting || isPaused || hasEnded || isOnHold}
-                                                        className="flex items-center gap-1.5 text-xs"
-                                                    >
-                                                        <Plus className="w-3.5 h-3.5" />
-                                                        Add Files
-                                                    </Button>
-                                                    {/* </Can> */}
+                                                    <Can action="create" on="CNC">
+                                                        <Button
+                                                            variant="dashed"
+                                                            size="sm"
+                                                            onClick={() => setShowUploadModal(true)}
+                                                            disabled={!isDrafting || isPaused || hasEnded || isOnHold}
+                                                            className="flex items-center gap-1.5 text-xs"
+                                                        >
+                                                            <Plus className="w-3.5 h-3.5" />
+                                                            Add Files
+                                                        </Button>
+                                                    </Can>
                                                 </div>
                                                 <Documents
                                                     onFileClick={handleFileClick}
@@ -735,15 +737,15 @@ export function CNCDetailsPage() {
                                     {viewMode === 'activity' && (
                                         <div className="flex justify-end gap-2 pt-2">
                                             <BackButton fallbackUrl="/job/draft" label="Cancel" />
-                                            {/* <Can action="create" on="CNC"> */}
-                                            <Button
-                                                onClick={handleOpenSubmissionModal}
-                                                className="bg-green-600 hover:bg-green-700"
-                                                disabled={!canOpenSubmit}
-                                            >
-                                                Submit CNC
-                                            </Button>
-                                            {/* </Can> */}
+                                            <Can action="create" on="CNC">
+                                                <Button
+                                                    onClick={handleOpenSubmissionModal}
+                                                    className="bg-green-600 hover:bg-green-700"
+                                                    disabled={!canOpenSubmit}
+                                                >
+                                                    Submit CNC
+                                                </Button>
+                                            </Can>
                                         </div>
                                     )}
                                 </CardContent>

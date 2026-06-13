@@ -792,31 +792,32 @@ export function RevisionDetailsPage() {
 
               <Card>
                 <CardContent className="p-3 sm:p-4 lg:p-5 space-y-5">
-                  <TimeTrackingComponent
-                    isDrafting={isDrafting}
-                    isPaused={isPaused}
-                    totalTime={totalTime}
-                    draftStart={draftStart}
-                    draftEnd={draftEnd}
-                    sessionData={sessionData}
-                    isFabOnHold={fabData?.status_id === 0}
-                    onStart={handleStart}
-                    onPause={handlePause}
-                    onResume={handleResume}
-                    onEnd={handleEnd}
-                    onOnHold={handleOnHold}
-                    onTimeUpdate={setTotalTime}
-                    hasEnded={hasEnded}
-                    uploadedFilesCount={allFilesForDisplay.length}
-                  />
-
-                  <Separator />
+                  <Can action="create" on="Revisions">
+                    <TimeTrackingComponent
+                      isDrafting={isDrafting}
+                      isPaused={isPaused}
+                      totalTime={totalTime}
+                      draftStart={draftStart}
+                      draftEnd={draftEnd}
+                      sessionData={sessionData}
+                      isFabOnHold={fabData?.status_id === 0}
+                      onStart={handleStart}
+                      onPause={handlePause}
+                      onResume={handleResume}
+                      onEnd={handleEnd}
+                      onOnHold={handleOnHold}
+                      onTimeUpdate={setTotalTime}
+                      hasEnded={hasEnded}
+                      uploadedFilesCount={allFilesForDisplay.length}
+                    />
+                    <Separator />
+                  </Can>
 
                   {/* File section */}
                   <div>
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold text-sm">Uploaded files</h3>
-                      {/* <Can action="create" on="Drafting"> */}
+                      <Can action="create" on="Revisions">
                       <Button
                         variant="dashed"
                         size="sm"
@@ -827,7 +828,7 @@ export function RevisionDetailsPage() {
                         <Plus className="w-3.5 h-3.5" />
                         Add Files
                       </Button>
-                      {/* </Can> */}
+                      </Can>
                     </div>
 
                     {shouldShowUploadSection ? (
@@ -849,7 +850,7 @@ export function RevisionDetailsPage() {
                   {/* Submit button */}
                   <div className="flex justify-end gap-2 pt-2">
                     <BackButton fallbackUrl="/job/revision" label="Cancel" />
-                    {/* <Can action="create" on="Drafting"> */}
+                    <Can action="create" on="Revisions">
                     <Button
                       onClick={() => setShowSubmissionModal(true)}
                       className="bg-purple-600 hover:bg-purple-700"
@@ -857,7 +858,7 @@ export function RevisionDetailsPage() {
                     >
                       Submit revision
                     </Button>
-                    {/* </Can> */}
+                    </Can>
                   </div>
                 </CardContent>
               </Card>

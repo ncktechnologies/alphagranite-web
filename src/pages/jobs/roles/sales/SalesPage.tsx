@@ -5,15 +5,13 @@ import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarActions, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Eye, Plus } from 'lucide-react';
-import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
 import { useGetFabsQuery } from '@/store/api/job';
 import { Fab } from '@/store/api/job';
-import { useJobStageFilter } from '@/hooks/use-job-stage';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { NewFabIdForm } from './NewFabIdForm';
-import { useIsSuperAdmin } from '@/hooks/use-permission';
+import { useIsSuperAdmin, usePermission } from '@/hooks/use-permission';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Can } from '@/components/permission';
@@ -24,7 +22,6 @@ import { JobSalesTable } from './components/Table';
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
     if (!dateString) return '-';
-
     try {
         const date = new Date(dateString);
         const day = date.getDate().toString().padStart(2, '0');
@@ -41,12 +38,10 @@ const transformFabToJob = (fab: Fab): IJob => {
     return {
         id: fab.id,
         fab_type: fab.fab_type,
-        fab_id: String(fab.id), // Using fab.id as fab_id since there's no fab_id in Fab type
+        fab_id: String(fab.id),
         job_name: `${fab.job_details?.name}`,
         job_no: String(fab.job_details?.job_number),
-        // date: fab.created_at, // Using created_at as date
-        current_stage: fab.current_stage, // Add current_stage
-        // Optional fields with default values
+        current_stage: fab.current_stage,
         template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
         template_received: '',
         templater: fab.technician_name || '-',
@@ -74,96 +69,75 @@ export function SalesPage() {
     const location = useLocation();
     const isNewFabForm = location.pathname.includes('/new-fab-id');
     const { data: salesPersonsData } = useGetSalesPersonsQuery();
+    const isSuperAdmin = useIsSuperAdmin();
+    const permissions = usePermission('View all FABS'); 
+
+    // Determine table action permissions
+    const canAddNote = isSuperAdmin || permissions.can_create;
+    const canToggleOnHold = isSuperAdmin || permissions.can_create;
+    const canExport = isSuperAdmin || permissions.can_read;
 
     // Extract sales persons
     const salesPersons = useMemo(() => {
-        if (!salesPersonsData) {
-            return [];
-        }
-
-        // Handle both possible response formats
+        if (!salesPersonsData) return [];
         let rawData: any[] = [];
-        if (Array.isArray(salesPersonsData)) {
-            rawData = salesPersonsData;
-        } else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData) {
+        if (Array.isArray(salesPersonsData)) rawData = salesPersonsData;
+        else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData)
             rawData = (salesPersonsData as any).data || [];
-        }
-
-        // Extract sales persons - keep full objects with id and name
         return rawData;
     }, [salesPersonsData]);
 
-    // Extract just names for display
-    const salesPersonNames = useMemo(() => {
-        return salesPersons.map((sp: any) => sp.name || String(sp));
-    }, [salesPersons]);
     const tableState = useTableState({
         tableId: 'sct-table',
         defaultPagination: { pageIndex: 0, pageSize: 25 },
         defaultDateFilter: 'all',
         persistState: false,
     });
+
     const skip = tableState.pagination.pageIndex * tableState.pagination.pageSize;
+
     const queryParams = useMemo(() => {
         const params: any = {
             skip,
             limit: tableState.pagination.pageSize,
-            // current_stage: /'sales_ct', // Changed to SCT stage
         };
-
         if (tableState.searchQuery) {
             params.search = tableState.searchQuery;
-            params.type = (tableState as any).searchType || 'fab_id'; // Add search type
+            params.type = (tableState as any).searchType || 'fab_id';
         }
-        if (tableState.searchType) {
-            params.type = tableState.searchType;
-        }
-        if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') {
+        if (tableState.searchType) params.type = tableState.searchType;
+        if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all')
             params.fab_type = tableState.fabTypeFilter;
-        }
-
-        // Add sales person filter using ID
         if (tableState.salesPersonFilter && tableState.salesPersonFilter !== 'all') {
-            if (tableState.salesPersonFilter === 'no_sales_person') {
-                // Filter for fabs without a sales person
-                params.sales_person_name = '';
-            } else {
-                // Find the sales person object by name and get the ID
+            if (tableState.salesPersonFilter === 'no_sales_person') params.sales_person_name = '';
+            else {
                 const selectedSalesPerson = salesPersons.find((sp: any) => sp.name === tableState.salesPersonFilter);
-                if (selectedSalesPerson && selectedSalesPerson.id) {
-                    params.sales_person_id = selectedSalesPerson.id;
-                }
+                if (selectedSalesPerson?.id) params.sales_person_id = selectedSalesPerson.id;
             }
         }
-
         if (tableState.dateFilter && tableState.dateFilter !== 'all') {
-            // For custom date range, use schedule_start_date and schedule_due_date
             if (tableState.dateFilter === 'custom') {
-                if (tableState.dateRange?.from) {
-                    // Use local date string (YYYY-MM-DD)
+                if (tableState.dateRange?.from)
                     params.draft_completed_start = format(tableState.dateRange.from, 'yyyy-MM-dd');
-                }
-                if (tableState.dateRange?.to) {
+                if (tableState.dateRange?.to)
                     params.draft_completed_end = format(tableState.dateRange.to, 'yyyy-MM-dd');
-                }
-                // Don't send date_filter when using custom range
             } else {
-                // For other filters (today, this_week, etc.), use date_filter
                 params.date_filter = tableState.dateFilter;
             }
         }
-
         return params;
     }, [
         skip,
         tableState.pagination.pageSize,
         tableState.searchQuery,
+        tableState.searchType,
         tableState.fabTypeFilter,
         tableState.salesPersonFilter,
         tableState.dateFilter,
         tableState.dateRange,
-        tableState.searchType,
+        salesPersons,
     ]);
+
     const { data, isLoading, error, isError } = useGetFabsQuery(queryParams);
 
     if (isNewFabForm) {
@@ -205,8 +179,8 @@ export function SalesPage() {
             </div>
         );
     }
-    // Transform Fab data to IJob format
-    const jobsData: IJob[] = data ? data.data?.map(transformFabToJob) : [];
+
+    const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
 
     return (
         <div className="">
@@ -214,7 +188,7 @@ export function SalesPage() {
                 <Toolbar className=' '>
                     <ToolbarHeading title="All Fabs" description="View & track all Alpha granite FAB ID'S" />
                     <ToolbarActions>
-                        <Can action="update" on="FAB IDs">
+                        <Can action="create" on="View all FABS">
                             <Link to="/sales/new-fab-id">
                                 <Button className="">
                                     <Plus />
@@ -222,29 +196,31 @@ export function SalesPage() {
                                 </Button>
                             </Link>
                         </Can>
-                        <Can action="update" on="Jobs">
+                        {/* <Can action="rea" on="View all FABS"> */}
                             <Link to="/create-jobs">
                                 <Button className="">
                                     <Eye />
                                     View Jobs
                                 </Button>
                             </Link>
-                        </Can>
+                        {/* </Can> */}
                     </ToolbarActions>
                 </Toolbar>
-                {/* <JobTable jobs={transformedJobs} path='sales' /> */}
                 <JobSalesTable
                     jobs={jobsData}
                     path='sales'
                     isLoading={isLoading && !data}
-                    // onRowClick={handleRowClick}
                     useBackendPagination={true}
                     totalRecords={data?.total || 0}
                     tableState={tableState}
                     showSalesPersonFilter={true}
-                    showScheduleFilter={false} // Remove separate schedule filter
+                    showScheduleFilter={false}
                     salesPersons={salesPersons}
                     visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'slabsmith_used', 'sct_notes', 'sct_completed', 'sales_person_name', 'draft_revision_notes', 'current_stage']}
+                    // 👇 Pass permission props
+                    canAddNote={canAddNote}
+                    canToggleOnHold={canToggleOnHold}
+                    canExport={canExport}
                 />
             </Container>
         </div>

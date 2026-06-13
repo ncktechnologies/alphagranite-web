@@ -11,7 +11,7 @@ import { useNavigate } from 'react-router';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { useIsSuperAdmin } from '@/hooks/use-permission';
+import { useIsSuperAdmin, usePermission } from '@/hooks/use-permission';
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
@@ -36,8 +36,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         fab_id: String(fab.id),
         job_name: `${fab.job_details?.name}`,
         job_no: String(fab.job_details?.job_number),
-        // date: (fab as any).shop_est_completion_date ?  (fab as any).shop_est_completion_date : (fab as any).estimated_completion_date,
-        date: (fab as any).install_details.scheduled_install_date,
+        date: (fab as any).install_details?.scheduled_install_date,
         shop_est_completion_date: (fab as any).shop_est_completion_date
             ? formatDate((fab as any).shop_est_completion_date)
             : (fab as any).estimated_completion_date
@@ -70,7 +69,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         status_id: fab.status_id,
         no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
 
-        // ── Install scheduling fields ──
+        // Install completion fields
         est_completion_date: (fab as any).est_completion_date
             ? formatDate((fab as any).est_completion_date)
             : '-',
@@ -78,18 +77,26 @@ const transformFabToJob = (fab: Fab): IJob => {
         completion_date: (fab as any).completion_date
             ? formatDate((fab as any).completion_date)
             : undefined,
-        installer: (fab as any).install_details.installer_name || (fab as any).installer || undefined,
-        install_date: (fab as any).install_details.scheduled_install_date
-            ? formatDate((fab as any).install_details.scheduled_install_date)
+        installer: (fab as any).install_details?.installer_name || (fab as any).installer || undefined,
+        install_date: (fab as any).install_details?.scheduled_install_date
+            ? formatDate((fab as any).install_details?.scheduled_install_date)
             : undefined,
-        install_confirmed: (fab as any).install_details.is_completed ?? undefined,
+        install_confirmed: (fab as any).install_details?.is_completed ?? undefined,
         shop_status: (fab as any).shop_status || undefined,
     };
 };
 
 export function InstallCompletionPage() {
     const navigate = useNavigate();
-    const isUserSuperAdmin = useIsSuperAdmin();
+    const isSuperAdmin = useIsSuperAdmin();
+
+
+    const permissions = usePermission('Install Completion');
+
+    // Determine what actions the user is allowed to do
+    const canAddNote = isSuperAdmin || permissions.can_create;      // Add Note menu item
+    const canToggleOnHold = isSuperAdmin || permissions.can_create; // On Hold toggle column
+
     const [dateGrouping, setDateGrouping] = useState<'date' | 'month' | 'none'>('month');
 
     // Fetch sales persons data for filter dropdown
@@ -97,19 +104,11 @@ export function InstallCompletionPage() {
 
     // Extract sales persons
     const salesPersons = useMemo(() => {
-        if (!salesPersonsData) {
-            return [];
-        }
-
-        // Handle both possible response formats
+        if (!salesPersonsData) return [];
         let rawData: any[] = [];
-        if (Array.isArray(salesPersonsData)) {
-            rawData = salesPersonsData;
-        } else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData) {
+        if (Array.isArray(salesPersonsData)) rawData = salesPersonsData;
+        else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData)
             rawData = (salesPersonsData as any).data || [];
-        }
-
-        // Extract sales persons - keep full objects with id and name
         return rawData;
     }, [salesPersonsData]);
 
@@ -117,7 +116,8 @@ export function InstallCompletionPage() {
     const salesPersonNames = useMemo(() => {
         return salesPersons.map((sp: any) => sp.name || String(sp));
     }, [salesPersons]);
-    // Use independent table state for predraft table
+
+    // Use independent table state
     const tableState = useTableState({
         tableId: 'install-table',
         defaultPagination: { pageIndex: 0, pageSize: 25 },
@@ -125,7 +125,6 @@ export function InstallCompletionPage() {
         persistState: false,
     });
 
-    // Calculate skip value for pagination
     const skip = tableState.pagination.pageIndex * tableState.pagination.pageSize;
 
     // Build query params for backend
@@ -133,71 +132,47 @@ export function InstallCompletionPage() {
         const params: any = {
             skip,
             limit: tableState.pagination.pageSize,
-            current_stage: 'install_completion', // Pre-draft review stage
+            current_stage: 'install_completion',
         };
-
         if (tableState.searchQuery) {
             params.search = tableState.searchQuery;
-            params.type = (tableState as any).searchType || 'fab_id'; // Add search type
+            params.type = (tableState as any).searchType || 'fab_id';
         }
-        if (tableState.searchType) {
-            params.type = tableState.searchType;
-        }
-        if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') {
+        if (tableState.searchType) params.type = tableState.searchType;
+        if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all')
             params.fab_type = tableState.fabTypeFilter;
-        }
-
-        // Add sales person filter using ID
         if (tableState.salesPersonFilter && tableState.salesPersonFilter !== 'all') {
-            if (tableState.salesPersonFilter === 'no_sales_person') {
-                // Filter for fabs without a sales person
-                params.sales_person_name = '';
-            } else {
-                // Find the sales person object by name and get the ID
+            if (tableState.salesPersonFilter === 'no_sales_person') params.sales_person_name = '';
+            else {
                 const selectedSalesPerson = salesPersons.find((sp: any) => sp.name === tableState.salesPersonFilter);
-                if (selectedSalesPerson && selectedSalesPerson.id) {
-                    params.sales_person_id = selectedSalesPerson.id;
-                }
+                if (selectedSalesPerson?.id) params.sales_person_id = selectedSalesPerson.id;
             }
         }
-
         if (tableState.dateFilter && tableState.dateFilter !== 'all') {
-            // For custom date range, use schedule_start_date and schedule_due_date
             if (tableState.dateFilter === 'custom') {
-                if (tableState.dateRange?.from) {
-                    // Use local date string (YYYY-MM-DD)
+                if (tableState.dateRange?.from)
                     params.template_completed_start = format(tableState.dateRange.from, 'yyyy-MM-dd');
-                }
-                if (tableState.dateRange?.to) {
+                if (tableState.dateRange?.to)
                     params.template_completed_end = format(tableState.dateRange.to, 'yyyy-MM-dd');
-                }
-                // Don't send date_filter when using custom range
             } else {
-                // For other filters (today, this_week, etc.), use date_filter
                 params.date_filter = tableState.dateFilter;
             }
         }
-
-        console.log('Pre-draft Query Params:', params); // Debug log
+        console.log('Install Completion Query Params:', params);
         return params;
     }, [
         skip,
         tableState.pagination.pageSize,
         tableState.searchQuery,
+        tableState.searchType,
         tableState.fabTypeFilter,
         tableState.salesPersonFilter,
         tableState.dateFilter,
         tableState.dateRange,
-        tableState.searchType
+        salesPersons,
     ]);
 
-    // Fetch data with backend pagination and filtering
     const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
-
-
-    const handleDetails = (id: string) => {
-        navigate(`/app/jobs/install-to-schedule/${id}`);
-    };
     const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
 
     if (isLoading) {
@@ -209,7 +184,6 @@ export function InstallCompletionPage() {
                         <Skeleton className="h-4 w-80 mt-2" />
                     </div>
                 </div>
-
                 <div className="mt-6">
                     <Skeleton className="h-96 w-full" />
                 </div>
@@ -244,7 +218,7 @@ export function InstallCompletionPage() {
                 totalRecords={data?.total || 0}
                 tableState={tableState}
                 showSalesPersonFilter={true}
-                showScheduleFilter={false} // Remove separate schedule filter
+                showScheduleFilter={false}
                 salesPersons={salesPersons}
                 dateGrouping={dateGrouping}
                 onDateGroupingChange={setDateGrouping}
@@ -258,14 +232,15 @@ export function InstallCompletionPage() {
                     'gp',
                     'est_completion_date',
                     'percent_complete',
-                    // 'completion_date',
                     'install_notes',
                     'installer',
                     'install_date',
                     'install_confirmed',
-                    'shop_status',
-                    'on_hold',
+                    'shop_status'
                 ]}
+               
+                canAddNote={canAddNote}
+                canToggleOnHold={canToggleOnHold}
             />
         </Container>
     );

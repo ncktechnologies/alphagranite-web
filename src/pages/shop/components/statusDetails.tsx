@@ -12,7 +12,6 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,21 +23,24 @@ import {
     Collapsible, CollapsibleContent, CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { DateTimePicker } from '@/components/ui/date-time-picker';
-import { Container } from '@/components/common/container';
 import {
     useGetFabByIdQuery,
     useUpdateFabMutation,
     useCreateFabNoteMutation,
 } from '@/store/api/job';
+import { useCreateShopRevisionMutation, useGetShopRevisionsByFabIdQuery } from '@/store/api/shopRevision';
 import { useUpdateShopPlanMutation } from '@/store/api';
 import { useGetWorkstationsQuery, useGetWorkStationByPlanningSectionsQuery } from '@/store/api/workstation';
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { BackButton } from '@/components/common/BackButton';
 import { usePlanSections } from '@/hooks/usePlanningSection';
+import { useSelector } from 'react-redux';
+import { SCTTimer } from '@/pages/jobs/roles/back-to-sales/components/SCTTimer';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { FileGallery, type FileSource, type UnifiedFile } from '@/pages/jobs/components/FileGallery';
 import { FileViewer } from '@/pages/jobs/roles/drafters/components';
 import CreatePlanSheet from './createEvent';
+import DialogContent, { Dialog, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants & Helpers
@@ -257,9 +259,10 @@ interface PlanStageCardProps {
     employees: any[];
     totalPlans: number;         // ← total plans on this fab, drives sequence options
     onSaved: () => void;
+    disabled?: boolean;
 }
 
-const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, employees, totalPlans, onSaved }) => {
+const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, employees, totalPlans, onSaved, disabled = false }) => {
     const [updateShopPlan] = useUpdateShopPlanMutation();
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
@@ -433,13 +436,15 @@ if (scheduledStart && scheduledEnd) {
                             <Badge variant="outline" className="text-xs font-normal">
                                 Seq: {plan.sequence ?? null}
                             </Badge>
-                            <Button
-                                variant="ghost" size="icon"
-                                className="h-7 w-7 text-[#7c8689] hover:text-[#4b545d]"
-                                onClick={() => setIsEditing(true)}
-                            >
-                                <Pencil className="h-3.5 w-3.5" />
-                            </Button>
+                            {!disabled && (
+                                <Button
+                                    variant="ghost" size="icon"
+                                    className="h-7 w-7 text-[#7c8689] hover:text-[#4b545d]"
+                                    onClick={() => setIsEditing(true)}
+                                >
+                                    <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                            )}
                         </>
                     )}
                 </div>
@@ -454,7 +459,7 @@ if (scheduledStart && scheduledEnd) {
                             <Select
                                 value={draft.workstation_id}
                                 onValueChange={v => patch({ workstation_id: v, operator_id: '' })}
-                                disabled={isLoadingWorkstations}
+                                disabled={isLoadingWorkstations || disabled}
                             >
                                 <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
                                     <SelectValue
@@ -489,7 +494,7 @@ if (scheduledStart && scheduledEnd) {
                             <Select
                                 value={draft.operator_id}
                                 onValueChange={v => patch({ operator_id: v })}
-                                disabled={!draft.workstation_id}
+                                disabled={!draft.workstation_id || disabled}
                             >
                                 <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
                                     <SelectValue
@@ -526,6 +531,7 @@ if (scheduledStart && scheduledEnd) {
                                 mode="date"
                                 value={draft.start_date}
                                 onChange={date => patch({ start_date: date })}
+                                disabled={disabled}
                             // minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
                             />
                         </div>
@@ -537,6 +543,7 @@ if (scheduledStart && scheduledEnd) {
                                 mode="date"
                                 value={draft.end_date}
                                 onChange={date => patch({ end_date: date })}
+                                disabled={disabled}
                             />
                         </div>
 
@@ -544,7 +551,7 @@ if (scheduledStart && scheduledEnd) {
                         <div className="">
                             <div className="flex flex-col gap-1.5">
                                 <Label className="text-xs text-muted-foreground uppercase tracking-wide">Start Time</Label>
-                                <Select value={draft.start_time} onValueChange={v => patch({ start_time: v })}>
+                                <Select value={draft.start_time} onValueChange={v => patch({ start_time: v })} disabled={disabled}>
                                     <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
                                         <SelectValue placeholder="Start" />
                                     </SelectTrigger>
@@ -557,7 +564,7 @@ if (scheduledStart && scheduledEnd) {
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 <Label className="text-xs text-muted-foreground uppercase tracking-wide">End Time</Label>
-                                <Select value={draft.end_time} onValueChange={v => patch({ end_time: v })}>
+                                <Select value={draft.end_time} onValueChange={v => patch({ end_time: v })} disabled={disabled}>
                                     <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
                                         <SelectValue placeholder="End" />
                                     </SelectTrigger>
@@ -594,12 +601,13 @@ if (scheduledStart && scheduledEnd) {
                                 onChange={e => patch({ notes: e.target.value })}
                                 placeholder="Add notes..."
                                 className="min-h-[72px] resize-none text-sm border-[#e2e4ed]"
+                                disabled={disabled}
                             />
                         </div>
 
                         {/* Save / Cancel */}
                         <div className="flex gap-2 pt-1">
-                            <Button size="sm" className="flex-1" onClick={handleSave} disabled={isSaving}>
+                            <Button size="sm" className="flex-1" onClick={handleSave} disabled={isSaving || disabled}>
                                 {isSaving
                                     ? <><LoaderCircle className="h-3.5 w-3.5 mr-1.5 animate-spin" />Saving…</>
                                     : <><Save className="h-3.5 w-3.5 mr-1.5" />Save</>}
@@ -649,6 +657,10 @@ const FabDetailsPage: React.FC = () => {
         Number(fabId), { skip: !fabId }
     );
     const [createFabNote] = useCreateFabNoteMutation();
+    const [createShopRevision] = useCreateShopRevisionMutation();
+
+    const currentUser = useSelector((s: any) => s.user.user);
+    const currentOperatorId = currentUser?.employee_id || currentUser?.id || 0;
 
     const { data: workstationsData } = useGetWorkstationsQuery();
     const workstations: any[] = workstationsData?.data || (Array.isArray(workstationsData) ? workstationsData : []);
@@ -660,6 +672,19 @@ const FabDetailsPage: React.FC = () => {
     const { sections: planSections } = usePlanSections();
 
     const fab = fabResponse?.data ?? fabResponse;
+    const numericFabId = Number(fabId);
+    const { data: fabRevisionsData, isLoading: isRevisionsLoading } = useGetShopRevisionsByFabIdQuery(numericFabId, {
+        skip: !numericFabId,
+    });
+    const revisions: any[] = Array.isArray(fabRevisionsData) ? fabRevisionsData : [];
+    const hasPendingShopRevision = revisions.some((rev: any) => !rev.revision_completed);
+
+    const [selectedRevisionId, setSelectedRevisionId] = useState<number | null>(null);
+    const selectedRevision = revisions.find((rev: any) => rev.id === selectedRevisionId) || revisions[0] || null;
+
+    const [showRevisionDialog, setShowRevisionDialog] = useState(false);
+    const [revisionNote, setRevisionNote] = useState('');
+    const [isCreatingRevision, setIsCreatingRevision] = useState(false);
 
     // State for file viewer
     const [activeFile, setActiveFile] = useState<UnifiedFile | null>(null);
@@ -737,6 +762,32 @@ const FabDetailsPage: React.FC = () => {
             toast.error('Failed to add note.');
         } finally {
             setIsSubmittingNote(false);
+        }
+    };
+
+    const handleCreateShopRevision = async () => {
+        if (!revisionNote.trim()) {
+            toast.warning('Revision note cannot be empty.');
+            return;
+        }
+
+        setIsCreatingRevision(true);
+        try {
+            await createShopRevision({
+                fab_id: numericFabId,
+                revision_note: revisionNote.trim(),
+                requested_by: currentOperatorId,
+                assigned_to: currentOperatorId,
+                revision_completed: false,
+            }).unwrap();
+            toast.success('Shop revision created.');
+            setRevisionNote('');
+            setShowRevisionDialog(false);
+            refetch();
+        } catch {
+            toast.error('Failed to create shop revision.');
+        } finally {
+            setIsCreatingRevision(false);
         }
     };
 
@@ -935,11 +986,17 @@ const FabDetailsPage: React.FC = () => {
                                             {plans.length} stage{plans.length !== 1 ? 's' : ''} · click the pencil on any card to edit
                                         </p>
                                     )}
+                                    {hasPendingShopRevision && (
+                                        <p className="text-sm text-amber-700 mt-2">
+                                            A pending shop revision exists. Plan edits and new plan creation are disabled until the revision is resolved.
+                                        </p>
+                                    )}
                                 </div>
                                 <Button
                                     size="sm"
                                     onClick={() => setShowCreatePlanModal(true)}
                                     className="bg-green-600 hover:bg-green-700"
+                                    disabled={hasPendingShopRevision}
                                 >
                                     <Plus className="h-4 w-4 mr-1" />
                                     Create Plan
@@ -959,6 +1016,7 @@ const FabDetailsPage: React.FC = () => {
                                             employees={employees}
                                             totalPlans={plans.length} // ← drives sequence options
                                             onSaved={refetch}
+                                            disabled={hasPendingShopRevision}
                                         />
                                     ))}
                                 </div>
@@ -1124,6 +1182,93 @@ const FabDetailsPage: React.FC = () => {
                             })}
                         </CardContent>
                     </Card>
+
+                    {/* Shop Revision History */}
+                    <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
+                        <CardHeader className="pb-3 border-b border-[#e2e4ed]">
+                            <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
+                                <CalendarDays className="h-4 w-4 text-[#7c8689]" />
+                                Shop Revisions
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4 space-y-4">
+                            <Button
+                                onClick={() => setShowRevisionDialog(true)}
+                                className="w-full bg-[#7a9705] hover:bg-[#6a8505] text-white"
+                                size="sm"
+                                disabled={hasPendingShopRevision}
+                            >
+                                <Plus className="h-4 w-4 mr-2" /> Create Shop Revision
+                            </Button>
+
+                            {isRevisionsLoading ? (
+                                <p className="text-sm text-muted-foreground">Loading revision history...</p>
+                            ) : revisions.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">No revisions exist for this FAB yet.</p>
+                            ) : (
+                                <div className="space-y-2">
+                                    {revisions.map((revision: any) => (
+                                        <button
+                                            key={revision.id}
+                                            type="button"
+                                            className={`w-full text-left border rounded-md p-3 transition ${selectedRevision?.id === revision.id ? 'border-green-600 bg-green-50/50' : 'border-border'}`}
+                                            onClick={() => setSelectedRevisionId(revision.id)}
+                                        >
+                                            <div className="flex items-center justify-between gap-2">
+                                                <p className="font-medium text-sm">Revision #{revision.id}</p>
+                                                <span className={`text-xs ${revision.revision_completed ? 'text-green-700' : 'text-orange-700'}`}>
+                                                    {revision.revision_completed ? 'Completed' : 'Pending'}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                                {revision.revision_note || 'No note provided.'}
+                                            </p>
+                                            <p className="text-xs text-gray-400 mt-1">
+                                                Requested by: {revision.requested_by_name || revision.requested_by || 'Unknown'}
+                                            </p>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Shop Revision Details */}
+                    <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
+                        <CardHeader className="pb-3 border-b border-[#e2e4ed]">
+                            <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-[#7c8689]" />
+                                Revision Details
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4 space-y-4">
+                            {!selectedRevision ? (
+                                <p className="text-sm text-muted-foreground">Select a revision to view details.</p>
+                            ) : (
+                                <>
+                                    <SCTTimer
+                                        startTime={selectedRevision.created_at || null}
+                                        endTime={selectedRevision.revision_completed ? selectedRevision.completed_at || null : null}
+                                        text="Time in Shop Revision:"
+                                    />
+                                    <InfoRow label="FAB ID" value={selectedRevision.fab_id || '—'} />
+                                    <InfoRow label="Revision Note" value={selectedRevision.revision_note || '—'} />
+                                    <InfoRow label="Requested By" value={selectedRevision.requested_by_name || selectedRevision.requested_by || '—'} />
+                                    <InfoRow label="Created At" value={selectedRevision.created_at ? format(new Date(selectedRevision.created_at), 'MMM dd, yyyy h:mm a') : '—'} />
+                                    {selectedRevision.revision_completed && selectedRevision.completed_at && (
+                                        <InfoRow label="Completed At" value={format(new Date(selectedRevision.completed_at), 'MMM dd, yyyy h:mm a')} />
+                                    )}
+                                    <InfoRow
+                                        label="Status"
+                                        value={selectedRevision.revision_completed ? <span className="text-green-700">Completed</span> : <span className="text-orange-700">Pending</span>}
+                                    />
+                                    {selectedRevision.revision_feedback && (
+                                        <InfoRow label="Feedback" value={selectedRevision.revision_feedback} />
+                                    )}
+                                </>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
 
@@ -1133,6 +1278,43 @@ const FabDetailsPage: React.FC = () => {
                     <FileViewer file={activeFile} onClose={() => setActiveFile(null)} />
                 </div>
             )}
+
+            {/* Create Shop Revision Dialog */}
+            <Dialog open={showRevisionDialog} onOpenChange={setShowRevisionDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Create Shop Revision</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-2">
+                        <p className="text-sm text-muted-foreground">
+                            Create a shop revision request for this FAB. New revisions are blocked while another revision is pending.
+                        </p>
+                        <div className="space-y-2">
+                            <Label htmlFor="revision-note" className="text-xs uppercase tracking-wide text-muted-foreground">
+                                Revision Note
+                            </Label>
+                            <Textarea
+                                id="revision-note"
+                                value={revisionNote}
+                                onChange={e => setRevisionNote(e.target.value)}
+                                placeholder="Describe the issue or revision request..."
+                                className="min-h-[120px]"
+                            />
+                        </div>
+                        <div className="flex justify-end gap-2">
+                            <Button variant="outline" onClick={() => setShowRevisionDialog(false)}>
+                                Cancel
+                            </Button>
+                            <Button
+                                onClick={handleCreateShopRevision}
+                                disabled={isCreatingRevision}
+                            >
+                                {isCreatingRevision ? 'Creating…' : 'Create Revision'}
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
 
             {/* Create Plan Modal */}
             <CreatePlanSheet

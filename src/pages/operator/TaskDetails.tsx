@@ -33,6 +33,7 @@ import { useIsSuperAdmin } from '@/hooks/use-permission';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreateShopRevisionMutation } from '@/store/api/shopRevision';
 import { useGetShopRevisionFabsQuery, useGetShopRevisionsByFabIdQuery } from '@/store/api/shopRevision';
+import { SCTTimer } from '@/pages/jobs/roles/back-to-sales/components/SCTTimer';
 
 // Helper for status display
 const getStatusInfo = (statusId: number | undefined, t: any) => {
@@ -65,6 +66,7 @@ export function OperatorTaskDetails() {
     const [workPercentage, setWorkPercentage] = useState(0);
     const [showUploadDialog, setShowUploadDialog] = useState(false);
     const [showRevisionDialog, setShowRevisionDialog] = useState(false);
+    const [selectedRevisionId, setSelectedRevisionId] = useState<number | null>(null);
     const [revisionNote, setRevisionNote] = useState('');
     const [activeFile, setActiveFile] = useState<UnifiedFile | null>(null);
 
@@ -86,9 +88,29 @@ export function OperatorTaskDetails() {
 
     const [createShopRevision, { isLoading: isCreatingRevision }] = useCreateShopRevisionMutation();
     const { data: revisionFabsData } = useGetShopRevisionFabsQuery();
-    const { data: fabRevisionsData } = useGetShopRevisionsByFabIdQuery(currentFabId, {
+    const { data: fabRevisionsData, isLoading: isRevisionsLoading } = useGetShopRevisionsByFabIdQuery(currentFabId, {
         skip: !currentFabId,
     });
+
+    const revisions: any[] = Array.isArray(fabRevisionsData) ? fabRevisionsData : [];
+    const selectedRevision: any = revisions.find((rev: any) => rev.id === selectedRevisionId) || revisions[0] || null;
+
+    useEffect(() => {
+        if (!currentFabId) {
+            setSelectedRevisionId(null);
+            return;
+        }
+
+        if (revisions.length === 0) {
+            setSelectedRevisionId(null);
+            return;
+        }
+
+        const selectedExists = selectedRevisionId !== null && revisions.some((rev: any) => rev.id === selectedRevisionId);
+        if (!selectedExists) {
+            setSelectedRevisionId(revisions[0].id);
+        }
+    }, [currentFabId, revisions, selectedRevisionId]);
 
     const hasPendingShopRevision = (() => {
         if (!currentFabId) return false;
@@ -528,6 +550,41 @@ export function OperatorTaskDetails() {
 
                     {/* Timer History Card */}
                     <OperatorTimerHistory planId={planId} workstationId={workstationId} />
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Shop Revision History</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {isRevisionsLoading ? (
+                                <p className="text-sm text-muted-foreground">Loading shop revision history...</p>
+                            ) : revisions.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">No shop revisions exist for this FAB.</p>
+                            ) : (
+                                revisions.map((revision: any) => (
+                                    <button
+                                        key={revision.id}
+                                        type="button"
+                                        className={`w-full text-left border rounded-md p-3 transition ${selectedRevision?.id === revision.id ? 'border-green-600 bg-green-50/50' : 'border-border'} `}
+                                        onClick={() => setSelectedRevisionId(revision.id)}
+                                    >
+                                        <div className="flex items-center justify-between gap-2">
+                                            <p className="font-medium text-sm">Revision #{revision.id}</p>
+                                            <span className={`text-xs ${revision.revision_completed ? 'text-green-700' : 'text-orange-700'}`}>
+                                                {revision.revision_completed ? 'Completed' : 'Pending'}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                                            {revision.revision_note || 'No note provided.'}
+                                        </p>
+                                        <p className="text-xs text-gray-400 mt-1">
+                                            Requested by: {revision.requested_by_name || revision.requested_by || 'Unknown'}
+                                        </p>
+                                    </button>
+                                ))
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
 
                 {/* Right column (4 columns) – Timer Controls */}
@@ -607,6 +664,63 @@ export function OperatorTaskDetails() {
                                 >
                                     <CheckCircle2 className="h-5 w-5" /> Complete
                                 </Button>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card className="mt-6 border-l shadow-sm">
+                        <CardHeader>
+                            <CardTitle>Revision Details</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4 pt-4">
+                            {!selectedRevision ? (
+                                <p className="text-sm text-muted-foreground">Select a revision from the history list to view details.</p>
+                            ) : (
+                                <>
+                                    <SCTTimer
+                                        startTime={selectedRevision.created_at || null}
+                                        endTime={selectedRevision.revision_completed ? selectedRevision.completed_at || null : null}
+                                        text="Time in Shop Revision:"
+                                    />
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-muted-foreground">FAB ID</p>
+                                        <p className="text-sm font-medium">{selectedRevision.fab_id || '—'}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-muted-foreground">Revision Note</p>
+                                        <p className="text-sm">{selectedRevision.revision_note || '—'}</p>
+                                    </div>
+                                    {selectedRevision.revision_feedback && (
+                                        <div className="space-y-1">
+                                            <p className="text-xs text-muted-foreground">Revision Feedback</p>
+                                            <p className="text-sm">{selectedRevision.revision_feedback}</p>
+                                        </div>
+                                    )}
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-muted-foreground">Requested By</p>
+                                        <p className="text-sm">{selectedRevision.requested_by_name || selectedRevision.requested_by || '—'}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-muted-foreground">Created At</p>
+                                        <p className="text-sm">{selectedRevision.created_at ? format(new Date(selectedRevision.created_at), 'MMM dd, yyyy h:mm a') : '—'}</p>
+                                    </div>
+                                    {selectedRevision.revision_completed && selectedRevision.completed_at && (
+                                        <div className="space-y-1">
+                                            <p className="text-xs text-muted-foreground">Completed At</p>
+                                            <p className="text-sm">{format(new Date(selectedRevision.completed_at), 'MMM dd, yyyy h:mm a')}</p>
+                                        </div>
+                                    )}
+                                    <div className="space-y-1">
+                                        <p className="text-xs text-muted-foreground">Status</p>
+                                        <p className="text-sm font-medium">
+                                            {selectedRevision.revision_completed ? (
+                                                <span className="text-green-700">Completed</span>
+                                            ) : (
+                                                <span className="text-orange-700">Pending</span>
+                                            )}
+                                        </p>
+                                    </div>
+                                </>
                             )}
                         </CardContent>
                     </Card>

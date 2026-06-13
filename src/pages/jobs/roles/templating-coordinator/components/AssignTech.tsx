@@ -32,6 +32,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Can } from "@/components/permission";
 
 const assignTechnicianSchema = z.object({
   technician: z.string().min(1, "Please select a technician"),
@@ -108,18 +109,18 @@ export function AssignTechnicianModal({
           technician_id: Number(values.technician),
           schedule_start_date: values.date || "",
           // ✅ FIXED: Calculate due date in local timezone, not UTC
-          schedule_due_date: values.date 
+          schedule_due_date: values.date
             ? (() => {
-                // Parse the YYYY-MM-DD string directly (local timezone)
-                const [y, m, d] = values.date.split('-').map(Number);
-                // Create a date in local timezone and add 7 days
-                const startDate = new Date(y, m - 1, d); // month is 0-indexed
-                const dueDate = new Date(startDate);
-                dueDate.setDate(dueDate.getDate() + 7);
-                
-                // Format back to YYYY-MM-DD in local timezone
-                return formatDateToString(dueDate);
-              })()
+              // Parse the YYYY-MM-DD string directly (local timezone)
+              const [y, m, d] = values.date.split('-').map(Number);
+              // Create a date in local timezone and add 7 days
+              const startDate = new Date(y, m - 1, d); // month is 0-indexed
+              const dueDate = new Date(startDate);
+              dueDate.setDate(dueDate.getDate() + 7);
+
+              // Format back to YYYY-MM-DD in local timezone
+              return formatDateToString(dueDate);
+            })()
             : "",
           total_sqft: values?.total_sqft ? String(values.total_sqft) : 0,
           revenue: values.revenue ? parseFloat(values.revenue) : undefined,
@@ -271,7 +272,7 @@ export function AssignTechnicianModal({
                         field.onChange(formatted);
                       }}
                       placeholder="Schedule date"
-                      // minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
+                    // minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
                     />
                   </FormControl>
                   <FormMessage>{fieldState.error?.message}</FormMessage>
@@ -342,16 +343,18 @@ export function AssignTechnicianModal({
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? (
-                  <span className="flex items-center gap-2">
-                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                    Assigning...
-                  </span>
-                ) : (
-                  "Assign Technician"
-                )}
-              </Button>
+               <Can action="create" on="templating">
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <span className="flex items-center gap-2">
+                      <LoaderCircle className="h-4 w-4 animate-spin" />
+                      Assigning...
+                    </span>
+                  ) : (
+                    "Assign Technician"
+                  )}
+                </Button>
+                </Can>
             </DialogFooter>
           </form>
         </Form>

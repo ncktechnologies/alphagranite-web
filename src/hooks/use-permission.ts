@@ -20,6 +20,29 @@ interface PermissionSet {
  *   // Show create button
  * }
  */
+const normalizePermissionKey = (key: string) =>
+  key
+    .toString()
+    .trim()
+    .replace(/[^a-zA-Z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .toLowerCase();
+
+const findPermissionRecord = (
+  permissions: Record<string, PermissionSet>,
+  menuCode: string,
+): PermissionSet | undefined => {
+  if (!menuCode) return undefined;
+  const exact = permissions[menuCode];
+  if (exact) return exact;
+
+  const normalized = normalizePermissionKey(menuCode);
+  return permissions[normalized] ||
+    Object.keys(permissions).map((key) => ({ key, normalized: normalizePermissionKey(key) })).find((entry) => entry.normalized === normalized)?.key
+      ? permissions[Object.keys(permissions).find((key) => normalizePermissionKey(key) === normalized) as string]
+      : undefined;
+};
+
 export const usePermission = (menuCode: string) => {
   const permissions = useSelector((state: RootState) => state.user?.permissions || {});
   const user = useSelector((state: RootState) => state.user?.user);
@@ -40,7 +63,7 @@ export const usePermission = (menuCode: string) => {
     };
   }
 
-  const menuPermissions: PermissionSet = permissions[menuCode] || {
+  const menuPermissions: PermissionSet = findPermissionRecord(permissions, menuCode) || {
     can_create: false,
     can_read: false,
     can_update: false,

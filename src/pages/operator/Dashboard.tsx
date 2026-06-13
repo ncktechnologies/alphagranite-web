@@ -235,7 +235,8 @@ export function OperatorDashboard() {
                     top: event._top + 2,
                     height: event._height,
                     backgroundColor: bg,
-                   borderColor: finalBorderColor,
+                    borderColor: finalBorderColor,
+                    borderWidth: event.has_pending_shop_revision ? 2 : 1,
                 }}
                 onClick={(e) => { e.stopPropagation(); handleEventClick(event); }}
             >
@@ -500,7 +501,12 @@ export function OperatorDashboard() {
                                                             <div
                                                                 key={event.task_id || event.id}
                                                                 className="text-[11px] px-2 py-1 rounded cursor-pointer truncate"
-                                                                style={{ backgroundColor: bg, borderColor: cardBorderColor, color: text, borderWidth: 1 }}
+                                                                style={{
+                                                                    backgroundColor: bg,
+                                                                    borderColor: cardBorderColor,
+                                                                    color: text,
+                                                                    borderWidth: event.has_pending_shop_revision ? 2 : 1,
+                                                                }}
                                                                 onClick={() => handleEventClick(event)}
                                                             >
                                                                 <div className="font-medium truncate">

@@ -9,6 +9,7 @@ import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
 import { useMemo, useState } from 'react';
 import { AssignDrafterModal } from './components/AssignDrafterModal';
+import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission'; // 👈 import permission hooks
 
 // Transform Fab data to match IJob interface
 export const transformFabToJob = (fab: Fab): IJob => {
@@ -45,6 +46,16 @@ export const transformFabToJob = (fab: Fab): IJob => {
 
 const DrafterPage = () => {
     const navigate = useNavigate();
+    const isSuperAdmin = useIsSuperAdmin();
+
+    // 👇 Get permissions for the 'drafting' menu (or 'drafter' – adjust as needed)
+    const permissions = usePermission('drafting');
+
+    // Determine what actions the user is allowed to do
+    const canAddNote = isSuperAdmin || permissions.can_create;       
+    const canToggleOnHold = isSuperAdmin || permissions.can_create;   
+    const canReassignDrafter = isSuperAdmin || permissions.can_create; 
+    const canAssignDrafter = isSuperAdmin || permissions.can_create;   
 
     // Fetch sales persons
     const { data: salesPersonsData } = useGetSalesPersonsQuery();
@@ -54,7 +65,6 @@ const DrafterPage = () => {
         if (Array.isArray(salesPersonsData)) rawData = salesPersonsData;
         else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData)
             rawData = (salesPersonsData as any).data || [];
-        // Keep full objects with id and name
         return rawData;
     }, [salesPersonsData]);
 
@@ -111,6 +121,7 @@ const DrafterPage = () => {
         tableState.salesPersonFilter,
         tableState.dateFilter,
         tableState.dateRange,
+        salesPersons, // added dependency
     ]);
 
     const { data, isLoading } = useGetFabsQuery(queryParams);
@@ -148,7 +159,7 @@ const DrafterPage = () => {
     };
 
     const handleReassignDrafterClick = (job: IJob) => {
-        setReassignFabId(job.fab_id); // just pass the FAB ID
+        setReassignFabId(job.fab_id);
         setSelectedRows([]);
         setShowAssignModal(true);
     };
@@ -194,8 +205,13 @@ const DrafterPage = () => {
                     'drafting_notes',
                     'draft_completed',
                     'drafter',
-                    'on_hold',
+                    
                 ]}
+                // 👇 Pass permission props
+                canAddNote={canAddNote}
+                canToggleOnHold={canToggleOnHold}
+                canReassignDrafter={canReassignDrafter}
+                canAssignDrafter={canAssignDrafter}
             />
             <AssignDrafterModal
                 open={showAssignModal}

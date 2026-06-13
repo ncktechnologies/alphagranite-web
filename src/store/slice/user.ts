@@ -38,15 +38,29 @@ const userSlice = createSlice({
       
       // Transform permissions array to lookup object
       if (permissions && Array.isArray(permissions)) {
+        const normalizeKey = (key: string) =>
+          key
+            .toString()
+            .trim()
+            .replace(/[^a-zA-Z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '')
+            .toLowerCase();
+
         state.permissions = permissions.reduce((acc: any, perm: MenuPermission) => {
-          // Use menu_name as the key for widget matching
-          const key = perm.menu_name;
-          acc[key] = {
+          const record = {
             can_create: perm.can_create,
             can_read: perm.can_read,
             can_update: perm.can_update,
             can_delete: perm.can_delete,
           };
+
+          const keys = [perm.menu_name, perm.menu_code];
+          keys.forEach((rawKey) => {
+            if (!rawKey) return;
+            acc[rawKey] = record;
+            acc[normalizeKey(rawKey)] = record;
+          });
+
           return acc;
         }, {});
         
@@ -90,14 +104,29 @@ const userSlice = createSlice({
       console.log('updatePermissions reducer called with:', action.payload);
       // Update permissions in state
       if (action.payload && Array.isArray(action.payload)) {
+        const normalizeKey = (key: string) =>
+          key
+            .toString()
+            .trim()
+            .replace(/[^a-zA-Z0-9]+/g, '_')
+            .replace(/^_+|_+$/g, '')
+            .toLowerCase();
+
         state.permissions = action.payload.reduce((acc: any, perm: MenuPermission) => {
-          const key = perm.menu_name;
-          acc[key] = {
+          const record = {
             can_create: perm.can_create,
             can_read: perm.can_read,
             can_update: perm.can_update,
             can_delete: perm.can_delete,
           };
+
+          const keys = [perm.menu_name, perm.menu_code];
+          keys.forEach((rawKey) => {
+            if (!rawKey) return;
+            acc[rawKey] = record;
+            acc[normalizeKey(rawKey)] = record;
+          });
+
           return acc;
         }, {});
         

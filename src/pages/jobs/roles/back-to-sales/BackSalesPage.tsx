@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { useIsSuperAdmin, usePermission } from '@/hooks/use-permission'; // 👈 import usePermission
 
 // Format date to "08 Oct, 2025" format
 const formatDate = (dateString?: string): string => {
@@ -72,6 +73,14 @@ const transformFabToJob = (fab: Fab): IJob => {
 
 export function AfterDraftSalesPage() {
     const navigate = useNavigate();
+    const isSuperAdmin = useIsSuperAdmin();
+
+    const permissions = usePermission('SCT');
+
+    // Determine what actions the user is allowed to do
+    const canAddNote = isSuperAdmin || permissions.can_create;      // Add Note menu item
+    const canToggleOnHold = isSuperAdmin || permissions.can_create; // On Hold toggle column
+
 
     // Fetch sales persons data for filter dropdown
     const { data: salesPersonsData } = useGetSalesPersonsQuery();
@@ -237,7 +246,10 @@ export function AfterDraftSalesPage() {
                 showSalesPersonFilter={true}
                 showScheduleFilter={false} // Remove separate schedule filter
                 salesPersons={salesPersons}
-                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'slabsmith_used', 'slabsmith_status', 'sct_notes', 'sct_completed', 'revenue', 'sales_person_name', 'draft_revision_notes', 'revised', 'on_hold']}
+                visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'slabsmith_used', 'slabsmith_status', 'sct_notes', 'sct_completed', 'revenue', 'sales_person_name', 'draft_revision_notes', 'revised']}
+                canAddNote={canAddNote}
+                canToggleOnHold={canToggleOnHold}
+
             />
         </Container>
     );

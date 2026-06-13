@@ -8,9 +8,13 @@ export interface ShopRevision {
   id: number;
   fab_id: number;
   revision_note: string;
+  revision_feedback?: string;
   requested_by: number;
+  requested_by_name?: string;
   assigned_to: number;
+  assigned_to_name?: string;
   revision_completed: boolean;
+  completed_at?: string;
   created_at?: string;
   updated_at?: string;
 }
@@ -50,15 +54,33 @@ export interface ShopRevisionSuccessResponse<T = any> {
 export const shopRevisionApi = createApi({
   reducerPath: "shopRevisionApi",
   baseQuery: axiosBaseQuery({ baseUrl }),
-  tagTypes: ["ShopRevision"],
+  tagTypes: ["ShopRevision", "Task", "Fab"],
   endpoints: (builder) => ({
-    createShopRevision: builder.mutation<ShopRevisionSuccessResponse<ShopRevision>, CreateShopRevisionPayload>({
+     createShopRevision: builder.mutation<ShopRevisionSuccessResponse<ShopRevision>, CreateShopRevisionPayload>({
       query: (data) => ({
         url: "/api/v1/shop-revisions",
         method: "POST",
         data,
       }),
-      invalidatesTags: ["ShopRevision"],
+      invalidatesTags: (_result, _error, { fab_id }) => [
+        "ShopRevision",
+        "Fab",                       // invalidates getFabs (string tag)
+        { type: "Fab", id: fab_id }, // invalidates getFabById (object tag)
+        "Task",                      // invalidates operator tasks
+      ],
+    }),
+    completeShopRevision: builder.mutation<ShopRevisionSuccessResponse<ShopRevision>, { revision_id: number; revision_feedback?: string }>({
+      query: ({ revision_id, revision_feedback }) => ({
+        url: `/api/v1/shop-revisions/${revision_id}/complete`,
+        method: "PATCH",
+        data: { revision_feedback },
+      }),
+      invalidatesTags: (_result, _error, { revision_id }) => [
+        "ShopRevision",
+        "Fab",
+        "Task",
+        // If we have fab_id in the payload or can fetch it, add { type: "Fab", id: fab_id } as well
+      ],
     }),
 
     getShopRevisionFabs: builder.query<ShopRevisionFabSummary[], void>({
@@ -78,14 +100,21 @@ export const shopRevisionApi = createApi({
       transformResponse: (response: any) => response?.data ?? response ?? [],
       providesTags: (_result, _error, fab_id) => [{ type: "ShopRevision", id: fab_id }],
     }),
-
-    completeShopRevision: builder.mutation<ShopRevisionSuccessResponse<ShopRevision>, number>({
-      query: (revision_id) => ({
-        url: `/api/v1/shop-revisions/${revision_id}/complete`,
-        method: "PATCH",
+    getShopRevisionCount: builder.query<number, void>({
+      query: () => ({
+        url: "/api/v1/shop-revisions/count",
+        method: "GET",
       }),
-      invalidatesTags: ["ShopRevision"],
+      transformResponse: (response: any) => {
+        if (typeof response === 'number') return response;
+        if (typeof response?.data === 'number') return response.data;
+        if (typeof response?.data?.count === 'number') return response.data.count;
+        if (typeof response?.count === 'number') return response.count;
+        return 0;
+      },
+      providesTags: ["ShopRevision"],
     }),
+
   }),
 });
 
@@ -93,5 +122,6 @@ export const {
   useCreateShopRevisionMutation,
   useGetShopRevisionFabsQuery,
   useGetShopRevisionsByFabIdQuery,
+  useGetShopRevisionCountQuery,
   useCompleteShopRevisionMutation,
 } = shopRevisionApi;

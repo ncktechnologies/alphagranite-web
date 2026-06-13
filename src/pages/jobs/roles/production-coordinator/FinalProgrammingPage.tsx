@@ -6,8 +6,7 @@ import { FinalProgrammingTable } from './FinalProgrammingTable';
 import { IJob } from '@/pages/jobs/components/job';
 import { Fab, useGetFabsInFinalProgrammingPendingQuery, useGetFabsQuery } from '@/store/api/job';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
-// import { transformFabToJob } from '@/pages/jobs/roles/drafters/DrafterPage';
-import { useIsSuperAdmin } from '@/hooks/use-permission';
+import { useIsSuperAdmin, usePermission } from '@/hooks/use-permission';
 import { JobTable } from '../../components/JobTable';
 import { useJobStageFilter } from '@/hooks/use-job-stage';
 import { useLocation, useNavigate } from 'react-router';
@@ -27,7 +26,6 @@ const transformFabToJob = (fab: Fab): IJob => {
         date: fab.shop_date_schedule || '',
         current_stage: fab.current_stage,
         sales_person_name: fab.sales_person_name || '',
-        // Optional fields with default values
         acct_name: fab.account_name || '',
         input_area: fab.input_area || '',
         no_of_pieces: fab.no_of_pieces ? `${fab.no_of_pieces}` : "-",
@@ -35,12 +33,9 @@ const transformFabToJob = (fab: Fab): IJob => {
         revenue: fab.job_details?.project_value || "-",
         gp: "-",
         draft_completed: fab.current_stage === 'completed' ? 'Yes' : 'No',
-        // template_schedule: fab.templating_schedule_start_date ? formatDate(fab.templating_schedule_start_date) : '-',
         template_received: '',
-        // templater: fab.technician_name || '-',
         revised: '',
         sct_completed: '',
-        // Final programming specific fields
         shop_date_scheduled: fab.templating_schedule_start_date || '',
         wj_time_minutes: fab.programming_time_minutes ? String(fab.programming_time_minutes) : null,
         final_programming_completed: fab.final_programming_complete ? 'Yes' : 'No',
@@ -55,27 +50,28 @@ const transformFabToJob = (fab: Fab): IJob => {
         status_id: fab.status_id,
     };
 };
+
 const FinalProgrammingPage = () => {
     const navigate = useNavigate();
+    const isSuperAdmin = useIsSuperAdmin();
+
+    const permissions = usePermission('Final Programming');
+
+    // Determine what actions the user is allowed to do
+    const canAddNote = isSuperAdmin || permissions.can_create;          
+    const canToggleOnHold = isSuperAdmin || permissions.can_create;     
+    const canReassignDrafter = isSuperAdmin || permissions.can_create;  // Reassign button inside drafter column
 
     // Fetch sales persons data for filter dropdown
     const { data: salesPersonsData } = useGetSalesPersonsQuery();
 
     // Extract sales persons
     const salesPersons = useMemo(() => {
-        if (!salesPersonsData) {
-            return [];
-        }
-
-        // Handle both possible response formats
+        if (!salesPersonsData) return [];
         let rawData: any[] = [];
-        if (Array.isArray(salesPersonsData)) {
-            rawData = salesPersonsData;
-        } else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData) {
+        if (Array.isArray(salesPersonsData)) rawData = salesPersonsData;
+        else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData)
             rawData = (salesPersonsData as any).data || [];
-        }
-
-        // Extract sales persons - keep full objects with id and name
         return rawData;
     }, [salesPersonsData]);
 
@@ -95,71 +91,48 @@ const FinalProgrammingPage = () => {
     // Calculate skip value for pagination
     const skip = tableState.pagination.pageIndex * tableState.pagination.pageSize;
 
-    // Build query params for backend
+    // Build query params for backend (currently unused because API doesn't accept params)
     const queryParams = useMemo(() => {
         const params: any = {
             skip,
             limit: tableState.pagination.pageSize,
             current_stage: 'final_programming',
         };
-
-        if (tableState.searchQuery) {
-            params.search = tableState.searchQuery;
-        }
-        if (tableState.searchType) {
-            params.type = tableState.searchType;
-        }
-        if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all') {
+        if (tableState.searchQuery) params.search = tableState.searchQuery;
+        if (tableState.searchType) params.type = tableState.searchType;
+        if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all')
             params.fab_type = tableState.fabTypeFilter;
-        }
-
-        // Add sales person filter using ID
         if (tableState.salesPersonFilter && tableState.salesPersonFilter !== 'all') {
-            if (tableState.salesPersonFilter === 'no_sales_person') {
-                // Filter for fabs without a sales person
-                params.sales_person_name = '';
-            } else {
-                // Find the sales person object by name and get the ID
+            if (tableState.salesPersonFilter === 'no_sales_person') params.sales_person_name = '';
+            else {
                 const selectedSalesPerson = salesPersons.find((sp: any) => sp.name === tableState.salesPersonFilter);
-                if (selectedSalesPerson && selectedSalesPerson.id) {
-                    params.sales_person_id = selectedSalesPerson.id;
-                }
+                if (selectedSalesPerson?.id) params.sales_person_id = selectedSalesPerson.id;
             }
         }
-
         if (tableState.dateFilter && tableState.dateFilter !== 'all') {
-            // For custom date range, use schedule_start_date and schedule_due_date
             if (tableState.dateFilter === 'custom') {
-                if (tableState.dateRange?.from) {
-                    // Use local date string (YYYY-MM-DD)
+                if (tableState.dateRange?.from)
                     params.schedule_start_date = format(tableState.dateRange.from, 'yyyy-MM-dd');
-                }
-                if (tableState.dateRange?.to) {
+                if (tableState.dateRange?.to)
                     params.schedule_due_date = format(tableState.dateRange.to, 'yyyy-MM-dd');
-                }
-                // Don't send date_filter when using custom range
             } else {
-                // For other filters (today, this_week, etc.), use date_filter
                 params.date_filter = tableState.dateFilter;
             }
         }
-
         return params;
     }, [
         skip,
         tableState.pagination.pageSize,
         tableState.searchQuery,
+        tableState.searchType,
         tableState.fabTypeFilter,
         tableState.salesPersonFilter,
         tableState.dateFilter,
         tableState.dateRange,
-        tableState.searchType,
-
+        salesPersons,
     ]);
 
-    // Fetch data with backend pagination and filtering
-    // const { data, isLoading, isFetching, isError, error } = useGetFabsQuery(queryParams);
-
+    // Fetch data – currently using a hook that doesn't accept queryParams
     const { data, isLoading, isFetching, isError, error } = useGetFabsInFinalProgrammingPendingQuery();
 
     const [selectedRows, setSelectedRows] = useState<string[]>([]);
@@ -195,7 +168,7 @@ const FinalProgrammingPage = () => {
     };
 
     const handleReassignDrafterClick = (job: IJob) => {
-        setReassignFabId(job.fab_id); // just pass the FAB ID
+        setReassignFabId(job.fab_id);
         setSelectedRows([]);
         setShowAssignModal(true);
     };
@@ -204,9 +177,9 @@ const FinalProgrammingPage = () => {
         setShowAssignModal(false);
         setReassignFabId(null);
     };
+
     const handleAssignSuccess = () => {
         setSelectedRows([]);
-        // Optionally refetch: tableState.refetch?.()
     };
 
     if (isLoading) {
@@ -245,9 +218,6 @@ const FinalProgrammingPage = () => {
         );
     }
 
-    // Transform Fab data to IJob format
-    // const jobsData: IJob[] = data?.data?.map(transformFabToJob) || [];
-
     return (
         <>
             <Container className="lg:mx-0">
@@ -259,18 +229,19 @@ const FinalProgrammingPage = () => {
                     jobs={jobsData}
                     path='final-programming'
                     isLoading={isLoading && !data}
-                    // useBackendPagination={true}
-                    // totalRecords={data?.total || 0}
-                    // tableState={tableState}
                     showSalesPersonFilter={true}
                     salesPersons={salesPersons}
-                    visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'wj_time_minutes', 'final_programming_notes', 'final_programming_completed', 'drafter', 'on_hold']}
+                    visibleColumns={['date', 'fab_type', 'fab_id', 'job_no', 'fab_info', 'no_of_pieces', 'total_sq_ft', 'wj_time_minutes', 'final_programming_notes', 'final_programming_completed', 'drafter']}
                     enableMultiSelect
                     selectedRows={selectedRows}
                     setSelectedRows={setSelectedRows}
                     showAssignDrafterButton
                     onAssignDrafterClick={handleAssignDrafterClick}
                     onReassignDrafterClick={handleReassignDrafterClick}
+                    canAddNote={canAddNote}
+                    canToggleOnHold={canToggleOnHold}
+                    canAssignDrafter={canReassignDrafter}
+                    canReassignDrafter={canReassignDrafter}
                 />
                 <AssignDrafterModal
                     open={showAssignModal}
@@ -282,17 +253,7 @@ const FinalProgrammingPage = () => {
                     initialEndDates={datePerFab.endDateMapping}
                     onAssignSuccess={handleAssignSuccess}
                 />
-
             </Container>
-
-            {/* <div className="mt-6">
-                <FinalProgrammingTable 
-                    jobs={jobs}
-                    path="/job/final-programming"
-                    isLoading={isLoading && !data}
-                    onRowClick={handleRowClick}
-                />
-            </div> */}
         </>
     );
 };

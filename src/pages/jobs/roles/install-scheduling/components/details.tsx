@@ -30,6 +30,9 @@ export function InstallSchedulingDetailsPage() {
     const { data: fab, isLoading, isError, error } = useGetFabByIdQuery(Number(id));
     const isCompletionRoute = location.pathname.includes('install-scheduled');
 
+    // 👇 Determine which permission menu to use based on the route
+    const permissionMenu = isCompletionRoute ? 'Install Completion' : 'Install Scheduling';
+
     // Prepare clickable links
     const jobNameLink = fab?.job_details?.id ? `/job/details/${fab.job_details.id}` : '#';
     const jobNumberLink = fab?.job_details?.job_number
@@ -70,7 +73,6 @@ export function InstallSchedulingDetailsPage() {
             title: 'FAB Notes',
             type: 'notes',
             notes: getAllFabNotes(fab?.fab_notes || []).map(note => {
-
                 const stage = note.stage || 'general';
                 const config = stageConfig[stage] || stageConfig.general;
                 return {
@@ -193,7 +195,6 @@ export function InstallSchedulingDetailsPage() {
             {/* Original grid layout – unchanged */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
                 <div className="lg:col-span-2">
-
                     <Card className="mt-6">
                         <CardHeader>
                             <CardTitle>Job Information</CardTitle>
@@ -217,9 +218,8 @@ export function InstallSchedulingDetailsPage() {
                     </div>
                 </div>
 
-                {/* RIGHT: Review checklist */}
-                <Can action="update" on="jobs">
-
+                {/* RIGHT: Review checklist – permission based on current route */}
+                <Can action="create" on={permissionMenu}>
                     <div className='border-l'>
                         <Card className='border-none py-6'>
                             <CardHeader className='border-b pb-4 flex-col items-start'>
