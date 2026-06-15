@@ -24,8 +24,9 @@ const transformToJob = (item: any): IJob => ({
     total_sq_ft: String(item.total_sqft ?? '0'),
     revenue: String(item.revenue ?? '0'),
     stone_cost: item.cost_of_stone,
+    acct_name: item.account_name || '',
+    input_area: item.input_area || '',
     // Required fields with defaults
-    acct_name: '',
     no_of_pieces: '-',
     gp: '-',
     draft_completed: '',
@@ -33,11 +34,11 @@ const transformToJob = (item: any): IJob => ({
     template_received: '',
     revised: '',
     sct_completed: '',
-    stone_type_name: '',
-    stone_color_name: '',
-    stone_thickness_value: '',
-    edge_name: '',
-    fab_notes: [],
+    stone_type_name: item.stone_type_name || '',
+    stone_color_name: item.stone_color_name || '',
+    stone_thickness_value: item.stone_thickness_value || '',
+    edge_name: item.edge_name || '',
+    fab_notes: item.fab_notes || [],
     job_id: 0,
     on_hold: false,
     status_id: 1,
@@ -132,7 +133,7 @@ const CostOfStonePage = () => {
                 totalRecords={totalRecords}
                 tableState={tableState}
                 showSalesPersonFilter={false}
-                visibleColumns={['fab_id', 'job_no', 'job_name', 'total_sq_ft', 'revenue', 'stone_cost']}
+                visibleColumns={['fab_type', 'fab_id', 'job_no', 'fab_info', 'total_sq_ft', 'revenue', 'stone_cost']}
                 // 👇 Pass permission props for Add Note and On Hold toggle
                 canAddNote={canAddNote}
                 canToggleOnHold={canToggleOnHold}
