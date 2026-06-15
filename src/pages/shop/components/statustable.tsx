@@ -147,6 +147,8 @@ interface GroupTotals {
 
 interface ShopStatusTableProps {
     isLoading?: boolean;
+    canAddNote?: boolean;
+    canExport?: boolean;
 }
 
 // Mapping of planning_section_id to stage details
@@ -176,12 +178,12 @@ const getTotalForStage = (fab: any, sectionId: number): number => {
 const emptyTotals = (): GroupTotals => ({ pieces: 0, sqft: 0, wj: 0, edging: 0, miter: 0, cnc: 0 });
 
 const addToTotals = (acc: GroupTotals, fab: ShopStatusFab): GroupTotals => ({
-    pieces:  acc.pieces  + fab.pieces,
-    sqft:    acc.sqft    + fab.total_sq_ft,
-    wj:      acc.wj      + fab.wj_total,
-    edging:  acc.edging  + fab.edging_total,
-    miter:   acc.miter   + fab.miter_total,
-    cnc:     acc.cnc     + fab.cnc_total,
+    pieces: acc.pieces + fab.pieces,
+    sqft: acc.sqft + fab.total_sq_ft,
+    wj: acc.wj + fab.wj_total,
+    edging: acc.edging + fab.edging_total,
+    miter: acc.miter + fab.miter_total,
+    cnc: acc.cnc + fab.cnc_total,
 });
 
 // ------------------ Progress Bar (plan rows only) ------------------
@@ -259,9 +261,10 @@ const AddNoteDialog: React.FC<AddNoteDialogProps> = ({ open, fabId, onClose }) =
 interface ActionsCellProps {
     fabId: string;
     onAddNote: (fabId: string) => void;
+    canAddNote?: boolean;
 }
 
-const ActionsCell: React.FC<ActionsCellProps> = ({ fabId, onAddNote }) => {
+const ActionsCell: React.FC<ActionsCellProps> = ({ fabId, onAddNote, canAddNote = false }) => {
     const navigate = useNavigate();
     return (
         <div className="flex items-center justify-center">
@@ -276,9 +279,11 @@ const ActionsCell: React.FC<ActionsCellProps> = ({ fabId, onAddNote }) => {
                         <Eye className="mr-2 h-4 w-4" />View Details
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAddNote(fabId); }}>
-                        <MessageSquare className="mr-2 h-4 w-4" />Add Note
-                    </DropdownMenuItem>
+                    {canAddNote && (
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAddNote(fabId); }}>
+                            <MessageSquare className="mr-2 h-4 w-4" />Add Note
+                        </DropdownMenuItem>
+                    )}
                 </DropdownMenuContent>
             </DropdownMenu>
         </div>
@@ -286,7 +291,7 @@ const ActionsCell: React.FC<ActionsCellProps> = ({ fabId, onAddNote }) => {
 };
 
 // ------------------ Main Component ------------------
-const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLoading }) => {
+const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLoading, canAddNote = false, canExport = false,}) => {
     const tableState = useTableState({
         tableId: 'shop-status-table',
         defaultPagination: { pageIndex: 0, pageSize: 25 },
@@ -377,8 +382,8 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     const tableData: ShopStatusRow[] = useMemo(() => {
         return fabs.map((fab: any): ShopStatusRow => {
             const rawDate = fab.shop_est_completion_date || fab.estimated_completion_date || fab.shop_date_schedule || fab.installation_date;
-            const dayKey   = rawDate ? format(new Date(rawDate), 'yyyy-MM-dd') : 'unscheduled';
-            const monthKey = rawDate ? format(new Date(rawDate), 'yyyy-MM')    : 'unscheduled';
+            const dayKey = rawDate ? format(new Date(rawDate), 'yyyy-MM-dd') : 'unscheduled';
+            const monthKey = rawDate ? format(new Date(rawDate), 'yyyy-MM') : 'unscheduled';
 
             const getPlanPercent = (sectionId: number): number => {
                 const plan = (fab.plans || []).find((p: any) => p.planning_section_id === sectionId);
@@ -529,12 +534,12 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     if (p.type === 'fab') dayTotals = addToTotals(dayTotals, p.data);
                 });
                 monthTotals = {
-                    pieces:  monthTotals.pieces  + dayTotals.pieces,
-                    sqft:    monthTotals.sqft    + dayTotals.sqft,
-                    wj:      monthTotals.wj      + dayTotals.wj,
-                    edging:  monthTotals.edging  + dayTotals.edging,
-                    miter:   monthTotals.miter   + dayTotals.miter,
-                    cnc:     monthTotals.cnc     + dayTotals.cnc,
+                    pieces: monthTotals.pieces + dayTotals.pieces,
+                    sqft: monthTotals.sqft + dayTotals.sqft,
+                    wj: monthTotals.wj + dayTotals.wj,
+                    edging: monthTotals.edging + dayTotals.edging,
+                    miter: monthTotals.miter + dayTotals.miter,
+                    cnc: monthTotals.cnc + dayTotals.cnc,
                 };
 
                 const dayDisplay = dk !== 'unscheduled'
@@ -582,7 +587,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             header: () => null,
             cell: ({ row }) => {
                 if (row.original.type !== 'fab') return null;
-                return <ActionsCell fabId={row.original.data.fab_id} onAddNote={(id) => setNoteDialogFabId(id)} />;
+                return <ActionsCell fabId={row.original.data.fab_id} onAddNote={(id) => setNoteDialogFabId(id)}  canAddNote={canAddNote} />;
             },
             size: 48,
         },
@@ -838,7 +843,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             enableSorting: true,
             size: 140,
         },
-    ], []);
+    ], [canAddNote]);
 
     // ------------------ Table Instance ------------------
     const table = useReactTable({
@@ -905,12 +910,12 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 );
                 if (id === 'expander' || id === 'actions') return <td key={id} className="px-4 py-2 border-r border-[#e2e4ed]" />;
                 if (id === labelColId) return td(label);
-                if (id === 'pieces')      return td(totals.pieces);
+                if (id === 'pieces') return td(totals.pieces);
                 if (id === 'total_sq_ft') return td(`${totals.sqft.toFixed(1)} SF`);
-                if (id === 'wj')          return td(`${totals.wj.toFixed(1)} LF`);
-                if (id === 'edging')      return td(`${totals.edging.toFixed(1)} LF`);
-                if (id === 'miter')       return td(`${totals.miter.toFixed(1)} LF`);
-                if (id === 'cnc')         return td(`${totals.cnc.toFixed(1)} LF`);
+                if (id === 'wj') return td(`${totals.wj.toFixed(1)} LF`);
+                if (id === 'edging') return td(`${totals.edging.toFixed(1)} LF`);
+                if (id === 'miter') return td(`${totals.miter.toFixed(1)} LF`);
+                if (id === 'cnc') return td(`${totals.cnc.toFixed(1)} LF`);
                 return <td key={id} className="px-4 py-2 border-r border-[#e2e4ed] last:border-r-0" />;
             })}
         </tr>
@@ -1029,7 +1034,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                     <th
                                                         key={header.id}
                                                         className="px-4 py-2 text-left text-xs font-semibold text-gray-700 bg-gray-50 border-b border-gray-200 whitespace-normal relative"
-                                                        style={{ 
+                                                        style={{
                                                             width: header.getSize(),
                                                             minWidth: header.getSize(),
                                                             maxWidth: header.getSize()
@@ -1060,7 +1065,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                             return (
                                                 <React.Fragment key={monthGroup.monthKey}>
                                                     {/* ── Month header row ── */}
-                                                    
+
 
                                                     {/* ── Month totals row ── */}
                                                     {!monthCollapsed && renderTotalsRow(
@@ -1123,7 +1128,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                                                             {parentRow.getVisibleCells().map(cell => {
                                                                                                 const columnId = cell.column.id;
                                                                                                 let cellStyle = {};
-                                                                                                
+
                                                                                                 if (parentRow.original.type === 'fab') {
                                                                                                     if (stageColumnIds.has(columnId)) {
                                                                                                         // Stage columns: gradient based on individual stage progress
@@ -1139,7 +1144,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                                                                         };
                                                                                                     }
                                                                                                 }
-                                                                                                
+
                                                                                                 return (
                                                                                                     <td
                                                                                                         key={cell.id}

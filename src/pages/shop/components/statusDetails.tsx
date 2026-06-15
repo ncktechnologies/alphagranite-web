@@ -41,6 +41,7 @@ import { FileGallery, type FileSource, type UnifiedFile } from '@/pages/jobs/com
 import { FileViewer } from '@/pages/jobs/roles/drafters/components';
 import CreatePlanSheet from './createEvent';
 import DialogContent, { Dialog, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants & Helpers
@@ -49,9 +50,7 @@ import DialogContent, { Dialog, DialogHeader, DialogTitle } from '@/components/u
 const TIME_SLOTS = (() => {
     const slots: { value: string; label: string }[] = [];
     for (let h = 6; h <= 22; h++) {
-        // Skip 12 PM (noon) - jump from 11 AM to 1 PM
         if (h === 12) continue;
-
         for (const m of [0, 15, 30, 45]) {
             if (h === 22 && m > 0) break;
             const hh = String(h).padStart(2, '0');
@@ -88,30 +87,21 @@ const parseDateString = (s: string | undefined): Date | undefined => {
 
 const formatDate = (d: Date | undefined): string => {
     if (!d) return '';
-    // Format in local time to avoid timezone shifts
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
-// Helper to parse date string for display (handles timezone correctly)
 const parseDateForDisplay = (s: string | undefined): Date | undefined => {
     if (!s || typeof s !== 'string' || s.trim() === '') return undefined;
-
     try {
-        // If it's in YYYY-MM-DD format, parse as local date to avoid UTC shift
         const parts = s.split('-');
         if (parts.length === 3) {
             const year = parseInt(parts[0], 10);
             const month = parseInt(parts[1], 10);
             const day = parseInt(parts[2], 10);
-
-            // Validate the parsed values
             if (isNaN(year) || isNaN(month) || isNaN(day)) return undefined;
             if (month < 1 || month > 12 || day < 1 || day > 31) return undefined;
-
             return new Date(year, month - 1, day);
         }
-
-        // If it has time component (ISO string), extract just the date part
         if (s.includes('T')) {
             const datePart = s.split('T')[0];
             const dateParts = datePart.split('-');
@@ -119,15 +109,11 @@ const parseDateForDisplay = (s: string | undefined): Date | undefined => {
                 const year = parseInt(dateParts[0], 10);
                 const month = parseInt(dateParts[1], 10);
                 const day = parseInt(dateParts[2], 10);
-
                 if (isNaN(year) || isNaN(month) || isNaN(day)) return undefined;
                 if (month < 1 || month > 12 || day < 1 || day > 31) return undefined;
-
                 return new Date(year, month - 1, day);
             }
         }
-
-        // Fallback: try parsing normally
         const d = new Date(s);
         return isNaN(d.getTime()) ? undefined : d;
     } catch {
@@ -135,7 +121,6 @@ const parseDateForDisplay = (s: string | undefined): Date | undefined => {
     }
 };
 
-// Safe format helper that handles invalid dates gracefully
 const safeFormatDate = (dateStr: string | undefined, formatStr: string): string => {
     const date = parseDateForDisplay(dateStr);
     if (!date || isNaN(date.getTime())) return '—';
@@ -151,7 +136,6 @@ const parseTimeFromISO = (isoStr: string | undefined): string => {
     try { return format(new Date(isoStr), 'HH:mm'); } catch { return ''; }
 };
 
-// Helper for FAB status display
 const getFabStatusInfo = (statusId: number | undefined) => {
     if (statusId === 0) return { className: 'bg-red-100 text-red-800', text: 'ON HOLD' };
     if (statusId === 1) return { className: 'bg-green-100 text-green-800', text: 'ACTIVE' };
@@ -209,7 +193,7 @@ const ShopEstDateField: React.FC<{ value: string | undefined; fabId: number; onS
             setIsEditing(false);
             onSaved();
         } catch {
-            toast.error('Failed to update date.');
+            // toast.error('Failed to update date.');
         } finally {
             setIsSaving(false);
         }
@@ -251,28 +235,27 @@ const ShopEstDateField: React.FC<{ value: string | undefined; fabId: number; onS
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// PlanStageCard
+// PlanStageCard (with permission prop)
 // ─────────────────────────────────────────────────────────────────────────────
 interface PlanStageCardProps {
     plan: any;
     workstations: any[];
     employees: any[];
-    totalPlans: number;         // ← total plans on this fab, drives sequence options
+    totalPlans: number;
     onSaved: () => void;
     disabled?: boolean;
+    canEdit?: boolean;          // ← new: whether the user can edit this plan
 }
 
-const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, employees, totalPlans, onSaved, disabled = false }) => {
+const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, employees, totalPlans, onSaved, disabled = false, canEdit = false }) => {
     const [updateShopPlan] = useUpdateShopPlanMutation();
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
-    // ← Use shared hook — resolves label by section id, no hardcoded stageMapping needed
     const { sections: planSections } = usePlanSections();
     const sectionInfo = planSections.find(s => s.id === plan.planning_section_id);
     const sectionLabel = sectionInfo?.plan_name ?? `Section ${plan.planning_section_id}`;
 
-    // Sequence options: always at least 3, grows with total plans
     const sequenceOptions = Array.from(
         { length: Math.max(3, totalPlans) },
         (_, i) => i + 1
@@ -302,7 +285,6 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
         if (plan.scheduled_end_date) {
             return parseDateString(plan.scheduled_end_date.split('T')[0]);
         }
-        // If no end date but we have start date and estimated hours, calculate end date
         if (plan.estimated_hours && plan.scheduled_start_date) {
             try {
                 const startDate = new Date(plan.scheduled_start_date);
@@ -310,10 +292,8 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                 return parseDateString(format(endDate, 'yyyy-MM-dd'));
             } catch { return undefined; }
         }
-        // Fallback to start date
         return parseDateString(plan.scheduled_start_date?.split('T')[0]);
     };
-
 
     const buildDraft = () => ({
         workstation_id: String(plan.workstation_id ?? ''),
@@ -322,7 +302,6 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
         start_time: parseTimeFromISO(plan.scheduled_start_date),
         end_date: deriveEndDate(),
         end_time: deriveEndTime(),
-        // estimated_hours: plan.estimated_hours ? String(plan.estimated_hours) : '',
         notes: plan.notes ?? '',
         sequence: plan.sequence ?? 1,
     });
@@ -348,21 +327,17 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
         setIsSaving(true);
         try {
             const startDateStr = draft.start_date ? formatDate(draft.start_date) : '';
-            const endDateStr = draft.end_date ? formatDate(draft.end_date) : startDateStr; // fallback to start date
+            const endDateStr = draft.end_date ? formatDate(draft.end_date) : startDateStr;
             const scheduledStart = startDateStr && draft.start_time ? `${startDateStr}T${draft.start_time}:00` : undefined;
             const scheduledEnd = endDateStr && draft.end_time ? `${endDateStr}T${draft.end_time}:00` : undefined;
 
-            // Use manual estimated_hours if provided, otherwise calculate from times
-            const manualHours = draft.estimated_hours ? parseFloat(draft.estimated_hours) : null;
-            const diffMs = scheduledStart && scheduledEnd
-                ? new Date(scheduledEnd).getTime() - new Date(scheduledStart).getTime() : 0;
-           let estimatedHours = plan.estimated_hours;
-if (scheduledStart && scheduledEnd) {
-    const diffMs = new Date(scheduledEnd).getTime() - new Date(scheduledStart).getTime();
-    if (diffMs > 0) {
-        estimatedHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
-    }
-}
+            let estimatedHours = plan.estimated_hours;
+            if (scheduledStart && scheduledEnd) {
+                const diffMs = new Date(scheduledEnd).getTime() - new Date(scheduledStart).getTime();
+                if (diffMs > 0) {
+                    estimatedHours = Math.round((diffMs / (1000 * 60 * 60)) * 100) / 100;
+                }
+            }
 
             await updateShopPlan({
                 plan_id: Number(plan.id),
@@ -400,10 +375,10 @@ if (scheduledStart && scheduledEnd) {
     })();
 
     const planPct = plan.work_percentage || 0;
+    const effectiveDisabled = disabled || !canEdit;   // block editing when no permission
 
     return (
         <Card className="border border-[#e2e4ed] shadow-sm">
-            {/* Header */}
             <CardHeader className="py-3 px-4 border-b border-[#e2e4ed] flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Badge
@@ -436,7 +411,7 @@ if (scheduledStart && scheduledEnd) {
                             <Badge variant="outline" className="text-xs font-normal">
                                 Seq: {plan.sequence ?? null}
                             </Badge>
-                            {!disabled && (
+                            {!effectiveDisabled && (
                                 <Button
                                     variant="ghost" size="icon"
                                     className="h-7 w-7 text-[#7c8689] hover:text-[#4b545d]"
@@ -459,7 +434,7 @@ if (scheduledStart && scheduledEnd) {
                             <Select
                                 value={draft.workstation_id}
                                 onValueChange={v => patch({ workstation_id: v, operator_id: '' })}
-                                disabled={isLoadingWorkstations || disabled}
+                                disabled={isLoadingWorkstations || effectiveDisabled}
                             >
                                 <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
                                     <SelectValue
@@ -494,11 +469,10 @@ if (scheduledStart && scheduledEnd) {
                             <Select
                                 value={draft.operator_id}
                                 onValueChange={v => patch({ operator_id: v })}
-                                disabled={!draft.workstation_id || disabled}
+                                disabled={!draft.workstation_id || effectiveDisabled}
                             >
                                 <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
                                     <SelectValue
-                                    
                                         placeholder={
                                             !draft.workstation_id
                                                 ? 'Select a workstation first'
@@ -531,8 +505,7 @@ if (scheduledStart && scheduledEnd) {
                                 mode="date"
                                 value={draft.start_date}
                                 onChange={date => patch({ start_date: date })}
-                                disabled={disabled}
-                            // minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
+                                disabled={effectiveDisabled}
                             />
                         </div>
 
@@ -543,7 +516,7 @@ if (scheduledStart && scheduledEnd) {
                                 mode="date"
                                 value={draft.end_date}
                                 onChange={date => patch({ end_date: date })}
-                                disabled={disabled}
+                                disabled={effectiveDisabled}
                             />
                         </div>
 
@@ -551,7 +524,7 @@ if (scheduledStart && scheduledEnd) {
                         <div className="">
                             <div className="flex flex-col gap-1.5">
                                 <Label className="text-xs text-muted-foreground uppercase tracking-wide">Start Time</Label>
-                                <Select value={draft.start_time} onValueChange={v => patch({ start_time: v })} disabled={disabled}>
+                                <Select value={draft.start_time} onValueChange={v => patch({ start_time: v })} disabled={effectiveDisabled}>
                                     <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
                                         <SelectValue placeholder="Start" />
                                     </SelectTrigger>
@@ -564,7 +537,7 @@ if (scheduledStart && scheduledEnd) {
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 <Label className="text-xs text-muted-foreground uppercase tracking-wide">End Time</Label>
-                                <Select value={draft.end_time} onValueChange={v => patch({ end_time: v })} disabled={disabled}>
+                                <Select value={draft.end_time} onValueChange={v => patch({ end_time: v })} disabled={effectiveDisabled}>
                                     <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
                                         <SelectValue placeholder="End" />
                                     </SelectTrigger>
@@ -579,20 +552,6 @@ if (scheduledStart && scheduledEnd) {
                             </div>
                         </div>
 
-                        {/* Estimated Hours */}
-                        {/* <div className="flex flex-col gap-1.5">
-                            <Label className="text-xs text-muted-foreground uppercase tracking-wide">Est. Hours</Label>
-                            <Input
-                                type="number"
-                                step="0.25"
-                                min="0"
-                                placeholder="Auto-calculated from times"
-                                value={draft.estimated_hours}
-                                onChange={e => patch({ estimated_hours: e.target.value })}
-                                className="h-[38px] border-[#e2e4ed] text-sm"
-                            />
-                        </div> */}
-
                         {/* Notes */}
                         <div className="flex flex-col gap-1.5">
                             <Label className="text-xs text-muted-foreground uppercase tracking-wide">Notes</Label>
@@ -601,13 +560,13 @@ if (scheduledStart && scheduledEnd) {
                                 onChange={e => patch({ notes: e.target.value })}
                                 placeholder="Add notes..."
                                 className="min-h-[72px] resize-none text-sm border-[#e2e4ed]"
-                                disabled={disabled}
+                                disabled={effectiveDisabled}
                             />
                         </div>
 
                         {/* Save / Cancel */}
                         <div className="flex gap-2 pt-1">
-                            <Button size="sm" className="flex-1" onClick={handleSave} disabled={isSaving || disabled}>
+                            <Button size="sm" className="flex-1" onClick={handleSave} disabled={isSaving || effectiveDisabled}>
                                 {isSaving
                                     ? <><LoaderCircle className="h-3.5 w-3.5 mr-1.5 animate-spin" />Saving…</>
                                     : <><Save className="h-3.5 w-3.5 mr-1.5" />Save</>}
@@ -648,9 +607,10 @@ if (scheduledStart && scheduledEnd) {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Main Page
-// ─────────────────────────────────────────────────────────────────────────────
-const FabDetailsPage: React.FC = () => {
+// Main Page (with canManagePlans prop)
+
+
+const FabDetailsPage = () => {
     const { fabId } = useParams<{ fabId: string }>();
 
     const { data: fabResponse, isLoading, isError, error, refetch } = useGetFabByIdQuery(
@@ -658,6 +618,7 @@ const FabDetailsPage: React.FC = () => {
     );
     const [createFabNote] = useCreateFabNoteMutation();
     const [createShopRevision] = useCreateShopRevisionMutation();
+
 
     const currentUser = useSelector((s: any) => s.user.user);
     const currentOperatorId = currentUser?.employee_id || currentUser?.id || 0;
@@ -668,7 +629,6 @@ const FabDetailsPage: React.FC = () => {
     const { data: employeesData } = useGetEmployeesQuery();
     const employees: any[] = employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
 
-    // ← usePlanSections used at page level for the sidebar schedule dates label lookup
     const { sections: planSections } = usePlanSections();
 
     const fab = fabResponse?.data ?? fabResponse;
@@ -679,6 +639,12 @@ const FabDetailsPage: React.FC = () => {
     const revisions: any[] = Array.isArray(fabRevisionsData) ? fabRevisionsData : [];
     const hasPendingShopRevision = revisions.some((rev: any) => !rev.revision_completed);
 
+    const isSuperAdmin = useIsSuperAdmin();
+    const permissions = usePermission('Shop Planning');  
+    const canManagePlans = isSuperAdmin || permissions.can_create;
+
+    const canEditPlans = canManagePlans && !hasPendingShopRevision;
+
     const [selectedRevisionId, setSelectedRevisionId] = useState<number | null>(null);
     const selectedRevision = revisions.find((rev: any) => rev.id === selectedRevisionId) || revisions[0] || null;
 
@@ -686,18 +652,12 @@ const FabDetailsPage: React.FC = () => {
     const [revisionNote, setRevisionNote] = useState('');
     const [isCreatingRevision, setIsCreatingRevision] = useState(false);
 
-    // State for file viewer
     const [activeFile, setActiveFile] = useState<UnifiedFile | null>(null);
-
-    // State for create plan modal
     const [showCreatePlanModal, setShowCreatePlanModal] = useState(false);
 
-    // Build file sources from FAB data (following the same pattern as other pages)
     const fileSources: FileSource[] = (() => {
         if (!fab) return [];
         const sources: FileSource[] = [];
-
-        // Helper to convert API file array into UnifiedFile[]
         const toUnifiedFiles = (files: any[]): UnifiedFile[] =>
             (files ?? []).map((f): UnifiedFile => ({
                 id: String(f.id),
@@ -705,7 +665,7 @@ const FabDetailsPage: React.FC = () => {
                 size: parseInt(f.file_size) || f.size || 0,
                 type: f.file_type || f.mime_type || 'application/octet-stream',
                 url: f.file_url || f.url || '',
-                stage_name: f.stage_name ?? f.stage,   // ← keep backend's stage_name
+                stage_name: f.stage_name ?? f.stage,
                 stage: f.stage_name ?? f.stage,
                 file_design: f.file_design,
                 uploaded_by_name: f.uploaded_by_name ?? f.uploader_name,
@@ -713,28 +673,11 @@ const FabDetailsPage: React.FC = () => {
                 uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
                 _raw: f,
             }));
-
-        // Drafting files (from draft_data.files)
-        if (fab.draft_data?.files?.length) {
-            sources.push({ kind: 'raw', data: toUnifiedFiles(fab.draft_data.files) });
-        }
-        // SlabSmith files
-        if (fab.slabsmith_data?.files?.length) {
-            sources.push({ kind: 'raw', data: toUnifiedFiles(fab.slabsmith_data.files) });
-        }
-        // Sales CT files
-        if (fab.sales_ct_data?.files?.length) {
-            sources.push({ kind: 'raw', data: toUnifiedFiles(fab.sales_ct_data.files) });
-        }
-        // CNC files (if you later add cnc_data)
-        if (fab.cnc_data?.files?.length) {
-            sources.push({ kind: 'raw', data: toUnifiedFiles(fab.cnc_data.files) });
-        }
-        // Top-level files
-        if (fab.files?.length) {
-            sources.push({ kind: 'raw', data: toUnifiedFiles(fab.files) });
-        }
-
+        if (fab.draft_data?.files?.length) sources.push({ kind: 'raw', data: toUnifiedFiles(fab.draft_data.files) });
+        if (fab.slabsmith_data?.files?.length) sources.push({ kind: 'raw', data: toUnifiedFiles(fab.slabsmith_data.files) });
+        if (fab.sales_ct_data?.files?.length) sources.push({ kind: 'raw', data: toUnifiedFiles(fab.sales_ct_data.files) });
+        if (fab.cnc_data?.files?.length) sources.push({ kind: 'raw', data: toUnifiedFiles(fab.cnc_data.files) });
+        if (fab.files?.length) sources.push({ kind: 'raw', data: toUnifiedFiles(fab.files) });
         return sources;
     })();
 
@@ -759,7 +702,7 @@ const FabDetailsPage: React.FC = () => {
             setShowNoteInput(false);
             refetch();
         } catch {
-            toast.error('Failed to add note.');
+            // toast.error('Failed to add note.');
         } finally {
             setIsSubmittingNote(false);
         }
@@ -770,7 +713,6 @@ const FabDetailsPage: React.FC = () => {
             toast.warning('Revision note cannot be empty.');
             return;
         }
-
         setIsCreatingRevision(true);
         try {
             await createShopRevision({
@@ -785,95 +727,31 @@ const FabDetailsPage: React.FC = () => {
             setShowRevisionDialog(false);
             refetch();
         } catch {
-            toast.error('Failed to create shop revision.');
+            // toast.error('Failed to create shop revision.');
         } finally {
             setIsCreatingRevision(false);
         }
     };
 
-    // Prepare clickable links
     const jobNameLink = fab?.job_details?.id ? `/job/details/${fab.job_details.id}` : '#';
     const jobNumberLink = fab?.job_details?.job_number
         ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fab.job_details.job_number}`
         : '#';
     const statusInfo = getFabStatusInfo(fab?.status_id);
 
-    if (isLoading) {
-        return (
-            <div className="flex flex-col min-h-screen">
-                <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
-                    <Skeleton className="h-8 w-72 mb-1" />
-                    <Skeleton className="h-4 w-48" />
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6 px-4 sm:px-6 lg:px-8">
-                    <div className="lg:col-span-2 space-y-6">
-                        <Card><CardHeader><Skeleton className="h-6 w-40" /></CardHeader><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
-                        <div className="grid grid-cols-3 gap-4">
-                            {[1, 2, 3].map(i => <Skeleton key={i} className="h-64 w-full rounded-lg" />)}
-                        </div>
-                    </div>
-                    <Skeleton className="h-[600px] w-full" />
-                </div>
-            </div>
-        );
-    }
-
-    if (isError) {
-        return (
-            <div className="flex flex-col min-h-screen">
-                <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
-                    <ToolbarHeading title="Error loading FAB" description="Could not load Fab details" />
-                </div>
-                <div className="p-6">
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
-                        <AlertDescription>
-                            {error ? `Failed to load FAB data: ${JSON.stringify(error)}` : 'Failed to load FAB data'}
-                        </AlertDescription>
-                    </Alert>
-                </div>
-            </div>
-        );
-    }
-
-    if (!fab) {
-        return (
-            <div className="flex flex-col min-h-screen">
-                <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
-                    <ToolbarHeading title="Not Found" description="FAB record not found" />
-                </div>
-                <div className="p-6">
-                    <Alert>
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Not Found</AlertTitle>
-                        <AlertDescription>FAB record not found.</AlertDescription>
-                    </Alert>
-                </div>
-            </div>
-        );
-    }
+    if (isLoading) return <LoadingSkeleton />;
+    if (isError) return <ErrorAlert error={error} />;
+    if (!fab) return <NotFoundAlert />;
 
     const plans: any[] = [...(fab.plans || [])].sort((a, b) => (a.sequence ?? 0) - (b.sequence ?? 0));
     const fabNotes: any[] = fab.fab_notes || [];
 
     const jobInfo = [
-        { label: 'FAB ID', value: String(fab.id) },
-        {
-            label: 'FAB ID',
-            value: fab.id
-                ? <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">{fab.id}</Link>
-                : (fab.id || 'N/A'),
-        },
+        { label: 'FAB ID', value: <Link to={`/sales/${fab.id}`} className="text-primary hover:underline">{fab.id}</Link> },
         { label: 'FAB Type', value: <span className="uppercase">{fab.fab_type || 'N/A'}</span> },
         { label: 'Account', value: fab.account_name || 'N/A' },
         { label: 'Job Name', value: fab.job_details?.name || 'N/A' },
-        {
-            label: 'Job #',
-            value: fab.job_details?.id
-                ? <Link to={`/job/details/${fab.job_details.id}`} className="text-primary hover:underline">{fab.job_details.job_number}</Link>
-                : (fab.job_details?.job_number || 'N/A'),
-        },
+        { label: 'Job #', value: fab.job_details?.id ? <Link to={`/job/details/${fab.job_details.id}`} className="text-primary hover:underline">{fab.job_details.job_number}</Link> : (fab.job_details?.job_number || 'N/A') },
         { label: 'Area', value: fab.input_area || 'N/A' },
         { label: 'Stone Type', value: fab.stone_type_name || 'N/A' },
         { label: 'Stone Color', value: fab.stone_color_name || 'N/A' },
@@ -888,7 +766,7 @@ const FabDetailsPage: React.FC = () => {
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50">
-            {/* Sticky toolbar */}
+            {/* Sticky toolbar (unchanged) */}
             <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
                 <div className="px-3 sm:px-4 lg:px-6">
                     <Toolbar className="py-2 sm:py-3">
@@ -896,24 +774,15 @@ const FabDetailsPage: React.FC = () => {
                             <ToolbarHeading
                                 title={
                                     <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
-                                        <a href={jobNameLink} className="hover:underline"
-                                            target="_blank"
-                                            rel="noreferrer"
-                                        >
+                                        <a href={jobNameLink} className="hover:underline" target="_blank" rel="noreferrer">
                                             {fab?.job_details?.name || `Job ${fab?.job_id}`}
                                         </a>
                                         <span className="mx-1 text-gray-400">·</span>
-                                        <a
-                                            href={jobNumberLink}
-                                            className="hover:underline text-gray-600"
-                                            target="_blank"
-                                            rel="noreferrer"
-                                        >
+                                        <a href={jobNumberLink} className="hover:underline text-gray-600" target="_blank" rel="noreferrer">
                                             {fab?.job_details?.job_number || fab?.job_id}
                                         </a>
                                     </div>
                                 }
-                            // description="Fab Details"
                             />
                             <div className="flex items-center gap-2 flex-shrink-0">
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
@@ -926,56 +795,40 @@ const FabDetailsPage: React.FC = () => {
                 </div>
             </div>
 
+            {/* Main content grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6 px-4 sm:px-6 lg:px-8">
-                {/* ── LEFT 2/3 ── */}
+                {/* LEFT 2/3 – same as before, but Plan cards now receive canEdit */}
                 <div className="lg:col-span-2 space-y-6">
-
-                    {/* Job Information */}
+                    {/* Job Information Card */}
                     <Card>
                         <CardHeader><CardTitle>Fab details</CardTitle></CardHeader>
                         <CardContent>
-                            {/* Adjusted grid to 4 columns on large screens to match typical dense layout */}
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-y-6 gap-x-4">
-                                {jobInfo.map((item, i) => (
-                                    <InfoRow key={i} label={item.label} value={item.value} />
-                                ))}
+                                {jobInfo.map((item, i) => <InfoRow key={i} label={item.label} value={item.value} />)}
                             </div>
                         </CardContent>
                     </Card>
 
-                    {/* FAB Files Card - All files from all stages */}
+                    {/* FAB Files Card */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-[#111827] leading-[32px] text-2xl font-bold">
                                 FAB Files
-                                {totalFileCount > 0 && (
-                                    <span className="ml-2 text-base font-normal text-gray-400">
-                                        ({totalFileCount})
-                                    </span>
-                                )}
+                                {totalFileCount > 0 && <span className="ml-2 text-base font-normal text-gray-400">({totalFileCount})</span>}
                             </CardTitle>
-                            <p className="text-sm text-[#4B5563]">
-                                Drafting, SlabSmith, CNC, Sales CT, and all other files for this fabrication
-                            </p>
+                            <p className="text-sm text-[#4B5563]">Drafting, SlabSmith, CNC, Sales CT, and all other files for this fabrication</p>
                         </CardHeader>
                         <CardContent>
-                            {isLoading ? (
-                                <div className="space-y-2">
-                                    <Skeleton className="h-20 w-full" />
-                                    <Skeleton className="h-20 w-full" />
-                                </div>
-                            ) : (
-                                <FileGallery
-                                    sources={fileSources}
-                                    onFileClick={handleFileClick}
-                                    defaultLayout="card"
-                                    emptyMessage="No files have been uploaded for this FAB yet."
-                                />
-                            )}
+                            <FileGallery
+                                sources={fileSources}
+                                onFileClick={handleFileClick}
+                                defaultLayout="card"
+                                emptyMessage="No files have been uploaded for this FAB yet."
+                            />
                         </CardContent>
                     </Card>
 
-                    {/* Plans Grid */}
+                    {/* Plans Card (with permission control) */}
                     <Card>
                         <CardHeader className="border-b pb-4">
                             <div className="flex items-center justify-between w-full">
@@ -996,7 +849,7 @@ const FabDetailsPage: React.FC = () => {
                                     size="sm"
                                     onClick={() => setShowCreatePlanModal(true)}
                                     className="bg-green-600 hover:bg-green-700"
-                                    disabled={hasPendingShopRevision}
+                                    disabled={!canEditPlans}
                                 >
                                     <Plus className="h-4 w-4 mr-1" />
                                     Create Plan
@@ -1014,9 +867,10 @@ const FabDetailsPage: React.FC = () => {
                                             plan={plan}
                                             workstations={workstations}
                                             employees={employees}
-                                            totalPlans={plans.length} // ← drives sequence options
+                                            totalPlans={plans.length}
                                             onSaved={refetch}
                                             disabled={hasPendingShopRevision}
+                                            canEdit={canEditPlans}
                                         />
                                     ))}
                                 </div>
@@ -1024,9 +878,7 @@ const FabDetailsPage: React.FC = () => {
                         </CardContent>
                     </Card>
 
-                    {/* FAB Notes */}
-
-                    {/* FAB Notes - GraySidebar style, collapsible */}
+                    {/* FAB Notes Card (unchanged) */}
                     <Card>
                         <Collapsible open={fabNotesOpen} onOpenChange={setFabNotesOpen}>
                             <CollapsibleTrigger asChild>
@@ -1035,11 +887,7 @@ const FabDetailsPage: React.FC = () => {
                                         <CardTitle className="flex items-center gap-2">
                                             <MessageSquare className="h-4 w-4 text-muted-foreground" />
                                             FAB Notes
-                                            {fabNotes.length > 0 && (
-                                                <Badge variant="secondary" className="text-xs font-normal ml-1">
-                                                    {fabNotes.length}
-                                                </Badge>
-                                            )}
+                                            {fabNotes.length > 0 && <Badge variant="secondary" className="text-xs font-normal ml-1">{fabNotes.length}</Badge>}
                                         </CardTitle>
                                         <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${fabNotesOpen ? 'rotate-180' : ''}`} />
                                     </div>
@@ -1049,29 +897,16 @@ const FabDetailsPage: React.FC = () => {
                                 <CardContent className="pt-0 pb-5">
                                     <Separator className="mb-4" />
                                     <div className="flex justify-end mb-3">
-                                        <Button variant="outline" size="sm" className="h-8 text-xs"
-                                            onClick={() => setShowNoteInput(v => !v)}>
-                                            {showNoteInput
-                                                ? <><X className="h-3 w-3 mr-1" />Cancel</>
-                                                : <><Pencil className="h-3 w-3 mr-1" />Add Note</>}
+                                        <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setShowNoteInput(v => !v)}>
+                                            {showNoteInput ? <><X className="h-3 w-3 mr-1" />Cancel</> : <><Pencil className="h-3 w-3 mr-1" />Add Note</>}
                                         </Button>
                                     </div>
                                     {showNoteInput && (
                                         <div className="space-y-2 mb-4">
-                                            <Textarea
-                                                placeholder="Type your note here..."
-                                                className="min-h-[90px] resize-none"
-                                                value={noteText}
-                                                onChange={e => setNoteText(e.target.value)}
-                                            />
+                                            <Textarea placeholder="Type your note here..." className="min-h-[90px] resize-none" value={noteText} onChange={e => setNoteText(e.target.value)} />
                                             <div className="flex justify-end gap-2">
-                                                <Button variant="outline" size="sm"
-                                                    onClick={() => { setShowNoteInput(false); setNoteText(''); }}>
-                                                    Cancel
-                                                </Button>
-                                                <Button size="sm" onClick={handleAddNote} disabled={isSubmittingNote}>
-                                                    {isSubmittingNote ? 'Saving...' : 'Save Note'}
-                                                </Button>
+                                                <Button variant="outline" size="sm" onClick={() => { setShowNoteInput(false); setNoteText(''); }}>Cancel</Button>
+                                                <Button size="sm" onClick={handleAddNote} disabled={isSubmittingNote}>{isSubmittingNote ? 'Saving...' : 'Save Note'}</Button>
                                             </div>
                                             <Separator />
                                         </div>
@@ -1084,9 +919,7 @@ const FabDetailsPage: React.FC = () => {
                                                 const cfg = noteStageConfig[note.stage || 'general'] || noteStageConfig.general;
                                                 const avatar = note.created_by_name?.charAt(0).toUpperCase() || 'U';
                                                 const author = note.created_by_name || 'Unknown';
-                                                const timestamp = note.created_at
-                                                    ? new Date(note.created_at).toLocaleDateString()
-                                                    : 'Unknown date';
+                                                const timestamp = note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date';
                                                 return (
                                                     <div key={note.id || i} className="flex gap-3">
                                                         <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
@@ -1115,10 +948,9 @@ const FabDetailsPage: React.FC = () => {
                     </Card>
                 </div>
 
-                {/* ── RIGHT SIDEBAR ── */}
+                {/* RIGHT SIDEBAR – unchanged except tooltip/disabled messages */}
                 <div className="border-l space-y-6">
-
-                    {/* Estimated Completion Date */}
+                    {/* Estimated Completion Date (always editable, not permission‑controlled) */}
                     <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
                         <CardHeader className="pb-3 border-b border-[#e2e4ed]">
                             <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
@@ -1127,11 +959,7 @@ const FabDetailsPage: React.FC = () => {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-4">
-                            <ShopEstDateField
-                                value={fab.shop_est_completion_date}
-                                fabId={Number(fabId)}
-                                onSaved={refetch}
-                            />
+                            <ShopEstDateField value={fab.shop_est_completion_date} fabId={Number(fabId)} onSaved={refetch} />
                         </CardContent>
                     </Card>
 
@@ -1144,14 +972,11 @@ const FabDetailsPage: React.FC = () => {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-4">
-                            <InfoRow
-                                label="Shop Suggested Date"
-                                value={safeFormatDate(fab.estimated_completion_date, 'MMM dd, yyyy')}
-                            />
+                            <InfoRow label="Shop Suggested Date" value={safeFormatDate(fab.estimated_completion_date, 'MMM dd, yyyy')} />
                         </CardContent>
                     </Card>
 
-                    {/* Schedule Dates — read-only */}
+                    {/* Schedule Dates – read only */}
                     <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
                         <CardHeader className="pb-3 border-b border-[#e2e4ed]">
                             <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
@@ -1160,25 +985,12 @@ const FabDetailsPage: React.FC = () => {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="pt-4 flex flex-col gap-3">
-                            <InfoRow
-                                label="Shop Date Schedule"
-                                value={safeFormatDate(fab.shop_date_schedule, 'MMM dd, yyyy')}
-                            />
-                            <InfoRow
-                                label="Install Date"
-                                value={safeFormatDate(fab.installation_date, 'MMM dd, yyyy')}
-                            />
-                            {/* ← Uses planSections from hook instead of hardcoded stageMapping */}
+                            <InfoRow label="Shop Date Schedule" value={safeFormatDate(fab.shop_date_schedule, 'MMM dd, yyyy')} />
+                            <InfoRow label="Install Date" value={safeFormatDate(fab.installation_date, 'MMM dd, yyyy')} />
                             {plans.map((plan: any) => {
                                 const section = planSections.find(s => s.id === plan.planning_section_id);
                                 if (!section || !plan.scheduled_start_date) return null;
-                                return (
-                                    <InfoRow
-                                        key={plan.id}
-                                        label={`${section.plan_name} Date`}
-                                        value={safeFormatDate(plan.scheduled_start_date, 'MMM dd, yyyy')}
-                                    />
-                                );
+                                return <InfoRow key={plan.id} label={`${section.plan_name} Date`} value={safeFormatDate(plan.scheduled_start_date, 'MMM dd, yyyy')} />;
                             })}
                         </CardContent>
                     </Card>
@@ -1220,12 +1032,8 @@ const FabDetailsPage: React.FC = () => {
                                                     {revision.revision_completed ? 'Completed' : 'Pending'}
                                                 </span>
                                             </div>
-                                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                                                {revision.revision_note || 'No note provided.'}
-                                            </p>
-                                            <p className="text-xs text-gray-400 mt-1">
-                                                Requested by: {revision.requested_by_name || revision.requested_by || 'Unknown'}
-                                            </p>
+                                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{revision.revision_note || 'No note provided.'}</p>
+                                            <p className="text-xs text-gray-400 mt-1">Requested by: {revision.requested_by_name || revision.requested_by || 'Unknown'}</p>
                                         </button>
                                     ))}
                                 </div>
@@ -1246,11 +1054,7 @@ const FabDetailsPage: React.FC = () => {
                                 <p className="text-sm text-muted-foreground">Select a revision to view details.</p>
                             ) : (
                                 <>
-                                    <SCTTimer
-                                        startTime={selectedRevision.created_at || null}
-                                        endTime={selectedRevision.revision_completed ? selectedRevision.completed_at || null : null}
-                                        text="Time in Shop Revision:"
-                                    />
+                                    <SCTTimer startTime={selectedRevision.created_at || null} endTime={selectedRevision.revision_completed ? selectedRevision.completed_at || null : null} text="Time in Shop Revision:" />
                                     <InfoRow label="FAB ID" value={selectedRevision.fab_id || '—'} />
                                     <InfoRow label="Revision Note" value={selectedRevision.revision_note || '—'} />
                                     <InfoRow label="Requested By" value={selectedRevision.requested_by_name || selectedRevision.requested_by || '—'} />
@@ -1258,13 +1062,8 @@ const FabDetailsPage: React.FC = () => {
                                     {selectedRevision.revision_completed && selectedRevision.completed_at && (
                                         <InfoRow label="Completed At" value={format(new Date(selectedRevision.completed_at), 'MMM dd, yyyy h:mm a')} />
                                     )}
-                                    <InfoRow
-                                        label="Status"
-                                        value={selectedRevision.revision_completed ? <span className="text-green-700">Completed</span> : <span className="text-orange-700">Pending</span>}
-                                    />
-                                    {selectedRevision.revision_feedback && (
-                                        <InfoRow label="Feedback" value={selectedRevision.revision_feedback} />
-                                    )}
+                                    <InfoRow label="Status" value={selectedRevision.revision_completed ? <span className="text-green-700">Completed</span> : <span className="text-orange-700">Pending</span>} />
+                                    {selectedRevision.revision_feedback && <InfoRow label="Feedback" value={selectedRevision.revision_feedback} />}
                                 </>
                             )}
                         </CardContent>
@@ -1272,62 +1071,86 @@ const FabDetailsPage: React.FC = () => {
                 </div>
             </div>
 
-            {/* Full-screen file viewer modal */}
+            {/* Modals (unchanged) */}
             {activeFile && (
                 <div className="fixed inset-0 z-50 bg-white overflow-auto">
                     <FileViewer file={activeFile} onClose={() => setActiveFile(null)} />
                 </div>
             )}
 
-            {/* Create Shop Revision Dialog */}
             <Dialog open={showRevisionDialog} onOpenChange={setShowRevisionDialog}>
                 <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Create Shop Revision</DialogTitle>
-                    </DialogHeader>
+                    <DialogHeader><DialogTitle>Create Shop Revision</DialogTitle></DialogHeader>
                     <div className="space-y-4 pt-2">
-                        <p className="text-sm text-muted-foreground">
-                            Create a shop revision request for this FAB. New revisions are blocked while another revision is pending.
-                        </p>
+                        <p className="text-sm text-muted-foreground">Create a shop revision request for this FAB. New revisions are blocked while another revision is pending.</p>
                         <div className="space-y-2">
-                            <Label htmlFor="revision-note" className="text-xs uppercase tracking-wide text-muted-foreground">
-                                Revision Note
-                            </Label>
-                            <Textarea
-                                id="revision-note"
-                                value={revisionNote}
-                                onChange={e => setRevisionNote(e.target.value)}
-                                placeholder="Describe the issue or revision request..."
-                                className="min-h-[120px]"
-                            />
+                            <Label htmlFor="revision-note" className="text-xs uppercase tracking-wide text-muted-foreground">Revision Note</Label>
+                            <Textarea id="revision-note" value={revisionNote} onChange={e => setRevisionNote(e.target.value)} placeholder="Describe the issue or revision request..." className="min-h-[120px]" />
                         </div>
                         <div className="flex justify-end gap-2">
-                            <Button variant="outline" onClick={() => setShowRevisionDialog(false)}>
-                                Cancel
-                            </Button>
-                            <Button
-                                onClick={handleCreateShopRevision}
-                                disabled={isCreatingRevision}
-                            >
-                                {isCreatingRevision ? 'Creating…' : 'Create Revision'}
-                            </Button>
+                            <Button variant="outline" onClick={() => setShowRevisionDialog(false)}>Cancel</Button>
+                            <Button onClick={handleCreateShopRevision} disabled={isCreatingRevision}>{isCreatingRevision ? 'Creating…' : 'Create Revision'}</Button>
                         </div>
                     </div>
                 </DialogContent>
             </Dialog>
 
-            {/* Create Plan Modal */}
             <CreatePlanSheet
                 open={showCreatePlanModal}
                 onOpenChange={setShowCreatePlanModal}
                 prefillFabId={fabId}
                 hideAddStageButton={true}
-                onEventCreated={() => {
-                    refetch();
-                }}
+                onEventCreated={() => refetch()}
             />
         </div>
     );
 };
+
+// Helper components for loading/error states
+const LoadingSkeleton = () => (
+    <div className="flex flex-col min-h-screen">
+        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+            <Skeleton className="h-8 w-72 mb-1" />
+            <Skeleton className="h-4 w-48" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6 px-4 sm:px-6 lg:px-8">
+            <div className="lg:col-span-2 space-y-6">
+                <Card><CardHeader><Skeleton className="h-6 w-40" /></CardHeader><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
+                <div className="grid grid-cols-3 gap-4">{Array(3).fill(null).map((_, i) => <Skeleton key={i} className="h-64 w-full rounded-lg" />)}</div>
+            </div>
+            <Skeleton className="h-[600px] w-full" />
+        </div>
+    </div>
+);
+
+const ErrorAlert = ({ error }: { error: any }) => (
+    <div className="flex flex-col min-h-screen">
+        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+            <ToolbarHeading title="Error loading FAB" description="Could not load Fab details" />
+        </div>
+        <div className="p-6">
+            <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error ? `Failed to load FAB data: ${JSON.stringify(error)}` : 'Failed to load FAB data'}</AlertDescription>
+            </Alert>
+        </div>
+    </div>
+);
+
+const NotFoundAlert = () => (
+    <div className="flex flex-col min-h-screen">
+        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+            <ToolbarHeading title="Not Found" description="FAB record not found" />
+        </div>
+        <div className="p-6">
+            <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Not Found</AlertTitle>
+                <AlertDescription>FAB record not found.</AlertDescription>
+            </Alert>
+        </div>
+    </div>
+);
 
 export { FabDetailsPage };

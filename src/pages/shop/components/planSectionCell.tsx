@@ -16,6 +16,8 @@ interface PlanSectionCellProps {
     fabPlans: any[];
     /** Called after a plan is created or updated so the parent can refetch */
     onPlanSaved: () => void;
+    /** Permission to create/edit plans */
+    canManagePlans?: boolean;
 }
 
 /**
@@ -24,18 +26,7 @@ interface PlanSectionCellProps {
  * - Resolves the correct planning section dynamically by keyword (no hardcoded IDs).
  * - If the fab already has a plan for that section, opens the sheet in edit mode.
  * - If not, opens in create mode with the section pre-selected.
- *
- * Usage in your column definition:
- *
- *   cell: ({ row }) => (
- *     <PlanSectionCell
- *       value={row.original.wl_ln_ft.toFixed(2)}
- *       sectionKeyword="wj"
- *       fabId={row.original.fab_id}
- *       fabPlans={row.original._rawPlans}
- *       onPlanSaved={refetch}
- *     />
- *   )
+ * - If `canManagePlans` is false, the cell is read‑only (plain text, not clickable).
  */
 const PlanSectionCell: React.FC<PlanSectionCellProps> = ({
     value,
@@ -43,41 +34,43 @@ const PlanSectionCell: React.FC<PlanSectionCellProps> = ({
     fabId,
     fabPlans,
     onPlanSaved,
+    canManagePlans = false,
 }) => {
     const { findSectionByKeyword, isLoading: sectionsLoading } = usePlanSections();
     const [sheetOpen, setSheetOpen] = useState(false);
 
     const handleClick = () => {
-        if (sectionsLoading) return;
+        if (sectionsLoading || !canManagePlans) return;
         setSheetOpen(true);
     };
 
-    // Resolve the matched section (done at render time, not just on click,
-    // so we can also derive the existing plan below)
     const matchedSection = findSectionByKeyword(sectionKeyword);
-
-    // Find existing plan for this fab + section (if any) → drives edit vs create mode
     const existingPlan = matchedSection
         ? fabPlans.find((p: any) => p.planning_section_id === matchedSection.id) ?? null
         : null;
+
+    // Determine if clickable: sections loaded, matched section exists, and user has permission
+    const isClickable = !sectionsLoading && matchedSection && canManagePlans;
 
     return (
         <>
             <button
                 onClick={handleClick}
-                disabled={sectionsLoading || !matchedSection}
+                disabled={!isClickable}
                 className={[
                     'text-sm text-left transition-colors',
-                    matchedSection && !sectionsLoading
+                    isClickable
                         ? 'text-blue-600 hover:underline cursor-pointer'
                         : 'text-text cursor-default',
                 ].join(' ')}
                 title={
-                    matchedSection
-                        ? existingPlan
-                            ? `Edit plan: ${matchedSection.plan_name}`
-                            : `Create plan: ${matchedSection.plan_name}`
-                        : 'No matching planning section found'
+                    !canManagePlans
+                        ? 'You do not have permission to manage plans'
+                        : matchedSection
+                            ? existingPlan
+                                ? `Edit plan: ${matchedSection.plan_name}`
+                                : `Create plan: ${matchedSection.plan_name}`
+                            : 'No matching planning section found'
                 }
             >
                 {value}
@@ -90,9 +83,7 @@ const PlanSectionCell: React.FC<PlanSectionCellProps> = ({
                     selectedDate={null}
                     selectedTimeSlot={null}
                     prefillFabId={fabId}
-                    // Pass the existing plan so CreatePlanSheet knows it's an edit
                     selectedEvent={existingPlan ?? null}
-                    // Pre-select the resolved section ID so the form opens on the right section
                     prefillPlanSectionId={matchedSection?.id}
                     onEventCreated={() => {
                         onPlanSaved();

@@ -1,3 +1,4 @@
+// ShopTable.tsx
 import React, { Fragment, useMemo, useState, useEffect } from 'react';
 import { flexRender } from '@tanstack/react-table';
 import {
@@ -32,12 +33,14 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DateRange } from 'react-day-picker';
 import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useGetFabsQuery, useGetFabTypesQuery } from '@/store/api/job';
+import { useGetFabsQuery, useGetFabTypesQuery, useCreateFabNoteMutation } from '@/store/api/job';
 import ActionsCell from './action';
 import { useNavigate } from 'react-router';
 import { Link } from 'react-router';
 import PlanSectionCell from './planSectionCell';
 import { useTableState } from '@/hooks/use-table-state';
+import { NotesModal } from '@/components/common/NotesModal';
+import { toast } from 'sonner';
 
 export interface ShopPlanRow {
     fab_id: string;
@@ -45,7 +48,6 @@ export interface ShopPlanRow {
     job_no: string;
     job_name: string;
     job_id?: number;
-    // Additional fields for structured fab info
     acct_name?: string;
     input_area?: string;
     stone_type_name?: string;
@@ -78,6 +80,10 @@ interface ShopTableProps {
     path?: string;
     isSuperAdmin?: boolean;
     isLoading?: boolean;
+    // Permission props
+    canManageShopPlans?: boolean;   // Controls View Calendar, Create Plan, Auto Schedule
+    canAddNote?: boolean;           // Controls Add Note action
+    canExport?: boolean;            // Controls Export CSV button
 }
 
 const computeOverallTotals = (rows: ShopPlanRow[]) => {
@@ -101,13 +107,17 @@ const computeOverallTotals = (rows: ShopPlanRow[]) => {
     });
 };
 
-const ShopTable: React.FC<ShopTableProps> = () => {
-    // Use persistent table state with localStorage
+const ShopTable: React.FC<ShopTableProps> = ({
+    
+    canManageShopPlans = false,
+    canAddNote = false,
+    canExport = false,
+}) => {
     const tableState = useTableState({
         tableId: 'shop-cut-list-table',
         defaultPagination: { pageIndex: 0, pageSize: 25 },
         defaultDateFilter: 'all',
-        persistState: true, // Enable localStorage persistence
+        persistState: true,
     });
 
     const [sorting, setSorting] = useState<SortingState>([]);
@@ -117,7 +127,11 @@ const ShopTable: React.FC<ShopTableProps> = () => {
     const [salesPersonFilter, setSalesPersonFilter] = useState<string>('all');
     const navigate = useNavigate();
 
-    // Extract state from tableState hook
+    // State for Add Note modal
+    const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+    const [selectedFabId, setSelectedFabId] = useState<string | null>(null);
+    const [createFabNote] = useCreateFabNoteMutation();
+
     const {
         pagination,
         setPagination,
@@ -144,14 +158,36 @@ const ShopTable: React.FC<ShopTableProps> = () => {
         navigate(`/shop/create-plan?fabId=${fabId}`);
     };
 
+    const handleAddNote = (fabId: string) => {
+        setSelectedFabId(fabId);
+        setIsNoteModalOpen(true);
+    };
+
+    const handleNoteSubmit = async (note: string, fabId: string) => {
+        try {
+            await createFabNote({ fab_id: parseInt(fabId), note, stage: 'shop' }).unwrap();
+            toast.success('Note added successfully');
+            setIsNoteModalOpen(false);
+            setSelectedFabId(null);
+        } catch (error) {
+            console.error('Error adding note:', error);
+            toast.error('Failed to add note');
+            throw error;
+        }
+    };
+
+    const handleCloseNotesModal = () => {
+        setIsNoteModalOpen(false);
+        setSelectedFabId(null);
+    };
+
     const queryParams = useMemo(() => ({
         current_stage: 'shop',
         skip: pagination.pageIndex * pagination.pageSize,
         limit: pagination.pageSize,
         ...(searchQuery && { search: searchQuery }),
-        ...(searchQuery && { type: searchType }), // Add search type parameter
+        ...(searchQuery && { type: searchType }),
         ...(fabTypeFilter !== 'all' && { fab_type: fabTypeFilter }),
-        // Add date range filters for backend processing
         ...(dateRange?.from && { schedule_start_date: format(dateRange.from, 'yyyy-MM-dd') }),
         ...(dateRange?.to && { schedule_due_date: format(dateRange.to, 'yyyy-MM-dd') }),
     }), [searchQuery, searchType, fabTypeFilter, dateRange, pagination]);
@@ -160,29 +196,15 @@ const ShopTable: React.FC<ShopTableProps> = () => {
     const { data: fabTypesData } = useGetFabTypesQuery();
 
     const fabTypes = useMemo(() => {
-        if (!fabTypesData) {
-            return [];
-        }
-
-        // Handle both possible response formats
+        if (!fabTypesData) return [];
         let rawData: any[] = [];
-        if (Array.isArray(fabTypesData)) {
-            rawData = fabTypesData;
-        } else if (typeof fabTypesData === 'object' && 'data' in fabTypesData) {
-            rawData = (fabTypesData as any).data || [];
-        }
-
-        // Extract names from FabType objects
+        if (Array.isArray(fabTypesData)) rawData = fabTypesData;
+        else if (typeof fabTypesData === 'object' && 'data' in fabTypesData) rawData = (fabTypesData as any).data || [];
         const extractName = (item: { name: string } | string) => {
-            if (typeof item === 'string') {
-                return item;
-            }
-            if (typeof item === 'object' && item !== null) {
-                return item.name || String(item);
-            }
+            if (typeof item === 'string') return item;
+            if (typeof item === 'object' && item !== null) return item.name || String(item);
             return String(item);
         };
-
         return rawData.map(extractName);
     }, [fabTypesData]);
 
@@ -207,7 +229,6 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                 job_no: fab.job_details?.job_number || 'N/A',
                 job_id: fab.job_details?.id || undefined,
                 job_name: fab.job_details?.name || 'N/A',
-                // Additional fields for structured fab info
                 acct_name: fab.account_name || fab.acct_name || '',
                 input_area: fab.input_area || '',
                 stone_type_name: fab.stone_type_name || '',
@@ -228,11 +249,9 @@ const ShopTable: React.FC<ShopTableProps> = () => {
 
             if (cutPlans.length > 0) {
                 cutPlans.forEach((plan: any) => {
-                    // Robustly get scheduled date — handle null, undefined, empty string
                     const scheduledDate = plan.scheduled_start_date || plan.scheduled_start || null;
                     const isValidDate = scheduledDate && typeof scheduledDate === 'string' && scheduledDate.trim().length > 0;
                     const dateGroup = isValidDate ? scheduledDate.split('T')[0] : 'unscheduled';
-
                     rows.push({
                         ...baseRow,
                         plan_id: plan.id,
@@ -248,8 +267,8 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                         shop_est_completion_date: fab.shop_est_completion_date
                             ? format(new Date(fab.shop_est_completion_date), 'MM/dd/yyyy')
                             : fab.estimated_completion_date
-                            ? format(new Date(fab.estimated_completion_date), 'MM/dd/yyyy')
-                            : undefined,
+                                ? format(new Date(fab.estimated_completion_date), 'MM/dd/yyyy')
+                                : undefined,
                     });
                 });
             } else {
@@ -268,19 +287,15 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                     shop_est_completion_date: fab.shop_est_completion_date
                         ? format(new Date(fab.shop_est_completion_date), 'MM/dd/yyyy')
                         : fab.estimated_completion_date
-                        ? format(new Date(fab.estimated_completion_date), 'MM/dd/yyyy')
-                        : undefined,
+                            ? format(new Date(fab.estimated_completion_date), 'MM/dd/yyyy')
+                            : undefined,
                 });
             }
         });
         return rows;
     }, [fabs]);
 
-    // No client-side filtering needed - backend handles all search/filter
-    const filteredRows = useMemo(() => {
-        return planRows;
-    }, [planRows]);
-
+    const filteredRows = useMemo(() => planRows, [planRows]);
     const overallTotals = useMemo(() => computeOverallTotals(filteredRows), [filteredRows]);
 
     const handleFabIdClick = (fabId: string) => navigate("/sales/" + fabId);
@@ -294,6 +309,11 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                     onViewCalendar={() => handleViewCalendar(row.original.fab_id, row.original.scheduled_start_date)}
                     onCreatePlan={() => handleCreatePlan(row.original.fab_id)}
                     onAutoSchedule={() => handleAutoSchedule(row.original.fab_id)}
+                    onAddNote={canAddNote ? handleAddNote : undefined}
+                    canViewCalendar={canManageShopPlans}
+                    canCreatePlan={canManageShopPlans}
+                    canAutoSchedule={canManageShopPlans}
+                    canAddNote={canAddNote}
                 />
             ),
             enableSorting: false,
@@ -373,7 +393,6 @@ const ShopTable: React.FC<ShopTableProps> = () => {
             enableSorting: true,
             size: 100,
         },
-        // Updated FAB INFO column with structured layout
         {
             id: 'fab_info',
             header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
@@ -442,6 +461,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                     fabId={row.original.fab_id}
                     fabPlans={row.original._rawPlans}
                     onPlanSaved={refetch}
+                    canManagePlans={canManageShopPlans}
                 />
             ),
             enableSorting: true,
@@ -457,6 +477,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                     fabId={row.original.fab_id}
                     fabPlans={row.original._rawPlans}
                     onPlanSaved={refetch}
+                    canManagePlans={canManageShopPlans}
                 />
             ),
             enableSorting: true,
@@ -472,6 +493,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                     fabId={row.original.fab_id}
                     fabPlans={row.original._rawPlans}
                     onPlanSaved={refetch}
+                    canManagePlans={canManageShopPlans}
                 />
             ),
             enableSorting: true,
@@ -487,6 +509,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                     fabId={row.original.fab_id}
                     fabPlans={row.original._rawPlans}
                     onPlanSaved={refetch}
+                    canManagePlans={canManageShopPlans}
                 />
             ),
             enableSorting: true,
@@ -502,6 +525,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                     fabId={row.original.fab_id}
                     fabPlans={row.original._rawPlans}
                     onPlanSaved={refetch}
+                    canManagePlans={canManageShopPlans}
                 />
             ),
             enableSorting: true,
@@ -551,7 +575,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
             enableSorting: true,
             size: 300,
         },
-    ], []);
+    ], [canManageShopPlans, canAddNote, handleViewCalendar, handleCreatePlan, handleAutoSchedule, handleAddNote, refetch]);
 
     const table = useReactTable({
         columns,
@@ -618,64 +642,32 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                                 </div>
                             </div>
 
-                            {/* <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                                <PopoverTrigger asChild>
-                                    <Button
-                                        variant="outline"
-                                        className={cn('w-[200px] h-[34px] justify-start text-center font-normal', !dateRange && 'text-muted-foreground')}
-                                        disabled={isApiLoading}
-                                    >
-                                        <CalendarDays className="mr-2 h-4 w-4" />
-                                        {dateRange?.from ? (
-                                            dateRange.to
-                                                ? <>{format(dateRange.from, 'MMM dd')} - {format(dateRange.to, 'MMM dd, yyyy')}</>
-                                                : format(dateRange.from, 'MMM dd, yyyy')
-                                        ) : <span>Pick dates</span>}
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        initialFocus
-                                        mode="range"
-                                        defaultMonth={dateRange?.from || new Date()}
-                                        selected={tempDateRange}
-                                        onSelect={setTempDateRange}
-                                        numberOfMonths={2}
-                                    />
-                                    <div className="flex items-center justify-end gap-1.5 border-t border-border p-3">
-                                        <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); }}>Reset</Button>
-                                        <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
-                                    </div>
-                                </PopoverContent>
-                            </Popover> */}
-
                             <Select value={fabTypeFilter} onValueChange={setFabTypeFilter} disabled={isApiLoading}>
                                 <SelectTrigger className="w-auto h-[34px]">
                                     <SelectValue placeholder="FAB type" />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-[200px] overflow-y-auto">
                                     <SelectItem value="all">All Types</SelectItem>
-
                                     {fabTypes.map((type) => (
-                                        <SelectItem key={type} value={type}>
-                                            {type}
-                                        </SelectItem>
+                                        <SelectItem key={type} value={type}>{type}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </div>
 
                         <CardToolbar>
-                            <Button variant="outline" onClick={() => exportTableToCSV(table, 'shop-cut-planning')} disabled={isApiLoading}>
-                                Export CSV
-                            </Button>
+                            {canExport && (
+                                <Button variant="outline" onClick={() => exportTableToCSV(table, 'shop-cut-planning')} disabled={isApiLoading}>
+                                    Export CSV
+                                </Button>
+                            )}
                         </CardToolbar>
                     </CardHeader>
 
                     <CardTable>
-                                                <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] [&>[data-radix-scroll-area-viewport]]:pb-1">       
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] [&>[data-radix-scroll-area-viewport]]:pb-1">
                             <div className="relative">
-                                {(isApiLoading) ? (
+                                {isApiLoading ? (
                                     <div className="flex items-center justify-center h-64">
                                         <p>Loading...</p>
                                     </div>
@@ -688,11 +680,7 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                                                         <th
                                                             key={header.id}
                                                             className="px-4 py-2 text-left text-xs font-semibold text-gray-700 border-b border-gray-200 bg-gray-50 break-words whitespace-normal relative"
-                                                            style={{ 
-                                                                width: header.getSize(),
-                                                                minWidth: header.getSize(),
-                                                                maxWidth: header.getSize()
-                                                            }}
+                                                            style={{ width: header.getSize(), minWidth: header.getSize(), maxWidth: header.getSize() }}
                                                         >
                                                             {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                                                             {header.column.getCanResize() && (
@@ -729,21 +717,18 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                                                 </tr>
                                             )}
 
-                                            {/* Data rows - flat list without grouping */}
+                                            {/* Data rows */}
                                             {table.getRowModel().rows.map(row => (
                                                 <tr key={row.id} className="border-b border-gray-200" data-fab-type={row.original.fab_type.toLowerCase()}>
-                                                    {row.getVisibleCells().map(cell => {
-                                                        const isLongText = cell.column.id === 'fab_info' || cell.column.id === 'notes';
-                                                        return (
-                                                            <td
-                                                                key={cell.id}
-                                                                className={`px-2 py-1 text-xs text-gray-700 break-words whitespace-normal`}
-                                                                style={{ width: cell.column.getSize() }}
-                                                            >
-                                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                            </td>
-                                                        );
-                                                    })}
+                                                    {row.getVisibleCells().map(cell => (
+                                                        <td
+                                                            key={cell.id}
+                                                            className="px-2 py-1 text-xs text-gray-700 break-words whitespace-normal"
+                                                            style={{ width: cell.column.getSize() }}
+                                                        >
+                                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                        </td>
+                                                    ))}
                                                 </tr>
                                             ))}
 
@@ -766,6 +751,14 @@ const ShopTable: React.FC<ShopTableProps> = () => {
                     </CardFooter>
                 </Card>
             </DataGrid>
+
+            {/* Add Note Modal */}
+            <NotesModal
+                isOpen={isNoteModalOpen}
+                onClose={handleCloseNotesModal}
+                fabId={selectedFabId || ''}
+                onSubmit={handleNoteSubmit}
+            />
         </>
     );
 };

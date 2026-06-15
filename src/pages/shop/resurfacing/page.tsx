@@ -4,8 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Settings } from 'lucide-react';
 import { Link } from 'react-router';
 import { ShopTable } from '../components/resurface_table';
+import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission';
+
 
 const ResurfacingStatusPage = () => {
+    const isSuperAdmin = useIsSuperAdmin();
+    const permissions = usePermission('Shop Planning');
+
+    const canManageShopPlans = isSuperAdmin || permissions.can_create; // Create plan, auto schedule, view calendar in table
+    const canAddNote = isSuperAdmin || permissions.can_create;
+    const canExport = isSuperAdmin || permissions.can_read;
+
+
     return (
         <div>
             <Container>
@@ -22,7 +32,11 @@ const ResurfacingStatusPage = () => {
                         </Link>
                     </ToolbarActions> */}
                 </Toolbar>
-                <ShopTable />
+                <ShopTable
+                    canManageShopPlans={canManageShopPlans}
+                    canAddNote={canAddNote}
+                    canExport={canExport}
+                />
             </Container>
         </div>
     );

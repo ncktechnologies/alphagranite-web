@@ -64,7 +64,7 @@ function InstallerCard({ installer, rows, isExpanded, onToggle }: { installer: s
                 <div className="p-3 border-t">
                     <DataGrid table={table} recordCount={rows.length} tableLayout={{ cellBorder: true }}>
                         <div className="rounded-md overflow-hidden">
-                            <ScrollArea className="max-h-[400px]">
+                            <ScrollArea className="">
                                 <table className="w-full border-collapse">
                                     <thead className="sticky top-0 bg-gray-50">
                                         {table.getHeaderGroups().map(hg => <tr key={hg.id}>{hg.headers.map(h => <th key={h.id} className="px-3 py-2 text-left text-xs font-semibold border-b border-[#e2e4ed]">{flexRender(h.column.columnDef.header, h.getContext())}</th>)}</tr>)}

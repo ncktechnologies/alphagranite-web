@@ -23,9 +23,25 @@ interface ActionsCellProps {
   onAddNote?: (fabId: string) => void;
   /** Auto-schedule the fab based on its current cut stages and shop availability */
   onAutoSchedule?: (fabId: string) => void;
+  // Permission props
+  canViewCalendar?: boolean;
+  canCreatePlan?: boolean;
+  canAutoSchedule?: boolean;
+  canAddNote?: boolean;
 }
 
-function ActionsCell({ row, onView, onViewCalendar, onCreatePlan, onAddNote, onAutoSchedule }: ActionsCellProps) {
+function ActionsCell({ 
+  row, 
+  onView, 
+  onViewCalendar, 
+  onCreatePlan, 
+  onAddNote, 
+  onAutoSchedule,
+  canViewCalendar = false,
+  canCreatePlan = false,
+  canAutoSchedule = false,
+  canAddNote = false,
+}: ActionsCellProps) {
   const fabId = String(row.original.id ?? row.original.fab_id ?? '');
   const navigate = useNavigate();
   return (
@@ -47,7 +63,7 @@ function ActionsCell({ row, onView, onViewCalendar, onCreatePlan, onAddNote, onA
             View Details
           </DropdownMenuItem>
 
-          {onViewCalendar && (
+          {canViewCalendar && onViewCalendar && (
             <DropdownMenuItem
               onClick={(e) => { e.stopPropagation(); onViewCalendar(fabId); }}
             >
@@ -56,7 +72,7 @@ function ActionsCell({ row, onView, onViewCalendar, onCreatePlan, onAddNote, onA
             </DropdownMenuItem>
           )}
 
-          {/* {onCreatePlan && (
+          {/* {canCreatePlan && onCreatePlan && (
             <DropdownMenuItem
               onClick={(e) => { e.stopPropagation(); onCreatePlan(fabId); }}
             >
@@ -64,7 +80,8 @@ function ActionsCell({ row, onView, onViewCalendar, onCreatePlan, onAddNote, onA
               Create Plan
             </DropdownMenuItem>
           )} */}
-          {onAutoSchedule && (
+          
+          {canAutoSchedule && onAutoSchedule && (
             <DropdownMenuItem
               onClick={(e) => { e.stopPropagation(); onAutoSchedule(fabId); }}
             >
@@ -73,7 +90,7 @@ function ActionsCell({ row, onView, onViewCalendar, onCreatePlan, onAddNote, onA
             </DropdownMenuItem>
           )}
 
-          {onAddNote && (
+          {canAddNote && onAddNote && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onAddNote(fabId); }}>

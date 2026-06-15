@@ -26,6 +26,7 @@ import { FileViewer } from '@/pages/jobs/roles/drafters/components';
 import { UniversalUploadModal } from '@/components/universal-upload';
 import { useSelector } from 'react-redux';
 import { SCTTimer } from '@/pages/jobs/roles/back-to-sales/components/SCTTimer';
+import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission';
 
 interface ExtendedUnifiedFile extends UnifiedFile {
   uploaded_by_id?: number;
@@ -38,6 +39,11 @@ const ShopRevisionDetailsPage = () => {
 
   const currentUser = useSelector((s: any) => s.user.user);
   const currentOperatorId = currentUser?.employee_id || currentUser?.id || 0;
+
+  // Permissions
+  const isSuperAdmin = useIsSuperAdmin();
+  const permissions = usePermission('Shop Revision');
+  const canManageRevisions = isSuperAdmin || permissions.can_create;
 
   const [selectedRevisionId, setSelectedRevisionId] = useState<number | null>(null);
   const [markChecked, setMarkChecked] = useState(false);
@@ -63,7 +69,7 @@ const ShopRevisionDetailsPage = () => {
   // Get appropriate entity IDs
   const cncId = fab?.cnc_data?.id;
   const draftingId = fab?.draft_data?.id;
-  const canUpload = !!(cncId || draftingId);
+  const hasEntityId = !!(cncId || draftingId);
   const uploadMutation = cncId ? uploadToCNC : uploadToDrafting;
   const entityId = cncId || draftingId || 0;
   const additionalParams = cncId
@@ -213,6 +219,10 @@ const ShopRevisionDetailsPage = () => {
     );
   }
 
+  // Permission‑derived UI flags
+  const canUpload = hasEntityId && canManageRevisions;
+  const canComplete = canManageRevisions && !selectedRevision?.revision_completed;
+
   return (
     <div className="flex flex-col min-h-screen">
       <div className="sticky top-0 z-10 bg-white border-b">
@@ -263,7 +273,7 @@ const ShopRevisionDetailsPage = () => {
                   Upload Files
                 </Button>
               ) : (
-                <Button size="sm" disabled title="No CNC or Drafting ID available for upload">
+                <Button size="sm" disabled title="No CNC or Drafting ID available for upload or insufficient permissions">
                   Upload Unavailable
                 </Button>
               )}
@@ -327,7 +337,6 @@ const ShopRevisionDetailsPage = () => {
             <CardTitle>Revision Details</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-
             {!selectedRevision ? (
               <p className="text-sm text-muted-foreground">Select a revision to view details.</p>
             ) : (
@@ -390,28 +399,40 @@ const ShopRevisionDetailsPage = () => {
                   </p>
                 </div>
                 <Separator />
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="revision-completed"
-                    checked={markChecked}
-                    onCheckedChange={(checked) => setMarkChecked(checked === true)}
-                    disabled={selectedRevision.revision_completed}
-                  />
-                  <Label htmlFor="revision-completed" className="text-sm">
-                    Revision completed
-                  </Label>
-                </div>
-                <Button
-                  className="w-full"
-                  disabled={!markChecked || isCompleting || selectedRevision.revision_completed}
-                  onClick={handleComplete}
-                >
-                  {selectedRevision.revision_completed
-                    ? 'Already Completed'
-                    : isCompleting
-                      ? 'Marking...'
-                      : 'Mark as Complete'}
-                </Button>
+                {canComplete ? (
+                  <>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="revision-completed"
+                        checked={markChecked}
+                        onCheckedChange={(checked) => setMarkChecked(checked === true)}
+                        disabled={selectedRevision.revision_completed}
+                      />
+                      <Label htmlFor="revision-completed" className="text-sm">
+                        Revision completed
+                      </Label>
+                    </div>
+                    <Button
+                      className="w-full"
+                      disabled={!markChecked || isCompleting || selectedRevision.revision_completed}
+                      onClick={handleComplete}
+                    >
+                      {selectedRevision.revision_completed
+                        ? 'Already Completed'
+                        : isCompleting
+                          ? 'Marking...'
+                          : 'Mark as Complete'}
+                    </Button>
+                  </>
+                ) : selectedRevision.revision_completed ? (
+                  <Button className="w-full" disabled>
+                    Already Completed
+                  </Button>
+                ) : (
+                  <Button className="w-full" disabled title="You don't have permission to mark revisions as complete">
+                    Mark as Complete (Restricted)
+                  </Button>
+                )}
               </>
             )}
           </CardContent>

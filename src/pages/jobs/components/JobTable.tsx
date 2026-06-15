@@ -93,7 +93,8 @@ interface JobTableProps {
     canAssignSlabSmith?: boolean;     // Toolbar "Assign SlabSmith" button
     canAddNote?: boolean;
     canToggleOnHold?: boolean;
-
+    canViewTemplaterTimer?: boolean;
+    canViewInstallerTimer?: boolean;
 }
 
 export const JobTable = ({
@@ -148,6 +149,8 @@ export const JobTable = ({
     canAssignSlabSmith = false,
     canAddNote = false,
     canToggleOnHold = false,
+    canViewTemplaterTimer = false,
+    canViewInstallerTimer = false,
 }: JobTableProps) => {
     const [localSelectedRows, setLocalSelectedRows] = useState<string[]>([]);
     const [localPagination, setLocalPagination] = useState<PaginationState>({
@@ -440,20 +443,23 @@ export const JobTable = ({
             header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
             cell: ({ row }) => {
                 const { job_id, job_no, fab_id } = row.original;
-                if (pageRole === 'templater' && job_id) {
+                // Templater timer link – only if permission is granted
+                if (pageRole === 'templater' && job_id && canViewTemplaterTimer) {
                     return (
                         <Link to={`/jobs/${job_id}/templater/timer?fab_id=${fab_id}`} className="text-xs text-blue-600 hover:underline">
                             {job_no}
                         </Link>
                     );
                 }
-                if (pageRole === 'installer' && job_id) {
+                // Installer timer link – only if permission is granted
+                if (pageRole === 'installer' && job_id && canViewInstallerTimer) {
                     return (
                         <Link to={`/jobs/${job_id}/installer/timer?fab_id=${fab_id}`} className="text-xs text-blue-600 hover:underline">
                             {job_no}
                         </Link>
                     );
                 }
+                // Fallback to job details link (always shown – you may also add a permission here if needed)
                 if (job_id) {
                     return (
                         <Link to={`/job/details/${job_id}`} className="text-xs text-blue-600 hover:underline">
@@ -1251,6 +1257,8 @@ export const JobTable = ({
         loadingStates,
         optimisticUpdates,
         toggleFabOnHold,
+        canViewTemplaterTimer,
+        canViewInstallerTimer
     ]);
     const table = useReactTable({
         columns,

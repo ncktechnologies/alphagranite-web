@@ -35,7 +35,7 @@ const transformFabToJob = (fab: Fab): IJob => {
         fab_id: String(fab.id),
         job_name: `${fab.job_details?.name}`,
         job_no: String(fab.job_details?.job_number),
-        date: (fab as any).shop_est_completion_date ?  (fab as any).shop_est_completion_date : (fab as any).estimated_completion_date,
+        date: (fab as any).shop_est_completion_date ? (fab as any).shop_est_completion_date : (fab as any).estimated_completion_date,
         shop_est_completion_date: (fab as any).shop_est_completion_date
             ? formatDate((fab as any).shop_est_completion_date)
             : (fab as any).estimated_completion_date
@@ -93,7 +93,7 @@ export function InstallSchedulingPage() {
     const permissions = usePermission('Install Scheduling');
 
     // Determine what actions the user is allowed to do
-    const canAddNote = isSuperAdmin || permissions.can_create;     
+    const canAddNote = isSuperAdmin || permissions.can_create;
     const canToggleOnHold = isSuperAdmin || permissions.can_create;
 
     // Fetch sales persons data for filter dropdown
@@ -237,6 +237,7 @@ export function InstallSchedulingPage() {
                     'shop_est_completion_date'
                 ]}
                 pageRole="installer"
+                canViewInstallerTimer={permissions.can_create}
                 canAddNote={canAddNote}
                 canToggleOnHold={canToggleOnHold}
             />

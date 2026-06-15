@@ -7,8 +7,6 @@ import { DefaultPage } from '@/pages/dashboards';
 import { DepartmentPage } from '@/pages/departments';
 import { DepartmentDetailsPage } from '@/pages/departments/department-table/TablePage';
 import { EmployeePage } from '@/pages/employers';
-// import { JobPage } from '@/pages/job-flow/job-page';
-// import { NewFabIdForm } from '@/pages/jobs';
 import { AfterDraftSalesPage } from '@/pages/jobs/roles/back-to-sales/BackSalesPage';
 import { DraftReviewDetailsPage } from '@/pages/jobs/roles/back-to-sales/details';
 import { DrafterDetailsPage } from '@/pages/jobs/roles/drafters';
@@ -24,18 +22,9 @@ import { SalesDetailsPage } from '@/pages/jobs/roles/sales/Details';
 import { TemplatingDetailsPage } from '@/pages/jobs/roles/technician-templater/components/TemplatingDetailsPage';
 import { TechnicianPage } from '@/pages/jobs/roles/technician-templater/TechnicianPage';
 import { FabIdDetailsPage } from '@/pages/jobs/roles/templating-coordinator/components/details';
-// import { TemplatingCoordinatorDetailsPage } from '@/pages/jobs/roles/templating-coordinator/components/TemplatingCoordinatorDetailsPage';
 import { TemplatingPage } from '@/pages/jobs/roles/templating-coordinator/templatingPage';
 import { NotificationsSection, ProfileSection, RolesSection, PermissionsSection, StoneTypesSection } from '@/pages/settings';
-import CuttingPlanPage from '@/pages/shop/cutting-plan/CuttingPlanPage';
-import { ShopDetailsPage } from '@/pages/shop/cutting-plan/Details';
-import { EdgingDetailsPage } from '@/pages/shop/edging/Details';
-import EdgingPlanPage from '@/pages/shop/edging/EdgingPage';
-import { MiterDetailsPage } from '@/pages/shop/milter/Details';
-import MilterPlanPage from '@/pages/shop/milter/MilterPage';
 import SettingsPage from '@/pages/shop/settings/SettingsPage';
-import { WjDetailsPage } from '@/pages/shop/wj/Detail';
-import WJPlanPage from '@/pages/shop/wj/WjPage';
 import { JobsSection } from '@/pages/jobs/JobsSection';
 import CutListPage from '@/pages/jobs/roles/production-coordinator/CutListPage';
 import FinalProgrammingPage from '@/pages/jobs/roles/production-coordinator/FinalProgrammingPage';
@@ -90,6 +79,7 @@ import { OwnerOverviewReport } from '@/pages/reports/OwnerReview';
 import { RedoAnalysisReport } from '@/pages/reports/RedoAnalysis';
 import { InstallerRatesReport } from '@/pages/reports/InstallerRates';
 import { ServiceLevelReport } from '@/pages/reports/ServiceLevel';
+import ShopStatusPage from '@/pages/shop/status/StatusPage';
 
 export function AppRoutingSetup() {
   return (
@@ -403,14 +393,6 @@ export function AppRoutingSetup() {
             }
           />
           <Route
-            path="/shop/:id"
-            element={
-              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-              <ShopDetailsPage />
-              // </ProtectedRoute>
-            }
-          />
-          <Route
             path="/shop/calendar"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
@@ -436,7 +418,7 @@ export function AppRoutingSetup() {
             path="/status"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-              <WJPlanPage />
+              <ShopStatusPage/>
               // </ProtectedRoute>
             }
           />
@@ -459,46 +441,7 @@ export function AppRoutingSetup() {
               // </ProtectedRoute>
             }
           />
-          <Route
-            path="/shop/wj/:id"
-            element={
-              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-              <WjDetailsPage />
-              // </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/shop/edging"
-            element={
-              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-              <EdgingPlanPage />
-              // </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/shop/edging/:id"
-            element={
-              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-              <EdgingDetailsPage />
-              // </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/shop/miter"
-            element={
-              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-              <MilterPlanPage />
-              // </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/shop/miter/:id"
-            element={
-              // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-              <MiterDetailsPage />
-              // </ProtectedRoute>
-            }
-          />
+         
           
           {/* Reports Route */}
           {/* <Route path="/report/:reportId" element={<ReportPage />} /> */}

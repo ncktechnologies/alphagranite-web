@@ -32,12 +32,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { DateRange } from 'react-day-picker';
 import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useGetFabsInResurfacingQuery, useGetFabTypesQuery } from '@/store/api/job';
+import { useCreateFabNoteMutation, useGetFabsInResurfacingQuery, useGetFabTypesQuery } from '@/store/api/job';
 import ActionsCell from './action';
 import { useNavigate } from 'react-router';
 import { Link } from 'react-router';
 import CreatePlanSheet from './createEvent';
 import { useTableState } from '@/hooks/use-table-state';
+import { NotesModal } from '@/components/common/NotesModal';
 
 export interface ShopPlanRow {
     fab_id: string;
@@ -77,9 +78,16 @@ interface ShopTableProps {
     path?: string;
     isSuperAdmin?: boolean;
     isLoading?: boolean;
+    canManageShopPlans?: boolean;
+    canAddNote?: boolean;
+    canExport?: boolean;
 }
 
-const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => {
+const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
+    canManageShopPlans = false,
+    canAddNote = false,
+    canExport = false,
+}) => {
     // Use persistent table state with localStorage
     const tableState = useTableState({
         tableId: 'shop-resurfacing-table',
@@ -99,6 +107,12 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
     const [selectedDateForSheet, setSelectedDateForSheet] = useState<Date | null>(null);
     const [selectedEventForSheet, setSelectedEventForSheet] = useState<any | null>(null);
     const navigate = useNavigate();
+
+    // State for Add Note modal
+    const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+    const [selectedFabId, setSelectedFabId] = useState<string | null>(null);
+    const [createFabNote] = useCreateFabNoteMutation();
+
 
     // Extract state from tableState hook
     const {
@@ -127,6 +141,27 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
         setSelectedDateForSheet(null);
         setSelectedEventForSheet(null);
         setPlanSheetOpen(true);
+    };
+    const handleAddNote = (fabId: string) => {
+        setSelectedFabId(fabId);
+        setIsNoteModalOpen(true);
+    };
+  const handleNoteSubmit = async (note: string, fabId: string) => {
+        try {
+            await createFabNote({ fab_id: parseInt(fabId), note, stage: 'shop' }).unwrap();
+            toast.success('Note added successfully');
+            setIsNoteModalOpen(false);
+            setSelectedFabId(null);
+        } catch (error) {
+            console.error('Error adding note:', error);
+            toast.error('Failed to add note');
+            throw error;
+        }
+    };
+
+    const handleCloseNotesModal = () => {
+        setIsNoteModalOpen(false);
+        setSelectedFabId(null);
     };
 
     const queryParams = useMemo(() => ({
@@ -212,8 +247,8 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                 shop_est_completion_date: fab.shop_est_completion_date
                     ? format(new Date(fab.shop_est_completion_date), 'MM/dd/yyyy')
                     : fab.estimated_completion_date
-                    ? format(new Date(fab.estimated_completion_date), 'MM/dd/yyyy')
-                    : undefined,
+                        ? format(new Date(fab.estimated_completion_date), 'MM/dd/yyyy')
+                        : undefined,
 
             };
 
@@ -326,6 +361,11 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                     onViewCalendar={() => handleViewCalendar(row.original.fab_id, row.original.scheduled_start_date)}
                     onCreatePlan={() => handleCreatePlan(row.original.fab_id)}
                     onAutoSchedule={() => handleAutoSchedule(row.original.fab_id)}
+                    onAddNote={canAddNote ? handleAddNote : undefined}
+                    canViewCalendar={canManageShopPlans}
+                    canCreatePlan={canManageShopPlans}
+                    canAutoSchedule={canManageShopPlans}
+                    canAddNote={canAddNote}
                 />
             ),
             enableSorting: false,
@@ -638,7 +678,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                                                         <th
                                                             key={header.id}
                                                             className="px-4 py-2 text-left text-xs font-semibold text-gray-700 border-b border-gray-200 bg-gray-50 break-words whitespace-normal relative"
-                                                            style={{ 
+                                                            style={{
                                                                 width: header.getSize(),
                                                                 minWidth: header.getSize(),
                                                                 maxWidth: header.getSize()
@@ -721,6 +761,12 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading }) => 
                 selectedEvent={selectedEventForSheet}
                 prefillFabId={selectedFabForSheet}
                 onEventCreated={() => { refetch(); }}
+            />
+            <NotesModal
+                isOpen={isNoteModalOpen}
+                onClose={handleCloseNotesModal}
+                fabId={selectedFabId || ''}
+                onSubmit={handleNoteSubmit}
             />
         </>
     );

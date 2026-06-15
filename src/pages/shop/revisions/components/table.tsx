@@ -15,14 +15,61 @@ import { Search, X } from 'lucide-react';
 import { DataGrid } from '@/components/ui/data-grid';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
 import { DataGridPagination } from '@/components/ui/data-grid-pagination';
-import { Card, CardFooter, CardHeader, CardTable } from '@/components/ui/card';
+import { Card, CardFooter, CardHeader, CardTable, CardToolbar } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useGetShopRevisionFabsQuery, type ShopRevisionFabSummary } from '@/store/api/shopRevision';
 import { format } from 'date-fns';
+import { exportTableToCSV } from '@/lib/exportToCsv';
 
-export const ShopRevisionTable = () => {
+// Reusable FabInfo component
+interface FabInfoProps {
+  fab: ShopRevisionFabSummary;
+}
+
+const FabInfo: React.FC<FabInfoProps> = ({ fab }) => {
+  const jobInfo = [fab.account_name, fab.job_name].filter(Boolean);
+  const stoneInfo = [fab.stone_type_name, fab.stone_color_name, fab.stone_thickness_value].filter(Boolean);
+  const materialInfo = [fab.input_area ? `Area: ${fab.input_area}` : '', fab.edge_name].filter(Boolean);
+
+  return (
+    <div className="flex gap-4 text-xs max-w-[400px]">
+      {(jobInfo.length > 0 || stoneInfo.length > 0) && (
+        <div className="flex-1 min-w-0">
+          {jobInfo.length > 0 && (
+            <div className="truncate text-gray-600" title={jobInfo.join(' - ')}>
+              {jobInfo.join(' - ')}
+            </div>
+          )}
+          {stoneInfo.length > 0 && (
+            <div className="truncate text-gray-600" title={stoneInfo.join(' - ')}>
+              {stoneInfo.join(' - ')}
+            </div>
+          )}
+        </div>
+      )}
+      {materialInfo.length > 0 && (
+        <div className="flex-1 min-w-0">
+          {materialInfo.map((info, idx) => (
+            <div key={idx} className="truncate text-gray-600">
+              {info}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface ShopRevisionTableProps {
+  /** Permission to show the "View Details" button in the actions column */
+  canViewDetails?: boolean;
+  /** Permission to show the Export CSV button in the toolbar */
+  canExport?: boolean;
+}
+
+export const ShopRevisionTable = ({ canViewDetails = false, canExport = false }: ShopRevisionTableProps) => {
   const navigate = useNavigate();
   const [sorting, setSorting] = useState<SortingState>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,13 +101,15 @@ export const ShopRevisionTable = () => {
       id: 'actions',
       header: () => null,
       cell: ({ row }) => (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => navigate(`/revision/${row.original.fab_id}`)}
-        >
-          View Details
-        </Button>
+        canViewDetails ? (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => navigate(`/revision/${row.original.fab_id}`)}
+          >
+            View Details
+          </Button>
+        ) : null
       ),
       size: 120,
     },
@@ -85,12 +134,12 @@ export const ShopRevisionTable = () => {
       cell: ({ row }) => <span className="text-sm">{row.original.job_name || '—'}</span>,
       size: 180,
     },
-    {id: 'account_name',
-      accessorFn: (r) => r.account_name,
-      header: ({ column }) => <DataGridColumnHeader title="ACCOUNT NAME" column={column} />,
-      cell: ({ row }) => <span className="text-sm">{row.original.account_name || '—'}</span>,
-      size: 180,
-    },  
+    {
+      id: 'fab_info',
+      header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
+      cell: ({ row }) => <FabInfo fab={row.original} />,
+      size: 400,
+    },
     {
       id: 'fab_type',
       accessorFn: (r) => r.fab_type,
@@ -126,17 +175,17 @@ export const ShopRevisionTable = () => {
       size: 260,
     },
     {
-      id:'created_at',
+      id: 'created_at',
       accessorFn: (r) => r.created_at,
       header: ({ column }) => <DataGridColumnHeader title="CREATED AT" column={column} />,
       cell: ({ row }) => (
         <span className="text-sm">
-          {row.original.latest_pending_revision.created_at ? format(new Date(row.original.latest_pending_revision.created_at), 'MMM dd, yyyy h:mm a') : '—'}
+          {row.original.latest_pending_revision?.created_at ? format(new Date(row.original.latest_pending_revision.created_at), 'MMM dd, yyyy h:mm a') : '—'}
         </span>
       ),
       size: 180,
-    }
-  ], [navigate]);
+    },
+  ], [navigate, canViewDetails]);
 
   const table = useReactTable({
     data: rows,
@@ -205,6 +254,13 @@ export const ShopRevisionTable = () => {
               )}
             </div>
           </div>
+          <CardToolbar>
+            {canExport && (
+              <Button variant="outline" onClick={() => exportTableToCSV(table, 'shop-revisions')} disabled={isLoading}>
+                Export CSV
+              </Button>
+            )}
+          </CardToolbar>
         </CardHeader>
         <CardTable>
           <ScrollArea className="max-h-[calc(100vh-280px)]">

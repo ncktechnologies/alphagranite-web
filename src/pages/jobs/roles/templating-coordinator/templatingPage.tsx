@@ -249,6 +249,7 @@ export function TemplatingPage() {
                         onRescheduleClick={handleRescheduleClick}
                         onAssignClick={handleAssignClick}
                         pageRole="templater"
+                        canViewTemplaterTimer={permissions.can_create}  
                         canToggleOnHold={canToggleOnHold}
                     />
 
