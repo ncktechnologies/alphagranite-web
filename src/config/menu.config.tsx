@@ -124,7 +124,7 @@ export const MENU_SIDEBAR: MenuConfig = [
       { title: 'Install Performance', path: '/report/install-performance', permissionKey: 'install_performance' },
       { title: 'Weekly Trends', path: '/report/weekly-trends', permissionKey: 'weekly_trends' },
       { title: 'Installation Template', path: '/report/installation-template', permissionKey: 'installation_template' },
-      { title: 'Installation Template', path: '/report/installation-template-card', permissionKey: 'installation_template' },
+      { title: 'Installation Template', path: '/report/template-card', permissionKey: 'installation_template' },
       { title: 'Monthly Install Comp.', path: '/report/monthly-install-completion', permissionKey: 'monthly_install_completion' },
       { title: 'Daily Install Comp.', path: '/report/daily-install-completion', permissionKey: 'daily_install_completion' },
       { title: 'Monthly Cut Comp.', path: '/report/monthly-cut-completion', permissionKey: 'monthly_cut_completion' },

@@ -458,7 +458,7 @@ export function AppRoutingSetup() {
           <Route path='/report/monthly-install-completion' element={<MonthlyInstallCompletionReport />} />
           <Route path='/report/weekly-trends' element={<WeeklyTrendsReport />} />
           <Route path="/report/installation-template" element={<InstallationTemplateReport />} />
-          <Route path="/report/installation-template-card" element={<InstallationTemplateReportCard />} />
+          <Route path="/report/template-card" element={<InstallationTemplateReportCard />} />
           <Route path="/report/owner-overview" element={<OwnerOverviewReport />} />
           <Route path="/report/redo-analysis" element={<RedoAnalysisReport />} />
           <Route path="/report/service-level" element={<ServiceLevelReport />} />

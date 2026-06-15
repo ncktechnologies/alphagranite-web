@@ -243,19 +243,19 @@ export function InstallationTemplateReport() {
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total Hours</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.total_hours_value?.toFixed(2) ?? '0.00'}</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#000000]">{summary.total_hours_value?.toFixed(2) ?? '0.00'}</p>
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Templates sq ft</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.templates_sq_ft?.toFixed(0) ?? '0'}</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#000000]">{summary.templates_sq_ft?.toFixed(0) ?? '0'}</p>
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Installs sq ft</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.installs_sq_ft?.toFixed(0) ?? '0'}</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#000000]">{summary.installs_sq_ft?.toFixed(0) ?? '0'}</p>
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Incomplete sq ft</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.incomplete_sq_ft?.toFixed(0) ?? '0'}</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#000000]">{summary.incomplete_sq_ft?.toFixed(0) ?? '0'}</p>
                     </Card>
                 </div>
             )}
