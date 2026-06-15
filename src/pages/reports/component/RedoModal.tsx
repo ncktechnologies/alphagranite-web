@@ -41,6 +41,13 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
 
   const [updateRedo] = useUpdateRedoMutation();
 
+  // Compute total cost: sqft * cost_per_sqft * 2.1
+  const totalCost = useMemo(() => {
+    const sqftNum = parseFloat(sqft) || 0;
+    const costNum = parseFloat(costPerSqft) || 0;
+    return sqftNum * costNum * 2.1;
+  }, [sqft, costPerSqft]);
+
   useEffect(() => {
     if (open && initialData) {
       setNoOfPieces(initialData.no_of_pieces?.toString() ?? '');
@@ -69,7 +76,7 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
     if (noOfPieces !== '') payload.no_of_pieces = parseFloat(noOfPieces);
     if (sqft !== '') payload.sqft = parseFloat(sqft);
     if (costPerSqft !== '') payload.cost_per_sqft = parseFloat(costPerSqft);
-    // Do NOT include total_cost – backend calculates it
+    if (totalCost > 0) payload.total_cost = totalCost; // send calculated total
     if (department) payload.department = department;
     if (personName) payload.person_name = personName;
     if (reason) payload.reason = reason;
@@ -128,17 +135,29 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
             </div>
           </div>
 
-          <div>
-            <Label htmlFor="costPerSqft">Cost per SQFT</Label>
-            <Input
-              id="costPerSqft"
-              type="number"
-              min="0"
-              step="0.01"
-              value={costPerSqft}
-              onChange={(e) => setCostPerSqft(e.target.value)}
-              placeholder="Cost per sq ft"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="costPerSqft">Cost per SQFT</Label>
+              <Input
+                id="costPerSqft"
+                type="number"
+                min="0"
+                step="0.01"
+                value={costPerSqft}
+                onChange={(e) => setCostPerSqft(e.target.value)}
+                placeholder="Cost per sq ft"
+              />
+            </div>
+            <div>
+              <Label htmlFor="totalCost">Total Cost</Label>
+              <Input
+                id="totalCost"
+                type="text"
+                readOnly
+                value={totalCost.toFixed(2)}
+                className="bg-gray-50"
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
