@@ -119,9 +119,27 @@ export function MonthlyCutCompletionReport() {
             size: 400,
         };
 
+        const actionCol: ColumnDef<any> = {
+            id: 'actions',
+            header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
+            cell: ({ row }) => (
+                <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                        setSelectedRow(row.original);
+                        setUpdateModalOpen(true);
+                    }}
+                >
+                    Edit
+                </Button>
+            ),
+            size: 80,
+        };
+
         const jobNumberIndex = dataCols.findIndex(col => col.accessorKey === 'job_number');
         const insertIndex = jobNumberIndex !== -1 ? jobNumberIndex + 1 : 1;
-        const finalCols = [];
+        const finalCols = [actionCol];
         finalCols.push(...dataCols.slice(0, insertIndex));
         finalCols.push(fabInfoCol);
         finalCols.push(...dataCols.slice(insertIndex));
