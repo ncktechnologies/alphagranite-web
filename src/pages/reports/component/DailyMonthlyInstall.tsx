@@ -1,10 +1,12 @@
 // components/modals/UpdateDailyInstallModal.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUpdateDailyInstallCompletionMutation } from '@/store/api/report';
+import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { toast } from 'sonner';
 
 interface UpdateDailyInstallModalProps {
@@ -15,6 +17,7 @@ interface UpdateDailyInstallModalProps {
     revenue?: number;
     sq_ft?: number;
     installer_name?: string;
+    installer_id?: number;   // optional: if the row already contains the ID
   };
   onUpdateSuccess?: () => void;
 }
@@ -28,18 +31,41 @@ export const UpdateDailyInstallModal: React.FC<UpdateDailyInstallModalProps> = (
 }) => {
   const [revenue, setRevenue] = useState<string>('');
   const [sqFt, setSqFt] = useState<string>('');
-  const [installerName, setInstallerName] = useState<string>('');
+  const [selectedInstallerId, setSelectedInstallerId] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [updateDailyInstall] = useUpdateDailyInstallCompletionMutation();
+  const { data: salesPersonsData, isLoading: isLoadingSalesPersons } = useGetSalesPersonsQuery();
 
+  // Build installer options (employees with id and name)
+  const installerOptions = useMemo(() => {
+    if (!salesPersonsData) return [];
+    let rawData: any[] = [];
+    if (Array.isArray(salesPersonsData)) rawData = salesPersonsData;
+    else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData) rawData = (salesPersonsData as any).data || [];
+    return rawData.map((emp: any) => ({
+      id: emp.id,
+      name: emp.name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || String(emp),
+    }));
+  }, [salesPersonsData]);
+
+  // Set initial values when modal opens
   useEffect(() => {
     if (open && initialData) {
       setRevenue(initialData.revenue?.toString() ?? '');
       setSqFt(initialData.sq_ft?.toString() ?? '');
-      setInstallerName(initialData.installer_name ?? '');
+      
+      // Pre-select installer by ID if available, otherwise try to match by name
+      if (initialData.installer_id) {
+        setSelectedInstallerId(initialData.installer_id);
+      } else if (initialData.installer_name && installerOptions.length > 0) {
+        const matched = installerOptions.find(opt => opt.name === initialData.installer_name);
+        setSelectedInstallerId(matched?.id ?? null);
+      } else {
+        setSelectedInstallerId(null);
+      }
     }
-  }, [open, initialData]);
+  }, [open, initialData, installerOptions]);
 
   const handleSubmit = async () => {
     if (!fabId) {
@@ -50,7 +76,7 @@ export const UpdateDailyInstallModal: React.FC<UpdateDailyInstallModalProps> = (
     const payload: any = {};
     if (revenue !== '') payload.revenue = parseFloat(revenue);
     if (sqFt !== '') payload.sq_ft = parseFloat(sqFt);
-    if (installerName) payload.installer_name = installerName;
+    if (selectedInstallerId) payload.installer_id = selectedInstallerId; // Send ID to backend
 
     if (Object.keys(payload).length === 0) {
       toast.error('Please enter at least one field to update');
@@ -107,13 +133,23 @@ export const UpdateDailyInstallModal: React.FC<UpdateDailyInstallModalProps> = (
           </div>
 
           <div>
-            <Label htmlFor="installerName">Installer Name</Label>
-            <Input
-              id="installerName"
-              value={installerName}
-              onChange={(e) => setInstallerName(e.target.value)}
-              placeholder="Installer name"
-            />
+            <Label htmlFor="installer">Installer</Label>
+            <Select
+              value={selectedInstallerId ? String(selectedInstallerId) : ''}
+              onValueChange={(value) => setSelectedInstallerId(value ? Number(value) : null)}
+              disabled={isLoadingSalesPersons}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={isLoadingSalesPersons ? "Loading installers..." : "Select installer"} />
+              </SelectTrigger>
+              <SelectContent>
+                {installerOptions.map(opt => (
+                  <SelectItem key={opt.id} value={String(opt.id)}>
+                    {opt.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 

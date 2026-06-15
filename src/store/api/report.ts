@@ -9,6 +9,13 @@ const getCurrentDateParams = () => {
     return { year: d.getFullYear(), month: d.getMonth() + 1 };
 };
 
+interface ReportQueryParams {
+    year?: number;
+    month?: number;
+    fab_type?: string;
+}
+
+
 export const reportApi = createApi({
     reducerPath: "reportApi",
     baseQuery: axiosBaseQuery({ baseUrl }),
@@ -82,36 +89,64 @@ export const reportApi = createApi({
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
-            getInstallationTemplateReport: build.query<any, void>({
-                query: () => ({
-                    url: "/api/v1/reports/owner/installation-template",
-                    method: "get"
-                }),
+            // getInstallationTemplateReport: build.query<any, void>({
+            //     query: () => ({
+            //         url: "/api/v1/reports/owner/installation-template",
+            //         method: "get"
+            //     }),
+            //     transformResponse: (response: any) => response,
+            //     providesTags: ["Report"],
+            // }),
+            getInstallationTemplateReport: build.query<any, { start_date?: string; end_date?: string; search?: string; fab_type?: string; sales_person_id?: number } | void>({
+                query: (params) => {
+                    const searchParams = new URLSearchParams();
+                    if (params?.start_date) searchParams.append('start_date', params.start_date);
+                    if (params?.end_date) searchParams.append('end_date', params.end_date);
+                    if (params?.search) searchParams.append('search', params.search);
+                    if (params?.fab_type && params.fab_type !== 'all') searchParams.append('fab_type', params.fab_type);
+                    if (params?.sales_person_id) searchParams.append('sales_person_id', String(params.sales_person_id));
+                    const queryString = searchParams.toString();
+                    return {
+                        url: `/api/v1/reports/owner/installation-template-dashboard${queryString ? `?${queryString}` : ''}`,
+                        method: "get",
+                    };
+                },
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
-            getMonthlyInstallCompletion: build.query<any, { year?: number, month?: number } | void>({
+            getMonthlyInstallCompletion: build.query<any, ReportQueryParams | void>({
                 query: (params) => ({
                     url: "/api/v1/reports/owner/monthly-install-completion",
                     method: "get",
-                    params: params || getCurrentDateParams()
+                    params: {
+                        ...(params?.year && { year: params.year }),
+                        ...(params?.month && { month: params.month }),
+                        ...(params?.fab_type && params.fab_type !== 'all' && { fab_type: params.fab_type }),
+                    }
                 }),
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
-            getDailyInstallCompletion: build.query<any, void>({
-                query: () => ({
+
+            getDailyInstallCompletion: build.query<any, { fab_type?: string } | void>({
+                query: (params) => ({
                     url: "/api/v1/reports/owner/daily-install-completion",
-                    method: "get"
+                    method: "get",
+                    params: params?.fab_type && params.fab_type !== 'all' ? { fab_type: params.fab_type } : undefined,
                 }),
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
-            getMonthlyCutCompletion: build.query<any, { year?: number, month?: number } | void>({
+
+            getMonthlyCutCompletion: build.query<any, ReportQueryParams | void>({
                 query: (params) => ({
                     url: "/api/v1/reports/owner/monthly-cut-completion",
                     method: "get",
-                    params: params || getCurrentDateParams()
+                    params: {
+                        ...(params?.year && { year: params.year }),
+                        ...(params?.month && { month: params.month }),
+                        ...(params?.fab_type && params.fab_type !== 'all' && { fab_type: params.fab_type }),
+                    }
                 }),
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],

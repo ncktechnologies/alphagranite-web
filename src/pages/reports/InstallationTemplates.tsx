@@ -1,170 +1,396 @@
-// pages/reports/InstallationTemplate.tsx
+// pages/reports/InstallationTemplateReport.tsx
 import { useMemo, useState } from 'react';
-import { flexRender, ColumnDef, getCoreRowModel, getPaginationRowModel, useReactTable } from '@tanstack/react-table';
+import { flexRender, ColumnDef, getCoreRowModel, getExpandedRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { CalendarDays, ChevronDown, ChevronRight } from 'lucide-react';
+import { CalendarDays, ChevronDown, ChevronRight, Search, X } from 'lucide-react';
 import { useGetInstallationTemplateReportQuery } from '@/store/api/report';
-import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
 import { DataGrid } from '@/components/ui/data-grid';
-import { Card, CardHeader, CardToolbar, CardTable, CardFooter } from '@/components/ui/card';
+import { DataGridPagination } from '@/components/ui/data-grid-pagination';
+import { Card, CardHeader, CardToolbar, CardTable, CardFooter, CardHeading } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
 
-interface ActivityRow {
+// ─── Types based on API response ────────────────────────────────────────────
+interface ReportRow {
+    installer: string;
+    installer_id: number;
+    installer_hours: number;
     activity_type: string;
     activity_date: string;
-    installer: string;
-    installer_hours: number;
+    fab_id: number;
+    fab_type: string;
+    job_number: string;
     job_name: string;
     activity_complete: boolean;
-    time_duration: string;
+    duration: string;
     sq_ft_installed: number;
     sq_ft_incomplete: number;
     reason_if_not_complete: string | null;
+    sales_person_id: number;
+    sales_person_name: string;
 }
 
-// Component for a single installer card with nested table
-function InstallerCard({ installer, rows, isExpanded, onToggle }: { installer: string; rows: ActivityRow[]; isExpanded: boolean; onToggle: () => void }) {
-    const columns = useMemo<ColumnDef<ActivityRow>[]>(() => [
-        { accessorKey: 'activity_type', header: ({ column }) => <DataGridColumnHeader title="TYPE" column={column} />, size: 100 },
-        { accessorKey: 'activity_date', header: ({ column }) => <DataGridColumnHeader title="DATE" column={column} />, cell: ({ row }) => format(new Date(row.original.activity_date), 'MMM dd, yyyy'), size: 110 },
-        { accessorKey: 'job_name', header: ({ column }) => <DataGridColumnHeader title="JOB" column={column} />, size: 180 },
-        { accessorKey: 'activity_complete', header: ({ column }) => <DataGridColumnHeader title="COMPLETE" column={column} />, cell: ({ row }) => row.original.activity_complete ? 'Yes' : 'No', size: 90 },
-        { accessorKey: 'time_duration', header: ({ column }) => <DataGridColumnHeader title="DURATION" column={column} />, size: 90 },
-        { accessorKey: 'sq_ft_installed', header: ({ column }) => <DataGridColumnHeader title="SQFT INSTALLED" column={column} />, cell: ({ row }) => row.original.sq_ft_installed.toFixed(0), size: 120 },
-        { accessorKey: 'sq_ft_incomplete', header: ({ column }) => <DataGridColumnHeader title="SQFT INCOMPLETE" column={column} />, cell: ({ row }) => row.original.sq_ft_incomplete.toFixed(0), size: 120 },
-        { accessorKey: 'reason_if_not_complete', header: ({ column }) => <DataGridColumnHeader title="REASON" column={column} />, size: 200 },
-    ], []);
-
-    const table = useReactTable({ columns, data: rows, getCoreRowModel: getCoreRowModel(), getPaginationRowModel: getPaginationRowModel() });
-    const totalHours = rows.reduce((s, r) => s + r.installer_hours, 0);
-    const totalInstalled = rows.reduce((s, r) => s + r.sq_ft_installed, 0);
-    const totalIncomplete = rows.reduce((s, r) => s + r.sq_ft_incomplete, 0);
-
-    return (
-        <Card className="border border-[#e2e4ed] rounded-[12px] overflow-hidden">
-            <div className="px-4 py-3 bg-gray-50 cursor-pointer hover:bg-gray-100 flex justify-between items-center" onClick={onToggle}>
-                <div className="flex items-center gap-4">
-                    {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                    <span className="font-semibold text-lg">{installer}</span>
-                    <div className="flex gap-4 text-sm text-gray-500">
-                        <span>{rows.length} activities</span>
-                        <span>Hours: {totalHours.toFixed(2)}</span>
-                        <span>Installed: {totalInstalled.toFixed(0)} sqft</span>
-                        <span>Incomplete: {totalIncomplete.toFixed(0)} sqft</span>
-                    </div>
-                </div>
-            </div>
-            {isExpanded && (
-                <div className="p-3 border-t">
-                    <DataGrid table={table} recordCount={rows.length} tableLayout={{ cellBorder: true }}>
-                        <div className="rounded-md overflow-hidden">
-                            <ScrollArea className="">
-                                <table className="w-full border-collapse">
-                                    <thead className="sticky top-0 bg-gray-50">
-                                        {table.getHeaderGroups().map(hg => <tr key={hg.id}>{hg.headers.map(h => <th key={h.id} className="px-3 py-2 text-left text-xs font-semibold border-b border-[#e2e4ed]">{flexRender(h.column.columnDef.header, h.getContext())}</th>)}</tr>)}
-                                    </thead>
-                                    <tbody>
-                                        {table.getRowModel().rows.map(row => <tr key={row.id} className="border-b">{row.getVisibleCells().map(cell => <td key={cell.id} className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}</tr>)}
-                                    </tbody>
-                                </table>
-                                <ScrollBar orientation="horizontal" />
-                            </ScrollArea>
-                        </div>
-                    </DataGrid>
-                </div>
-            )}
-        </Card>
-    );
+interface Group {
+    installer: string;
+    installer_id: number;
+    activity_label: string;
+    job_count: number;
+    rows: ReportRow[];
+    installer_hours: number;
+    installer_hours_display: string;
 }
 
+interface ReportData {
+    title: string;
+    period: { from_date: string | null; to_date: string | null };
+    columns: string[];
+    filters: { search: string | null; fab_type: string | null; sales_person_id: number | null };
+    filter_options: { sales_person_options: { id: number; name: string }[]; fab_types: string[] };
+    summary: {
+        total_hours: string;
+        total_hours_value: number;
+        templates_sq_ft: number;
+        installs_sq_ft: number;
+        incomplete_sq_ft: number;
+        row_count: number;
+        group_count: number;
+    };
+    groups: Group[];
+    rows: ReportRow[];
+}
+
+// ─── Component ──────────────────────────────────────────────────────────────
 export function InstallationTemplateReport() {
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [month, setMonth] = useState(new Date());
-    const [expandedInstallers, setExpandedInstallers] = useState<Set<string>>(new Set());
+    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
+    const [sorting, setSorting] = useState<SortingState>([]);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
+    const [salesPersonId, setSalesPersonId] = useState<number | 'all'>('all');
 
+    // Build query params for API
     const queryParams = useMemo(() => {
-        if (!dateRange?.from) return undefined;
-        return { start_date: format(dateRange.from, 'yyyy-MM-dd'), end_date: dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : format(dateRange.from, 'yyyy-MM-dd') };
-    }, [dateRange]);
+        const params: { start_date?: string; end_date?: string; search?: string; fab_type?: string; sales_person_id?: number } = {};
+        if (dateRange?.from) {
+            params.start_date = format(dateRange.from, 'yyyy-MM-dd');
+            params.end_date = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : format(dateRange.from, 'yyyy-MM-dd');
+        }
+        if (searchQuery.trim()) params.search = searchQuery.trim();
+        if (fabTypeFilter !== 'all') params.fab_type = fabTypeFilter;
+        if (salesPersonId !== 'all') params.sales_person_id = salesPersonId;
+        return Object.keys(params).length ? params : undefined;
+    }, [dateRange, searchQuery, fabTypeFilter, salesPersonId]);
 
     const { data, isLoading } = useGetInstallationTemplateReportQuery(queryParams);
-    const rows: ActivityRow[] = useMemo(() => data?.data?.rows ?? [], [data]);
-    const summary = useMemo(() => data?.data?.summary ?? null, [data]);
+    const reportData = data?.data as ReportData | undefined;
 
-    // Group by installer
-    const grouped = useMemo(() => {
-        const map = new Map<string, ActivityRow[]>();
-        rows.forEach(row => {
-            const installer = row.installer || 'Unknown';
-            if (!map.has(installer)) map.set(installer, []);
-            map.get(installer)!.push(row);
-        });
-        return Array.from(map.entries()).map(([installer, installerRows]) => ({ installer, rows: installerRows }));
-    }, [rows]);
+    const fabTypes = useMemo(() => reportData?.filter_options?.fab_types ?? [], [reportData]);
+    const salesPersonOptions = useMemo(() => reportData?.filter_options?.sales_person_options ?? [], [reportData]);
 
-    const toggleInstaller = (installer: string) => {
-        setExpandedInstallers(prev => {
-            const next = new Set(prev);
-            if (next.has(installer)) next.delete(installer);
-            else next.add(installer);
-            return next;
-        });
+    const tableData = useMemo(() => reportData?.groups ?? [], [reportData]);
+    const summary = reportData?.summary;
+
+    // ─── Column definitions with sorting enabled ─────────────────────────────
+    const columns = useMemo<ColumnDef<Group | ReportRow>[]>(() => [
+        {
+            id: 'expander',
+            header: () => null,
+            cell: ({ row }) => {
+                if (row.getCanExpand()) {
+                    return (
+                        <button onClick={row.getToggleExpandedHandler()} className="p-1 hover:bg-gray-100 rounded">
+                            {row.getIsExpanded() ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        </button>
+                    );
+                }
+                return null;
+            },
+            size: 40,
+            enableSorting: false,
+        },
+        {
+            id: 'installer',
+            header: ({ column }) => <DataGridColumnHeader title="INSTALLER" column={column} />,
+            cell: ({ row }) => {
+                if (row.getCanExpand()) return <span className="font-medium">{row.original.installer}</span>;
+                return <span className="ml-4 text-muted-foreground">—</span>;
+            },
+            size: 200,
+            enableSorting: true,
+        },
+        {
+            id: 'hours',
+            header: ({ column }) => <DataGridColumnHeader title="HOURS" column={column} />,
+            cell: ({ row }) => {
+                if (row.getCanExpand()) return <span>{row.original.installer_hours?.toFixed(2) ?? '0.00'}</span>;
+                return <span className="text-muted-foreground">—</span>;
+            },
+            size: 80,
+            enableSorting: true,
+        },
+        {
+            id: 'job_name',
+            header: ({ column }) => <DataGridColumnHeader title="JOB NAME" column={column} />,
+            cell: ({ row }) => {
+                if (row.getCanExpand()) return <span className="text-muted-foreground">{row.original.activity_label ?? 'Activity'}</span>;
+                return <span>{row.original.job_name}</span>;
+            },
+            size: 250,
+            enableSorting: true,
+        },
+        {
+            id: 'activity_complete',
+            header: ({ column }) => <DataGridColumnHeader title="ACTIVITY COMPLETE" column={column} />,
+            cell: ({ row }) => {
+                if (row.getCanExpand()) return null;
+                return <span>{row.original.activity_complete ? 'Yes' : 'No'}</span>;
+            },
+            size: 130,
+            enableSorting: true,
+        },
+        {
+            id: 'duration',
+            header: ({ column }) => <DataGridColumnHeader title="DURATION" column={column} />,
+            cell: ({ row }) => {
+                if (row.getCanExpand()) return null;
+                return <span className="whitespace-pre-wrap">{row.original.duration || '—'}</span>;
+            },
+            size: 120,
+            enableSorting: true,
+        },
+        {
+            id: 'sqft_installed',
+            header: ({ column }) => <DataGridColumnHeader title="SQ FT INSTALLED" column={column} />,
+            cell: ({ row }) => {
+                if (row.getCanExpand()) return <span>{row.original.sqft_installed?.toFixed(0) ?? '0'}</span>;
+                return <span>{row.original.sq_ft_installed?.toFixed(0) ?? '0'}</span>;
+            },
+            size: 130,
+            enableSorting: true,
+        },
+        {
+            id: 'sqft_incomplete',
+            header: ({ column }) => <DataGridColumnHeader title="SQ FT INCOMPLETE" column={column} />,
+            cell: ({ row }) => {
+                if (row.getCanExpand()) return <span>{row.original.sqft_incomplete?.toFixed(0) ?? '0'}</span>;
+                return <span>{row.original.sq_ft_incomplete?.toFixed(0) ?? '0'}</span>;
+            },
+            size: 140,
+            enableSorting: true,
+        },
+        {
+            id: 'reason',
+            header: ({ column }) => <DataGridColumnHeader title="REASON (IF NOT COMPLETE)" column={column} />,
+            cell: ({ row }) => {
+                if (row.getCanExpand()) return null;
+                return <span>{row.original.reason_if_not_complete || '—'}</span>;
+            },
+            size: 200,
+            // enableSorting: true,
+        },
+    ], []);
+
+    const table = useReactTable({
+        columns,
+        data: tableData,
+        state: { pagination, sorting },
+        onPaginationChange: setPagination,
+        onSortingChange: setSorting,
+        getCoreRowModel: getCoreRowModel(),
+        getExpandedRowModel: getExpandedRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        getSubRows: (node) => (node as Group).rows || [],
+        enableExpanding: true,
+        meta: {
+            getRowAttributes: (row) => {
+                if (row.getCanExpand()) {
+                    return { className: 'bg-[#f6ffe7] hover:bg-[#edffd4] transition-colors' };
+                }
+                return { className: 'bg-white hover:bg-gray-50/50' };
+            },
+        },
+    });
+
+    const getTitle = () => {
+        if (dateRange?.from) {
+            return dateRange.to
+                ? `${format(dateRange.from, 'MMM dd, yyyy')} – ${format(dateRange.to, 'MMM dd, yyyy')}`
+                : format(dateRange.from, 'MMM dd, yyyy');
+        }
+        return 'All dates';
     };
 
-    if (isLoading) return <div className="p-5">Loading...</div>;
+    if (isLoading) return <div className="p-5 text-[#7c8689]">Loading report...</div>;
 
     return (
         <div className="flex flex-col gap-5 p-5">
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-semibold">Installation & Template Report</h1>
-                <div className="flex gap-2">
-                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                        <PopoverTrigger asChild>
-                            <Button variant="outline" className={cn('w-[260px] justify-start', !dateRange && 'text-muted-foreground')}>
-                                <CalendarDays className="mr-2 h-4 w-4" />
-                                {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}` : format(dateRange.from, 'MMM dd, yyyy')) : 'Filter by Date Range'}
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                            <Calendar mode="range" month={month} onMonthChange={setMonth} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} />
-                            <div className="flex justify-end gap-2 p-3 border-t">
-                                <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); setIsDatePickerOpen(false); }}>Reset</Button>
-                                <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
-                            </div>
-                        </PopoverContent>
-                    </Popover>
-                    <Button variant="outline" onClick={() => exportTableToCSV({}, 'installation-template')}>Export CSV</Button>
-                </div>
-            </div>
+            <h1 className="text-2xl font-semibold text-[#4b545d]">Installation and Template Report</h1>
 
+            {/* Summary Cards */}
             {summary && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Card className="p-4"><div className="text-sm">Row Count</div><div className="text-2xl font-semibold">{summary.row_count}</div></Card>
-                    <Card className="p-4"><div className="text-sm">Total Installer Hours</div><div className="text-2xl font-semibold">{summary.total_installer_hours?.toFixed(2) ?? 0}</div></Card>
-                    <Card className="p-4"><div className="text-sm">Total SQFT Installed</div><div className="text-2xl font-semibold">{summary.total_sq_ft_installed?.toFixed(0) ?? 0}</div></Card>
-                    <Card className="p-4"><div className="text-sm">Total SQFT Incomplete</div><div className="text-2xl font-semibold">{summary.total_sq_ft_incomplete?.toFixed(0) ?? 0}</div></Card>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total Hours</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.total_hours_value?.toFixed(2) ?? '0.00'}</p>
+                    </Card>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Templates sq ft</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.templates_sq_ft?.toFixed(0) ?? '0'}</p>
+                    </Card>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Installs sq ft</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.installs_sq_ft?.toFixed(0) ?? '0'}</p>
+                    </Card>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Incomplete sq ft</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.incomplete_sq_ft?.toFixed(0) ?? '0'}</p>
+                    </Card>
                 </div>
             )}
 
-            <div className="space-y-4">
-                {grouped.map(group => (
-                    <InstallerCard
-                        key={group.installer}
-                        installer={group.installer}
-                        rows={group.rows}
-                        isExpanded={expandedInstallers.has(group.installer)}
-                        onToggle={() => toggleInstaller(group.installer)}
-                    />
-                ))}
-            </div>
+            {/* DataGrid with embedded filters inside CardHeader */}
+            <DataGrid table={table} recordCount={tableData.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
+                <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
+                    <CardHeader className="py-3.5 border-b border-[#e2e4ed]">
+                        <CardHeading>
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                                {/* Search */}
+                                <div className="relative flex items-center">
+                                    <div className="relative">
+                                        <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                                        <Input
+                                            placeholder="Search by job name"
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="ps-9 w-[230px] h-[34px]"
+                                        />
+                                        {searchQuery && (
+                                            <Button mode="icon" variant="ghost" className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6" onClick={() => setSearchQuery('')}>
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Date picker */}
+                                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className={cn('w-[170px] h-[34px] justify-start text-left', !dateRange && 'text-muted-foreground')}>
+                                            <CalendarDays className="mr-2 h-4 w-4" />
+                                            {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}` : format(dateRange.from, 'MMM dd, yyyy')) : 'Filter by Date'}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar mode="range" month={month} onMonthChange={setMonth} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} />
+                                        <div className="flex justify-end gap-2 p-3 border-t">
+                                            <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); setIsDatePickerOpen(false); }}>Reset</Button>
+                                            <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
+
+                                {/* FAB type filter */}
+                                <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
+                                    <SelectTrigger className="w-auto min-w-[150px] h-[34px]"><SelectValue placeholder="Fab Type" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Types</SelectItem>
+                                        {fabTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+
+                                
+                            </div>
+                        </CardHeading>
+                        <CardToolbar>
+                            {/* Sales person filter */}
+                                <Select value={String(salesPersonId)} onValueChange={(v) => setSalesPersonId(v === 'all' ? 'all' : Number(v))}>
+                                    <SelectTrigger className="w-auto min-w-[150px] h-[34px]"><SelectValue placeholder="Sales Person" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Sales Persons</SelectItem>
+                                        <SelectItem value="no_sales_person">No Sales Person</SelectItem>
+                                        {salesPersonOptions.map(sp => <SelectItem key={sp.id} value={String(sp.id)}>{sp.name}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            <Button variant="outline" onClick={() => exportTableToCSV(table, 'installation-template')} className="h-[34px]">
+                                Export CSV
+                            </Button>
+                        </CardToolbar>
+                    </CardHeader>
+
+                    <CardTable>
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-400px)] bg-white">
+                            <div className="relative">
+                                <table className="w-full border-collapse table-fixed">
+                                    <thead className="sticky top-0 z-10 bg-white">
+                                        {table.getHeaderGroups().map(headerGroup => (
+                                            <tr key={headerGroup.id}>
+                                                {headerGroup.headers.map(header => (
+                                                    <th
+                                                        key={header.id}
+                                                        className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] border-b border-[#e2e4ed] bg-gray-50"
+                                                        style={{ width: header.getSize() }}
+                                                    >
+                                                        {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
+                                                        {header.column.getCanResize() && (
+                                                            <div
+                                                                onDoubleClick={() => header.column.resetSize()}
+                                                                onMouseDown={header.getResizeHandler()}
+                                                                onTouchStart={header.getResizeHandler()}
+                                                                className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                            />
+                                                        )}
+                                                    </th>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                    </thead>
+                                    <tbody>
+                                        {table.getRowModel().rows.map(row => {
+                                            const rowAttrs = table.options.meta?.getRowAttributes?.(row) || {};
+                                            return (
+                                                <tr key={row.id} className={`border-b border-[#e2e4ed] ${rowAttrs.className || ''}`}>
+                                                    {row.getVisibleCells().map(cell => (
+                                                        <td
+                                                            key={cell.id}
+                                                            className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
+                                                            style={{ width: cell.column.getSize() }}
+                                                        >
+                                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                        </td>
+                                                    ))}
+                                                </tr>
+                                            );
+                                        })}
+                                        {tableData.length === 0 && (
+                                            <tr>
+                                                <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
+                                                    No data available.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <ScrollBar orientation="horizontal" />
+                        </ScrollArea>
+                    </CardTable>
+                    <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">
+                        <DataGridPagination />
+                    </CardFooter>
+                </Card>
+            </DataGrid>
         </div>
     );
 }

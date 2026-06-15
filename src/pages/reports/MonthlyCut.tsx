@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { flexRender, ColumnDef, getCoreRowModel, getPaginationRowModel, PaginationState, useReactTable } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { useGetMonthlyCutCompletionQuery } from '@/store/api/report';
+import { useGetFabTypesQuery } from '@/store/api/job';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
 import { DataGrid } from '@/components/ui/data-grid';
 import { DataGridPagination } from '@/components/ui/data-grid-pagination';
@@ -37,8 +38,30 @@ export function MonthlyCutCompletionReport() {
     const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
     const [updateModalOpen, setUpdateModalOpen] = useState(false);
     const [selectedRow, setSelectedRow] = useState<any>(null);
+    const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
 
-    const { data, isLoading, refetch } = useGetMonthlyCutCompletionQuery({ year, month });
+    // Fetch fab types for dropdown
+    const { data: fabTypesData } = useGetFabTypesQuery();
+    const fabTypes = useMemo(() => {
+        if (!fabTypesData) return [];
+        let rawData: any[] = [];
+        if (Array.isArray(fabTypesData)) rawData = fabTypesData;
+        else if (typeof fabTypesData === 'object' && 'data' in fabTypesData) rawData = (fabTypesData as any).data || [];
+        const extractName = (item: { name: string } | string) =>
+            typeof item === 'string' ? item : (typeof item === 'object' && item !== null ? item.name || String(item) : String(item));
+        return rawData.map(extractName).sort();
+    }, [fabTypesData]);
+
+    // Build query params including fab_type if selected
+    const queryParams = useMemo(() => {
+        const params: { year: number; month: number; fab_type?: string } = { year, month };
+        if (fabTypeFilter && fabTypeFilter !== 'all') {
+            params.fab_type = fabTypeFilter;
+        }
+        return params;
+    }, [year, month, fabTypeFilter]);
+
+    const { data, isLoading, refetch } = useGetMonthlyCutCompletionQuery(queryParams);
     const rows = useMemo(() => data?.data?.rows ?? [], [data]);
     const summary = useMemo(() => data?.data?.summary ?? null, [data]);
 
@@ -46,26 +69,6 @@ export function MonthlyCutCompletionReport() {
         if (!rows.length) return [];
         const first = rows[0];
         const keys = Object.keys(first);
-
-        // Action column at the beginning
-        // const actionCol: ColumnDef<any> = {
-        //     id: 'actions',
-        //     header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
-        //     cell: ({ row }) => {
-        //         // Use monthly_cut_id or cut_id – check the actual field name from API
-        //         const cutId = row.original.fab_id ?? row.original.cut_id;
-        //         if (!cutId) return null;
-        //         return (
-        //             <Button size="sm" onClick={() => {
-        //                 setSelectedRow(row.original);
-        //                 setUpdateModalOpen(true);
-        //             }}>
-        //                 Edit
-        //             </Button>
-        //         );
-        //     },
-        //     size: 80,
-        // };
 
         const compositeFabFields = [
             'acct_name', 'account_name', 'job_name', 'input_area',
@@ -75,7 +78,6 @@ export function MonthlyCutCompletionReport() {
             .filter(key => !compositeFabFields.includes(key))
             .map(key => {
                 let headerTitle = key.replace(/_/g, ' ').toUpperCase();
-                // Customize "pieces" field label
                 if (key === 'pieces' || key === 'no_of_pieces') {
                     headerTitle = 'NO OF PIECES';
                 }
@@ -85,13 +87,10 @@ export function MonthlyCutCompletionReport() {
                     size: key === 'job_name' || key === 'fab_info' ? 250 : 130,
                     cell: ({ row }) => {
                         let val = row.original[key];
-                        // Date formatting
                         if (key.includes('date') && val) val = format(new Date(val), 'MMM dd, yyyy');
-                        // Number formatting
                         if (typeof val === 'number') val = val.toLocaleString();
                         if (val == null) return <span className="text-sm">-</span>;
 
-                        // Render links
                         if (key === 'fab_id') {
                             const link = getFabIdLink(Number(val));
                             return renderLink(link);
@@ -108,11 +107,11 @@ export function MonthlyCutCompletionReport() {
                             }
                             return <span className="text-sm">{val}</span>;
                         }
-
                         return <span className="text-sm">{val}</span>;
                     },
                 };
             });
+
         const fabInfoCol: ColumnDef<any> = {
             id: 'fab_info',
             header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
@@ -120,7 +119,6 @@ export function MonthlyCutCompletionReport() {
             size: 400,
         };
 
-        // Insert fab info column after job_number (if exists) or at position 1
         const jobNumberIndex = dataCols.findIndex(col => col.accessorKey === 'job_number');
         const insertIndex = jobNumberIndex !== -1 ? jobNumberIndex + 1 : 1;
         const finalCols = [];
@@ -128,7 +126,6 @@ export function MonthlyCutCompletionReport() {
         finalCols.push(fabInfoCol);
         finalCols.push(...dataCols.slice(insertIndex));
         return finalCols;
-        return [...dataCols];
     }, [rows]);
 
     const table = useReactTable({
@@ -159,7 +156,20 @@ export function MonthlyCutCompletionReport() {
         <div className="flex flex-col gap-5 p-5">
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <h1 className="text-2xl font-semibold text-[#4b545d]">Monthly Cut Completion</h1>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                    {/* Fab Type Filter Dropdown */}
+                    <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
+                        <SelectTrigger className="w-[150px] h-[34px] border-[#e2e4ed]">
+                            <SelectValue placeholder="Fab Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Types</SelectItem>
+                            {fabTypes.map(type => (
+                                <SelectItem key={type} value={type}>{type}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
                     <Select value={String(year)} onValueChange={(v) => setYear(parseInt(v))}>
                         <SelectTrigger className="w-[100px] h-[34px] border-[#e2e4ed]">
                             <SelectValue placeholder="Year" />
@@ -202,7 +212,7 @@ export function MonthlyCutCompletionReport() {
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Revenue / SQFT</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.revenue_per_sq_ft.toFixed(2)}</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.revenue_per_sq_ft?.toFixed(2) ?? '0.00'}</p>
                     </Card>
                 </div>
             )}

@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { CalendarDays } from 'lucide-react';
 import { useGetDailyInstallCompletionQuery } from '@/store/api/report';
+import { useGetFabTypesQuery } from '@/store/api/job';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
 import { DataGrid } from '@/components/ui/data-grid';
 import { DataGridPagination } from '@/components/ui/data-grid-pagination';
@@ -18,6 +19,7 @@ import { cn } from '@/lib/utils';
 import { UpdateDailyInstallModal } from './component/DailyMonthlyInstall';
 import { getFabIdLink, getJobNameLink, getJobNumberLink, renderLink } from '@/lib/reportLinks';
 import { FabInfoCell } from '@/components/common/fabInfo';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const fabTypeColorMap: Record<string, string> = {
     standard: '#9eeb47',
@@ -41,41 +43,41 @@ export function DailyInstallCompletionReport() {
     const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
     const [updateModalOpen, setUpdateModalOpen] = useState(false);
     const [selectedRow, setSelectedRow] = useState<any>(null);
+    const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
+
+    // Fetch fab types for dropdown
+    const { data: fabTypesData } = useGetFabTypesQuery();
+    const fabTypes = useMemo(() => {
+        if (!fabTypesData) return [];
+        let rawData: any[] = [];
+        if (Array.isArray(fabTypesData)) rawData = fabTypesData;
+        else if (typeof fabTypesData === 'object' && 'data' in fabTypesData) rawData = (fabTypesData as any).data || [];
+        const extractName = (item: { name: string } | string) =>
+            typeof item === 'string' ? item : (typeof item === 'object' && item !== null ? item.name || String(item) : String(item));
+        return rawData.map(extractName).sort();
+    }, [fabTypesData]);
 
     const queryParams = useMemo(() => {
-        if (!dateRange?.from) return undefined;
-        return {
-            start_date: format(dateRange.from, 'yyyy-MM-dd'),
-            end_date: dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : format(dateRange.from, 'yyyy-MM-dd'),
-        };
-    }, [dateRange]);
+        const params: { start_date?: string; end_date?: string; fab_type?: string } = {};
+        if (dateRange?.from) {
+            params.start_date = format(dateRange.from, 'yyyy-MM-dd');
+            params.end_date = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : format(dateRange.from, 'yyyy-MM-dd');
+        }
+        if (fabTypeFilter && fabTypeFilter !== 'all') {
+            params.fab_type = fabTypeFilter;
+        }
+        return Object.keys(params).length ? params : undefined;
+    }, [dateRange, fabTypeFilter]);
 
     const { data, isLoading, refetch } = useGetDailyInstallCompletionQuery(queryParams);
     const rows = useMemo(() => data?.data?.rows ?? [], [data]);
     const summary = useMemo(() => data?.data?.summary ?? null, [data]);
 
+    // Columns definition (unchanged)
     const columns = useMemo<ColumnDef<any>[]>(() => {
         if (!rows.length) return [];
         const first = rows[0];
         const keys = Object.keys(first);
-
-        // Action column first
-        // const actionCol: ColumnDef<any> = {
-        //     id: 'actions',
-        //     header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
-        //     cell: ({ row }) => {
-        //         if (!row.original.fab_id) return null;
-        //         return (
-        //             <Button size="sm" onClick={() => {
-        //                 setSelectedRow(row.original);
-        //                 setUpdateModalOpen(true);
-        //             }}>
-        //                 Edit
-        //             </Button>
-        //         );
-        //     },
-        //     size: 80,
-        // };
 
         const compositeFabFields = [
             'acct_name', 'account_name', 'job_name', 'input_area',
@@ -85,23 +87,17 @@ export function DailyInstallCompletionReport() {
             .filter(key => !compositeFabFields.includes(key))
             .map(key => {
                 let headerTitle = key.replace(/_/g, ' ').toUpperCase();
-                // Customize "pieces" field label
-                if (key === 'pieces' || key === 'no_of_pieces') {
-                    headerTitle = 'NO OF PIECES';
-                }
+                if (key === 'pieces' || key === 'no_of_pieces') headerTitle = 'NO OF PIECES';
                 return {
                     accessorKey: key,
                     header: ({ column }) => <DataGridColumnHeader title={headerTitle} column={column} />,
                     size: key === 'job_name' || key === 'fab_info' ? 250 : 130,
                     cell: ({ row }) => {
                         let val = row.original[key];
-                        // Date formatting
                         if (key.includes('date') && val) val = format(new Date(val), 'MMM dd, yyyy');
-                        // Number formatting
                         if (typeof val === 'number') val = val.toLocaleString();
                         if (val == null) return <span className="text-sm">-</span>;
 
-                        // Render links
                         if (key === 'fab_id') {
                             const link = getFabIdLink(Number(val));
                             return renderLink(link);
@@ -118,11 +114,11 @@ export function DailyInstallCompletionReport() {
                             }
                             return <span className="text-sm">{val}</span>;
                         }
-
                         return <span className="text-sm">{val}</span>;
                     },
                 };
             });
+
         const fabInfoCol: ColumnDef<any> = {
             id: 'fab_info',
             header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
@@ -130,7 +126,6 @@ export function DailyInstallCompletionReport() {
             size: 400,
         };
 
-        // Insert fab info column after job_number (if exists) or at position 1
         const jobNumberIndex = dataCols.findIndex(col => col.accessorKey === 'job_number');
         const insertIndex = jobNumberIndex !== -1 ? jobNumberIndex + 1 : 1;
         const finalCols = [];
@@ -138,7 +133,6 @@ export function DailyInstallCompletionReport() {
         finalCols.push(fabInfoCol);
         finalCols.push(...dataCols.slice(insertIndex));
         return finalCols;
-        return [...dataCols];
     }, [rows]);
 
     const table = useReactTable({
@@ -175,7 +169,19 @@ export function DailyInstallCompletionReport() {
         <div className="flex flex-col gap-5 p-5">
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <h1 className="text-2xl font-semibold text-[#4b545d]">Daily Install Completion</h1>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                    <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
+                        <SelectTrigger className="w-[150px] h-[34px] border-[#e2e4ed]">
+                            <SelectValue placeholder="Fab Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Types</SelectItem>
+                            {fabTypes.map(type => (
+                                <SelectItem key={type} value={type}>{type}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>
                             <Button variant="outline" className={cn('w-[260px] justify-start text-left font-normal h-[34px]', !dateRange && 'text-muted-foreground')}>
