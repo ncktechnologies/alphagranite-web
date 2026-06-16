@@ -102,7 +102,7 @@ export function OwnerOverviewReport() {
                         </CardToolbar>
                     </CardHeader>
                     <CardTable>
-                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-300px)] bg-white">
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4 ">
                             <table className="w-full border-collapse table-fixed">
                                 <thead className="sticky top-0 z-10 bg-white">
                                     {table.getHeaderGroups().map(headerGroup => (
@@ -127,7 +127,7 @@ export function OwnerOverviewReport() {
                                     ))}
                                 </tbody>
                             </table>
-                            <ScrollBar orientation="horizontal" />
+                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
                         </ScrollArea>
                     </CardTable>
                     <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">

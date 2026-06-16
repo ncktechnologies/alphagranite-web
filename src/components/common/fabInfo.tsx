@@ -20,7 +20,7 @@ export const generateFabInfo = (data: FabInfoData) => {
     const accountName = data.acct_name || data.account_name;
     if (accountName) jobInfo.push(accountName);
     if (data.job_name) jobInfo.push(data.job_name);
-    if (data.input_area) materialInfo.push(`Area: ${data.input_area}`);
+    if (data.input_area) materialInfo.push(`${data.input_area}`);
     if (data.stone_type_name) stoneInfo.push(data.stone_type_name);
     if (data.stone_color_name) stoneInfo.push(data.stone_color_name);
     if (data.stone_thickness_value) stoneInfo.push(data.stone_thickness_value);

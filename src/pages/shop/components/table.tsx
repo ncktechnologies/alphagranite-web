@@ -401,7 +401,7 @@ const ShopTable: React.FC<ShopTableProps> = ({
                 const jobInfo = [f.acct_name, f.job_name].filter(Boolean);
                 const stoneInfo = [f.stone_type_name, f.stone_color_name, f.stone_thickness_value].filter(Boolean);
                 const materialInfo = [
-                    f.input_area ? `Area: ${f.input_area}` : '',
+                    f.input_area ? `${f.input_area}` : '',
                     f.edge_name || '',
                 ].filter(Boolean);
 

@@ -31,7 +31,7 @@ interface FabInfoProps {
 const FabInfo: React.FC<FabInfoProps> = ({ fab }) => {
   const jobInfo = [fab.account_name, fab.job_name].filter(Boolean);
   const stoneInfo = [fab.stone_type_name, fab.stone_color_name, fab.stone_thickness_value].filter(Boolean);
-  const materialInfo = [fab.input_area ? `Area: ${fab.input_area}` : '', fab.edge_name].filter(Boolean);
+  const materialInfo = [fab.input_area ? `${fab.input_area}` : '', fab.edge_name].filter(Boolean);
 
   return (
     <div className="flex gap-4 text-xs max-w-[400px]">

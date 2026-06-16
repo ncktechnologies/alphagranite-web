@@ -4,7 +4,7 @@ import { flexRender, ColumnDef, getCoreRowModel, getPaginationRowModel, useReact
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import { CalendarDays, ChevronDown, ChevronRight } from 'lucide-react';
-import { useGetInstallationTemplateReportQuery } from '@/store/api/report';
+import { useGetInstallationTemplaterReportQuery } from '@/store/api/report';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
 import { DataGrid } from '@/components/ui/data-grid';
 import { Card, CardHeader, CardToolbar, CardTable, CardFooter } from '@/components/ui/card';
@@ -64,7 +64,8 @@ function InstallerCard({ installer, rows, isExpanded, onToggle }: { installer: s
                 <div className="p-3 border-t">
                     <DataGrid table={table} recordCount={rows.length} tableLayout={{ cellBorder: true }}>
                         <div className="rounded-md overflow-hidden">
-                            <ScrollArea className="">
+                            <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4 ">
+
                                 <table className="w-full border-collapse">
                                     <thead className="sticky top-0 bg-gray-50">
                                         {table.getHeaderGroups().map(hg => <tr key={hg.id}>{hg.headers.map(h => <th key={h.id} className="px-3 py-2 text-left text-xs font-semibold border-b border-[#e2e4ed]">{flexRender(h.column.columnDef.header, h.getContext())}</th>)}</tr>)}
@@ -73,7 +74,8 @@ function InstallerCard({ installer, rows, isExpanded, onToggle }: { installer: s
                                         {table.getRowModel().rows.map(row => <tr key={row.id} className="border-b">{row.getVisibleCells().map(cell => <td key={cell.id} className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0">{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}</tr>)}
                                     </tbody>
                                 </table>
-                                <ScrollBar orientation="horizontal" />
+                                <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+
                             </ScrollArea>
                         </div>
                     </DataGrid>
@@ -95,7 +97,7 @@ export function InstallationTemplateReportCard() {
         return { start_date: format(dateRange.from, 'yyyy-MM-dd'), end_date: dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : format(dateRange.from, 'yyyy-MM-dd') };
     }, [dateRange]);
 
-    const { data, isLoading } = useGetInstallationTemplateReportQuery(queryParams);
+    const { data, isLoading } = useGetInstallationTemplaterReportQuery(queryParams);
     const rows: ActivityRow[] = useMemo(() => data?.data?.rows ?? [], [data]);
     const summary = useMemo(() => data?.data?.summary ?? null, [data]);
 

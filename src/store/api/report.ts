@@ -89,19 +89,19 @@ export const reportApi = createApi({
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
-            // getInstallationTemplateReport: build.query<any, void>({
-            //     query: () => ({
-            //         url: "/api/v1/reports/owner/installation-template",
-            //         method: "get"
-            //     }),
-            //     transformResponse: (response: any) => response,
-            //     providesTags: ["Report"],
-            // }),
-            getInstallationTemplateReport: build.query<any, { start_date?: string; end_date?: string; search?: string; fab_type?: string; sales_person_id?: number } | void>({
+            getInstallationTemplaterReport: build.query<any, void>({
+                query: () => ({
+                    url: "/api/v1/reports/owner/installation-template",
+                    method: "get"
+                }),
+                transformResponse: (response: any) => response,
+                providesTags: ["Report"],
+            }),
+            getInstallationTemplateReport: build.query<any, { from_date?: string; to_date?: string; search?: string; fab_type?: string; sales_person_id?: number } | void>({
                 query: (params) => {
                     const searchParams = new URLSearchParams();
-                    if (params?.start_date) searchParams.append('start_date', params.start_date);
-                    if (params?.end_date) searchParams.append('end_date', params.end_date);
+                    if (params?.from_date) searchParams.append('from_date', params.from_date);
+                    if (params?.to_date) searchParams.append('to_date', params.to_date);
                     if (params?.search) searchParams.append('search', params.search);
                     if (params?.fab_type && params.fab_type !== 'all') searchParams.append('fab_type', params.fab_type);
                     if (params?.sales_person_id) searchParams.append('sales_person_id', String(params.sales_person_id));
@@ -240,6 +240,7 @@ export const {
     useGetInstallPerformanceQuery,
     useGetWeeklyTrendsQuery,
     useGetInstallationTemplateReportQuery,
+    useGetInstallationTemplaterReportQuery,
     useGetMonthlyInstallCompletionQuery,
     useGetDailyInstallCompletionQuery,
     useGetMonthlyCutCompletionQuery,

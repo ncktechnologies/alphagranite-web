@@ -269,7 +269,7 @@ export const CutListTableWithCalculations = ({
         const stoneInfo: string[] = [];
         if (list.acct_name) jobInfo.push(list.acct_name);
         if (list.job_name) jobInfo.push(list.job_name);
-        if (list.input_area) jobInfo.push(`Area: ${list.input_area}`);
+        if (list.input_area) jobInfo.push(`${list.input_area}`);
         if (list.stone_type_name) stoneInfo.push(list.stone_type_name);
         if (list.stone_color_name) stoneInfo.push(list.stone_color_name);
         if (list.stone_thickness_value) stoneInfo.push(list.stone_thickness_value);

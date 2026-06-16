@@ -89,7 +89,7 @@ export function ServiceLevelReport() {
     const [month, setMonth] = useState(new Date());
     const [stagePagination, setStagePagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
     const [fabPagination, setFabPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
-    const [backlogPagination, setBacklogPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10});
+    const [backlogPagination, setBacklogPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
 
     const queryParams = useMemo(() => {
         if (!dateRange?.from) return undefined;
@@ -123,9 +123,9 @@ export function ServiceLevelReport() {
     // Fab status columns with links
     const fabColumns = useMemo<ColumnDef<FabStatusRow>[]>(() => [
         { accessorKey: 'fab_type', header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} />, size: 100, cell: ({ row }) => <span className="uppercase text-sm">{row.original.fab_type}</span> },
-        { 
-            accessorKey: 'fab_id', 
-            header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />, 
+        {
+            accessorKey: 'fab_id',
+            header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
             size: 80,
             cell: ({ row }) => {
                 const fabId = row.original.fab_id;
@@ -133,9 +133,9 @@ export function ServiceLevelReport() {
                 return <Link to={link} className="text-blue-600 hover:text-blue-800 hover:underline text-sm">{fabId}</Link>;
             }
         },
-        { 
-            accessorKey: 'job_number', 
-            header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />, 
+        {
+            accessorKey: 'job_number',
+            header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
             size: 100,
             cell: ({ row }) => {
                 const jobNumber = row.original.job_number;
@@ -186,7 +186,7 @@ export function ServiceLevelReport() {
     ], []);
 
     const stageTable = useReactTable({ columns: stageColumns, data: stageHeatMap, state: { pagination: stagePagination }, onPaginationChange: setStagePagination, getCoreRowModel: getCoreRowModel(), getPaginationRowModel: getPaginationRowModel() });
-    
+
     const fabTable = useReactTable({
         columns: fabColumns,
         data: fabStatusRows,
@@ -205,7 +205,7 @@ export function ServiceLevelReport() {
             },
         },
     });
-    
+
     const backlogTable = useReactTable({ columns: backlogColumns, data: agingBacklog, state: { pagination: backlogPagination }, onPaginationChange: setBacklogPagination, getCoreRowModel: getCoreRowModel(), getPaginationRowModel: getPaginationRowModel() });
 
     if (isLoading) return <div className="p-5">Loading service level report...</div>;
@@ -221,7 +221,8 @@ export function ServiceLevelReport() {
                     </CardToolbar>
                 </CardHeader>
                 <CardTable>
-                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[1000px] bg-white">
+                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4 ">
+
                         <div className="relative">
                             <table className="w-full border-collapse table-fixed">
                                 <thead className="sticky top-0 z-10 bg-white">
@@ -259,7 +260,8 @@ export function ServiceLevelReport() {
                                 </tbody>
                             </table>
                         </div>
-                        <ScrollBar orientation="horizontal" />
+                        <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+
                     </ScrollArea>
                 </CardTable>
                 <CardFooter className="bg-white border-t px-4 py-2">

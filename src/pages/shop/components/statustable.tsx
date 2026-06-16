@@ -695,7 +695,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                     const f = row.original.data;
                     const jobInfo = [f.acct_name, f.job_name].filter(Boolean);
                     const stoneInfo = [f.stone_type_name, f.stone_color_name, f.stone_thickness_value].filter(Boolean);
-                    const materialInfo = [f.input_area ? `Area: ${f.input_area}` : '', f.edge_name || ''].filter(Boolean);
+                    const materialInfo = [f.input_area ? `${f.input_area}` : '', f.edge_name || ''].filter(Boolean);
                     return (
                         <div className="flex gap-4 text-xs max-w-[400px]">
                             {(jobInfo.length > 0 || stoneInfo.length > 0) && (

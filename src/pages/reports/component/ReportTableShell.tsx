@@ -254,7 +254,7 @@ export function ReportTableShell<TData>({
                     </CardToolbar>
                 </CardHeader>
                 <CardTable>
-                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-250px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
+                    <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                         <DataGridTable />
                         <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
                     </ScrollArea>

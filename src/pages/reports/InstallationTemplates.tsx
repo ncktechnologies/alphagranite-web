@@ -75,16 +75,17 @@ export function InstallationTemplateReport() {
     const [month, setMonth] = useState(new Date());
     const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
     const [sorting, setSorting] = useState<SortingState>([]);
+    const [expanded, setExpanded] = useState<Record<string, boolean>>({});
     const [searchQuery, setSearchQuery] = useState('');
     const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
     const [salesPersonId, setSalesPersonId] = useState<number | 'all'>('all');
 
     // Build query params for API
     const queryParams = useMemo(() => {
-        const params: { start_date?: string; end_date?: string; search?: string; fab_type?: string; sales_person_id?: number } = {};
+        const params: { from_date?: string; to_date?: string; search?: string; fab_type?: string; sales_person_id?: number } = {};
         if (dateRange?.from) {
-            params.start_date = format(dateRange.from, 'yyyy-MM-dd');
-            params.end_date = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : format(dateRange.from, 'yyyy-MM-dd');
+            params.from_date = format(dateRange.from, 'yyyy-MM-dd');
+            params.to_date = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : format(dateRange.from, 'yyyy-MM-dd');
         }
         if (searchQuery.trim()) params.search = searchQuery.trim();
         if (fabTypeFilter !== 'all') params.fab_type = fabTypeFilter;
@@ -97,17 +98,87 @@ export function InstallationTemplateReport() {
 
     const fabTypes = useMemo(() => reportData?.filter_options?.fab_types ?? [], [reportData]);
     const salesPersonOptions = useMemo(() => reportData?.filter_options?.sales_person_options ?? [], [reportData]);
-
-    const tableData = useMemo(() => reportData?.groups ?? [], [reportData]);
     const summary = reportData?.summary;
 
-    // ─── Column definitions with sorting enabled ─────────────────────────────
-    const columns = useMemo<ColumnDef<Group | ReportRow>[]>(() => [
+    // ─── Build hierarchical data: Installer → Activity Type → Jobs ──────────
+    const tableData = useMemo(() => {
+        if (!reportData?.groups) return [];
+
+        const result: any[] = [];
+        reportData.groups.forEach((group) => {
+            const templateRows = group.rows.filter(r => r.activity_type === 'Template');
+            const installationRows = group.rows.filter(r => r.activity_type === 'Installation');
+
+            const activityRows: any[] = [];
+            if (templateRows.length > 0) {
+                activityRows.push({
+                    type: 'activity',
+                    id: `activity-${group.installer}-template`,
+                    installer: group.installer,
+                    activity_label: 'Template',
+                    total_hours: templateRows.reduce((s, r) => s + r.installer_hours, 0),
+                    total_sqft_installed: templateRows.reduce((s, r) => s + r.sq_ft_installed, 0),
+                    total_sqft_incomplete: templateRows.reduce((s, r) => s + r.sq_ft_incomplete, 0),
+                    subRows: templateRows.map(r => ({
+                        ...r,
+                        type: 'job',
+                        id: `job-${r.fab_id}-${r.activity_type}`, // unique id for each job
+                    })),
+                });
+            }
+            if (installationRows.length > 0) {
+                activityRows.push({
+                    type: 'activity',
+                    id: `activity-${group.installer}-installation`,
+                    installer: group.installer,
+                    activity_label: 'Installation',
+                    total_hours: installationRows.reduce((s, r) => s + r.installer_hours, 0),
+                    total_sqft_installed: installationRows.reduce((s, r) => s + r.sq_ft_installed, 0),
+                    total_sqft_incomplete: installationRows.reduce((s, r) => s + r.sq_ft_incomplete, 0),
+                    subRows: installationRows.map(r => ({
+                        ...r,
+                        type: 'job',
+                        id: `job-${r.fab_id}-${r.activity_type}`,
+                    })),
+                });
+            }
+
+            if (activityRows.length > 0) {
+                result.push({
+                    type: 'installer',
+                    id: `installer-${group.installer}`,
+                    installer: group.installer,
+                    installer_id: group.installer_id,
+                    total_hours: group.installer_hours,
+                    total_sqft_installed: activityRows.reduce((s, a) => s + a.total_sqft_installed, 0),
+                    total_sqft_incomplete: activityRows.reduce((s, a) => s + a.total_sqft_incomplete, 0),
+                    subRows: activityRows,
+                });
+            }
+        });
+        return result;
+    }, [reportData]);
+
+    // ─── Initial expanded state: all installer & activity rows expanded ─────
+    const initialExpanded = useMemo(() => {
+        const state: Record<string, boolean> = {};
+        tableData.forEach(installer => {
+            state[installer.id] = true; // installer rows expanded
+            installer.subRows?.forEach((activity: any) => {
+                state[activity.id] = true; // activity rows expanded
+            });
+        });
+        return state;
+    }, [tableData]);
+
+    // ─── Column definitions ──────────────────────────────────────────────────
+    const columns = useMemo<ColumnDef<any>[]>(() => [
         {
             id: 'expander',
             header: () => null,
             cell: ({ row }) => {
-                if (row.getCanExpand()) {
+                // Only show expander for activity rows
+                if (row.original.type === 'activity') {
                     return (
                         <button onClick={row.getToggleExpandedHandler()} className="p-1 hover:bg-gray-100 rounded">
                             {row.getIsExpanded() ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -123,28 +194,44 @@ export function InstallationTemplateReport() {
             id: 'installer',
             header: ({ column }) => <DataGridColumnHeader title="INSTALLER" column={column} />,
             cell: ({ row }) => {
-                if (row.getCanExpand()) return <span className="font-medium">{row.original.installer}</span>;
-                return <span className="ml-4 text-muted-foreground">—</span>;
+                if (row.original.type === 'installer') {
+                    return <span className="font-medium">{row.original.installer}</span>;
+                } else if (row.original.type === 'activity') {
+                    return <span className="ml-4 font-medium text-muted-foreground">{row.original.activity_label}</span>;
+                } else {
+                    // job row
+                    return <span className="ml-8 text-muted-foreground"></span>;
+                }
             },
             size: 200,
             enableSorting: true,
         },
-        {
-            id: 'hours',
-            header: ({ column }) => <DataGridColumnHeader title="HOURS" column={column} />,
-            cell: ({ row }) => {
-                if (row.getCanExpand()) return <span>{row.original.installer_hours?.toFixed(2) ?? '0.00'}</span>;
-                return <span className="text-muted-foreground">—</span>;
-            },
-            size: 80,
-            enableSorting: true,
-        },
+        // {
+        //     id: 'hours',
+        //     header: ({ column }) => <DataGridColumnHeader title="HOURS" column={column} />,
+        //     cell: ({ row }) => {
+        //         if (row.original.type === 'installer') {
+        //             return <span>{row.original.total_hours?.toFixed(2) ?? '0.00'}</span>;
+        //         } else if (row.original.type === 'activity') {
+        //             return <span>{row.original.total_hours?.toFixed(2) ?? '0.00'}</span>;
+        //         } else {
+        //             return <span className="text-muted-foreground">—</span>;
+        //         }
+        //     },
+        //     size: 80,
+        //     enableSorting: true,
+        // },
         {
             id: 'job_name',
             header: ({ column }) => <DataGridColumnHeader title="JOB NAME" column={column} />,
             cell: ({ row }) => {
-                if (row.getCanExpand()) return <span className="text-muted-foreground">{row.original.activity_label ?? 'Activity'}</span>;
-                return <span>{row.original.job_name}</span>;
+                if (row.original.type === 'installer') {
+                    return <span className="text-muted-foreground"></span>;
+                } else if (row.original.type === 'activity') {
+                    return <span className="text-muted-foreground"></span>;
+                } else {
+                    return <span>{row.original.acc_name}:{row.original.job_name}</span>;
+                }
             },
             size: 250,
             enableSorting: true,
@@ -153,8 +240,10 @@ export function InstallationTemplateReport() {
             id: 'activity_complete',
             header: ({ column }) => <DataGridColumnHeader title="ACTIVITY COMPLETE" column={column} />,
             cell: ({ row }) => {
-                if (row.getCanExpand()) return null;
-                return <span>{row.original.activity_complete ? 'Yes' : 'No'}</span>;
+                if (row.original.type === 'job') {
+                    return <span>{row.original.activity_complete ? 'Yes' : 'No'}</span>;
+                }
+                return null;
             },
             size: 130,
             enableSorting: true,
@@ -163,8 +252,10 @@ export function InstallationTemplateReport() {
             id: 'duration',
             header: ({ column }) => <DataGridColumnHeader title="DURATION" column={column} />,
             cell: ({ row }) => {
-                if (row.getCanExpand()) return null;
-                return <span className="whitespace-pre-wrap">{row.original.duration || '—'}</span>;
+                if (row.original.type === 'job') {
+                    return <span className="whitespace-pre-wrap">{row.original.duration || '—'}</span>;
+                }
+                return null;
             },
             size: 120,
             enableSorting: true,
@@ -173,8 +264,13 @@ export function InstallationTemplateReport() {
             id: 'sqft_installed',
             header: ({ column }) => <DataGridColumnHeader title="SQ FT INSTALLED" column={column} />,
             cell: ({ row }) => {
-                if (row.getCanExpand()) return <span>{row.original.sqft_installed?.toFixed(0) ?? '0'}</span>;
-                return <span>{row.original.sq_ft_installed?.toFixed(0) ?? '0'}</span>;
+                if (row.original.type === 'installer') {
+                    return <span>{row.original.total_sqft_installed?.toFixed(0) ?? '0'}</span>;
+                } else if (row.original.type === 'activity') {
+                    return <span>{row.original.total_sqft_installed?.toFixed(0) ?? '0'}</span>;
+                } else {
+                    return <span>{row.original.sq_ft_installed?.toFixed(0) ?? '0'}</span>;
+                }
             },
             size: 130,
             enableSorting: true,
@@ -183,8 +279,13 @@ export function InstallationTemplateReport() {
             id: 'sqft_incomplete',
             header: ({ column }) => <DataGridColumnHeader title="SQ FT INCOMPLETE" column={column} />,
             cell: ({ row }) => {
-                if (row.getCanExpand()) return <span>{row.original.sqft_incomplete?.toFixed(0) ?? '0'}</span>;
-                return <span>{row.original.sq_ft_incomplete?.toFixed(0) ?? '0'}</span>;
+                if (row.original.type === 'installer') {
+                    return <span>{row.original.total_sqft_incomplete?.toFixed(0) ?? '0'}</span>;
+                } else if (row.original.type === 'activity') {
+                    return <span>{row.original.total_sqft_incomplete?.toFixed(0) ?? '0'}</span>;
+                } else {
+                    return <span>{row.original.sq_ft_incomplete?.toFixed(0) ?? '0'}</span>;
+                }
             },
             size: 140,
             enableSorting: true,
@@ -193,29 +294,45 @@ export function InstallationTemplateReport() {
             id: 'reason',
             header: ({ column }) => <DataGridColumnHeader title="REASON (IF NOT COMPLETE)" column={column} />,
             cell: ({ row }) => {
-                if (row.getCanExpand()) return null;
-                return <span>{row.original.reason_if_not_complete || '—'}</span>;
+                if (row.original.type === 'job') {
+                    return <span>{row.original.reason_if_not_complete || '—'}</span>;
+                }
+                return null;
             },
             size: 200,
-            // enableSorting: true,
+            enableSorting: true,
         },
     ], []);
 
     const table = useReactTable({
         columns,
         data: tableData,
-        state: { pagination, sorting },
-        onPaginationChange: setPagination,
+        getRowId: (row) => row.id, // use the id we assigned
+        state: {
+            pagination,
+            sorting,
+            expanded: { ...initialExpanded, ...expanded },
+        },
+        columnResizeMode: 'onEnd',
+        enableColumnResizing: true,
         onSortingChange: setSorting,
+        onPaginationChange: setPagination,
+        // onExpandedChange: (updater) => {
+        //     if (typeof updater === 'function') {
+        //         setExpanded(updater(expanded));
+        //     } else {
+        //         setExpanded(updater);
+        //     }
+        // },
         getCoreRowModel: getCoreRowModel(),
+        getSortedRowModel: getSortedRowModel(),
         getExpandedRowModel: getExpandedRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        getSubRows: (node) => (node as Group).rows || [],
+        getSubRows: (row) => row.subRows || [],
         enableExpanding: true,
         meta: {
             getRowAttributes: (row) => {
-                if (row.getCanExpand()) {
+                if (row.original.type === 'installer') {
                     return { className: 'bg-[#f6ffe7] hover:bg-[#edffd4] transition-colors' };
                 }
                 return { className: 'bg-white hover:bg-gray-50/50' };
@@ -236,32 +353,51 @@ export function InstallationTemplateReport() {
 
     return (
         <div className="flex flex-col gap-5 p-5">
-            <h1 className="text-2xl font-semibold text-[#4b545d]">Installation and Template Report</h1>
+            <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-semibold text-[#4b545d]">Lucas Report</h1>
+                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className={cn('w-[170px] h-[34px] justify-start text-left', !dateRange && 'text-muted-foreground')}>
+                            <CalendarDays className="mr-2 h-4 w-4" />
+                            {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}` : format(dateRange.from, 'MMM dd, yyyy')) : 'Filter by Date'}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar mode="range" month={month} onMonthChange={setMonth} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} />
+                        <div className="flex justify-end gap-2 p-3 border-t">
+                            <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); setIsDatePickerOpen(false); }}>Reset</Button>
+                            <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            </div>
 
             {/* Summary Cards */}
             {summary && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total Hours</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#000000]">{summary.total_hours_value?.toFixed(2) ?? '0.00'}</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.total_hours_value?.toFixed(2) ?? '0.00'}</p>
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Templates sq ft</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#000000]">{summary.templates_sq_ft?.toFixed(0) ?? '0'}</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.templates_sq_ft?.toFixed(0) ?? '0'}</p>
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Installs sq ft</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#000000]">{summary.installs_sq_ft?.toFixed(0) ?? '0'}</p>
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Installs Completed sq ft</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.installs_sq_ft?.toFixed(0) ?? '0'}</p>
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Incomplete sq ft</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#000000]">{summary.incomplete_sq_ft?.toFixed(0) ?? '0'}</p>
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Installs Not Completed sq ft</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.incomplete_sq_ft?.toFixed(0) ?? '0'}</p>
                     </Card>
                 </div>
             )}
 
-            {/* DataGrid with embedded filters inside CardHeader */}
-            <DataGrid table={table} recordCount={tableData.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
+            <DataGrid table={table} recordCount={tableData.length}
+                tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}
+            
+            >
                 <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
                     <CardHeader className="py-3.5 border-b border-[#e2e4ed]">
                         <CardHeading>
@@ -284,24 +420,8 @@ export function InstallationTemplateReport() {
                                     </div>
                                 </div>
 
-                                {/* Date picker */}
-                                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" className={cn('w-[170px] h-[34px] justify-start text-left', !dateRange && 'text-muted-foreground')}>
-                                            <CalendarDays className="mr-2 h-4 w-4" />
-                                            {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}` : format(dateRange.from, 'MMM dd, yyyy')) : 'Filter by Date'}
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar mode="range" month={month} onMonthChange={setMonth} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} />
-                                        <div className="flex justify-end gap-2 p-3 border-t">
-                                            <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); setIsDatePickerOpen(false); }}>Reset</Button>
-                                            <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
-                                        </div>
-                                    </PopoverContent>
-                                </Popover>
 
-                                {/* FAB type filter */}
+
                                 <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
                                     <SelectTrigger className="w-auto min-w-[150px] h-[34px]"><SelectValue placeholder="Fab Type" /></SelectTrigger>
                                     <SelectContent>
@@ -309,20 +429,17 @@ export function InstallationTemplateReport() {
                                         {fabTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
-
-                                
                             </div>
                         </CardHeading>
                         <CardToolbar>
-                            {/* Sales person filter */}
-                                <Select value={String(salesPersonId)} onValueChange={(v) => setSalesPersonId(v === 'all' ? 'all' : Number(v))}>
-                                    <SelectTrigger className="w-auto min-w-[150px] h-[34px]"><SelectValue placeholder="Sales Person" /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Sales Persons</SelectItem>
-                                        <SelectItem value="no_sales_person">No Sales Person</SelectItem>
-                                        {salesPersonOptions.map(sp => <SelectItem key={sp.id} value={String(sp.id)}>{sp.name}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                            <Select value={String(salesPersonId)} onValueChange={(v) => setSalesPersonId(v === 'all' ? 'all' : Number(v))}>
+                                <SelectTrigger className="w-auto min-w-[150px] h-[34px]"><SelectValue placeholder="Sales Person" /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Sales Persons</SelectItem>
+                                    <SelectItem value="no_sales_person">No Sales Person</SelectItem>
+                                    {salesPersonOptions.map(sp => <SelectItem key={sp.id} value={String(sp.id)}>{sp.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
                             <Button variant="outline" onClick={() => exportTableToCSV(table, 'installation-template')} className="h-[34px]">
                                 Export CSV
                             </Button>
@@ -330,7 +447,7 @@ export function InstallationTemplateReport() {
                     </CardHeader>
 
                     <CardTable>
-                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-400px)] bg-white">
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] bg-white [&>[data-radix-scroll-area-viewport]]:pb-4">
                             <div className="relative">
                                 <table className="w-full border-collapse table-fixed">
                                     <thead className="sticky top-0 z-10 bg-white">
@@ -383,7 +500,7 @@ export function InstallationTemplateReport() {
                                     </tbody>
                                 </table>
                             </div>
-                            <ScrollBar orientation="horizontal" />
+                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
                         </ScrollArea>
                     </CardTable>
                     <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">

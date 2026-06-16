@@ -334,7 +334,7 @@ export const JobTable = ({
         const stoneInfo = [];
         if (job.acct_name || job.account_name) jobInfo.push(job.acct_name || job.account_name || '');
         if (job.job_name) jobInfo.push(job.job_name);
-        if (job.input_area) materialInfo.push(`Area: ${job.input_area}`);
+        if (job.input_area) materialInfo.push(`${job.input_area}`);
         if (job.stone_type_name) stoneInfo.push(job.stone_type_name);
         if (job.stone_color_name) stoneInfo.push(job.stone_color_name);
         if (job.stone_thickness_value) stoneInfo.push(job.stone_thickness_value);

@@ -116,7 +116,7 @@ export function MonthlyInstallCompletionReport() {
             cell: ({ row }) => <FabInfoCell data={row.original} />,
             size: 400,
         };
-  const actionCol: ColumnDef<any> = {
+        const actionCol: ColumnDef<any> = {
             id: 'actions',
             header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
             cell: ({ row }) => (
@@ -243,7 +243,7 @@ export function MonthlyInstallCompletionReport() {
                         </CardToolbar>
                     </CardHeader>
                     <CardTable>
-                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-300px)] bg-white">
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4 ">
                             <div className="relative">
                                 <table className="w-full border-collapse table-fixed">
                                     <thead className="sticky top-0 z-10 bg-white">
@@ -296,7 +296,8 @@ export function MonthlyInstallCompletionReport() {
                                     </tbody>
                                 </table>
                             </div>
-                            <ScrollBar orientation="horizontal" />
+                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+
                         </ScrollArea>
                     </CardTable>
                     <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">

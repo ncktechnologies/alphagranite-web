@@ -12,6 +12,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { UpdateRedoModal } from './component/RedoModal';
 import { getFabIdLink, getJobNumberLink, renderLink } from '@/lib/reportLinks';
+import { FabInfoCell } from '@/components/common/fabInfo';
 
 interface RedoItem {
     fab_id: number;
@@ -129,24 +130,17 @@ export function RedosReport() {
             size: 100,
         },
         {
-            accessorKey: 'fab_info',
+            id: 'fab_info',
             header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
             cell: ({ row }) => {
-                const { leftLine1, leftLine2, right } = parseFabInfo(row.original.fab_info);
-                return (
-                    <div className="flex gap-4 text-xs max-w-[500px]">
-                        <div className="flex-1 min-w-0">
-                            {leftLine1.length > 0 && <div className=" text-gray-600" title={leftLine1.join(' - ')}>{leftLine1.join(' - ')}</div>}
-                            {leftLine2.length > 0 && <div className=" text-gray-600" title={leftLine2.join(' - ')}>{leftLine2.join(' - ')}</div>}
-                            {leftLine1.length === 0 && leftLine2.length === 0 && <div className=" text-gray-400 italic"></div>}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            {right.length ? <div className="truncate text-gray-600" title={right.join(' - ')}>{right.join(' - ')}</div> : <div className="truncate text-gray-400 italic"></div>}
-                        </div>
-                    </div>
-                );
+                const hasFields = row.original.account_name || row.original.job_name || row.original.input_area || row.original.stone_type_name;
+                if (hasFields) {
+                    return <FabInfoCell data={row.original} />;
+                }
+                const info = row.original.fab_info || '';
+                return <span className="text-sm">{info}</span>;
             },
-            size: 450,
+            size: 350,
         },
         {
             accessorKey: 'no_of_pieces',
@@ -175,17 +169,18 @@ export function RedosReport() {
             size: 110,
         },
         {
-            accessorKey: 'person_name',
-            header: ({ column }) => <DataGridColumnHeader title="PERSON NAME" column={column} />,
-            cell: ({ row }) => row.original.person_name || '-',
-            size: 150,
-        },
-        {
             accessorKey: 'department',
             header: ({ column }) => <DataGridColumnHeader title="DEPARTMENT" column={column} />,
             cell: ({ row }) => row.original.department || '-',
             size: 150,
         },
+        {
+            accessorKey: 'person_name',
+            header: ({ column }) => <DataGridColumnHeader title="PERSON NAME" column={column} />,
+            cell: ({ row }) => row.original.person_name || '-',
+            size: 150,
+        },
+        
         {
             accessorKey: 'reason',
             header: ({ column }) => <DataGridColumnHeader title="REASON" column={column} />,
@@ -250,7 +245,7 @@ export function RedosReport() {
                 <Card className="border border-[#e2e4ed] rounded-[12px] overflow-hidden">
                     <CardHeader className="py-3 px-5 border-b bg-white" />
                     <CardTable>
-                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] bg-white">
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-10px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                             <div className="relative">
                                 <table className="w-full border-collapse table-fixed">
                                     <thead className="sticky top-0 z-10 bg-white">
@@ -301,7 +296,9 @@ export function RedosReport() {
                                     </tbody>
                                 </table>
                             </div>
-                            <ScrollBar orientation="horizontal" />
+
+                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+
                         </ScrollArea>
                     </CardTable>
                     <CardFooter><DataGridPagination /></CardFooter>
@@ -324,9 +321,9 @@ export function RedosReport() {
                     reason: selectedRow.reason ?? undefined,
                     department_options: selectedRow.department_options ?? [],
                 } : undefined}
-                // onUpdateSuccess={() => {
-                //     // Refetch data if needed – the mutation invalidates tags, so it should auto-refetch
-                // }}
+            // onUpdateSuccess={() => {
+            //     // Refetch data if needed – the mutation invalidates tags, so it should auto-refetch
+            // }}
             />
         </div>
     );

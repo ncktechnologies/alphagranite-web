@@ -60,7 +60,7 @@ export function TurnaroundTimesReport() {
                 let val = row.original[key];
                 if (key === 'fab_id' && val) {
                     const link = getFabIdLink(Number(val));
-                   return renderLink(link);
+                    return renderLink(link);
                 }
                 // Job number link (external)
                 if (key === 'job_number' && val) {
@@ -197,7 +197,8 @@ export function TurnaroundTimesReport() {
                         </CardToolbar>
                     </CardHeader>
                     <CardTable>
-                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-300px)] bg-white">
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4 ">
+
                             <div className="relative">
                                 <table className="w-full border-collapse table-fixed">
                                     <thead className="sticky top-0 z-10 bg-white">
@@ -250,7 +251,8 @@ export function TurnaroundTimesReport() {
                                     </tbody>
                                 </table>
                             </div>
-                            <ScrollBar orientation="horizontal" />
+                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+
                         </ScrollArea>
                     </CardTable>
                     <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">

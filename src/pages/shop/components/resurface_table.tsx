@@ -146,7 +146,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
         setSelectedFabId(fabId);
         setIsNoteModalOpen(true);
     };
-  const handleNoteSubmit = async (note: string, fabId: string) => {
+    const handleNoteSubmit = async (note: string, fabId: string) => {
         try {
             await createFabNote({ fab_id: parseInt(fabId), note, stage: 'shop' }).unwrap();
             toast.success('Note added successfully');
@@ -343,7 +343,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
 
         if (row.acct_name) jobInfo.push(row.acct_name);
         if (row.job_name) jobInfo.push(row.job_name);
-        if (row.input_area) materialInfo.push(`Area: ${row.input_area}`);
+        if (row.input_area) materialInfo.push(`${row.input_area}`);
         if (row.stone_type_name) stoneInfo.push(row.stone_type_name);
         if (row.stone_color_name) stoneInfo.push(row.stone_color_name);
         if (row.stone_thickness) stoneInfo.push(row.stone_thickness);
@@ -663,7 +663,8 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
                     </CardHeader>
 
                     <CardTable>
-                        <ScrollArea className="h-[calc(100vh-280px)]">
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4 ">
+
                             <div className="relative">
                                 {(isApiLoading || externalLoading) ? (
                                     <div className="flex items-center justify-center h-64">
@@ -744,7 +745,8 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
                                     </table>
                                 )}
                             </div>
-                            <ScrollBar orientation="horizontal" />
+                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+
                         </ScrollArea>
                     </CardTable>
                     <CardFooter>

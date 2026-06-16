@@ -279,6 +279,7 @@ function DataGridColumnHeader<TData, TValue>({
   };
 
   if (
+    column.getCanSort() ||
     props.tableLayout?.columnsMovable ||
     (props.tableLayout?.columnsVisibility && visibility) ||
     (props.tableLayout?.columnsPinnable && column.getCanPin()) ||

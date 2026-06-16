@@ -419,7 +419,7 @@ function ReportRenderer({ useQueryHook, title, groupBy, reportId }: { useQueryHo
                     <Card className="border border-[#e2e4ed] rounded-[12px] shadow-sm overflow-hidden">
                         <CardHeader className="py-3 px-5 border-b bg-white" />
                         <CardTable>
-                            <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-250px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
+                            <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                                 <DataGridTable />
                                 <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400" />
                             </ScrollArea>
