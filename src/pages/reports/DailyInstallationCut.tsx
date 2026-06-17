@@ -1,9 +1,9 @@
 // pages/reports/DailyInstallCompletion.tsx
 import { useMemo, useState } from 'react';
-import { flexRender, ColumnDef, getCoreRowModel, getPaginationRowModel, PaginationState, useReactTable } from '@tanstack/react-table';
+import { flexRender, ColumnDef, getCoreRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, Search, X } from 'lucide-react';
 import { useGetDailyInstallCompletionQuery } from '@/store/api/report';
 import { useGetFabTypesQuery } from '@/store/api/job';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
@@ -20,6 +20,8 @@ import { UpdateDailyInstallModal } from './component/DailyMonthlyInstall';
 import { getFabIdLink, getJobNameLink, getJobNumberLink, renderLink } from '@/lib/reportLinks';
 import { FabInfoCell } from '@/components/common/fabInfo';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { useIsSuperAdmin } from '@/hooks/use-permission';
 
 const fabTypeColorMap: Record<string, string> = {
     standard: '#9eeb47',
@@ -36,16 +38,30 @@ const getFabColor = (fabType: string | undefined): string => {
 };
 
 export function DailyInstallCompletionReport() {
+    const isSuperAdmin = useIsSuperAdmin();
+
+    // Date range
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [month, setMonth] = useState(new Date());
-    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
-    const [updateModalOpen, setUpdateModalOpen] = useState(false);
-    const [selectedRow, setSelectedRow] = useState<any>(null);
+
+    // Pagination & sorting
+    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
+    const [sorting, setSorting] = useState<SortingState>([]);
+
+    // Search (client‑side) with type selector
+    const [searchType, setSearchType] = useState<'fab_id' | 'job_number' | 'job_name'>('fab_id');
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Fab type filter (backend)
     const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
 
-    // Fetch fab types for dropdown
+    // Modal
+    const [updateModalOpen, setUpdateModalOpen] = useState(false);
+    const [selectedRow, setSelectedRow] = useState<any>(null);
+
+    // Fetch fab types
     const { data: fabTypesData } = useGetFabTypesQuery();
     const fabTypes = useMemo(() => {
         if (!fabTypesData) return [];
@@ -57,6 +73,7 @@ export function DailyInstallCompletionReport() {
         return rawData.map(extractName).sort();
     }, [fabTypesData]);
 
+    // Build API params
     const queryParams = useMemo(() => {
         const params: { start_date?: string; end_date?: string; fab_type?: string } = {};
         if (dateRange?.from) {
@@ -70,14 +87,56 @@ export function DailyInstallCompletionReport() {
     }, [dateRange, fabTypeFilter]);
 
     const { data, isLoading, refetch } = useGetDailyInstallCompletionQuery(queryParams);
-    const rows = useMemo(() => data?.data?.rows ?? [], [data]);
+    const rawRows = useMemo(() => data?.data?.rows ?? [], [data]);
     const summary = useMemo(() => data?.data?.summary ?? null, [data]);
 
-    // Columns definition (unchanged)
+    // ─── Client‑side filtering ───────────────────────────────────────────────
+    const filteredRows = useMemo(() => {
+        if (!searchQuery.trim()) return rawRows;
+        const q = searchQuery.toLowerCase();
+        return rawRows.filter(row => {
+            if (searchType === 'fab_id') return String(row.fab_id).toLowerCase().includes(q);
+            if (searchType === 'job_number') return String(row.job_number).toLowerCase().includes(q);
+            if (searchType === 'job_name') return (row.job_name || '').toLowerCase().includes(q);
+            return true;
+        });
+    }, [rawRows, searchQuery, searchType]);
+
+    // ─── Totals ────────────────────────────────────────────────────────────────
+    const totals = useMemo(() => {
+        if (!filteredRows.length) return null;
+        return {
+            pieces: filteredRows.reduce((s, r) => s + (r.pieces || 0), 0),
+            sq_ft: filteredRows.reduce((s, r) => s + (r.sq_ft || 0), 0),
+            revenue: filteredRows.reduce((s, r) => s + (r.revenue || 0), 0),
+        };
+    }, [filteredRows]);
+
+    // ─── Sliced data for current page ───────────────────────────────────────
+    const slicedData = useMemo(() => {
+        const start = pagination.pageIndex * pagination.pageSize;
+        const end = start + pagination.pageSize;
+        return filteredRows.slice(start, end);
+    }, [filteredRows, pagination.pageIndex, pagination.pageSize]);
+
+    // ─── Prepend total row ──────────────────────────────────────────────────
+    const displayRows = useMemo(() => {
+        if (!totals) return slicedData;
+        const totalRow: any = {
+            fab_id: 'TOTAL',
+            pieces: totals.pieces,
+            sq_ft: totals.sq_ft,
+            revenue: totals.revenue,
+            _isTotalRow: true,
+        };
+        return [totalRow, ...slicedData];
+    }, [totals, slicedData]);
+
+    // ─── Columns with sorting ──────────────────────────────────────────────
     const columns = useMemo<ColumnDef<any>[]>(() => {
-        if (!rows.length) return [];
-        const first = rows[0];
-        const keys = Object.keys(first);
+        if (!displayRows.length) return [];
+        const first = displayRows[0];
+        const keys = Object.keys(first).filter(k => k !== '_isTotalRow');
 
         const compositeFabFields = [
             'acct_name', 'account_name', 'job_name', 'input_area',
@@ -92,7 +151,15 @@ export function DailyInstallCompletionReport() {
                     accessorKey: key,
                     header: ({ column }) => <DataGridColumnHeader title={headerTitle} column={column} />,
                     size: key === 'job_name' || key === 'fab_info' ? 250 : 130,
+                    enableSorting: true,
                     cell: ({ row }) => {
+                        if (row.original._isTotalRow) {
+                            if (key === 'fab_id') return <span className="font-semibold">TOTAL</span>;
+                            if (key === 'pieces') return <span className="font-semibold">{row.original.pieces}</span>;
+                            if (key === 'sq_ft') return <span className="font-semibold">{row.original.sq_ft?.toFixed(2)}</span>;
+                            if (key === 'revenue') return <span className="font-semibold">${row.original.revenue?.toFixed(2)}</span>;
+                            return null;
+                        }
                         let val = row.original[key];
                         if (key.includes('date') && val) val = format(new Date(val), 'MMM dd, yyyy');
                         if (typeof val === 'number') val = val.toLocaleString();
@@ -122,45 +189,64 @@ export function DailyInstallCompletionReport() {
         const fabInfoCol: ColumnDef<any> = {
             id: 'fab_info',
             header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
-            cell: ({ row }) => <FabInfoCell data={row.original} />,
+            cell: ({ row }) => {
+                if (row.original._isTotalRow) return <span className="text-sm">—</span>;
+                return <FabInfoCell data={row.original} />;
+            },
             size: 400,
+            enableSorting: false,
+        };
+
+        const actionCol: ColumnDef<any> = {
+            id: 'actions',
+            header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
+            cell: ({ row }) => {
+                if (!isSuperAdmin) return null;
+                if (row.original._isTotalRow) return null;
+                return (
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                            setSelectedRow(row.original);
+                            setUpdateModalOpen(true);
+                        }}
+                    >
+                        Edit
+                    </Button>
+                );
+            },
+            size: 80,
+            enableSorting: false,
         };
 
         const jobNumberIndex = dataCols.findIndex(col => col.accessorKey === 'job_number');
         const insertIndex = jobNumberIndex !== -1 ? jobNumberIndex + 1 : 1;
-        const actionCol: ColumnDef<any> = {
-            id: 'actions',
-            header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
-            cell: ({ row }) => (
-                <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                        setSelectedRow(row.original);
-                        setUpdateModalOpen(true);
-                    }}
-                >
-                    Edit
-                </Button>
-            ),
-            size: 80,
-        };
         const finalCols = [actionCol];
         finalCols.push(...dataCols.slice(0, insertIndex));
         finalCols.push(fabInfoCol);
         finalCols.push(...dataCols.slice(insertIndex));
         return finalCols;
-    }, [rows]);
+    }, [displayRows]);
 
     const table = useReactTable({
         columns,
-        data: rows,
-        state: { pagination },
+        data: displayRows,
+        getRowId: (row) => row._isTotalRow ? 'total' : String(row.fab_id),
+        state: { pagination, sorting },
         onPaginationChange: setPagination,
+        onSortingChange: setSorting,
         getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        manualPagination: true,
+        pageCount: Math.ceil(filteredRows.length / pagination.pageSize),
+        enableColumnResizing: true,
+        columnResizeMode: 'onEnd',
         meta: {
             getRowAttributes: (row) => {
+                if (row.original._isTotalRow) {
+                    return { className: 'bg-[#f0f7e0] font-semibold [&>td]:border-0' };
+                }
                 const fabType = row.original.fab_type?.toLowerCase();
                 const bgColor = getFabColor(fabType);
                 if (bgColor !== 'transparent') {
@@ -187,18 +273,18 @@ export function DailyInstallCompletionReport() {
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <h1 className="text-2xl font-semibold text-[#4b545d]">Daily Install Completion</h1>
                 <div className="flex items-center gap-2 flex-wrap">
+                    {/* Fab Type Filter */}
                     <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
                         <SelectTrigger className="w-[150px] h-[34px] border-[#e2e4ed]">
                             <SelectValue placeholder="Fab Type" />
                         </SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">All Types</SelectItem>
-                            {fabTypes.map(type => (
-                                <SelectItem key={type} value={type}>{type}</SelectItem>
-                            ))}
+                            {fabTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
                         </SelectContent>
                     </Select>
 
+                    {/* Date Range Picker */}
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>
                             <Button variant="outline" className={cn('w-[260px] justify-start text-left font-normal h-[34px]', !dateRange && 'text-muted-foreground')}>
@@ -215,7 +301,43 @@ export function DailyInstallCompletionReport() {
                         </PopoverContent>
                     </Popover>
                     {dateRange && <Button variant="ghost" size="sm" onClick={() => setDateRange(undefined)}>Clear</Button>}
-                    <Button variant="outline" onClick={() => exportTableToCSV(table, 'daily-install-completion')}>Export CSV</Button>
+
+                    {/* Search with type selector */}
+                    <div className="relative flex items-center">
+                        <Select value={searchType} onValueChange={(v) => setSearchType(v as 'fab_id' | 'job_number' | 'job_name')}>
+                            <SelectTrigger className="w-[140px] h-[34px] rounded-e-none border-r-0">
+                                <SelectValue placeholder="Search by" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="fab_id">Fab ID</SelectItem>
+                                <SelectItem value="job_number">Job Number</SelectItem>
+                                <SelectItem value="job_name">Job Name</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <div className="relative">
+                            <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                            <Input
+                                placeholder={`Search by ${searchType.replace('_', ' ')}`}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="ps-9 w-[230px] h-[34px] rounded-s-none"
+                            />
+                            {searchQuery && (
+                                <Button
+                                    mode="icon"
+                                    variant="ghost"
+                                    className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                                    onClick={() => setSearchQuery('')}
+                                >
+                                    <X />
+                                </Button>
+                            )}
+                        </div>
+                    </div>
+
+                    <Button variant="outline" onClick={() => exportTableToCSV(table, 'daily-install-completion')} className="h-[34px]">
+                        Export CSV
+                    </Button>
                 </div>
             </div>
 
@@ -242,15 +364,14 @@ export function DailyInstallCompletionReport() {
             )}
 
             {/* Data Table */}
-            <DataGrid table={table} recordCount={rows.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
+            <DataGrid table={table} recordCount={filteredRows.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
                 <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
                     <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
                         <p className="text-base font-semibold text-[#4b545d]">{getTitle()}</p>
                         <CardToolbar />
                     </CardHeader>
                     <CardTable>
-                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4 ">
-
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                             <div className="relative">
                                 <table className="w-full border-collapse table-fixed">
                                     <thead className="sticky top-0 z-10 bg-white">
@@ -280,7 +401,11 @@ export function DailyInstallCompletionReport() {
                                         {table.getRowModel().rows.map(row => {
                                             const rowAttrs = table.options.meta?.getRowAttributes?.(row) || {};
                                             return (
-                                                <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50" {...rowAttrs}>
+                                                <tr
+                                                    key={row.id}
+                                                    className={`border-b border-[#e2e4ed] hover:bg-gray-50/50 ${rowAttrs.className || ''}`}
+                                                    {...rowAttrs}
+                                                >
                                                     {row.getVisibleCells().map(cell => (
                                                         <td
                                                             key={cell.id}
@@ -293,7 +418,7 @@ export function DailyInstallCompletionReport() {
                                                 </tr>
                                             );
                                         })}
-                                        {rows.length === 0 && (
+                                        {filteredRows.length === 0 && (
                                             <tr>
                                                 <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
                                                     No data available.
@@ -304,7 +429,6 @@ export function DailyInstallCompletionReport() {
                                 </table>
                             </div>
                             <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
-
                         </ScrollArea>
                     </CardTable>
                     <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">
@@ -326,9 +450,7 @@ export function DailyInstallCompletionReport() {
                     sq_ft: selectedRow.sq_ft,
                     installer_name: selectedRow.installer_name,
                 } : undefined}
-                onUpdateSuccess={() => {
-                    refetch();
-                }}
+                onUpdateSuccess={() => refetch()}
             />
         </div>
     );

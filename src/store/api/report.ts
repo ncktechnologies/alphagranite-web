@@ -13,6 +13,8 @@ interface ReportQueryParams {
     year?: number;
     month?: number;
     fab_type?: string;
+    start_date?: string;
+    end_date?: string;
 }
 
 
@@ -71,11 +73,17 @@ export const reportApi = createApi({
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
-            getShopStatusReport: build.query<any, void>({
-                query: () => ({
-                    url: "/api/v1/reports/owner/shop-status",
-                    method: "get"
-                }),
+            getShopStatusReport: build.query<any, { start_date?: string; end_date?: string } | void>({
+                query: (params) => {
+                    const searchParams = new URLSearchParams();
+                    if (params?.start_date) searchParams.append('start_date', params.start_date);
+                    if (params?.end_date) searchParams.append('end_date', params.end_date);
+                    const queryString = searchParams.toString();
+                    return {
+                        url: `/api/v1/reports/owner/shop-status${queryString ? `?${queryString}` : ''}`,
+                        method: "get",
+                    };
+                },
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
@@ -133,26 +141,42 @@ export const reportApi = createApi({
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
-            getMonthlyInstallCompletion: build.query<any, ReportQueryParams | void>({
-                query: (params) => ({
-                    url: "/api/v1/reports/owner/monthly-install-completion",
-                    method: "get",
-                    params: {
-                        ...(params?.year && { year: params.year }),
-                        ...(params?.month && { month: params.month }),
-                        ...(params?.fab_type && params.fab_type !== 'all' && { fab_type: params.fab_type }),
-                    }
-                }),
+            // Inside reportApi.ts
+
+         
+
+            // ─── Daily Install Completion ───────────────────────────────────────────
+            getDailyInstallCompletion: build.query<any, { start_date?: string; end_date?: string; fab_type?: string } | void>({
+                query: (params) => {
+                    const searchParams = new URLSearchParams();
+                    if (params?.start_date) searchParams.append('start_date', params.start_date);
+                    if (params?.end_date) searchParams.append('end_date', params.end_date);
+                    if (params?.fab_type && params.fab_type !== 'all') searchParams.append('fab_type', params.fab_type);
+                    const queryString = searchParams.toString();
+                    return {
+                        url: `/api/v1/reports/owner/daily-install-completion${queryString ? `?${queryString}` : ''}`,
+                        method: "get",
+                    };
+                },
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
 
-            getDailyInstallCompletion: build.query<any, { fab_type?: string } | void>({
-                query: (params) => ({
-                    url: "/api/v1/reports/owner/daily-install-completion",
-                    method: "get",
-                    params: params?.fab_type && params.fab_type !== 'all' ? { fab_type: params.fab_type } : undefined,
-                }),
+            // ─── Monthly Install Completion ─────────────────────────────────────────
+            getMonthlyInstallCompletion: build.query<any, { year?: number; month?: number; fab_type?: string; start_date?: string; end_date?: string } | void>({
+                query: (params) => {
+                    const searchParams = new URLSearchParams();
+                    if (params?.year) searchParams.append('year', String(params.year));
+                    if (params?.month) searchParams.append('month', String(params.month));
+                    if (params?.fab_type && params.fab_type !== 'all') searchParams.append('fab_type', params.fab_type);
+                    if (params?.start_date) searchParams.append('start_date', params.start_date);
+                    if (params?.end_date) searchParams.append('end_date', params.end_date);
+                    const queryString = searchParams.toString();
+                    return {
+                        url: `/api/v1/reports/owner/monthly-install-completion${queryString ? `?${queryString}` : ''}`,
+                        method: "get",
+                    };
+                },
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
