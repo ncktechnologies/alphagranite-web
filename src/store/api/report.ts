@@ -57,11 +57,17 @@ export const reportApi = createApi({
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
-            getOwnerOverview: build.query<any, void>({
-                query: () => ({
-                    url: "/api/v1/reports/owner/overview",
-                    method: "get"
-                }),
+            getOwnerOverview: build.query<any, { start_date?: string; end_date?: string } | void>({
+                query: (params) => {
+                    const searchParams = new URLSearchParams();
+                    if (params?.start_date) searchParams.append('start_date', params.start_date);
+                    if (params?.end_date) searchParams.append('end_date', params.end_date);
+                    const queryString = searchParams.toString();
+                    return {
+                        url: `/api/v1/reports/owner/overview${queryString ? `?${queryString}` : ''}`,
+                        method: "get",
+                    };
+                },
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
@@ -143,7 +149,7 @@ export const reportApi = createApi({
             }),
             // Inside reportApi.ts
 
-         
+
 
             // ─── Daily Install Completion ───────────────────────────────────────────
             getDailyInstallCompletion: build.query<any, { start_date?: string; end_date?: string; fab_type?: string } | void>({
