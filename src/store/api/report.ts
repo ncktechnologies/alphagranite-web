@@ -71,11 +71,17 @@ export const reportApi = createApi({
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
-            getRedoAnalysis: build.query<any, void>({
-                query: () => ({
-                    url: "/api/v1/reports/owner/redo-analysis",
-                    method: "get"
-                }),
+            getRedoAnalysis: build.query<any, { start_date?: string; end_date?: string } | void>({
+                query: (params) => {
+                    const searchParams = new URLSearchParams();
+                    if (params?.start_date) searchParams.append('start_date', params.start_date);
+                    if (params?.end_date) searchParams.append('end_date', params.end_date);
+                    const queryString = searchParams.toString();
+                    return {
+                        url: `/api/v1/reports/owner/redo-analysis${queryString ? `?${queryString}` : ''}`,
+                        method: "get",
+                    };
+                },
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),

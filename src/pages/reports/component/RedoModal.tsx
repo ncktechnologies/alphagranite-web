@@ -108,8 +108,8 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
+          {/* <div className="grid grid-cols-2 gap-4"> */}
+            {/* <div>
               <Label htmlFor="noOfPieces">No. of Pieces</Label>
               <Input
                 id="noOfPieces"
@@ -120,8 +120,8 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
                 onChange={(e) => setNoOfPieces(e.target.value)}
                 placeholder="e.g., 5"
               />
-            </div>
-            <div>
+            </div> */}
+            {/* <div>
               <Label htmlFor="sqft">SQFT</Label>
               <Input
                 id="sqft"
@@ -132,8 +132,8 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
                 onChange={(e) => setSqft(e.target.value)}
                 placeholder="Square feet"
               />
-            </div>
-          </div>
+            </div> */}
+          {/* </div> */}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -160,7 +160,7 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="department">Department</Label>
               {departmentOptions.length > 0 ? (
@@ -194,9 +194,9 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
                 placeholder="Assigned person"
               />
             </div>
-          </div>
+          </div> */}
 
-          <div>
+          {/* <div>
             <Label htmlFor="reason">Reason</Label>
             <Input
               id="reason"
@@ -204,7 +204,7 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
               onChange={(e) => setReason(e.target.value)}
               placeholder="Reason for redo"
             />
-          </div>
+          </div> */}
         </div>
 
         <div className="flex justify-end space-x-3 pt-4 border-t">

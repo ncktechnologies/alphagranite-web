@@ -230,7 +230,7 @@ export function InstallationTemplateReport() {
                 } else if (row.original.type === 'activity') {
                     return <span className="text-muted-foreground"></span>;
                 } else {
-                    return <span>{row.original.acc_name}:{row.original.job_name}</span>;
+                    return <span>{row.original.account_name}:{row.original.job_name}</span>;
                 }
             },
             size: 250,
@@ -317,13 +317,13 @@ export function InstallationTemplateReport() {
         enableColumnResizing: true,
         onSortingChange: setSorting,
         onPaginationChange: setPagination,
-        // onExpandedChange: (updater) => {
-        //     if (typeof updater === 'function') {
-        //         setExpanded(updater(expanded));
-        //     } else {
-        //         setExpanded(updater);
-        //     }
-        // },
+        onExpandedChange: (updater) => {
+            if (typeof updater === 'function') {
+                setExpanded(updater(expanded));
+            } else {
+                setExpanded(updater);
+            }
+        },
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         getExpandedRowModel: getExpandedRowModel(),
