@@ -126,7 +126,7 @@ export function InstallationTemplateReportCard() {
     return (
         <div className="flex flex-col gap-5 p-5">
             <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-semibold">Installation and Template Report</h1>
+                <h1 className="text-2xl font-semibold">Employee Productivity Report</h1>
                 <div className="flex gap-2">
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>

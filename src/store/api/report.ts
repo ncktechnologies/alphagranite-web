@@ -23,11 +23,17 @@ export const reportApi = createApi({
     keepUnusedDataFor: 0,
     endpoints(build) {
         return {
-            getReportRedos: build.query<any, void>({
-                query: () => ({
-                    url: "/api/v1/reports/redos",
-                    method: "get"
-                }),
+            getReportRedos: build.query<any, { from_date?: string; to_date?: string } | void>({
+                query: (params) => {
+                    const searchParams = new URLSearchParams();
+                    if (params?.from_date) searchParams.append('from_date', params.from_date);
+                    if (params?.to_date) searchParams.append('to_date', params.to_date);
+                    const queryString = searchParams.toString();
+                    return {
+                        url: `/api/v1/reports/redos?${queryString}`,
+                        method: "get",
+                    };
+                },
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
@@ -73,19 +79,32 @@ export const reportApi = createApi({
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
-            getInstallPerformance: build.query<any, void>({
-                query: () => ({
-                    url: "/api/v1/reports/owner/install-performance",
-                    method: "get"
-                }),
+            getInstallPerformance: build.query<any, { start_date?: string; end_date?: string; installer_id?: number } | void>({
+                query: (params) => {
+                    const searchParams = new URLSearchParams();
+                    if (params?.start_date) searchParams.append('start_date', params.start_date);
+                    if (params?.end_date) searchParams.append('end_date', params.end_date);
+                    if (params?.installer_id) searchParams.append('installer_id', String(params.installer_id));
+                    const queryString = searchParams.toString();
+                    return {
+                        url: `/api/v1/reports/owner/install-performance${queryString ? `?${queryString}` : ''}`,
+                        method: "get",
+                    };
+                },
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
-            getWeeklyTrends: build.query<any, void>({
-                query: () => ({
-                    url: "/api/v1/reports/owner/weekly-trends",
-                    method: "get"
-                }),
+            getWeeklyTrends: build.query<any, { from_date?: string; to_date?: string } | void>({
+                query: (params) => {
+                    const searchParams = new URLSearchParams();
+                    if (params?.from_date) searchParams.append('from_date', params.from_date);
+                    if (params?.to_date) searchParams.append('to_date', params.to_date);
+                    const queryString = searchParams.toString();
+                    return {
+                        url: `/api/v1/reports/owner/weekly-trends${queryString ? `?${queryString}` : ''}`,
+                        method: "get",
+                    };
+                },
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),

@@ -44,7 +44,7 @@ export function ShopStatusReport() {
     return (
         <div className="flex flex-col gap-5 p-5">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Shop Status</h1>
+                <h1 className="text-2xl font-semibold text-[#4b545d]">AG Completion Report</h1>
             </div>
 
             {period && period.start_date && period.end_date && (
