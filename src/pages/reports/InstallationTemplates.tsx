@@ -1,5 +1,5 @@
 // pages/reports/InstallationTemplateReport.tsx
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { flexRender, ColumnDef, getCoreRowModel, getExpandedRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
@@ -79,6 +79,7 @@ export function InstallationTemplateReport() {
     const [searchQuery, setSearchQuery] = useState('');
     const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
     const [salesPersonId, setSalesPersonId] = useState<number | 'all'>('all');
+    const [hasInitialized, setHasInitialized] = useState(false);
 
     // Build query params for API
     const queryParams = useMemo(() => {
@@ -160,16 +161,20 @@ export function InstallationTemplateReport() {
     }, [reportData]);
 
     // ─── Initial expanded state: all installer & activity rows expanded ─────
-    const initialExpanded = useMemo(() => {
-        const state: Record<string, boolean> = {};
-        tableData.forEach(installer => {
-            state[installer.id] = true; // installer rows expanded
-            installer.subRows?.forEach((activity: any) => {
-                state[activity.id] = true; // activity rows expanded
+    useEffect(() => {
+        if (!hasInitialized && tableData.length > 0) {
+            const initialState: Record<string, boolean> = {};
+            tableData.forEach(installer => {
+                initialState[installer.id] = true; // installer rows expanded
+                installer.subRows?.forEach((activity: any) => {
+                    initialState[activity.id] = true; // activity rows expanded
+                });
             });
-        });
-        return state;
-    }, [tableData]);
+            setExpanded(initialState);
+            setHasInitialized(true);
+        }
+    }, [tableData, hasInitialized]);
+
 
     // ─── Column definitions ──────────────────────────────────────────────────
     const columns = useMemo<ColumnDef<any>[]>(() => [
@@ -311,7 +316,7 @@ export function InstallationTemplateReport() {
         state: {
             pagination,
             sorting,
-            expanded: { ...initialExpanded, ...expanded },
+            expanded,
         },
         columnResizeMode: 'onEnd',
         enableColumnResizing: true,
@@ -396,7 +401,7 @@ export function InstallationTemplateReport() {
 
             <DataGrid table={table} recordCount={tableData.length}
                 tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}
-            
+
             >
                 <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
                     <CardHeader className="py-3.5 border-b border-[#e2e4ed]">

@@ -74,7 +74,7 @@ export const MENU_SIDEBAR: MenuConfig = [
   { heading: 'Menu' },
   {
     title: 'Employees',
-    icon:'user-profile.svg',
+    icon: 'user-profile.svg',
     path: '/employees',
     permissionKey: 'employees',
   },
@@ -84,18 +84,18 @@ export const MENU_SIDEBAR: MenuConfig = [
     path: '/departments',
     permissionKey: 'department',
   },
-   {
+  {
     title: 'Jobs',
     icon: 'building.svg',
     path: '/job', // Changed from '/job/sales' to '/job' for dashboard
     permissionKey: 'jobs',
     children: [
-          { title: 'View Job Widgets', path: '/job', permissionKey: 'job_widgets' },
-          { title: 'Manage Jobs', path: '/create-jobs', permissionKey: 'manage_jobs' },
-          { title: 'View All Fabs', path: '/sales', permissionKey: 'view_all_fabs' },
-          { title: 'Need to Invoice', path: '/need-to-invoice', permissionKey: 'need_to_invoice' },
-          { title: 'Job Status', path: '/report-status', permissionKey: 'job_status' },
-        ],
+      { title: 'View Job Widgets', path: '/job', permissionKey: 'job_widgets' },
+      { title: 'Manage Jobs', path: '/create-jobs', permissionKey: 'manage_jobs' },
+      { title: 'View All Fabs', path: '/sales', permissionKey: 'view_all_fabs' },
+      { title: 'Need to Invoice', path: '/need-to-invoice', permissionKey: 'need_to_invoice' },
+      { title: 'Job Status', path: '/report-status', permissionKey: 'job_status' },
+    ],
   },
   {
     title: 'Shop',
@@ -103,11 +103,11 @@ export const MENU_SIDEBAR: MenuConfig = [
     path: '/shop',
     permissionKey: 'shop',
     children: [
-          { title: 'Shop Planning', path: '/shop', permissionKey: 'shop_planning' },
-          { title: 'Shop Status', path: '/status', permissionKey: 'shop_status' },
-          { title: 'Shop Revision', path: '/revision', permissionKey: 'shop_revision' },
-          { title: 'Resurfacing Status', path: '/resurfacing-status', permissionKey: 'shop_resurfacing_status' },
-        ],
+      { title: 'Shop Planning', path: '/shop', permissionKey: 'shop_planning' },
+      { title: 'Shop Status', path: '/status', permissionKey: 'shop_status' },
+      { title: 'Shop Revision', path: '/revision', permissionKey: 'shop_revision' },
+      { title: 'Resurfacing Status', path: '/resurfacing-status', permissionKey: 'shop_resurfacing_status' },
+    ],
   },
   {
     title: 'Reports',
@@ -115,22 +115,22 @@ export const MENU_SIDEBAR: MenuConfig = [
     path: '/report',
     permissionKey: 'reports',
     children: [
+      { title: 'AG Completion Report', path: '/report/shop-status', permissionKey: 'report_shop_status' },
+      { title: 'Daily Install Comp.', path: '/report/daily-install-completion', permissionKey: 'daily_install_completion' },
+      { title: 'Employee Productivity Report', path: '/report/template-card', permissionKey: 'installation_template' },
+      { title: 'Install Performance', path: '/report/install-performance', permissionKey: 'install_performance' },
+      { title: 'Installer Rates', path: '/report/installer-rates', permissionKey: 'installer_rates' },
+      { title: 'Lucas report', path: '/report/installation-template', permissionKey: 'installation_template' },
+      { title: 'Monthly Cut Comp.', path: '/report/monthly-cut-completion', permissionKey: 'monthly_cut_completion' },
+      { title: 'Monthly Install Comp.', path: '/report/monthly-install-completion', permissionKey: 'monthly_install_completion' },
+      { title: 'Redo Analysis', path: '/report/redo-analysis', permissionKey: 'redo_analysis' },
       { title: 'Redos', path: '/report/redos', permissionKey: 'redos' },
+      { title: 'Service Level', path: '/report/service-level', permissionKey: 'service_level' },
+      { title: 'Stage Status', path: '/report/owner-overview', permissionKey: 'owner_overview' },
+      { title: 'Template & Install Trends', path: '/report/weekly-trends', permissionKey: 'weekly_trends' },
+      { title: 'Turnaround Times', path: '/report/turnaround-times', permissionKey: 'turnaround_times' },
       { title: 'Weekly Fabrication Cost', path: '/report/weekly-fabrication-cost', permissionKey: 'weekly_fabrication_cost' },
       { title: 'Weekly Installer Cost', path: '/report/weekly-installer-cost', permissionKey: 'weekly_installer_cost' },
-      { title: 'Stage Status', path: '/report/owner-overview', permissionKey: 'owner_overview' },
-      { title: 'Redo Analysis', path: '/report/redo-analysis', permissionKey: 'redo_analysis' },
-      { title: 'AG Completion Report', path: '/report/shop-status', permissionKey: 'report_shop_status' },
-      { title: 'Install Performance', path: '/report/install-performance', permissionKey: 'install_performance' },
-      { title: 'Template & Install Trends', path: '/report/weekly-trends', permissionKey: 'weekly_trends' },
-      { title: 'Lucas report', path: '/report/installation-template', permissionKey: 'installation_template' },
-      { title: 'Employee Productivity Report', path: '/report/template-card', permissionKey: 'installation_template' },
-      { title: 'Monthly Install Comp.', path: '/report/monthly-install-completion', permissionKey: 'monthly_install_completion' },
-      { title: 'Daily Install Comp.', path: '/report/daily-install-completion', permissionKey: 'daily_install_completion' },
-      { title: 'Monthly Cut Comp.', path: '/report/monthly-cut-completion', permissionKey: 'monthly_cut_completion' },
-      { title: 'Turnaround Times', path: '/report/turnaround-times', permissionKey: 'turnaround_times' },
-      { title: 'Service Level', path: '/report/service-level', permissionKey: 'service_level' },
-      { title: 'Installer Rates', path: '/report/installer-rates', permissionKey: 'installer_rates' },
     ],
   },
   // {
@@ -146,98 +146,98 @@ export const MENU_SIDEBAR: MenuConfig = [
   },
 ];
 
-export const SETTINGS_NAV:MenuConfig = [
+export const SETTINGS_NAV: MenuConfig = [
   {
     title: 'Profile',
     icon: RiUser3Line,
-    path:'/settings/profile',
+    path: '/settings/profile',
     permissionKey: 'settings_profile',
   },
   // Super admin only sections
   {
     title: 'Roles & Permissions',
     icon: RiNodeTree,
-    path:'/settings/roles',
+    path: '/settings/roles',
     superAdminOnly: true,
     permissionKey: 'roles_permissions',
   },
   {
     title: 'Permissions Management',
     icon: RiShieldKeyholeLine,
-    path:'/settings/permissions',
+    path: '/settings/permissions',
     superAdminOnly: true,
     permissionKey: 'permissions_management',
   },
   {
     title: 'Stone Types & Colors',
     icon: Diamond,
-    path:'/settings/stone-types',
+    path: '/settings/stone-types',
     permissionKey: 'stone_types_colors',
   }
 ];
-export const SHOP_NAV:MenuConfig = [
+export const SHOP_NAV: MenuConfig = [
   {
     title: 'Shop settings',
     icon: Users,
-    path:'/shop/settings',
+    path: '/shop/settings',
     permissionKey: 'shop_settings',
   },
   {
     title: 'Roles & Permissions',
     icon: Users,
-    path:'/settings/roles',
+    path: '/settings/roles',
     permissionKey: 'roles_permissions',
   },
   {
     title: 'Notifications',
     icon: Users,
-    path:'/settings/notifications',
+    path: '/settings/notifications',
     permissionKey: 'notifications',
   }
 ];
 export const roles: Role[] = [
-    {
-      id: '1',
-      name: 'SALES',
-      description: 'Job pipeline, estimates pending approval',
-      status: 1,
-      member_count: 5,
-      top_members: ['AJ', 'SM']
-    },
-    {
-      id: '2',
-      name: 'PROJECT MANAGERS',
-      description: 'Active jobs, schedules, blockers',
-      status: 1,
-      member_count: 5,
-      top_members: ['DC', 'MG']
-    },
-    {
-      id: '3',
-      name: 'FABRICATION MANAGER',
-      description: 'Today\'s cut list, task queue',
-      status: 1,
-      member_count: 5,
-      top_members: ['JW', 'AB']
-    },
-    {
-      id: '4',
-      name: 'INSTALLERS',
-      description: 'Assigned jobs, route planning, customer details',
-      status: 2,
-      member_count: 5,
-      top_members: ['CD', 'EF']
-    },
-    {
-      id: '5',
-      name: 'ADMIN/EXECUTIVES',
-      description: 'Department KPIs, financial & operational insights',
-      status: 1,
-      member_count: 5,
-      top_members: ['GH', 'IJ']
-    }
-  ];
-  export const workStation: Station[] = [
+  {
+    id: '1',
+    name: 'SALES',
+    description: 'Job pipeline, estimates pending approval',
+    status: 1,
+    member_count: 5,
+    top_members: ['AJ', 'SM']
+  },
+  {
+    id: '2',
+    name: 'PROJECT MANAGERS',
+    description: 'Active jobs, schedules, blockers',
+    status: 1,
+    member_count: 5,
+    top_members: ['DC', 'MG']
+  },
+  {
+    id: '3',
+    name: 'FABRICATION MANAGER',
+    description: 'Today\'s cut list, task queue',
+    status: 1,
+    member_count: 5,
+    top_members: ['JW', 'AB']
+  },
+  {
+    id: '4',
+    name: 'INSTALLERS',
+    description: 'Assigned jobs, route planning, customer details',
+    status: 2,
+    member_count: 5,
+    top_members: ['CD', 'EF']
+  },
+  {
+    id: '5',
+    name: 'ADMIN/EXECUTIVES',
+    description: 'Department KPIs, financial & operational insights',
+    status: 1,
+    member_count: 5,
+    top_members: ['GH', 'IJ']
+  }
+];
+export const workStation: Station[] = [
   {
     id: 'ws-001',
     workstationName: 'Cutting',
@@ -263,30 +263,30 @@ export const roles: Role[] = [
     // status: 'Inactive',
     // createdAt: '2025-10-12T14:20:00Z',
   },
-  
- 
-  
+
+
+
 ];
 
 
-   export const availableUsers = [
-    { id: '1', name: 'Alex Johnson', initials: 'AJ' },
-    { id: '2', name: 'Sarah Miller', initials: 'SM' },
-    { id: '3', name: 'David Chen', initials: 'DC' },
-    { id: '4', name: 'Maria Garcia', initials: 'MG' },
-    { id: '5', name: 'James Wilson', initials: 'JW' },
-  ];
+export const availableUsers = [
+  { id: '1', name: 'Alex Johnson', initials: 'AJ' },
+  { id: '2', name: 'Sarah Miller', initials: 'SM' },
+  { id: '3', name: 'David Chen', initials: 'DC' },
+  { id: '4', name: 'Maria Garcia', initials: 'MG' },
+  { id: '5', name: 'James Wilson', initials: 'JW' },
+];
 
-  export const modules = [
-    { key: 'dashboard', label: 'Dashboard' },
-    { key: 'job', label: 'Job' },
-    { key: 'employees', label: 'Employees' },
-    { key: 'sales', label: 'Sales' },
-    { key: 'fabrication', label: 'Fabrication' },
-    { key: 'installation', label: 'Installation' },
-    { key: 'report', label: 'Report' },
-    { key: 'settings', label: 'Settings' },
-  ];
+export const modules = [
+  { key: 'dashboard', label: 'Dashboard' },
+  { key: 'job', label: 'Job' },
+  { key: 'employees', label: 'Employees' },
+  { key: 'sales', label: 'Sales' },
+  { key: 'fabrication', label: 'Fabrication' },
+  { key: 'installation', label: 'Installation' },
+  { key: 'report', label: 'Report' },
+  { key: 'settings', label: 'Settings' },
+];
 
 export const MENU_SIDEBAR_CUSTOM: MenuConfig = [
   {
