@@ -29,10 +29,13 @@ interface ReportRow {
     fab_type: string;
     job_number: string;
     job_name: string;
+    account_name: string;
     activity_complete: boolean;
     duration: string;
     sq_ft_installed: number;
     sq_ft_incomplete: number;
+    sqft_templated: number;      // ← from API
+    sqft_not_templated: number;  // ← from API
     reason_if_not_complete: string | null;
     sales_person_id: number;
     sales_person_name: string;
@@ -110,6 +113,7 @@ export function InstallationTemplateReport() {
             const templateRows = group.rows.filter(r => r.activity_type === 'Template');
             const installationRows = group.rows.filter(r => r.activity_type === 'Installation');
 
+            // Build activity rows
             const activityRows: any[] = [];
             if (templateRows.length > 0) {
                 activityRows.push({
@@ -120,10 +124,12 @@ export function InstallationTemplateReport() {
                     total_hours: templateRows.reduce((s, r) => s + r.installer_hours, 0),
                     total_sqft_installed: templateRows.reduce((s, r) => s + r.sq_ft_installed, 0),
                     total_sqft_incomplete: templateRows.reduce((s, r) => s + r.sq_ft_incomplete, 0),
+                    total_sqft_templated: templateRows.reduce((s, r) => s + (r.sqft_templated || 0), 0),
+                    total_sqft_not_templated: templateRows.reduce((s, r) => s + (r.sqft_not_templated || 0), 0),
                     subRows: templateRows.map(r => ({
                         ...r,
                         type: 'job',
-                        id: `job-${r.fab_id}-${r.activity_type}`, // unique id for each job
+                        id: `job-${r.fab_id}-${r.activity_type}`,
                     })),
                 });
             }
@@ -136,6 +142,8 @@ export function InstallationTemplateReport() {
                     total_hours: installationRows.reduce((s, r) => s + r.installer_hours, 0),
                     total_sqft_installed: installationRows.reduce((s, r) => s + r.sq_ft_installed, 0),
                     total_sqft_incomplete: installationRows.reduce((s, r) => s + r.sq_ft_incomplete, 0),
+                    total_sqft_templated: installationRows.reduce((s, r) => s + (r.sqft_templated || 0), 0),
+                    total_sqft_not_templated: installationRows.reduce((s, r) => s + (r.sqft_not_templated || 0), 0),
                     subRows: installationRows.map(r => ({
                         ...r,
                         type: 'job',
@@ -145,6 +153,10 @@ export function InstallationTemplateReport() {
             }
 
             if (activityRows.length > 0) {
+                // Compute totals for installer row
+                const totalSqftTemplated = activityRows.reduce((s, a) => s + a.total_sqft_templated, 0);
+                const totalSqftNotTemplated = activityRows.reduce((s, a) => s + a.total_sqft_not_templated, 0);
+
                 result.push({
                     type: 'installer',
                     id: `installer-${group.installer}`,
@@ -153,6 +165,8 @@ export function InstallationTemplateReport() {
                     total_hours: group.installer_hours,
                     total_sqft_installed: activityRows.reduce((s, a) => s + a.total_sqft_installed, 0),
                     total_sqft_incomplete: activityRows.reduce((s, a) => s + a.total_sqft_incomplete, 0),
+                    total_sqft_templated: totalSqftTemplated,
+                    total_sqft_not_templated: totalSqftNotTemplated,
                     subRows: activityRows,
                 });
             }
@@ -165,9 +179,9 @@ export function InstallationTemplateReport() {
         if (!hasInitialized && tableData.length > 0) {
             const initialState: Record<string, boolean> = {};
             tableData.forEach(installer => {
-                initialState[installer.id] = true; // installer rows expanded
+                initialState[installer.id] = true;
                 installer.subRows?.forEach((activity: any) => {
-                    initialState[activity.id] = true; // activity rows expanded
+                    initialState[activity.id] = true;
                 });
             });
             setExpanded(initialState);
@@ -175,14 +189,12 @@ export function InstallationTemplateReport() {
         }
     }, [tableData, hasInitialized]);
 
-
     // ─── Column definitions ──────────────────────────────────────────────────
     const columns = useMemo<ColumnDef<any>[]>(() => [
         {
             id: 'expander',
             header: () => null,
             cell: ({ row }) => {
-                // Only show expander for activity rows
                 if (row.original.type === 'activity') {
                     return (
                         <button onClick={row.getToggleExpandedHandler()} className="p-1 hover:bg-gray-100 rounded">
@@ -204,41 +216,40 @@ export function InstallationTemplateReport() {
                 } else if (row.original.type === 'activity') {
                     return <span className="ml-4 font-medium text-muted-foreground">{row.original.activity_label}</span>;
                 } else {
-                    // job row
-                    return <span className="ml-8 text-muted-foreground"></span>;
+                    return <span className="ml-8 text-muted-foreground">{row.original.job_name}</span>;
                 }
             },
             size: 200,
             enableSorting: true,
         },
-        // {
-        //     id: 'hours',
-        //     header: ({ column }) => <DataGridColumnHeader title="HOURS" column={column} />,
-        //     cell: ({ row }) => {
-        //         if (row.original.type === 'installer') {
-        //             return <span>{row.original.total_hours?.toFixed(2) ?? '0.00'}</span>;
-        //         } else if (row.original.type === 'activity') {
-        //             return <span>{row.original.total_hours?.toFixed(2) ?? '0.00'}</span>;
-        //         } else {
-        //             return <span className="text-muted-foreground">—</span>;
-        //         }
-        //     },
-        //     size: 80,
-        //     enableSorting: true,
-        // },
         {
             id: 'job_name',
             header: ({ column }) => <DataGridColumnHeader title="JOB NAME" column={column} />,
             cell: ({ row }) => {
                 if (row.original.type === 'installer') {
-                    return <span className="text-muted-foreground"></span>;
+                    return <span className="text-muted-foreground">—</span>;
                 } else if (row.original.type === 'activity') {
-                    return <span className="text-muted-foreground"></span>;
+                    return <span className="text-muted-foreground">{row.original.activity_label}</span>;
                 } else {
-                    return <span>{row.original.account_name}:{row.original.job_name}</span>;
+                    return <span>{row.original.job_name}</span>;
                 }
             },
             size: 250,
+            enableSorting: true,
+        },
+        {
+            id: 'account_name',
+            header: ({ column }) => <DataGridColumnHeader title="ACCOUNT" column={column} />,
+            cell: ({ row }) => {
+                if (row.original.type === 'installer') {
+                    return <span className="text-muted-foreground">—</span>;
+                } else if (row.original.type === 'activity') {
+                    return <span className="text-muted-foreground">—</span>;
+                } else {
+                    return <span>{row.original.account_name}</span>;
+                }
+            },
+            size: 200,
             enableSorting: true,
         },
         {
@@ -265,31 +276,33 @@ export function InstallationTemplateReport() {
             size: 120,
             enableSorting: true,
         },
-         {
+        // ─── SQFT TEMPLATED ─────────────────────────────────────────────────
+        {
             id: 'sqft_templated',
-            header: ({ column }) => <DataGridColumnHeader title="SQ FT TEMPLATED" column={column} />,
+            header: ({ column }) => <DataGridColumnHeader title="SQFT TEMPLATED" column={column} />,
             cell: ({ row }) => {
                 if (row.original.type === 'installer') {
                     return <span>{row.original.total_sqft_templated?.toFixed(0) ?? '0'}</span>;
                 } else if (row.original.type === 'activity') {
                     return <span>{row.original.total_sqft_templated?.toFixed(0) ?? '0'}</span>;
                 } else {
-                    return <span>{row.original.sq_ft_templated?.toFixed(0) ?? '0'}</span>;
+                    return <span>{row.original.sqft_templated?.toFixed(0) ?? '0'}</span>;
                 }
             },
             size: 130,
             enableSorting: true,
         },
+        // ─── SQFT NOT TEMPLATED ─────────────────────────────────────────────
         {
             id: 'sqft_not_templated',
-            header: ({ column }) => <DataGridColumnHeader title="SQ FT NOT TEMPLATED" column={column} />,
+            header: ({ column }) => <DataGridColumnHeader title="SQFT NOT TEMPLATED" column={column} />,
             cell: ({ row }) => {
                 if (row.original.type === 'installer') {
                     return <span>{row.original.total_sqft_not_templated?.toFixed(0) ?? '0'}</span>;
                 } else if (row.original.type === 'activity') {
                     return <span>{row.original.total_sqft_not_templated?.toFixed(0) ?? '0'}</span>;
                 } else {
-                    return <span>{row.original.sq_ft_not_templated?.toFixed(0) ?? '0'}</span>;
+                    return <span>{row.original.sqft_not_templated?.toFixed(0) ?? '0'}</span>;
                 }
             },
             size: 140,
@@ -342,7 +355,7 @@ export function InstallationTemplateReport() {
     const table = useReactTable({
         columns,
         data: tableData,
-        getRowId: (row) => row.id, // use the id we assigned
+        getRowId: (row) => row.id,
         state: {
             pagination,
             sorting,
@@ -431,7 +444,6 @@ export function InstallationTemplateReport() {
 
             <DataGrid table={table} recordCount={tableData.length}
                 tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}
-
             >
                 <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
                     <CardHeader className="py-3.5 border-b border-[#e2e4ed]">
@@ -454,8 +466,6 @@ export function InstallationTemplateReport() {
                                         )}
                                     </div>
                                 </div>
-
-
 
                                 <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
                                     <SelectTrigger className="w-auto min-w-[150px] h-[34px]"><SelectValue placeholder="Fab Type" /></SelectTrigger>
