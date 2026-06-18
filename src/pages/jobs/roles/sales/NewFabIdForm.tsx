@@ -43,9 +43,12 @@ import {
   useGetJobsQuery,
   useGetJobsByAccountQuery
 } from '@/store/api/job';
+import { useGetEmployeesQuery } from '@/store/api/employee';
+import { useGetDepartmentsQuery } from '@/store/api/department';
 import { useAuth } from '@/auth/context/auth-context';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import Popup from '@/components/ui/popup';
+import DialogContent, { Dialog, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 // Update the Zod schema - remove jobName and jobNumber as required fields since they'll be selected
 // Added cost_of_stone field
@@ -64,6 +67,10 @@ const fabIdFormSchema = z.object({
     .refine((val) => !isNaN(parseFloat(val)), { message: 'Revenue must be a number' }),
   cost_of_stone: z.string().optional()
     .refine((val) => val === '' || !isNaN(parseFloat(val)), { message: 'Cost of Stone must be a number' }),
+  cost_per_sqft: z.string().optional()
+    .refine((val) => val === '' || !isNaN(parseFloat(val)), { message: 'Cost per Sq Ft must be a number' }),
+  redo_department: z.string().optional(),
+  redo_requested_by: z.string().optional(),
   selectedSalesPerson: z.string().min(1, 'Sales Person is required'),
   notes: z.string().optional(),
   templateNotNeeded: z.boolean(),
@@ -125,19 +132,19 @@ export const IMPOSSIBLE_SCENARIOS: string[][] = [
 export const getSelectedCheckboxLabels = (formData: Partial<FabIdFormData>): string[] => {
   const selected: string[] = [];
   const labels = Object.entries(CHECKBOX_FIELD_MAP);
-  
+
   for (const [label, field] of labels) {
     if (formData[field]) {
       selected.push(label);
     }
   }
-  
+
   return selected;
 };
 
 export const isScenarioImpossible = (scenario: string[]): boolean => {
-  return IMPOSSIBLE_SCENARIOS.some(impossible => 
-    impossible.length === scenario.length && 
+  return IMPOSSIBLE_SCENARIOS.some(impossible =>
+    impossible.length === scenario.length &&
     impossible.every(item => scenario.includes(item))
   );
 };
@@ -246,6 +253,8 @@ const NewFabIdForm = () => {
   const [createStoneType] = useCreateStoneTypeMutation();
   const [createStoneColor] = useCreateStoneColorMutation();
   const [createEdge] = useCreateEdgeMutation();
+  const { data: employeesData, isLoading: isLoadingEmployees } = useGetEmployeesQuery();
+  const { data: departmentsData, isLoading: isLoadingDepartments } = useGetDepartmentsQuery();
 
   // Search states for dropdowns
   const [fabTypeSearch, setFabTypeSearch] = useState('');
@@ -261,7 +270,10 @@ const NewFabIdForm = () => {
   const [jobNumberPopoverOpen, setJobNumberPopoverOpen] = useState(false);
   const [thicknessPopoverOpen, setThicknessPopoverOpen] = useState(false);
   const [showPopover, setShowPopover] = useState(false);
-
+  const [showAgRedoModal, setShowAgRedoModal] = useState(false);
+  const [costPerSqft, setCostPerSqft] = useState('');
+  const [redoDepartment, setRedoDepartment] = useState('');
+  const [redoRequestedBy, setRedoRequestedBy] = useState('');
   // Nested popover states for adding new items
   const [showAddThickness, setShowAddThickness] = useState(false);
   const [showAddStoneType, setShowAddStoneType] = useState(false);
@@ -308,6 +320,9 @@ const NewFabIdForm = () => {
       sctNotNeeded: false,
       slabSmithAGNotNeeded: false,
       finalProgrammingNotNeeded: false,
+      cost_per_sqft: '',
+      redo_department: '',
+      redo_requested_by: '',
     },
   });
 
@@ -521,6 +536,54 @@ const NewFabIdForm = () => {
 
   const edgeOptions = !isEdgesError && Array.isArray(edgesData) ? (edgesData?.map((edge: any) => edge.name) || []) : [];
 
+  useEffect(() => {
+    const fabTypeLower = fabTypeValue?.toLowerCase();
+    if (fabTypeLower === 'ag redo') {
+      // Pre-fill with current totalSqFt if available
+      const totalSqFt = form.getValues('totalSqFt');
+      if (totalSqFt && !costPerSqft) {
+        // We could auto-set a default cost or leave empty
+      }
+      setShowAgRedoModal(true);
+    } else {
+      // Optionally clear modal state if user switches away
+      // We'll keep it open only when AG REDO is selected
+    }
+  }, [fabTypeValue]);
+
+  useEffect(() => {
+    const fabTypeLower = fabTypeValue?.toLowerCase();
+    if (fabTypeLower !== 'ag redo') {
+      // Clear AG REDO fields
+      setCostPerSqft('');
+      setRedoDepartment('');
+      setRedoRequestedBy('');
+      form.setValue('cost_per_sqft', '');
+      form.setValue('redo_department', '');
+      form.setValue('redo_requested_by', '');
+      if (showAgRedoModal) {
+        setShowAgRedoModal(false);
+      }
+    }
+  }, [fabTypeValue]);
+  const handleAgRedoSave = () => {
+    form.setValue('cost_per_sqft', costPerSqft);
+    form.setValue('redo_department', redoDepartment);
+    form.setValue('redo_requested_by', redoRequestedBy);
+    setShowAgRedoModal(false);
+  };
+
+  const handleAgRedoSkip = () => {
+    setCostPerSqft('');
+    setRedoDepartment('');
+    setRedoRequestedBy('');
+    form.setValue('cost_per_sqft', '');
+    form.setValue('redo_department', '');
+    form.setValue('redo_requested_by', '');
+    setShowAgRedoModal(false);
+  };
+
+
   // Functions to add new items
   const handleAddThickness = async () => {
     if (newThickness.trim()) {
@@ -665,6 +728,10 @@ const NewFabIdForm = () => {
         slab_smith_ag_needed: !values.slabSmithAGNotNeeded,
         sct_needed: !values.sctNotNeeded,
         final_programming_needed: !values.finalProgrammingNotNeeded,
+        redo_total_sqft: parseFloat(values.totalSqFt) || 0,
+        cost_per_sqft: values.cost_per_sqft ? parseFloat(values.cost_per_sqft) : undefined,
+        redo_department: values.redo_department ? parseInt(values.redo_department) : undefined,
+        redo_requested_by: values.redo_requested_by ? parseInt(values.redo_requested_by) : undefined,
       }).unwrap();
 
       const newFabId = response.data?.id;
@@ -1599,7 +1666,7 @@ const NewFabIdForm = () => {
                               </FormItem>
                             )}
                           />
-                         
+
                           <FormField
                             control={form.control}
                             name="slabSmithAGNotNeeded"
@@ -1617,7 +1684,7 @@ const NewFabIdForm = () => {
                               </FormItem>
                             )}
                           />
-                           <FormField
+                          <FormField
                             control={form.control}
                             name="sctNotNeeded"
                             render={({ field }) => (
@@ -1710,6 +1777,82 @@ const NewFabIdForm = () => {
           <Button className="px-8" onClick={handlePopupClose}>Confirm</Button>
         </div>
       </Popup>
+      {/* AG REDO Modal */}
+      <Dialog open={showAgRedoModal} onOpenChange={setShowAgRedoModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>AG REDO Details</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="">
+              <Label htmlFor="costPerSqft" className="text-right">
+                Cost / SQFT
+              </Label>
+              <Input
+                id="costPerSqft"
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={costPerSqft}
+                onChange={(e) => setCostPerSqft(e.target.value)}
+                className=""
+              />
+            </div>
+            <div className="grid  items-center gap-4">
+              <Label htmlFor="redoDepartment" className="">
+                Department
+              </Label>
+              <Select value={redoDepartment} onValueChange={setRedoDepartment}>
+                <SelectTrigger className="">
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {isLoadingDepartments ? (
+                    <SelectItem value="loading" disabled>Loading...</SelectItem>
+                  ) : (
+                    departmentsData?.items?.map((dept: any) => (
+                      <SelectItem key={dept.id} value={String(dept.id)}>
+                        {dept.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className=" ">
+              <Label htmlFor="redoRequestedBy" className="text-right">
+                Requested By
+              </Label>
+              <Select value={redoRequestedBy} onValueChange={setRedoRequestedBy}>
+                <SelectTrigger className="">
+                  <SelectValue placeholder="Select employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  {isLoadingEmployees ? (
+                    <SelectItem value="loading" disabled>Loading...</SelectItem>
+                  ) : (
+                    employeesData?.data?.map((emp: any) => (
+                      <SelectItem key={emp.id} value={String(emp.id)}>
+                        {emp.name || `${emp.first_name} ${emp.last_name}`}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleAgRedoSkip}>
+              Skip
+            </Button>
+            <Button onClick={handleAgRedoSave}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
     </div>
   );
 };

@@ -42,8 +42,11 @@ import {
     useUpdateFabMutation,
     useGetJobsByAccountQuery
 } from '@/store/api/job';
+import { useGetEmployeesQuery } from '@/store/api/employee';
+import { useGetDepartmentsQuery } from '@/store/api/department';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { getCheckboxRuleError, isCurrentStateImpossible } from './NewFabIdForm';
+import DialogContent, { Dialog, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 // Custom Currency Input Component
 interface CurrencyInputProps {
@@ -194,6 +197,10 @@ const fabIdFormSchema = z.object({
     sctNotNeeded: z.boolean(),
     slabSmithAGNotNeeded: z.boolean(),
     finalProgrammingNotNeeded: z.boolean(),
+    cost_per_sqft: z.string().optional()
+        .refine((val) => val === '' || !isNaN(parseFloat(val)), { message: 'Cost must be a number' }),
+    redo_department: z.string().optional(),
+    redo_requested_by: z.string().optional(),
 }).refine((data) => data.jobName || data.jobNumber, {
     message: "Please select either job name or job number",
     path: ["jobName"],
@@ -221,6 +228,8 @@ const EditFabIdForm = () => {
     const { data: jobsData = [], isLoading: isLoadingJobs } = useGetJobsQuery({ limit: 1000 });
     const { data: existingFab, isLoading: isLoadingFab, isError: isFabError, error: fabError } = useGetFabByIdQuery(Number(id));
     const { data: salesPersonsData = [], isLoading: isLoadingSalesPersons } = useGetSalesPersonsQuery();
+    const { data: employeesData, isLoading: isLoadingEmployees } = useGetEmployeesQuery();
+    const { data: departmentsData, isLoading: isLoadingDepartments } = useGetDepartmentsQuery();
 
     // Mutations
     const [updateFab] = useUpdateFabMutation();
@@ -241,6 +250,10 @@ const EditFabIdForm = () => {
     const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
     const [thicknessPopoverOpen, setThicknessPopoverOpen] = useState(false);
     const [edgePopoverOpen, setEdgePopoverOpen] = useState(false);
+    const [showAgRedoModal, setShowAgRedoModal] = useState(false);
+    const [costPerSqft, setCostPerSqft] = useState('');
+    const [redoDepartment, setRedoDepartment] = useState('');
+    const [redoRequestedBy, setRedoRequestedBy] = useState('');
 
     // Add item states
     const [showAddThickness, setShowAddThickness] = useState(false);
@@ -281,6 +294,9 @@ const EditFabIdForm = () => {
             sctNotNeeded: false,
             slabSmithAGNotNeeded: false,
             finalProgrammingNotNeeded: false,
+            cost_per_sqft: '',
+            redo_department: '',
+            redo_requested_by: '',
         },
     });
 
@@ -490,6 +506,51 @@ const EditFabIdForm = () => {
         // Note: We don't reset to false on other types for edit form, as user may have manually set them
     }, [fabTypeValue, form]);
 
+    useEffect(() => {
+        const fabTypeLower = fabTypeValue?.toLowerCase();
+        if (fabTypeLower === 'ag redo') {
+            // Pre-fill with current totalSqFt if available
+            const totalSqFt = form.getValues('totalSqFt');
+            if (totalSqFt && !costPerSqft) {
+                // We could auto-set a default cost or leave empty
+            }
+            setShowAgRedoModal(true);
+        } else {
+            // Optionally clear modal state if user switches away
+            // We'll keep it open only when AG REDO is selected
+        }
+    }, [fabTypeValue]);
+    useEffect(() => {
+  const fabTypeLower = fabTypeValue?.toLowerCase();
+  if (fabTypeLower !== 'ag redo') {
+    // Clear AG REDO fields
+    setCostPerSqft('');
+    setRedoDepartment('');
+    setRedoRequestedBy('');
+    form.setValue('cost_per_sqft', '');
+    form.setValue('redo_department', '');
+    form.setValue('redo_requested_by', '');
+    if (showAgRedoModal) {
+      setShowAgRedoModal(false);
+    }
+  }
+}, [fabTypeValue]);
+    const handleAgRedoSave = () => {
+        form.setValue('cost_per_sqft', costPerSqft);
+        form.setValue('redo_department', redoDepartment);
+        form.setValue('redo_requested_by', redoRequestedBy);
+        setShowAgRedoModal(false);
+    };
+
+    const handleAgRedoSkip = () => {
+        setCostPerSqft('');
+        setRedoDepartment('');
+        setRedoRequestedBy('');
+        form.setValue('cost_per_sqft', '');
+        form.setValue('redo_department', '');
+        form.setValue('redo_requested_by', '');
+        setShowAgRedoModal(false);
+    };
 
     const handleAddThickness = async () => {
         if (newThickness.trim()) {
@@ -636,6 +697,10 @@ const EditFabIdForm = () => {
                 slab_smith_ag_needed: !values.slabSmithAGNotNeeded,
                 sct_needed: !values.sctNotNeeded,
                 final_programming_needed: !values.finalProgrammingNotNeeded,
+                redo_total_sqft: parseFloat(values.totalSqFt) || 0,
+                cost_per_sqft: values.cost_per_sqft ? parseFloat(values.cost_per_sqft) : undefined,
+                redo_department: values.redo_department ? parseInt(values.redo_department) : undefined,
+                redo_requested_by: values.redo_requested_by ? parseInt(values.redo_requested_by) : undefined,
             };
             await updateFab({ id: Number(id), data: updatePayload }).unwrap();
             toast.success('FAB ID updated successfully!');
@@ -1152,6 +1217,80 @@ const EditFabIdForm = () => {
                     </div>
                 </div>
             </Container>
+            <Dialog open={showAgRedoModal} onOpenChange={setShowAgRedoModal}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>AG REDO Details</DialogTitle>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="">
+                            <Label htmlFor="costPerSqft" className="text-right">
+                                Cost / SQFT
+                            </Label>
+                            <Input
+                                id="costPerSqft"
+                                type="number"
+                                step="0.01"
+                                placeholder="0.00"
+                                value={costPerSqft}
+                                onChange={(e) => setCostPerSqft(e.target.value)}
+                                className=""
+                            />
+                        </div>
+                        <div className="grid  items-center gap-4">
+                            <Label htmlFor="redoDepartment" className="">
+                                Department
+                            </Label>
+                            <Select value={redoDepartment} onValueChange={setRedoDepartment}>
+                                <SelectTrigger className="">
+                                    <SelectValue placeholder="Select department" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {isLoadingDepartments ? (
+                                        <SelectItem value="loading" disabled>Loading...</SelectItem>
+                                    ) : (
+                                        departmentsData?.items?.map((dept: any) => (
+                                            <SelectItem key={dept.id} value={String(dept.id)}>
+                                                {dept.name}
+                                            </SelectItem>
+                                        ))
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className=" ">
+                            <Label htmlFor="redoRequestedBy" className="text-right">
+                                Requested By
+                            </Label>
+                            <Select value={redoRequestedBy} onValueChange={setRedoRequestedBy}>
+                                <SelectTrigger className="">
+                                    <SelectValue placeholder="Select employee" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {isLoadingEmployees ? (
+                                        <SelectItem value="loading" disabled>Loading...</SelectItem>
+                                    ) : (
+                                        employeesData?.data?.map((emp: any) => (
+                                            <SelectItem key={emp.id} value={String(emp.id)}>
+                                                {emp.name || `${emp.first_name} ${emp.last_name}`}
+                                            </SelectItem>
+                                        ))
+                                    )}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={handleAgRedoSkip}>
+                            Skip
+                        </Button>
+                        <Button onClick={handleAgRedoSave}>
+                            Save
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
         </div>
     );
 };
