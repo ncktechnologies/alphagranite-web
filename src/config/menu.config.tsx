@@ -116,6 +116,7 @@ export const MENU_SIDEBAR: MenuConfig = [
     permissionKey: 'reports',
     children: [
       { title: 'AG Completion Report', path: '/report/shop-status', permissionKey: 'report_shop_status' },
+      { title: 'Daily Completion', path: '/report/daily-completion', permissionKey: 'daily_completion' },
       { title: 'Daily Install Comp.', path: '/report/daily-install-completion', permissionKey: 'daily_install_completion' },
       { title: 'Employee Productivity Report', path: '/report/template-card', permissionKey: 'installation_template' },
       { title: 'Install Performance', path: '/report/install-performance', permissionKey: 'install_performance' },
@@ -126,6 +127,7 @@ export const MENU_SIDEBAR: MenuConfig = [
       { title: 'Redo Analysis', path: '/report/redo-analysis', permissionKey: 'redo_analysis' },
       { title: 'Redos', path: '/report/redos', permissionKey: 'redos' },
       { title: 'Service Level', path: '/report/service-level', permissionKey: 'service_level' },
+       { title: 'Shop Production Summary', path: '/report/shop-production-summary', permissionKey: 'shop_production_summary' },
       { title: 'Stage Status', path: '/report/owner-overview', permissionKey: 'owner_overview' },
       { title: 'Template & Install Trends', path: '/report/weekly-trends', permissionKey: 'weekly_trends' },
       { title: 'Turnaround Times', path: '/report/turnaround-times', permissionKey: 'turnaround_times' },

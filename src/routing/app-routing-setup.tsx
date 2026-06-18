@@ -81,6 +81,8 @@ import { InstallerRatesReport } from '@/pages/reports/InstallerRates';
 import { ServiceLevelReport } from '@/pages/reports/ServiceLevel';
 import ShopStatusPage from '@/pages/shop/status/StatusPage';
 import { InstallationTemplateReportCard } from '@/pages/reports/InstallationTemplateCard';
+import { ShopProductionSummary } from '@/pages/reports/ShopProductionSummary';
+import { DailyCompletion } from '@/pages/reports/DailyCompletion';
 
 export function AppRoutingSetup() {
   return (
@@ -349,7 +351,7 @@ export function AppRoutingSetup() {
               // </ProtectedRoute>
             }
           />
-          
+
           <Route
             path="/job/install-scheduled"
             element={
@@ -419,7 +421,7 @@ export function AppRoutingSetup() {
             path="/status"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
-              <ShopStatusPage/>
+              <ShopStatusPage />
               // </ProtectedRoute>
             }
           />
@@ -442,15 +444,15 @@ export function AppRoutingSetup() {
               // </ProtectedRoute>
             }
           />
-         
-          
+
+
           {/* Reports Route */}
           {/* <Route path="/report/:reportId" element={<ReportPage />} /> */}
           <Route path="/report/installer-rates" element={<InstallerRatesReport />} />
           <Route path="/report/redos" element={<RedosReport />} />
           <Route path="/report/weekly-fabrication-cost" element={<WeeklyFabricationCostReport />} />
           <Route path="/report/weekly-installer-cost" element={<WeeklyInstallerCostReport />} />
-          <Route path="/report/install-performance" element={<InstallPerformance/>} />
+          <Route path="/report/install-performance" element={<InstallPerformance />} />
           <Route path="/report/shop-status" element={<ShopStatusReport />} />
           <Route path="/report/turnaround-times" element={<TurnaroundTimesReport />} />
           <Route path='/report/monthly-cut-completion' element={<MonthlyCutCompletionReport />} />
@@ -462,6 +464,8 @@ export function AppRoutingSetup() {
           <Route path="/report/owner-overview" element={<OwnerOverviewReport />} />
           <Route path="/report/redo-analysis" element={<RedoAnalysisReport />} />
           <Route path="/report/service-level" element={<ServiceLevelReport />} />
+          <Route path='/report/shop-production-summary' element={<ShopProductionSummary/>} />
+          <Route path='/report/daily-completion' element={<DailyCompletion/>} />
 
 
 

@@ -70,7 +70,7 @@ export function WeeklyInstallerCostReport() {
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [month, setMonth] = useState(new Date());
 
-    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
+    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
     const [sorting, setSorting] = useState<SortingState>([]);
     const [annualPagination, setAnnualPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 12 });
     const [annualSorting, setAnnualSorting] = useState<SortingState>([]);

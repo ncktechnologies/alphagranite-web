@@ -247,6 +247,41 @@ export const reportApi = createApi({
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
+            getShopProductionSummary: build.query<any, { start_date?: string; end_date?: string; status_id?: number; include_non_shop_stages?: boolean; include_fab_details?: boolean } | void>({
+                query: (params) => {
+                    const searchParams = new URLSearchParams();
+                    if (params?.start_date) searchParams.append('start_date', params.start_date);
+                    if (params?.end_date) searchParams.append('end_date', params.end_date);
+                    if (params?.status_id !== undefined && params?.status_id !== null) searchParams.append('status_id', String(params.status_id));
+                    if (params?.include_non_shop_stages !== undefined) searchParams.append('include_non_shop_stages', String(params.include_non_shop_stages));
+                    if (params?.include_fab_details !== undefined) searchParams.append('include_fab_details', String(params.include_fab_details));
+                    const queryString = searchParams.toString();
+                    return {
+                        url: `/api/v1/reports/owner/shop-production-summary${queryString ? `?${queryString}` : ''}`,
+                        method: "get",
+                    };
+                },
+                transformResponse: (response: any) => response,
+                providesTags: ["Report"],
+            }),
+            // In reportApi.ts
+            getDailyCompletion: build.query<any, { from_date?: string; to_date?: string; weekdays?: number } | void>({
+                query: (params) => {
+                    const searchParams = new URLSearchParams();
+                    if (params?.from_date) searchParams.append('from_date', params.from_date);
+                    if (params?.to_date) searchParams.append('to_date', params.to_date);
+                    if (params?.weekdays !== undefined && params?.weekdays !== null) {
+                        searchParams.append('weekdays', String(params.weekdays));
+                    }
+                    const queryString = searchParams.toString();
+                    return {
+                        url: `/api/v1/reports/owner/daily-completion${queryString ? `?${queryString}` : ''}`,
+                        method: "get",
+                    };
+                },
+                transformResponse: (response: any) => response,
+                providesTags: ["Report"],
+            }),
             // Add inside endpoints builder
             updateRedo: build.mutation<any, { fab_id: number; data: any }>({
                 query: ({ fab_id, data }) => ({
@@ -308,4 +343,7 @@ export const {
     useUpdateMonthlyInstallCompletionMutation,
     useUpdateDailyInstallCompletionMutation,
     useUpdateMonthlyCutCompletionMutation,
+    useGetShopProductionSummaryQuery,
+    useGetDailyCompletionQuery,
+
 } = reportApi;

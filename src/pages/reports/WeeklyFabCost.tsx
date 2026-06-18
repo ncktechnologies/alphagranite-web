@@ -77,7 +77,7 @@ export function WeeklyFabricationCostReport() {
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [month, setMonth] = useState(new Date());
 
-    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
+    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
     const [sorting, setSorting] = useState<SortingState>([]);
 
    const queryParams = useMemo(() => {

@@ -18,8 +18,8 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { cn } from '@/lib/utils';
 import { getFabIdLink, getJobNumberLink, renderLink } from '@/lib/reportLinks';
+import { FabInfoCell } from '@/components/common/fabInfo';
 
-// Fab type color map
 const fabTypeColorMap: Record<string, string> = {
     standard: '#9eeb47',
     'fab only': '#5bd1d7',
@@ -34,18 +34,37 @@ const getFabColor = (fabType: string | undefined): string => {
     return fabTypeColorMap[fabType.toLowerCase()] || 'transparent';
 };
 
-const parseFabInfo = (info: string) => {
-    if (!info) return { leftLine1: [], leftLine2: [], right: [] };
-    const parts = info.split(' - ').filter(p => p.trim());
-    return {
-        leftLine1: parts.slice(0, 3),
-        leftLine2: parts.slice(3, 6),
-        right: parts.slice(6),
-    };
+// ─── Pivot helper ──────────────────────────────────────────────────────────
+const pivotTurnaroundData = (rows: any[]) => {
+    if (!rows.length) return { rows: [], stageKeys: [] };
+    const sample = rows[0];
+    const stageKeys = Object.keys(sample).filter(
+        key => (key.endsWith('_days') || key.includes('days')) && key !== 'number_of_days' && typeof sample[key] === 'number'
+    );
+    const pivoted = stageKeys.map(key => {
+        const values = rows
+            .map(r => r[key])
+            .filter((v): v is number => typeof v === 'number' && v !== null && !isNaN(v));
+        if (!values.length) return null;
+        const sum = values.reduce((a, b) => a + b, 0);
+        const avg = sum / values.length;
+        const max = Math.max(...values);
+        const min = Math.min(...values);
+        const count = values.length;
+        return {
+            metric: key.replace(/_days$/, '').replace(/_/g, ' ').toUpperCase(),
+            total: sum,
+            average: avg,
+            max,
+            min,
+            count,
+        };
+    }).filter(Boolean);
+    return { rows: pivoted, stageKeys };
 };
 
 export function TurnaroundTimesReport() {
-    // ─── Date mode (monthly or custom range) ──────────────────────────────
+    // ─── Date mode ──────────────────────────────────────────────────────────
     const [dateMode, setDateMode] = useState<'monthly' | 'custom'>('monthly');
     const currentYear = new Date().getFullYear();
     const currentMonth = new Date().getMonth() + 1;
@@ -56,8 +75,12 @@ export function TurnaroundTimesReport() {
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
     // ─── Sorting & pagination ──────────────────────────────────────────────
-    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
-    const [sorting, setSorting] = useState<SortingState>([]);
+    // Summary table
+    const [summaryPagination, setSummaryPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
+    const [summarySorting, setSummarySorting] = useState<SortingState>([]);
+    // Detail table
+    const [detailPagination, setDetailPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
+    const [detailSorting, setDetailSorting] = useState<SortingState>([]);
 
     // ─── Fab type filter ────────────────────────────────────────────────────
     const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
@@ -72,7 +95,7 @@ export function TurnaroundTimesReport() {
         return rawData.map(extractName).sort();
     }, [fabTypesData]);
 
-    // ─── Build query params ──────────────────────────────────────────────────
+    // ─── Query params ──────────────────────────────────────────────────────
     const queryParams = useMemo(() => {
         const params: any = {};
         if (dateMode === 'custom' && dateRange?.from) {
@@ -89,76 +112,142 @@ export function TurnaroundTimesReport() {
     }, [dateMode, dateRange, year, month, fabTypeFilter]);
 
     const { data, isLoading } = useGetTurnaroundTimesQuery(queryParams);
-    const rows = useMemo(() => data?.data?.rows ?? [], [data]);
-    const summary = useMemo(() => data?.data?.summary ?? null, [data]);
+    const rawRows = useMemo(() => data?.data?.rows ?? [], [data]);
     const stageAverages = useMemo(() => data?.data?.stage_averages ?? null, [data]);
 
-    // ─── Columns with sorting ──────────────────────────────────────────────────
-    const columns = useMemo<ColumnDef<any>[]>(() => {
-        if (!rows.length) return [];
-        const first = rows[0];
-        return Object.keys(first).map(key => ({
-            accessorKey: key,
-            header: ({ column }) => <DataGridColumnHeader title={key.replace(/_/g, ' ').toUpperCase()} column={column} />,
-            size: key === 'fab_info' ? 450 : 100,
-            enableSorting: true, // enable sorting on all columns
-            cell: ({ row }) => {
-                let val = row.original[key];
-                if (key === 'fab_id' && val) {
-                    const link = getFabIdLink(Number(val));
-                    return renderLink(link);
-                }
-                if (key === 'job_number' && val) {
-                    const link = getJobNumberLink(String(val));
-                    return renderLink(link);
-                }
-                if (key === 'fab_info' && typeof val === 'string') {
-                    const { leftLine1, leftLine2, right } = parseFabInfo(val);
-                    return (
-                        <div className="flex gap-4 text-xs max-w-[500px]">
-                            <div className="flex-1 min-w-0">
-                                {leftLine1.length > 0 && (
-                                    <div className="text-gray-600" title={leftLine1.join(' - ')}>
-                                        {leftLine1.join(' - ')}
-                                    </div>
-                                )}
-                                {leftLine2.length > 0 && (
-                                    <div className="text-gray-600" title={leftLine2.join(' - ')}>
-                                        {leftLine2.join(' - ')}
-                                    </div>
-                                )}
-                                {leftLine1.length === 0 && leftLine2.length === 0 && (
-                                    <div className="text-gray-400 italic">No details</div>
-                                )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                {right.length ? (
-                                    <div className="text-gray-600" title={right.join(' - ')}>
-                                        {right.join(' - ')}
-                                    </div>
-                                ) : (
-                                    <div className="truncate text-gray-400 italic"></div>
-                                )}
-                            </div>
-                        </div>
-                    );
-                }
-                if (key.includes('date') && val) {
-                    try {
-                        val = format(new Date(val), 'MMM dd, yyyy');
-                    } catch { /* keep original */ }
-                }
-                return <span className="text-sm">{val ?? '-'}</span>;
-            },
-        }));
-    }, [rows]);
+    // ─── Pivot the data ────────────────────────────────────────────────────
+    const { rows: pivotedRows } = useMemo(() => pivotTurnaroundData(rawRows), [rawRows]);
 
-    const table = useReactTable({
-        columns,
-        data: rows,
-        state: { pagination, sorting },
-        onPaginationChange: setPagination,
-        onSortingChange: setSorting,
+    // ─── Summary columns ────────────────────────────────────────────────────
+    const summaryColumns = useMemo<ColumnDef<any>[]>(() => [
+        {
+            id: 'metric',
+            accessorKey: 'metric',
+            header: ({ column }) => <DataGridColumnHeader title="STAGE METRIC" column={column} />,
+            cell: ({ row }) => <span className="text-sm font-medium">{row.original.metric}</span>,
+            size: 200,
+            enableSorting: true,
+        },
+        {
+            accessorKey: 'total',
+            header: ({ column }) => <DataGridColumnHeader title="TOTAL DAYS" column={column} />,
+            cell: ({ row }) => <span className="text-sm">{row.original.total.toFixed(1)}</span>,
+            size: 120,
+            enableSorting: true,
+        },
+        {
+            accessorKey: 'average',
+            header: ({ column }) => <DataGridColumnHeader title="AVG DAYS" column={column} />,
+            cell: ({ row }) => <span className="text-sm">{row.original.average.toFixed(1)}</span>,
+            size: 120,
+            enableSorting: true,
+        },
+        {
+            accessorKey: 'max',
+            header: ({ column }) => <DataGridColumnHeader title="MAX DAYS" column={column} />,
+            cell: ({ row }) => <span className="text-sm">{row.original.max.toFixed(1)}</span>,
+            size: 120,
+            enableSorting: true,
+        },
+        {
+            accessorKey: 'min',
+            header: ({ column }) => <DataGridColumnHeader title="MIN DAYS" column={column} />,
+            cell: ({ row }) => <span className="text-sm">{row.original.min.toFixed(1)}</span>,
+            size: 120,
+            enableSorting: true,
+        },
+        {
+            accessorKey: 'count',
+            header: ({ column }) => <DataGridColumnHeader title="COUNT" column={column} />,
+            cell: ({ row }) => <span className="text-sm">{row.original.count}</span>,
+            size: 100,
+            enableSorting: true,
+        },
+    ], []);
+
+    const summaryTable = useReactTable({
+        columns: summaryColumns,
+        data: pivotedRows,
+        state: { pagination: summaryPagination, sorting: summarySorting },
+        onPaginationChange: setSummaryPagination,
+        onSortingChange: setSummarySorting,
+        getCoreRowModel: getCoreRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        enableColumnResizing: true,
+        columnResizeMode: 'onEnd',
+    });
+
+    // ─── Detail columns ────────────────────────────────────────────────────
+    const detailColumns = useMemo<ColumnDef<any>[]>(() => {
+        if (!rawRows.length) return [];
+        const first = rawRows[0];
+        const keys = Object.keys(first);
+        const compositeFabFields = [
+            'acct_name', 'account_name', 'job_name', 'input_area',
+            'stone_type_name', 'stone_color_name', 'stone_thickness_value', 'edge_name'
+        ];
+
+        const dataCols = keys
+            .filter(key => !compositeFabFields.includes(key))
+            .map(key => {
+                let headerTitle = key.replace(/_/g, ' ').toUpperCase();
+                return {
+                    accessorKey: key,
+                    header: ({ column }) => <DataGridColumnHeader title={headerTitle} column={column} />,
+                    size: key === 'job_name' || key === 'fab_info' ? 250 : 130,
+                    enableSorting: true,
+                    cell: ({ row }) => {
+                        let val = row.original[key];
+                        if (key.includes('date') && val) {
+                            try { val = format(new Date(val), 'MMM dd, yyyy'); } catch {}
+                        }
+                        if (typeof val === 'number') val = val.toLocaleString();
+                        if (val == null) return <span className="text-sm">-</span>;
+
+                        if (key === 'fab_id') {
+                            const link = getFabIdLink(Number(val));
+                            return renderLink(link);
+                        }
+                        if (key === 'job_number') {
+                            const link = getJobNumberLink(String(val));
+                            return renderLink(link);
+                        }
+                        if (key === 'job_name') {
+                            const jobId = row.original.job_id;
+                            if (jobId) {
+                                const link = getJobNameLink(String(val), jobId);
+                                if (link) return renderLink(link);
+                            }
+                            return <span className="text-sm">{val}</span>;
+                        }
+                        return <span className="text-sm">{val}</span>;
+                    },
+                };
+            });
+
+        const fabInfoCol: ColumnDef<any> = {
+            id: 'fab_info',
+            header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
+            cell: ({ row }) => <FabInfoCell data={row.original} />,
+            size: 400,
+            enableSorting: false,
+        };
+
+        const jobNumberIndex = dataCols.findIndex(col => col.accessorKey === 'job_number');
+        const insertIndex = jobNumberIndex !== -1 ? jobNumberIndex + 1 : 1;
+        const finalCols = [...dataCols.slice(0, insertIndex)];
+        // finalCols.push(fabInfoCol);
+        finalCols.push(...dataCols.slice(insertIndex));
+        return finalCols;
+    }, [rawRows]);
+
+    const detailTable = useReactTable({
+        columns: detailColumns,
+        data: rawRows,
+        state: { pagination: detailPagination, sorting: detailSorting },
+        onPaginationChange: setDetailPagination,
+        onSortingChange: setDetailSorting,
         getCoreRowModel: getCoreRowModel(),
         getPaginationRowModel: getPaginationRowModel(),
         getSortedRowModel: getSortedRowModel(),
@@ -166,11 +255,10 @@ export function TurnaroundTimesReport() {
         columnResizeMode: 'onEnd',
         meta: {
             getRowAttributes: (row) => {
-                if (row.original.fab_type) {
-                    const bgColor = getFabColor(row.original.fab_type);
-                    if (bgColor !== 'transparent') {
-                        return { style: { backgroundColor: bgColor } };
-                    }
+                const fabType = row.original.fab_type?.toLowerCase();
+                const bgColor = getFabColor(fabType);
+                if (bgColor !== 'transparent') {
+                    return { style: { backgroundColor: bgColor } };
                 }
                 return {};
             },
@@ -186,7 +274,7 @@ export function TurnaroundTimesReport() {
                 ? `${format(dateRange.from, 'MMM dd, yyyy')} – ${format(dateRange.to, 'MMM dd, yyyy')}`
                 : format(dateRange.from, 'MMM dd, yyyy');
         }
-        return `${monthName} ${year} – Turnaround Details`;
+        return `${monthName} ${year}`;
     };
 
     return (
@@ -194,7 +282,6 @@ export function TurnaroundTimesReport() {
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <h1 className="text-2xl font-semibold text-[#4b545d]">Turnaround Times</h1>
                 <div className="flex items-center gap-2 flex-wrap">
-                    {/* Fab Type Filter */}
                     <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
                         <SelectTrigger className="w-[150px] h-[34px] border-[#e2e4ed]">
                             <SelectValue placeholder="Fab Type" />
@@ -205,7 +292,6 @@ export function TurnaroundTimesReport() {
                         </SelectContent>
                     </Select>
 
-                    {/* Mode toggle: Monthly or Custom Range */}
                     <Select value={dateMode} onValueChange={(v) => setDateMode(v as 'monthly' | 'custom')}>
                         <SelectTrigger className="w-[120px] h-[34px] border-[#e2e4ed]">
                             <SelectValue placeholder="Period" />
@@ -223,9 +309,7 @@ export function TurnaroundTimesReport() {
                                     <SelectValue placeholder="Year" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {[2024, 2025, 2026, 2027].map(y => (
-                                        <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-                                    ))}
+                                    {[2024, 2025, 2026, 2027].map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                             <Select value={String(month)} onValueChange={(v) => setMonth(parseInt(v))}>
@@ -259,7 +343,7 @@ export function TurnaroundTimesReport() {
                         </Popover>
                     )}
 
-                    <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(table, `turnaround-${year}-${month}`)}>
+                    <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(detailTable, `turnaround-detail-${year}-${month}`)}>
                         Export CSV
                     </Button>
                 </div>
@@ -274,18 +358,18 @@ export function TurnaroundTimesReport() {
                                 {stage.replace(/_/g, ' ')}
                             </p>
                             <p className="text-2xl font-semibold mt-2 text-[#4b545d]">
-                                {typeof days === 'number' ? Math.floor(days) : days} days
+                                {typeof days === 'number' ? days.toFixed(1) : days} days
                             </p>
                         </Card>
                     ))}
                 </div>
             )}
 
-            {/* Data Table */}
-            <DataGrid table={table} recordCount={rows.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
+            {/* Summary Table */}
+            <DataGrid table={summaryTable} recordCount={pivotedRows.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
                 <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
                     <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
-                        <p className="text-base font-semibold text-[#4b545d]">{getTitle()}</p>
+                        <p className="text-base font-semibold text-[#4b545d]">Turnaround Summary – {getTitle()}</p>
                         <CardToolbar />
                     </CardHeader>
                     <CardTable>
@@ -293,7 +377,7 @@ export function TurnaroundTimesReport() {
                             <div className="relative">
                                 <table className="w-full border-collapse table-fixed">
                                     <thead className="sticky top-0 z-10 bg-white">
-                                        {table.getHeaderGroups().map(headerGroup => (
+                                        {summaryTable.getHeaderGroups().map(headerGroup => (
                                             <tr key={headerGroup.id}>
                                                 {headerGroup.headers.map(header => (
                                                     <th
@@ -316,8 +400,75 @@ export function TurnaroundTimesReport() {
                                         ))}
                                     </thead>
                                     <tbody>
-                                        {table.getRowModel().rows.map(row => {
-                                            const rowAttrs = table.options.meta?.getRowAttributes?.(row) || {};
+                                        {summaryTable.getRowModel().rows.map(row => (
+                                            <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50">
+                                                {row.getVisibleCells().map(cell => (
+                                                    <td
+                                                        key={cell.id}
+                                                        className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
+                                                        style={{ width: cell.column.getSize() }}
+                                                    >
+                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                        {pivotedRows.length === 0 && (
+                                            <tr>
+                                                <td colSpan={summaryColumns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
+                                                    No data available.
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
+                        </ScrollArea>
+                    </CardTable>
+                    <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">
+                        <DataGridPagination />
+                    </CardFooter>
+                </Card>
+            </DataGrid>
+
+            {/* Detail Table */}
+            <DataGrid table={detailTable} recordCount={rawRows.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
+                <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
+                    <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
+                        <p className="text-base font-semibold text-[#4b545d]">Fab Details – {getTitle()}</p>
+                        <CardToolbar />
+                    </CardHeader>
+                    <CardTable>
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
+                            <div className="relative">
+                                <table className="w-full border-collapse table-fixed">
+                                    <thead className="sticky top-0 z-10 bg-white">
+                                        {detailTable.getHeaderGroups().map(headerGroup => (
+                                            <tr key={headerGroup.id}>
+                                                {headerGroup.headers.map(header => (
+                                                    <th
+                                                        key={header.id}
+                                                        className="px-3 py-2 text-left text-xs font-semibold text-[#7c8689] border-b border-[#e2e4ed] bg-gray-50"
+                                                        style={{ width: header.getSize() }}
+                                                    >
+                                                        {flexRender(header.column.columnDef.header, header.getContext())}
+                                                        {header.column.getCanResize() && (
+                                                            <div
+                                                                onDoubleClick={() => header.column.resetSize()}
+                                                                onMouseDown={header.getResizeHandler()}
+                                                                onTouchStart={header.getResizeHandler()}
+                                                                className="absolute top-0 h-full w-4 cursor-col-resize user-select-none touch-none -end-2 z-10 flex justify-center before:absolute before:w-px before:inset-y-0 before:bg-gray-300 before:-translate-x-px hover:before:bg-blue-500"
+                                                            />
+                                                        )}
+                                                    </th>
+                                                ))}
+                                            </tr>
+                                        ))}
+                                    </thead>
+                                    <tbody>
+                                        {detailTable.getRowModel().rows.map(row => {
+                                            const rowAttrs = detailTable.options.meta?.getRowAttributes?.(row) || {};
                                             return (
                                                 <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50" {...rowAttrs}>
                                                     {row.getVisibleCells().map(cell => (
@@ -332,9 +483,9 @@ export function TurnaroundTimesReport() {
                                                 </tr>
                                             );
                                         })}
-                                        {rows.length === 0 && (
+                                        {rawRows.length === 0 && (
                                             <tr>
-                                                <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
+                                                <td colSpan={detailColumns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
                                                     No data available.
                                                 </td>
                                             </tr>
