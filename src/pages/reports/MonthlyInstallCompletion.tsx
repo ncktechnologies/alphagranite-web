@@ -229,7 +229,7 @@ export function MonthlyInstallCompletionReport() {
 
         const jobNumberIndex = dataCols.findIndex(col => col.accessorKey === 'job_number');
         const insertIndex = jobNumberIndex !== -1 ? jobNumberIndex + 1 : 1;
-        const finalCols = [actionCol];
+        const finalCols = [];
         finalCols.push(...dataCols.slice(0, insertIndex));
         finalCols.push(fabInfoCol);
         finalCols.push(...dataCols.slice(insertIndex));

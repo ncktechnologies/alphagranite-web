@@ -121,20 +121,20 @@ export function RedosReport() {
     }, [totals, slicedData]);
 
     const columns = useMemo<ColumnDef<RedoItem>[]>(() => [
-        {
-            id: 'action',
-            header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
-            cell: ({ row }) => {
-                if (row.original._isTotalRow) return null;
-                return (
-                    <Button size="sm" onClick={() => { setSelectedRow(row.original); setUpdateModalOpen(true); }}>
-                        Edit
-                    </Button>
-                );
-            },
-            size: 80,
-            enableSorting: false,
-        },
+        // {
+        //     id: 'action',
+        //     header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
+        //     cell: ({ row }) => {
+        //         if (row.original._isTotalRow) return null;
+        //         return (
+        //             <Button size="sm" onClick={() => { setSelectedRow(row.original); setUpdateModalOpen(true); }}>
+        //                 Edit
+        //             </Button>
+        //         );
+        //     },
+        //     size: 80,
+        //     enableSorting: false,
+        // },
         {
             accessorKey: 'fab_created_date',
             header: ({ column }) => <DataGridColumnHeader title="CREATED DATE" column={column} />,
