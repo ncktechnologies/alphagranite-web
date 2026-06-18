@@ -18,9 +18,60 @@ import { cn } from '@/lib/utils';
 
 const $ = (v: number) => `$${v.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 const num = (v: number, d = 2) => v.toFixed(d);
+const pct = (v: number) => num(v, 2) + '%';
+
+// ─── Pivot transformation ───────────────────────────────────────────────────
+const pivotWeeklyData = (weeklyData: any[]) => {
+    if (!weeklyData.length) return { rows: [], weeks: [] };
+    const weeks = weeklyData.map(w => format(new Date(w.week_ending), 'MMM dd'));
+    const sample = weeklyData[0];
+    // All numeric keys except week_ending
+    const metricKeys = Object.keys(sample).filter(
+        key => key !== 'week_ending' && typeof sample[key] === 'number'
+    );
+    // Metrics that should be averaged rather than summed for the total
+    const avgMetrics = new Set([
+        'average_sqft_per_day',
+        'average_revenue_per_day',
+        'cost_of_overtime_pct',
+        'overtime_hours_pct',
+        'shop_labor_per_hour',
+        'shop_overhead_per_hour',
+        'shop_labor_overhead_per_hour',
+        'manpower_cost_per_hour',
+        'sqft_per_labor_hour',
+        'shop_productivity_sqft_per_hour',
+        'labor_cost_per_sq_ft',
+        'labor_cost_pct_per_dollar_sold',
+        'shop_overhead_cost_per_sqft',
+        'shop_total_cost_per_sqft',
+        'gross_profit_per_sf_completed',
+        'gross_profit_less_shop_total_cost_psf',
+        'gross_revenue_per_sqft_fabricated',
+        'total_head_count_inc_yard',
+    ]);
+
+    const rows = metricKeys.map(key => {
+        const row: any = { metric: key };
+        let sum = 0;
+        weeklyData.forEach((w, idx) => {
+            const val = w[key];
+            row[`week_${idx}`] = val;
+            if (typeof val === 'number') sum += val;
+        });
+        // Decide total: average for rates/percentages, sum for others
+        if (avgMetrics.has(key)) {
+            row.total = sum / weeklyData.length;
+        } else {
+            row.total = sum;
+        }
+        return row;
+    });
+    return { rows, weeks };
+};
 
 export function WeeklyFabricationCostReport() {
-    // Date state – support either date range or year/month
+    // ─── Date filter ──────────────────────────────────────────────────────────
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -29,20 +80,21 @@ export function WeeklyFabricationCostReport() {
     const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
     const [sorting, setSorting] = useState<SortingState>([]);
 
-    // Build query params: if dateRange is set, use start_date/end_date; else use current year/month
-    const queryParams = useMemo(() => {
-        if (dateRange?.from) {
-            return {
-                start_date: format(dateRange.from, 'yyyy-MM-dd'),
-                end_date: dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : format(dateRange.from, 'yyyy-MM-dd'),
-            };
-        }
+   const queryParams = useMemo(() => {
+    const params: any = {};
+    if (dateRange?.from) {
+        params.start_date = format(dateRange.from, 'yyyy-MM-dd');
+        params.end_date = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : format(dateRange.from, 'yyyy-MM-dd');
+        // Extract year and month from the selected start date
+        params.year = dateRange.from.getFullYear();
+        params.month = dateRange.from.getMonth() + 1;
+    } else {
         const now = new Date();
-        return {
-            year: now.getFullYear(),
-            month: now.getMonth() + 1,
-        };
-    }, [dateRange]);
+        params.year = now.getFullYear();
+        params.month = now.getMonth() + 1;
+    }
+    return params;
+}, [dateRange]);
 
     const { data, isLoading, isError } = useGetWeeklyFabricationLaborCostQuery(queryParams);
 
@@ -51,42 +103,141 @@ export function WeeklyFabricationCostReport() {
     const totals = useMemo(() => data?.data?.monthly_report?.totals ?? null, [data]);
     const annualSummary: any[] = useMemo(() => data?.data?.annual_monthly_summary ?? [], [data]);
 
-    // Weekly columns (all available)
-    const weeklyColumns = useMemo<ColumnDef<any>[]>(() => [
-        { accessorKey: 'week_ending', header: ({ column }) => <DataGridColumnHeader title="Week Ending" column={column} />, cell: ({ row }) => format(new Date(row.original.week_ending), 'MMM dd, yyyy'), size: 120, enableSorting: true },
-        { accessorKey: 'number_of_days', header: ({ column }) => <DataGridColumnHeader title="Days" column={column} />, size: 70, enableSorting: true },
-        { accessorKey: 'cut_sqft_saw', header: ({ column }) => <DataGridColumnHeader title="Cut Sqft (Saw)" column={column} />, cell: ({ row }) => num(row.original.cut_sqft_saw), size: 120, enableSorting: true },
-        { accessorKey: 'wj_sqft', header: ({ column }) => <DataGridColumnHeader title="WJ Sqft" column={column} />, cell: ({ row }) => num(row.original.wj_sqft), size: 90, enableSorting: true },
-        { accessorKey: 'completed_sqft', header: ({ column }) => <DataGridColumnHeader title="Completed Sqft" column={column} />, cell: ({ row }) => num(row.original.completed_sqft), size: 120, enableSorting: true },
-        { accessorKey: 'average_sqft_per_day', header: ({ column }) => <DataGridColumnHeader title="Avg Sqft/Day" column={column} />, cell: ({ row }) => num(row.original.average_sqft_per_day), size: 110, enableSorting: true },
-        { accessorKey: 'gross_revenue', header: ({ column }) => <DataGridColumnHeader title="Gross Revenue" column={column} />, cell: ({ row }) => $(row.original.gross_revenue), size: 130, enableSorting: true },
-        { accessorKey: 'gross_profit', header: ({ column }) => <DataGridColumnHeader title="Gross Profit" column={column} />, cell: ({ row }) => $(row.original.gross_profit), size: 120, enableSorting: true },
-        { accessorKey: 'average_revenue_per_day', header: ({ column }) => <DataGridColumnHeader title="Avg Revenue/Day" column={column} />, cell: ({ row }) => $(row.original.average_revenue_per_day), size: 130, enableSorting: true },
-        { accessorKey: 'total_head_count_inc_yard', header: ({ column }) => <DataGridColumnHeader title="Head Count" column={column} />, size: 100, enableSorting: true },
-        { accessorKey: 'wages_basic_shop_yard', header: ({ column }) => <DataGridColumnHeader title="Wages Basic" column={column} />, cell: ({ row }) => $(row.original.wages_basic_shop_yard), size: 120, enableSorting: true },
-        { accessorKey: 'overtime_shop_yard', header: ({ column }) => <DataGridColumnHeader title="Overtime" column={column} />, cell: ({ row }) => $(row.original.overtime_shop_yard), size: 100, enableSorting: true },
-        { accessorKey: 'cost_of_overtime_pct', header: ({ column }) => <DataGridColumnHeader title="Overtime %" column={column} />, cell: ({ row }) => num(row.original.cost_of_overtime_pct, 2) + '%', size: 100, enableSorting: true },
-        { accessorKey: 'total_labor_cost', header: ({ column }) => <DataGridColumnHeader title="Total Labor Cost" column={column} />, cell: ({ row }) => $(row.original.total_labor_cost), size: 130, enableSorting: true },
-        { accessorKey: 'regular_hours', header: ({ column }) => <DataGridColumnHeader title="Regular Hours" column={column} />, cell: ({ row }) => num(row.original.regular_hours), size: 110, enableSorting: true },
-        { accessorKey: 'overtime_hours', header: ({ column }) => <DataGridColumnHeader title="Overtime Hours" column={column} />, cell: ({ row }) => num(row.original.overtime_hours), size: 110, enableSorting: true },
-        { accessorKey: 'overtime_hours_pct', header: ({ column }) => <DataGridColumnHeader title="Overtime Hrs %" column={column} />, cell: ({ row }) => num(row.original.overtime_hours_pct, 2) + '%', size: 120, enableSorting: true },
-        { accessorKey: 'total_hours', header: ({ column }) => <DataGridColumnHeader title="Total Hours" column={column} />, cell: ({ row }) => num(row.original.total_hours), size: 110, enableSorting: true },
-        { accessorKey: 'shop_labor_per_hour', header: ({ column }) => <DataGridColumnHeader title="Labor $/Hour" column={column} />, cell: ({ row }) => $(row.original.shop_labor_per_hour), size: 120, enableSorting: true },
-        { accessorKey: 'shop_overhead_per_hour', header: ({ column }) => <DataGridColumnHeader title="Overhead $/Hour" column={column} />, cell: ({ row }) => $(row.original.shop_overhead_per_hour), size: 140, enableSorting: true },
-        { accessorKey: 'shop_labor_overhead_per_hour', header: ({ column }) => <DataGridColumnHeader title="Labor+Overhead $/Hour" column={column} />, cell: ({ row }) => $(row.original.shop_labor_overhead_per_hour), size: 160, enableSorting: true },
-        { accessorKey: 'manpower_cost_per_hour', header: ({ column }) => <DataGridColumnHeader title="Cost per Installer/Hour" column={column} />, cell: ({ row }) => $(row.original.manpower_cost_per_hour), size: 150, enableSorting: true },
-        { accessorKey: 'sqft_per_labor_hour', header: ({ column }) => <DataGridColumnHeader title="Sqft per Labor Hour" column={column} />, cell: ({ row }) => num(row.original.sqft_per_labor_hour, 2), size: 140, enableSorting: true },
-        { accessorKey: 'shop_productivity_sqft_per_hour', header: ({ column }) => <DataGridColumnHeader title="Productivity Sqft/Hour" column={column} />, cell: ({ row }) => num(row.original.shop_productivity_sqft_per_hour, 2), size: 150, enableSorting: true },
-        { accessorKey: 'labor_cost_per_sq_ft', header: ({ column }) => <DataGridColumnHeader title="Labor $/Sqft" column={column} />, cell: ({ row }) => $(row.original.labor_cost_per_sq_ft), size: 120, enableSorting: true },
-        { accessorKey: 'labor_cost_pct_per_dollar_sold', header: ({ column }) => <DataGridColumnHeader title="Labor % of Revenue" column={column} />, cell: ({ row }) => num(row.original.labor_cost_pct_per_dollar_sold, 2) + '%', size: 140, enableSorting: true },
-        { accessorKey: 'shop_overhead_cost_per_sqft', header: ({ column }) => <DataGridColumnHeader title="Overhead $/Sqft" column={column} />, cell: ({ row }) => $(row.original.shop_overhead_cost_per_sqft), size: 130, enableSorting: true },
-        { accessorKey: 'shop_total_cost_per_sqft', header: ({ column }) => <DataGridColumnHeader title="Total Cost $/Sqft" column={column} />, cell: ({ row }) => $(row.original.shop_total_cost_per_sqft), size: 130, enableSorting: true },
-        { accessorKey: 'gross_profit_per_sf_completed', header: ({ column }) => <DataGridColumnHeader title="GP $/Sqft" column={column} />, cell: ({ row }) => $(row.original.gross_profit_per_sf_completed), size: 110, enableSorting: true },
-        { accessorKey: 'gross_profit_less_shop_total_cost_psf', header: ({ column }) => <DataGridColumnHeader title="GP less total cost $/Sqft" column={column} />, cell: ({ row }) => $(row.original.gross_profit_less_shop_total_cost_psf), size: 170, enableSorting: true },
-        { accessorKey: 'gross_revenue_per_sqft_fabricated', header: ({ column }) => <DataGridColumnHeader title="Revenue $/Sqft" column={column} />, cell: ({ row }) => $(row.original.gross_revenue_per_sqft_fabricated), size: 130, enableSorting: true },
-    ], []);
+    // ─── Pivot the weekly data ───────────────────────────────────────────────
+    const { rows: pivotedRows, weeks } = useMemo(() => pivotWeeklyData(weeklyData), [weeklyData]);
 
-    // Annual Monthly Summary columns
+    // ─── Dynamic columns for pivoted table ──────────────────────────────────
+    const pivotedColumns = useMemo<ColumnDef<any>[]>(() => {
+        const cols: ColumnDef<any>[] = [
+            {
+                id: 'metric',
+                accessorKey: 'metric',
+                header: ({ column }) => <DataGridColumnHeader title="METRIC" column={column} />,
+                cell: ({ row }) => {
+                    const key = row.original.metric;
+                    const labels: Record<string, string> = {
+                        number_of_days: 'Number of Days',
+                        cut_sqft_saw: 'Cut Sq. Ft (saw)',
+                        wj_sqft: 'WJ Sq. Ft.',
+                        completed_sqft: 'Completed Sq. Ft',
+                        average_sqft_per_day: 'Average Sq. Ft. per Day',
+                        gross_revenue: 'Gross Revenue',
+                        gross_profit: 'Gross Profit',
+                        average_revenue_per_day: 'Average Revenue per Day',
+                        total_head_count_inc_yard: 'Total Head Count (Inc yard)',
+                        wages_basic_shop_yard: 'Wages Basic Shop & Yard',
+                        overtime_shop_yard: 'Overtime Shop & Yard',
+                        cost_of_overtime_pct: 'Cost Of Overtime as a % of Basic Wages',
+                        total_labor_cost: 'Total Labor Cost',
+                        regular_hours: 'Regular Hours',
+                        overtime_hours: 'Overtime Hours',
+                        overtime_hours_pct: 'Overtime Hours as % of Total Hours',
+                        total_hours: 'Total Hours',
+                        shop_labor_per_hour: 'Shop Labor Per hour',
+                        shop_overhead_per_hour: 'Shop Overhead per hour',
+                        shop_labor_overhead_per_hour: 'Shop labor & overhead per hour',
+                        manpower_cost_per_hour: 'Manpower cost per hour',
+                        sqft_per_labor_hour: 'Sq. Ft. Per Labor Hour',
+                        shop_productivity_sqft_per_hour: 'Shop Productivity - Sq. Ft per Hour',
+                        labor_cost_per_sq_ft: 'Labor Cost Per sq. Ft.',
+                        labor_cost_pct_per_dollar_sold: 'Labor Cost as % per Dollar Sold',
+                        shop_overhead_cost_per_sqft: 'Shop overhead cost per sq.ft fabricated',
+                        shop_total_cost_per_sqft: 'Shop total cost per sq.ft fabricated',
+                        gross_profit_per_sf_completed: 'Gross Profit per s.f. completed',
+                        gross_profit_less_shop_total_cost_psf: 'Gross Profit less Shop total cost psf',
+                        gross_revenue_per_sqft_fabricated: 'Gross Revenue per sq.ft fabricated',
+                    };
+                    return <span className="text-sm font-medium">{labels[key] || key.replace(/_/g, ' ').toUpperCase()}</span>;
+                },
+                size: 250,
+                enableSorting: true,
+            },
+        ];
+
+        // Add week columns
+        weeks.forEach((weekLabel, idx) => {
+            cols.push({
+                id: `week_${idx}`,
+                accessorKey: `week_${idx}`,
+                header: ({ column }) => <DataGridColumnHeader title={weekLabel} column={column} />,
+                cell: ({ row }) => {
+                    const val = row.original[`week_${idx}`];
+                    if (val === undefined || val === null) return <span className="text-sm">-</span>;
+                    const key = row.original.metric;
+                    if (['gross_revenue', 'gross_profit', 'average_revenue_per_day', 'total_labor_cost',
+                        'wages_basic_shop_yard', 'overtime_shop_yard', 'shop_labor_per_hour',
+                        'shop_overhead_per_hour', 'shop_labor_overhead_per_hour', 'manpower_cost_per_hour',
+                        'labor_cost_per_sq_ft', 'shop_overhead_cost_per_sqft', 'shop_total_cost_per_sqft',
+                        'gross_profit_per_sf_completed', 'gross_profit_less_shop_total_cost_psf',
+                        'gross_revenue_per_sqft_fabricated'].includes(key)) {
+                        return <span className="text-sm">{$(val)}</span>;
+                    }
+                    if (['cost_of_overtime_pct', 'overtime_hours_pct', 'labor_cost_pct_per_dollar_sold'].includes(key)) {
+                        return <span className="text-sm">{pct(val)}</span>;
+                    }
+                    if (['total_head_count_inc_yard'].includes(key)) {
+                        return <span className="text-sm">{num(val, 1)}</span>;
+                    }
+                    return <span className="text-sm">{num(val)}</span>;
+                },
+                size: 120,
+                enableSorting: true,
+            });
+        });
+
+        // Total column
+        cols.push({
+            id: 'total',
+            accessorKey: 'total',
+            header: ({ column }) => <DataGridColumnHeader title="TOTAL" column={column} />,
+            cell: ({ row }) => {
+                const val = row.original.total;
+                if (val === undefined || val === null) return <span className="text-sm">-</span>;
+                const key = row.original.metric;
+                if (['gross_revenue', 'gross_profit', 'average_revenue_per_day', 'total_labor_cost',
+                    'wages_basic_shop_yard', 'overtime_shop_yard', 'shop_labor_per_hour',
+                    'shop_overhead_per_hour', 'shop_labor_overhead_per_hour', 'manpower_cost_per_hour',
+                    'labor_cost_per_sq_ft', 'shop_overhead_cost_per_sqft', 'shop_total_cost_per_sqft',
+                    'gross_profit_per_sf_completed', 'gross_profit_less_shop_total_cost_psf',
+                    'gross_revenue_per_sqft_fabricated'].includes(key)) {
+                    return <span className="text-sm font-semibold">{$(val)}</span>;
+                }
+                if (['cost_of_overtime_pct', 'overtime_hours_pct', 'labor_cost_pct_per_dollar_sold'].includes(key)) {
+                    return <span className="text-sm font-semibold">{pct(val)}</span>;
+                }
+                if (['total_head_count_inc_yard'].includes(key)) {
+                    return <span className="text-sm font-semibold">{num(val, 1)}</span>;
+                }
+                return <span className="text-sm font-semibold">{num(val)}</span>;
+            },
+            size: 140,
+            enableSorting: true,
+        });
+
+        return cols;
+    }, [weeks]);
+
+    const pivotedTable = useReactTable({
+        columns: pivotedColumns,
+        data: pivotedRows,
+        state: { pagination, sorting },
+        onPaginationChange: setPagination,
+        onSortingChange: setSorting,
+        getCoreRowModel: getCoreRowModel(),
+        getPaginationRowModel: getPaginationRowModel(),
+        getSortedRowModel: getSortedRowModel(),
+        enableColumnResizing: true,
+        columnResizeMode: 'onEnd',
+        meta: {
+            getRowAttributes: (row) => {
+                // Highlight the total row (the "Metric" row is just a normal row; we want to highlight the "Month Total" row, but we have a separate totals row later)
+                // We'll keep it simple: no special row, as we have a footer totals row in the table (the old totals row is not used now; we removed it).
+                return {};
+            },
+        },
+    });
+
+    // ─── Annual Summary Table (unchanged, keep original) ────────────────────
     const annualColumns = useMemo<ColumnDef<any>[]>(() => [
         { accessorKey: 'month', header: ({ column }) => <DataGridColumnHeader title="Month" column={column} />, size: 120, enableSorting: true },
         { accessorKey: 'number_of_weeks', header: ({ column }) => <DataGridColumnHeader title="Weeks" column={column} />, size: 80, enableSorting: true },
@@ -98,19 +249,6 @@ export function WeeklyFabricationCostReport() {
         { accessorKey: 'gross_profit_less_shop_total_cost_psf', header: ({ column }) => <DataGridColumnHeader title="GP less total cost $/Sqft" column={column} />, cell: ({ row }) => $(row.original.gross_profit_less_shop_total_cost_psf), size: 170, enableSorting: true },
     ], []);
 
-    // Weekly table
-    const weeklyTable = useReactTable({
-        columns: weeklyColumns,
-        data: weeklyData,
-        state: { pagination, sorting },
-        onPaginationChange: setPagination,
-        onSortingChange: setSorting,
-        getCoreRowModel: getCoreRowModel(),
-        getPaginationRowModel: getPaginationRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-    });
-
-    // Annual table (separate pagination)
     const [annualPagination, setAnnualPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
     const [annualSorting, setAnnualSorting] = useState<SortingState>([]);
     const annualTable = useReactTable({
@@ -124,7 +262,6 @@ export function WeeklyFabricationCostReport() {
         getSortedRowModel: getSortedRowModel(),
     });
 
-    // Build title from date range or fallback
     const getTitle = () => {
         if (dateRange?.from) {
             return dateRange.to
@@ -140,11 +277,9 @@ export function WeeklyFabricationCostReport() {
 
     return (
         <div className="flex flex-col gap-5 p-5">
-            {/* Header with filters */}
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <h1 className="text-2xl font-semibold text-[#4b545d]">Weekly Fabrication Labor Cost</h1>
                 <div className="flex items-center gap-2 flex-wrap">
-                    {/* Date range picker */}
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>
                             <Button variant="outline" className={cn('w-[260px] justify-start text-left font-normal h-[34px]', !dateRange && 'text-muted-foreground')}>
@@ -161,8 +296,7 @@ export function WeeklyFabricationCostReport() {
                         </PopoverContent>
                     </Popover>
                     {dateRange && <Button variant="ghost" size="sm" onClick={() => setDateRange(undefined)}>Clear</Button>}
-
-                    <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(weeklyTable, `fabrication-cost-${getTitle()}`)}>
+                    <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(pivotedTable, `fabrication-cost-${getTitle()}`)}>
                         Export CSV
                     </Button>
                 </div>
@@ -194,20 +328,19 @@ export function WeeklyFabricationCostReport() {
                 </div>
             )}
 
-            {/* Weekly Breakdown Table */}
-            <DataGrid table={weeklyTable} recordCount={weeklyData.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
+            {/* Pivoted Weekly Breakdown Table */}
+            <DataGrid table={pivotedTable} recordCount={pivotedRows.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
                 <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
                     <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
                         <CardTitle className="text-base font-semibold text-[#4b545d]">Weekly Breakdown – {getTitle()}</CardTitle>
                         <CardToolbar />
                     </CardHeader>
                     <CardTable>
-                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4 ">
-
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                             <div className="relative">
                                 <table className="w-full border-collapse table-fixed">
                                     <thead className="sticky top-0 z-10 bg-white">
-                                        {weeklyTable.getHeaderGroups().map(headerGroup => (
+                                        {pivotedTable.getHeaderGroups().map(headerGroup => (
                                             <tr key={headerGroup.id}>
                                                 {headerGroup.headers.map(header => (
                                                     <th
@@ -230,62 +363,30 @@ export function WeeklyFabricationCostReport() {
                                         ))}
                                     </thead>
                                     <tbody>
-                                        {/* Totals row */}
-                                        {totals && (
-                                            <tr className="bg-[#f0f7e0] font-semibold border-b border-[#e2e4ed]">
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">MONTH TOTAL</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{totals.number_of_days}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{num(totals.cut_sqft_saw)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{num(totals.wj_sqft)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{num(totals.completed_sqft)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{num(totals.average_sqft_per_day)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{$(totals.gross_revenue)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{$(totals.gross_profit)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{$(totals.average_revenue_per_day)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{totals.total_head_count_inc_yard}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{$(totals.wages_basic_shop_yard)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{$(totals.overtime_shop_yard)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{num(totals.cost_of_overtime_pct, 2)}%</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{$(totals.total_labor_cost)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{num(totals.regular_hours)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{num(totals.overtime_hours)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{num(totals.overtime_hours_pct, 2)}%</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{num(totals.total_hours)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{$(totals.shop_labor_per_hour)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{$(totals.shop_overhead_per_hour)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{$(totals.shop_labor_overhead_per_hour)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{$(totals.manpower_cost_per_hour)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{num(totals.sqft_per_labor_hour, 2)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{num(totals.shop_productivity_sqft_per_hour, 2)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{$(totals.labor_cost_per_sq_ft)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{num(totals.labor_cost_pct_per_dollar_sold, 2)}%</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{$(totals.shop_overhead_cost_per_sqft)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{$(totals.shop_total_cost_per_sqft)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{$(totals.gross_profit_per_sf_completed)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{$(totals.gross_profit_less_shop_total_cost_psf)}</td>
-                                                <td className="px-3 py-2 text-sm text-[#4b545d]">{$(totals.gross_revenue_per_sqft_fabricated)}</td>
-                                            </tr>
-                                        )}
-                                        {/* Data rows */}
-                                        {weeklyTable.getRowModel().rows.map(row => (
+                                        {pivotedTable.getRowModel().rows.map(row => (
                                             <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50">
                                                 {row.getVisibleCells().map(cell => (
-                                                    <td key={cell.id} className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0" style={{ width: cell.column.getSize() }}>
+                                                    <td
+                                                        key={cell.id}
+                                                        className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
+                                                        style={{ width: cell.column.getSize() }}
+                                                    >
                                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                     </td>
                                                 ))}
                                             </tr>
                                         ))}
-                                        {weeklyData.length === 0 && (
+                                        {pivotedRows.length === 0 && (
                                             <tr>
-                                                <td colSpan={weeklyColumns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">No data available.</td>
+                                                <td colSpan={pivotedColumns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
+                                                    No data available.
+                                                </td>
                                             </tr>
                                         )}
                                     </tbody>
                                 </table>
                             </div>
                             <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
-
                         </ScrollArea>
                     </CardTable>
                     <CardFooter className="bg-white border-t border-[#e2e4ed] px-4 py-2">
@@ -303,7 +404,7 @@ export function WeeklyFabricationCostReport() {
                             <CardToolbar />
                         </CardHeader>
                         <CardTable>
-                            <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4 ">
+                            <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                                 <div className="relative">
                                     <table className="w-full border-collapse table-fixed">
                                         <thead className="sticky top-0 z-10 bg-white">
@@ -333,7 +434,11 @@ export function WeeklyFabricationCostReport() {
                                             {annualTable.getRowModel().rows.map(row => (
                                                 <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50">
                                                     {row.getVisibleCells().map(cell => (
-                                                        <td key={cell.id} className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0" style={{ width: cell.column.getSize() }}>
+                                                        <td
+                                                            key={cell.id}
+                                                            className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
+                                                            style={{ width: cell.column.getSize() }}
+                                                        >
                                                             {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                         </td>
                                                     ))}
