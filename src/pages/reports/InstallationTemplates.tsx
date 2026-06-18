@@ -265,6 +265,36 @@ export function InstallationTemplateReport() {
             size: 120,
             enableSorting: true,
         },
+         {
+            id: 'sqft_templated',
+            header: ({ column }) => <DataGridColumnHeader title="SQ FT TEMPLATED" column={column} />,
+            cell: ({ row }) => {
+                if (row.original.type === 'installer') {
+                    return <span>{row.original.total_sqft_templated?.toFixed(0) ?? '0'}</span>;
+                } else if (row.original.type === 'activity') {
+                    return <span>{row.original.total_sqft_templated?.toFixed(0) ?? '0'}</span>;
+                } else {
+                    return <span>{row.original.sq_ft_templated?.toFixed(0) ?? '0'}</span>;
+                }
+            },
+            size: 130,
+            enableSorting: true,
+        },
+        {
+            id: 'sqft_not_templated',
+            header: ({ column }) => <DataGridColumnHeader title="SQ FT NOT TEMPLATED" column={column} />,
+            cell: ({ row }) => {
+                if (row.original.type === 'installer') {
+                    return <span>{row.original.total_sqft_not_templated?.toFixed(0) ?? '0'}</span>;
+                } else if (row.original.type === 'activity') {
+                    return <span>{row.original.total_sqft_not_templated?.toFixed(0) ?? '0'}</span>;
+                } else {
+                    return <span>{row.original.sq_ft_not_templated?.toFixed(0) ?? '0'}</span>;
+                }
+            },
+            size: 140,
+            enableSorting: true,
+        },
         {
             id: 'sqft_installed',
             header: ({ column }) => <DataGridColumnHeader title="SQ FT INSTALLED" column={column} />,

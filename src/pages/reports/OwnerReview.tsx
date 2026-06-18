@@ -16,6 +16,27 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { cn } from '@/lib/utils';
 
+// ─── Stage order (matches DASHBOARD_WIDGETS) ─────────────────────────────
+const STAGE_ORDER = [
+    'templating',
+    'pre_draft_review',
+    'resurface_scheduling',
+    'drafting',
+    'slab_smith_request',
+    'sales_ct',
+    'revision',
+    'cut_list',
+    'final_programming',
+    'install_scheduling',
+    'install_completion',
+    'cnc',
+];
+
+// ─── Normalize stage name for matching ────────────────────────────────────
+const normalizeStage = (stage: string): string => {
+    return stage.toLowerCase().replace(/[\s-]+/g, '_').trim();
+};
+
 // ─── Formatting helpers ──────────────────────────────────────────────────────
 export const formatStage = (stage: string) => {
     if (!stage) return stage;
@@ -25,6 +46,7 @@ export const formatStage = (stage: string) => {
 interface StageRow {
     stage: string;
     count: number;
+    _sortOrder: number; // hidden sort key
 }
 
 export function OwnerOverviewReport() {
@@ -51,7 +73,26 @@ export function OwnerOverviewReport() {
     const { data, isLoading } = useGetOwnerOverviewQuery(queryParams);
 
     const kpis = useMemo(() => data?.data?.kpis ?? null, [data]);
-    const stageData: StageRow[] = useMemo(() => data?.data?.stage_breakdown ?? [], [data]);
+    const rawData: StageRow[] = useMemo(() => data?.data?.stage_breakdown ?? [], [data]);
+
+    // ─── Sort stages by defined order and assign _sortOrder ──────────────
+    const stageData = useMemo(() => {
+        if (!rawData || !rawData.length) return [];
+        const sorted = [...rawData].sort((a, b) => {
+            const normA = normalizeStage(a.stage);
+            const normB = normalizeStage(b.stage);
+            const indexA = STAGE_ORDER.indexOf(normA);
+            const indexB = STAGE_ORDER.indexOf(normB);
+            if (indexA === -1 && indexB === -1) return 0;
+            if (indexA === -1) return 1;
+            if (indexB === -1) return -1;
+            return indexA - indexB;
+        });
+        return sorted.map((item, index) => ({
+            ...item,
+            _sortOrder: index,
+        }));
+    }, [rawData]);
 
     // ─── Columns with sorting ──────────────────────────────────────────────────
     const columns = useMemo<ColumnDef<StageRow>[]>(() => [
@@ -81,7 +122,16 @@ export function OwnerOverviewReport() {
         getSortedRowModel: getSortedRowModel(),
         enableColumnResizing: true,
         columnResizeMode: 'onEnd',
+        // Use a custom sorting function to sort by the hidden _sortOrder when sorting by 'stage'
+        sortingFns: {
+            // We'll rely on the default sorting but also ensure initial order is _sortOrder
+            // We can set a default sort order by using the `getSortedRowModel` with a default sort.
+        },
     });
+
+    // Since we want the initial order to be by _sortOrder (workflow order), we can set an initial sorting state.
+    // However, we don't want to force a sort on the stage column because it would override the workflow order.
+    // We'll just rely on the data being pre-sorted.
 
     if (isLoading) return <div className="p-5 text-[#7c8689]">Loading owner overview...</div>;
 
@@ -101,7 +151,6 @@ export function OwnerOverviewReport() {
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <h1 className="text-2xl font-semibold text-[#4b545d]">Stage Status</h1>
                 <div className="flex items-center gap-2 flex-wrap">
-                    {/* Date Range Picker */}
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>
                             <Button variant="outline" className={cn('w-[260px] justify-start text-left font-normal h-[34px]', !dateRange && 'text-muted-foreground')}>
