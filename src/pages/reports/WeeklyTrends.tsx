@@ -105,8 +105,8 @@ export function WeeklyTrendsReport() {
             enableSorting: true,
         },
         {
-            accessorKey: 'sqft_template_installed',
-            header: ({ column }) => <DataGridColumnHeader title="SQFT TEMPLATE INSTALLED" column={column} />,
+            accessorKey: 'sqft_templated',
+            header: ({ column }) => <DataGridColumnHeader title="SQFT TEMPLATED" column={column} />,
             cell: ({ row }) => row.original.sqft_template_installed?.toFixed(0) ?? '0',
             size: 150,
             enableSorting: true,
@@ -131,20 +131,20 @@ export function WeeklyTrendsReport() {
             enableSorting: true,
         },
 
-        // {
-        //     accessorKey: 'revenue',
-        //     header: ({ column }) => <DataGridColumnHeader title="REVENUE" column={column} />,
-        //     cell: ({ row }) => `$${row.original.revenue.toFixed(2)}`,
-        //     size: 130,
-        //     enableSorting: true,
-        // },
-        // {
-        //     accessorKey: 'gross_profit',
-        //     header: ({ column }) => <DataGridColumnHeader title="GROSS PROFIT" column={column} />,
-        //     cell: ({ row }) => `$${row.original.gross_profit.toFixed(2)}`,
-        //     size: 130,
-        //     enableSorting: true,
-        // },
+        {
+            accessorKey: 'revenue',
+            header: ({ column }) => <DataGridColumnHeader title="REVENUE" column={column} />,
+            cell: ({ row }) => `$${row.original.revenue.toFixed(2)}`,
+            size: 130,
+            enableSorting: true,
+        },
+        {
+            accessorKey: 'gross_profit',
+            header: ({ column }) => <DataGridColumnHeader title="GROSS PROFIT" column={column} />,
+            cell: ({ row }) => `$${row.original.gross_profit.toFixed(2)}`,
+            size: 130,
+            enableSorting: true,
+        },
 
     ], []);
 
