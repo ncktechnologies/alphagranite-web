@@ -356,7 +356,6 @@ export function MonthlyInstallCompletionReport() {
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <h1 className="text-2xl font-semibold text-[#4b545d]">Monthly Install Completion</h1>
                 <div className="flex items-center gap-2 flex-wrap">
-                    {/* Mode toggle: Monthly or Custom Range */}
                     <Select value={dateMode} onValueChange={(v) => setDateMode(v as 'monthly' | 'custom')}>
                         <SelectTrigger className="w-[120px] h-[34px] border-[#e2e4ed]">
                             <SelectValue placeholder="Period" />
@@ -414,14 +413,14 @@ export function MonthlyInstallCompletionReport() {
 
             {/* ─── Summary Widgets ────────────────────────────────────────── */}
             {summary && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Pieces</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.pieces.toLocaleString()}</p>
-                    </Card>
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">SQ FT</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.sq_ft.toFixed(2)}</p>
+                    </Card>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">No of Pieces</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.pieces.toLocaleString()}</p>
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Revenue</p>
@@ -430,6 +429,14 @@ export function MonthlyInstallCompletionReport() {
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Revenue / SQFT</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.revenue_per_sq_ft?.toFixed(2) ?? '0.00'}</p>
+                    </Card>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Cost of Stone</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.cost_of_stone?.toFixed(2) ?? '0.00'}</p>
+                    </Card>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">GP</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.gp?.toFixed(2) ?? '0.00'}</p>
                     </Card>
                 </div>
             )}
