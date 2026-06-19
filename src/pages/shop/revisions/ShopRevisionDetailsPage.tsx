@@ -1,3 +1,4 @@
+// ShopRevisionDetailsPage.tsx (with delete confirmation modal)
 import { BackButton } from '@/components/common/BackButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -14,6 +15,7 @@ import {
   useAddFilesToCNCDraftingMutation,
   useAddFilesToDraftingMutation,
   useGetFabByIdQuery,
+  useDeleteFileMutation
 } from '@/store/api/job';
 import { useGetOperatorQaFilesQuery } from '@/store/api/operator';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
@@ -27,6 +29,7 @@ import { UniversalUploadModal } from '@/components/universal-upload';
 import { useSelector } from 'react-redux';
 import { SCTTimer } from '@/pages/jobs/roles/back-to-sales/components/SCTTimer';
 import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission';
+import Popup from '@/components/ui/popup'; // ✅ import Popup
 
 interface ExtendedUnifiedFile extends UnifiedFile {
   uploaded_by_id?: number;
@@ -52,6 +55,10 @@ const ShopRevisionDetailsPage = () => {
   const [showCompleteFeedbackDialog, setShowCompleteFeedbackDialog] = useState(false);
   const [revisionFeedback, setRevisionFeedback] = useState('');
 
+  // ── Delete confirmation state ──
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<{ id: string; name: string } | null>(null);
+
   // Data fetching
   const { data: revisionsData, isLoading: revisionsLoading, refetch: refetchRevisions } = useGetShopRevisionsByFabIdQuery(numericFabId, {
     skip: !numericFabId,
@@ -62,6 +69,9 @@ const ShopRevisionDetailsPage = () => {
   // Upload mutations
   const [uploadToCNC] = useAddFilesToCNCDraftingMutation();
   const [uploadToDrafting] = useAddFilesToDraftingMutation();
+
+  // Delete mutation
+  const [deleteFile, { isLoading: isDeleting }] = useDeleteFileMutation();
 
   const revisions = useMemo(() => (Array.isArray(revisionsData) ? revisionsData : []), [revisionsData]);
   const fab = (fabResponse as any)?.data ?? fabResponse;
@@ -187,6 +197,35 @@ const ShopRevisionDetailsPage = () => {
     toast.success('Shop revision files uploaded successfully');
   };
 
+  // ── Delete handlers ──
+  const handleDeleteClick = (file: UnifiedFile) => {
+    setFileToDelete({ id: String(file.id), name: file.name });
+    setDeleteConfirmationOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!fileToDelete) return;
+    try {
+      await deleteFile({ file_id: fileToDelete.id }).unwrap();
+      toast.success('File deleted successfully');
+      // Refetch both fab and QA files to update the list
+      refetchFab();
+      if (selectedRequesterId) {
+        refetchQaFiles();
+      }
+    } catch (error: any) {
+      toast.error(error?.data?.message || 'Failed to delete file');
+    } finally {
+      setDeleteConfirmationOpen(false);
+      setFileToDelete(null);
+    }
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirmationOpen(false);
+    setFileToDelete(null);
+  };
+
   const fabInfo = [
     { label: 'FAB ID', value: String(fab?.id || fabId || '—') },
     {
@@ -282,6 +321,8 @@ const ShopRevisionDetailsPage = () => {
               <FileGallery
                 sources={fileSources}
                 onFileClick={(file) => setActiveFile(file)}
+                onDeleteFile={handleDeleteClick} // ✅ opens the confirmation modal
+                deletePermissionSubject="file"
                 defaultLayout="card"
                 emptyMessage={
                   !selectedRevision
@@ -364,12 +405,6 @@ const ShopRevisionDetailsPage = () => {
                   <p className="text-xs text-muted-foreground">Requested By</p>
                   <p className="text-sm">
                     {selectedRevision.requested_by_name || selectedRevision.requested_by || '—'}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">Assigned To</p>
-                  <p className="text-sm">
-                    {selectedRevision.assigned_to_name || selectedRevision.assigned_to || '—'}
                   </p>
                 </div>
                 <div className="space-y-1">
@@ -490,6 +525,34 @@ const ShopRevisionDetailsPage = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ── Delete Confirmation Popup ── */}
+      <Popup
+        isOpen={deleteConfirmationOpen}
+        onClose={handleDeleteCancel}
+        title="Delete File"
+        description={`Are you sure you want to delete "${fileToDelete?.name}"? This action cannot be undone.`}
+        centered
+        className="h-auto"
+      >
+        <div className="flex justify-end space-x-3 my-3">
+          <Button
+            variant="outline"
+            onClick={handleDeleteCancel}
+            className="w-[200px]"
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleDeleteConfirm}
+            disabled={isDeleting}
+            className="w-[140px]"
+          >
+            {isDeleting ? 'Deleting…' : 'Delete'}
+          </Button>
+        </div>
+      </Popup>
     </div>
   );
 };
