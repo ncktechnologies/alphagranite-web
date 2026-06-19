@@ -2,7 +2,6 @@
 import { useMemo, useState } from 'react';
 import { flexRender, ColumnDef, getCoreRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { DateRange } from 'react-day-picker';
 import { CalendarDays } from 'lucide-react';
 import { useGetWeeklyFabricationLaborCostQuery } from '@/store/api/report';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
@@ -25,11 +24,9 @@ const pivotWeeklyData = (weeklyData: any[]) => {
     if (!weeklyData.length) return { rows: [], weeks: [] };
     const weeks = weeklyData.map(w => format(new Date(w.week_ending), 'MMM dd'));
     const sample = weeklyData[0];
-    // All numeric keys except week_ending
     const metricKeys = Object.keys(sample).filter(
         key => key !== 'week_ending' && typeof sample[key] === 'number'
     );
-    // Metrics that should be averaged rather than summed for the total
     const avgMetrics = new Set([
         'average_sqft_per_day',
         'average_revenue_per_day',
@@ -59,7 +56,6 @@ const pivotWeeklyData = (weeklyData: any[]) => {
             row[`week_${idx}`] = val;
             if (typeof val === 'number') sum += val;
         });
-        // Decide total: average for rates/percentages, sum for others
         if (avgMetrics.has(key)) {
             row.total = sum / weeklyData.length;
         } else {
@@ -71,30 +67,36 @@ const pivotWeeklyData = (weeklyData: any[]) => {
 };
 
 export function WeeklyFabricationCostReport() {
-    // ─── Date filter ──────────────────────────────────────────────────────────
-    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-    const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
+    // ─── Month/Year filter (instead of date range) ────────────────────────
+    const now = new Date();
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date(now.getFullYear(), now.getMonth(), 1));
+    const [tempDate, setTempDate] = useState<Date | undefined>(selectedDate);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-    const [month, setMonth] = useState(new Date());
+    // This is the month displayed in the calendar
+    const [calendarMonth, setCalendarMonth] = useState<Date>(selectedDate || now);
 
+    // ─── Pagination & sorting ──────────────────────────────────────────────
     const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 100 });
     const [sorting, setSorting] = useState<SortingState>([]);
 
-   const queryParams = useMemo(() => {
-    const params: any = {};
-    if (dateRange?.from) {
-        params.start_date = format(dateRange.from, 'yyyy-MM-dd');
-        params.end_date = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : format(dateRange.from, 'yyyy-MM-dd');
-        // Extract year and month from the selected start date
-        params.year = dateRange.from.getFullYear();
-        params.month = dateRange.from.getMonth() + 1;
-    } else {
-        const now = new Date();
-        params.year = now.getFullYear();
-        params.month = now.getMonth() + 1;
-    }
-    return params;
-}, [dateRange]);
+    // ─── Build query params ────────────────────────────────────────────────
+    const queryParams = useMemo(() => {
+        const params: any = {};
+        if (selectedDate) {
+            params.year = selectedDate.getFullYear();
+            params.month = selectedDate.getMonth() + 1;
+            // Also set start/end for the API (if needed)
+            const start = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+            const end = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+            params.start_date = format(start, 'yyyy-MM-dd');
+            params.end_date = format(end, 'yyyy-MM-dd');
+        } else {
+            const now = new Date();
+            params.year = now.getFullYear();
+            params.month = now.getMonth() + 1;
+        }
+        return params;
+    }, [selectedDate]);
 
     const { data, isLoading, isError } = useGetWeeklyFabricationLaborCostQuery(queryParams);
 
@@ -154,7 +156,6 @@ export function WeeklyFabricationCostReport() {
             },
         ];
 
-        // Add week columns
         weeks.forEach((weekLabel, idx) => {
             cols.push({
                 id: `week_${idx}`,
@@ -185,7 +186,6 @@ export function WeeklyFabricationCostReport() {
             });
         });
 
-        // Total column
         cols.push({
             id: 'total',
             accessorKey: 'total',
@@ -228,16 +228,9 @@ export function WeeklyFabricationCostReport() {
         getSortedRowModel: getSortedRowModel(),
         enableColumnResizing: true,
         columnResizeMode: 'onEnd',
-        meta: {
-            getRowAttributes: (row) => {
-                // Highlight the total row (the "Metric" row is just a normal row; we want to highlight the "Month Total" row, but we have a separate totals row later)
-                // We'll keep it simple: no special row, as we have a footer totals row in the table (the old totals row is not used now; we removed it).
-                return {};
-            },
-        },
     });
 
-    // ─── Annual Summary Table (unchanged, keep original) ────────────────────
+    // ─── Annual Summary Table ──────────────────────────────────────────────
     const annualColumns = useMemo<ColumnDef<any>[]>(() => [
         { accessorKey: 'month', header: ({ column }) => <DataGridColumnHeader title="Month" column={column} />, size: 120, enableSorting: true },
         { accessorKey: 'number_of_weeks', header: ({ column }) => <DataGridColumnHeader title="Weeks" column={column} />, size: 80, enableSorting: true },
@@ -249,7 +242,7 @@ export function WeeklyFabricationCostReport() {
         { accessorKey: 'gross_profit_less_shop_total_cost_psf', header: ({ column }) => <DataGridColumnHeader title="GP less total cost $/Sqft" column={column} />, cell: ({ row }) => $(row.original.gross_profit_less_shop_total_cost_psf), size: 170, enableSorting: true },
     ], []);
 
-    const [annualPagination, setAnnualPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
+    const [annualPagination, setAnnualPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 100 });
     const [annualSorting, setAnnualSorting] = useState<SortingState>([]);
     const annualTable = useReactTable({
         columns: annualColumns,
@@ -263,13 +256,10 @@ export function WeeklyFabricationCostReport() {
     });
 
     const getTitle = () => {
-        if (dateRange?.from) {
-            return dateRange.to
-                ? `${format(dateRange.from, 'MMM dd, yyyy')} – ${format(dateRange.to, 'MMM dd, yyyy')}`
-                : format(dateRange.from, 'MMM dd, yyyy');
+        if (selectedDate) {
+            return format(selectedDate, 'MMMM yyyy');
         }
-        const now = new Date();
-        return `${format(now, 'MMMM yyyy')}`;
+        return format(now, 'MMMM yyyy');
     };
 
     if (isLoading) return <div className="p-5 text-[#7c8689]">Loading fabrication cost report...</div>;
@@ -280,22 +270,58 @@ export function WeeklyFabricationCostReport() {
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <h1 className="text-2xl font-semibold text-[#4b545d]">Weekly Fabrication Labor Cost</h1>
                 <div className="flex items-center gap-2 flex-wrap">
+                    {/* ─── Month/Year Picker ───────────────────────────── */}
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>
-                            <Button variant="outline" className={cn('w-[260px] justify-start text-left font-normal h-[34px]', !dateRange && 'text-muted-foreground')}>
+                            <Button variant="outline" className={cn('w-[180px] justify-start text-left font-normal h-[34px]', !selectedDate && 'text-muted-foreground')}>
                                 <CalendarDays className="mr-2 h-4 w-4" />
-                                {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}` : format(dateRange.from, 'MMM dd, yyyy')) : 'Filter by Date Range'}
+                                {selectedDate ? format(selectedDate, 'MMM yyyy') : 'Select Month'}
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="range" month={month} onMonthChange={setMonth} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} />
+                            <Calendar
+                                mode="single"
+                                month={calendarMonth}
+                                onMonthChange={setCalendarMonth}
+                                selected={tempDate}
+                                onSelect={setTempDate}
+                                initialFocus
+                            />
                             <div className="flex justify-end gap-2 p-3 border-t">
-                                <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); setIsDatePickerOpen(false); }}>Reset</Button>
-                                <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        setTempDate(undefined);
+                                        setSelectedDate(undefined);
+                                        setIsDatePickerOpen(false);
+                                    }}
+                                >
+                                    Reset
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    onClick={() => {
+                                        if (tempDate) {
+                                            // Set to the first of the selected month
+                                            const firstOfMonth = new Date(tempDate.getFullYear(), tempDate.getMonth(), 1);
+                                            setSelectedDate(firstOfMonth);
+                                        } else {
+                                            setSelectedDate(undefined);
+                                        }
+                                        setIsDatePickerOpen(false);
+                                    }}
+                                >
+                                    Apply
+                                </Button>
                             </div>
                         </PopoverContent>
                     </Popover>
-                    {dateRange && <Button variant="ghost" size="sm" onClick={() => setDateRange(undefined)}>Clear</Button>}
+                    {selectedDate && (
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedDate(undefined)}>
+                            Clear
+                        </Button>
+                    )}
                     <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(pivotedTable, `fabrication-cost-${getTitle()}`)}>
                         Export CSV
                     </Button>

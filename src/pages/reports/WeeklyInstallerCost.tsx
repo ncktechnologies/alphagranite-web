@@ -2,7 +2,6 @@
 import { useMemo, useState } from 'react';
 import { flexRender, ColumnDef, getCoreRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table';
 import { format } from 'date-fns';
-import { DateRange } from 'react-day-picker';
 import { CalendarDays } from 'lucide-react';
 import { useGetWeeklyInstallerLaborCostQuery } from '@/store/api/report';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
@@ -65,31 +64,36 @@ const pivotWeeklyData = (weeklyData: any[]) => {
 };
 
 export function WeeklyInstallerCostReport() {
-    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-    const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
+    // ─── Month/Year filter ────────────────────────────────────────────────
+    const now = new Date();
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date(now.getFullYear(), now.getMonth(), 1));
+    const [tempDate, setTempDate] = useState<Date | undefined>(selectedDate);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-    const [month, setMonth] = useState(new Date());
+    const [calendarMonth, setCalendarMonth] = useState<Date>(selectedDate || now);
 
-    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
+    // ─── Pagination & sorting ──────────────────────────────────────────────
+    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 100 });
     const [sorting, setSorting] = useState<SortingState>([]);
-    const [annualPagination, setAnnualPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 12 });
+    const [annualPagination, setAnnualPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 100 });
     const [annualSorting, setAnnualSorting] = useState<SortingState>([]);
 
-  const queryParams = useMemo(() => {
-    const params: any = {};
-    if (dateRange?.from) {
-        params.start_date = format(dateRange.from, 'yyyy-MM-dd');
-        params.end_date = dateRange.to ? format(dateRange.to, 'yyyy-MM-dd') : format(dateRange.from, 'yyyy-MM-dd');
-        // Extract year and month from the selected start date
-        params.year = dateRange.from.getFullYear();
-        params.month = dateRange.from.getMonth() + 1;
-    } else {
-        const now = new Date();
-        params.year = now.getFullYear();
-        params.month = now.getMonth() + 1;
-    }
-    return params;
-}, [dateRange]);
+    // ─── Build query params ────────────────────────────────────────────────
+    const queryParams = useMemo(() => {
+        const params: any = {};
+        if (selectedDate) {
+            params.year = selectedDate.getFullYear();
+            params.month = selectedDate.getMonth() + 1;
+            const start = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+            const end = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+            params.start_date = format(start, 'yyyy-MM-dd');
+            params.end_date = format(end, 'yyyy-MM-dd');
+        } else {
+            const now = new Date();
+            params.year = now.getFullYear();
+            params.month = now.getMonth() + 1;
+        }
+        return params;
+    }, [selectedDate]);
 
     const { data, isLoading, isError } = useGetWeeklyInstallerLaborCostQuery(queryParams);
 
@@ -243,13 +247,10 @@ export function WeeklyInstallerCostReport() {
     });
 
     const getTitle = () => {
-        if (dateRange?.from) {
-            return dateRange.to
-                ? `${format(dateRange.from, 'MMM dd, yyyy')} – ${format(dateRange.to, 'MMM dd, yyyy')}`
-                : format(dateRange.from, 'MMM dd, yyyy');
+        if (selectedDate) {
+            return format(selectedDate, 'MMMM yyyy');
         }
-        const now = new Date();
-        return `${format(now, 'MMMM yyyy')}`;
+        return format(now, 'MMMM yyyy');
     };
 
     if (isLoading) return <div className="p-5 text-[#7c8689]">Loading installer cost report...</div>;
@@ -260,22 +261,57 @@ export function WeeklyInstallerCostReport() {
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <h1 className="text-2xl font-semibold text-[#4b545d]">Weekly Installer Labor Cost</h1>
                 <div className="flex items-center gap-2 flex-wrap">
+                    {/* ─── Month/Year Picker ───────────────────────────── */}
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>
-                            <Button variant="outline" className={cn('w-[260px] justify-start text-left font-normal h-[34px]', !dateRange && 'text-muted-foreground')}>
+                            <Button variant="outline" className={cn('w-[180px] justify-start text-left font-normal h-[34px]', !selectedDate && 'text-muted-foreground')}>
                                 <CalendarDays className="mr-2 h-4 w-4" />
-                                {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}` : format(dateRange.from, 'MMM dd, yyyy')) : 'Filter by Date Range'}
+                                {selectedDate ? format(selectedDate, 'MMM yyyy') : 'Select Month'}
                             </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="range" month={month} onMonthChange={setMonth} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} />
+                            <Calendar
+                                mode="single"
+                                month={calendarMonth}
+                                onMonthChange={setCalendarMonth}
+                                selected={tempDate}
+                                onSelect={setTempDate}
+                                initialFocus
+                            />
                             <div className="flex justify-end gap-2 p-3 border-t">
-                                <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); setIsDatePickerOpen(false); }}>Reset</Button>
-                                <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => {
+                                        setTempDate(undefined);
+                                        setSelectedDate(undefined);
+                                        setIsDatePickerOpen(false);
+                                    }}
+                                >
+                                    Reset
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    onClick={() => {
+                                        if (tempDate) {
+                                            const firstOfMonth = new Date(tempDate.getFullYear(), tempDate.getMonth(), 1);
+                                            setSelectedDate(firstOfMonth);
+                                        } else {
+                                            setSelectedDate(undefined);
+                                        }
+                                        setIsDatePickerOpen(false);
+                                    }}
+                                >
+                                    Apply
+                                </Button>
                             </div>
                         </PopoverContent>
                     </Popover>
-                    {dateRange && <Button variant="ghost" size="sm" onClick={() => setDateRange(undefined)}>Clear</Button>}
+                    {selectedDate && (
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedDate(undefined)}>
+                            Clear
+                        </Button>
+                    )}
                     <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(pivotedTable, `installer-cost-${getTitle()}`)}>
                         Export CSV
                     </Button>
@@ -302,7 +338,7 @@ export function WeeklyInstallerCostReport() {
                         <CardToolbar />
                     </CardHeader>
                     <CardTable>
-                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-5px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                             <div className="relative">
                                 <table className="w-full border-collapse table-fixed">
                                     <thead className="sticky top-0 z-10 bg-white">
@@ -368,7 +404,7 @@ export function WeeklyInstallerCostReport() {
                         <CardToolbar />
                     </CardHeader>
                     <CardTable>
-                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-5px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                             <div className="relative">
                                 <table className="w-full border-collapse table-fixed">
                                     <thead className="sticky top-0 z-10 bg-white">
