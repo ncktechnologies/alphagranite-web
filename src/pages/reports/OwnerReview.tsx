@@ -38,7 +38,8 @@ const STAGE_DISPLAY_MAP: Record<string, string> = {
     'cnc': 'CNC Programming',
     'pre_draft_review': 'Pre-Draft Review',
     'install_scheduling': 'Install To Schedule',
-    'install_completion': 'Install Scheduled'
+    'install_completion': 'Install Scheduled',
+    'sales_ct': 'SCT'
 };
 
 // ─── Normalize stage name for matching ────────────────────────────────────

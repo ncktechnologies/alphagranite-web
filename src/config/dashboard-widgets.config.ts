@@ -136,7 +136,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
   // CNC (10)
   {
     id: 'CNC',
-    title: 'CNC',
+    title: 'CNC Programming',
     requiredPermission: 'CNC',
     requiredAction: 'read',
     component: 'StatWidget',

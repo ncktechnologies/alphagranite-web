@@ -310,7 +310,7 @@ export function DailyInstallCompletionReport() {
         };
 
         // Build final columns: action first, then data columns up to insertIdx, then fab_info, then rest
-        const finalCols = [actionCol];
+        const finalCols = [];
         finalCols.push(...dataCols.slice(0, insertIdx));
         finalCols.push(fabInfoCol);
         finalCols.push(...dataCols.slice(insertIdx));

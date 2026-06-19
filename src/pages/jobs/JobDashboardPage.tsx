@@ -74,7 +74,7 @@ export function JobDashboardPage() {
       'Install Scheduling': 'install_scheduling',
       'Install Completion': 'install_completion',
       'FAB IDs': 'fab_created',
-      'CNC': 'cnc'
+      'CNC Programming': 'cnc'
     };
 
     const stageName = stageNameMap[widgetId] || widgetId.toLowerCase().replace(/ /g, '_');

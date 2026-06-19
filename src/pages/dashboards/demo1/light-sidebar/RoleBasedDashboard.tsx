@@ -46,6 +46,7 @@ export function RoleBasedDashboard() {
       'Install Scheduling': '/job/install-to-schedule',
       'Install Completion': '/job/install-scheduled',
       'shop-overview': '/shop',
+      'CNC Programming': '/job/cnc',
     };
     return routeMap[widgetId] || '/job';
   };
@@ -70,7 +71,8 @@ export function RoleBasedDashboard() {
       'Install Scheduling': 'install_scheduling',
       'Install Completion': 'install_completion',
       'FAB IDs': 'fab_created',
-      'shop-overview': 'shop_overview'
+      'shop-overview': 'shop_overview',
+      'CNC Programming': 'cnc',
     };
     
     const stageName = stageNameMap[widgetId] || widgetId.toLowerCase().replace(/ /g, '_');
