@@ -126,6 +126,7 @@ export const MENU_SIDEBAR: MenuConfig = [
       { title: 'Monthly Install Comp.', path: '/report/monthly-install-completion', permissionKey: 'monthly_install_completion' },
       { title: 'Redo Analysis', path: '/report/redo-analysis', permissionKey: 'redo_analysis' },
       { title: 'Redos', path: '/report/redos', permissionKey: 'redos' },
+      { title: 'Revision', path: '/report/report-revision', permissionKey: 'revision' },
       { title: 'Service Level', path: '/report/service-level', permissionKey: 'service_level' },
        { title: 'Shop Production Summary', path: '/report/shop-production-summary', permissionKey: 'shop_production_summary' },
       { title: 'Stage Status', path: '/report/owner-overview', permissionKey: 'owner_overview' },

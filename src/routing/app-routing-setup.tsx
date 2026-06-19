@@ -83,6 +83,7 @@ import ShopStatusPage from '@/pages/shop/status/StatusPage';
 import { InstallationTemplateReportCard } from '@/pages/reports/InstallationTemplateCard';
 import { ShopProductionSummary } from '@/pages/reports/ShopProductionSummary';
 import { DailyCompletion } from '@/pages/reports/DailyCompletion';
+import { RevisionReport } from '@/pages/reports/RevisionReport';
 
 export function AppRoutingSetup() {
   return (
@@ -466,6 +467,7 @@ export function AppRoutingSetup() {
           <Route path="/report/service-level" element={<ServiceLevelReport />} />
           <Route path='/report/shop-production-summary' element={<ShopProductionSummary/>} />
           <Route path='/report/daily-completion' element={<DailyCompletion/>} />
+          <Route path='/report/report-revision' element={<RevisionReport/>} />
 
 
 

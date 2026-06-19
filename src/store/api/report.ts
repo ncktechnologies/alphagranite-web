@@ -316,6 +316,23 @@ export const reportApi = createApi({
                 }),
                 invalidatesTags: ["Report"],
             }),
+            getRevisionReport: build.query<any, { year?: number; month?: number; start_date?: string; end_date?: string; fab_type?: string } | void>({
+                query: (params) => {
+                    const searchParams = new URLSearchParams();
+                    if (params?.year) searchParams.append('year', String(params.year));
+                    if (params?.month) searchParams.append('month', String(params.month));
+                    if (params?.start_date) searchParams.append('start_date', params.start_date);
+                    if (params?.end_date) searchParams.append('end_date', params.end_date);
+                    if (params?.fab_type && params.fab_type !== 'all') searchParams.append('fab_type', params.fab_type);
+                    const queryString = searchParams.toString();
+                    return {
+                        url: `/api/v1/reports/owner/revision-report${queryString ? `?${queryString}` : ''}`,
+                        method: "get",
+                    };
+                },
+                transformResponse: (response: any) => response,
+                providesTags: ["Report"],
+            }),
         };
     },
 });
@@ -345,5 +362,6 @@ export const {
     useUpdateMonthlyCutCompletionMutation,
     useGetShopProductionSummaryQuery,
     useGetDailyCompletionQuery,
+    useGetRevisionReportQuery
 
 } = reportApi;

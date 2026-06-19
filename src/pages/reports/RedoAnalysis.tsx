@@ -66,7 +66,6 @@ interface RedoCostRow {
     redo_total_sqft: number;
     redo_total_cost: number;
     created_at: string;
-    // Optional fields for FabInfoCell
     input_area?: string;
     stone_type_name?: string;
     stone_color_name?: string;
@@ -394,7 +393,11 @@ export function RedoAnalysisReport() {
         {
             accessorKey: 'redo_percent_value',
             header: ({ column }) => <DataGridColumnHeader title="REDO %" column={column} />,
-            cell: ({ row }) => row.original.redo_percent_value?.toFixed(2) + '%' ?? '0.00%',
+            // ✅ fixed: handle null/undefined properly
+            cell: ({ row }) => {
+                const val = row.original.redo_percent_value;
+                return val != null ? val.toFixed(2) + '%' : '0.00%';
+            },
             size: 100,
             enableSorting: true,
         },
