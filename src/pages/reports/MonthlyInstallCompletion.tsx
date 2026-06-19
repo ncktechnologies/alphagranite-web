@@ -44,6 +44,11 @@ const CURRENCY_COLUMNS = new Set([
     'cost_per_sqft', 'total_cost'
 ]);
 
+// ─── Column header overrides ──────────────────────────────────────────────
+const HEADER_OVERRIDES: Record<string, string> = {
+    'pieces': 'NO OF PIECES',
+};
+
 export function MonthlyInstallCompletionReport() {
     const isSuperAdmin = useIsSuperAdmin();
 
@@ -165,6 +170,9 @@ export function MonthlyInstallCompletionReport() {
 
         const keys = Object.keys(regularRow).filter(k => k !== '_isTotalRow');
 
+        // ── Exclude these keys from the table ──
+        const excludeKeys = new Set(['installer_id']);
+
         // Fields that should be hidden and shown only inside fab_info
         const compositeFabFields = [
             'acct_name', 'account_name', 'job_name', 'input_area',
@@ -179,15 +187,18 @@ export function MonthlyInstallCompletionReport() {
 
         const orderedKeys: string[] = [];
 
-        // 1. Priority keys
+        // 1. Priority keys (skip excluded)
         priority.forEach(key => {
-            if (keys.includes(key)) orderedKeys.push(key);
+            if (keys.includes(key) && !excludeKeys.has(key)) {
+                orderedKeys.push(key);
+            }
         });
 
-        // 2. All remaining keys (excluding composite and specialLast)
+        // 2. All remaining keys (excluding composite, priority, excluded, and specialLast)
         const remaining = keys.filter(key => 
             !priority.includes(key) && 
-            !compositeFabFields.includes(key) && 
+            !compositeFabFields.includes(key) &&
+            !excludeKeys.has(key) &&
             key !== specialLast
         );
         orderedKeys.push(...remaining);
@@ -199,7 +210,7 @@ export function MonthlyInstallCompletionReport() {
 
         // Build data columns for all ordered keys
         const dataCols = orderedKeys.map(key => {
-            const headerTitle = key.replace(/_/g, ' ').toUpperCase();
+            const headerTitle = HEADER_OVERRIDES[key] || key.replace(/_/g, ' ').toUpperCase();
             const isCurrency = CURRENCY_COLUMNS.has(key) || key.includes('revenue') || key === 'gp' || key === 'cost_of_stone';
             return {
                 accessorKey: key,
