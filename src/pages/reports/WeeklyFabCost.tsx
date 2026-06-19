@@ -77,7 +77,7 @@ export function WeeklyFabricationCostReport() {
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [month, setMonth] = useState(new Date());
 
-    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
+    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 100 });
     const [sorting, setSorting] = useState<SortingState>([]);
 
    const queryParams = useMemo(() => {
@@ -336,7 +336,7 @@ export function WeeklyFabricationCostReport() {
                         <CardToolbar />
                     </CardHeader>
                     <CardTable>
-                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-5px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                             <div className="relative">
                                 <table className="w-full border-collapse table-fixed">
                                     <thead className="sticky top-0 z-10 bg-white">
@@ -404,7 +404,7 @@ export function WeeklyFabricationCostReport() {
                             <CardToolbar />
                         </CardHeader>
                         <CardTable>
-                            <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
+                            <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-5px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                                 <div className="relative">
                                     <table className="w-full border-collapse table-fixed">
                                         <thead className="sticky top-0 z-10 bg-white">

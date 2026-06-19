@@ -69,6 +69,9 @@ export function DailyCompletion() {
     // ─── Weekday override ────────────────────────────────────────────────────
     const [weekdays, setWeekdays] = useState<number | null>(null);
 
+    // ─── Installer filter (client‑side) ──────────────────────────────────────
+    const [installerFilter, setInstallerFilter] = useState<string>('all');
+
     // ─── Sorting & pagination ────────────────────────────────────────────────
     const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
     const [sorting, setSorting] = useState<SortingState>([]);
@@ -89,23 +92,52 @@ export function DailyCompletion() {
     const { data, isLoading } = useGetDailyCompletionQuery(queryParams);
     const apiData = data?.data as ApiResponse['data'] | undefined;
     const columnsFromApi = useMemo(() => apiData?.columns ?? [], [apiData]);
-    const rows = useMemo(() => apiData?.rows ?? [], [apiData]);
+    const rawRows = useMemo(() => apiData?.rows ?? [], [apiData]);
     const summary = useMemo(() => apiData?.summary ?? null, [apiData]);
 
-    // ─── Dynamic columns ─────────────────────────────────────────────────────
+    // ─── Extract unique installers for filter ───────────────────────────────
+    const installers = useMemo(() => {
+        const installerSet = new Set<string>();
+        rawRows.forEach(row => {
+            const installer = row.installer || row.installer_name || row.assigned_to_name;
+            if (installer) installerSet.add(String(installer));
+        });
+        return Array.from(installerSet).sort();
+    }, [rawRows]);
+
+    // ─── Client‑side filtering by installer ─────────────────────────────────
+    const rows = useMemo(() => {
+        if (installerFilter === 'all') return rawRows;
+        return rawRows.filter(row => {
+            const installer = row.installer || row.installer_name || row.assigned_to_name;
+            return String(installer) === installerFilter;
+        });
+    }, [rawRows, installerFilter]);
+
+    // ─── Dynamic columns with enhanced formatting ──────────────────────────
     const tableColumns = useMemo<ColumnDef<DailyRow>[]>(() => {
         if (!columnsFromApi.length) return [];
+
+        // Define currency columns (GP, Revenue, etc.)
+        const currencyColumns = new Set(['gross_profit', 'gp', 'revenue', 'total_revenue', 'profit']);
+
         return columnsFromApi.map(key => ({
             accessorKey: key,
             header: ({ column }) => <DataGridColumnHeader title={key.replace(/_/g, ' ').toUpperCase()} column={column} />,
-            size: key === 'date' ? 140 : 120,
+            size: key === 'date' ? 140 : key === 'installer' || key === 'installer_name' ? 160 : 120,
             enableSorting: true,
             cell: ({ row }) => {
                 let val = row.original[key];
                 if (key === 'date' && val) {
                     try { val = format(new Date(val), 'MMM dd, yyyy'); } catch {}
                 }
-                if (typeof val === 'number') val = val.toFixed(2);
+                if (typeof val === 'number') {
+                    // Format currency for GP, revenue, etc.
+                    if (currencyColumns.has(key)) {
+                        return <span className="text-sm">${val.toFixed(2)}</span>;
+                    }
+                    val = val.toFixed(2);
+                }
                 if (val == null) return <span className="text-sm">-</span>;
                 return <span className="text-sm">{val}</span>;
             },
@@ -198,7 +230,22 @@ export function DailyCompletion() {
                     </Popover>
                     {dateRange && <Button variant="ghost" size="sm" onClick={() => setDateRange(undefined)}>Clear</Button>}
 
-                    {/* Weekday Override */}
+                    {/* Installer Filter (only show if installers exist) */}
+                    {installers.length > 0 && (
+                        <Select value={installerFilter} onValueChange={setInstallerFilter}>
+                            <SelectTrigger className="w-[180px] h-[34px] border-[#e2e4ed]">
+                                <SelectValue placeholder="Installer" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Installers</SelectItem>
+                                {installers.map(inst => (
+                                    <SelectItem key={inst} value={inst}>{inst}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
+
+                    {/* Weekday Override (commented out – can be uncommented if needed) */}
                     {/* <Select value={weekdays !== null ? String(weekdays) : 'all'} onValueChange={(v) => setWeekdays(v === 'all' ? null : Number(v))}>
                         <SelectTrigger className="w-[150px] h-[34px] border-[#e2e4ed]">
                             <SelectValue placeholder="Weekday" />

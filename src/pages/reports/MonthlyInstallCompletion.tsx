@@ -37,6 +37,13 @@ const getFabColor = (fabType: string | undefined): string => {
     return fabTypeColorMap[fabType.toLowerCase()] || 'transparent';
 };
 
+// ─── Currency column set ────────────────────────────────────────────────────
+const CURRENCY_COLUMNS = new Set([
+    'revenue', 'gp', 'gross_profit', 'cost_of_stone', 
+    'revenue_per_sq_ft',
+    'cost_per_sqft', 'total_cost'
+]);
+
 export function MonthlyInstallCompletionReport() {
     const isSuperAdmin = useIsSuperAdmin();
 
@@ -116,6 +123,8 @@ export function MonthlyInstallCompletionReport() {
             pieces: filteredRows.reduce((s, r) => s + (r.pieces || 0), 0),
             sq_ft: filteredRows.reduce((s, r) => s + (r.sq_ft || 0), 0),
             revenue: filteredRows.reduce((s, r) => s + (r.revenue || 0), 0),
+            cost_of_stone: filteredRows.reduce((s, r) => s + (r.cost_of_stone || 0), 0),
+            gp: filteredRows.reduce((s, r) => s + (r.gp || 0), 0),
         };
     }, [filteredRows]);
 
@@ -130,68 +139,123 @@ export function MonthlyInstallCompletionReport() {
     const displayRows = useMemo(() => {
         if (!totals) return slicedData;
         const totalRow: any = {
-            fab_id: 'TOTAL',
+            install_date: 'TOTAL',
+            fab_id: '',
+            job_number: '',
+            installer_name: '',
+            job_name: '',
+            account_name: '',
             pieces: totals.pieces,
             sq_ft: totals.sq_ft,
             revenue: totals.revenue,
+            cost_of_stone: totals.cost_of_stone,
+            gp: totals.gp,
             _isTotalRow: true,
         };
         return [totalRow, ...slicedData];
     }, [totals, slicedData]);
 
-    // ─── Columns with sorting ──────────────────────────────────────────────
+    // ─── Columns ──────────────────────────────────────────────────────────────
     const columns = useMemo<ColumnDef<any>[]>(() => {
         if (!displayRows.length) return [];
-        const first = displayRows[0];
-        const keys = Object.keys(first).filter(k => k !== '_isTotalRow');
 
+        // Get keys from the first non-total row, or fallback to rawRows[0]
+        const regularRow = displayRows.find(row => !row._isTotalRow) || rawRows[0];
+        if (!regularRow) return [];
+
+        const keys = Object.keys(regularRow).filter(k => k !== '_isTotalRow');
+
+        // Fields that should be hidden and shown only inside fab_info
         const compositeFabFields = [
             'acct_name', 'account_name', 'job_name', 'input_area',
             'stone_type_name', 'stone_color_name', 'stone_thickness_value', 'edge_name'
         ];
-        const dataCols = keys
-            .filter(key => !compositeFabFields.includes(key))
-            .map(key => {
-                let headerTitle = key.replace(/_/g, ' ').toUpperCase();
-                if (key === 'pieces' || key === 'no_of_pieces') headerTitle = 'NO OF PIECES';
-                return {
-                    accessorKey: key,
-                    header: ({ column }) => <DataGridColumnHeader title={headerTitle} column={column} />,
-                    size: key === 'job_name' || key === 'fab_info' ? 250 : 130,
-                    enableSorting: true,
-                    cell: ({ row }) => {
-                        if (row.original._isTotalRow) {
-                            if (key === 'fab_id') return <span className="font-semibold">TOTAL</span>;
-                            if (key === 'pieces') return <span className="font-semibold">{row.original.pieces}</span>;
-                            if (key === 'sq_ft') return <span className="font-semibold">{row.original.sq_ft?.toFixed(2)}</span>;
-                            if (key === 'revenue') return <span className="font-semibold">${row.original.revenue?.toFixed(2)}</span>;
-                            return null;
-                        }
-                        let val = row.original[key];
-                        if (key.includes('date') && val) val = format(new Date(val), 'MMM dd, yyyy');
-                        if (typeof val === 'number') val = val.toLocaleString();
-                        if (val == null) return <span className="text-sm">-</span>;
 
-                        if (key === 'fab_id') {
-                            const link = getFabIdLink(Number(val));
-                            return renderLink(link);
+        // Priority order (these appear first)
+        const priority = ['install_date', 'fab_type', 'fab_id', 'job_number', 'installer_name'];
+
+        // We want revenue_per_sq_ft to be last
+        const specialLast = 'revenue_per_sq_ft';
+
+        const orderedKeys: string[] = [];
+
+        // 1. Priority keys
+        priority.forEach(key => {
+            if (keys.includes(key)) orderedKeys.push(key);
+        });
+
+        // 2. All remaining keys (excluding composite and specialLast)
+        const remaining = keys.filter(key => 
+            !priority.includes(key) && 
+            !compositeFabFields.includes(key) && 
+            key !== specialLast
+        );
+        orderedKeys.push(...remaining);
+
+        // 3. Special last column
+        if (keys.includes(specialLast)) {
+            orderedKeys.push(specialLast);
+        }
+
+        // Build data columns for all ordered keys
+        const dataCols = orderedKeys.map(key => {
+            const headerTitle = key.replace(/_/g, ' ').toUpperCase();
+            const isCurrency = CURRENCY_COLUMNS.has(key) || key.includes('revenue') || key === 'gp' || key === 'cost_of_stone';
+            return {
+                accessorKey: key,
+                header: ({ column }) => <DataGridColumnHeader title={headerTitle} column={column} />,
+                size: key === 'install_date' ? 120 : key === 'job_name' ? 200 : 130,
+                enableSorting: true,
+                cell: ({ row }) => {
+                    if (row.original._isTotalRow) {
+                        if (key === 'install_date') return <span className="font-semibold">TOTAL</span>;
+                        if (key === 'pieces') return <span className="font-semibold">{row.original.pieces}</span>;
+                        if (key === 'sq_ft') return <span className="font-semibold">{row.original.sq_ft?.toFixed(2)}</span>;
+                        if (key === 'revenue') return <span className="font-semibold">${row.original.revenue?.toFixed(2)}</span>;
+                        if (key === 'cost_of_stone') return <span className="font-semibold">${row.original.cost_of_stone?.toFixed(2)}</span>;
+                        if (key === 'gp') return <span className="font-semibold">${row.original.gp?.toFixed(2)}</span>;
+                        if (key === 'revenue_per_sq_ft') return <span className="font-semibold">—</span>;
+                        if (typeof row.original[key] === 'number') {
+                            return <span className="font-semibold">{row.original[key]?.toFixed(2)}</span>;
                         }
-                        if (key === 'job_number') {
-                            const link = getJobNumberLink(String(val));
-                            return renderLink(link);
+                        return null;
+                    }
+                    let val = row.original[key];
+                    if (key === 'install_date' && val) {
+                        try { val = format(new Date(val), 'MMM dd, yyyy'); } catch {}
+                    }
+                    if (typeof val === 'number') {
+                        if (isCurrency) {
+                            return <span className="text-sm">${val.toFixed(2)}</span>;
                         }
-                        if (key === 'job_name') {
-                            const jobId = row.original.job_id;
-                            if (jobId) {
-                                const link = getJobNameLink(String(val), jobId);
-                                if (link) return renderLink(link);
-                            }
-                            return <span className="text-sm">{val}</span>;
+                        val = val.toLocaleString();
+                    }
+                    if (val == null) return <span className="text-sm">-</span>;
+
+                    if (key === 'fab_id') {
+                        const link = getFabIdLink(Number(val));
+                        return renderLink(link);
+                    }
+                    if (key === 'job_number') {
+                        const link = getJobNumberLink(String(val));
+                        return renderLink(link);
+                    }
+                    if (key === 'job_name') {
+                        const jobId = row.original.job_id;
+                        if (jobId) {
+                            const link = getJobNameLink(String(val), jobId);
+                            if (link) return renderLink(link);
                         }
                         return <span className="text-sm">{val}</span>;
-                    },
-                };
-            });
+                    }
+                    return <span className="text-sm">{val}</span>;
+                },
+            };
+        });
+
+        // Insert fab_info after job_number
+        const jobNumberIdx = dataCols.findIndex(col => col.accessorKey === 'job_number');
+        const insertIdx = jobNumberIdx !== -1 ? jobNumberIdx + 1 : 1;
 
         const fabInfoCol: ColumnDef<any> = {
             id: 'fab_info',
@@ -227,19 +291,18 @@ export function MonthlyInstallCompletionReport() {
             enableSorting: false,
         };
 
-        const jobNumberIndex = dataCols.findIndex(col => col.accessorKey === 'job_number');
-        const insertIndex = jobNumberIndex !== -1 ? jobNumberIndex + 1 : 1;
+        // Final columns: action first, then data columns up to insertIdx, then fab_info, then rest
         const finalCols = [];
-        finalCols.push(...dataCols.slice(0, insertIndex));
+        finalCols.push(...dataCols.slice(0, insertIdx));
         finalCols.push(fabInfoCol);
-        finalCols.push(...dataCols.slice(insertIndex));
+        finalCols.push(...dataCols.slice(insertIdx));
         return finalCols;
-    }, [displayRows]);
+    }, [displayRows, rawRows, isSuperAdmin]);
 
     const table = useReactTable({
         columns,
         data: displayRows,
-        getRowId: (row) => row._isTotalRow ? 'total' : String(row.fab_id),
+        getRowId: (row) => row._isTotalRow ? 'total' : String(row.fab_id || row.install_date),
         state: { pagination, sorting },
         onPaginationChange: setPagination,
         onSortingChange: setSorting,
@@ -278,20 +341,10 @@ export function MonthlyInstallCompletionReport() {
 
     return (
         <div className="flex flex-col gap-5 p-5">
+            {/* ─── Top Bar: Title + Date Controls ────────────────────────── */}
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <h1 className="text-2xl font-semibold text-[#4b545d]">Monthly Install Completion</h1>
                 <div className="flex items-center gap-2 flex-wrap">
-                    {/* Fab Type Filter */}
-                    <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
-                        <SelectTrigger className="w-[150px] h-[34px] border-[#e2e4ed]">
-                            <SelectValue placeholder="Fab Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Types</SelectItem>
-                            {fabTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-
                     {/* Mode toggle: Monthly or Custom Range */}
                     <Select value={dateMode} onValueChange={(v) => setDateMode(v as 'monthly' | 'custom')}>
                         <SelectTrigger className="w-[120px] h-[34px] border-[#e2e4ed]">
@@ -336,7 +389,7 @@ export function MonthlyInstallCompletionReport() {
                                     {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}` : format(dateRange.from, 'MMM dd, yyyy')) : 'Select date range'}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
+                            <PopoverContent className="w-auto p-0" align="start" side="top">
                                 <Calendar mode="range" month={new Date()} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} />
                                 <div className="flex justify-end gap-2 p-3 border-t">
                                     <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); setIsDatePickerOpen(false); }}>Reset</Button>
@@ -345,47 +398,10 @@ export function MonthlyInstallCompletionReport() {
                             </PopoverContent>
                         </Popover>
                     )}
-
-                    {/* Search with type selector */}
-                    <div className="relative flex items-center">
-                        <Select value={searchType} onValueChange={(v) => setSearchType(v as 'fab_id' | 'job_number' | 'job_name')}>
-                            <SelectTrigger className="w-[140px] h-[34px] rounded-e-none border-r-0">
-                                <SelectValue placeholder="Search by" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="fab_id">Fab ID</SelectItem>
-                                <SelectItem value="job_number">Job Number</SelectItem>
-                                <SelectItem value="job_name">Job Name</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <div className="relative">
-                            <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
-                            <Input
-                                placeholder={`Search by ${searchType.replace('_', ' ')}`}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="ps-9 w-[230px] h-[34px] rounded-s-none"
-                            />
-                            {searchQuery && (
-                                <Button
-                                    mode="icon"
-                                    variant="ghost"
-                                    className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                                    onClick={() => setSearchQuery('')}
-                                >
-                                    <X />
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-
-                    <Button variant="outline" onClick={() => exportTableToCSV(table, `monthly-install-${year}-${month}`)} className="h-[34px]">
-                        Export CSV
-                    </Button>
                 </div>
             </div>
 
-            {/* Summary Widgets */}
+            {/* ─── Summary Widgets ────────────────────────────────────────── */}
             {summary && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
@@ -407,12 +423,60 @@ export function MonthlyInstallCompletionReport() {
                 </div>
             )}
 
-            {/* Data Table */}
+            {/* ─── Data Table with filters inside CardToolbar ────────────── */}
             <DataGrid table={table} recordCount={filteredRows.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
                 <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
                     <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
                         <p className="text-base font-semibold text-[#4b545d]">{getTitle()}</p>
-                        <CardToolbar />
+                        <CardToolbar className="flex items-center gap-2 flex-wrap">
+                            {/* Fab Type Filter */}
+                            <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
+                                <SelectTrigger className="w-[150px] h-[34px] border-[#e2e4ed]">
+                                    <SelectValue placeholder="Fab Type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Types</SelectItem>
+                                    {fabTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+
+                            {/* Search with type selector */}
+                            <div className="relative flex items-center">
+                                <Select value={searchType} onValueChange={(v) => setSearchType(v as 'fab_id' | 'job_number' | 'job_name')}>
+                                    <SelectTrigger className="w-[140px] h-[34px] rounded-e-none border-r-0">
+                                        <SelectValue placeholder="Search by" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="fab_id">Fab ID</SelectItem>
+                                        <SelectItem value="job_number">Job Number</SelectItem>
+                                        <SelectItem value="job_name">Job Name</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <div className="relative">
+                                    <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                                    <Input
+                                        placeholder={`Search by ${searchType.replace('_', ' ')}`}
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="ps-9 w-[230px] h-[34px] rounded-s-none"
+                                    />
+                                    {searchQuery && (
+                                        <Button
+                                            mode="icon"
+                                            variant="ghost"
+                                            className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                                            onClick={() => setSearchQuery('')}
+                                        >
+                                            <X />
+                                        </Button>
+                                    )}
+                                </div>
+                            </div>
+
+                            <Button variant="outline" onClick={() => exportTableToCSV(table, `monthly-install-${year}-${month}`)} className="h-[34px]">
+                                Export CSV
+                            </Button>
+                        </CardToolbar>
                     </CardHeader>
                     <CardTable>
                         <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">

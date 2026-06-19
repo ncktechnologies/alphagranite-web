@@ -33,7 +33,7 @@ export function WeeklyTrendsReport() {
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [month, setMonth] = useState(new Date());
 
-    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
+    const [pagination, setPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 100 });
     const [sorting, setSorting] = useState<SortingState>([]);
 
     // Build query params
@@ -90,13 +90,6 @@ export function WeeklyTrendsReport() {
     // ─── Columns with sorting ────────────────────────────────────────────────
     const columns = useMemo<ColumnDef<TrendRow>[]>(() => [
         {
-            accessorKey: 'sqft_template_installed',
-            header: ({ column }) => <DataGridColumnHeader title="SQFT TEMPLATE INSTALLED" column={column} />,
-            cell: ({ row }) => row.original.sqft_template_installed?.toFixed(0) ?? '0',
-            size: 150,
-            enableSorting: true,
-        },
-        {
             accessorKey: 'week_start',
             header: ({ column }) => <DataGridColumnHeader title="WEEK STARTING" column={column} />,
             cell: ({ row }) => {
@@ -112,29 +105,10 @@ export function WeeklyTrendsReport() {
             enableSorting: true,
         },
         {
-            accessorKey: 'fabs_created',
-            header: ({ column }) => <DataGridColumnHeader title="FABS CREATED" column={column} />,
-            size: 120,
-            enableSorting: true,
-        },
-        {
-            accessorKey: 'installs_completed',
-            header: ({ column }) => <DataGridColumnHeader title="INSTALLS COMPLETED" column={column} />,
+            accessorKey: 'sqft_template_installed',
+            header: ({ column }) => <DataGridColumnHeader title="SQFT TEMPLATE INSTALLED" column={column} />,
+            cell: ({ row }) => row.original.sqft_template_installed?.toFixed(0) ?? '0',
             size: 150,
-            enableSorting: true,
-        },
-        {
-            accessorKey: 'revenue',
-            header: ({ column }) => <DataGridColumnHeader title="REVENUE" column={column} />,
-            cell: ({ row }) => `$${row.original.revenue.toFixed(2)}`,
-            size: 130,
-            enableSorting: true,
-        },
-        {
-            accessorKey: 'gross_profit',
-            header: ({ column }) => <DataGridColumnHeader title="GROSS PROFIT" column={column} />,
-            cell: ({ row }) => `$${row.original.gross_profit.toFixed(2)}`,
-            size: 130,
             enableSorting: true,
         },
         {
@@ -144,6 +118,34 @@ export function WeeklyTrendsReport() {
             size: 130,
             enableSorting: true,
         },
+        {
+            accessorKey: 'installs_completed',
+            header: ({ column }) => <DataGridColumnHeader title="INSTALLS COMPLETED" column={column} />,
+            size: 150,
+            enableSorting: true,
+        },
+        {
+            accessorKey: 'fabs_created',
+            header: ({ column }) => <DataGridColumnHeader title="FABS CREATED" column={column} />,
+            size: 120,
+            enableSorting: true,
+        },
+
+        // {
+        //     accessorKey: 'revenue',
+        //     header: ({ column }) => <DataGridColumnHeader title="REVENUE" column={column} />,
+        //     cell: ({ row }) => `$${row.original.revenue.toFixed(2)}`,
+        //     size: 130,
+        //     enableSorting: true,
+        // },
+        // {
+        //     accessorKey: 'gross_profit',
+        //     header: ({ column }) => <DataGridColumnHeader title="GROSS PROFIT" column={column} />,
+        //     cell: ({ row }) => `$${row.original.gross_profit.toFixed(2)}`,
+        //     size: 130,
+        //     enableSorting: true,
+        // },
+
     ], []);
 
     const table = useReactTable({
@@ -216,7 +218,7 @@ export function WeeklyTrendsReport() {
                         <CardToolbar />
                     </CardHeader>
                     <CardTable>
-                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] bg-white [&>[data-radix-scroll-area-viewport]]:pb-4">
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-10px)] bg-white [&>[data-radix-scroll-area-viewport]]:pb-4">
                             <div className="relative">
                                 <table className="w-full border-collapse table-fixed">
                                     <thead className="sticky top-0 z-10 bg-white">

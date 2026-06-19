@@ -310,7 +310,7 @@ export function InstallationTemplateReport() {
         },
         {
             id: 'sqft_installed',
-            header: ({ column }) => <DataGridColumnHeader title="SQ FT INSTALLED" column={column} />,
+            header: ({ column }) => <DataGridColumnHeader title="SQ FT COMPLETED" column={column} />,
             cell: ({ row }) => {
                 if (row.original.type === 'installer') {
                     return <span>{row.original.total_sqft_installed?.toFixed(0) ?? '0'}</span>;
@@ -325,7 +325,7 @@ export function InstallationTemplateReport() {
         },
         {
             id: 'sqft_incomplete',
-            header: ({ column }) => <DataGridColumnHeader title="SQ FT INCOMPLETE" column={column} />,
+            header: ({ column }) => <DataGridColumnHeader title="SQ FT NOT COMPLETE" column={column} />,
             cell: ({ row }) => {
                 if (row.original.type === 'installer') {
                     return <span>{row.original.total_sqft_incomplete?.toFixed(0) ?? '0'}</span>;
@@ -402,7 +402,7 @@ export function InstallationTemplateReport() {
     return (
         <div className="flex flex-col gap-5 p-5">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Lucas Report</h1>
+                <h1 className="text-2xl font-semibold text-[#4b545d]">Installation And Template Report</h1>
                 <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                     <PopoverTrigger asChild>
                         <Button variant="outline" className={cn('w-[170px] h-[34px] justify-start text-left', !dateRange && 'text-muted-foreground')}>

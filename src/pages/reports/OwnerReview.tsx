@@ -23,6 +23,7 @@ const STAGE_ORDER = [
     'resurface_scheduling',
     'drafting',
     'slab_smith_request',
+    'slabsmith',
     'sales_ct',
     'revision',
     'cut_list',
@@ -32,6 +33,14 @@ const STAGE_ORDER = [
     'cnc',
 ];
 
+// ─── Custom display names for stages ─────────────────────────────────────
+const STAGE_DISPLAY_MAP: Record<string, string> = {
+    'cnc': 'CNC Programming',
+    'pre_draft_review': 'Pre-Draft Review',
+    'install_scheduling': 'Install To Schedule',
+    'install_completion': 'Install Scheduled'
+};
+
 // ─── Normalize stage name for matching ────────────────────────────────────
 const normalizeStage = (stage: string): string => {
     return stage.toLowerCase().replace(/[\s-]+/g, '_').trim();
@@ -40,6 +49,12 @@ const normalizeStage = (stage: string): string => {
 // ─── Formatting helpers ──────────────────────────────────────────────────────
 export const formatStage = (stage: string) => {
     if (!stage) return stage;
+    const normalized = normalizeStage(stage);
+    // Use custom display name if available
+    if (STAGE_DISPLAY_MAP[normalized]) {
+        return STAGE_DISPLAY_MAP[normalized];
+    }
+    // Default: replace underscores, capitalize each word
     return stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
@@ -94,7 +109,7 @@ export function OwnerOverviewReport() {
         }));
     }, [rawData]);
 
-    // ─── Columns with sorting ──────────────────────────────────────────────────
+    // ─── Columns with custom sorting for stage (by workflow order) ────────
     const columns = useMemo<ColumnDef<StageRow>[]>(() => [
         {
             accessorKey: 'stage',
@@ -102,6 +117,12 @@ export function OwnerOverviewReport() {
             cell: ({ row }) => <span className="text-sm font-medium">{formatStage(row.original.stage)}</span>,
             size: 250,
             enableSorting: true,
+            sortingFn: (rowA, rowB) => {
+                // Sort by workflow order (hidden _sortOrder)
+                const a = rowA.original._sortOrder;
+                const b = rowB.original._sortOrder;
+                return a - b;
+            },
         },
         {
             accessorKey: 'count',
@@ -122,16 +143,7 @@ export function OwnerOverviewReport() {
         getSortedRowModel: getSortedRowModel(),
         enableColumnResizing: true,
         columnResizeMode: 'onEnd',
-        // Use a custom sorting function to sort by the hidden _sortOrder when sorting by 'stage'
-        sortingFns: {
-            // We'll rely on the default sorting but also ensure initial order is _sortOrder
-            // We can set a default sort order by using the `getSortedRowModel` with a default sort.
-        },
     });
-
-    // Since we want the initial order to be by _sortOrder (workflow order), we can set an initial sorting state.
-    // However, we don't want to force a sort on the stage column because it would override the workflow order.
-    // We'll just rely on the data being pre-sorted.
 
     if (isLoading) return <div className="p-5 text-[#7c8689]">Loading owner overview...</div>;
 
