@@ -22,6 +22,7 @@ import { FabInfoCell } from '@/components/common/fabInfo';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
+import { BackButton } from '@/components/common/BackButton';
 
 const fabTypeColorMap: Record<string, string> = {
     standard: '#9eeb47',
@@ -38,7 +39,7 @@ const getFabColor = (fabType: string | undefined): string => {
 };
 
 // ─── Currency columns ─────────────────────────────────────────────────────
-const CURRENCY_COLUMNS = new Set(['revenue', 'gp', 'gross_profit']);
+const CURRENCY_COLUMNS = new Set(['revenue', 'gp', 'gross_profit', 'cost_of_stone']);
 
 export function DailyInstallCompletionReport() {
     const isSuperAdmin = useIsSuperAdmin();
@@ -137,6 +138,7 @@ export function DailyInstallCompletionReport() {
             sqft: filteredEntries.reduce((s, r) => s + (r.sqft || 0), 0),
             revenue: filteredEntries.reduce((s, r) => s + (r.revenue || 0), 0),
             gp: filteredEntries.reduce((s, r) => s + (r.gp || 0), 0),
+            cost_of_stone: filteredEntries.reduce((s, r) => s + (r.cost_of_stone || 0), 0),
         };
     }, [filteredEntries]);
 
@@ -201,8 +203,8 @@ export function DailyInstallCompletionReport() {
         });
 
         // 2. All remaining keys (excluding composite, priority, and excludeKeys)
-        const remaining = keys.filter(key => 
-            !priority.includes(key) && 
+        const remaining = keys.filter(key =>
+            !priority.includes(key) &&
             !compositeFabFields.includes(key) &&
             !excludeKeys.has(key)
         );
@@ -223,6 +225,7 @@ export function DailyInstallCompletionReport() {
                         if (key === 'sqft') return <span className="font-semibold">{row.original.sqft?.toFixed(2)}</span>;
                         if (key === 'revenue') return <span className="font-semibold">${row.original.revenue?.toFixed(2)}</span>;
                         if (key === 'gp') return <span className="font-semibold">${row.original.gp?.toFixed(2)}</span>;
+                        if (key === 'cost_of_stone') return <span className="font-semibold">${row.original.cost_of_stone?.toFixed(2)}</span>;
                         if (typeof row.original[key] === 'number') {
                             return <span className="font-semibold">{row.original[key]?.toFixed(2)}</span>;
                         }
@@ -230,7 +233,7 @@ export function DailyInstallCompletionReport() {
                     }
                     let val = row.original[key];
                     if (key === 'install_date' && val) {
-                        try { val = format(new Date(val), 'MMM dd, yyyy'); } catch {}
+                        try { val = format(new Date(val), 'MMM dd, yyyy'); } catch { }
                     }
                     if (typeof val === 'number') {
                         if (isCurrency) {
@@ -321,7 +324,7 @@ export function DailyInstallCompletionReport() {
             cell: ({ row }) => {
                 const val = row.original.install_date;
                 if (val) {
-                    try { return format(new Date(val), 'MMM dd, yyyy'); } catch {}
+                    try { return format(new Date(val), 'MMM dd, yyyy'); } catch { }
                 }
                 return <span className="text-sm">-</span>;
             },
@@ -346,6 +349,13 @@ export function DailyInstallCompletionReport() {
             accessorKey: 'total_gp',
             header: ({ column }) => <DataGridColumnHeader title="TOTAL GP" column={column} />,
             cell: ({ row }) => <span className="text-sm">${row.original.total_gp?.toFixed(2)}</span>,
+            size: 130,
+            enableSorting: true,
+        },
+        {
+            accessorKey: 'cost_of_stone',
+            header: ({ column }) => <DataGridColumnHeader title="COST OF STONE" column={column} />,
+            cell: ({ row }) => <span className="text-sm">${row.original.total_cost_of_stone?.toFixed(2)}</span>,
             size: 130,
             enableSorting: true,
         },
@@ -430,7 +440,9 @@ export function DailyInstallCompletionReport() {
                         </PopoverContent>
                     </Popover>
                     {dateRange && <Button variant="ghost" size="sm" onClick={() => setDateRange(undefined)}>Clear</Button>}
+                <BackButton/>
                 </div>
+
             </div>
 
             {/* ─── Summary Widgets (grandTotals) ──────────────────────────── */}
@@ -446,12 +458,17 @@ export function DailyInstallCompletionReport() {
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total GP</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${grandTotals.total_gp?.toFixed(2) ?? '0.00'}</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${grandTotals.total_gp?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Entries</p>
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total Cost of Stone</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${grandTotals.total_cost_of_stone?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0.00'}</p>
+                    </Card>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">FABS</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{grandTotals.entry_count}</p>
                     </Card>
+
                 </div>
             )}
 

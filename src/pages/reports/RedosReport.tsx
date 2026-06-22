@@ -18,6 +18,7 @@ import { UpdateRedoModal } from './component/RedoModal';
 import { getFabIdLink, getJobNumberLink, renderLink } from '@/lib/reportLinks';
 import { FabInfoCell } from '@/components/common/fabInfo';
 import { cn } from '@/lib/utils';
+import { BackButton } from '@/components/common/BackButton';
 
 interface RedoItem {
     fab_id: number;
@@ -299,6 +300,7 @@ export function RedosReport() {
                     <Button variant="outline" onClick={() => exportTableToCSV(table, 'redos-report')} className="h-[34px]">
                         Export CSV
                     </Button>
+                <BackButton/>
                 </div>
             </div>
 

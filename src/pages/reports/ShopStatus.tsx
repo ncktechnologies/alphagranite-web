@@ -15,6 +15,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { cn } from '@/lib/utils';
+import { BackButton } from '@/components/common/BackButton';
 
 interface StageRow {
     stage: string;
@@ -178,6 +179,7 @@ export function ShopStatusReport() {
                     <Button variant="outline" size="sm" className="h-[34px]" onClick={() => exportTableToCSV(table, 'shop-status')}>
                         Export CSV
                     </Button>
+                <BackButton/>
                 </div>
             </div>
 

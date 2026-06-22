@@ -77,6 +77,7 @@ export interface Permission {
   read: boolean;
   update: boolean;
   delete: boolean;
+  can_read?: boolean; // For flexibility in permission checks
 }
 
 export interface Permissions {

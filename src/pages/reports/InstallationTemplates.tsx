@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
+import { BackButton } from '@/components/common/BackButton';
 
 // ─── Types based on API response ────────────────────────────────────────────
 interface ReportRow {
@@ -209,7 +210,7 @@ export function InstallationTemplateReport() {
         },
         {
             id: 'installer',
-            header: ({ column }) => <DataGridColumnHeader title="INSTALLER" column={column} />,
+            header: ({ column }) => <DataGridColumnHeader title="EMPLOYEE" column={column} />,
             cell: ({ row }) => {
                 if (row.original.type === 'installer') {
                     return <span className="font-medium">{row.original.installer}</span>;
@@ -403,21 +404,24 @@ export function InstallationTemplateReport() {
         <div className="flex flex-col gap-5 p-5">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold text-[#4b545d]">Installation And Template Report</h1>
-                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
-                    <PopoverTrigger asChild>
-                        <Button variant="outline" className={cn('w-[170px] h-[34px] justify-start text-left', !dateRange && 'text-muted-foreground')}>
-                            <CalendarDays className="mr-2 h-4 w-4" />
-                            {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}` : format(dateRange.from, 'MMM dd, yyyy')) : 'Filter by Date'}
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar mode="range" month={month} onMonthChange={setMonth} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} />
-                        <div className="flex justify-end gap-2 p-3 border-t">
-                            <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); setIsDatePickerOpen(false); }}>Reset</Button>
-                            <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
-                        </div>
-                    </PopoverContent>
-                </Popover>
+                <div className='flex items-center gap-2'>
+                    <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" className={cn('w-[170px] h-[34px] justify-start text-left', !dateRange && 'text-muted-foreground')}>
+                                <CalendarDays className="mr-2 h-4 w-4" />
+                                {dateRange?.from ? (dateRange.to ? `${format(dateRange.from, 'MMM dd')} - ${format(dateRange.to, 'MMM dd, yyyy')}` : format(dateRange.from, 'MMM dd, yyyy')) : 'Filter by Date'}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar mode="range" month={month} onMonthChange={setMonth} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} />
+                            <div className="flex justify-end gap-2 p-3 border-t">
+                                <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); setIsDatePickerOpen(false); }}>Reset</Button>
+                                <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                    <BackButton />
+                </div>
             </div>
 
             {/* Summary Cards */}

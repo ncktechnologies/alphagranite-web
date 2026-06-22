@@ -15,6 +15,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { cn } from '@/lib/utils';
+import { BackButton } from '@/components/common/BackButton';
 
 interface TrendRow {
     week_start: string;
@@ -207,6 +208,7 @@ export function WeeklyTrendsReport() {
                     <Button variant="outline" onClick={() => exportTableToCSV(table, 'weekly-trends')} className="h-[34px]">
                         Export CSV
                     </Button>
+                    <BackButton/>
                 </div>
             </div>
 

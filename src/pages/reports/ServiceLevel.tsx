@@ -16,6 +16,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router';
+import { BackButton } from '@/components/common/BackButton';
 
 // Helper for external job number link
 const getJobNumberLink = (jobNumber: string) => {
@@ -292,6 +293,7 @@ export function ServiceLevelReport() {
                         </PopoverContent>
                     </Popover>
                     {dateRange && <Button variant="ghost" size="sm" onClick={() => setDateRange(undefined)}>Clear</Button>}
+                <BackButton />
                 </div>
             </div>
 

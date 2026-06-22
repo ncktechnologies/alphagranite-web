@@ -9,6 +9,7 @@ import { Card, CardHeader, CardToolbar, CardTable, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
+import { BackButton } from '@/components/common/BackButton';
 
 // ─── Stage order (matches DASHBOARD_WIDGETS) ─────────────────────────────
 const STAGE_ORDER = [
@@ -114,8 +115,11 @@ export function OwnerOverview() {
 
     return (
         <div className="flex flex-col gap-5 p-5">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 justify-between">
                 <h1 className="text-2xl font-semibold text-[#4b545d]">Owner Overview</h1>
+                <BackButton/>
+            </div>
+            <div>
                 {isFetching && <span className="text-sm text-[#7c8689] animate-pulse">Updating...</span>}
             </div>
 

@@ -17,6 +17,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { BackButton } from '@/components/common/BackButton';
 
 const fmtDate = (s: string | null) => {
     if (!s) return '-';
@@ -227,7 +228,9 @@ export function InstallPerformance() {
                     <Button variant="outline" onClick={() => exportTableToCSV(table, 'install-performance')} className="h-[34px]">
                         Export CSV
                     </Button>
+                <BackButton/>
                 </div>
+
             </div>
 
             {/* Summary Widgets */}

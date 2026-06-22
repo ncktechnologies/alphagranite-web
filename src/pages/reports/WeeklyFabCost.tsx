@@ -14,6 +14,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { cn } from '@/lib/utils';
+import { BackButton } from '@/components/common/BackButton';
 
 const $ = (v: number) => `$${v.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 const num = (v: number, d = 2) => v.toFixed(d);
@@ -325,6 +326,7 @@ export function WeeklyFabricationCostReport() {
                     <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(pivotedTable, `fabrication-cost-${getTitle()}`)}>
                         Export CSV
                     </Button>
+                <BackButton/>
                 </div>
             </div>
 

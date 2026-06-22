@@ -16,6 +16,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { BackButton } from '@/components/common/BackButton';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface DailyRow {
@@ -129,7 +130,7 @@ export function DailyCompletion() {
             cell: ({ row }) => {
                 let val = row.original[key];
                 if (key === 'date' && val) {
-                    try { val = format(new Date(val), 'MMM dd, yyyy'); } catch {}
+                    try { val = format(new Date(val), 'MMM dd, yyyy'); } catch { }
                 }
                 if (typeof val === 'number') {
                     // Format currency for GP, revenue, etc.
@@ -262,7 +263,9 @@ export function DailyCompletion() {
                     <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(table, 'daily-completion')}>
                         Export CSV
                     </Button>
+                <BackButton/>
                 </div>
+
             </div>
 
             {/* Summary Widgets */}

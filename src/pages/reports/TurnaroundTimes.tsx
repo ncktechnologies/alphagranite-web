@@ -19,6 +19,7 @@ import { exportTableToCSV } from '@/lib/exportToCsv';
 import { cn } from '@/lib/utils';
 import { getFabIdLink, getJobNumberLink, renderLink } from '@/lib/reportLinks';
 import { FabInfoCell } from '@/components/common/fabInfo';
+import { BackButton } from '@/components/common/BackButton';
 
 const fabTypeColorMap: Record<string, string> = {
     standard: '#9eeb47',
@@ -346,6 +347,7 @@ export function TurnaroundTimesReport() {
                     <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(detailTable, `turnaround-detail-${year}-${month}`)}>
                         Export CSV
                     </Button>
+                <BackButton/>
                 </div>
             </div>
 

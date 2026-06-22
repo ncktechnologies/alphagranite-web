@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { formatStage } from './OwnerOverview';
 import { getFabIdLink, getJobNumberLink, renderLink } from '@/lib/reportLinks';
 import { FabInfoCell } from '@/components/common/fabInfo';
+import { BackButton } from '@/components/common/BackButton';
 
 // ─── Stage order (matches DASHBOARD_WIDGETS) ─────────────────────────────
 const STAGE_ORDER = [
@@ -613,6 +614,7 @@ export function RedoAnalysisReport() {
                         </PopoverContent>
                     </Popover>
                     {dateRange && <Button variant="ghost" size="sm" onClick={() => setDateRange(undefined)}>Clear</Button>}
+                <BackButton/>
                 </div>
             </div>
 

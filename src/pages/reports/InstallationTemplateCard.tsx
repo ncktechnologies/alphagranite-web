@@ -14,6 +14,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { cn } from '@/lib/utils';
+import { BackButton } from '@/components/common/BackButton';
 
 interface ActivityRow {
     activity_type: string;
@@ -144,7 +145,9 @@ export function InstallationTemplateReportCard() {
                         </PopoverContent>
                     </Popover>
                     <Button variant="outline" onClick={() => exportTableToCSV({}, 'installation-template')}>Export CSV</Button>
+                <BackButton/>
                 </div>
+
             </div>
 
             {summary && (

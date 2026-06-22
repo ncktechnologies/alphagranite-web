@@ -22,6 +22,7 @@ import { getFabIdLink, getJobNameLink, getJobNumberLink, renderLink } from '@/li
 import { FabInfoCell } from '@/components/common/fabInfo';
 import { Input } from '@/components/ui/input';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
+import { BackButton } from '@/components/common/BackButton';
 
 const fabTypeColorMap: Record<string, string> = {
     standard: '#9eeb47',
@@ -39,7 +40,7 @@ const getFabColor = (fabType: string | undefined): string => {
 
 // ─── Currency column set ────────────────────────────────────────────────────
 const CURRENCY_COLUMNS = new Set([
-    'revenue', 'gp', 'gross_profit', 'cost_of_stone', 
+    'revenue', 'gp', 'gross_profit', 'cost_of_stone',
     'revenue_per_sq_ft',
     'cost_per_sqft', 'total_cost'
 ]);
@@ -195,8 +196,8 @@ export function MonthlyInstallCompletionReport() {
         });
 
         // 2. All remaining keys (excluding composite, priority, excluded, and specialLast)
-        const remaining = keys.filter(key => 
-            !priority.includes(key) && 
+        const remaining = keys.filter(key =>
+            !priority.includes(key) &&
             !compositeFabFields.includes(key) &&
             !excludeKeys.has(key) &&
             key !== specialLast
@@ -233,7 +234,7 @@ export function MonthlyInstallCompletionReport() {
                     }
                     let val = row.original[key];
                     if (key === 'install_date' && val) {
-                        try { val = format(new Date(val), 'MMM dd, yyyy'); } catch {}
+                        try { val = format(new Date(val), 'MMM dd, yyyy'); } catch { }
                     }
                     if (typeof val === 'number') {
                         if (isCurrency) {
@@ -408,7 +409,9 @@ export function MonthlyInstallCompletionReport() {
                             </PopoverContent>
                         </Popover>
                     )}
+                <BackButton/>
                 </div>
+
             </div>
 
             {/* ─── Summary Widgets ────────────────────────────────────────── */}

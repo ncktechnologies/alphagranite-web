@@ -182,7 +182,6 @@ export function UpdateFabIdModal({
       navigate("/job/cut-list");
     } catch (error) {
       console.error("Error scheduling FAB:", error);
-      toast.error("Failed to schedule FAB");
     } finally {
       setIsSubmitting(false);
     }

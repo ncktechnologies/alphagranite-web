@@ -182,11 +182,11 @@ const fabIdFormSchema = z.object({
     stoneThickness: z.string().min(1, 'Stone Thickness is required'),
     edge: z.string().min(1, 'Edge is required'),
     totalSqFt: z.string().min(1, 'Total Sq Ft is required'),
-    revenue: z.string().min(1, 'Revenue is required')
-        .refine((val) => {
-            const num = parseFloat(val);
-            return !isNaN(num) && num >= 0;
-        }, { message: 'Revenue must be a valid number' }),
+    revenue: z.string().optional(),
+        // .refine((val) => {
+        //     const num = parseFloat(val);
+        //     return !isNaN(num) && num >= 0;
+        // }, { message: 'Revenue must be a valid number' }),
     cost_of_stone: z.string().optional()
         .refine((val) => val === '' || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), { message: 'Cost of Stone must be a valid number' }),
     selectedSalesPerson: z.string().min(1, 'Sales Person is required'),
@@ -1060,7 +1060,7 @@ const EditFabIdForm = () => {
                                             {/* Total Sq Ft */}
                                             <FormField control={form.control} name="totalSqFt" render={({ field }) => (<FormItem><FormLabel>Total Sq Ft *</FormLabel><FormControl><Input placeholder="Enter total size" {...field} /></FormControl><FormMessage /></FormItem>)} />
                                             {/* Revenue */}
-                                            <FormField control={form.control} name="revenue" render={({ field }) => (<FormItem><FormLabel>Revenue ($) *</FormLabel><FormControl><Input placeholder="Enter revenue amount" type="text" inputMode="decimal" value={field.value} onChange={field.onChange} onWheel={(e) => e.currentTarget.blur()} /></FormControl><FormMessage /></FormItem>)} />
+                                            <FormField control={form.control} name="revenue" render={({ field }) => (<FormItem><FormLabel>Revenue ($) </FormLabel><FormControl><Input placeholder="Enter revenue amount" type="text" inputMode="decimal" value={field.value} onChange={field.onChange} onWheel={(e) => e.currentTarget.blur()} /></FormControl><FormMessage /></FormItem>)} />
                                             {/* Cost of Stone */}
                                             <FormField control={form.control} name="cost_of_stone" render={({ field }) => (<FormItem><FormLabel>Cost of Stone ($) </FormLabel><FormControl><Input placeholder="Enter cost of stone" type="text" inputMode="decimal" value={field.value} onChange={field.onChange} onWheel={(e) => e.currentTarget.blur()} /></FormControl><FormMessage /></FormItem>)} />
                                             {/* Sales Person */}

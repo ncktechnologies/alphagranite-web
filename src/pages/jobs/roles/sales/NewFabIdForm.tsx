@@ -63,8 +63,8 @@ const fabIdFormSchema = z.object({
   stoneThickness: z.string().min(1, 'Stone Thickness is required'),
   edge: z.string().min(1, 'Edge is required'),
   totalSqFt: z.string().min(1, 'Total Sq Ft is required'),
-  revenue: z.string().min(1, 'Revenue is required')
-    .refine((val) => !isNaN(parseFloat(val)), { message: 'Revenue must be a number' }),
+  revenue: z.string().optional(),
+    // .refine((val) => !isNaN(parseFloat(val)), { message: 'Revenue must be a number' }),
   cost_of_stone: z.string().optional()
     .refine((val) => val === '' || !isNaN(parseFloat(val)), { message: 'Cost of Stone must be a number' }),
   cost_per_sqft: z.string().optional()
@@ -1523,7 +1523,7 @@ const NewFabIdForm = () => {
                           name="revenue"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Revenue ($) *</FormLabel>
+                              <FormLabel>Revenue ($) </FormLabel>
                               <FormControl>
                                 <Input
                                   placeholder="Enter revenue amount"

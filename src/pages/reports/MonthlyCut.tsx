@@ -22,6 +22,7 @@ import { getFabIdLink, getJobNameLink, getJobNumberLink, renderLink } from '@/li
 import { FabInfoCell } from '@/components/common/fabInfo';
 import { Input } from '@/components/ui/input';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
+import { BackButton } from '@/components/common/BackButton';
 
 const fabTypeColorMap: Record<string, string> = {
     standard: '#9eeb47',
@@ -255,7 +256,7 @@ export function MonthlyCutCompletionReport() {
                     </Select>
 
                     {/* Mode toggle: Monthly or Custom Range */}
-                    <Select value={dateMode} onValueChange={(v) => setDateMode(v as 'monthly' | 'custom')}>
+                    {/* <Select value={dateMode} onValueChange={(v) => setDateMode(v as 'monthly' | 'custom')}>
                         <SelectTrigger className="w-[120px] h-[34px] border-[#e2e4ed]">
                             <SelectValue placeholder="Period" />
                         </SelectTrigger>
@@ -263,7 +264,7 @@ export function MonthlyCutCompletionReport() {
                             <SelectItem value="monthly">Monthly</SelectItem>
                             <SelectItem value="custom">Custom Range</SelectItem>
                         </SelectContent>
-                    </Select>
+                    </Select> */}
 
                     {dateMode === 'monthly' ? (
                         <>
@@ -341,10 +342,10 @@ export function MonthlyCutCompletionReport() {
                         </div>
                     </div>
 
-                    <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(table, `monthly-cut-${year}-${month}`)}>
-                        Export CSV
-                    </Button>
+
+                    <BackButton />
                 </div>
+
             </div>
 
             {/* Summary Widgets with Cost of Stone and Gross Profit */}
@@ -382,7 +383,10 @@ export function MonthlyCutCompletionReport() {
                 <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
                     <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
                         <p className="text-base font-semibold text-[#4b545d]">{getTitle()}</p>
-                        <CardToolbar />
+                        <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(table, `monthly-cut-${year}-${month}`)}>
+                            Export CSV
+                        </Button>
+                        {/* <CardToolbar /> */}
                     </CardHeader>
                     <CardTable>
                         <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-10px)] [&>[data-radix-scroll-area-viewport]]:pb-4">

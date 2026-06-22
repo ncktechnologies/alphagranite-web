@@ -15,6 +15,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { exportTableToCSV } from '@/lib/exportToCsv';
 import { cn } from '@/lib/utils';
+import { BackButton } from '@/components/common/BackButton';
 
 // ─── Stage order (matches DASHBOARD_WIDGETS) ─────────────────────────────
 const STAGE_ORDER = [
@@ -181,6 +182,7 @@ export function OwnerOverviewReport() {
                     </Popover>
                     {dateRange && <Button variant="ghost" size="sm" onClick={() => setDateRange(undefined)}>Clear</Button>}
                     <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(table, 'owner-overview')}>Export CSV</Button>
+                <BackButton/>
                 </div>
             </div>
 
