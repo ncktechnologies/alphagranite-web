@@ -82,3 +82,4 @@ export interface Permission {
 export interface Permissions {
   [key: string]: Permission;
 }
+export type PermissionMap = Record<string, Permission>;

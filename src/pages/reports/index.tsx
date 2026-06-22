@@ -1,8 +1,11 @@
+// src/pages/reports/ReportsPage.tsx
+
 import { useNavigate } from "react-router";
+import { useAllPermissions, useIsSuperAdmin } from "@/hooks/use-permission";
+import { hasReadPermissionForKey } from "@/lib/permission";
 
 const REPORTS = [
     { title: 'AG Completion Report', path: '/report/daily-completion', permissionKey: 'report_shop_status' },
-    // { title: 'Daily Completion', path: '/report/daily-completion', permissionKey: 'daily_completion' },
     { title: 'Daily Install Completion', path: '/report/daily-install-completion', permissionKey: 'daily_install_completion' },
     { title: 'Employee Productivity Report', path: '/report/template-card', permissionKey: 'installation_template' },
     { title: 'Install Performance', path: '/report/install-performance', permissionKey: 'install_performance' },
@@ -37,14 +40,40 @@ function ChevronRight() {
 
 export function ReportsPage() {
     const navigate = useNavigate();
+    const permissions = useAllPermissions();
+    const isSuperAdmin = useIsSuperAdmin();
 
-    const perCol = Math.ceil(REPORTS.length / 3);
-    const columns = [REPORTS.slice(0, perCol), REPORTS.slice(perCol, perCol * 2), REPORTS.slice(perCol * 2)];
+    // Filter reports by permission and sort alphabetically by title
+    const visibleReports = REPORTS
+        .filter(report => hasReadPermissionForKey(report.permissionKey, permissions, isSuperAdmin))
+        .sort((a, b) => a.title.localeCompare(b.title));
+
+    if (visibleReports.length === 0) {
+        return (
+            <div className="">
+                <div className="border-b border-[#e5e7eb] pb-[32px]">
+                    <h1 className="font-proxima font-semibold text-[28px] leading-[32px] text-black px-[32px]">
+                        Reports
+                    </h1>
+                </div>
+                <div className="flex items-center justify-center h-64">
+                    <p className="text-gray-500 text-lg">You do not have access to any reports.</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Split into 3 columns (alphabetical order is preserved left-to-right)
+    const numColumns = 3;
+    const columns: typeof visibleReports[] = Array.from({ length: numColumns }, () => []);
+    visibleReports.forEach((report, index) => {
+        columns[index % numColumns].push(report);
+    });
 
     return (
         <div className="">
             <div className="border-b border-[#e5e7eb] pb-[32px]">
-                <h1 className="font-proxima font-semibold text-[28px] leading-[32px] text-black  px-[32px] ">
+                <h1 className="font-proxima font-semibold text-[28px] leading-[32px] text-black px-[32px]">
                     Reports
                 </h1>
             </div>
