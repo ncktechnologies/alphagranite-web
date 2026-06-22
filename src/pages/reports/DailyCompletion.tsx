@@ -210,7 +210,7 @@ export function DailyCompletion() {
     return (
         <div className="flex flex-col gap-5 p-5">
             <div className="flex items-center justify-between flex-wrap gap-3">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Daily Completion</h1>
+                <h1 className="text-2xl font-semibold text-[#4b545d]">AG Completion Report</h1>
                 <div className="flex items-center gap-2 flex-wrap">
                     {/* Date Range Picker */}
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>

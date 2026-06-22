@@ -62,7 +62,6 @@ import { JobStatusTable } from '@/pages/jobs/roles/report/JobStatus';
 import JobStatusPage from '@/pages/jobs/roles/report/JobStatusPage';
 import { InstallerScheduleCards } from '@/pages/installer/InstallerDashboard';
 import CostOfStonePage from '@/pages/jobs/roles/cost_of_stone.tsx/CostOfStonePage';
-import ReportPage from '@/pages/reports/ReportPage';
 import { RedosReport } from '@/pages/reports/RedosReport';
 import { WeeklyFabricationCostReport } from '@/pages/reports/WeeklyFabCost';
 import { WeeklyInstallerCostReport } from '@/pages/reports/WeeklyInstallerCost';
@@ -84,6 +83,7 @@ import { InstallationTemplateReportCard } from '@/pages/reports/InstallationTemp
 import { ShopProductionSummary } from '@/pages/reports/ShopProductionSummary';
 import { DailyCompletion } from '@/pages/reports/DailyCompletion';
 import { RevisionReport } from '@/pages/reports/RevisionReport';
+import { ReportsPage } from '@/pages/reports';
 
 export function AppRoutingSetup() {
   return (
@@ -448,7 +448,7 @@ export function AppRoutingSetup() {
 
 
           {/* Reports Route */}
-          {/* <Route path="/report/:reportId" element={<ReportPage />} /> */}
+          <Route path="/report" element={<ReportsPage />} />
           <Route path="/report/installer-rates" element={<InstallerRatesReport />} />
           <Route path="/report/redos" element={<RedosReport />} />
           <Route path="/report/weekly-fabrication-cost" element={<WeeklyFabricationCostReport />} />
