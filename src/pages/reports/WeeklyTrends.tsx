@@ -135,14 +135,14 @@ export function WeeklyTrendsReport() {
         {
             accessorKey: 'revenue',
             header: ({ column }) => <DataGridColumnHeader title="REVENUE" column={column} />,
-            cell: ({ row }) => `$${row.original.revenue.toFixed(2)}`,
+            cell: ({ row }) => `$${row.original.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
             size: 130,
             enableSorting: true,
         },
         {
             accessorKey: 'gross_profit',
             header: ({ column }) => <DataGridColumnHeader title="GROSS PROFIT" column={column} />,
-            cell: ({ row }) => `$${row.original.gross_profit.toFixed(2)}`,
+            cell: ({ row }) => `$${row.original.gross_profit?.toLocaleString(undefined, { minimumFractionDigits: 2 })}`,
             size: 130,
             enableSorting: true,
         },

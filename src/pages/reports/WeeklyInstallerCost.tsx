@@ -165,7 +165,7 @@ export function WeeklyInstallerCostReport() {
                         'hourly_overhead_cost_for_all_installers', 'hourly_cost_of_all_installers_inc_overhead',
                         'hourly_cost_per_installer_inc_overhead', 'labor_cost_per_sq_ft', 'overhead_cost_per_sqft',
                         'cost_to_install_per_sqft', 'gross_profit_per_sf_installed',
-                        'gross_profit_less_installer_total_cost_psf', 'gross_revenue_per_sq_ft'].includes(key)) {
+                        'gross_profit_less_installer_total_cost_psf', 'gross_revenue_per_sq_ft', 'overhead_per_week'].includes(key)) {
                         return <span className="text-sm">{$(val)}</span>;
                     }
                     if (['cost_of_overtime_pct', 'overtime_hours_pct', 'labor_cost_pct_per_dollar_sold'].includes(key)) {
@@ -194,7 +194,7 @@ export function WeeklyInstallerCostReport() {
                     'hourly_overhead_cost_for_all_installers', 'hourly_cost_of_all_installers_inc_overhead',
                     'hourly_cost_per_installer_inc_overhead', 'labor_cost_per_sq_ft', 'overhead_cost_per_sqft',
                     'cost_to_install_per_sqft', 'gross_profit_per_sf_installed',
-                    'gross_profit_less_installer_total_cost_psf', 'gross_revenue_per_sq_ft'].includes(key)) {
+                    'gross_profit_less_installer_total_cost_psf', 'gross_revenue_per_sq_ft', 'overhead_per_week'].includes(key)) {
                     return <span className="text-sm font-semibold">{$(val)}</span>;
                 }
                 if (['cost_of_overtime_pct', 'overtime_hours_pct', 'labor_cost_pct_per_dollar_sold'].includes(key)) {
@@ -229,9 +229,9 @@ export function WeeklyInstallerCostReport() {
         { accessorKey: 'month', header: ({ column }) => <DataGridColumnHeader title="MONTH" column={column} />, cell: ({ row }) => <span className="font-medium">{row.original.month}</span>, size: 120, enableSorting: true },
         { accessorKey: 'number_of_weeks', header: ({ column }) => <DataGridColumnHeader title="WEEKS" column={column} />, size: 80, enableSorting: true },
         { accessorKey: 'completed_sqft', header: ({ column }) => <DataGridColumnHeader title="SQFT" column={column} />, cell: ({ row }) => num(row.original.completed_sqft), size: 100, enableSorting: true },
-        { accessorKey: 'gross_revenue', header: ({ column }) => <DataGridColumnHeader title="GROSS REVENUE" column={column} />, cell: ({ row }) => $(row.original.gross_revenue), size: 140, enableSorting: true },
-        { accessorKey: 'gross_profit', header: ({ column }) => <DataGridColumnHeader title="GROSS PROFIT" column={column} />, cell: ({ row }) => $(row.original.gross_profit), size: 130, enableSorting: true },
-        { accessorKey: 'total_labor_cost', header: ({ column }) => <DataGridColumnHeader title="LABOR COST" column={column} />, cell: ({ row }) => $(row.original.total_labor_cost), size: 120, enableSorting: true },
+        { accessorKey: 'gross_revenue', header: ({ column }) => <DataGridColumnHeader title="GROSS REVENUE" column={column} />, cell: ({ row }) => $(row.original.gross_revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })), size: 140, enableSorting: true },
+        { accessorKey: 'gross_profit', header: ({ column }) => <DataGridColumnHeader title="GROSS PROFIT" column={column} />, cell: ({ row }) => $(row.original.gross_profit.toLocaleString(undefined, { minimumFractionDigits: 2 })), size: 130, enableSorting: true },
+        { accessorKey: 'total_labor_cost', header: ({ column }) => <DataGridColumnHeader title="LABOR COST" column={column} />, cell: ({ row }) => $(row.original.total_labor_cost.toLocaleString(undefined, { minimumFractionDigits: 2 })), size: 120, enableSorting: true },
         { accessorKey: 'total_hours', header: ({ column }) => <DataGridColumnHeader title="TOTAL HRS" column={column} />, cell: ({ row }) => num(row.original.total_hours), size: 100, enableSorting: true },
         { accessorKey: 'gross_profit_less_installer_total_cost_psf', header: ({ column }) => <DataGridColumnHeader title="GP LESS COST/SQFT" column={column} />, cell: ({ row }) => { const v = row.original.gross_profit_less_installer_total_cost_psf; return <span className={v < 0 ? 'text-red-600 font-medium' : 'text-green-600 font-medium'}>{$(v)}</span>; }, size: 160, enableSorting: true },
     ], []);

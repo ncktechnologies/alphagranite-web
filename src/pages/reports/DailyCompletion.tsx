@@ -184,25 +184,38 @@ export function DailyCompletion() {
         { value: 7, label: 'Sunday' },
     ];
 
-    // ─── Render summary widgets ─────────────────────────────────────────────
-    const renderSummaryWidgets = (title: string, data: any, isCurrency = false) => {
+    // ─── Render summary widgets (UPDATED) ──────────────────────────────────
+    const renderSummaryWidgets = (title: string, data: any) => {
         if (!data) return null;
         const entries = Object.entries(data).filter(([key]) => key !== 'weekdays' && key !== 'row_count');
         if (!entries.length) return null;
+
+        const currencyKeys = [
+            'revenue', 'profit', 'gp', 'gross_profit', 'cost', 'cost_of_stone',
+            'total_cost', 'gross_profit', 'revenue_per_sqft', 'total_revenue'
+        ];
+
         return (
             <div className="space-y-2">
                 <h3 className="text-sm font-semibold text-[#4b545d]">{title}</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {entries.map(([key, value]) => (
-                        <Card key={key} className="p-3 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                            <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">
-                                {key.replace(/_/g, ' ')}
-                            </p>
-                            <p className="text-lg font-semibold mt-1 text-[#4b545d]">
-                                {isCurrency ? `$${value.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : value.toFixed(2)}
-                            </p>
-                        </Card>
-                    ))}
+                    {entries.map(([key, value]) => {
+                        const isCurrency = currencyKeys.some(k => key.toLowerCase().includes(k));
+                        const numValue = typeof value === 'number' ? value : parseFloat(value);
+                        if (isNaN(numValue)) return null;
+                        return (
+                            <Card key={key} className="p-3 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                                <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">
+                                    {key.replace(/_/g, ' ')}
+                                </p>
+                                <p className="text-lg font-semibold mt-1 text-[#4b545d]">
+                                    {isCurrency
+                                        ? `$${numValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`
+                                        : numValue.toFixed(2)}
+                                </p>
+                            </Card>
+                        );
+                    })}
                 </div>
             </div>
         );

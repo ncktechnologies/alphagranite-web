@@ -46,7 +46,7 @@ const CURRENCY_COLUMNS = new Set([
 ]);
 
 // ─── Column header overrides ──────────────────────────────────────────────
-const HEADER_OVERRIDES: Record<string, string> = {
+export const HEADER_OVERRIDES: Record<string, string> = {
     'pieces': 'NO OF PIECES',
 };
 

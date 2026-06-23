@@ -24,6 +24,7 @@ import { Input } from '@/components/ui/input';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
 import { BackButton } from '@/components/common/BackButton';
 import { CURRENCY_COLUMNS } from './DailyInstallationCut';
+import { HEADER_OVERRIDES } from './MonthlyInstallCompletion';
 
 const fabTypeColorMap: Record<string, string> = {
     standard: '#9eeb47',
@@ -186,7 +187,7 @@ export function MonthlyCutCompletionReport() {
 
         // Build data columns for all ordered keys
         const dataCols = orderedKeys.map(key => {
-            const headerTitle = key.replace(/_/g, ' ').toUpperCase();
+            const headerTitle =HEADER_OVERRIDES[key] || key.replace(/_/g, ' ').toUpperCase();   
             const isCurrency = CURRENCY_COLUMNS.has(key) || key.includes('revenue') || key === 'gp';
             return {
                 accessorKey: key,

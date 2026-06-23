@@ -343,11 +343,11 @@ export function RedoAnalysisReport() {
         {
             accessorKey: 'job_number',
             header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
-            cell: ({ row }) => {
-                const jobNumber = row.original.job_number;
-                const link = getJobNumberLink(jobNumber);
-                return renderLink(link);
-            },
+            // cell: ({ row }) => {
+            //     const jobNumber = row.original.job_number;
+            //     const link = getJobNumberLink(jobNumber);
+            //     return renderLink(link);
+            // },
             size: 100,
             enableSorting: true,
         },
