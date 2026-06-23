@@ -21,26 +21,31 @@ import { cn } from '@/lib/utils';
 import { BackButton } from '@/components/common/BackButton';
 
 interface RedoItem {
-    fab_id: number;
     fab_created_date: string;
     fab_type: string;
+    fab_id: number;
     job_number: string;
+    job_name: string;
+    account_name: string;
+    stone_type_name: string;
+    stone_color_name: string;
+    edge_name: string;
+    stone_thickness_value: string;
+    input_area: string;
     fab_info: string;
-    sqft: number;
-    total_cost: number | null;
-    reason: string | null;
-    person_name: string | null;
-    department: string | null;
     no_of_pieces: number | null;
-    department_options?: string[];
-    account_name?: string;
-    job_name?: string;
-    input_area?: string;
-    stone_type_name?: string;
-    stone_color_name?: string;
-    stone_thickness_value?: string;
-    edge_name?: string;
-    cost_per_sqft?: number | null;
+    sqft: number;
+    cost_per_sqft: number | null;
+    redo_total_sqft: number;
+    total_cost: number | null;
+    cost_of_stone: number;
+    redo_department: number | null;
+    redo_requested_by: number | null;
+    department: string | null;
+    person_name: string | null;
+    note: string | null;
+    reason: string | null;
+    department_options: string | null; // comma-separated string
 }
 
 const fabTypeColorMap: Record<string, string> = {
@@ -87,22 +92,26 @@ export function RedosReport() {
     }, [dateRange]);
 
     const { data, isLoading } = useGetReportRedosQuery(queryParams);
-    const rawData: RedoItem[] = useMemo(() => data?.data ?? [], [data]);
+    // ✅ Fix: data.data is an object with 'rows' and 'summary'
+    const rawRows: RedoItem[] = useMemo(() => data?.data?.rows ?? [], [data]);
+    const summary = useMemo(() => data?.data?.summary ?? null, [data]);
 
+    // Compute totals from rows
     const totals = useMemo(() => {
-        if (!rawData.length) return null;
+        if (!rawRows.length) return null;
         return {
-            sqft: rawData.reduce((sum, r) => sum + r.sqft, 0),
-            total_cost: rawData.reduce((sum, r) => sum + (r.total_cost || 0), 0),
+            sqft: rawRows.reduce((sum, r) => sum + r.sqft, 0),
+            total_cost: rawRows.reduce((sum, r) => sum + (r.total_cost || 0), 0),
+            cost_of_stone: rawRows.reduce((sum, r) => sum + r.cost_of_stone, 0),
         };
-    }, [rawData]);
+    }, [rawRows]);
 
-    // Slice rawData for current page
+    // Slice rawRows for current page
     const slicedData = useMemo(() => {
         const start = pagination.pageIndex * pagination.pageSize;
         const end = start + pagination.pageSize;
-        return rawData.slice(start, end);
-    }, [rawData, pagination.pageIndex, pagination.pageSize]);
+        return rawRows.slice(start, end);
+    }, [rawRows, pagination.pageIndex, pagination.pageSize]);
 
     // Prepend total row to slicedData
     const displayRows = useMemo(() => {
@@ -111,6 +120,7 @@ export function RedosReport() {
             fab_created_date: 'TOTAL',
             sqft: totals.sqft,
             total_cost: totals.total_cost,
+            cost_of_stone: totals.cost_of_stone,
             fab_id: '',
             job_number: '',
             fab_info: '',
@@ -122,6 +132,7 @@ export function RedosReport() {
     }, [totals, slicedData]);
 
     const columns = useMemo<ColumnDef<RedoItem>[]>(() => [
+        // action column (optional, uncomment if needed)
         // {
         //     id: 'action',
         //     header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
@@ -224,6 +235,13 @@ export function RedosReport() {
             enableSorting: true,
         },
         {
+            accessorKey: 'cost_of_stone',
+            header: ({ column }) => <DataGridColumnHeader title="COST OF STONE" column={column} />,
+            cell: ({ row }) => row.original.cost_of_stone !== null ? `$${row.original.cost_of_stone.toFixed(2)}` : '-',
+            size: 120,
+            enableSorting: true,
+        },
+        {
             accessorKey: 'department',
             header: ({ column }) => <DataGridColumnHeader title="DEPARTMENT" column={column} />,
             cell: ({ row }) => row.original.department || '-',
@@ -256,7 +274,7 @@ export function RedosReport() {
         getCoreRowModel: getCoreRowModel(),
         getSortedRowModel: getSortedRowModel(),
         manualPagination: true,
-        pageCount: Math.ceil(rawData.length / pagination.pageSize),
+        pageCount: Math.ceil(rawRows.length / pagination.pageSize),
         enableColumnResizing: true,
         columnResizeMode: 'onEnd',
         meta: {
@@ -300,11 +318,33 @@ export function RedosReport() {
                     <Button variant="outline" onClick={() => exportTableToCSV(table, 'redos-report')} className="h-[34px]">
                         Export CSV
                     </Button>
-                <BackButton/>
+                    <BackButton />
                 </div>
             </div>
 
-            <DataGrid table={table} recordCount={rawData.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
+            {/* Summary Cards */}
+            {summary && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total SQFT</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.total_sqft?.toFixed(2) ?? '0.00'}</p>
+                    </div>
+                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total Cost</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.total_cost?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0.00'}</p>
+                    </div>
+                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Cost of Stone</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.total_cost_of_stone?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0.00'}</p>
+                    </div>
+                    {/* <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Number of Redos</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{rawRows.length}</p>
+                    </div> */}
+                </div>
+            )}
+
+            <DataGrid table={table} recordCount={rawRows.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
                 <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
                     <CardHeader className="py-3 px-5 border-b bg-white" />
                     <CardTable>
@@ -355,7 +395,7 @@ export function RedosReport() {
                                                 </tr>
                                             );
                                         })}
-                                        {rawData.length === 0 && (
+                                        {rawRows.length === 0 && (
                                             <tr>
                                                 <td colSpan={columns.length} className="px-4 py-8 text-center text-sm text-[#7c8689]">
                                                     No data available.
@@ -388,7 +428,7 @@ export function RedosReport() {
                     department: selectedRow.department ?? undefined,
                     person_name: selectedRow.person_name ?? undefined,
                     reason: selectedRow.reason ?? undefined,
-                    department_options: selectedRow.department_options ?? [],
+                    department_options: selectedRow.department_options ? selectedRow.department_options.split(',').map(s => s.trim()) : [],
                 } : undefined}
             />
         </div>
