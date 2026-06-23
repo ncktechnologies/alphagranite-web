@@ -62,7 +62,7 @@ interface JobsSectionProps {
   canToggleInvoice?: boolean;
 }
 
-export const JobsSection = ({ canToggleInvoice = false }: JobsSectionProps) => {
+export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 25,
