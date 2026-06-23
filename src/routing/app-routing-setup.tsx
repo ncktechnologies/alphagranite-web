@@ -451,7 +451,7 @@ export function AppRoutingSetup() {
           {/* Reports Route */}
           <Route path="/report" element={<ReportsPage />} />
           <Route path="/report/installer-rates" element={<InstallerRatesReport />} />
-          <Route path="/report/redos" element={<RedosReport />} />
+          <Route path="/performance/redos" element={<RedosReport />} />
           <Route path="/report/weekly-fabrication-cost" element={<WeeklyFabricationCostReport />} />
           <Route path="/report/weekly-installer-cost" element={<WeeklyInstallerCostReport />} />
           <Route path="/report/install-performance" element={<InstallPerformance />} />
@@ -461,7 +461,7 @@ export function AppRoutingSetup() {
           <Route path='/report/daily-install-completion' element={<DailyInstallCompletionReport />} />
           <Route path='/report/monthly-install-completion' element={<MonthlyInstallCompletionReport />} />
           <Route path='/report/weekly-trends' element={<WeeklyTrendsReport />} />
-          <Route path="/report/installation-template" element={<InstallationTemplateReport />} />
+          <Route path="/performance/installation-template" element={<InstallationTemplateReport />} />
           <Route path="/report/template-card" element={<InstallationTemplateReportCard />} />
           <Route path="/report/owner-overview" element={<OwnerOverviewReport />} />
           <Route path="/report/redo-analysis" element={<RedoAnalysisReport />} />

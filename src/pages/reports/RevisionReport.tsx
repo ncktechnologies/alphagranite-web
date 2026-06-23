@@ -18,6 +18,22 @@ import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getFabIdLink, getJobNumberLink, getJobNameLink, renderLink } from '@/lib/reportLinks';
 import { BackButton } from '@/components/common/BackButton';
+import { FabInfoCell } from '@/components/common/fabInfo';
+
+// ─── Fab type color mapping ──────────────────────────────────────────────
+const fabTypeColorMap: Record<string, string> = {
+    standard: '#9eeb47',
+    'fab only': '#5bd1d7',
+    'cust redo': '#f0bf4c',
+    resurface: '#d094ea',
+    'fast track': '#f59794',
+    'ag redo': '#f5cc94',
+};
+
+const getFabColor = (fabType: string | undefined): string => {
+    if (!fabType) return 'transparent';
+    return fabTypeColorMap[fabType.toLowerCase()] || 'transparent';
+};
 
 // ─── Revision type display mapping ──────────────────────────────────────
 const REVISION_TYPE_MAP: Record<string, string> = {
@@ -29,10 +45,10 @@ const REVISION_TYPE_MAP: Record<string, string> = {
 
 // ─── Column definitions for Sales CT Revisions ─────────────────────────────
 const SALES_COLUMNS = [
+    { key: 'fab_type', label: 'FAB TYPE', isFabType: true }, // 👈 Added
     { key: 'fab_id', label: 'FAB ID', isLink: true, linkType: 'fab' },
-    { key: 'job_number', label: 'JOB #', isLink: true, linkType: 'jobNumber' },
-    { key: 'job_name', label: 'JOB NAME', isLink: false, linkType: 'jobName' },
-    { key: 'account_name', label: 'ACCOUNT' },
+    { key: 'job_number', label: 'JOB NO', isLink: true, linkType: 'jobNumber' },
+    { key: 'fab_info', label: 'FAB INFO', isFabInfo: true },
     { key: 'revision_type_label', label: 'TYPE', isType: true },
     { key: 'revision_notes', label: 'NOTES' },
     { key: 'requested_by_name', label: 'REQUESTED BY' },
@@ -42,10 +58,10 @@ const SALES_COLUMNS = [
 
 // ─── Column definitions for Shop Revisions ────────────────────────────────
 const SHOP_COLUMNS = [
+    { key: 'fab_type', label: 'FAB TYPE', isFabType: true }, // 👈 Added
     { key: 'fab_id', label: 'FAB ID', isLink: false, linkType: 'fab' },
-    { key: 'job_number', label: 'JOB #', isLink: false, linkType: 'jobNumber' },
-    { key: 'job_name', label: 'JOB NAME', isLink: false, linkType: 'jobName' },
-    { key: 'account_name', label: 'ACCOUNT' },
+    { key: 'job_number', label: 'JOB NO', isLink: false, linkType: 'jobNumber' },
+    { key: 'fab_info', label: 'FAB INFO', isFabInfo: true },
     { key: 'revision_type_label', label: 'TYPE', isType: true },
     { key: 'revision_notes', label: 'NOTES' },
     { key: 'revision_feedback', label: 'FEEDBACK' },
@@ -66,21 +82,39 @@ function buildColumns<T extends Record<string, any>>(
         isDate?: boolean;
         isBoolean?: boolean;
         isType?: boolean;
+        isFabInfo?: boolean;
+        isFabType?: boolean; // 👈 Added flag
     }>
 ): ColumnDef<T>[] {
     if (!data.length) return [];
 
     return columnDefs.map((def) => {
-        const { key, label, isLink, linkType, isDate, isBoolean, isType } = def;
+        const { key, label, isLink, linkType, isDate, isBoolean, isType, isFabInfo, isFabType } = def;
+
+        // ── FabInfoCell ────────────────────────────────────────────────────
+        if (isFabInfo) {
+            return {
+                accessorKey: key as string,
+                header: ({ column }) => <DataGridColumnHeader title={label} column={column} />,
+                size: 300,
+                enableSorting: false,
+                cell: ({ row }) => <FabInfoCell data={row.original} />,
+            };
+        }
 
         return {
             accessorKey: key as string,
             header: ({ column }) => <DataGridColumnHeader title={label} column={column} />,
-            size: key === 'revision_notes' || key === 'revision_feedback' ? 250 : 140,
+            size: key === 'revision_notes' || key === 'revision_feedback' ? 250 : key === 'fab_type' ? 110 : 140,
             enableSorting: true,
             cell: ({ row }) => {
                 const val = row.original[key];
                 if (val == null) return <span className="text-sm">—</span>;
+
+                // ── Fab Type ──────────────────────────────────────────────
+                if (isFabType && typeof val === 'string') {
+                    return <span className="uppercase text-sm">{val}</span>;
+                }
 
                 // ── Type mapping ──
                 if (isType && typeof val === 'string') {
@@ -164,6 +198,16 @@ export function RevisionReport() {
     const salesColumns = useMemo(() => buildColumns(salesRevisions, SALES_COLUMNS), [salesRevisions]);
     const shopColumns = useMemo(() => buildColumns(shopRevisions, SHOP_COLUMNS), [shopRevisions]);
 
+    // ─── Helper to get row attributes (for background color) ──────────────
+    const getRowAttributes = (row: any) => {
+        const fabType = row.original.fab_type;
+        const bgColor = getFabColor(fabType);
+        if (bgColor !== 'transparent') {
+            return { style: { backgroundColor: bgColor } };
+        }
+        return {};
+    };
+
     // ─── Tables ─────────────────────────────────────────────────────────────
     const salesTable = useReactTable({
         columns: salesColumns,
@@ -176,6 +220,9 @@ export function RevisionReport() {
         getSortedRowModel: getSortedRowModel(),
         enableColumnResizing: true,
         columnResizeMode: 'onEnd',
+        meta: {
+            getRowAttributes, // 👈 Injected
+        },
     });
 
     const shopTable = useReactTable({
@@ -189,6 +236,9 @@ export function RevisionReport() {
         getSortedRowModel: getSortedRowModel(),
         enableColumnResizing: true,
         columnResizeMode: 'onEnd',
+        meta: {
+            getRowAttributes, // 👈 Injected
+        },
     });
 
     // ─── Render helper ─────────────────────────────────────────────────────
@@ -229,19 +279,26 @@ export function RevisionReport() {
                                     ))}
                                 </thead>
                                 <tbody>
-                                    {table.getRowModel().rows.map(row => (
-                                        <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50">
-                                            {row.getVisibleCells().map(cell => (
-                                                <td
-                                                    key={cell.id}
-                                                    className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
-                                                    style={{ width: cell.column.getSize() }}
-                                                >
-                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                                </td>
-                                            ))}
-                                        </tr>
-                                    ))}
+                                    {table.getRowModel().rows.map(row => {
+                                        const rowAttrs = table.options.meta?.getRowAttributes?.(row) || {};
+                                        return (
+                                            <tr
+                                                key={row.id}
+                                                className="border-b border-[#e2e4ed] hover:bg-gray-50/50"
+                                                {...rowAttrs}
+                                            >
+                                                {row.getVisibleCells().map(cell => (
+                                                    <td
+                                                        key={cell.id}
+                                                        className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
+                                                        style={{ width: cell.column.getSize() }}
+                                                    >
+                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                    </td>
+                                                ))}
+                                            </tr>
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>

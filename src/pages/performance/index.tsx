@@ -5,9 +5,9 @@ import { useAllPermissions, useIsSuperAdmin } from "@/hooks/use-permission";
 import { hasReadPermissionForKey } from "@/lib/permission";
 
 const REPORTS = [
-    { title: 'Installation & Template ', path: '/report/installation-template', permissionKey: 'installation_template' },
+    { title: 'Installation & Template ', path: '/performance/installation-template', permissionKey: 'installation_template' },
    
-    { title: 'Redos', path: '/report/redos', permissionKey: 'redos' },
+    { title: 'Redos', path: '/performance/redos', permissionKey: 'redos' },
   
 ];
 
