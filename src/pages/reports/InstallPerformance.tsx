@@ -133,34 +133,34 @@ export function InstallPerformance() {
             size: 100,
             enableSorting: true,
         },
-        {
-            accessorKey: 'labor_cost',
-            header: ({ column }) => <DataGridColumnHeader title="LABOR COST" column={column} />,
-            cell: ({ row }) => <span className="text-sm">${row.original.labor_cost.toFixed(2)}</span>,
-            size: 120,
-            enableSorting: true,
-        },
-        {
-            accessorKey: 'labor_cost_per_sqft',
-            header: ({ column }) => <DataGridColumnHeader title="COST/SQFT" column={column} />,
-            cell: ({ row }) => <span className="text-sm">${row.original.labor_cost_per_sqft.toFixed(2)}</span>,
-            size: 110,
-            enableSorting: true,
-        },
-        {
-            accessorKey: 'first_completion_at',
-            header: ({ column }) => <DataGridColumnHeader title="FIRST COMPLETION" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-[#7c8689]">{fmtDate(row.original.first_completion_at)}</span>,
-            size: 150,
-            enableSorting: true,
-        },
-        {
-            accessorKey: 'last_completion_at',
-            header: ({ column }) => <DataGridColumnHeader title="LAST COMPLETION" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-[#7c8689]">{fmtDate(row.original.last_completion_at)}</span>,
-            size: 150,
-            enableSorting: true,
-        },
+        // {
+        //     accessorKey: 'labor_cost',
+        //     header: ({ column }) => <DataGridColumnHeader title="LABOR COST" column={column} />,
+        //     cell: ({ row }) => <span className="text-sm">${row.original.labor_cost.toFixed(2)}</span>,
+        //     size: 120,
+        //     enableSorting: true,
+        // },
+        // {
+        //     accessorKey: 'labor_cost_per_sqft',
+        //     header: ({ column }) => <DataGridColumnHeader title="COST/SQFT" column={column} />,
+        //     cell: ({ row }) => <span className="text-sm">${row.original.labor_cost_per_sqft.toFixed(2)}</span>,
+        //     size: 110,
+        //     enableSorting: true,
+        // },
+        // {
+        //     accessorKey: 'first_completion_at',
+        //     header: ({ column }) => <DataGridColumnHeader title="FIRST COMPLETION" column={column} />,
+        //     cell: ({ row }) => <span className="text-sm text-[#7c8689]">{fmtDate(row.original.first_completion_at)}</span>,
+        //     size: 150,
+        //     enableSorting: true,
+        // },
+        // {
+        //     accessorKey: 'last_completion_at',
+        //     header: ({ column }) => <DataGridColumnHeader title="LAST COMPLETION" column={column} />,
+        //     cell: ({ row }) => <span className="text-sm text-[#7c8689]">{fmtDate(row.original.last_completion_at)}</span>,
+        //     size: 150,
+        //     enableSorting: true,
+        // },
     ], []);
 
     const table = useReactTable({
@@ -237,8 +237,8 @@ export function InstallPerformance() {
             {summary && (
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                     {[
-                        { label: 'Installer Count', value: summary.installer_count },
                         { label: 'Total SQFT Installed', value: summary.total_sqft_installed.toFixed(1) },
+                        { label: 'Installer Count', value: summary.installer_count },
                         { label: 'Total Work Hours', value: summary.total_work_hours.toFixed(2) },
                         { label: 'Total Labor Cost', value: `$${summary.total_labor_cost.toFixed(2)}` },
                         { label: 'Labor Cost/SQFT', value: `$${summary.portfolio_labor_cost_per_sqft.toFixed(2)}` },

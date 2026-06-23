@@ -243,22 +243,22 @@ export function DailyInstallCompletionReport() {
                     }
                     if (val == null) return <span className="text-sm">-</span>;
 
-                    if (key === 'fab_id') {
-                        const link = getFabIdLink(Number(val));
-                        return renderLink(link);
-                    }
-                    if (key === 'job_number') {
-                        const link = getJobNumberLink(String(val));
-                        return renderLink(link);
-                    }
-                    if (key === 'job_name') {
-                        const jobId = row.original.job_id;
-                        if (jobId) {
-                            const link = getJobNameLink(String(val), jobId);
-                            if (link) return renderLink(link);
-                        }
-                        return <span className="text-sm">{val}</span>;
-                    }
+                    // if (key === 'fab_id') {
+                    //     const link = getFabIdLink(Number(val));
+                    //     return renderLink(link);
+                    // }
+                    // if (key === 'job_number') {
+                    //     const link = getJobNumberLink(String(val));
+                    //     return renderLink(link);
+                    // }
+                    // if (key === 'job_name') {
+                    //     const jobId = row.original.job_id;
+                    //     if (jobId) {
+                    //         const link = getJobNameLink(String(val), jobId);
+                    //         if (link) return renderLink(link);
+                    //     }
+                    //     return <span className="text-sm">{val}</span>;
+                    // }
                     return <span className="text-sm">{val}</span>;
                 },
             };
@@ -541,7 +541,7 @@ export function DailyInstallCompletionReport() {
             <DataGrid table={detailTable} recordCount={filteredEntries.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
                 <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
                     <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
-                        <p className="text-base font-semibold text-[#4b545d]">{getTitle()} – Detail Entries</p>
+                        <p className="text-base font-semibold text-[#4b545d]">{getTitle()} – Fab Details</p>
                         <CardToolbar className="flex items-center gap-2 flex-wrap">
                             {/* Fab Type Filter */}
                             <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>

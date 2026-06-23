@@ -42,8 +42,8 @@ const SALES_COLUMNS = [
 
 // ─── Column definitions for Shop Revisions ────────────────────────────────
 const SHOP_COLUMNS = [
-    { key: 'fab_id', label: 'FAB ID', isLink: true, linkType: 'fab' },
-    { key: 'job_number', label: 'JOB #', isLink: true, linkType: 'jobNumber' },
+    { key: 'fab_id', label: 'FAB ID', isLink: false, linkType: 'fab' },
+    { key: 'job_number', label: 'JOB #', isLink: false, linkType: 'jobNumber' },
     { key: 'job_name', label: 'JOB NAME', isLink: false, linkType: 'jobName' },
     { key: 'account_name', label: 'ACCOUNT' },
     { key: 'revision_type_label', label: 'TYPE', isType: true },

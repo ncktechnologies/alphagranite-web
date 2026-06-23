@@ -253,22 +253,22 @@ export function RedoAnalysisReport() {
         {
             accessorKey: 'fab_id',
             header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
-            cell: ({ row }) => {
-                const fabId = row.original.fab_id;
-                const link = getFabIdLink(Number(fabId));
-                return renderLink(link);
-            },
+            // cell: ({ row }) => {
+            //     const fabId = row.original.fab_id;
+            //     const link = getFabIdLink(Number(fabId));
+            //     return renderLink(link);
+            // },
             size: 100,
             enableSorting: true,
         },
         {
             accessorKey: 'job_number',
             header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
-            cell: ({ row }) => {
-                const jobNumber = row.original.job_number;
-                const link = getJobNumberLink(jobNumber);
-                return renderLink(link);
-            },
+            // cell: ({ row }) => {
+            //     const jobNumber = row.original.job_number;
+            //     const link = getJobNumberLink(jobNumber);
+            //     return renderLink(link);
+            // },
             size: 120,
             enableSorting: true,
         },
@@ -642,7 +642,7 @@ export function RedoAnalysisReport() {
 
             {/* Tables */}
             <div className="space-y-6">
-                {redoByStage.length > 0 && renderTable(stageTable, 'Redo by Stage', 'redo-by-stage')}
+                {/* {redoByStage.length > 0 && renderTable(stageTable, 'Redo by Stage', 'redo-by-stage')} */}
                 {redoByDepartment.length > 0 && renderTable(deptTable, 'Redo by Department', 'redo-by-department')}
                 {redoByEmployee.length > 0 && renderTable(employeeTable, 'Redo by Employee', 'redo-by-employee')}
                 {redoCostRows.length > 0 && renderTable(costTable, 'Redo Cost Details (Fab Level)', 'redo-cost-details')}

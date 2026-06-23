@@ -206,22 +206,22 @@ export function TurnaroundTimesReport() {
                         if (typeof val === 'number') val = val.toLocaleString();
                         if (val == null) return <span className="text-sm">-</span>;
 
-                        if (key === 'fab_id') {
-                            const link = getFabIdLink(Number(val));
-                            return renderLink(link);
-                        }
-                        if (key === 'job_number') {
-                            const link = getJobNumberLink(String(val));
-                            return renderLink(link);
-                        }
-                        if (key === 'job_name') {
-                            const jobId = row.original.job_id;
-                            if (jobId) {
-                                const link = getJobNameLink(String(val), jobId);
-                                if (link) return renderLink(link);
-                            }
-                            return <span className="text-sm">{val}</span>;
-                        }
+                        // if (key === 'fab_id') {
+                        //     const link = getFabIdLink(Number(val));
+                        //     return renderLink(link);
+                        // }
+                        // if (key === 'job_number') {
+                        //     const link = getJobNumberLink(String(val));
+                        //     return renderLink(link);
+                        // }
+                        // if (key === 'job_name') {
+                        //     const jobId = row.original.job_id;
+                        //     if (jobId) {
+                        //         const link = getJobNameLink(String(val), jobId);
+                        //         if (link) return renderLink(link);
+                        //     }
+                        //     return <span className="text-sm">{val}</span>;
+                        // }
                         return <span className="text-sm">{val}</span>;
                     },
                 };

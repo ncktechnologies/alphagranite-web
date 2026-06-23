@@ -7,7 +7,7 @@ import { hasReadPermissionForKey } from "@/lib/permission";
 const REPORTS = [
     { title: 'AG Completion Report', path: '/report/daily-completion', permissionKey: 'report_shop_status' },
     { title: 'Daily Install Completion', path: '/report/daily-install-completion', permissionKey: 'daily_install_completion' },
-    { title: 'Employee Productivity Report', path: '/report/template-card', permissionKey: 'installation_template' },
+    // { title: 'Employee Productivity Report', path: '/report/template-card', permissionKey: 'installation_template' },
     { title: 'Install Performance', path: '/report/install-performance', permissionKey: 'install_performance' },
     { title: 'Installation & Template Report', path: '/report/installation-template', permissionKey: 'installation_template' },
     { title: 'Monthly Cut Completion', path: '/report/monthly-cut-completion', permissionKey: 'monthly_cut_completion' },

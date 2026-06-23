@@ -284,8 +284,8 @@ const EditFabIdForm = () => {
             stoneThickness: '',
             edge: '',
             totalSqFt: '',
-            revenue: '0',
-            cost_of_stone: '0',
+            revenue: '',
+            cost_of_stone: '',
             selectedSalesPerson: '',
             notes: '',
             templateNotNeeded: true,
@@ -687,8 +687,8 @@ const EditFabIdForm = () => {
                 stone_thickness_id: selectedStoneThickness.id,
                 edge_id: selectedEdge.id,
                 input_area: values.area,
-                total_sqft: parseFloat(values.totalSqFt) || 0,
-                revenue: parseFloat(values.revenue) || 0,
+                total_sqft: parseFloat(values.totalSqFt) ,
+                revenue: parseFloat(values.revenue) ,
                 cost_of_stone: values.cost_of_stone && values.cost_of_stone.trim() !== '' ? parseFloat(values.cost_of_stone) : null,
                 notes: values.notes?.trim() || undefined,
                 template_needed: !values.templateNotNeeded,
@@ -697,7 +697,7 @@ const EditFabIdForm = () => {
                 slab_smith_ag_needed: !values.slabSmithAGNotNeeded,
                 sct_needed: !values.sctNotNeeded,
                 final_programming_needed: !values.finalProgrammingNotNeeded,
-                redo_total_sqft: parseFloat(values.totalSqFt) || 0,
+                redo_total_sqft: parseFloat(values.totalSqFt) ,
                 cost_per_sqft: values.cost_per_sqft ? parseFloat(values.cost_per_sqft) : undefined,
                 redo_department: values.redo_department ? parseInt(values.redo_department) : undefined,
                 redo_requested_by: values.redo_requested_by ? parseInt(values.redo_requested_by) : undefined,
@@ -1260,7 +1260,7 @@ const EditFabIdForm = () => {
                         </div>
                         <div className=" ">
                             <Label htmlFor="redoRequestedBy" className="text-right">
-                                Requested By
+                                Employee
                             </Label>
                             <Select value={redoRequestedBy} onValueChange={setRedoRequestedBy}>
                                 <SelectTrigger className="">

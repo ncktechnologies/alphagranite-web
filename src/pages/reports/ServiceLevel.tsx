@@ -128,21 +128,21 @@ export function ServiceLevelReport() {
             accessorKey: 'fab_id',
             header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
             size: 80,
-            cell: ({ row }) => {
-                const fabId = row.original.fab_id;
-                const link = getFabIdLink(fabId);
-                return <Link to={link} className="text-blue-600 hover:text-blue-800 hover:underline text-sm">{fabId}</Link>;
-            }
+            // cell: ({ row }) => {
+            //     const fabId = row.original.fab_id;
+            //     const link = getFabIdLink(fabId);
+            //     return <Link to={link} className="text-blue-600 hover:text-blue-800 hover:underline text-sm">{fabId}</Link>;
+            // }
         },
         {
             accessorKey: 'job_number',
             header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
             size: 100,
-            cell: ({ row }) => {
-                const jobNumber = row.original.job_number;
-                const link = getJobNumberLink(jobNumber);
-                return <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline text-sm">{jobNumber}</a>;
-            }
+            // cell: ({ row }) => {
+            //     const jobNumber = row.original.job_number;
+            //     const link = getJobNumberLink(jobNumber);
+            //     return <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline text-sm">{jobNumber}</a>;
+            // }
         },
         {
             accessorKey: 'fab_info',

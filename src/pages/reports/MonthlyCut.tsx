@@ -167,22 +167,22 @@ export function MonthlyCutCompletionReport() {
                         if (typeof val === 'number') val = val.toLocaleString();
                         if (val == null) return <span className="text-sm">-</span>;
 
-                        if (key === 'fab_id') {
-                            const link = getFabIdLink(Number(val));
-                            return renderLink(link);
-                        }
-                        if (key === 'job_number') {
-                            const link = getJobNumberLink(String(val));
-                            return renderLink(link);
-                        }
-                        if (key === 'job_name') {
-                            const jobId = row.original.job_id;
-                            if (jobId) {
-                                const link = getJobNameLink(String(val), jobId);
-                                if (link) return renderLink(link);
-                            }
-                            return <span className="text-sm">{val}</span>;
-                        }
+                        // if (key === 'fab_id') {
+                        //     const link = getFabIdLink(Number(val));
+                        //     return renderLink(link);
+                        // }
+                        // if (key === 'job_number') {
+                        //     const link = getJobNumberLink(String(val));
+                        //     return renderLink(link);
+                        // }
+                        // if (key === 'job_name') {
+                        //     const jobId = row.original.job_id;
+                        //     if (jobId) {
+                        //         const link = getJobNameLink(String(val), jobId);
+                        //         if (link) return renderLink(link);
+                        //     }
+                        //     return <span className="text-sm">{val}</span>;
+                        // }
                         return <span className="text-sm">{val}</span>;
                     },
                 };
@@ -244,19 +244,10 @@ export function MonthlyCutCompletionReport() {
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <h1 className="text-2xl font-semibold text-[#4b545d]">Monthly Cut Completion</h1>
                 <div className="flex items-center gap-2 flex-wrap">
-                    {/* Fab Type Filter */}
-                    <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
-                        <SelectTrigger className="w-[150px] h-[34px] border-[#e2e4ed]">
-                            <SelectValue placeholder="Fab Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Types</SelectItem>
-                            {fabTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
+
 
                     {/* Mode toggle: Monthly or Custom Range */}
-                    {/* <Select value={dateMode} onValueChange={(v) => setDateMode(v as 'monthly' | 'custom')}>
+                    <Select value={dateMode} onValueChange={(v) => setDateMode(v as 'monthly' | 'custom')}>
                         <SelectTrigger className="w-[120px] h-[34px] border-[#e2e4ed]">
                             <SelectValue placeholder="Period" />
                         </SelectTrigger>
@@ -264,7 +255,7 @@ export function MonthlyCutCompletionReport() {
                             <SelectItem value="monthly">Monthly</SelectItem>
                             <SelectItem value="custom">Custom Range</SelectItem>
                         </SelectContent>
-                    </Select> */}
+                    </Select>
 
                     {dateMode === 'monthly' ? (
                         <>
@@ -308,56 +299,24 @@ export function MonthlyCutCompletionReport() {
                             </PopoverContent>
                         </Popover>
                     )}
+                    <BackButton/>
+
 
                     {/* Additional Filters: Fab ID, Job Number, General Search */}
-                    <div className="relative flex items-center">
-                        <Select value={searchType} onValueChange={(v) => setSearchType(v as 'fab_id' | 'job_number' | 'job_name')}>
-                            <SelectTrigger className="w-[140px] h-[34px] rounded-e-none border-r-0">
-                                <SelectValue placeholder="Search by" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="fab_id">Fab ID</SelectItem>
-                                <SelectItem value="job_number">Job Number</SelectItem>
-                                <SelectItem value="job_name">Job Name</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <div className="relative">
-                            <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
-                            <Input
-                                placeholder={`Search by ${searchType.replace('_', ' ')}`}
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="ps-9 w-[230px] h-[34px] rounded-s-none"
-                            />
-                            {searchQuery && (
-                                <Button
-                                    mode="icon"
-                                    variant="ghost"
-                                    className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                                    onClick={() => setSearchQuery('')}
-                                >
-                                    <X />
-                                </Button>
-                            )}
-                        </div>
-                    </div>
 
-
-                    <BackButton />
                 </div>
-
             </div>
 
             {/* Summary Widgets with Cost of Stone and Gross Profit */}
             {summary && (
                 <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">NO OF Pieces</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.pieces?.toLocaleString() ?? '0'}</p>
-                    </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">SQ FT</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.sq_ft?.toFixed(2) ?? '0.00'}</p>
+                    </Card>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">NO OF Pieces</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.pieces?.toLocaleString() ?? '0'}</p>
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Revenue</p>
@@ -383,10 +342,53 @@ export function MonthlyCutCompletionReport() {
                 <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
                     <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
                         <p className="text-base font-semibold text-[#4b545d]">{getTitle()}</p>
-                        <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(table, `monthly-cut-${year}-${month}`)}>
-                            Export CSV
-                        </Button>
-                        {/* <CardToolbar /> */}
+                        <CardToolbar className="flex items-center gap-2 flex-wrap">
+                            {/* Fab Type Filter */}
+                            <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
+                                <SelectTrigger className="w-[150px] h-[34px] border-[#e2e4ed]">
+                                    <SelectValue placeholder="Fab Type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Types</SelectItem>
+                                    {fabTypes.map(type => <SelectItem key={type} value={type}>{type}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                            <Select value={searchType} onValueChange={(v) => setSearchType(v as 'fab_id' | 'job_number' | 'job_name')}>
+                                <SelectTrigger className="w-[140px] h-[34px] rounded-e-none border-r-0">
+                                    <SelectValue placeholder="Search by" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="fab_id">Fab ID</SelectItem>
+                                    <SelectItem value="job_number">Job Number</SelectItem>
+                                    <SelectItem value="job_name">Job Name</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <div className="relative">
+                                <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                                <Input
+                                    placeholder={`Search by ${searchType.replace('_', ' ')}`}
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="ps-9 w-[230px] h-[34px] rounded-s-none"
+                                />
+                                {searchQuery && (
+                                    <Button
+                                        mode="icon"
+                                        variant="ghost"
+                                        className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                                        onClick={() => setSearchQuery('')}
+                                    >
+                                        <X />
+                                    </Button>
+                                )}
+                            </div>
+
+
+                            <Button variant="outline" className="h-[34px]" onClick={() => exportTableToCSV(table, `monthly-cut-${year}-${month}`)}>
+                                Export CSV
+                            </Button>
+                        </CardToolbar>
+
                     </CardHeader>
                     <CardTable>
                         <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-10px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
@@ -464,6 +466,6 @@ export function MonthlyCutCompletionReport() {
                 } : undefined}
                 onUpdateSuccess={() => refetch()}
             />
-        </div>
+        </div >
     );
 }
