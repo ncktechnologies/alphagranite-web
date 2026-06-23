@@ -297,7 +297,7 @@ export function MonthlyCutCompletionReport() {
 
 
                     {/* Mode toggle: Monthly or Custom Range */}
-                    <Select value={dateMode} onValueChange={(v) => setDateMode(v as 'monthly' | 'custom')}>
+                    {/* <Select value={dateMode} onValueChange={(v) => setDateMode(v as 'monthly' | 'custom')}>
                         <SelectTrigger className="w-[120px] h-[34px] border-[#e2e4ed]">
                             <SelectValue placeholder="Period" />
                         </SelectTrigger>
@@ -305,7 +305,7 @@ export function MonthlyCutCompletionReport() {
                             <SelectItem value="monthly">Monthly</SelectItem>
                             <SelectItem value="custom">Custom Range</SelectItem>
                         </SelectContent>
-                    </Select>
+                    </Select> */}
 
                     {dateMode === 'monthly' ? (
                         <>
