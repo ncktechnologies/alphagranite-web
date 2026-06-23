@@ -137,8 +137,8 @@ export function DailyInstallCompletionReport() {
         return {
             sqft: filteredEntries.reduce((s, r) => s + (r.sqft || 0), 0),
             revenue: filteredEntries.reduce((s, r) => s + (r.revenue || 0), 0),
-            gp: filteredEntries.reduce((s, r) => s + (r.gp || 0), 0),
             cost_of_stone: filteredEntries.reduce((s, r) => s + (r.cost_of_stone || 0), 0),
+            gp: filteredEntries.reduce((s, r) => s + (r.gp || 0), 0),
         };
     }, [filteredEntries]);
 
@@ -345,17 +345,18 @@ export function DailyInstallCompletionReport() {
             size: 150,
             enableSorting: true,
         },
-        {
-            accessorKey: 'total_gp',
-            header: ({ column }) => <DataGridColumnHeader title="TOTAL GP" column={column} />,
-            cell: ({ row }) => <span className="text-sm">${row.original.total_gp?.toFixed(2)}</span>,
-            size: 130,
-            enableSorting: true,
-        },
+        
         {
             accessorKey: 'cost_of_stone',
             header: ({ column }) => <DataGridColumnHeader title="COST OF STONE" column={column} />,
             cell: ({ row }) => <span className="text-sm">${row.original.total_cost_of_stone?.toFixed(2)}</span>,
+            size: 130,
+            enableSorting: true,
+        },
+        {
+            accessorKey: 'total_gp',
+            header: ({ column }) => <DataGridColumnHeader title="TOTAL GP" column={column} />,
+            cell: ({ row }) => <span className="text-sm">${row.original.total_gp?.toFixed(2)}</span>,
             size: 130,
             enableSorting: true,
         },
@@ -415,14 +416,14 @@ export function DailyInstallCompletionReport() {
                 ? `${format(dateRange.from, 'MMM dd, yyyy')} – ${format(dateRange.to, 'MMM dd, yyyy')}`
                 : format(dateRange.from, 'MMM dd, yyyy');
         }
-        return 'All Time';
+        return 'Last 7 Days';
     };
 
     return (
         <div className="flex flex-col gap-5 p-5">
             {/* ─── Top Bar: Title + Date Picker ──────────────────────────── */}
             <div className="flex items-center justify-between flex-wrap gap-3">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Daily Install Completion</h1>
+                <h1 className="text-2xl font-semibold text-[#4b545d]">Install Completion</h1>
                 <div className="flex items-center gap-2">
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>
@@ -456,13 +457,14 @@ export function DailyInstallCompletionReport() {
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total Revenue</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${grandTotals.total_revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total GP</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${grandTotals.total_gp?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
-                    </Card>
+                    
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total Cost of Stone</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${grandTotals.total_cost_of_stone?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0.00'}</p>
+                    </Card>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total GP</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${grandTotals.total_gp?.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">FABS</p>

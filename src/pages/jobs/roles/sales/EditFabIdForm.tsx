@@ -182,11 +182,11 @@ const fabIdFormSchema = z.object({
     stoneThickness: z.string().min(1, 'Stone Thickness is required'),
     edge: z.string().min(1, 'Edge is required'),
     totalSqFt: z.string().min(1, 'Total Sq Ft is required'),
-    revenue: z.string().optional(),
-        // .refine((val) => {
-        //     const num = parseFloat(val);
-        //     return !isNaN(num) && num >= 0;
-        // }, { message: 'Revenue must be a valid number' }),
+    revenue: z.string().min(1, 'Revenue is required')
+        .refine((val) => {
+            const num = parseFloat(val);
+            return !isNaN(num) && num >= 0;
+        }, { message: 'Revenue must be a valid number' }),
     cost_of_stone: z.string().optional()
         .refine((val) => val === '' || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), { message: 'Cost of Stone must be a valid number' }),
     selectedSalesPerson: z.string().min(1, 'Sales Person is required'),
@@ -457,8 +457,8 @@ const EditFabIdForm = () => {
                             stoneThickness: fabData.stone_thickness_value || '',
                             edge: fabData.edge_name || '',
                             totalSqFt: String(fabData.total_sqft || ''),
-                            revenue: String(fabData.revenue || '0'),
-                            cost_of_stone: String(fabData.cost_of_stone || '0'),
+                            revenue: fabData.revenue ? String(fabData.revenue) : '',
+                            cost_of_stone: fabData.cost_of_stone ? String(fabData.cost_of_stone) : '',
                             selectedSalesPerson: fabData.sales_person_name || '',
                             notes: '',
                             templateNotNeeded: !fabData.template_needed,
@@ -467,6 +467,9 @@ const EditFabIdForm = () => {
                             sctNotNeeded: !fabData.sct_needed,
                             slabSmithAGNotNeeded: !fabData.slab_smith_ag_needed,
                             finalProgrammingNotNeeded: !fabData.final_programming_needed,
+                            cost_per_sqft: fabData.cost_per_sqft ? String(fabData.cost_per_sqft) : '',
+                            redo_department: fabData.redo_department ? String(fabData.redo_department) : '',
+                            redo_requested_by: fabData.redo_requested_by ? String(fabData.redo_requested_by) : '',
                         };
                         if (fabData.notes && Array.isArray(fabData.notes) && fabData.notes.length > 0) {
                             formData.notes = fabData.notes[0];
@@ -474,6 +477,10 @@ const EditFabIdForm = () => {
                             formData.notes = fabData.notes;
                         }
                         form.reset(formData);
+                        // Populate AG redo modal if values exist
+                        if (fabData.cost_per_sqft) setCostPerSqft(String(fabData.cost_per_sqft));
+                        if (fabData.redo_department) setRedoDepartment(String(fabData.redo_department));
+                        if (fabData.redo_requested_by) setRedoRequestedBy(String(fabData.redo_requested_by));
                         if (formData.jobName && formData.jobNumber) {
                             lastProcessedJobRef.current = { name: formData.jobName, number: formData.jobNumber };
                         }
@@ -539,6 +546,18 @@ const EditFabIdForm = () => {
         form.setValue('cost_per_sqft', costPerSqft);
         form.setValue('redo_department', redoDepartment);
         form.setValue('redo_requested_by', redoRequestedBy);
+        
+        // Calculate revenue based on cost_per_sqft and total_sqft
+        if (costPerSqft) {
+            const costPerSqftNum = parseFloat(costPerSqft);
+            const totalSqFtNum = parseFloat(form.getValues('totalSqFt'));
+            if (!isNaN(costPerSqftNum) && !isNaN(totalSqFtNum) && totalSqFtNum > 0) {
+                // Revenue = -(cost_per_sqft * total_sqft)
+                const calculatedRevenue = -(costPerSqftNum * totalSqFtNum);
+                form.setValue('revenue', calculatedRevenue.toString());
+            }
+        }
+        
         setShowAgRedoModal(false);
     };
 
@@ -687,8 +706,8 @@ const EditFabIdForm = () => {
                 stone_thickness_id: selectedStoneThickness.id,
                 edge_id: selectedEdge.id,
                 input_area: values.area,
-                total_sqft: parseFloat(values.totalSqFt) ,
-                revenue: parseFloat(values.revenue) ,
+                total_sqft: parseFloat(values.totalSqFt) || 0,
+                revenue: parseFloat(values.revenue) || 0,
                 cost_of_stone: values.cost_of_stone && values.cost_of_stone.trim() !== '' ? parseFloat(values.cost_of_stone) : null,
                 notes: values.notes?.trim() || undefined,
                 template_needed: !values.templateNotNeeded,
@@ -697,7 +716,7 @@ const EditFabIdForm = () => {
                 slab_smith_ag_needed: !values.slabSmithAGNotNeeded,
                 sct_needed: !values.sctNotNeeded,
                 final_programming_needed: !values.finalProgrammingNotNeeded,
-                redo_total_sqft: parseFloat(values.totalSqFt) ,
+                redo_total_sqft: parseFloat(values.totalSqFt) || 0,
                 cost_per_sqft: values.cost_per_sqft ? parseFloat(values.cost_per_sqft) : undefined,
                 redo_department: values.redo_department ? parseInt(values.redo_department) : undefined,
                 redo_requested_by: values.redo_requested_by ? parseInt(values.redo_requested_by) : undefined,
@@ -1260,7 +1279,7 @@ const EditFabIdForm = () => {
                         </div>
                         <div className=" ">
                             <Label htmlFor="redoRequestedBy" className="text-right">
-                                Employee
+                                Requested By
                             </Label>
                             <Select value={redoRequestedBy} onValueChange={setRedoRequestedBy}>
                                 <SelectTrigger className="">

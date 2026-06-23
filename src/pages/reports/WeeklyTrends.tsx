@@ -187,7 +187,7 @@ export function WeeklyTrendsReport() {
         <div className="flex flex-col gap-5 p-5">
             {/* Header with filters */}
             <div className="flex items-center justify-between flex-wrap gap-3">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Template & Install Trends</h1>
+                <h1 className="text-2xl font-semibold text-[#4b545d]">Install & Template Trends</h1>
                 <div className="flex items-center gap-2 flex-wrap">
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>

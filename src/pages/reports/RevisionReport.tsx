@@ -272,7 +272,7 @@ export function RevisionReport() {
         <div className="flex flex-col gap-5 p-5">
             {/* ─── Top Bar ─────────────────────────────────────────────────────── */}
             <div className="flex items-center justify-between flex-wrap gap-3">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Revision Report</h1>
+                <h1 className="text-2xl font-semibold text-[#4b545d]">Revision Analysis</h1>
                 <div className="flex items-center gap-2 flex-wrap">
                     <Select value={dateMode} onValueChange={(v) => setDateMode(v as 'monthly' | 'custom')}>
                         <SelectTrigger className="w-[120px] h-[34px] border-[#e2e4ed]">

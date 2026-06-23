@@ -68,13 +68,13 @@ export function JobDashboardPage() {
       'SCT': 'sales_ct',
       'SlabSmith Request': 'slab_smith_request',
       'Final Programming': 'final_programming',
+      'CNC Programming': 'cnc',
       'Cut List': 'cut_list',
       'Resurface Scheduling': 'resurface_scheduling',
       'Revisions': 'revision',
       'Install Scheduling': 'install_scheduling',
       'Install Completion': 'install_completion',
       'FAB IDs': 'fab_created',
-      'CNC Programming': 'cnc'
     };
 
     const stageName = stageNameMap[widgetId] || widgetId.toLowerCase().replace(/ /g, '_');

@@ -242,7 +242,7 @@ export function MonthlyCutCompletionReport() {
     return (
         <div className="flex flex-col gap-5 p-5">
             <div className="flex items-center justify-between flex-wrap gap-3">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Monthly Cut Completion</h1>
+                <h1 className="text-2xl font-semibold text-[#4b545d]">Shop Cut Completion - Monthly</h1>
                 <div className="flex items-center gap-2 flex-wrap">
 
 

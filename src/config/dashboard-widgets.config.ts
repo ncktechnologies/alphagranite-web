@@ -142,7 +142,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     component: 'StatWidget',
     category: 'stats',
     domain: 'job',
-    order: 12,
+    order: 10,
     data: { icon: 'icon-6.svg', bgColor: 'bg-[#0BC3BD]' }
   },
   // Install to schedule (11)
@@ -154,7 +154,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     component: 'StatWidget',
     category: 'stats',
     domain: 'job',
-    order: 10,
+    order: 11,
     data: { icon: 'calendar-pin.svg', bgColor: 'bg-[#CF2675]' }
   },
   // Install Scheduled (12)
@@ -166,7 +166,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
     component: 'StatWidget',
     category: 'stats',
     domain: 'job',
-    order: 11,
+    order: 12,
     data: { icon: 'icon-1.svg', bgColor: 'bg-[#13D6C6]' }
   },
   // Cost Of Stone (13)

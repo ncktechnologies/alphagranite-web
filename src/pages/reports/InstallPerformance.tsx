@@ -185,7 +185,7 @@ export function InstallPerformance() {
                 ? `${format(dateRange.from, 'MMM dd, yyyy')} – ${format(dateRange.to, 'MMM dd, yyyy')}`
                 : format(dateRange.from, 'MMM dd, yyyy');
         }
-        return 'All dates';
+        return 'Last 7 Days';
     };
 
     return (

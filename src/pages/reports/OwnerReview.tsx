@@ -29,9 +29,9 @@ const STAGE_ORDER = [
     'revision',
     'cut_list',
     'final_programming',
+    'cnc',
     'install_scheduling',
     'install_completion',
-    'cnc',
 ];
 
 // ─── Custom display names for stages ─────────────────────────────────────

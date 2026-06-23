@@ -39,10 +39,12 @@ const getFabColor = (fabType: string | undefined): string => {
 
 export function ShopProductionSummary() {
     // ─── Date range ───────────────────────────────────────────────────────────
-    const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
-    const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
+    // Default to today
+    const today = new Date();
+    const [dateRange, setDateRange] = useState<DateRange | undefined>({ from: today, to: today });
+    const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>({ from: today, to: today });
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
-    const [month, setMonth] = useState(new Date());
+    const [month, setMonth] = useState(today);
 
     // ─── Filters ──────────────────────────────────────────────────────────────
     const [statusId, setStatusId] = useState<number | null>(1); // default Active

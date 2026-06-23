@@ -260,7 +260,7 @@ export function WeeklyInstallerCostReport() {
     return (
         <div className="flex flex-col gap-5 p-5">
             <div className="flex items-center justify-between flex-wrap gap-3">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Weekly Installer Labor Cost</h1>
+                <h1 className="text-2xl font-semibold text-[#4b545d]">Installer Labor Costs - Weekly</h1>
                 <div className="flex items-center gap-2 flex-wrap">
                     {/* ─── Month/Year Picker ───────────────────────────── */}
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
