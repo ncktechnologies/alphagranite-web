@@ -102,7 +102,7 @@ export function ShopProductionSummary() {
         },
         {
             accessorKey: 'total_pieces',
-            header: ({ column }) => <DataGridColumnHeader title="TOTAL PIECES" column={column} />,
+            header: ({ column }) => <DataGridColumnHeader title="TOTAL No Of  PIECES" column={column} />,
             size: 120,
             enableSorting: true,
         },
@@ -352,7 +352,7 @@ export function ShopProductionSummary() {
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.total_sqft?.toFixed(2)}</p>
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total Pieces</p>
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total No Of Pieces</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.total_pieces}</p>
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">

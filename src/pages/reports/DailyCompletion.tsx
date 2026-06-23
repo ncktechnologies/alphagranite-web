@@ -135,7 +135,7 @@ export function DailyCompletion() {
                 if (typeof val === 'number') {
                     // Format currency for GP, revenue, etc.
                     if (currencyColumns.has(key)) {
-                        return <span className="text-sm">${val.toFixed(2)}</span>;
+                        return <span className="text-sm">${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>;
                     }
                     val = val.toFixed(2);
                 }
@@ -199,7 +199,7 @@ export function DailyCompletion() {
                                 {key.replace(/_/g, ' ')}
                             </p>
                             <p className="text-lg font-semibold mt-1 text-[#4b545d]">
-                                {isCurrency ? `$${value.toFixed(2)}` : value.toFixed(2)}
+                                {isCurrency ? `$${value.toLocaleString(undefined, { minimumFractionDigits: 2 })}` : value.toFixed(2)}
                             </p>
                         </Card>
                     ))}

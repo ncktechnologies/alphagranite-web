@@ -237,7 +237,7 @@ export function DailyInstallCompletionReport() {
                     }
                     if (typeof val === 'number') {
                         if (isCurrency) {
-                            return <span className="text-sm">${val.toFixed(2)}</span>;
+                            return <span className="text-sm">${val.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>;
                         }
                         val = val.toLocaleString();
                     }

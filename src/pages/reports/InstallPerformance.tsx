@@ -240,8 +240,8 @@ export function InstallPerformance() {
                         { label: 'Total SQFT Installed', value: summary.total_sqft_installed.toFixed(1) },
                         { label: 'Installer Count', value: summary.installer_count },
                         { label: 'Total Work Hours', value: summary.total_work_hours.toFixed(2) },
-                        { label: 'Total Labor Cost', value: `$${summary.total_labor_cost.toFixed(2)}` },
-                        { label: 'Labor Cost/SQFT', value: `$${summary.portfolio_labor_cost_per_sqft.toFixed(2)}` },
+                        { label: 'Total Labor Cost', value: `$${summary.total_labor_cost?.toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
+                        { label: 'Labor Cost/SQFT', value: `$${summary.portfolio_labor_cost_per_sqft?.toLocaleString(undefined, { minimumFractionDigits: 2 })}` },
                         { label: 'SQFT/Hour', value: summary.portfolio_sqft_per_hour.toFixed(2) },
                     ].map(kpi => (
                         <Card key={kpi.label} className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">

@@ -198,14 +198,14 @@ export function RedoAnalysisReport() {
         {
             accessorKey: 'redo_value',
             header: ({ column }) => <DataGridColumnHeader title="REDO VALUE" column={column} />,
-            cell: ({ row }) => `$${row.original.redo_value?.toFixed(2) ?? '0.00'}`,
+            cell: ({ row }) => `$${row.original.redo_value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? ''}`,
             size: 140,
             enableSorting: true,
         },
         {
             accessorKey: 'redo_total_cost',
             header: ({ column }) => <DataGridColumnHeader title="TOTAL COST" column={column} />,
-            cell: ({ row }) => `$${row.original.redo_total_cost?.toFixed(2) ?? '0.00'}`,
+            cell: ({ row }) => `$${row.original.redo_total_cost?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0.00'}`,
             size: 140,
             enableSorting: true,
         },
@@ -235,14 +235,14 @@ export function RedoAnalysisReport() {
         {
             accessorKey: 'redo_value',
             header: ({ column }) => <DataGridColumnHeader title="REDO VALUE" column={column} />,
-            cell: ({ row }) => `$${row.original.redo_value?.toFixed(2) ?? '0.00'}`,
+            cell: ({ row }) => `$${row.original.redo_value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? ''}`,
             size: 140,
             enableSorting: true,
         },
         {
             accessorKey: 'redo_total_cost',
             header: ({ column }) => <DataGridColumnHeader title="TOTAL COST" column={column} />,
-            cell: ({ row }) => `$${row.original.redo_total_cost?.toFixed(2) ?? '0.00'}`,
+            cell: ({ row }) => `$${row.original.redo_total_cost?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? ''}`,
             size: 140,
             enableSorting: true,
         },
@@ -272,12 +272,12 @@ export function RedoAnalysisReport() {
             size: 120,
             enableSorting: true,
         },
-        {
-            accessorKey: 'job_name',
-            header: ({ column }) => <DataGridColumnHeader title="JOB NAME" column={column} />,
-            size: 200,
-            enableSorting: true,
-        },
+        // {
+        //     accessorKey: 'job_name',
+        //     header: ({ column }) => <DataGridColumnHeader title="JOB NAME" column={column} />,
+        //     size: 200,
+        //     enableSorting: true,
+        // },
         // {
         //     accessorKey: 'account_name',
         //     header: ({ column }) => <DataGridColumnHeader title="ACCOUNT" column={column} />,
@@ -295,7 +295,7 @@ export function RedoAnalysisReport() {
         {
             accessorKey: 'cost_per_sqft',
             header: ({ column }) => <DataGridColumnHeader title="COST/SQFT" column={column} />,
-            cell: ({ row }) => `$${row.original.cost_per_sqft?.toFixed(2) ?? '0.00'}`,
+            cell: ({ row }) => `$${row.original.cost_per_sqft?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? ''}`,
             size: 120,
             enableSorting: true,
         },
@@ -309,7 +309,7 @@ export function RedoAnalysisReport() {
         {
             accessorKey: 'redo_total_cost',
             header: ({ column }) => <DataGridColumnHeader title="TOTAL COST" column={column} />,
-            cell: ({ row }) => `$${row.original.redo_total_cost?.toFixed(2) ?? '0.00'}`,
+            cell: ({ row }) => `$${row.original.redo_total_cost?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? ''}`,
             size: 140,
             enableSorting: true,
         },
@@ -412,14 +412,14 @@ export function RedoAnalysisReport() {
         {
             accessorKey: 'total_redo_value',
             header: ({ column }) => <DataGridColumnHeader title="REDO VALUE" column={column} />,
-            cell: ({ row }) => `$${row.original.total_redo_value?.toFixed(2) ?? '0.00'}`,
+            cell: ({ row }) => `$${row.original.total_redo_value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? ''}`,
             size: 140,
             enableSorting: true,
         },
         {
             accessorKey: 'increase_decrease_value',
             header: ({ column }) => <DataGridColumnHeader title="INCREASE/DECREASE" column={column} />,
-            cell: ({ row }) => `$${row.original.increase_decrease_value?.toFixed(2) ?? '0.00'}`,
+            cell: ({ row }) => `$${row.original.increase_decrease_value?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? ''}`,
             size: 140,
             enableSorting: true,
         },
@@ -635,7 +635,7 @@ export function RedoAnalysisReport() {
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <div className="text-sm text-[#7c8689] uppercase tracking-wider">Total Redo Cost</div>
-                        <div className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.redo_total_cost?.toFixed(2) ?? '0.00'}</div>
+                        <div className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.redo_total_cost?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? ''}</div>
                     </Card>
                 </div>
             )}

@@ -236,11 +236,11 @@ export function WeeklyFabricationCostReport() {
         { accessorKey: 'month', header: ({ column }) => <DataGridColumnHeader title="Month" column={column} />, size: 120, enableSorting: true },
         { accessorKey: 'number_of_weeks', header: ({ column }) => <DataGridColumnHeader title="Weeks" column={column} />, size: 80, enableSorting: true },
         { accessorKey: 'completed_sqft', header: ({ column }) => <DataGridColumnHeader title="Completed Sqft" column={column} />, cell: ({ row }) => num(row.original.completed_sqft), size: 130, enableSorting: true },
-        { accessorKey: 'gross_revenue', header: ({ column }) => <DataGridColumnHeader title="Gross Revenue" column={column} />, cell: ({ row }) => $(row.original.gross_revenue), size: 130, enableSorting: true },
-        { accessorKey: 'gross_profit', header: ({ column }) => <DataGridColumnHeader title="Gross Profit" column={column} />, cell: ({ row }) => $(row.original.gross_profit), size: 120, enableSorting: true },
-        { accessorKey: 'total_labor_cost', header: ({ column }) => <DataGridColumnHeader title="Labor Cost" column={column} />, cell: ({ row }) => $(row.original.total_labor_cost), size: 120, enableSorting: true },
+        { accessorKey: 'gross_revenue', header: ({ column }) => <DataGridColumnHeader title="Gross Revenue" column={column} />, cell: ({ row }) => $(row.original.gross_revenue?.toLocaleString(undefined, { minimumFractionDigits: 2 })), size: 130, enableSorting: true },
+        { accessorKey: 'gross_profit', header: ({ column }) => <DataGridColumnHeader title="Gross Profit" column={column} />, cell: ({ row }) => $(row.original.gross_profit?.toLocaleString(undefined, { minimumFractionDigits: 2 })), size: 120, enableSorting: true },
+        { accessorKey: 'total_labor_cost', header: ({ column }) => <DataGridColumnHeader title="Labor Cost" column={column} />, cell: ({ row }) => $(row.original.total_labor_cost?.toLocaleString(undefined, { minimumFractionDigits: 2 })), size: 120, enableSorting: true },
         { accessorKey: 'total_hours', header: ({ column }) => <DataGridColumnHeader title="Total Hours" column={column} />, cell: ({ row }) => num(row.original.total_hours), size: 110, enableSorting: true },
-        { accessorKey: 'gross_profit_less_shop_total_cost_psf', header: ({ column }) => <DataGridColumnHeader title="GP less total cost $/Sqft" column={column} />, cell: ({ row }) => $(row.original.gross_profit_less_shop_total_cost_psf), size: 170, enableSorting: true },
+        { accessorKey: 'gross_profit_less_shop_total_cost_psf', header: ({ column }) => <DataGridColumnHeader title="GP less total cost $/Sqft" column={column} />, cell: ({ row }) => $(row.original.gross_profit_less_shop_total_cost_psf?.toLocaleString(undefined, { minimumFractionDigits: 2 })), size: 170, enableSorting: true },
     ], []);
 
     const [annualPagination, setAnnualPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 100 });
