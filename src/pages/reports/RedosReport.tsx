@@ -168,24 +168,24 @@ export function RedosReport() {
         {
             accessorKey: 'fab_id',
             header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
-            // cell: ({ row }) => {
-            //     const fabId = row.original.fab_id;
-            //     if (!fabId) return <span className="text-sm">—</span>;
-            //     const link = getFabIdLink(fabId);
-            //     return renderLink(link);
-            // },
+            cell: ({ row }) => {
+                const fabId = row.original.fab_id;
+                if (!fabId) return <span className="text-sm">—</span>;
+                const link = getFabIdLink(fabId);
+                return renderLink(link);
+            },
             size: 80,
             enableSorting: true,
         },
         {
             accessorKey: 'job_number',
             header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
-            // cell: ({ row }) => {
-            //     const jobNumber = row.original.job_number;
-            //     if (!jobNumber) return <span className="text-sm">—</span>;
-            //     const link = getJobNumberLink(jobNumber);
-            //     return renderLink(link);
-            // },
+            cell: ({ row }) => {
+                const jobNumber = row.original.job_number;
+                if (!jobNumber) return <span className="text-sm">—</span>;
+                const link = getJobNumberLink(jobNumber);
+                return renderLink(link);
+            },
             size: 100,
             enableSorting: true,
         },

@@ -39,13 +39,12 @@ const getFabColor = (fabType: string | undefined): string => {
 const REVISION_TYPE_MAP: Record<string, string> = {
     'ag_redo': 'AG Redo',
     'shop': 'Shop',
-    'sales': 'Sales CT',
-    // add others as needed
+    'sales': 'SCT',
 };
 
 // ─── Column definitions for Sales CT Revisions ─────────────────────────────
 const SALES_COLUMNS = [
-    { key: 'fab_type', label: 'FAB TYPE', isFabType: true }, // 👈 Added
+    { key: 'fab_type', label: 'FAB TYPE', isFabType: true },
     { key: 'fab_id', label: 'FAB ID', isLink: true, linkType: 'fab' },
     { key: 'job_number', label: 'JOB NO', isLink: true, linkType: 'jobNumber' },
     { key: 'fab_info', label: 'FAB INFO', isFabInfo: true },
@@ -58,7 +57,7 @@ const SALES_COLUMNS = [
 
 // ─── Column definitions for Shop Revisions ────────────────────────────────
 const SHOP_COLUMNS = [
-    { key: 'fab_type', label: 'FAB TYPE', isFabType: true }, // 👈 Added
+    { key: 'fab_type', label: 'FAB TYPE', isFabType: true },
     { key: 'fab_id', label: 'FAB ID', isLink: false, linkType: 'fab' },
     { key: 'job_number', label: 'JOB NO', isLink: false, linkType: 'jobNumber' },
     { key: 'fab_info', label: 'FAB INFO', isFabInfo: true },
@@ -83,7 +82,7 @@ function buildColumns<T extends Record<string, any>>(
         isBoolean?: boolean;
         isType?: boolean;
         isFabInfo?: boolean;
-        isFabType?: boolean; // 👈 Added flag
+        isFabType?: boolean;
     }>
 ): ColumnDef<T>[] {
     if (!data.length) return [];
@@ -91,7 +90,6 @@ function buildColumns<T extends Record<string, any>>(
     return columnDefs.map((def) => {
         const { key, label, isLink, linkType, isDate, isBoolean, isType, isFabInfo, isFabType } = def;
 
-        // ── FabInfoCell ────────────────────────────────────────────────────
         if (isFabInfo) {
             return {
                 accessorKey: key as string,
@@ -111,18 +109,15 @@ function buildColumns<T extends Record<string, any>>(
                 const val = row.original[key];
                 if (val == null) return <span className="text-sm">—</span>;
 
-                // ── Fab Type ──────────────────────────────────────────────
                 if (isFabType && typeof val === 'string') {
                     return <span className="uppercase text-sm">{val}</span>;
                 }
 
-                // ── Type mapping ──
                 if (isType && typeof val === 'string') {
                     const display = REVISION_TYPE_MAP[val] || val;
                     return <span className="text-sm">{display}</span>;
                 }
 
-                // ── Link handling ──
                 if (isLink && linkType === 'fab') {
                     const link = getFabIdLink(Number(val));
                     return renderLink(link);
@@ -140,17 +135,14 @@ function buildColumns<T extends Record<string, any>>(
                     return <span className="text-sm">{val}</span>;
                 }
 
-                // ── Date ──
                 if (isDate && typeof val === 'string') {
                     try { return <span className="text-sm">{format(new Date(val), 'MMM dd, yyyy h:mm a')}</span>; } catch { }
                 }
 
-                // ── Boolean ──
                 if (isBoolean) {
                     return <span className="text-sm">{val ? 'Yes' : 'No'}</span>;
                 }
 
-                // ── Default ──
                 return <span className="text-sm">{val}</span>;
             },
         };
@@ -169,10 +161,17 @@ export function RevisionReport() {
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
     // ─── Pagination & sorting ──────────────────────────────────────────────
-    const [salesPagination, setSalesPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
-    const [shopPagination, setShopPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 });
+    const [salesPagination, setSalesPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
+    const [shopPagination, setShopPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
     const [salesSorting, setSalesSorting] = useState<SortingState>([]);
     const [shopSorting, setShopSorting] = useState<SortingState>([]);
+
+    // ─── SCT Filters ──────────────────────────────────────────────────────
+    const [sctFabTypeFilter, setSctFabTypeFilter] = useState<string>('all');
+    const [sctRevisionTypeFilter, setSctRevisionTypeFilter] = useState<string>('all');
+
+    // ─── Shop Filters ──────────────────────────────────────────────────────
+    const [shopFabTypeFilter, setShopFabTypeFilter] = useState<string>('all');
 
     // ─── Query params ──────────────────────────────────────────────────────
     const queryParams = useMemo(() => {
@@ -194,11 +193,61 @@ export function RevisionReport() {
     const salesRevisions = useMemo(() => data?.data?.sales_ct_revisions ?? [], [data]);
     const shopRevisions = useMemo(() => data?.data?.shop_revisions ?? [], [data]);
 
-    // ─── Build columns ─────────────────────────────────────────────────────
-    const salesColumns = useMemo(() => buildColumns(salesRevisions, SALES_COLUMNS), [salesRevisions]);
-    const shopColumns = useMemo(() => buildColumns(shopRevisions, SHOP_COLUMNS), [shopRevisions]);
+    // ─── Extract filter options ────────────────────────────────────────────
+    const sctFabTypes = useMemo(() => {
+        const types = new Set<string>();
+        salesRevisions.forEach(row => { if (row.fab_type) types.add(row.fab_type); });
+        return Array.from(types).sort();
+    }, [salesRevisions]);
 
-    // ─── Helper to get row attributes (for background color) ──────────────
+    const sctRevisionTypes = useMemo(() => {
+        const types = new Set<string>();
+        salesRevisions.forEach(row => {
+            if (row.revision_type_label) {
+                const display = REVISION_TYPE_MAP[row.revision_type_label] || row.revision_type_label;
+                types.add(display);
+            }
+        });
+        return Array.from(types).sort();
+    }, [salesRevisions]);
+
+    const shopFabTypes = useMemo(() => {
+        const types = new Set<string>();
+        shopRevisions.forEach(row => { if (row.fab_type) types.add(row.fab_type); });
+        return Array.from(types).sort();
+    }, [shopRevisions]);
+
+    // ─── Apply filters ──────────────────────────────────────────────────────
+    const filteredSalesRevisions = useMemo(() => {
+        return salesRevisions.filter(row => {
+            const matchFab = sctFabTypeFilter === 'all' || row.fab_type === sctFabTypeFilter;
+            const matchRevType = sctRevisionTypeFilter === 'all' ||
+                (row.revision_type_label && REVISION_TYPE_MAP[row.revision_type_label] === sctRevisionTypeFilter) ||
+                row.revision_type_label === sctRevisionTypeFilter;
+            return matchFab && matchRevType;
+        });
+    }, [salesRevisions, sctFabTypeFilter, sctRevisionTypeFilter]);
+
+    const filteredShopRevisions = useMemo(() => {
+        return shopRevisions.filter(row => {
+            return shopFabTypeFilter === 'all' || row.fab_type === shopFabTypeFilter;
+        });
+    }, [shopRevisions, shopFabTypeFilter]);
+
+    // Reset pagination when filters change
+    useMemo(() => {
+        setSalesPagination(prev => ({ ...prev, pageIndex: 0 }));
+    }, [filteredSalesRevisions]);
+
+    useMemo(() => {
+        setShopPagination(prev => ({ ...prev, pageIndex: 0 }));
+    }, [filteredShopRevisions]);
+
+    // ─── Build columns ─────────────────────────────────────────────────────
+    const salesColumns = useMemo(() => buildColumns(filteredSalesRevisions, SALES_COLUMNS), [filteredSalesRevisions]);
+    const shopColumns = useMemo(() => buildColumns(filteredShopRevisions, SHOP_COLUMNS), [filteredShopRevisions]);
+
+    // ─── Helper for row background colors ──────────────────────────────────
     const getRowAttributes = (row: any) => {
         const fabType = row.original.fab_type;
         const bgColor = getFabColor(fabType);
@@ -211,7 +260,7 @@ export function RevisionReport() {
     // ─── Tables ─────────────────────────────────────────────────────────────
     const salesTable = useReactTable({
         columns: salesColumns,
-        data: salesRevisions,
+        data: filteredSalesRevisions,
         state: { pagination: salesPagination, sorting: salesSorting },
         onPaginationChange: setSalesPagination,
         onSortingChange: setSalesSorting,
@@ -220,14 +269,12 @@ export function RevisionReport() {
         getSortedRowModel: getSortedRowModel(),
         enableColumnResizing: true,
         columnResizeMode: 'onEnd',
-        meta: {
-            getRowAttributes, // 👈 Injected
-        },
+        meta: { getRowAttributes },
     });
 
     const shopTable = useReactTable({
         columns: shopColumns,
-        data: shopRevisions,
+        data: filteredShopRevisions,
         state: { pagination: shopPagination, sorting: shopSorting },
         onPaginationChange: setShopPagination,
         onSortingChange: setShopSorting,
@@ -236,17 +283,23 @@ export function RevisionReport() {
         getSortedRowModel: getSortedRowModel(),
         enableColumnResizing: true,
         columnResizeMode: 'onEnd',
-        meta: {
-            getRowAttributes, // 👈 Injected
-        },
+        meta: { getRowAttributes },
     });
 
     // ─── Render helper ─────────────────────────────────────────────────────
-    const renderTable = (table: any, title: string, exportName: string) => (
+    const renderTable = (
+        table: any,
+        title: string,
+        exportName: string,
+        filterComponent?: React.ReactNode
+    ) => (
         <DataGrid table={table} recordCount={table.getCoreRowModel().rows.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
             <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
-                <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white">
-                    <p className="text-base font-semibold text-[#4b545d]">{title}</p>
+                <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white flex-wrap gap-2">
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <p className="text-base font-semibold text-[#4b545d]">{title}</p>
+                        {filterComponent && filterComponent}
+                    </div>
                     <CardToolbar>
                         <Button variant="outline" size="sm" className="h-[34px]" onClick={() => exportTableToCSV(table, exportName)}>Export CSV</Button>
                     </CardToolbar>
@@ -282,17 +335,9 @@ export function RevisionReport() {
                                     {table.getRowModel().rows.map(row => {
                                         const rowAttrs = table.options.meta?.getRowAttributes?.(row) || {};
                                         return (
-                                            <tr
-                                                key={row.id}
-                                                className="border-b border-[#e2e4ed] hover:bg-gray-50/50"
-                                                {...rowAttrs}
-                                            >
+                                            <tr key={row.id} className="border-b border-[#e2e4ed] hover:bg-gray-50/50" {...rowAttrs}>
                                                 {row.getVisibleCells().map(cell => (
-                                                    <td
-                                                        key={cell.id}
-                                                        className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0"
-                                                        style={{ width: cell.column.getSize() }}
-                                                    >
+                                                    <td key={cell.id} className="px-3 py-2 text-sm text-[#4b545d] border-r border-[#e2e4ed] last:border-r-0" style={{ width: cell.column.getSize() }}>
                                                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                                                     </td>
                                                 ))}
@@ -325,13 +370,55 @@ export function RevisionReport() {
         return `${monthName} ${year}`;
     };
 
+    // ─── Filter Components ──────────────────────────────────────────────────
+    const sctFilters = (
+        <>
+            <Select value={sctFabTypeFilter} onValueChange={setSctFabTypeFilter}>
+                <SelectTrigger className="min-w-[130px] w-auto h-[34px] border-[#e2e4ed]">
+                    <SelectValue placeholder="Fab Type" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Fab Types</SelectItem>
+                    {sctFabTypes.map(type => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+            <Select value={sctRevisionTypeFilter} onValueChange={setSctRevisionTypeFilter}>
+                <SelectTrigger className="min-w-[130px] w-auto h-[34px] border-[#e2e4ed]">
+                    <SelectValue placeholder="Revision Type" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all">All Revision Types</SelectItem>
+                    {sctRevisionTypes.map(type => (
+                        <SelectItem key={type} value={type}>{type}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </>
+    );
+
+    const shopFilters = (
+        <Select value={shopFabTypeFilter} onValueChange={setShopFabTypeFilter}>
+            <SelectTrigger className="min-w-[130px] w-auto h-[34px] border-[#e2e4ed]">
+                <SelectValue placeholder="Fab Type" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="all">All Fab Types</SelectItem>
+                {shopFabTypes.map(type => (
+                    <SelectItem key={type} value={type}>{type}</SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    );
+
     return (
         <div className="flex flex-col gap-5 p-5">
             {/* ─── Top Bar ─────────────────────────────────────────────────────── */}
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <h1 className="text-2xl font-semibold text-[#4b545d]">Revision Analysis</h1>
                 <div className="flex items-center gap-2 flex-wrap">
-                    <Select value={dateMode} onValueChange={(v) => setDateMode(v as 'monthly' | 'custom')}>
+                    {/* <Select value={dateMode} onValueChange={(v) => setDateMode(v as 'monthly' | 'custom')}>
                         <SelectTrigger className="w-[120px] h-[34px] border-[#e2e4ed]">
                             <SelectValue placeholder="Period" />
                         </SelectTrigger>
@@ -339,7 +426,7 @@ export function RevisionReport() {
                             <SelectItem value="monthly">Monthly</SelectItem>
                             <SelectItem value="custom">Custom Range</SelectItem>
                         </SelectContent>
-                    </Select>
+                    </Select> */}
 
                     {dateMode === 'monthly' ? (
                         <>
@@ -375,7 +462,14 @@ export function RevisionReport() {
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar mode="range" month={new Date()} selected={tempDateRange} onSelect={setTempDateRange} numberOfMonths={2} />
+                                <Calendar
+                                    mode="range"
+                                    month={month}
+                                    onMonthChange={setMonth}
+                                    selected={tempDateRange}
+                                    onSelect={setTempDateRange}
+                                    numberOfMonths={2}
+                                />
                                 <div className="flex justify-end gap-2 p-3 border-t">
                                     <Button variant="outline" size="sm" onClick={() => { setTempDateRange(undefined); setDateRange(undefined); setIsDatePickerOpen(false); }}>Reset</Button>
                                     <Button size="sm" onClick={() => { setDateRange(tempDateRange); setIsDatePickerOpen(false); }}>Apply</Button>
@@ -391,7 +485,7 @@ export function RevisionReport() {
             {summary && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Sales CT Revisions</p>
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">SCT Revisions</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.sales_ct_revision_count}</p>
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
@@ -411,9 +505,19 @@ export function RevisionReport() {
 
             {/* ─── Tables ──────────────────────────────────────────────────────── */}
             <div className="space-y-6">
-                {salesRevisions.length > 0 && renderTable(salesTable, `SCT Revisions – ${getTitle()}`, 'sales-ct-revisions')}
-                {shopRevisions.length > 0 && renderTable(shopTable, `Shop Revisions – ${getTitle()}`, 'shop-revisions')}
-                {salesRevisions.length === 0 && shopRevisions.length === 0 && (
+                {filteredSalesRevisions.length > 0 && renderTable(
+                    salesTable,
+                    `SCT Revisions – ${getTitle()}`,
+                    'sales-ct-revisions',
+                    sctFilters
+                )}
+                {filteredShopRevisions.length > 0 && renderTable(
+                    shopTable,
+                    `Shop Revisions – ${getTitle()}`,
+                    'shop-revisions',
+                    shopFilters
+                )}
+                {filteredSalesRevisions.length === 0 && filteredShopRevisions.length === 0 && (
                     <div className="text-center py-8 text-[#7c8689]">No revisions found for the selected period.</div>
                 )}
             </div>

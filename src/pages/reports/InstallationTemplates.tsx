@@ -18,7 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
 import { BackButton } from '@/components/common/BackButton';
 import { Link } from 'react-router';
-import { getJobNumberLink, renderLink } from '@/lib/reportLinks';
+import { getJobNameLink, getJobNumberLink, renderLink } from '@/lib/reportLinks';
 
 // ─── Types (based on API response) ──────────────────────────────────────────
 interface ReportRow {
@@ -236,7 +236,15 @@ export function InstallationTemplateReport() {
                     if (row.original.type === 'installer') {
                         return <span className="text-muted-foreground">—</span>;
                     } else {
-                        return <span>{row.original.job_name}</span>;
+                        if (row.original.job_name) {
+                            const jobId = row.original.job_id;
+                            if (jobId) {
+                                const link = getJobNameLink(String(row.original.job_name), jobId);
+                                if (link) return renderLink(link);
+                            }
+                            return <span className="text-sm">{row.original.job_name}</span>;
+                        }
+                        
                     }
                 },
                 size: 250,
@@ -247,11 +255,11 @@ export function InstallationTemplateReport() {
                 accessorKey: "job_number",
                 header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
                 cell: ({ row }) => {
-                const jobNumber = row.original.job_number;
-                if (!jobNumber) return <span className="text-sm">—</span>;
-                const link = getJobNumberLink(jobNumber);
-                return renderLink(link);
-            },
+                    const jobNumber = row.original.job_number;
+                    if (!jobNumber) return <span className="text-sm">—</span>;
+                    const link = getJobNumberLink(jobNumber);
+                    return renderLink(link);
+                },
                 size: 100,
                 enableSorting: true,
             },
@@ -569,11 +577,11 @@ export function InstallationTemplateReport() {
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.total_hours_templated ?? '0:00'}</p>
                     </div>
                     <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Templated SQFT</p>
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">SQFT Templated</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.sqft_templated?.toFixed(0) ?? '0'}</p>
                     </div>
                     <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Not Templated SQFT</p>
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">SQFT Not Templated </p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.sqft_not_templated?.toFixed(0) ?? '0'}</p>
                     </div>
                     <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
@@ -581,12 +589,12 @@ export function InstallationTemplateReport() {
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.total_hours_installed ?? '0:00'}</p>
                     </div>
                     <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Installed SQFT</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.installs_sq_ft?.toFixed(0) ?? '0'}</p>
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">SQFT Installed</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.sqft_installed?.toFixed(0) ?? '0'}</p>
                     </div>
                     <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Not Installed SQFT</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.incomplete_sq_ft?.toFixed(0) ?? '0'}</p>
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">SQFT Not Installed</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.sqft_not_installed?.toFixed(0) ?? '0'}</p>
                     </div>
                 </div>
             )}
