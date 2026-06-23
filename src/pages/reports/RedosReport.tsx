@@ -232,7 +232,7 @@ export function RedosReport() {
         },
         {
             accessorKey: 'person_name',
-            header: ({ column }) => <DataGridColumnHeader title="PERSON NAME" column={column} />,
+            header: ({ column }) => <DataGridColumnHeader title="EMPLOYEE" column={column} />,
             cell: ({ row }) => row.original.person_name || '-',
             size: 150,
             enableSorting: true,
@@ -279,7 +279,7 @@ export function RedosReport() {
     return (
         <div className="flex flex-col gap-5 p-5">
             <div className="flex justify-between items-center flex-wrap gap-3">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Redos Report</h1>
+                <h1 className="text-2xl font-semibold text-[#4b545d]">Redos</h1>
                 <div className="flex items-center gap-2 flex-wrap">
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>

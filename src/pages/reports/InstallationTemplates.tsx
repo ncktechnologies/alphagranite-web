@@ -59,9 +59,10 @@ interface ReportData {
     filters: { search: string | null; fab_type: string | null; sales_person_id: number | null };
     filter_options: { sales_person_options: { id: number; name: string }[]; fab_types: string[] };
     summary: {
-        total_hours: string;
-        total_hours_value: number;
-        templates_sq_ft: number;
+        total_hours_templated: string;
+        total_hours_installed: string;
+        sqft_templated: number;
+        sqft_not_templated: number;
         installs_sq_ft: number;
         incomplete_sq_ft: number;
         row_count: number;
@@ -326,7 +327,7 @@ export function InstallationTemplateReport() {
         },
         {
             id: 'sqft_incomplete',
-            header: ({ column }) => <DataGridColumnHeader title="SQ FT NOT COMPLETE" column={column} />,
+            header: ({ column }) => <DataGridColumnHeader title="SQ FT NOT COMPLETED" column={column} />,
             cell: ({ row }) => {
                 if (row.original.type === 'installer') {
                     return <span>{row.original.total_sqft_incomplete?.toFixed(0) ?? '0'}</span>;
@@ -403,7 +404,7 @@ export function InstallationTemplateReport() {
     return (
         <div className="flex flex-col gap-5 p-5">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-semibold text-[#4b545d]">Installation And Template Report</h1>
+                <h1 className="text-2xl font-semibold text-[#4b545d]">Installation And Template</h1>
                 <div className='flex items-center gap-2'>
                     <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
                         <PopoverTrigger asChild>
@@ -425,24 +426,32 @@ export function InstallationTemplateReport() {
             </div>
 
             {/* Summary Cards */}
-            {summary && (
+           {summary && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Total Hours</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.total_hours_value?.toFixed(2) ?? '0.00'}</p>
-                    </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Templates sq ft</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.templates_sq_ft?.toFixed(0) ?? '0'}</p>
-                    </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Template Hours</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.total_hours_templated ?? '0:00'}</p>
+                    </div>
+                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Install Hours</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.total_hours_installed ?? '0:00'}</p>
+                    </div>
+                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Templated SQFT</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.sqft_templated?.toFixed(0) ?? '0'}</p>
+                    </div>
+                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">NOT Templated SQFT</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.sqft_not_templated?.toFixed(0) ?? '0'}</p>
+                    </div>
+                     <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Installs Completed sq ft</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.installs_sq_ft?.toFixed(0) ?? '0'}</p>
-                    </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                    </div>
+                    <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Installs Not Completed sq ft</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.incomplete_sq_ft?.toFixed(0) ?? '0'}</p>
-                    </Card>
+                    </div>
                 </div>
             )}
 

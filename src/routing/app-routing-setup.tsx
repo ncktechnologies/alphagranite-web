@@ -84,6 +84,7 @@ import { ShopProductionSummary } from '@/pages/reports/ShopProductionSummary';
 import { DailyCompletion } from '@/pages/reports/DailyCompletion';
 import { RevisionReport } from '@/pages/reports/RevisionReport';
 import { ReportsPage } from '@/pages/reports';
+import { PerformancePage } from '@/pages/performance';
 
 export function AppRoutingSetup() {
   return (
@@ -465,15 +466,39 @@ export function AppRoutingSetup() {
           <Route path="/report/owner-overview" element={<OwnerOverviewReport />} />
           <Route path="/report/redo-analysis" element={<RedoAnalysisReport />} />
           <Route path="/report/service-level" element={<ServiceLevelReport />} />
-          <Route path='/report/shop-production-summary' element={<ShopProductionSummary/>} />
-          <Route path='/report/daily-completion' element={<DailyCompletion/>} />
-          <Route path='/report/report-revision' element={<RevisionReport/>} />
+          <Route path='/report/shop-production-summary' element={<ShopProductionSummary />} />
+          <Route path='/report/daily-completion' element={<DailyCompletion />} />
+          <Route path='/report/report-revision' element={<RevisionReport />} />
 
 
-
+          <Route
+            path="/performance"
+            element={
+              <PerformancePage />
+            }
+          />
 
 
           {/* Operator Routes */}
+
+          <Route
+            path="/operator/dashboard"
+            element={
+              <OperatorDashboard />
+            }
+          />
+          <Route
+            path="/operator/dashboard"
+            element={
+              <OperatorDashboard />
+            }
+          />
+          <Route
+            path="/operator/dashboard"
+            element={
+              <OperatorDashboard />
+            }
+          />
           <Route
             path="/operator/dashboard"
             element={

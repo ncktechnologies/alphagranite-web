@@ -342,11 +342,11 @@ export function RevisionReport() {
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.shop_revision_count}</p>
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Active Fabs with Sales CT Rev</p>
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Active Fabs with SCT Revisions</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.active_fabs_with_sales_ct_revisions}</p>
                     </Card>
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Active Fabs with Shop Rev</p>
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Active Fabs with Shop Revisions</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.active_fabs_with_shop_revisions}</p>
                     </Card>
                 </div>
@@ -354,7 +354,7 @@ export function RevisionReport() {
 
             {/* ─── Tables ──────────────────────────────────────────────────────── */}
             <div className="space-y-6">
-                {salesRevisions.length > 0 && renderTable(salesTable, `Sales CT Revisions – ${getTitle()}`, 'sales-ct-revisions')}
+                {salesRevisions.length > 0 && renderTable(salesTable, `SCT Revisions – ${getTitle()}`, 'sales-ct-revisions')}
                 {shopRevisions.length > 0 && renderTable(shopTable, `Shop Revisions – ${getTitle()}`, 'shop-revisions')}
                 {salesRevisions.length === 0 && shopRevisions.length === 0 && (
                     <div className="text-center py-8 text-[#7c8689]">No revisions found for the selected period.</div>

@@ -24,6 +24,7 @@ import Popup from '@/components/ui/popup';
 import { FileViewer } from './roles/drafters/components';
 import { FileGallery } from '@/pages/jobs/components/FileGallery';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
+import { formatStage } from '../reports/OwnerReview';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -340,7 +341,7 @@ export function JobDetailsPage() {
                             //       : 'outline'
                             // }
                             >
-                              {(fab.current_stage || '').toUpperCase()}
+                              {formatStage(fab.current_stage || '')}
                             </Badge>
                           </div>
                         </div>

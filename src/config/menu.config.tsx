@@ -97,6 +97,12 @@ export const MENU_SIDEBAR: MenuConfig = [
       { title: 'Job Status', path: '/report-status', permissionKey: 'job_status' },
     ],
   },
+   {
+    title: 'Performance',
+    icon: "building.svg",
+    path: '/performance',
+    permissionKey: 'performance'
+  },
   {
     title: 'Shop',
     icon: 'shop.svg',
@@ -109,6 +115,7 @@ export const MENU_SIDEBAR: MenuConfig = [
       { title: 'Resurfacing Status', path: '/resurfacing-status', permissionKey: 'shop_resurfacing_status' },
     ],
   },
+ 
   {
     title: 'Reports',
     icon: 'building.svg',
@@ -141,6 +148,7 @@ export const MENU_SIDEBAR: MenuConfig = [
   //   icon: 'shop.svg',
   //   path: '/operator/dashboard',
   // },
+
   {
     title: 'Settings',
     icon: 'settings.svg',

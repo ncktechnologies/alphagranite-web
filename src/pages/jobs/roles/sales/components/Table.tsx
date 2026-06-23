@@ -40,6 +40,7 @@ import { DateRange } from 'react-day-picker';
 import { formatForDisplay } from '@/utils/date-utils';
 import { useTableState } from '@/hooks/use-table-state';
 import ActionsCell from './action';
+import { formatStage } from '@/pages/reports/OwnerReview';
 
 interface JobTableProps {
     jobs: IJob[];
@@ -855,7 +856,7 @@ export const JobSalesTable = ({
                 const currentStage = row.original.current_stage || '-';
                 const shopCurrentStage = row.original.shop_current_stage;
                 const displayText = shopCurrentStage ? `${currentStage} (${shopCurrentStage})` : currentStage;
-                return <span className="text-xs">{displayText}</span>;
+                return <span className="text-xs">{formatStage(displayText)}</span>;
             },
             size: 150,
             enableSorting: true,

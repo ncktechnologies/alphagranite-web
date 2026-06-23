@@ -278,12 +278,12 @@ export function RedoAnalysisReport() {
             size: 200,
             enableSorting: true,
         },
-        {
-            accessorKey: 'account_name',
-            header: ({ column }) => <DataGridColumnHeader title="ACCOUNT" column={column} />,
-            size: 180,
-            enableSorting: true,
-        },
+        // {
+        //     accessorKey: 'account_name',
+        //     header: ({ column }) => <DataGridColumnHeader title="ACCOUNT" column={column} />,
+        //     size: 180,
+        //     enableSorting: true,
+        // },
         // ─── Fab Info column ──────────────────────────────────────────────────
         {
             id: 'fab_info',

@@ -409,7 +409,7 @@ export function MonthlyInstallCompletionReport() {
                             </PopoverContent>
                         </Popover>
                     )}
-                <BackButton/>
+                    <BackButton />
                 </div>
 
             </div>
@@ -429,10 +429,7 @@ export function MonthlyInstallCompletionReport() {
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Revenue</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.revenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</p>
                     </Card>
-                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Revenue / SQFT</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.revenue_per_sq_ft?.toFixed(2) ?? '0.00'}</p>
-                    </Card>
+
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Cost of Stone</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.cost_of_stone?.toFixed(2) ?? '0.00'}</p>
@@ -440,6 +437,10 @@ export function MonthlyInstallCompletionReport() {
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">GP</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.gp?.toFixed(2) ?? '0.00'}</p>
+                    </Card>
+                    <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
+                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Revenue / SQFT</p>
+                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.revenue_per_sq_ft?.toFixed(2) ?? '0.00'}</p>
                     </Card>
                 </div>
             )}

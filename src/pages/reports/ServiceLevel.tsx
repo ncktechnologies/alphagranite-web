@@ -17,6 +17,8 @@ import { exportTableToCSV } from '@/lib/exportToCsv';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router';
 import { BackButton } from '@/components/common/BackButton';
+import { FabInfoCell } from '@/components/common/fabInfo';
+import { formatStage } from './OwnerReview';
 
 // Helper for external job number link
 const getJobNumberLink = (jobNumber: string) => {
@@ -147,24 +149,26 @@ export function ServiceLevelReport() {
         {
             accessorKey: 'fab_info',
             header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
-            size: 450,
-            cell: ({ row }) => {
-                const { leftLine1, leftLine2, right } = parseFabInfo(row.original.fab_info);
-                return (
-                    <div className="flex gap-4 text-xs max-w-[500px]">
-                        <div className="flex-1 min-w-0">
-                            {leftLine1.length > 0 && <div className="truncate text-gray-600" title={leftLine1.join(' | ')}>{leftLine1.join(' | ')}</div>}
-                            {leftLine2.length > 0 && <div className="truncate text-gray-600" title={leftLine2.join(' | ')}>{leftLine2.join(' | ')}</div>}
-                            {!leftLine1.length && !leftLine2.length && <div className="truncate text-gray-400 italic">No details</div>}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            {right.length ? <div className="truncate text-gray-600" title={right.join(' | ')}>{right.join(' | ')}</div> : <div className="truncate text-gray-400 italic">—</div>}
-                        </div>
-                    </div>
-                );
-            },
+            size: 350,
+            // cell: ({ row }) => {
+            //     const { leftLine1, leftLine2, right } = parseFabInfo(row.original.fab_info);
+            //     return (
+            //         <div className="flex gap-4 text-xs max-w-[500px]">
+            //             <div className="flex-1 min-w-0">
+            //                 {leftLine1.length > 0 && <div className="truncate text-gray-600" title={leftLine1.join(' | ')}>{leftLine1.join(' | ')}</div>}
+            //                 {leftLine2.length > 0 && <div className="truncate text-gray-600" title={leftLine2.join(' | ')}>{leftLine2.join(' | ')}</div>}
+            //                 {!leftLine1.length && !leftLine2.length && <div className="truncate text-gray-400 italic">No details</div>}
+            //             </div>
+            //             <div className="flex-1 min-w-0">
+            //                 {right.length ? <div className="truncate text-gray-600" title={right.join(' | ')}>{right.join(' | ')}</div> : <div className="truncate text-gray-400 italic">—</div>}
+            //             </div>
+            //         </div>
+            //     );
+            // },
+            cell: ({ row }) => <FabInfoCell data={row.original} />,
+
         },
-        { accessorKey: 'current_stage', header: ({ column }) => <DataGridColumnHeader title="STAGE" column={column} />, size: 150 },
+        { accessorKey: 'current_stage', header: ({ column }) => <DataGridColumnHeader title="STAGE" column={column} />, size: 150,  cell: ({ row }) => <span className="text-sm font-medium">{formatStage(row.original.current_stage)}</span>},
         { accessorKey: 'days_in_stage', header: ({ column }) => <DataGridColumnHeader title="DAYS IN STAGE" column={column} />, size: 120, cell: ({ row }) => row.original.days_in_stage },
         { accessorKey: 'assigned_user', header: ({ column }) => <DataGridColumnHeader title="ASSIGNED USER" column={column} />, size: 150, cell: ({ row }) => row.original.assigned_user || '-' },
         { accessorKey: 'status', header: ({ column }) => <DataGridColumnHeader title="STATUS" column={column} />, size: 120 },
@@ -293,7 +297,7 @@ export function ServiceLevelReport() {
                         </PopoverContent>
                     </Popover>
                     {dateRange && <Button variant="ghost" size="sm" onClick={() => setDateRange(undefined)}>Clear</Button>}
-                <BackButton />
+                    <BackButton />
                 </div>
             </div>
 
