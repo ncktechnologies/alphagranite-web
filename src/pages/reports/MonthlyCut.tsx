@@ -23,6 +23,7 @@ import { FabInfoCell } from '@/components/common/fabInfo';
 import { Input } from '@/components/ui/input';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
 import { BackButton } from '@/components/common/BackButton';
+import { CURRENCY_COLUMNS } from './DailyInstallationCut';
 
 const fabTypeColorMap: Record<string, string> = {
     standard: '#9eeb47',
@@ -151,42 +152,91 @@ export function MonthlyCutCompletionReport() {
             'acct_name', 'account_name', 'job_name', 'input_area',
             'stone_type_name', 'stone_color_name', 'stone_thickness_value', 'edge_name'
         ];
-        const dataCols = keys
-            .filter(key => !compositeFabFields.includes(key))
-            .map(key => {
-                let headerTitle = key.replace(/_/g, ' ').toUpperCase();
-                if (key === 'pieces' || key === 'no_of_pieces') headerTitle = 'NO OF PIECES';
-                return {
-                    accessorKey: key,
-                    header: ({ column }) => <DataGridColumnHeader title={headerTitle} column={column} />,
-                    size: key === 'job_name' || key === 'fab_info' ? 250 : 130,
-                    enableSorting: true,
-                    cell: ({ row }) => {
-                        let val = row.original[key];
-                        if (key.includes('date') && val) val = format(new Date(val), 'MMM dd, yyyy');
-                        if (typeof val === 'number') val = val.toLocaleString();
-                        if (val == null) return <span className="text-sm">-</span>;
+        const excludeKeys = new Set(['installer_id']);
 
-                        // if (key === 'fab_id') {
-                        //     const link = getFabIdLink(Number(val));
-                        //     return renderLink(link);
-                        // }
-                        // if (key === 'job_number') {
-                        //     const link = getJobNumberLink(String(val));
-                        //     return renderLink(link);
-                        // }
-                        // if (key === 'job_name') {
-                        //     const jobId = row.original.job_id;
-                        //     if (jobId) {
-                        //         const link = getJobNameLink(String(val), jobId);
-                        //         if (link) return renderLink(link);
-                        //     }
-                        //     return <span className="text-sm">{val}</span>;
-                        // }
-                        return <span className="text-sm">{val}</span>;
-                    },
-                };
-            });
+        const priority = [
+            "cut_date",
+            "fab_type",
+            "fab_id",
+            "job_number",
+            "sq_ft",
+            "pieces",
+             "revenue",
+             "cost_of_stone",
+             "gp",
+             "revenue_per_sq_ft",
+        ]
+
+        const orderedKeys: string[] = [];
+
+        // 1. Priority keys (exclude any that are in excludeKeys)
+        priority.forEach(key => {
+            if (keys.includes(key) && !excludeKeys.has(key)) {
+                orderedKeys.push(key);
+            }
+        });
+
+        // 2. All remaining keys (excluding composite, priority, and excludeKeys)
+        const remaining = keys.filter(key =>
+            !priority.includes(key) &&
+            !compositeFabFields.includes(key) &&
+            !excludeKeys.has(key)
+        );
+        orderedKeys.push(...remaining);
+
+        // Build data columns for all ordered keys
+        const dataCols = orderedKeys.map(key => {
+            const headerTitle = key.replace(/_/g, ' ').toUpperCase();
+            const isCurrency = CURRENCY_COLUMNS.has(key) || key.includes('revenue') || key === 'gp';
+            return {
+                accessorKey: key,
+                header: ({ column }) => <DataGridColumnHeader title={headerTitle} column={column} />,
+                size: key === 'install_date' ? 120 : key === 'job_name' ? 200 : 130,
+                enableSorting: true,
+                cell: ({ row }) => {
+                    if (row.original._isTotalRow) {
+                        if (key === 'install_date') return <span className="font-semibold">TOTAL</span>;
+                        if (key === 'sqft') return <span className="font-semibold">{row.original.sqft?.toFixed(2)}</span>;
+                        if (key === 'revenue') return <span className="font-semibold">${row.original.revenue?.toFixed(2)}</span>;
+                        if (key === 'gp') return <span className="font-semibold">${row.original.gp?.toFixed(2)}</span>;
+                        if (key === 'cost_of_stone') return <span className="font-semibold">${row.original.cost_of_stone?.toFixed(2)}</span>;
+                        if (typeof row.original[key] === 'number') {
+                            return <span className="font-semibold">{row.original[key]?.toFixed(2)}</span>;
+                        }
+                        return null;
+                    }
+                    let val = row.original[key];
+                    if (key === 'install_date' && val) {
+                        try { val = format(new Date(val), 'MMM dd, yyyy'); } catch { }
+                    }
+                    if (typeof val === 'number') {
+                        if (isCurrency) {
+                            return <span className="text-sm">${val.toFixed(2)}</span>;
+                        }
+                        val = val.toLocaleString();
+                    }
+                    if (val == null) return <span className="text-sm">-</span>;
+
+                    // if (key === 'fab_id') {
+                    //     const link = getFabIdLink(Number(val));
+                    //     return renderLink(link);
+                    // }
+                    // if (key === 'job_number') {
+                    //     const link = getJobNumberLink(String(val));
+                    //     return renderLink(link);
+                    // }
+                    // if (key === 'job_name') {
+                    //     const jobId = row.original.job_id;
+                    //     if (jobId) {
+                    //         const link = getJobNameLink(String(val), jobId);
+                    //         if (link) return renderLink(link);
+                    //     }
+                    //     return <span className="text-sm">{val}</span>;
+                    // }
+                    return <span className="text-sm">{val}</span>;
+                },
+            };
+        });
 
         const fabInfoCol: ColumnDef<any> = {
             id: 'fab_info',
@@ -299,7 +349,7 @@ export function MonthlyCutCompletionReport() {
                             </PopoverContent>
                         </Popover>
                     )}
-                    <BackButton/>
+                    <BackButton />
 
 
                     {/* Additional Filters: Fab ID, Job Number, General Search */}
@@ -318,6 +368,7 @@ export function MonthlyCutCompletionReport() {
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">NO OF Pieces</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{summary.pieces?.toLocaleString() ?? '0'}</p>
                     </Card>
+
                     <Card className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Revenue</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.revenue?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0.00'}</p>

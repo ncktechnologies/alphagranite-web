@@ -39,7 +39,7 @@ const getFabColor = (fabType: string | undefined): string => {
 };
 
 // ─── Currency columns ─────────────────────────────────────────────────────
-const CURRENCY_COLUMNS = new Set(['revenue', 'gp', 'gross_profit', 'cost_of_stone']);
+export const CURRENCY_COLUMNS = new Set(['revenue', 'gp', 'gross_profit', 'cost_of_stone']);
 
 export function DailyInstallCompletionReport() {
     const isSuperAdmin = useIsSuperAdmin();

@@ -570,6 +570,18 @@ const NewFabIdForm = () => {
     form.setValue('cost_per_sqft', costPerSqft);
     form.setValue('redo_department', redoDepartment);
     form.setValue('redo_requested_by', redoRequestedBy);
+    
+    // Calculate revenue based on cost_per_sqft and total_sqft
+    if (costPerSqft) {
+      const costPerSqftNum = parseFloat(costPerSqft);
+      const totalSqFtNum = parseFloat(form.getValues('totalSqFt'));
+      if (!isNaN(costPerSqftNum) && !isNaN(totalSqFtNum) && totalSqFtNum > 0) {
+        // Revenue = -(cost_per_sqft * total_sqft)
+        const calculatedRevenue = -(costPerSqftNum * totalSqFtNum);
+        form.setValue('revenue', calculatedRevenue.toString());
+      }
+    }
+    
     setShowAgRedoModal(false);
   };
 
