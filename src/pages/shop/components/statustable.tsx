@@ -291,7 +291,7 @@ const ActionsCell: React.FC<ActionsCellProps> = ({ fabId, onAddNote, canAddNote 
 };
 
 // ------------------ Main Component ------------------
-const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLoading, canAddNote = false, canExport = false,}) => {
+const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLoading, canAddNote = false, canExport = false, }) => {
     const tableState = useTableState({
         tableId: 'shop-status-table',
         defaultPagination: { pageIndex: 0, pageSize: 25 },
@@ -587,7 +587,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             header: () => null,
             cell: ({ row }) => {
                 if (row.original.type !== 'fab') return null;
-                return <ActionsCell fabId={row.original.data.fab_id} onAddNote={(id) => setNoteDialogFabId(id)}  canAddNote={canAddNote} />;
+                return <ActionsCell fabId={row.original.data.fab_id} onAddNote={(id) => setNoteDialogFabId(id)} canAddNote={canAddNote} />;
             },
             size: 48,
         },
@@ -1020,7 +1020,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
                     {/* ---- Table Body ---- */}
                     <CardTable>
-                        <ScrollArea className="h-[calc(100vh-280px)]">
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-80px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                             {isLoading ? (
                                 <div className="flex items-center justify-center h-64">
                                     <p className="text-[#7c8689]">Loading…</p>
@@ -1190,7 +1190,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                     </tbody>
                                 </table>
                             )}
-                            <ScrollBar orientation="horizontal" />
+                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
                         </ScrollArea>
                     </CardTable>
 

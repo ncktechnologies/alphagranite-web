@@ -108,7 +108,7 @@ const computeOverallTotals = (rows: ShopPlanRow[]) => {
 };
 
 const ShopTable: React.FC<ShopTableProps> = ({
-    
+
     canManageShopPlans = false,
     canAddNote = false,
     canExport = false,
@@ -665,7 +665,7 @@ const ShopTable: React.FC<ShopTableProps> = ({
                     </CardHeader>
 
                     <CardTable>
-                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] [&>[data-radix-scroll-area-viewport]]:pb-1">
+                        <ScrollArea className="[&>[data-radix-scroll-area-viewport]]:max-h-[calc(100vh-200px)] [&>[data-radix-scroll-area-viewport]]:pb-4">
                             <div className="relative">
                                 {isApiLoading ? (
                                     <div className="flex items-center justify-center h-64">
@@ -743,7 +743,7 @@ const ShopTable: React.FC<ShopTableProps> = ({
                                     </table>
                                 )}
                             </div>
-                            <ScrollBar orientation="horizontal" />
+                            <ScrollBar orientation="horizontal" className="h-3 bg-gray-100 [&>div]:bg-gray-400 hover:[&>div]:bg-gray-500" />
                         </ScrollArea>
                     </CardTable>
                     <CardFooter>
