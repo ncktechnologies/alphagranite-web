@@ -39,7 +39,7 @@ export function SlaSettings() {
       // Send the full updated rule (never empty)
       await updateRule({
         id,
-        body: {
+        data: {
           target_days: rule.target_days,
           at_risk_days: rule.at_risk_days,
           is_applicable: rule.is_applicable,

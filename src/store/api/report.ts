@@ -254,11 +254,11 @@ export const reportApi = createApi({
                 providesTags: ["Report"],
             }),
             // UPDATE a single rule
-            updateSlaRule: build.mutation<SlaRule, { id: number; body: UpdateSlaRuleDto }>({
-                query: ({ id, body }) => ({
+            updateSlaRule: build.mutation<SlaRule, { id: number; data: UpdateSlaRuleDto }>({
+                query: ({ id, data }) => ({
                     url: `/api/v1/reports/owner/service-level-settings/${id}`,
                     method: 'PATCH',
-                    body,
+                    data,
                 }),
                 invalidatesTags: ['SlaSettings'],
             }),
