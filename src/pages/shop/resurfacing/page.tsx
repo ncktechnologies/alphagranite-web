@@ -9,7 +9,7 @@ import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission';
 
 const ResurfacingStatusPage = () => {
     const isSuperAdmin = useIsSuperAdmin();
-    const permissions = usePermission('Shop Planning');
+    const permissions = usePermission('Resurfacing Status');
 
     const canManageShopPlans = isSuperAdmin || permissions.can_create; // Create plan, auto schedule, view calendar in table
     const canAddNote = isSuperAdmin || permissions.can_create;

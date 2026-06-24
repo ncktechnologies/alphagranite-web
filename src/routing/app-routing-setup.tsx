@@ -85,6 +85,7 @@ import { DailyCompletion } from '@/pages/reports/DailyCompletion';
 import { RevisionReport } from '@/pages/reports/RevisionReport';
 import { ReportsPage } from '@/pages/reports';
 import { PerformancePage } from '@/pages/performance';
+import { SlaSettings } from '@/pages/reports/SlaSettings';
 
 export function AppRoutingSetup() {
   return (
@@ -99,7 +100,7 @@ export function AppRoutingSetup() {
           <Route path="/settings/permissions" element={<PermissionsSection />} />
           <Route path="/settings/stone-types" element={<StoneTypesSection />} />
           <Route path="/create-jobs" element={<JobsSection />} />
-          <Route path="/report-status" element={<JobStatusPage />} />
+          <Route path="/status-job-report" element={<JobStatusPage />} />
           <Route path="/need-to-invoice" element={<NeedToInvoicePage />} />
 
           {/* Job Dashboard Route */}
@@ -420,7 +421,7 @@ export function AppRoutingSetup() {
             }
           />
           <Route
-            path="/status"
+            path="/planning-status"
             element={
               // <ProtectedRoute roles={['admin', 'manager', "developer"]}>
               <ShopStatusPage />
@@ -475,6 +476,12 @@ export function AppRoutingSetup() {
             path="/performance"
             element={
               <PerformancePage />
+            }
+          />
+          <Route
+            path="/performance/sla-settings"
+            element={
+              <SlaSettings />
             }
           />
 

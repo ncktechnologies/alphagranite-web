@@ -1,6 +1,6 @@
 'use client';
 
-import { JSX, useCallback, useMemo } from 'react';
+import { JSX, useCallback, useMemo, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { MENU_SIDEBAR } from '@/config/menu.config';
 import { MenuConfig, MenuItem } from '@/config/types';
@@ -18,12 +18,46 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useAllPermissions, useIsSuperAdmin } from '@/hooks/use-permission';
 import { useGetShopRevisionCountQuery } from '@/store/api/shopRevision';
+import { Pin } from 'lucide-react';
 
 export function SidebarMenu() {
   const { pathname } = useLocation();
   const permissions = useAllPermissions();
   const isSuperAdmin = useIsSuperAdmin();
   const { data: shopRevisionCount = 0 } = useGetShopRevisionCountQuery();
+  const [pinnedItems, setPinnedItems] = useState<Set<string>>(new Set());
+  const [openItems, setOpenItems] = useState<Set<string>>(new Set());
+
+  const togglePin = (itemPath: string) => {
+    setPinnedItems(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(itemPath)) {
+        newSet.delete(itemPath);
+      } else {
+        newSet.add(itemPath);
+        // Auto-open pinned items
+        setOpenItems(prev => new Set(prev).add(itemPath));
+      }
+      return newSet;
+    });
+  };
+
+  const handleOpenChange = (itemPath: string, isOpen: boolean) => {
+    // Prevent closing if pinned
+    if (pinnedItems.has(itemPath) && !isOpen) {
+      return;
+    }
+    
+    setOpenItems(prev => {
+      const newSet = new Set(prev);
+      if (isOpen) {
+        newSet.add(itemPath);
+      } else {
+        newSet.delete(itemPath);
+      }
+      return newSet;
+    });
+  };
 
   // Memoize matchPath to prevent unnecessary re-renders
   const matchPath = useCallback(
@@ -205,27 +239,64 @@ export function SidebarMenu() {
 
   const buildMenuItemRoot = (item: MenuItem, index: number): JSX.Element => {
     if (item.children) {
+      const itemPath = item.path || `root-${index}`;
+      const isPinned = pinnedItems.has(itemPath);
+      const isOpen = openItems.has(itemPath);
+      const badgeText = item.badge ?? (item.path?.endsWith('/revision') ? String(shopRevisionCount) : undefined);
+
       return (
-        <AccordionMenuSub key={index} value={item.path || `root-${index}`}>
-          <AccordionMenuSubTrigger className="text-[18px] font-medium">
-            {item.icon && (typeof item.icon === 'string' ? (
-              <img src={`/images/icons/${item.icon}`} data-slot="accordion-menu-icon" />
-            ) : (
-              <item.icon data-slot="accordion-menu-icon" />
-            ))}
-            <span data-slot="accordion-menu-title">{item.title}</span>
-          </AccordionMenuSubTrigger>
-          <AccordionMenuSubContent
-            type="single"
-            collapsible
-            parentValue={item.path || `root-${index}`}
-            className="ps-6"
+        <div key={index} className="relative">
+          <AccordionMenuSub 
+            value={itemPath} 
+            open={isOpen}
+            onOpenChange={(newOpen) => handleOpenChange(itemPath, newOpen)}
           >
-            <AccordionMenuGroup>
-              {buildMenuItemChildren(item.children, 1)}
-            </AccordionMenuGroup>
-          </AccordionMenuSubContent>
-        </AccordionMenuSub>
+            <AccordionMenuSubTrigger className="text-[18px] font-medium group">
+              {item.icon && (typeof item.icon === 'string' ? (
+                <img src={`/images/icons/${item.icon}`} data-slot="accordion-menu-icon" />
+              ) : (
+                <item.icon data-slot="accordion-menu-icon" />
+              ))}
+              <span data-slot="accordion-menu-title">{item.title}</span>
+              
+              {/* Badge always visible */}
+              {badgeText !== undefined && (
+                <Badge
+                  variant="secondary"
+                  size="sm"
+                  className="ms-auto bg-[#667F01] text-white"
+                >
+                  {badgeText}
+                </Badge>
+              )}
+
+              {/* Pin button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  togglePin(itemPath);
+                }}
+                className="ms-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                title={isPinned ? 'Unpin' : 'Pin'}
+              >
+                <Pin 
+                  size={16} 
+                  className={isPinned ? 'fill-current text-[#667F01]' : 'text-muted-foreground'}
+                />
+              </button>
+            </AccordionMenuSubTrigger>
+            <AccordionMenuSubContent
+              type="single"
+              collapsible
+              parentValue={itemPath}
+              className="ps-6"
+            >
+              <AccordionMenuGroup>
+                {buildMenuItemChildren(item.children, 1)}
+              </AccordionMenuGroup>
+            </AccordionMenuSubContent>
+          </AccordionMenuSub>
+        </div>
       );
     } else {
       return (

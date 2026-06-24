@@ -6,7 +6,7 @@ import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission';
 
 const ShopStatusPage = () => {
     const isSuperAdmin = useIsSuperAdmin();
-    const permissions = usePermission('Shop Planning');
+    const permissions = usePermission('Shop Status');
 
     return (
         <div>

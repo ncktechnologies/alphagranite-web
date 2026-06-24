@@ -94,7 +94,7 @@ export const MENU_SIDEBAR: MenuConfig = [
       { title: 'Manage Jobs', path: '/create-jobs', permissionKey: 'manage_jobs' },
       { title: 'View All Fabs', path: '/sales', permissionKey: 'view_all_fabs' },
       { title: 'Need to Invoice', path: '/need-to-invoice', permissionKey: 'need_to_invoice' },
-      { title: 'Job Status', path: '/report-status', permissionKey: 'job_status' },
+      { title: 'Job Status', path: '/status-job-report', permissionKey: 'job_status' },
     ],
   },
    {
@@ -110,9 +110,9 @@ export const MENU_SIDEBAR: MenuConfig = [
     permissionKey: 'shop',
     children: [
       { title: 'Shop Planning', path: '/shop', permissionKey: 'shop_planning' },
-      { title: 'Shop Status', path: '/status', permissionKey: 'shop_status' },
+      { title: 'Shop Status', path: '/planning-status', permissionKey: 'shop_status' },
       { title: 'Shop Revision', path: '/revision', permissionKey: 'shop_revision' },
-      { title: 'Resurfacing Status', path: '/resurfacing-status', permissionKey: 'shop_resurfacing_status' },
+      { title: 'Resurfacing Status', path: '/resurfacing-status', permissionKey: 'resurfacing_status' },
     ],
   },
  

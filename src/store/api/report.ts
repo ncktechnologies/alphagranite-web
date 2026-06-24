@@ -16,12 +16,26 @@ interface ReportQueryParams {
     start_date?: string;
     end_date?: string;
 }
+export interface SlaRule {
+    id: number;
+    fab_type: string;
+    stage_name: string;
+    target_days: number;
+    at_risk_days: number;
+    is_applicable: boolean;
+}
+
+export interface UpdateSlaRuleDto {
+    target_days?: number;
+    at_risk_days?: number;
+    is_applicable?: boolean;
+}
 
 
 export const reportApi = createApi({
     reducerPath: "reportApi",
     baseQuery: axiosBaseQuery({ baseUrl }),
-    tagTypes: ["Report"],
+    tagTypes: ["Report", "SlaSettings"],
     keepUnusedDataFor: 0,
     endpoints(build) {
         return {
@@ -239,6 +253,22 @@ export const reportApi = createApi({
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
+            // UPDATE a single rule
+            updateSlaRule: build.mutation<SlaRule, { id: number; body: UpdateSlaRuleDto }>({
+                query: ({ id, body }) => ({
+                    url: `/api/v1/reports/owner/service-level-settings/${id}`,
+                    method: 'PATCH',
+                    body,
+                }),
+                invalidatesTags: ['SlaSettings'],
+            }),
+            getSlaSettings: build.query<SlaRule[], void>({
+                query: () => ({
+                    url: '/api/v1/reports/owner/service-level-settings',
+                }),
+                providesTags: ['SlaSettings'],
+                transformResponse: (response: any) => response.data || [],
+            }),
             getInstallerRates: build.query<any, void>({
                 query: () => ({
                     url: "/api/v1/reports/owner/installer-rates",
@@ -362,6 +392,8 @@ export const {
     useUpdateMonthlyCutCompletionMutation,
     useGetShopProductionSummaryQuery,
     useGetDailyCompletionQuery,
-    useGetRevisionReportQuery
+    useGetRevisionReportQuery,
+    useUpdateSlaRuleMutation,
+    useGetSlaSettingsQuery
 
 } = reportApi;
