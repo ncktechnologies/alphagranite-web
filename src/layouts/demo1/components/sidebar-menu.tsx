@@ -1,6 +1,6 @@
 'use client';
 
-import { JSX, useCallback, useMemo, useState } from 'react';
+import { JSX, useCallback, useMemo, useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { MENU_SIDEBAR } from '@/config/menu.config';
 import { MenuConfig, MenuItem } from '@/config/types';
@@ -25,9 +25,32 @@ export function SidebarMenu() {
   const permissions = useAllPermissions();
   const isSuperAdmin = useIsSuperAdmin();
   const { data: shopRevisionCount = 0 } = useGetShopRevisionCountQuery();
+
   const [pinnedItems, setPinnedItems] = useState<Set<string>>(new Set());
   const [openItems, setOpenItems] = useState<Set<string>>(new Set());
 
+  // ─── Auto‑open the parent of the current route ──────────────────────────
+  useEffect(() => {
+    const findParentPath = (items: MenuConfig): string | null => {
+      for (const item of items) {
+        if (item.path && pathname.startsWith(item.path) && item.path !== '/') {
+          return item.path;
+        }
+        if (item.children) {
+          const childResult = findParentPath(item.children);
+          if (childResult) return childResult;
+        }
+      }
+      return null;
+    };
+
+    const parentPath = findParentPath(MENU_SIDEBAR);
+    if (parentPath) {
+      setOpenItems(prev => new Set(prev).add(parentPath));
+    }
+  }, [pathname]);
+
+  // ─── Toggle pin ──────────────────────────────────────────────────────────
   const togglePin = (itemPath: string) => {
     setPinnedItems(prev => {
       const newSet = new Set(prev);
@@ -35,16 +58,25 @@ export function SidebarMenu() {
         newSet.delete(itemPath);
       } else {
         newSet.add(itemPath);
-        // Auto-open pinned items
-        setOpenItems(prev => new Set(prev).add(itemPath));
+        // Auto‑open when pinned
+        setOpenItems(open => new Set(open).add(itemPath));
       }
       return newSet;
     });
   };
 
+  // ─── Handle open/close from accordion ──────────────────────────────────
+  const handleOpenChange = (value: string | string[]) => {
+  const newOpen = new Set(Array.isArray(value) ? value : [value]);
+  pinnedItems.forEach(pinned => {
+    if (!newOpen.has(pinned)) {
+      newOpen.add(pinned);
+    }
+  });
+  setOpenItems(newOpen);
+};
 
-
-  // Memoize matchPath to prevent unnecessary re-renders
+  // ─── Permission logic (unchanged) ──────────────────────────────────────
   const matchPath = useCallback(
     (path: string): boolean =>
       path === pathname || (path.length > 1 && pathname.startsWith(path)),
@@ -74,7 +106,6 @@ export function SidebarMenu() {
     const permissionKey = getPermissionKey(item);
     if (!permissionKey) return false;
 
-    // Special case: stone_types_colors requires EITHER stone_type OR stone_color permission
     if (permissionKey === 'stone_types_colors') {
       const stoneTypeKeysToTry = ['stone_type', 'Stone Type', 'stone_types'];
       const stoneColorKeysToTry = ['stone_color', 'Stone Color', 'stone_colors'];
@@ -121,13 +152,11 @@ export function SidebarMenu() {
 
   const filterMenuByPermissions = useCallback((items: MenuConfig, parentPermissionKey?: string): MenuConfig => {
     return items.reduce<MenuConfig>((filtered, item) => {
-      // Always keep headings and separators
       if (item.heading || item.separator) {
         filtered.push(item);
         return filtered;
       }
 
-      // Always show Dashboard for all users
       if (item.path === '/') {
         filtered.push(item);
         return filtered;
@@ -143,12 +172,10 @@ export function SidebarMenu() {
 
       let children: MenuConfig | undefined;
       if (item.children) {
-        // Pass current item's permissionKey to children for context
         const currentPermKey = getPermissionKey(item);
         children = filterMenuByPermissions(item.children, currentPermKey);
       }
 
-      // For children of stone_types_colors, use parent's combined permission
       let itemHasPermission: boolean;
       if (parentPermissionKey === 'stone_types_colors') {
         const stoneTypeKeysToTry = ['stone_type', 'Stone Type', 'stone_types'];
@@ -189,27 +216,25 @@ export function SidebarMenu() {
     }, []);
   }, [permissions, isSuperAdmin]);
 
-  // Memoize filtered menu
   const filteredMenu = useMemo(
     () => filterMenuByPermissions(MENU_SIDEBAR),
     [filterMenuByPermissions]
   );
 
-  // Global classNames for consistent styling
+  // ─── Class names ──────────────────────────────────────────────────────
   const classNames: AccordionMenuClassNames = {
     root: 'lg:ps-1 space-y-3',
     group: 'gap-px',
-    label:
-      'uppercase text-xs font-medium text-muted-foreground/70 py-2.25 pb-px',
+    label: 'uppercase text-xs font-medium text-muted-foreground/70 py-2.25 pb-px',
     separator: '',
     item: 'h-8 hover:bg-transparent text-white hover:text-white/50 data-[selected=true]:text-white data-[selected=true]:bg-[#667F01]! data-[selected=true]:py-6',
     sub: '',
-    subTrigger:
-      'h-8 hover:bg-transparent text-white hover:text-white/50 data-[selected=true]:text-primary data-[selected=true]:bg-[#667F01]! data-[selected=true]:font-medium [&_svg]:text-white [&_svg]:w-6 [&_svg]:h-6',
+    subTrigger: 'h-8 hover:bg-transparent text-white hover:text-white/50 data-[selected=true]:text-primary data-[selected=true]:bg-[#667F01]! data-[selected=true]:font-medium [&_svg]:text-white [&_svg]:w-6 [&_svg]:h-6',
     subContent: 'py-0 [&_svg]:text-white [&_svg]:w-5 [&_svg]:h-5',
     indicator: 'text-white',
   };
 
+  // ─── Menu builders ────────────────────────────────────────────────────
   const buildMenu = (items: MenuConfig): JSX.Element[] => {
     return items.map((item: MenuItem, index: number) => {
       if (item.heading) {
@@ -229,10 +254,10 @@ export function SidebarMenu() {
       const badgeText = item.badge ?? (item.path?.endsWith('/revision') ? String(shopRevisionCount) : undefined);
 
       return (
-        <AccordionMenuSub 
+        <AccordionMenuSub
           key={index}
           value={itemPath}
-          defaultOpen={isPinned}
+          // No defaultOpen – controlled by parent via value
         >
           <AccordionMenuSubTrigger className="text-[18px] font-medium group">
             {item.icon && (typeof item.icon === 'string' ? (
@@ -242,7 +267,6 @@ export function SidebarMenu() {
             ))}
             <span data-slot="accordion-menu-title">{item.title}</span>
             
-            {/* Badge always visible */}
             {badgeText !== undefined && (
               <Badge
                 variant="secondary"
@@ -253,7 +277,6 @@ export function SidebarMenu() {
               </Badge>
             )}
 
-            {/* Pin button */}
             <button
               onClick={(e) => {
                 e.stopPropagation();
@@ -269,7 +292,7 @@ export function SidebarMenu() {
             </button>
           </AccordionMenuSubTrigger>
           <AccordionMenuSubContent
-            type="single"
+            type="single"   // Each submenu is single-select for its children
             collapsible
             parentValue={itemPath}
             className="ps-6 [&_[data-state=open]]:text-white [&_svg]:text-white [&_svg]:w-5 [&_svg]:h-5"
@@ -287,11 +310,7 @@ export function SidebarMenu() {
           value={item.path || ''}
           className="text-lg text-[#E2E4ED]"
         >
-          <Link
-            to={item.path || '#'}
-            // className="flex items-center justify-between grow gap-2"
-          >
-            {/* {item.icon && <item.icon data-slot="accordion-menu-icon" className='size-[20px]!'/>} */}
+          <Link to={item.path || '#'}>
             {item.icon && <img src={`/images/icons/${item.icon}`} />}
             <span data-slot="accordion-menu-title">{item.title}</span>
           </Link>
@@ -300,10 +319,7 @@ export function SidebarMenu() {
     }
   };
 
-  const buildMenuItemRootDisabled = (
-    item: MenuItem,
-    index: number,
-  ): JSX.Element => {
+  const buildMenuItemRootDisabled = (item: MenuItem, index: number): JSX.Element => {
     return (
       <AccordionMenuItem
         key={index}
@@ -321,10 +337,7 @@ export function SidebarMenu() {
     );
   };
 
-  const buildMenuItemChildren = (
-    items: MenuConfig,
-    level: number = 0,
-  ): JSX.Element[] => {
+  const buildMenuItemChildren = (items: MenuConfig, level: number = 0): JSX.Element[] => {
     return items.map((item: MenuItem, index: number) => {
       if (item.disabled) {
         return buildMenuItemChildDisabled(item, index, level);
@@ -334,11 +347,7 @@ export function SidebarMenu() {
     });
   };
 
-  const buildMenuItemChild = (
-    item: MenuItem,
-    index: number,
-    level: number = 0,
-  ): JSX.Element => {
+  const buildMenuItemChild = (item: MenuItem, index: number, level: number = 0): JSX.Element => {
     if (item.children) {
       return (
         <AccordionMenuSub
@@ -370,10 +379,7 @@ export function SidebarMenu() {
             )}
           >
             <AccordionMenuGroup>
-              {buildMenuItemChildren(
-                item.children,
-                item.collapse ? level : level + 1,
-              )}
+              {buildMenuItemChildren(item.children, item.collapse ? level : level + 1)}
             </AccordionMenuGroup>
           </AccordionMenuSubContent>
         </AccordionMenuSub>
@@ -401,11 +407,7 @@ export function SidebarMenu() {
     }
   };
 
-  const buildMenuItemChildDisabled = (
-    item: MenuItem,
-    index: number,
-    level: number = 0,
-  ): JSX.Element => {
+  const buildMenuItemChildDisabled = (item: MenuItem, index: number, level: number = 0): JSX.Element => {
     return (
       <AccordionMenuItem
         key={index}
@@ -426,13 +428,16 @@ export function SidebarMenu() {
     return <AccordionMenuLabel key={index} className='text-[#E6E9E7] text-[16px] leading-[24px] p-0'>{item.heading}</AccordionMenuLabel>;
   };
 
+  // ─── Render ──────────────────────────────────────────────────────────────
   return (
     <div className="kt-scrollable-y-hover flex grow shrink-0 py-5 px-5 lg:max-h-[calc(100vh-5.5rem)]">
       <AccordionMenu
         selectedValue={pathname}
         matchPath={matchPath}
-        type="single"
+        type="multiple"                     // allow multiple open
         collapsible
+        value={Array.from(openItems)}       // controlled open items
+        onValueChange={handleOpenChange}    // handle toggles, preserve pinned
         classNames={classNames}
         pinnedItems={pinnedItems}
       >

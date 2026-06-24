@@ -35,6 +35,7 @@ interface AccordionMenuProps {
   classNames?: AccordionMenuClassNames;
   onItemClick?: (value: string, event: React.MouseEvent) => void;
   pinnedItems?: Set<string>;
+  onValueChange?: (value: string | string[]) => void; // ✅ parent-controlled value change
 }
 
 const AccordionMenuContext = React.createContext<AccordionMenuContextValue>({
@@ -53,6 +54,7 @@ function AccordionMenu({
   selectedValue,
   onItemClick,
   pinnedItems = new Set(),
+  onValueChange, // ✅ now we receive it
   ...props
 }: React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Root> & AccordionMenuProps) {
   const [internalSelectedValue, setInternalSelectedValue] = React.useState<string | undefined>(selectedValue);
@@ -60,66 +62,8 @@ function AccordionMenu({
     setInternalSelectedValue(selectedValue);
   }, [selectedValue]);
 
-  const initialNestedStates = React.useMemo(() => {
-    const getActiveChain = (nodes: React.ReactNode, chain: string[] = []): string[] => {
-      let result: string[] = [];
-      React.Children.forEach(nodes, (node) => {
-        if (React.isValidElement(node)) {
-          const { value, children } = node.props as {
-            value?: string;
-            children?: React.ReactNode;
-          };
-          const newChain = value ? [...chain, value] : chain;
-          if (value && (value === selectedValue || matchPath(value))) {
-            result = newChain;
-          } else if (children) {
-            const childChain = getActiveChain(children, newChain);
-            if (childChain.length > 0) {
-              result = childChain;
-            }
-          }
-        }
-      });
-      return result;
-    };
-
-    const chain = getActiveChain(children);
-    const trimmedChain = chain.length > 1 ? chain.slice(0, chain.length - 1) : chain;
-    const mapping: Record<string, string | string[]> = {};
-    if (trimmedChain.length > 0) {
-      if (props.type === 'multiple') {
-        mapping['root'] = trimmedChain;
-      } else {
-        mapping['root'] = trimmedChain[0];
-        for (let i = 0; i < trimmedChain.length - 1; i++) {
-          mapping[trimmedChain[i]] = trimmedChain[i + 1];
-        }
-      }
-    }
-    return mapping;
-  }, [children, matchPath, selectedValue, props.type]);
-
-  const [nestedStates, setNestedStates] = React.useState<Record<string, string | string[]>>(initialNestedStates);
-  const multipleValue = (
-    Array.isArray(nestedStates['root'])
-      ? nestedStates['root']
-      : typeof nestedStates['root'] === 'string'
-        ? [nestedStates['root']]
-        : []
-  ) as string[];
-  const singleValue = (nestedStates['root'] ?? '') as string;
-
-  const handleRootValueChange = (value: string) => {
-    // If a pinned item is currently open and we're trying to close it, keep it open
-    const currentValue = singleValue;
-    if (currentValue && pinnedItems.has(currentValue) && value !== currentValue) {
-      // Keep the pinned item open and also open the new item
-      // For single type, we need to keep the pinned item open
-      console.log('[v0] Pinned item preventing close:', currentValue);
-      return;
-    }
-    setNestedStates((prev) => ({ ...prev, root: value }));
-  };
+  // ── Nested states for sub-menus (not for root) ──────────────────────────
+  const [nestedStates, setNestedStates] = React.useState<Record<string, string | string[]>>({});
 
   return (
     <AccordionMenuContext.Provider
@@ -136,9 +80,11 @@ function AccordionMenu({
       {props.type === 'single' ? (
         <AccordionPrimitive.Root
           data-slot="accordion-menu"
-          value={singleValue}
+          value={props.value as string ?? ''}
           className={cn('w-full', classNames?.root, className)}
-          onValueChange={handleRootValueChange}
+          onValueChange={(val) => {
+            onValueChange?.(val);
+          }}
           {...props}
           role="menu"
         >
@@ -147,9 +93,11 @@ function AccordionMenu({
       ) : (
         <AccordionPrimitive.Root
           data-slot="accordion-menu"
-          value={multipleValue}
+          value={Array.isArray(props.value) ? props.value : []}
           className={cn('w-full', classNames?.root, className)}
-          onValueChange={(value: string | string[]) => setNestedStates((prev) => ({ ...prev, root: value }))}
+          onValueChange={(val) => {
+            onValueChange?.(val);
+          }}
           {...props}
           role="menu"
         >
