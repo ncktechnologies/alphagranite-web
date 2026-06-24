@@ -51,7 +51,7 @@ const SALES_COLUMNS = [
     { key: 'revision_type_label', label: 'TYPE', isType: true },
     { key: 'revision_notes', label: 'NOTES' },
     { key: 'requested_by_name', label: 'REQUESTED BY' },
-    { key: 'assigned_to_name', label: 'ASSIGNED TO' },
+    // { key: 'assigned_to_name', label: 'ASSIGNED TO' },
     { key: 'created_at', label: 'CREATED AT', isDate: true },
 ];
 
@@ -65,7 +65,7 @@ const SHOP_COLUMNS = [
     { key: 'revision_notes', label: 'NOTES' },
     { key: 'revision_feedback', label: 'FEEDBACK' },
     { key: 'requested_by_name', label: 'REQUESTED BY' },
-    { key: 'assigned_to_name', label: 'ASSIGNED TO' },
+    // { key: 'assigned_to_name', label: 'ASSIGNED TO' },
     { key: 'created_at', label: 'CREATED AT', isDate: true },
     { key: 'revision_completed', label: 'COMPLETED', isBoolean: true },
     { key: 'completed_at', label: 'COMPLETED AT', isDate: true },

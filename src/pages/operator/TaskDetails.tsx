@@ -141,7 +141,9 @@ export function OperatorTaskDetails() {
         size: file.file_size || file.size || 0,
         type: file.file_type || file.mime_type || 'application/octet-stream',
         url: file.file_url || file.url,
+        file_url: file.file_url || file.url,
         stage: file.stage_name || file.stage,
+        stage_name: file.stage_name ?? file.stage,
         uploadedBy: file.uploaded_by_name || 'Operator',
         uploadedAt: file.created_at ? new Date(file.created_at) : undefined,
         _raw: file,
@@ -655,7 +657,7 @@ export function OperatorTaskDetails() {
                             )}
 
                             {/* Submit button (always visible when timer is not idle) */}
-                            {timerState !== 'idle' && (
+                            {timerState !== 'idle' && timerState !== 'paused' && (
                                 <Button
                                     onClick={() => setShowSubmitModal(true)}
                                     className="w-full gap-2 bg-red-600 hover:bg-red-700 text-white"

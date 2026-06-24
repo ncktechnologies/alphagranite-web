@@ -183,6 +183,7 @@ const ShopRevisionDetailsPage = () => {
       setShowCompleteFeedbackDialog(false);
       refetchRevisions();
       refetchFab();
+      navigate('/revision')
     } catch (error: any) {
       toast.error(error?.data?.message || 'Failed to complete revision.');
     }

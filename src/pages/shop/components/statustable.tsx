@@ -327,6 +327,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         limit: itemsPerPage,
         ...(searchQuery && { search: searchQuery }),
         ...(fabTypeFilter !== 'all' && { fab_type: fabTypeFilter }),
+        ...(searchType && {type:searchType}),
     }), [searchQuery, fabTypeFilter, currentPage, itemsPerPage]);
 
     const { data: fabsData, isLoading: isApiLoading } = useGetFabsQuery(queryParams);

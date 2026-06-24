@@ -141,6 +141,7 @@ export const FileViewer = ({
                 src={file.url}
                 alt={file.name}
                 className="max-w-full max-h-full object-contain"
+                crossOrigin="anonymous"
                 onError={() => {
                   console.error('[FileViewer] Image failed to load:', file.url);
                   setImageError(true);
