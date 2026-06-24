@@ -42,22 +42,7 @@ export function SidebarMenu() {
     });
   };
 
-  const handleOpenChange = (itemPath: string, isOpen: boolean) => {
-    // Prevent closing if pinned
-    if (pinnedItems.has(itemPath) && !isOpen) {
-      return;
-    }
-    
-    setOpenItems(prev => {
-      const newSet = new Set(prev);
-      if (isOpen) {
-        newSet.add(itemPath);
-      } else {
-        newSet.delete(itemPath);
-      }
-      return newSet;
-    });
-  };
+
 
   // Memoize matchPath to prevent unnecessary re-renders
   const matchPath = useCallback(
@@ -220,9 +205,9 @@ export function SidebarMenu() {
     item: 'h-8 hover:bg-transparent text-white hover:text-white/50 data-[selected=true]:text-white data-[selected=true]:bg-[#667F01]! data-[selected=true]:py-6',
     sub: '',
     subTrigger:
-      'h-8 hover:bg-transparent text-white hover:text-white/50 data-[selected=true]:text-primary data-[selected=true]:bg-[#667F01]! data-[selected=true]:font-medium',
-    subContent: 'py-0',
-    indicator: '',
+      'h-8 hover:bg-transparent text-white hover:text-white/50 data-[selected=true]:text-primary data-[selected=true]:bg-[#667F01]! data-[selected=true]:font-medium [&_svg]:text-white [&_svg]:w-6 [&_svg]:h-6',
+    subContent: 'py-0 [&_svg]:text-white [&_svg]:w-5 [&_svg]:h-5',
+    indicator: 'text-white',
   };
 
   const buildMenu = (items: MenuConfig): JSX.Element[] => {
@@ -241,62 +226,59 @@ export function SidebarMenu() {
     if (item.children) {
       const itemPath = item.path || `root-${index}`;
       const isPinned = pinnedItems.has(itemPath);
-      const isOpen = openItems.has(itemPath);
       const badgeText = item.badge ?? (item.path?.endsWith('/revision') ? String(shopRevisionCount) : undefined);
 
       return (
-        <div key={index} className="relative">
-          <AccordionMenuSub 
-            value={itemPath} 
-            open={isOpen}
-            onOpenChange={(newOpen) => handleOpenChange(itemPath, newOpen)}
-          >
-            <AccordionMenuSubTrigger className="text-[18px] font-medium group">
-              {item.icon && (typeof item.icon === 'string' ? (
-                <img src={`/images/icons/${item.icon}`} data-slot="accordion-menu-icon" />
-              ) : (
-                <item.icon data-slot="accordion-menu-icon" />
-              ))}
-              <span data-slot="accordion-menu-title">{item.title}</span>
-              
-              {/* Badge always visible */}
-              {badgeText !== undefined && (
-                <Badge
-                  variant="secondary"
-                  size="sm"
-                  className="ms-auto bg-[#667F01] text-white"
-                >
-                  {badgeText}
-                </Badge>
-              )}
-
-              {/* Pin button */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  togglePin(itemPath);
-                }}
-                className="ms-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                title={isPinned ? 'Unpin' : 'Pin'}
+        <AccordionMenuSub 
+          key={index}
+          value={itemPath}
+          defaultOpen={isPinned}
+        >
+          <AccordionMenuSubTrigger className="text-[18px] font-medium group">
+            {item.icon && (typeof item.icon === 'string' ? (
+              <img src={`/images/icons/${item.icon}`} data-slot="accordion-menu-icon" />
+            ) : (
+              <item.icon data-slot="accordion-menu-icon" />
+            ))}
+            <span data-slot="accordion-menu-title">{item.title}</span>
+            
+            {/* Badge always visible */}
+            {badgeText !== undefined && (
+              <Badge
+                variant="secondary"
+                size="sm"
+                className="ms-auto bg-[#667F01] text-white"
               >
-                <Pin 
-                  size={16} 
-                  className={isPinned ? 'fill-current text-[#667F01]' : 'text-muted-foreground'}
-                />
-              </button>
-            </AccordionMenuSubTrigger>
-            <AccordionMenuSubContent
-              type="single"
-              collapsible
-              parentValue={itemPath}
-              className="ps-6"
+                {badgeText}
+              </Badge>
+            )}
+
+            {/* Pin button */}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                togglePin(itemPath);
+              }}
+              className="ms-2 opacity-0 group-hover:opacity-100 transition-opacity"
+              title={isPinned ? 'Unpin' : 'Pin'}
             >
-              <AccordionMenuGroup>
-                {buildMenuItemChildren(item.children, 1)}
-              </AccordionMenuGroup>
-            </AccordionMenuSubContent>
-          </AccordionMenuSub>
-        </div>
+              <Pin 
+                size={18} 
+                className={isPinned ? 'fill-current text-white' : 'text-white opacity-50'}
+              />
+            </button>
+          </AccordionMenuSubTrigger>
+          <AccordionMenuSubContent
+            type="single"
+            collapsible
+            parentValue={itemPath}
+            className="ps-6 [&_[data-state=open]]:text-white [&_svg]:text-white [&_svg]:w-5 [&_svg]:h-5"
+          >
+            <AccordionMenuGroup>
+              {buildMenuItemChildren(item.children, 1)}
+            </AccordionMenuGroup>
+          </AccordionMenuSubContent>
+        </AccordionMenuSub>
       );
     } else {
       return (
@@ -452,6 +434,7 @@ export function SidebarMenu() {
         type="single"
         collapsible
         classNames={classNames}
+        pinnedItems={pinnedItems}
       >
         {buildMenu(filteredMenu)}
       </AccordionMenu>

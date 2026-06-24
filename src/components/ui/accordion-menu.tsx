@@ -34,6 +34,7 @@ interface AccordionMenuProps {
   matchPath?: (href: string) => boolean;
   classNames?: AccordionMenuClassNames;
   onItemClick?: (value: string, event: React.MouseEvent) => void;
+  pinnedItems?: Set<string>;
 }
 
 const AccordionMenuContext = React.createContext<AccordionMenuContextValue>({
@@ -51,6 +52,7 @@ function AccordionMenu({
   children,
   selectedValue,
   onItemClick,
+  pinnedItems = new Set(),
   ...props
 }: React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Root> & AccordionMenuProps) {
   const [internalSelectedValue, setInternalSelectedValue] = React.useState<string | undefined>(selectedValue);
@@ -107,6 +109,18 @@ function AccordionMenu({
   ) as string[];
   const singleValue = (nestedStates['root'] ?? '') as string;
 
+  const handleRootValueChange = (value: string) => {
+    // If a pinned item is currently open and we're trying to close it, keep it open
+    const currentValue = singleValue;
+    if (currentValue && pinnedItems.has(currentValue) && value !== currentValue) {
+      // Keep the pinned item open and also open the new item
+      // For single type, we need to keep the pinned item open
+      console.log('[v0] Pinned item preventing close:', currentValue);
+      return;
+    }
+    setNestedStates((prev) => ({ ...prev, root: value }));
+  };
+
   return (
     <AccordionMenuContext.Provider
       value={{
@@ -124,7 +138,7 @@ function AccordionMenu({
           data-slot="accordion-menu"
           value={singleValue}
           className={cn('w-full', classNames?.root, className)}
-          onValueChange={(value: string) => setNestedStates((prev) => ({ ...prev, root: value }))}
+          onValueChange={handleRootValueChange}
           {...props}
           role="menu"
         >
