@@ -5,23 +5,20 @@ import { useAllPermissions, useIsSuperAdmin } from "@/hooks/use-permission";
 import { hasReadPermissionForKey } from "@/lib/permission";
 
 const REPORTS = [
-    { title: 'Completion Report', path: '/report/daily-completion', permissionKey: 'report_shop_status' },
-    { title: 'Install Completion', path: '/report/daily-install-completion', permissionKey: 'daily_install_completion' },
-    // { title: 'Employee Productivity Report', path: '/report/template-card', permissionKey: 'installation_template' },
+    { title: 'Completion Report', path: '/report/daily-completion', permissionKey: 'completion_report' },
+    { title: 'Install Completion', path: '/report/daily-install-completion', permissionKey: 'install_completion' },
     { title: 'Install Performance', path: '/report/install-performance', permissionKey: 'install_performance' },
-    // { title: 'Installation & Template Report', path: '/report/installation-template', permissionKey: 'installation_template' },
-    { title: 'Shop Cut Completion - Monthly', path: '/report/monthly-cut-completion', permissionKey: 'monthly_cut_completion' },
-    { title: 'Install Completion - Monthly', path: '/report/monthly-install-completion', permissionKey: 'monthly_install_completion' },
+    { title: 'Shop Cut Completion - Monthly', path: '/report/monthly-cut-completion', permissionKey: 'shop_cut_completion_monthly' },
+    { title: 'Install Completion - Monthly', path: '/report/monthly-install-completion', permissionKey: 'install_completion_monthly' },
     { title: 'Redo Analysis', path: '/report/redo-analysis', permissionKey: 'redo_analysis' },
-    // { title: 'Redos', path: '/report/redos', permissionKey: 'redos' },
-    { title: 'Revision Analysis', path: '/report/report-revision', permissionKey: 'revision' },
+    { title: 'Revision Analysis', path: '/report/report-revision', permissionKey: 'revision_analysis' },
     { title: 'Service Level', path: '/report/service-level', permissionKey: 'service_level' },
     { title: 'Shop Production Summary', path: '/report/shop-production-summary', permissionKey: 'shop_production_summary' },
-    { title: 'Stage Status', path: '/report/owner-overview', permissionKey: 'owner_overview' },
-    { title: 'Install & Template Trends', path: '/report/weekly-trends', permissionKey: 'weekly_trends' },
+    { title: 'Stage Status', path: '/report/owner-overview', permissionKey: 'stage_status' },
+    { title: 'Install & Template Trends', path: '/report/weekly-trends', permissionKey: 'install_template_trends' },
     { title: 'Turnaround Times', path: '/report/turnaround-times', permissionKey: 'turnaround_times' },
-    { title: 'Shop Labor Costs - Weekly', path: '/report/weekly-fabrication-cost', permissionKey: 'weekly_fabrication_cost' },
-    { title: 'Installer Labor Costs - Weekly', path: '/report/weekly-installer-cost', permissionKey: 'weekly_installer_cost' },
+    { title: 'Shop Labor Costs - Weekly', path: '/report/weekly-fabrication-cost', permissionKey: 'shop_labor_costs_weekly' },
+    { title: 'Installer Labor Costs - Weekly', path: '/report/weekly-installer-cost', permissionKey: 'installer_labor_costs_weekly' },
 ];
 
 function ChevronRight() {

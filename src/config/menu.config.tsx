@@ -172,13 +172,13 @@ export const SETTINGS_NAV: MenuConfig = [
     superAdminOnly: true,
     permissionKey: 'roles_permissions',
   },
-  {
-    title: 'Permissions Management',
-    icon: RiShieldKeyholeLine,
-    path: '/settings/permissions',
-    superAdminOnly: true,
-    permissionKey: 'permissions_management',
-  },
+  // {
+  //   title: 'Permissions Management',
+  //   icon: RiShieldKeyholeLine,
+  //   path: '/settings/permissions',
+  //   superAdminOnly: true,
+  //   permissionKey: 'permissions_management',
+  // },
   {
     title: 'Stone Types & Colors',
     icon: Diamond,

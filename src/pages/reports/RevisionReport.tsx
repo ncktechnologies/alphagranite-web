@@ -49,9 +49,9 @@ const SALES_COLUMNS = [
     { key: 'job_number', label: 'JOB NO', isLink: true, linkType: 'jobNumber' },
     { key: 'fab_info', label: 'FAB INFO', isFabInfo: true },
     { key: 'revision_type_label', label: 'TYPE', isType: true },
-    { key: 'revision_notes', label: 'NOTES' },
+    { key: 'revision_reason', label: 'REVISION REASON' },
+    { key: 'revision_notes', label: 'REVISION NOTES' },
     { key: 'requested_by_name', label: 'REQUESTED BY' },
-    // { key: 'assigned_to_name', label: 'ASSIGNED TO' },
     { key: 'created_at', label: 'CREATED AT', isDate: true },
 ];
 

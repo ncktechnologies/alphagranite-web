@@ -74,11 +74,12 @@ const getRevisionInfo = (fabData: any, sctData: any, revisionsData: any) => {
   // First try to get from revisions table (most accurate)
   const revisionsArray = Array.isArray(revisionsData) ? revisionsData : (revisionsData as any)?.data || [];
   const latestRevision = revisionsArray.length > 0 ? revisionsArray[0] : null;
+  const salesCTData = fabData?.sales_ct_data || sctData;
 
   if (latestRevision) {
     return {
       revisionType: latestRevision.revision_type || 'general',
-      revisionReason: latestRevision.revision_notes || 'No revision reason provided',
+      revisionReason: latestRevision.revision_reason || salesCTData?.revision_reason || '',
       revisionCount: revisionsArray.length,
       salesCTId: latestRevision.sales_ct_id,
       salesCTData: latestRevision,
@@ -86,7 +87,6 @@ const getRevisionInfo = (fabData: any, sctData: any, revisionsData: any) => {
   }
 
   // Fallback to SCT data if no revision exists
-  const salesCTData = fabData?.sales_ct_data || sctData;
   if (!salesCTData) {
     return {
       revisionType: 'general',
@@ -108,7 +108,7 @@ const getRevisionInfo = (fabData: any, sctData: any, revisionsData: any) => {
   }
 
   const revisionCount = salesCTData?.current_revision_count || 0;
-  let revisionReason = 'No revision reason provided';
+  let revisionReason = '';
 
   const fabNotes = fabData?.fab_notes || [];
   const revisionNote = fabNotes.find((note: any) =>
@@ -119,13 +119,14 @@ const getRevisionInfo = (fabData: any, sctData: any, revisionsData: any) => {
 
   if (salesCTData?.revision_reason) {
     revisionReason = salesCTData.revision_reason;
-  } else if (revisionNote?.note) {
-    revisionReason = revisionNote.note.replace('[REVISION REQUEST] ', '');
-  } else if (salesCTData?.note) {
-    revisionReason = salesCTData.note;
-  } else if (salesCTData?.sales_ct_notes) {
-    revisionReason = salesCTData.sales_ct_notes;
-  }
+  // } else if (revisionNote?.note) {
+  //   revisionReason = revisionNote.note.replace('[REVISION REQUEST] ', '');
+  } 
+  // else if (salesCTData?.note) {
+  //   revisionReason = salesCTData.note;
+  // } else if (salesCTData?.sales_ct_notes) {
+  //   revisionReason = salesCTData.sales_ct_notes;
+  // }
 
   return {
     revisionType,
@@ -478,9 +479,11 @@ export function RevisionDetailsPage() {
             fab_id: fabId,
             revision_type: revisionInfo.salesCTData?.revision_type || revisionInfo.revisionType,
             requested_by: currentEmployeeId,
-            revision_notes: data.notes || revisionInfo.revisionReason || '',
+            revision_notes: data.notes  || '',
             is_completed: false,
-            sales_ct_id: revisionInfo.salesCTId || null
+            sales_ct_id: revisionInfo.salesCTId || null,
+            revision_reason: revisionInfo.revisionReason
+
           };
           const createResult = await createRevision(createData).unwrap();
           // console.log("[v0] createRevision response:", createResult);
@@ -490,20 +493,21 @@ export function RevisionDetailsPage() {
         // Now call updateRevision with is_completed: true
         const updateData: any = {
           revision_type: revisionInfo.salesCTData?.revision_type || revisionInfo.revisionType,
-          revision_notes: data.notes || revisionInfo.revisionReason || '',
-          is_completed: true
+          revision_notes: data.notes || '',
+          is_completed: true,
+          revision_reason: revisionInfo.revisionReason
         };
         const updateResult = await updateRevision({ revision_id: revisionIdToUpdate, data: updateData }).unwrap();
         // console.log("[v0] updateRevision response:", updateResult);
         revisionId = revisionIdToUpdate;
       } else if (hasExistingRevisions) {
         // If complete is false but there are existing revisions, update them
-        // console.log("[v0] complete is FALSE but hasExistingRevisions is TRUE");
         const latestRevision = existingRevisions[existingRevisions.length - 1];
         const updateData: any = {
           revision_type: revisionInfo.salesCTData?.revision_type || revisionInfo.revisionType,
-          revision_notes: data.notes || revisionInfo.revisionReason || '',
-          is_completed: false
+          revision_notes: data.notes || '',
+          is_completed: false,
+          revision_reason: revisionInfo.revisionReason
         };
         const updateResult = await updateRevision({ revision_id: latestRevision.id, data: updateData }).unwrap();
         // console.log("[v0] updateRevision response:", updateResult);
@@ -515,7 +519,8 @@ export function RevisionDetailsPage() {
           fab_id: fabId,
           revision_type: revisionInfo.salesCTData?.revision_type || revisionInfo.revisionType,
           requested_by: currentEmployeeId,
-          revision_notes: data.notes || revisionInfo.revisionReason || '',
+          revision_notes: data.notes || '',
+          revision_reason: revisionInfo.revisionReason,
           is_completed: false,
           sales_ct_id: revisionInfo.salesCTId || null
         };
@@ -778,7 +783,7 @@ export function RevisionDetailsPage() {
                           sessionStatus === 'drafting' ? 'Revision Active' :
                             sessionStatus === 'paused' ? 'Paused' :
                               sessionStatus === 'on_hold' ? 'On Hold' :
-                                sessionStatus === 'ended' ? 'Completed' : 'Unknown'}
+                                sessionStatus === 'ended' ? 'Completed' : ''}
                       </span>
                       {fabData?.status_id === 0 && (
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
@@ -818,16 +823,16 @@ export function RevisionDetailsPage() {
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="font-semibold text-sm">Uploaded files</h3>
                       <Can action="create" on="Revisions">
-                      <Button
-                        variant="dashed"
-                        size="sm"
-                        onClick={() => setShowUploadModal(true)}
-                        disabled={!isDrafting || isPaused || hasEnded || isOnHold}
-                        className="flex items-center gap-1.5 text-xs"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                        Add Files
-                      </Button>
+                        <Button
+                          variant="dashed"
+                          size="sm"
+                          onClick={() => setShowUploadModal(true)}
+                          disabled={!isDrafting || isPaused || hasEnded || isOnHold}
+                          className="flex items-center gap-1.5 text-xs"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Add Files
+                        </Button>
                       </Can>
                     </div>
 
@@ -851,13 +856,13 @@ export function RevisionDetailsPage() {
                   <div className="flex justify-end gap-2 pt-2">
                     <BackButton fallbackUrl="/job/revision" label="Cancel" />
                     <Can action="create" on="Revisions">
-                    <Button
-                      onClick={() => setShowSubmissionModal(true)}
-                      className="bg-purple-600 hover:bg-purple-700"
-                      disabled={!canOpenSubmit}
-                    >
-                      Submit revision
-                    </Button>
+                      <Button
+                        onClick={() => setShowSubmissionModal(true)}
+                        className="bg-purple-600 hover:bg-purple-700"
+                        disabled={!canOpenSubmit}
+                      >
+                        Submit revision
+                      </Button>
                     </Can>
                   </div>
                 </CardContent>
