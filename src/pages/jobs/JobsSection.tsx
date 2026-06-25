@@ -1,4 +1,3 @@
-// components/JobsSection.tsx
 import { useMemo, useState, useEffect } from 'react';
 import {
   ColumnDef,
@@ -37,15 +36,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { useGetJobsQuery, useDeleteJobMutation, Job, useGetAccountsQuery, ToggleInvoiceRequest } from '@/store/api/job';
 import { toast } from 'sonner';
 import { Can } from '@/components/permission';
 import JobFormSheet from './components/JobFormSheet';
 import { Link } from 'react-router';
-import { Switch } from '@/components/ui/switch';
-import { useToggleNeedToInvoiceMutation } from '@/store/api/job';
+import { useToggleNeedToInvoiceMutation, useMarkJobInvoicedMutation, useAddJobNotesMutation } from '@/store/api/job';
 
-// Update the ExtendedJob interface to include API fields
 interface ExtendedJob extends Omit<Job, 'project_value'> {
   sales_person_name?: string;
   status?: string;
@@ -54,11 +62,11 @@ interface ExtendedJob extends Omit<Job, 'project_value'> {
   account_name?: string;
   account_id?: number;
   need_to_invoice?: boolean;
+  invoiced_at?: string;
   notes?: string | Array<{ note: string }>;
 }
 
 interface JobsSectionProps {
-  /** Permission to show and use the "Need to Invoice" toggle column */
   canToggleInvoice?: boolean;
 }
 
@@ -76,6 +84,16 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
   const [sheetMode, setSheetMode] = useState<'create' | 'edit' | 'view'>('create');
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
+  // Dialog states
+  const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
+  const [currentJobForNote, setCurrentJobForNote] = useState<ExtendedJob | null>(null);
+  const [noteText, setNoteText] = useState('');
+  const [markAsNeedInvoice, setMarkAsNeedInvoice] = useState(true);
+
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<'unmark' | 'invoice' | null>(null);
+  const [jobForAction, setJobForAction] = useState<ExtendedJob | null>(null);
+
   // API hooks
   const { data: jobsData, isLoading, refetch } = useGetJobsQuery({
     skip: pagination.pageIndex * pagination.pageSize,
@@ -88,14 +106,14 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
 
   const [deleteJob] = useDeleteJobMutation();
   const [toggleNeedToInvoice] = useToggleNeedToInvoiceMutation();
+  const [markJobInvoiced] = useMarkJobInvoicedMutation();
+  const [addJobNotes] = useAddJobNotesMutation();
 
-  // Create account name mapping
   const accountNameMap = useMemo(() => {
     if (!accountsData) return new Map<number, string>();
     return new Map(accountsData.map(account => [account.id, account.name]));
   }, [accountsData]);
 
-  // Transform API data to match table structure
   const jobs = useMemo(() => {
     if (!jobsData) return [];
     return jobsData.data.map((job: any) => ({
@@ -105,6 +123,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
       updated_at: job.updated_at || 'N/A',
       status: job.status_id === 1 ? 'Active' : job.status_id === 2 ? 'Inactive' : job.status_id === 3 ? 'Completed' : 'N/A',
       need_to_invoice: job.need_to_invoice,
+      invoiced_at: job.invoiced_at || '',
       account_name: job.account_id ? accountNameMap.get(job.account_id) || 'N/A' : 'N/A',
       notes: job.notes || [],
     } as ExtendedJob));
@@ -122,17 +141,17 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
     setIsSheetOpen(true);
   };
 
-  const handleDelete = async (job: ExtendedJob) => {
-    if (window.confirm(`Are you sure you want to delete job ${job.name}?`)) {
-      try {
-        await deleteJob(job.id).unwrap();
-        toast.success('Job deleted successfully');
-        refetch();
-      } catch (error) {
-        toast.error('Failed to delete job');
-      }
-    }
-  };
+  // const handleDelete = async (job: ExtendedJob) => {
+  //   if (window.confirm(`Are you sure you want to delete job ${job.name}?`)) {
+  //     try {
+  //       await deleteJob(job.id).unwrap();
+  //       toast.success('Job deleted successfully');
+  //       refetch();
+  //     } catch (error) {
+  //       toast.error('Failed to delete job');
+  //     }
+  //   }
+  // };
 
   const handleCreateNew = () => {
     setSelectedJob(null);
@@ -140,40 +159,118 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
     setIsSheetOpen(true);
   };
 
-  // Reset to first page when filters change
+  // --- Invoice action handlers ---
+  const handleOpenNoteDialog = (job: ExtendedJob) => {
+    setCurrentJobForNote(job);
+    setNoteText('');
+    setMarkAsNeedInvoice(true);
+    setIsNoteDialogOpen(true);
+  };
+
+  const handleSaveNoteAndInvoiceFlag = async () => {
+    if (!currentJobForNote) return;
+    try {
+      if (noteText.trim()) {
+        await addJobNotes({ job_id: currentJobForNote.id, note: noteText.trim() }).unwrap();
+      }
+      if (markAsNeedInvoice) {
+        await toggleNeedToInvoice({ job_id: currentJobForNote.id }).unwrap();
+      }
+      toast.success('Updated successfully');
+      refetch();
+      setIsNoteDialogOpen(false);
+      setCurrentJobForNote(null);
+      setNoteText('');
+    } catch (error) {
+      toast.error('Failed to update');
+    }
+  };
+
+  const handleOpenConfirm = (job: ExtendedJob, action: 'unmark' | 'invoice') => {
+    setJobForAction(job);
+    setConfirmAction(action);
+    setIsConfirmDialogOpen(true);
+  };
+
+  const handleConfirmAction = async () => {
+    if (!jobForAction) return;
+    try {
+      if (confirmAction === 'unmark') {
+        await toggleNeedToInvoice({ job_id: jobForAction.id }).unwrap();
+        toast.success('Removed from Need to Invoice list');
+      } else if (confirmAction === 'invoice') {
+        await markJobInvoiced({ job_id: jobForAction.id }).unwrap();
+        toast.success('Job marked as invoiced');
+      }
+      refetch();
+      setIsConfirmDialogOpen(false);
+      setJobForAction(null);
+      setConfirmAction(null);
+    } catch (error) {
+      toast.error('Failed to perform action');
+    }
+  };
+
   useEffect(() => {
     setPagination(prev => ({ ...prev, pageIndex: 0 }));
   }, [searchQuery, selectedStatus]);
 
-  // Define columns – conditionally include the "need_to_invoice" column
+  // ─── Columns ──────────────────────────────────────────────────────────────
   const columns = useMemo<ColumnDef<ExtendedJob>[]>(
     () => {
       const baseColumns: ColumnDef<ExtendedJob>[] = [
         {
           id: 'actions',
           header: '',
-          cell: ({ row }) => (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0">
-                  <span className="sr-only">Open menu</span>
-                  <Ellipsis className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => handleView(row.original)}>
-                  View
-                </DropdownMenuItem>
-                <Can on="Manage Jobs" action="create">
-                  <DropdownMenuItem onClick={() => handleEdit(row.original)}>
-                    Edit
-                  </DropdownMenuItem>
-                </Can>
-                <DropdownMenuSeparator />
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ),
+          cell: ({ row }) => {
+            const job = row.original;
+            return (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-8 w-8 p-0">
+                    <span className="sr-only">Open menu</span>
+                    <Ellipsis className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => handleView(job)}>View</DropdownMenuItem>
+                  <Can on="Manage Jobs" action="create">
+                    <DropdownMenuItem onClick={() => handleEdit(job)}>Edit</DropdownMenuItem>
+                  </Can>
+
+                  {canToggleInvoice && (
+                    <>
+                      <DropdownMenuSeparator />
+                      {/* Mark as Need to Invoice – only if not already marked */}
+                      {!job.need_to_invoice && (
+                        <DropdownMenuItem onClick={() => handleOpenNoteDialog(job)}>
+                          Mark as Need to Invoice
+                        </DropdownMenuItem>
+                      )}
+                      {/* Unmark – only if already marked */}
+                      {job.need_to_invoice && (
+                        <DropdownMenuItem onClick={() => handleOpenConfirm(job, 'unmark')}>
+                          Unmark Need to Invoice
+                        </DropdownMenuItem>
+                      )}
+                      {/* Mark as Invoiced – only if not already invoiced */}
+                      {!job.invoiced_at && (
+                        <DropdownMenuItem onClick={() => handleOpenConfirm(job, 'invoice')}>
+                          Mark as Invoiced
+                        </DropdownMenuItem>
+                      )}
+                    </>
+                  )}
+
+                  <DropdownMenuSeparator />
+                  {/* <Can on="Manage Jobs" action="delete">
+                    <DropdownMenuItem onClick={() => handleDelete(job)}>Delete</DropdownMenuItem>
+                  </Can> */}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            );
+          },
           enableSorting: false,
           size: 60,
         },
@@ -257,6 +354,38 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           enableSorting: true,
           size: 120,
         },
+        // ─── Invoice status columns ────────────────────────────────────────
+        {
+          id: 'need_to_invoice',
+          accessorFn: (row) => row.need_to_invoice,
+          header: ({ column }) => <DataGridColumnHeader title="NEED TO INVOICE" column={column} />,
+          cell: ({ row }) =>
+            row.original.need_to_invoice ? (
+              <Badge variant="outline" className="bg-yellow-100 text-yellow-800">
+                Yes
+              </Badge>
+            ) : (
+              <span className="text-muted-foreground">No</span>
+            ),
+          size: 130,
+          enableSorting: true,
+        },
+        {
+          id: 'invoiced_at',
+          accessorFn: (row) => row.invoiced_at,
+          header: ({ column }) => <DataGridColumnHeader title="INVOICED" column={column} />,
+          cell: ({ row }) =>
+            row.original.invoiced_at ? (
+              <Badge variant="outline" className="bg-green-100 text-green-800">
+                Invoiced
+              </Badge>
+            ) : (
+              <span className="text-muted-foreground">-</span>
+            ),
+          size: 130,
+          enableSorting: true,
+        },
+        // ─── Accounting Notes ──────────────────────────────────────────────
         {
           id: 'notes',
           accessorKey: 'notes',
@@ -268,12 +397,10 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
             }
             return '';
           },
-          header: ({ column }) => <DataGridColumnHeader title="NOTES" column={column} />,
+          header: ({ column }) => <DataGridColumnHeader title="ACCOUNTING NOTE" column={column} />,
           cell: ({ row }) => {
             const notes = row.original.notes;
-            if (typeof notes === 'string') {
-              return <span className="text-xs">{notes}</span>;
-            }
+            if (typeof notes === 'string') return <span className="text-xs">{notes}</span>;
             if (Array.isArray(notes) && notes.length > 0) {
               const firstNote = notes[0];
               const noteText = typeof firstNote === 'string' ? firstNote : firstNote?.note;
@@ -285,38 +412,9 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
           enableSorting: true,
         },
       ];
-
-      // Conditionally add the "need_to_invoice" column if user has permission
-      if (canToggleInvoice) {
-        baseColumns.push({
-          id: 'need_to_invoice',
-          accessorFn: (row) => row.need_to_invoice,
-          header: ({ column }) => <DataGridColumnHeader title="NEED TO INVOICE" column={column} />,
-          cell: ({ row }) => (
-            <div className="flex justify-center">
-              <Switch
-                checked={row.original.need_to_invoice}
-                onCheckedChange={async (checked) => {
-                  try {
-                    await toggleNeedToInvoice({ job_id: row.original.id }).unwrap();
-                    toast.success(`Invoice requirement ${checked ? 'enabled' : 'disabled'} successfully`);
-                    refetch();
-                  } catch (error) {
-                    console.error('Error toggling invoice requirement:', error);
-                    toast.error(`Failed to ${checked ? 'enable' : 'disable'} invoice requirement`);
-                  }
-                }}
-              />
-            </div>
-          ),
-          enableSorting: false,
-          size: 150,
-        });
-      }
-
       return baseColumns;
     },
-    [canToggleInvoice, toggleNeedToInvoice, refetch]
+    [canToggleInvoice, handleView, handleEdit, handleOpenNoteDialog, handleOpenConfirm]
   );
 
   const table = useReactTable({
@@ -347,6 +445,64 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
         onOpenChange={setIsSheetOpen}
         onSubmitSuccess={refetch}
       />
+
+      {/* Note Dialog */}
+      <Dialog open={isNoteDialogOpen} onOpenChange={setIsNoteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark as Need to Invoice</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label htmlFor="note">Accounting Note</Label>
+              <Textarea
+                id="note"
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="Add any relevant accounting notes..."
+                rows={3}
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="mark-invoice"
+                checked={markAsNeedInvoice}
+                onCheckedChange={(checked) => setMarkAsNeedInvoice(!!checked)}
+              />
+              <Label htmlFor="mark-invoice">Mark this job as needing invoice</Label>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsNoteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveNoteAndInvoiceFlag}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {confirmAction === 'unmark' ? 'Remove from Need to Invoice' : 'Mark as Invoiced'}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="py-4">
+            {confirmAction === 'unmark'
+              ? 'Are you sure you want to remove this job from the "Need to Invoice" list?'
+              : 'Are you sure you want to mark this job as invoiced? This action cannot be undone.'}
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsConfirmDialogOpen(false)}>
+              No
+            </Button>
+            <Button onClick={handleConfirmAction}>Yes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <DataGrid
         table={table}
         recordCount={jobsData?.total || 0}
