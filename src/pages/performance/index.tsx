@@ -9,7 +9,7 @@ const REPORTS = [
    
     { title: 'Redos', path: '/performance/redos', permissionKey: 'redos' },
 
-    {title:'Sla Settings', path: '/performance/sla-settings', PermsissionKey: 'sla_settings' }
+    {title:'SLA Settings', path: '/performance/sla-settings', PermsissionKey: 'sla_settings' }
   
 ];
 

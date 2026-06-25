@@ -37,13 +37,13 @@ export const RoleStats = ({ role }: RoleStatsProps) => {
       indicatorColor: 'bg-red-500',
       showIndicator: true,
     },
-    {
-      label: 'Pending staff',
-      value: String(role.pending_members || 0),
-      icon: <Users className="w-5 h-5 text-primary" />,
-      indicatorColor: 'bg-orange-500',
-      showIndicator: true,
-    },
+    // {
+    //   label: 'Pending staff',
+    //   value: String(role.pending_members || 0),
+    //   icon: <Users className="w-5 h-5 text-primary" />,
+    //   indicatorColor: 'bg-orange-500',
+    //   showIndicator: true,
+    // },
   ]
 
   return (

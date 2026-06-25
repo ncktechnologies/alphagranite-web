@@ -83,19 +83,7 @@ const DepartmentTable = ({ employees }: employeeProps) => {
 
     const columns = useMemo<ColumnDef<DepartmentUser>[]>(
         () => [
-            {
-                accessorKey: 'id',
-                accessorFn: (row) => row.id,
-                header: () => <DataGridTableRowSelectAll />,
-                cell: ({ row }) => <DataGridTableRowSelect row={row} />,
-                enableSorting: false,
-                enableHiding: false,
-                enableResizing: false,
-                size: 48,
-                meta: {
-                    cellClassName: '',
-                },
-            },
+            
             {
                 id: 'name',
                 accessorFn: (row) => `${row.first_name} ${row.last_name}`,
