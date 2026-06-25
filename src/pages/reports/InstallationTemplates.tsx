@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { flexRender, ColumnDef, getCoreRowModel, getExpandedRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { CalendarDays, ChevronDown, ChevronRight, Search, X } from 'lucide-react';
-import { useGetInstallationTemplateReportQuery } from '@/store/api/report';
+import { CalendarDays, ChevronDown, ChevronRight, Search, X, FileText, Pencil } from 'lucide-react';
+import { useGetInstallationTemplateReportQuery, useGetInstallationTemplateReportPdfMutation } from '@/store/api/report';
 import { DataGrid } from '@/components/ui/data-grid';
 import { DataGridPagination } from '@/components/ui/data-grid-pagination';
 import { Card, CardHeader, CardToolbar, CardTable, CardFooter, CardHeading } from '@/components/ui/card';
@@ -11,16 +11,25 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { exportTableToCSV } from '@/lib/exportToCsv';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
 import { BackButton } from '@/components/common/BackButton';
-import { Link } from 'react-router';
 import { getJobNameLink, getJobNumberLink, renderLink } from '@/lib/reportLinks';
+import { toast } from 'sonner';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { UpdateInstallationTemplateModal } from './component/InstallationModal';
+import { useSelector } from 'react-redux';
 
-// ─── Types (based on API response) ──────────────────────────────────────────
+// ─── Types ──────────────────────────────────────────────────────────────────
 interface ReportRow {
     installer: string;
     installer_id: number;
@@ -36,11 +45,12 @@ interface ReportRow {
     duration: string;
     sq_ft_installed: number;
     sq_ft_incomplete: number;
-    sqft_templated: number;      // from API
-    sqft_not_templated: number;  // from API
+    sqft_templated: number;
+    sqft_not_templated: number;
     reason_if_not_complete: string | null;
     sales_person_id: number;
     sales_person_name: string;
+    job_id?: number;
 }
 
 interface Group {
@@ -75,12 +85,31 @@ interface ReportData {
 
 // ─── Component ──────────────────────────────────────────────────────────────
 export function InstallationTemplateReport() {
+    // ── Main filters ─────────────────────────────────────────────────────────
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
     const [month, setMonth] = useState(new Date());
 
-    // Separate pagination for each table
+    const [searchQuery, setSearchQuery] = useState('');
+    const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
+    const [salesPersonId, setSalesPersonId] = useState<number | 'all'>('all');
+
+    // ── PDF Dialog state ────────────────────────────────────────────────────
+    const [isPdfDialogOpen, setIsPdfDialogOpen] = useState(false);
+    const [pdfDateRange, setPdfDateRange] = useState<DateRange | undefined>(undefined);
+    const [pdfTempDateRange, setPdfTempDateRange] = useState<DateRange | undefined>(undefined);
+    const [pdfIsDatePickerOpen, setPdfIsDatePickerOpen] = useState(false);
+    const [pdfMonth, setPdfMonth] = useState(new Date());
+    const [pdfSearch, setPdfSearch] = useState('');
+    const [pdfFabType, setPdfFabType] = useState<string>('all');
+    const [pdfSalesPerson, setPdfSalesPerson] = useState<number | 'all'>('all');
+
+    // ── Update Modal state ──────────────────────────────────────────────────
+    const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+    const [selectedRowData, setSelectedRowData] = useState<any>(null);
+
+    // ── Pagination & Expansion ──────────────────────────────────────────────
     const [paginationTemplate, setPaginationTemplate] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
     const [sortingTemplate, setSortingTemplate] = useState<SortingState>([]);
     const [expandedTemplate, setExpandedTemplate] = useState<Record<string, boolean>>({});
@@ -89,12 +118,12 @@ export function InstallationTemplateReport() {
     const [sortingInstall, setSortingInstall] = useState<SortingState>([]);
     const [expandedInstall, setExpandedInstall] = useState<Record<string, boolean>>({});
 
-    const [searchQuery, setSearchQuery] = useState('');
-    const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
-    const [salesPersonId, setSalesPersonId] = useState<number | 'all'>('all');
     const [hasInitialized, setHasInitialized] = useState(false);
 
-    // ─── Build query params ────────────────────────────────────────────────────
+    // ─── Queries & Mutations ────────────────────────────────────────────────
+    const [exportPdf, { isLoading: pdfLoading }] = useGetInstallationTemplateReportPdfMutation();
+
+    // ─── Build query params ──────────────────────────────────────────────────
     const queryParams = useMemo(() => {
         const params: { from_date?: string; to_date?: string; search?: string; fab_type?: string; sales_person_id?: number } = {};
         if (dateRange?.from) {
@@ -107,14 +136,14 @@ export function InstallationTemplateReport() {
         return Object.keys(params).length ? params : undefined;
     }, [dateRange, searchQuery, fabTypeFilter, salesPersonId]);
 
-    const { data, isLoading } = useGetInstallationTemplateReportQuery(queryParams);
+    const { data, isLoading, refetch } = useGetInstallationTemplateReportQuery(queryParams);
     const reportData = data?.data as ReportData | undefined;
 
     const fabTypes = useMemo(() => reportData?.filter_options?.fab_types ?? [], [reportData]);
     const salesPersonOptions = useMemo(() => reportData?.filter_options?.sales_person_options ?? [], [reportData]);
     const summary = reportData?.summary;
 
-    // ─── Build separate hierarchical data for Template and Installation ──────
+    // ─── Build hierarchical data ────────────────────────────────────────────
     const { templateData, installData } = useMemo(() => {
         if (!reportData?.groups) return { templateData: [], installData: [] };
 
@@ -124,7 +153,6 @@ export function InstallationTemplateReport() {
                 const rows = group.rows.filter(r => r.activity_type === activityType);
                 if (rows.length === 0) return;
 
-                // Aggregated totals for this installer
                 const totalHours = rows.reduce((s, r) => s + r.installer_hours, 0);
                 const totalSqftTemplated = rows.reduce((s, r) => s + (r.sqft_templated || 0), 0);
                 const totalSqftNotTemplated = rows.reduce((s, r) => s + (r.sqft_not_templated || 0), 0);
@@ -158,7 +186,7 @@ export function InstallationTemplateReport() {
         };
     }, [reportData]);
 
-    // ─── Initial expand state: all rows expanded ─────────────────────────────
+    // ─── Initial expand state ─────────────────────────────────────────────
     useEffect(() => {
         if (!hasInitialized && (templateData.length > 0 || installData.length > 0)) {
             const initExpanded = (data: any[]) => {
@@ -177,8 +205,13 @@ export function InstallationTemplateReport() {
         }
     }, [templateData, installData, hasInitialized]);
 
+    // ─── Handle edit action ─────────────────────────────────────────────────
+    const handleEditJob = (row: any) => {
+        setSelectedRowData(row);
+        setIsUpdateModalOpen(true);
+    };
+
     // ─── Column definitions ──────────────────────────────────────────────────
-    // Shared columns for both tables
     const baseColumns = (activityType: 'Template' | 'Installation'): ColumnDef<any>[] => {
         const isTemplate = activityType === 'Template';
         const sqftLabel1 = isTemplate ? 'SQFT TEMPLATED' : 'SQFT INSTALLED';
@@ -203,15 +236,36 @@ export function InstallationTemplateReport() {
                 size: 40,
                 enableSorting: false,
             },
+             // ── Actions column ──
+            {
+                id: 'actions',
+                header: () => null,
+                cell: ({ row }) => {
+                    if (row.original.type === 'job') {
+                        return (
+                            <Button
+                               
+                                size="sm"
+                                onClick={() => handleEditJob(row.original)}
+                                // className="h-6 w-6 p-0"
+                            >
+                               Edit
+                            </Button>
+                        );
+                    }
+                    return null;
+                },
+                size: 80,
+                enableSorting: false,
+            },
             {
                 id: 'installer',
                 header: ({ column }) => <DataGridColumnHeader title="EMPLOYEE" column={column} />,
                 cell: ({ row }) => {
                     if (row.original.type === 'installer') {
                         return <span className="font-medium">{row.original.installer}</span>;
-                        //   } else {
-                        //     return <span className="ml-8 text-muted-foreground">{row.original.job_name}</span>;
                     }
+                    return null;
                 },
                 size: 200,
                 enableSorting: true,
@@ -244,7 +298,7 @@ export function InstallationTemplateReport() {
                             }
                             return <span className="text-sm">{row.original.job_name}</span>;
                         }
-                        
+                        return null;
                     }
                 },
                 size: 250,
@@ -327,6 +381,7 @@ export function InstallationTemplateReport() {
                 size: 200,
                 enableSorting: true,
             },
+           
         ];
     };
 
@@ -406,18 +461,114 @@ export function InstallationTemplateReport() {
         },
     });
 
-    const getTitle = () => {
-        if (dateRange?.from) {
-            return dateRange.to
-                ? `${format(dateRange.from, 'MMM dd, yyyy')} – ${format(dateRange.to, 'MMM dd, yyyy')}`
-                : format(dateRange.from, 'MMM dd, yyyy');
-        }
-        return 'All dates';
+    // ─── PDF Export handler ──────────────────────────────────────────────────
+    const handleOpenPdfDialog = () => {
+        setPdfDateRange(dateRange);
+        setPdfSearch(searchQuery);
+        setPdfFabType(fabTypeFilter);
+        setPdfSalesPerson(salesPersonId);
+        setIsPdfDialogOpen(true);
     };
 
-    if (isLoading) return <div className="p-5 text-[#7c8689]">Loading report...</div>;
+ const token = useSelector((state: any) => state.auth?.token || state.user?.token || localStorage.getItem('token'));
 
-    // ─── Helper to render a table ────────────────────────────────────────────
+const handlePdfDownload = async () => {
+  const params: any = {};
+  if (pdfDateRange?.from) {
+    params.from_date = format(pdfDateRange.from, 'yyyy-MM-dd');
+    params.to_date = pdfDateRange.to ? format(pdfDateRange.to, 'yyyy-MM-dd') : format(pdfDateRange.from, 'yyyy-MM-dd');
+  }
+  if (pdfSearch.trim()) params.search = pdfSearch.trim();
+  if (pdfFabType !== 'all') params.fab_type = pdfFabType;
+  if (pdfSalesPerson !== 'all') params.sales_person_id = pdfSalesPerson;
+
+  const queryString = new URLSearchParams(params).toString();
+  const url = `https://dev.api.ag.easybusiness.ng/api/v1/reports/owner/installation-template-dashboard/pdf${queryString ? `?${queryString}` : ''}`;
+
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'Accept': 'application/pdf',
+        ...(token && { 'Authorization': `Bearer ${token}` }),
+      },
+    });
+
+    const contentType = response.headers.get('content-type') || '';
+
+    if (!response.ok || contentType.includes('application/json')) {
+      const errorText = await response.text();
+      let errorMessage = 'PDF generation failed';
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || errorJson.detail || errorText;
+      } catch (_) {
+        errorMessage = errorText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const blob = await response.blob();
+    if (!blob || blob.size === 0) {
+      throw new Error('Empty PDF file received');
+    }
+
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = `installation-template-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(downloadUrl);
+    setIsPdfDialogOpen(false);
+    toast.success('PDF downloaded successfully');
+  } catch (error: any) {
+    console.error('PDF export failed:', error);
+    toast.error(error.message || 'Failed to download PDF. Please try again.');
+  }
+};
+    // ─── CSV Export – flatten all rows ─────────────────────────────────────
+    const exportFlattenedToCSV = (table: any, filename: string) => {
+        const flattenRows = (rows: any[]): any[] => {
+            let result: any[] = [];
+            rows.forEach(row => {
+                result.push(row.original);
+                if (row.subRows && row.subRows.length > 0) {
+                    result = result.concat(flattenRows(row.subRows));
+                }
+            });
+            return result;
+        };
+
+        const allRows = flattenRows(table.getPrePaginationRowModel().rows);
+        if (allRows.length === 0) {
+            toast.warning('No data to export');
+            return;
+        }
+
+        const excludeKeys = ['type', 'id', 'subRows', '_level', '_isGroup', 'children'];
+        const headers = Object.keys(allRows[0]).filter(k => !excludeKeys.includes(k) && k !== 'children');
+
+        const rows = allRows.map(row =>
+            headers.map(header => {
+                const value = row[header] ?? '';
+                return `"${String(value).replace(/"/g, '""')}"`;
+            }).join(',')
+        );
+
+        const csvContent = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `${filename}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    };
+
+    // ─── Render Table helper ────────────────────────────────────────────────
     const renderTable = (
         table: any,
         title: string,
@@ -438,7 +589,7 @@ export function InstallationTemplateReport() {
                         </div>
                     </CardHeading>
                     <CardToolbar>
-                        <Button variant="outline" onClick={() => exportTableToCSV(table, exportFileName)} className="h-[34px]">
+                        <Button variant="outline" onClick={() => exportFlattenedToCSV(table, exportFileName)} className="h-[34px]">
                             Export CSV
                         </Button>
                     </CardToolbar>
@@ -508,10 +659,11 @@ export function InstallationTemplateReport() {
         </DataGrid>
     );
 
-    // ─── Render ────────────────────────────────────────────────────────────────
+    if (isLoading) return <div className="p-5 text-[#7c8689]">Loading report...</div>;
+
     return (
         <div className="flex flex-col gap-5 p-5">
-            {/* Header */}
+            {/* ── Header ── */}
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold text-[#4b545d]">Installation And Template</h1>
                 <div className="flex items-center gap-2">
@@ -530,11 +682,22 @@ export function InstallationTemplateReport() {
                             </div>
                         </PopoverContent>
                     </Popover>
+
+                    <Button
+                        variant="outline"
+                        onClick={handleOpenPdfDialog}
+                        disabled={pdfLoading}
+                        className="h-[34px] flex items-center gap-2"
+                    >
+                        <FileText className="h-4 w-4" />
+                        {pdfLoading ? 'Generating...' : 'Export PDF'}
+                    </Button>
+
                     <BackButton />
                 </div>
             </div>
 
-            {/* Global Filters */}
+            {/* ── Global Filters ── */}
             <div className="flex items-center gap-2 flex-wrap">
                 <div className="relative flex items-center">
                     <div className="relative">
@@ -569,7 +732,7 @@ export function InstallationTemplateReport() {
                 </Select>
             </div>
 
-            {/* Summary Cards - split by activity */}
+            {/* ── Summary Cards ── */}
             {summary && (
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
@@ -599,7 +762,7 @@ export function InstallationTemplateReport() {
                 </div>
             )}
 
-            {/* Template Table */}
+            {/* ── Tables ── */}
             {renderTable(
                 templateTable,
                 'Template Activities',
@@ -608,7 +771,6 @@ export function InstallationTemplateReport() {
                 'template-activities'
             )}
 
-            {/* Installation Table */}
             {renderTable(
                 installTable,
                 'Installation Activities',
@@ -616,6 +778,98 @@ export function InstallationTemplateReport() {
                 installColumns,
                 'installation-activities'
             )}
+
+            {/* ── Update Modal ── */}
+            <UpdateInstallationTemplateModal
+                open={isUpdateModalOpen}
+                onClose={() => {
+                    setIsUpdateModalOpen(false);
+                    setSelectedRowData(null);
+                }}
+                rowData={selectedRowData}
+                onUpdateSuccess={refetch}
+            />
+
+            {/* ── PDF Export Dialog ── */}
+            <Dialog open={isPdfDialogOpen} onOpenChange={setIsPdfDialogOpen}>
+                <DialogContent className="max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Export PDF</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div>
+                            <Label>Date Range</Label>
+                            <Popover open={pdfIsDatePickerOpen} onOpenChange={setPdfIsDatePickerOpen}>
+                                <PopoverTrigger asChild>
+                                    <Button variant="outline" className="w-full justify-start text-left font-normal h-[34px]">
+                                        <CalendarDays className="mr-2 h-4 w-4" />
+                                        {pdfDateRange?.from ? (
+                                            pdfDateRange.to
+                                                ? `${format(pdfDateRange.from, 'MMM dd')} – ${format(pdfDateRange.to, 'MMM dd, yyyy')}`
+                                                : format(pdfDateRange.from, 'MMM dd, yyyy')
+                                        ) : 'Select date range'}
+                                    </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                        mode="range"
+                                        month={pdfMonth}
+                                        onMonthChange={setPdfMonth}
+                                        selected={pdfTempDateRange}
+                                        onSelect={setPdfTempDateRange}
+                                        numberOfMonths={2}
+                                    />
+                                    <div className="flex justify-end gap-2 p-3 border-t">
+                                        <Button variant="outline" size="sm" onClick={() => { setPdfTempDateRange(undefined); setPdfDateRange(undefined); setPdfIsDatePickerOpen(false); }}>Reset</Button>
+                                        <Button size="sm" onClick={() => { setPdfDateRange(pdfTempDateRange); setPdfIsDatePickerOpen(false); }}>Apply</Button>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        </div>
+                        <div>
+                            <Label htmlFor="pdf-search">Search</Label>
+                            <Input
+                                id="pdf-search"
+                                value={pdfSearch}
+                                onChange={(e) => setPdfSearch(e.target.value)}
+                                placeholder="Search by job name, job number, FAB ID"
+                                className="h-[34px]"
+                            />
+                        </div>
+                        <div>
+                            <Label>Fab Type</Label>
+                            <Select value={pdfFabType} onValueChange={setPdfFabType}>
+                                <SelectTrigger className="h-[34px]">
+                                    <SelectValue placeholder="All Types" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Types</SelectItem>
+                                    {fabTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div>
+                            <Label>Sales Person</Label>
+                            <Select value={String(pdfSalesPerson)} onValueChange={(v) => setPdfSalesPerson(v === 'all' ? 'all' : Number(v))}>
+                                <SelectTrigger className="h-[34px]">
+                                    <SelectValue placeholder="All Sales Persons" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Sales Persons</SelectItem>
+                                    <SelectItem value="no_sales_person">No Sales Person</SelectItem>
+                                    {salesPersonOptions.map(sp => <SelectItem key={sp.id} value={String(sp.id)}>{sp.name}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsPdfDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handlePdfDownload} disabled={pdfLoading}>
+                            {pdfLoading ? 'Generating...' : 'Download PDF'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

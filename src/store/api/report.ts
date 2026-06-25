@@ -167,9 +167,32 @@ export const reportApi = createApi({
                 transformResponse: (response: any) => response,
                 providesTags: ["Report"],
             }),
-            // Inside reportApi.ts
-
-
+            // Inside endpoints builder
+            getInstallationTemplateReportPdf: build.mutation<Blob, { from_date?: string; to_date?: string; search?: string; fab_type?: string; sales_person_id?: number } | void>({
+                query: (params) => {
+                    const searchParams = new URLSearchParams();
+                    if (params?.from_date) searchParams.append('from_date', params.from_date);
+                    if (params?.to_date) searchParams.append('to_date', params.to_date);
+                    if (params?.search) searchParams.append('search', params.search);
+                    if (params?.fab_type && params.fab_type !== 'all') searchParams.append('fab_type', params.fab_type);
+                    if (params?.sales_person_id) searchParams.append('sales_person_id', String(params.sales_person_id));
+                    const queryString = searchParams.toString();
+                    return {
+                        url: `/api/v1/reports/owner/installation-template-dashboard/pdf${queryString ? `?${queryString}` : ''}`,
+                        method: 'get',
+                        responseHandler: 'blob' as const,
+                    };
+                },
+            }),
+            // Inside endpoints builder
+            updateInstallationTemplateReport: build.mutation<any, any>({
+                query: (body) => ({
+                    url: `/api/v1/reports/owner/installation-template-dashboard`,
+                    method: 'PATCH',
+                    data: body, // send the entire body as-is
+                }),
+                invalidatesTags: ['Report'],
+            }),
 
             // ─── Daily Install Completion ───────────────────────────────────────────
             getDailyInstallCompletion: build.query<any, { start_date?: string; end_date?: string; fab_type?: string } | void>({
@@ -378,6 +401,8 @@ export const {
     useGetWeeklyTrendsQuery,
     useGetInstallationTemplateReportQuery,
     useGetInstallationTemplaterReportQuery,
+    useGetInstallationTemplateReportPdfMutation,
+    useUpdateInstallationTemplateReportMutation,
     useGetMonthlyInstallCompletionQuery,
     useGetDailyInstallCompletionQuery,
     useGetMonthlyCutCompletionQuery,

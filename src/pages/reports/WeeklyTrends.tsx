@@ -19,7 +19,8 @@ import { BackButton } from '@/components/common/BackButton';
 
 interface TrendRow {
     week_start: string;
-    sqft_template_installed: number;
+    sqft_templated: number;
+    sqft_not_templated: number;
     fabs_created: number;
     installs_completed: number;
     revenue: number;
@@ -108,7 +109,14 @@ export function WeeklyTrendsReport() {
         {
             accessorKey: 'sqft_templated',
             header: ({ column }) => <DataGridColumnHeader title="SQFT TEMPLATED" column={column} />,
-            cell: ({ row }) => row.original.sqft_template_installed?.toFixed(0) ?? '0',
+            cell: ({ row }) => row.original.sqft_templated?.toFixed(0) ?? '0',
+            size: 150,
+            enableSorting: true,
+        },
+        {
+            accessorKey: 'sqft_not_templated',
+            header: ({ column }) => <DataGridColumnHeader title="SQFT NOT TEMPLATED" column={column} />,
+            cell: ({ row }) => row.original.sqft_not_templated?.toFixed(0) ?? '0',
             size: 150,
             enableSorting: true,
         },

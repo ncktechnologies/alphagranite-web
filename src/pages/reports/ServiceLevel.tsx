@@ -96,6 +96,7 @@ export function ServiceLevelReport() {
     const [fabTypeFilter, setFabTypeFilter] = useState<string>('all');
     const [stageFilter, setStageFilter] = useState<string>('all');
     const [riskFilter, setRiskFilter] = useState<string>('all');
+    const [statusFilter, setStatusFilter] = useState<string>('all'); // ✅ new
     const [searchQuery, setSearchQuery] = useState('');
 
     const queryParams = useMemo(() => {
@@ -140,12 +141,22 @@ export function ServiceLevelReport() {
         return Array.from(risks).sort();
     }, [fabStatusRows]);
 
+    // ✅ Extract status options
+    const statusOptions = useMemo(() => {
+        const statuses = new Set<string>();
+        fabStatusRows.forEach(row => {
+            if (row.status) statuses.add(row.status);
+        });
+        return Array.from(statuses).sort();
+    }, [fabStatusRows]);
+
     // ─── Apply filters and search ──────────────────────────────────────────
     const filteredFabRows = useMemo(() => {
         return fabStatusRows.filter(row => {
             const matchFabType = fabTypeFilter === 'all' || row.fab_type === fabTypeFilter;
             const matchStage = stageFilter === 'all' || row.current_stage === stageFilter;
             const matchRisk = riskFilter === 'all' || row.risk_color === riskFilter;
+            const matchStatus = statusFilter === 'all' || row.status === statusFilter; // ✅
             // Search: match fab_id or job_number (case-insensitive)
             const searchTerm = searchQuery.trim().toLowerCase();
             let matchSearch = true;
@@ -154,9 +165,9 @@ export function ServiceLevelReport() {
                 const jobNumberMatch = (row.job_number || '').toLowerCase().includes(searchTerm);
                 matchSearch = fabIdMatch || jobNumberMatch;
             }
-            return matchFabType && matchStage && matchRisk && matchSearch;
+            return matchFabType && matchStage && matchRisk && matchStatus && matchSearch;
         });
-    }, [fabStatusRows, fabTypeFilter, stageFilter, riskFilter, searchQuery]);
+    }, [fabStatusRows, fabTypeFilter, stageFilter, riskFilter, statusFilter, searchQuery]);
 
     // Reset pagination when filters or search change
     useEffect(() => {
@@ -168,6 +179,7 @@ export function ServiceLevelReport() {
         setFabTypeFilter('all');
         setStageFilter('all');
         setRiskFilter('all');
+        setStatusFilter('all'); // ✅
         setSearchQuery('');
     };
 
@@ -194,21 +206,11 @@ export function ServiceLevelReport() {
             accessorKey: 'fab_id',
             header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
             size: 80,
-            // cell: ({ row }) => {
-            //     const fabId = row.original.fab_id;
-            //     const link = getFabIdLink(fabId);
-            //     return <Link to={link} className="text-blue-600 hover:text-blue-800 hover:underline text-sm">{fabId}</Link>;
-            // }
         },
         {
             accessorKey: 'job_number',
             header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
             size: 100,
-            // cell: ({ row }) => {
-            //     const jobNumber = row.original.job_number;
-            //     const link = getJobNumberLink(jobNumber);
-            //     return <a href={link} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 hover:underline text-sm">{jobNumber}</a>;
-            // }
         },
         {
             accessorKey: 'fab_info',
@@ -455,6 +457,19 @@ export function ServiceLevelReport() {
                                     </SelectContent>
                                 </Select>
 
+                                {/* ✅ Status Filter */}
+                                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                    <SelectTrigger className="w-[140px] h-[34px] border-[#e2e4ed]">
+                                        <SelectValue placeholder="Status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Statuses</SelectItem>
+                                        {statusOptions.map(status => (
+                                            <SelectItem key={status} value={status}>{status}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+
                                 {/* ─── Search Input ────────────────────────────────────────────── */}
                                 <div className="relative">
                                     <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
@@ -477,7 +492,7 @@ export function ServiceLevelReport() {
                                 </div>
 
                                 {/* Clear All */}
-                                {(fabTypeFilter !== 'all' || stageFilter !== 'all' || riskFilter !== 'all' || searchQuery) && (
+                                {(fabTypeFilter !== 'all' || stageFilter !== 'all' || riskFilter !== 'all' || statusFilter !== 'all' || searchQuery) && (
                                     <Button variant="ghost" size="sm" onClick={clearAll} className="h-[34px]">
                                         Clear All
                                     </Button>

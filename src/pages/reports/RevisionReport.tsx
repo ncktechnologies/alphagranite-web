@@ -44,9 +44,10 @@ const REVISION_TYPE_MAP: Record<string, string> = {
 
 // ─── Column definitions for Sales CT Revisions ─────────────────────────────
 const SALES_COLUMNS = [
-    { key: 'fab_type', label: 'FAB TYPE', isFabType: true },
-    { key: 'fab_id', label: 'FAB ID', isLink: true, linkType: 'fab' },
-    { key: 'job_number', label: 'JOB NO', isLink: true, linkType: 'jobNumber' },
+    { key: 'fab_type', label: 'FAB TYPE', isFabType: false },
+    { key: 'fab_id', label: 'FAB ID', isLink: false, linkType: 'fab' },
+    { key: 'job_number', label: 'JOB NO', isLink: false, linkType: 'jobNumber' },
+    { key: 'job_name', label: 'JOB NAME', isLink: false, linkType: 'job_name' },
     { key: 'fab_info', label: 'FAB INFO', isFabInfo: true },
     { key: 'revision_type_label', label: 'TYPE', isType: true },
     { key: 'revision_reason', label: 'REVISION REASON' },
@@ -60,6 +61,7 @@ const SHOP_COLUMNS = [
     { key: 'fab_type', label: 'FAB TYPE', isFabType: true },
     { key: 'fab_id', label: 'FAB ID', isLink: false, linkType: 'fab' },
     { key: 'job_number', label: 'JOB NO', isLink: false, linkType: 'jobNumber' },
+    { key: 'job_name', label: 'JOB NAME', isLink: false, linkType: 'job_name' },
     { key: 'fab_info', label: 'FAB INFO', isFabInfo: true },
     { key: 'revision_type_label', label: 'TYPE', isType: true },
     { key: 'revision_notes', label: 'NOTES' },

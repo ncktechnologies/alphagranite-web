@@ -73,10 +73,10 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
     }
 
     const payload: any = {};
-    if (noOfPieces !== '') payload.no_of_pieces = parseFloat(noOfPieces);
-    if (sqft !== '') payload.sqft = parseFloat(sqft);
+    // if (noOfPieces !== '') payload.no_of_pieces = parseFloat(noOfPieces);
+    // if (sqft !== '') payload.sqft = parseFloat(sqft);
     if (costPerSqft !== '') payload.cost_per_sqft = parseFloat(costPerSqft);
-    if (totalCost > 0) payload.total_cost = totalCost; // send calculated total
+    // if (totalCost > 0) payload.total_cost = totalCost; // send calculated total
     if (department) payload.department = department;
     if (personName) payload.person_name = personName;
     if (reason) payload.reason = reason;
@@ -135,7 +135,7 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
             </div> */}
           {/* </div> */}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid gap-4">
             <div>
               <Label htmlFor="costPerSqft">Cost per SQFT</Label>
               <Input
@@ -148,7 +148,7 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
                 placeholder="Cost per sq ft"
               />
             </div>
-            <div>
+            {/* <div>
               <Label htmlFor="totalCost">Total Cost</Label>
               <Input
                 id="totalCost"
@@ -157,10 +157,10 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
                 value={totalCost.toFixed(2)}
                 className="bg-gray-50"
               />
-            </div>
+            </div> */}
           </div>
 
-          {/* <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label htmlFor="department">Department</Label>
               {departmentOptions.length > 0 ? (
@@ -194,9 +194,9 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
                 placeholder="Assigned person"
               />
             </div>
-          </div> */}
+          </div>
 
-          {/* <div>
+          <div>
             <Label htmlFor="reason">Reason</Label>
             <Input
               id="reason"
@@ -204,7 +204,7 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
               onChange={(e) => setReason(e.target.value)}
               placeholder="Reason for redo"
             />
-          </div> */}
+          </div>
         </div>
 
         <div className="flex justify-end space-x-3 pt-4 border-t">
