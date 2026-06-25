@@ -483,7 +483,7 @@ const handlePdfDownload = async () => {
   if (pdfSalesPerson !== 'all') params.sales_person_id = pdfSalesPerson;
 
   const queryString = new URLSearchParams(params).toString();
-  const url = `https://dev.api.ag.easybusiness.ng/api/v1/reports/owner/installation-template-dashboard/pdf${queryString ? `?${queryString}` : ''}`;
+  const url = `/api/v1/reports/owner/installation-template-dashboard/pdf${queryString ? `?${queryString}` : ''}`;
 
   try {
     const response = await fetch(url, {
