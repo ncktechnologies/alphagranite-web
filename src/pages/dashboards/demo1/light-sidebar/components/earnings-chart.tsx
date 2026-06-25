@@ -1,66 +1,66 @@
-import { useEffect, useState } from 'react';
 import { ApexOptions } from 'apexcharts';
 import ApexChart from 'react-apexcharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// Use empty data when no backend data is available
-const emptyChartData = {
-  inProgress: [],
-  paused: [],
-  completed: [],
-};
+interface EarningsChartProps {
+  months?: string[];
+  data?: number[];
+  title?: string;
+  timePeriod?: string;
+  onTimePeriodChange?: (value: string) => void;
+}
 
-const EarningsChart = () => {
-  const [chartData, setChartData] = useState(emptyChartData);
-  const categories: string[] = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'May',
-    'Jun',
-    'Jul',
-    'Aug',
-    'Sep',
-    'Oct',
-    'Nov',
-    'Dec',
-  ];
+const defaultMonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const defaultData = Array(12).fill(0);
 
-  useEffect(() => {
-    // Initialize with empty data - should be replaced with backend data
-    setChartData(emptyChartData);
-  }, []);
+export const EarningsChart = ({ 
+  months = defaultMonths, 
+  data = defaultData,
+  title = 'Performance Overview',
+  timePeriod = 'all',
+  onTimePeriodChange,
+}: EarningsChartProps) => {
+  // Map period to dropdown value
+  const periodMap: Record<string, string> = {
+    'all': '1',
+    '3': '3',
+    '6': '6',
+    '12': '12',
+  };
+  const value = periodMap[timePeriod] || '1';
+
+  const handlePeriodChange = (val: string) => {
+    if (onTimePeriodChange) {
+      // Convert dropdown value back to period key
+      const map: Record<string, string> = {
+        '1': 'all',
+        '3': '3',
+        '6': '6',
+        '12': '12',
+      };
+      onTimePeriodChange(map[val] || 'all');
+    }
+  };
+
+  // Calculate max for yaxis (auto-scale)
+  const maxValue = Math.max(...data, 1);
+  const yMax = Math.ceil(maxValue / 10) * 10 + 5; // round up to nearest 10 + padding
 
   const options: ApexOptions = {
     series: [
       {
         name: 'Performance',
-        data: chartData.inProgress ?? [],
+        data: data,
       },
     ],
     chart: {
       height: 250,
       type: 'area',
-      toolbar: {
-        show: false,
-      },
+      toolbar: { show: false },
     },
-    dataLabels: {
-      enabled: false,
-    },
-    legend: {
-      show: false,
-    },
+    dataLabels: { enabled: false },
+    legend: { show: false },
     stroke: {
       curve: 'smooth',
       show: true,
@@ -68,13 +68,9 @@ const EarningsChart = () => {
       colors: ['#EA3DB1'],
     },
     xaxis: {
-      categories: categories,
-      axisBorder: {
-        show: false,
-      },
-      axisTicks: {
-        show: false,
-      },
+      categories: months,
+      axisBorder: { show: false },
+      axisTicks: { show: false },
       labels: {
         show: true,
         style: {
@@ -82,38 +78,17 @@ const EarningsChart = () => {
           fontSize: '12px',
         },
       },
-      crosshairs: {
-        position: 'front',
-        stroke: {
-          color: 'var(--color-primary)',
-          width: 1,
-          dashArray: 3,
-        },
-      },
-      tooltip: {
-        enabled: false,
-        formatter: undefined,
-        offsetY: 0,
-        style: {
-          fontSize: '12px',
-        },
-      },
     },
     yaxis: {
       min: 0,
-      max: 80,
+      max: yMax,
       tickAmount: 4,
-      axisTicks: {
-        show: false,
-      },
+      axisTicks: { show: false },
       labels: {
         show: false,
         style: {
           colors: 'var(--color-secondary-foreground)',
           fontSize: '12px',
-        },
-        formatter: (defaultValue) => {
-          return `${defaultValue}`;
         },
       },
     },
@@ -121,28 +96,13 @@ const EarningsChart = () => {
       enabled: true,
       custom({ series, seriesIndex, dataPointIndex, w }) {
         const month = w.globals.seriesX[seriesIndex][dataPointIndex];
-        const monthName = categories[month];
-
-        // Get values for this specific month from our data
-        const inProgress = chartData.inProgress[dataPointIndex];
-        const paused = chartData.paused[dataPointIndex];
-        const completed = chartData.completed[dataPointIndex];
-
+        const value = series[seriesIndex][dataPointIndex];
         return `
-          <div class="flex flex-col gap-2 p-6.5">
-            <div class="flex flex-col gap-1 space-y-3 pr-12">
-              <div class="flex items-center gap-2">
-                <span class="text-sm">In Progress: ${inProgress}</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-sm">Paused: ${paused}</span>
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-sm">Completed: ${completed}</span>
-              </div>
-            </div>
+          <div class="flex flex-col gap-2 p-4">
+            <div class="font-semibold">${month}</div>
+            <div>Performance: ${value}</div>
           </div>
-          `;
+        `;
       },
     },
     markers: {
@@ -151,26 +111,13 @@ const EarningsChart = () => {
       strokeColors: '#EA3DB1',
       strokeWidth: 4,
       strokeOpacity: 1,
-      strokeDashArray: 0,
-      fillOpacity: 1,
-      discrete: [],
-      shape: 'circle',
-      offsetX: 0,
-      offsetY: 0,
-      onClick: undefined,
-      onDblClick: undefined,
-      showNullDataPoints: true,
-      hover: {
-        size: 8,
-        sizeOffset: 0,
-      },
+      hover: { size: 8 },
     },
     fill: {
       type: 'gradient',
-      colors:['#EA3DB1'],
+      colors: ['#EA3DB1'],
       gradient: {
         shade: 'vertical',
-        // type: 'linear',
         shadeIntensity: 0.5,
         gradientToColors: ['#ffffff'],
         inverseColors: false,
@@ -182,31 +129,17 @@ const EarningsChart = () => {
     grid: {
       borderColor: 'var(--color-border)',
       strokeDashArray: 5,
-      yaxis: {
-        lines: {
-          show: true,
-        },
-      },
-      xaxis: {
-        lines: {
-          show: false,
-        },
-      },
+      yaxis: { lines: { show: true } },
+      xaxis: { lines: { show: false } },
     },
   };
 
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle className="text-[20px] leading-[24px]">Performance Overview</CardTitle>
+        <CardTitle className="text-[20px] leading-[24px]">{title}</CardTitle>
         <div className="flex gap-5">
-          {/* <div className="flex items-center gap-2">
-            <Label htmlFor="auto-update" className="text-sm">
-              Referrals only
-            </Label>
-            <Switch id="auto-update" defaultChecked size="sm" />
-          </div> */}
-          <Select defaultValue="1">
+          <Select value={value} onValueChange={handlePeriodChange}>
             <SelectTrigger className="w-28 h-8 text-sm">
               <SelectValue placeholder="Select" />
             </SelectTrigger>
@@ -221,18 +154,16 @@ const EarningsChart = () => {
       </CardHeader>
       <CardContent className="flex flex-col justify-end items-stretch grow px-3 py-1 overflow-hidden">
         <div className="w-full overflow-hidden">
-        <ApexChart
-          id="earnings_chart"
-          options={options}
-          series={options.series}
-          type="area"
+          <ApexChart
+            id="earnings_chart"
+            options={options}
+            series={options.series}
+            type="area"
             width="100%"
-          height="250"
-        />
+            height="250"
+          />
         </div>
       </CardContent>
     </Card>
   );
 };
-
-export { EarningsChart };

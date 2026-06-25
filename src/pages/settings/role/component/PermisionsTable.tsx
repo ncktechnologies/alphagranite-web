@@ -46,7 +46,6 @@ export const PermissionsTable = ({
   const topLevelItems = useMemo(() => {
     if (!actionMenus) return [];
 
-    // Map code -> name and name -> code (case-insensitive)
     const codeToName = new Map<string, string>();
     const nameToCode = new Map<string, string>();
     actionMenus.forEach((menu) => {
@@ -54,22 +53,17 @@ export const PermissionsTable = ({
       nameToCode.set(menu.name.toLowerCase(), menu.code);
     });
 
-    // Helper: find the action menu code for a given permissionKey
-    // 1. Try exact match on code
-    // 2. Try case-insensitive match on name
     const findCode = (key: string, fallbackTitle?: string): string | undefined => {
       if (codeToName.has(key)) return key;
       if (fallbackTitle && nameToCode.has(fallbackTitle.toLowerCase())) {
         return nameToCode.get(fallbackTitle.toLowerCase());
       }
-      // Also try matching the key itself against names (if the key is a name)
       if (nameToCode.has(key.toLowerCase())) {
         return nameToCode.get(key.toLowerCase());
       }
       return undefined;
     };
 
-    // Build parent -> children map
     const parentMap = new Map<string, string[]>();
 
     PERMISSION_GROUPS.forEach((group) => {
@@ -100,12 +94,10 @@ export const PermissionsTable = ({
       }
     });
 
-    // Sets of parent and child codes
     const parentCodes = new Set(parentMap.keys());
     const childCodesSet = new Set<string>();
     parentMap.forEach((children) => children.forEach((c) => childCodesSet.add(c)));
 
-    // Build top-level items: parents + standalone
     const parents: FlatItem[] = [];
     const standalone: FlatItem[] = [];
 
@@ -136,10 +128,8 @@ export const PermissionsTable = ({
       }
     });
 
-    // Sort alphabetically
     const allTopLevel = [...parents, ...standalone];
     allTopLevel.sort((a, b) => a.name.localeCompare(b.name));
-
     console.log('[PermissionsTable] Top-level items:', allTopLevel);
     return allTopLevel;
   }, [actionMenus]);
@@ -181,10 +171,18 @@ export const PermissionsTable = ({
     });
   };
 
+  // ✅ FIXED: Write ⇒ Read auto‑selection + parent grant
   const handlePermissionChange = (module: string, action: string, checked: boolean) => {
+    // 1. Update the requested permission
     onPermissionChange(module, action, checked);
+
+    // 2. If Write is enabled, also enable Read for the same module
+    if (action === 'create' && checked) {
+      onPermissionChange(module, 'read', true);
+    }
+
+    // 3. If any permission is enabled for a child, grant the same permission to its parent
     if (checked) {
-      // Find parent and grant same permission to it
       for (const parent of topLevelItems) {
         if (parent.children?.some((child) => child.key === module)) {
           onPermissionChange(parent.key, action, true);
@@ -261,17 +259,17 @@ export const PermissionsTable = ({
         </TableCell>
         <TableCell className="py-2.5! text-center">
           <Checkbox
-            checked={hasWrite}
+            checked={hasRead}
             onCheckedChange={(checked) =>
-              handlePermissionChange(key, 'create', checked as boolean)
+              handlePermissionChange(key, 'read', checked as boolean)
             }
           />
         </TableCell>
         <TableCell className="py-2.5! text-center">
           <Checkbox
-            checked={hasRead}
+            checked={hasWrite}
             onCheckedChange={(checked) =>
-              handlePermissionChange(key, 'read', checked as boolean)
+              handlePermissionChange(key, 'create', checked as boolean)
             }
           />
         </TableCell>
@@ -289,10 +287,10 @@ export const PermissionsTable = ({
                 Module
               </TableHead>
               <TableHead className="min-w-24 text-secondary-foreground font-normal text-center h-10">
-                Write
+                Read
               </TableHead>
               <TableHead className="min-w-24 text-secondary-foreground font-normal text-center h-10">
-                Read
+                Write
               </TableHead>
             </TableRow>
             <TableRow className="bg-accent/30">
@@ -301,14 +299,14 @@ export const PermissionsTable = ({
               </TableHead>
               <TableHead className="text-center h-10">
                 <Checkbox
-                  checked={allWriteSelected}
-                  onCheckedChange={handleSelectAllWrite}
+                  checked={allReadSelected}
+                  onCheckedChange={handleSelectAllRead}
                 />
               </TableHead>
               <TableHead className="text-center h-10">
                 <Checkbox
-                  checked={allReadSelected}
-                  onCheckedChange={handleSelectAllRead}
+                  checked={allWriteSelected}
+                  onCheckedChange={handleSelectAllWrite}
                 />
               </TableHead>
             </TableRow>

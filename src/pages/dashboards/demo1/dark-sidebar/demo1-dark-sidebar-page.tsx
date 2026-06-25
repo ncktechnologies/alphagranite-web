@@ -63,7 +63,7 @@ const Demo1DarkSidebarPage = () => {
         </Toolbar>
       </Container>
       <Container>
-        <Demo1LightSidebarContent />
+        {/* <Demo1LightSidebarContent /> */}
       </Container>
     </Fragment>
   );

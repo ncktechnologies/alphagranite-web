@@ -9,7 +9,7 @@ export default defineConfig({
   // server: {
   //   proxy: {
   //     '/api': {
-  //       target: 'https://api.ag.easybusiness.ng',
+  //       target: 'https://dev.api.ag.easybusiness.ng',
   //       changeOrigin: true,
   //       rewrite: (path) => path.replace(/^\/api/, ''),
   //     },

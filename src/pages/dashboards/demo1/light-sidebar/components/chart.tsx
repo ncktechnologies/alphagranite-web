@@ -175,8 +175,8 @@ const Contributions = ({ title, overallStats }: IContributionsProps) => {
                   >
                     <div className="bg-white text-text rounded-full px-4 py-2 text-sm font-semibold whitespace-nowrap shadow-sm">
                       {Math.round((overallStats.completed / overallStats.total) * 100)}%
-                      {dataMismatch && overallStats.completion_percentage !== undefined && 
-                        ` (${Math.round(overallStats.completion_percentage)}%)`}
+                      {/* {dataMismatch && overallStats.completion_percentage !== undefined && 
+                        ` (${Math.round(overallStats.completion_percentage)}%)`} */}
                     </div>
                   </div>
                 )}

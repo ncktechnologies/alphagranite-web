@@ -125,22 +125,7 @@ const UsersSection = ({ role }: UsersSectionProps) => {
   }, [searchQuery, members]);
 
   const columns = useMemo<ColumnDef<RoleMember>[]>(() => [
-    {
-      id: 'select',
-      header: () => (
-        <DataGridTableRowSelectAll />
-      ),
-      cell: ({ row }) => (
-        <DataGridTableRowSelect row={row} />
-      ),
-      enableSorting: false,
-      enableHiding: false,
-      enableResizing: false,
-      size: 48,
-      meta: {
-        cellClassName: '',
-      },
-    },
+  
     {
       id: 'name',
       accessorFn: (row) => `${row.first_name} ${row.last_name}`,
@@ -259,7 +244,7 @@ const UsersSection = ({ role }: UsersSectionProps) => {
                   </Button>
                 )}
               </div>
-              <Select >
+              {/* <Select >
                 <SelectTrigger className="w-[170px] h-[34px]">
                   <SelectValue placeholder="2 June - 9 June" />
                 </SelectTrigger>
@@ -268,7 +253,7 @@ const UsersSection = ({ role }: UsersSectionProps) => {
                   <SelectItem value="disabled">Disabled</SelectItem>
                   <SelectItem value="pending">Pending</SelectItem>
                 </SelectContent>
-              </Select>
+              </Select> */}
               {/* <Select>
                 <SelectTrigger className="w-[100px] h-[34px]">
                   <SelectValue placeholder="Gender" />

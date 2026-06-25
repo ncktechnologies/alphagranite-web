@@ -12,14 +12,25 @@ import { CommunityBadges } from './components/fab';
 import { FinanceStats } from './components/finance';
 import { useGetAdminDashboardQuery } from '@/store/api/job';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useState } from 'react';
 
 interface IDemo1LightSidebarContentProps {
   timePeriod: string;
 }
 
-export function Demo1LightSidebarContent({ timePeriod }: IDemo1LightSidebarContentProps) {
-  const { data: dashboardData, isLoading, isError } = useGetAdminDashboardQuery({ time_period: timePeriod });
+export function Demo1LightSidebarContent({ timePeriod: initialTimePeriod }: IDemo1LightSidebarContentProps) {
+  const [timePeriod, setTimePeriod] = useState(initialTimePeriod || 'all');
+  const { data: dashboardData, isLoading, isError, refetch } = useGetAdminDashboardQuery(
+    { time_period: timePeriod },
+    { skip: false }
+  );
 
+  const handlePeriodChange = (newPeriod: string) => {
+    setTimePeriod(newPeriod);
+    // The query will automatically refetch when timePeriod changes
+  };
+  const performanceData = dashboardData?.performance_overview;
+  
   if (isLoading) {
     return (
       <div className="grid gap-5 lg:gap-7.5">
@@ -63,14 +74,14 @@ export function Demo1LightSidebarContent({ timePeriod }: IDemo1LightSidebarConte
       </div>
       <div className="grid lg:grid-cols-3 gap-5 lg:gap-7.5 items-stretch">
         <div className="lg:col-span-1">
-          <CommunityBadges 
-            cardTitle='Newly assigned FAB ID' 
+          <CommunityBadges
+            cardTitle='Newly assigned FAB ID'
             newlyAssignedFabs={dashboardData.newly_assigned_fabs}
           />
         </div>
         <div className="lg:col-span-1">
-          <Contributions 
-            title='Overall Statistics' 
+          <Contributions
+            title='Overall Statistics'
             overallStats={dashboardData.overall_statistics}
           />
         </div>
@@ -80,12 +91,18 @@ export function Demo1LightSidebarContent({ timePeriod }: IDemo1LightSidebarConte
       </div>
       <div className="grid lg:grid-cols-3 gap-5 lg:gap-7.5 items-stretch">
         <div className="lg:col-span-2">
-          <EarningsChart />
+          <EarningsChart
+            months={performanceData?.months}
+            data={performanceData?.data}
+            title="Performance Overview"
+            timePeriod={timePeriod}
+            onTimePeriodChange={handlePeriodChange}
+          />
         </div>
         <div className="lg:col-span-1">
-          <CommunityBadges 
-            cardTitle='Paused jobs' 
-            pausedJobs={dashboardData.paused_jobs}
+          <CommunityBadges
+            cardTitle='Paused jobs'
+            newlyAssignedFabs={dashboardData.paused_jobs}
           />
         </div>
       </div>
