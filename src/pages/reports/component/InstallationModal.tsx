@@ -14,7 +14,7 @@ interface UpdateInstallationTemplateModalProps {
     fab_id: number;
     job_id?: number;
     installer_id?: number;
-    activity_type?: string; // 'Template' or 'Installation'
+    activity_type?: string; // 'Template' or 'Installation' from report
     activity_complete?: boolean;
     sqft_templated?: number;
     sqft_not_templated?: number;
@@ -49,39 +49,41 @@ export const UpdateInstallationTemplateModal: React.FC<UpdateInstallationTemplat
     }
   }, [open, rowData]);
 
-  // ─── Helper to convert duration string to minutes (integer) ─────────────
+  // ─── Helper: convert duration string to minutes (integer) ─────────────
   const parseDurationToMinutes = (dur: string): number => {
     if (!dur) return 0;
     const trimmed = dur.trim();
-    // If it's already a number, parse as minutes
     if (/^\d+$/.test(trimmed)) return parseInt(trimmed, 10);
-    // Try to parse "HH:MM" or "MM:SS" – we assume "MM:SS" or "H:MM"
     const parts = trimmed.split(':');
     if (parts.length === 2) {
       const hours = parseInt(parts[0], 10) || 0;
       const minutes = parseInt(parts[1], 10) || 0;
-      // If the first part is > 23, treat as minutes:seconds? Better to treat as hours:minutes.
-      // But we don't know; we'll assume the format is "minutes:seconds" if first part <= 59.
-      if (hours <= 59) {
-        // Treat as minutes:seconds → total minutes = hours + minutes/60? Not integer.
-        // Simpler: treat as "hours:minutes" (like "2:30" → 2h30m = 150 min)
-        return hours * 60 + minutes;
-      }
-      // If first part > 59, treat as minutes:seconds (unlikely)
-      return hours + Math.round(minutes / 60);
+      return hours * 60 + minutes;
     }
-    // If single number, assume minutes
     return parseInt(trimmed, 10) || 0;
   };
 
   const handleSubmit = async () => {
-    // Build payload
-   const payload: any = {
-    type: rowData?.activity_type?.toLowerCase() === 'installation' ? 'installation' : 'template',
-    fab_id: rowData.fab_id,
-    job_id: rowData.job_id,
-    installer_id: rowData.installer_id,
-  };
+    // ─── Map activity_type to backend expected values ────────────────────
+    const typeMap: Record<string, string> = {
+      'Template': 'templater',
+      'Installation': 'installer',
+    };
+    const activityType = rowData?.activity_type || '';
+    const mappedType = typeMap[activityType] || '';
+
+    if (!mappedType) {
+      toast.error('Unknown activity type');
+      return;
+    }
+
+    // ─── Build payload ────────────────────────────────────────────────────
+    const payload: any = {
+      type: mappedType,
+      fab_id: rowData.fab_id,
+      job_id: rowData.job_id,
+      installer_id: rowData.installer_id,
+    };
 
     if (sqftTemplated !== '') payload.sqft_templated = parseFloat(sqftTemplated);
     if (sqftNotTemplated !== '') payload.sqft_not_templated = parseFloat(sqftNotTemplated);
@@ -91,6 +93,7 @@ export const UpdateInstallationTemplateModal: React.FC<UpdateInstallationTemplat
     }
     payload.activity_complete = activityComplete;
 
+    // Only send if there's at least one extra field
     if (Object.keys(payload).length === 4) {
       toast.error('Please change at least one field');
       return;
@@ -104,6 +107,7 @@ export const UpdateInstallationTemplateModal: React.FC<UpdateInstallationTemplat
       onClose();
     } catch (error: any) {
       console.error('Update failed:', error);
+      toast.error(error?.data?.message || 'Failed to update record');
     } finally {
       setIsSubmitting(false);
     }
@@ -149,7 +153,7 @@ export const UpdateInstallationTemplateModal: React.FC<UpdateInstallationTemplat
             />
           </div>
           <div>
-            <Label htmlFor="reason">Reason</Label>
+            <Label htmlFor="reason">Reason (if not complete)</Label>
             <Input
               id="reason"
               value={reason}
@@ -158,7 +162,7 @@ export const UpdateInstallationTemplateModal: React.FC<UpdateInstallationTemplat
             />
           </div>
           <div>
-            <Label htmlFor="duration">Duration </Label>
+            <Label htmlFor="duration">Duration (minutes, or MM:SS)</Label>
             <Input
               id="duration"
               value={duration}
