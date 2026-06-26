@@ -1042,7 +1042,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                                           <p><span className="font-semibold">Operator:</span> {ev.operator_name || 'N/A'}</p>
                                           <p><span className="font-semibold">Workstation:</span> {ev.workstation_name || 'N/A'}</p>
                                           <p><span className="font-semibold">Est. Hours:</span> {ev.estimated_hours ?? 'N/A'}</p>
-                                          <p><span className="font-semibold">% Complete:</span> {ev.percent_complete ?? 0}%</p>
+                                          <p><span className="font-semibold">% Complete:</span> {ev.work_percentage ?? 0}%</p>
                                           <p><span className="font-semibold">Job:</span> {`${ev.job_name}-${ev.job_number}` || 'N/A'}</p>
                                           <p><span className="font-semibold">Job No:</span> {ev.job_number || 'N/A'}</p>
                                           <p><span className="font-semibold">Account Name:</span> {ev.account_name || 'N/A'}</p>
