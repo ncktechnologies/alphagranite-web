@@ -85,6 +85,8 @@ interface ReportData {
 
 // ─── Component ──────────────────────────────────────────────────────────────
 export function InstallationTemplateReport() {
+    const baseUrl = `${(import.meta as any).env?.VITE_ALPHA_GRANITE_BASE_URL || ''}`;
+
     // ── Main filters ─────────────────────────────────────────────────────────
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
@@ -483,8 +485,8 @@ const handlePdfDownload = async () => {
   if (pdfSalesPerson !== 'all') params.sales_person_id = pdfSalesPerson;
 
   const queryString = new URLSearchParams(params).toString();
-  const url = `/api/v1/reports/owner/installation-template-dashboard/pdf${queryString ? `?${queryString}` : ''}`;
-
+  const url = `${baseUrl}/api/v1/reports/owner/installation-template-dashboard/pdf${queryString ? `?${queryString}` : ''}`;
+ 
   try {
     const response = await fetch(url, {
       headers: {
