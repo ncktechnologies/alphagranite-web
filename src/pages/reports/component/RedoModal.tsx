@@ -6,7 +6,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUpdateRedoMutation } from '@/store/api/report';
+import { useGetEmployeesQuery } from '@/store/api/employee';
 import { toast } from 'sonner';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface UpdateRedoModalProps {
   open: boolean;
@@ -41,13 +43,21 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
 
   const [updateRedo] = useUpdateRedoMutation();
 
-  // Compute total cost: sqft * cost_per_sqft * 2.1
+  // ✅ Only fetch employees when modal is open
+  const { data: employeesData, isLoading: isEmployeesLoading } = useGetEmployeesQuery(
+    // { limit: 1},
+    // { skip: !open } 
+  );
+
+
+  // ─── Compute total cost ──────────────────────────────────────────────────
   const totalCost = useMemo(() => {
     const sqftNum = parseFloat(sqft) || 0;
     const costNum = parseFloat(costPerSqft) || 0;
     return sqftNum * costNum * 2.1;
   }, [sqft, costPerSqft]);
 
+  // ─── Populate form from initialData ─────────────────────────────────────
   useEffect(() => {
     if (open && initialData) {
       setNoOfPieces(initialData.no_of_pieces?.toString() ?? '');
@@ -59,6 +69,7 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
     }
   }, [open, initialData]);
 
+  // ─── Department options ──────────────────────────────────────────────────
   const departmentOptions = useMemo(() => {
     const opts = initialData?.department_options;
     if (Array.isArray(opts)) return opts;
@@ -66,6 +77,16 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
     return [];
   }, [initialData?.department_options]);
 
+  // ─── Employee options ──────────────────────────────────────────────────
+  const employeeOptions = useMemo(() => {
+    if (!employeesData?.data) return [];
+    return employeesData.data.map((emp: any) => ({
+      value: emp.id,
+      label: emp.full_name || `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.name || `Employee ${emp.id}`,
+    }));
+  }, [employeesData]);
+
+  // ─── Submit handler ──────────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!fabId) {
       toast.error('Invalid FAB ID');
@@ -73,10 +94,7 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
     }
 
     const payload: any = {};
-    // if (noOfPieces !== '') payload.no_of_pieces = parseFloat(noOfPieces);
-    // if (sqft !== '') payload.sqft = parseFloat(sqft);
     if (costPerSqft !== '') payload.cost_per_sqft = parseFloat(costPerSqft);
-    // if (totalCost > 0) payload.total_cost = totalCost; // send calculated total
     if (department) payload.department = department;
     if (personName) payload.person_name = personName;
     if (reason) payload.reason = reason;
@@ -108,92 +126,70 @@ export const UpdateRedoModal: React.FC<UpdateRedoModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* <div className="grid grid-cols-2 gap-4"> */}
-            {/* <div>
-              <Label htmlFor="noOfPieces">No. of Pieces</Label>
-              <Input
-                id="noOfPieces"
-                type="number"
-                min="0"
-                step="1"
-                value={noOfPieces}
-                onChange={(e) => setNoOfPieces(e.target.value)}
-                placeholder="e.g., 5"
-              />
-            </div> */}
-            {/* <div>
-              <Label htmlFor="sqft">SQFT</Label>
-              <Input
-                id="sqft"
-                type="number"
-                min="0"
-                step="0.01"
-                value={sqft}
-                onChange={(e) => setSqft(e.target.value)}
-                placeholder="Square feet"
-              />
-            </div> */}
-          {/* </div> */}
-
-          <div className="grid gap-4">
-            <div>
-              <Label htmlFor="costPerSqft">Cost per SQFT</Label>
-              <Input
-                id="costPerSqft"
-                type="number"
-                min="0"
-                step="0.01"
-                value={costPerSqft}
-                onChange={(e) => setCostPerSqft(e.target.value)}
-                placeholder="Cost per sq ft"
-              />
-            </div>
-            {/* <div>
-              <Label htmlFor="totalCost">Total Cost</Label>
-              <Input
-                id="totalCost"
-                type="text"
-                readOnly
-                value={totalCost.toFixed(2)}
-                className="bg-gray-50"
-              />
-            </div> */}
+          <div>
+            <Label htmlFor="costPerSqft">Cost per SQFT</Label>
+            <Input
+              id="costPerSqft"
+              type="number"
+              min="0"
+              step="0.01"
+              value={costPerSqft}
+              onChange={(e) => setCostPerSqft(e.target.value)}
+              placeholder="Cost per sq ft"
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="department">Department</Label>
-              {departmentOptions.length > 0 ? (
-                <Select value={department} onValueChange={setDepartment}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departmentOptions.map((dept) => (
-                      <SelectItem key={dept} value={dept}>
-                        {dept}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <Input
-                  id="department"
-                  value={department}
-                  onChange={(e) => setDepartment(e.target.value)}
-                  placeholder="Department name"
-                />
-              )}
-            </div>
-            <div>
-              <Label htmlFor="personName">Person Name</Label>
+          <div>
+            <Label htmlFor="department">Department</Label>
+            {departmentOptions.length > 0 ? (
+              <Select value={department} onValueChange={setDepartment}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departmentOptions.map((dept) => (
+                    <SelectItem key={dept} value={dept}>
+                      {dept}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                id="department"
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                placeholder="Department name"
+              />
+            )}
+          </div>
+
+          {/* Person Name – dropdown of employees (fetched only when modal opens) */}
+          <div>
+            <Label htmlFor="personName">Person Name</Label>
+            {isEmployeesLoading ? (
+              <Skeleton className="h-10 w-full" />
+            ) : employeeOptions.length > 0 ? (
+              <Select value={personName} onValueChange={setPersonName}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employeeOptions.map((emp) => (
+                    <SelectItem key={emp.value} value={emp.label}>
+                      {emp.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
               <Input
                 id="personName"
                 value={personName}
                 onChange={(e) => setPersonName(e.target.value)}
-                placeholder="Assigned person"
+                placeholder="Type employee name"
               />
-            </div>
+            )}
           </div>
 
           <div>

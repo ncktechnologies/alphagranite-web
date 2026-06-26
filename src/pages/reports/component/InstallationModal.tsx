@@ -153,7 +153,7 @@ export const UpdateInstallationTemplateModal: React.FC<UpdateInstallationTemplat
             />
           </div>
           <div>
-            <Label htmlFor="reason">Reason (if not complete)</Label>
+            <Label htmlFor="reason">Reason</Label>
             <Input
               id="reason"
               value={reason}
@@ -162,7 +162,7 @@ export const UpdateInstallationTemplateModal: React.FC<UpdateInstallationTemplat
             />
           </div>
           <div>
-            <Label htmlFor="duration">Duration (minutes, or MM:SS)</Label>
+            <Label htmlFor="duration">Duration</Label>
             <Input
               id="duration"
               value={duration}
