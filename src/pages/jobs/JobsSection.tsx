@@ -88,7 +88,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
   const [isNoteDialogOpen, setIsNoteDialogOpen] = useState(false);
   const [currentJobForNote, setCurrentJobForNote] = useState<ExtendedJob | null>(null);
   const [noteText, setNoteText] = useState('');
-  const [markAsNeedInvoice, setMarkAsNeedInvoice] = useState(true);
+  const [markAsNeedInvoice, setMarkAsNeedInvoice] = useState(false);
 
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<'unmark' | 'invoice' | null>(null);
@@ -163,7 +163,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
   const handleOpenNoteDialog = (job: ExtendedJob) => {
     setCurrentJobForNote(job);
     setNoteText('');
-    setMarkAsNeedInvoice(true);
+    setMarkAsNeedInvoice(false);
     setIsNoteDialogOpen(true);
   };
 
@@ -243,7 +243,7 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
                     <>
                       <DropdownMenuSeparator />
                       {/* Mark as Need to Invoice – only if not already marked */}
-                      {!job.need_to_invoice && (
+                      {!job.need_to_invoice && !job.invoiced_at && (
                         <DropdownMenuItem onClick={() => handleOpenNoteDialog(job)}>
                           Mark as Need to Invoice
                         </DropdownMenuItem>
@@ -255,11 +255,11 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
                         </DropdownMenuItem>
                       )}
                       {/* Mark as Invoiced – only if not already invoiced */}
-                      {!job.invoiced_at && (
+                      {/* {!job.invoiced_at && (
                         <DropdownMenuItem onClick={() => handleOpenConfirm(job, 'invoice')}>
                           Mark as Invoiced
                         </DropdownMenuItem>
-                      )}
+                      )} */}
                     </>
                   )}
 
@@ -473,10 +473,10 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsNoteDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsNoteDialogOpen(false)} >
               Cancel
             </Button>
-            <Button onClick={handleSaveNoteAndInvoiceFlag}>Save</Button>
+            <Button onClick={handleSaveNoteAndInvoiceFlag} disabled={!markAsNeedInvoice} >Save</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

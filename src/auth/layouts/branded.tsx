@@ -16,19 +16,20 @@ export function BrandedLayout() {
           }
         `}
       </style>
-      <div className="branded-bg bg-no-repeat bg-cover min-h-screen bg-blend-overlay bg-black/70">
-        <div className=" grid max-w-5xl mx-auto min-h-screen items-center ">
-          <div className="flex flex-col justify-start items-center">
-            <Link to="/">
-              <img
-                src={toAbsoluteUrl('/images/logo/white-odyssey-logo.svg')}
-                className="h-[43px] max-w-none"
-                alt=""
-              />
-            </Link>
-          </div>
+      <div className="branded-bg bg-no-repeat bg-cover min-h-screen bg-blend-overlay bg-black/70 flex flex-col justify-center items-center p-4">
+        <div className="w-full max-w-5xl mx-auto flex flex-col items-center gap-6">
+          {/* ── Top Odyssey Logo ── */}
+          <Link to="/">
+            <img
+              src={toAbsoluteUrl('/images/logo/white-odyssey-logo.svg')}
+              className="h-[60px] max-w-none"
+              alt=""
+            />
+          </Link>
 
-          <div className="grid lg:grid-cols-3 grow mx-auto items-center">
+          {/* ── Main Two‑Column Grid ── */}
+          <div className="grid lg:grid-cols-3 w-full items-stretch gap-6">
+            {/* Left Column – hidden on mobile */}
             <div className="hidden lg:flex flex-col justify-end w-full max-w-[341px]">
               <div className="flex flex-col">
                 <Link to="/">
@@ -51,7 +52,6 @@ export function BrandedLayout() {
                   <p className="text-white pb-2">Need help?</p>
                   <div className="text-white/80 flex items-center gap-2">
                     <img src="/images/icons/mail-line.svg" alt="" />
-                    {/* clickable email */}
                     <a
                       href="mailto:odyssey@alphagraniteaustin.com"
                       className="hover:underline"
@@ -67,7 +67,9 @@ export function BrandedLayout() {
               </div>
             </div>
 
+            {/* Right Column – Card */}
             <div className="flex flex-col justify-start items-center lg:col-span-2">
+              {/* Mobile: show Odyssey logo above card */}
               <Link to="/">
                 <img
                   src={toAbsoluteUrl('/images/logo/white-odyssey-logo.svg')}

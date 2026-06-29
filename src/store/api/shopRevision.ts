@@ -56,7 +56,7 @@ export const shopRevisionApi = createApi({
   baseQuery: axiosBaseQuery({ baseUrl }),
   tagTypes: ["ShopRevision", "Task", "Fab"],
   endpoints: (builder) => ({
-     createShopRevision: builder.mutation<ShopRevisionSuccessResponse<ShopRevision>, CreateShopRevisionPayload>({
+    createShopRevision: builder.mutation<ShopRevisionSuccessResponse<ShopRevision>, CreateShopRevisionPayload>({
       query: (data) => ({
         url: "/api/v1/shop-revisions",
         method: "POST",
@@ -100,6 +100,35 @@ export const shopRevisionApi = createApi({
       transformResponse: (response: any) => response?.data ?? response ?? [],
       providesTags: (_result, _error, fab_id) => [{ type: "ShopRevision", id: fab_id }],
     }),
+
+    // In your shopRevision API slice (e.g., store/api/shopRevision.ts)
+    addFilesToShopRevision: builder.mutation<any, {
+      revision_id?: number;
+      id?: number;
+      entityId?: number;
+      files: File[];
+      stage_name?: string;
+      file_design?: string;
+    }>({
+      query: ({ revision_id, id, entityId, files, stage_name, file_design }) => {
+        // Use the ID from multiple possible keys
+        const revisionId = revision_id ?? id ?? entityId;
+        if (!revisionId) {
+          throw new Error('No revision ID provided');
+        }
+        const formData = new FormData();
+        files.forEach((file) => formData.append('files', file));
+        if (stage_name) formData.append('stage_name', stage_name);
+        if (file_design) formData.append('file_design', file_design);
+        return {
+          url: `/api/v1/shop-revision/${revisionId}/add-files`, 
+          method: 'POST',
+          data: formData,
+          headers: { 'Content-Type': 'multipart/form-data' },
+        };
+      },
+      invalidatesTags: ['ShopRevision'],
+    }),
     getShopRevisionCount: builder.query<number, void>({
       query: () => ({
         url: "/api/v1/shop-revisions/count",
@@ -115,6 +144,7 @@ export const shopRevisionApi = createApi({
       providesTags: ["ShopRevision"],
     }),
 
+
   }),
 });
 
@@ -124,4 +154,5 @@ export const {
   useGetShopRevisionsByFabIdQuery,
   useGetShopRevisionCountQuery,
   useCompleteShopRevisionMutation,
+  useAddFilesToShopRevisionMutation,
 } = shopRevisionApi;

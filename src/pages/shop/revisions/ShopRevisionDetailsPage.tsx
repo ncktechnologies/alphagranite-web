@@ -1,4 +1,4 @@
-// ShopRevisionDetailsPage.tsx (with delete confirmation modal)
+// ShopRevisionDetailsPage.tsx
 import { BackButton } from '@/components/common/BackButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -10,13 +10,9 @@ import { Textarea } from '@/components/ui/textarea';
 import {
   useCompleteShopRevisionMutation,
   useGetShopRevisionsByFabIdQuery,
+  useAddFilesToShopRevisionMutation,
 } from '@/store/api/shopRevision';
-import {
-  useAddFilesToCNCDraftingMutation,
-  useAddFilesToDraftingMutation,
-  useGetFabByIdQuery,
-  useDeleteFileMutation
-} from '@/store/api/job';
+import { useGetFabByIdQuery, useDeleteFileMutation } from '@/store/api/job';
 import { useGetOperatorQaFilesQuery } from '@/store/api/operator';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { format } from 'date-fns';
@@ -29,7 +25,7 @@ import { UniversalUploadModal } from '@/components/universal-upload';
 import { useSelector } from 'react-redux';
 import { SCTTimer } from '@/pages/jobs/roles/back-to-sales/components/SCTTimer';
 import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission';
-import Popup from '@/components/ui/popup'; // ✅ import Popup
+import Popup from '@/components/ui/popup';
 
 interface ExtendedUnifiedFile extends UnifiedFile {
   uploaded_by_id?: number;
@@ -60,31 +56,21 @@ const ShopRevisionDetailsPage = () => {
   const [fileToDelete, setFileToDelete] = useState<{ id: string; name: string } | null>(null);
 
   // Data fetching
-  const { data: revisionsData, isLoading: revisionsLoading, refetch: refetchRevisions } = useGetShopRevisionsByFabIdQuery(numericFabId, {
-    skip: !numericFabId,
-  });
+  const { data: revisionsData, isLoading: revisionsLoading, refetch: refetchRevisions } = useGetShopRevisionsByFabIdQuery(
+    numericFabId,
+    { skip: !numericFabId }
+  );
   const { data: fabResponse, refetch: refetchFab } = useGetFabByIdQuery(numericFabId, { skip: !numericFabId });
   const [completeRevision, { isLoading: isCompleting }] = useCompleteShopRevisionMutation();
 
-  // Upload mutations
-  const [uploadToCNC] = useAddFilesToCNCDraftingMutation();
-  const [uploadToDrafting] = useAddFilesToDraftingMutation();
+  // ✅ Upload to shop revision
+  const [uploadToShopRevision, { isLoading: isUploading }] = useAddFilesToShopRevisionMutation();
 
   // Delete mutation
   const [deleteFile, { isLoading: isDeleting }] = useDeleteFileMutation();
 
   const revisions = useMemo(() => (Array.isArray(revisionsData) ? revisionsData : []), [revisionsData]);
   const fab = (fabResponse as any)?.data ?? fabResponse;
-
-  // Get appropriate entity IDs
-  const cncId = fab?.cnc_data?.id;
-  const draftingId = fab?.draft_data?.id;
-  const hasEntityId = !!(cncId || draftingId);
-  const uploadMutation = cncId ? uploadToCNC : uploadToDrafting;
-  const entityId = cncId || draftingId || 0;
-  const additionalParams = cncId
-    ? { cnc_id: cncId, stage_name: 'shop revision', operator_id: currentOperatorId }
-    : { drafting_id: draftingId, stage_name: 'shop revision', operator_id: currentOperatorId };
 
   // Selected revision
   const selectedRevision = useMemo(() => {
@@ -135,7 +121,26 @@ const ShopRevisionDetailsPage = () => {
       }));
   }, [fab]);
 
-  const fabFilesForSelected = allFabRevisionFiles;
+  // Files directly attached to the selected revision (from the revision's `files` array)
+  const revisionDirectFiles: ExtendedUnifiedFile[] = useMemo(() => {
+    if (!selectedRevision?.files || !Array.isArray(selectedRevision.files)) return [];
+    return selectedRevision.files.map((f: any): ExtendedUnifiedFile => ({
+      id: String(f.id),
+      name: f.name || f.filename || `File_${f.id}`,
+      size: f.file_size || f.size || 0,
+      type: f.file_type || f.mime_type || 'application/octet-stream',
+      url: f.file_url || f.url || '',
+      stage_name: f.stage_name ?? f.stage,
+      stage: f.stage_name ?? f.stage,
+      file_design: f.file_design,
+      uploaded_by_name: f.uploaded_by_name ?? f.uploader_name,
+      uploadedBy: f.uploaded_by_name ?? f.uploader_name,
+      uploaded_by_id: f.uploaded_by ?? f.operator_id ?? f.uploaded_by_id,
+      uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
+      _raw: f,
+    }));
+  }, [selectedRevision]);
+
   const qaFilesForSelected: ExtendedUnifiedFile[] = useMemo(() => {
     if (!qaFilesData?.data) return [];
     return (qaFilesData.data as any[])
@@ -157,9 +162,10 @@ const ShopRevisionDetailsPage = () => {
       }));
   }, [qaFilesData]);
 
+  // Merge all sources: revision direct files + fab files + QA files
   const mergedFiles = useMemo(
-    () => [...fabFilesForSelected, ...qaFilesForSelected],
-    [fabFilesForSelected, qaFilesForSelected]
+    () => [...revisionDirectFiles, ...allFabRevisionFiles, ...qaFilesForSelected],
+    [revisionDirectFiles, allFabRevisionFiles, qaFilesForSelected]
   );
   const fileSources: FileSource[] = mergedFiles.length > 0 ? [{ kind: 'raw', data: mergedFiles }] : [];
 
@@ -183,7 +189,7 @@ const ShopRevisionDetailsPage = () => {
       setShowCompleteFeedbackDialog(false);
       refetchRevisions();
       refetchFab();
-      navigate('/revision')
+      navigate('/revision');
     } catch (error: any) {
       toast.error(error?.data?.message || 'Failed to complete revision.');
     }
@@ -191,6 +197,7 @@ const ShopRevisionDetailsPage = () => {
 
   const handleUploadComplete = () => {
     setShowUploadModal(false);
+    refetchRevisions(); // Refresh to get the newly attached files
     refetchFab();
     if (selectedRequesterId) {
       refetchQaFiles();
@@ -209,7 +216,7 @@ const ShopRevisionDetailsPage = () => {
     try {
       await deleteFile({ file_id: fileToDelete.id }).unwrap();
       toast.success('File deleted successfully');
-      // Refetch both fab and QA files to update the list
+      refetchRevisions();
       refetchFab();
       if (selectedRequesterId) {
         refetchQaFiles();
@@ -260,7 +267,7 @@ const ShopRevisionDetailsPage = () => {
   }
 
   // Permission‑derived UI flags
-  const canUpload = hasEntityId && canManageRevisions;
+  const canUpload = !!selectedRevision && !selectedRevision.revision_completed && canManageRevisions && !!selectedRevision.id;
   const canComplete = canManageRevisions && !selectedRevision?.revision_completed;
 
   return (
@@ -313,7 +320,7 @@ const ShopRevisionDetailsPage = () => {
                   Upload Files
                 </Button>
               ) : (
-                <Button size="sm" disabled title="No CNC or Drafting ID available for upload or insufficient permissions">
+                <Button size="sm" disabled title="No active revision selected or insufficient permissions">
                   Upload Unavailable
                 </Button>
               )}
@@ -322,7 +329,7 @@ const ShopRevisionDetailsPage = () => {
               <FileGallery
                 sources={fileSources}
                 onFileClick={(file) => setActiveFile(file)}
-                onDeleteFile={handleDeleteClick} // ✅ opens the confirmation modal
+                onDeleteFile={handleDeleteClick}
                 deletePermissionSubject="file"
                 defaultLayout="card"
                 emptyMessage={
@@ -475,15 +482,15 @@ const ShopRevisionDetailsPage = () => {
         </Card>
       </div>
 
-      {/* Conditional Upload Modal */}
+      {/* ✅ Upload Modal – uses selected revision ID */}
       {canUpload && (
         <UniversalUploadModal
           open={showUploadModal}
           onOpenChange={setShowUploadModal}
           title="Upload Shop Revision Files"
-          entityId={entityId}
-          uploadMutation={uploadMutation}
-          disabled={false}
+          entityId={selectedRevision.id}               // kept for compatibility
+          uploadMutation={uploadToShopRevision}
+          disabled={isUploading}
           stages={[{ value: 'shop revision', label: 'Shop Revision' }]}
           fileTypes={[
             { value: 'block_drawing', label: 'Block Drawing' },
@@ -492,11 +499,15 @@ const ShopRevisionDetailsPage = () => {
             { value: 'shop_drawing', label: 'Shop Drawing' },
             { value: 'photo_media', label: 'Photo Media' },
           ]}
-          additionalParams={additionalParams}
+          additionalParams={{
+            revision_id: selectedRevision.id,   // ✅ explicitly pass the ID here
+            operator_id: currentOperatorId,
+          }}
           onUploadComplete={handleUploadComplete}
         />
       )}
 
+      {/* Completion feedback dialog */}
       <Dialog open={showCompleteFeedbackDialog} onOpenChange={setShowCompleteFeedbackDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -527,7 +538,7 @@ const ShopRevisionDetailsPage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* ── Delete Confirmation Popup ── */}
+      {/* Delete Confirmation Popup */}
       <Popup
         isOpen={deleteConfirmationOpen}
         onClose={handleDeleteCancel}
@@ -537,11 +548,7 @@ const ShopRevisionDetailsPage = () => {
         className="h-auto"
       >
         <div className="flex justify-end space-x-3 my-3">
-          <Button
-            variant="outline"
-            onClick={handleDeleteCancel}
-            className="w-[200px]"
-          >
+          <Button variant="outline" onClick={handleDeleteCancel} className="w-[200px]">
             Cancel
           </Button>
           <Button
