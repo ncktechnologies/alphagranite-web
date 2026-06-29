@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { flexRender, ColumnDef, getCoreRowModel, getExpandedRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { CalendarDays, ChevronDown, ChevronRight, Search, X, FileText, Pencil } from 'lucide-react';
+import { CalendarDays, ChevronDown, ChevronRight, Search, X, FileText } from 'lucide-react';
 import { useGetInstallationTemplateReportQuery, useGetInstallationTemplateReportPdfMutation } from '@/store/api/report';
 import { DataGrid } from '@/components/ui/data-grid';
 import { DataGridPagination } from '@/components/ui/data-grid-pagination';
@@ -28,8 +28,31 @@ import {
 import { Label } from '@/components/ui/label';
 import { UpdateInstallationTemplateModal } from './component/InstallationModal';
 import { useSelector } from 'react-redux';
+import { usePermission } from '@/hooks/use-permission';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
+interface TimerSession {
+    id: number;
+    job_id: number;
+    fab_id: number | null;
+    templater_id?: number;
+    installer_id?: number;
+    status: string;
+    session_start_at: string;
+    current_run_start_at: string | null;
+    current_pause_start_at: string | null;
+    stopped_at: string | null;
+    total_work_seconds: number;
+    total_pause_seconds: number;
+    sqft_templated?: number;
+    sqft_not_templated?: number;
+    sqft_installed?: number;
+    sqft_not_installed?: number;
+    created_at: string;
+    updated_at: string;
+    updated_by: number | null;
+}
+
 interface ReportRow {
     installer: string;
     installer_id: number;
@@ -51,6 +74,7 @@ interface ReportRow {
     sales_person_id: number;
     sales_person_name: string;
     job_id?: number;
+    timer_sessions: TimerSession[];
 }
 
 interface Group {
@@ -74,8 +98,8 @@ interface ReportData {
         total_hours_installed: string;
         sqft_templated: number;
         sqft_not_templated: number;
-        installs_sq_ft: number;
-        incomplete_sq_ft: number;
+        sqft_installed: number;
+        sqft_not_installed: number;
         row_count: number;
         group_count: number;
     };
@@ -87,7 +111,10 @@ interface ReportData {
 export function InstallationTemplateReport() {
     const baseUrl = `${(import.meta as any).env?.VITE_ALPHA_GRANITE_BASE_URL || ''}`;
 
-    // ── Main filters ─────────────────────────────────────────────────────────
+    // ── Permission ──────────────────────────────────────────────────────────
+    const { can_create: canEdit } = usePermission('Installation & Template'); // adjust menu code as needed
+
+    // ── Filters ─────────────────────────────────────────────────────────────
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -145,7 +172,7 @@ export function InstallationTemplateReport() {
     const salesPersonOptions = useMemo(() => reportData?.filter_options?.sales_person_options ?? [], [reportData]);
     const summary = reportData?.summary;
 
-    // ─── Build hierarchical data ────────────────────────────────────────────
+    // ─── Build hierarchical data (installer → job → timer) ────────────────
     const { templateData, installData } = useMemo(() => {
         if (!reportData?.groups) return { templateData: [], installData: [] };
 
@@ -171,10 +198,23 @@ export function InstallationTemplateReport() {
                     total_sqft_not_templated: totalSqftNotTemplated,
                     total_sqft_installed: totalSqftInstalled,
                     total_sqft_incomplete: totalSqftIncomplete,
-                    subRows: rows.map(r => ({
+                    subRows: rows.map((r) => ({
                         ...r,
                         type: 'job',
                         id: `job-${r.fab_id}-${activityType}`,
+                        // Timer sessions become subRows of the job
+                        subRows: (r.timer_sessions || []).map((ts) => ({
+                            ...ts,
+                            type: 'timer',
+                            id: `timer-${ts.id}`,
+                            // map fields for display
+                            session_start: ts.session_start_at,
+                            session_end: ts.stopped_at,
+                            work_duration: ts.total_work_seconds,
+                            pause_duration: ts.total_pause_seconds,
+                            sqft: ts.sqft_templated ?? ts.sqft_installed ?? 0,
+                            status: ts.status,
+                        })),
                     })),
                 };
                 result.push(installerRow);
@@ -188,7 +228,7 @@ export function InstallationTemplateReport() {
         };
     }, [reportData]);
 
-    // ─── Initial expand state ─────────────────────────────────────────────
+    // ─── Initial expand state (installers + jobs expanded, timers collapsed) ──
     useEffect(() => {
         if (!hasInitialized && (templateData.length > 0 || installData.length > 0)) {
             const initExpanded = (data: any[]) => {
@@ -196,7 +236,8 @@ export function InstallationTemplateReport() {
                 data.forEach(installer => {
                     state[installer.id] = true;
                     installer.subRows?.forEach((job: any) => {
-                        state[job.id] = true;
+                        state[job.id] = true; // expand jobs by default
+                        // timers remain collapsed
                     });
                 });
                 return state;
@@ -221,12 +262,15 @@ export function InstallationTemplateReport() {
         const sqftLabel2 = isTemplate ? 'SQFT NOT TEMPLATED' : 'SQFT NOT INSTALLED';
         const sqftKey2 = isTemplate ? 'total_sqft_not_templated' : 'total_sqft_incomplete';
 
-        return [
+        const columns: ColumnDef<any>[] = [
             {
                 id: 'expander',
                 header: () => null,
                 cell: ({ row }) => {
-                    if (row.original.type === 'installer') {
+                    // Show expander for installer and job rows (only if they have children)
+                    if (row.original.type === 'installer' || row.original.type === 'job') {
+                        const hasSubRows = row.original.subRows && row.original.subRows.length > 0;
+                        if (!hasSubRows) return null;
                         return (
                             <button onClick={row.getToggleExpandedHandler()} className="p-1 hover:bg-gray-100 rounded">
                                 {row.getIsExpanded() ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
@@ -238,20 +282,18 @@ export function InstallationTemplateReport() {
                 size: 40,
                 enableSorting: false,
             },
-             // ── Actions column ──
-            {
+        ];
+
+        // Actions column – only if user has edit permission
+        if (canEdit) {
+            columns.push({
                 id: 'actions',
                 header: () => null,
                 cell: ({ row }) => {
                     if (row.original.type === 'job') {
                         return (
-                            <Button
-                               
-                                size="sm"
-                                onClick={() => handleEditJob(row.original)}
-                                // className="h-6 w-6 p-0"
-                            >
-                               Edit
+                            <Button size="sm" onClick={() => handleEditJob(row.original)}>
+                                Edit
                             </Button>
                         );
                     }
@@ -259,13 +301,19 @@ export function InstallationTemplateReport() {
                 },
                 size: 80,
                 enableSorting: false,
-            },
+            });
+        }
+
+        // Main columns
+        columns.push(
             {
                 id: 'installer',
                 header: ({ column }) => <DataGridColumnHeader title="EMPLOYEE" column={column} />,
                 cell: ({ row }) => {
                     if (row.original.type === 'installer') {
                         return <span className="font-medium">{row.original.installer}</span>;
+                    } else if (row.original.type === 'timer') {
+                        return <span className="text-muted-foreground text-xs"></span>;
                     }
                     return null;
                 },
@@ -278,8 +326,10 @@ export function InstallationTemplateReport() {
                 cell: ({ row }) => {
                     if (row.original.type === 'installer') {
                         return <span className="text-muted-foreground">—</span>;
-                    } else {
+                    } else if (row.original.type === 'job') {
                         return <span>{row.original.account_name}</span>;
+                    } else {
+                        return <span className="text-muted-foreground text-xs"></span>;
                     }
                 },
                 size: 200,
@@ -291,7 +341,7 @@ export function InstallationTemplateReport() {
                 cell: ({ row }) => {
                     if (row.original.type === 'installer') {
                         return <span className="text-muted-foreground">—</span>;
-                    } else {
+                    } else if (row.original.type === 'job') {
                         if (row.original.job_name) {
                             const jobId = row.original.job_id;
                             if (jobId) {
@@ -301,6 +351,8 @@ export function InstallationTemplateReport() {
                             return <span className="text-sm">{row.original.job_name}</span>;
                         }
                         return null;
+                    } else {
+                        return <span className="text-muted-foreground text-xs"></span>;
                     }
                 },
                 size: 250,
@@ -311,6 +363,7 @@ export function InstallationTemplateReport() {
                 accessorKey: "job_number",
                 header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
                 cell: ({ row }) => {
+                    if (row.original.type === 'timer') return <span className="text-muted-foreground text-xs">—</span>;
                     const jobNumber = row.original.job_number;
                     if (!jobNumber) return <span className="text-sm">—</span>;
                     const link = getJobNumberLink(jobNumber);
@@ -325,6 +378,8 @@ export function InstallationTemplateReport() {
                 cell: ({ row }) => {
                     if (row.original.type === 'job') {
                         return <span>{row.original.activity_complete ? 'Yes' : 'No'}</span>;
+                    } else if (row.original.type === 'timer') {
+                        return <span className="text-muted-foreground text-xs">—</span>;
                     }
                     return null;
                 },
@@ -337,6 +392,12 @@ export function InstallationTemplateReport() {
                 cell: ({ row }) => {
                     if (row.original.type === 'job') {
                         return <span className="whitespace-pre-wrap">{row.original.duration || '—'}</span>;
+                    } else if (row.original.type === 'timer') {
+                        const seconds = row.original.total_work_seconds || 0;
+                        const hrs = Math.floor(seconds / 3600);
+                        const mins = Math.floor((seconds % 3600) / 60);
+                        const secs = seconds % 60;
+                        return <span className="text-xs">{`${hrs.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`}</span>;
                     }
                     return null;
                 },
@@ -349,9 +410,13 @@ export function InstallationTemplateReport() {
                 cell: ({ row }) => {
                     if (row.original.type === 'installer') {
                         return <span>{row.original[sqftKey1]?.toFixed(0) ?? '0'}</span>;
-                    } else {
+                    } else if (row.original.type === 'job') {
                         const val = isTemplate ? row.original.sqft_templated : row.original.sq_ft_installed;
                         return <span>{val?.toFixed(0) ?? '0'}</span>;
+                    } else {
+                        // Timer row: show session's sqft
+                        const val = row.original.sqft ?? 0;
+                        return <span className="text-xs">{val.toFixed(0)}</span>;
                     }
                 },
                 size: 130,
@@ -363,9 +428,11 @@ export function InstallationTemplateReport() {
                 cell: ({ row }) => {
                     if (row.original.type === 'installer') {
                         return <span>{row.original[sqftKey2]?.toFixed(0) ?? '0'}</span>;
-                    } else {
+                    } else if (row.original.type === 'job') {
                         const val = isTemplate ? row.original.sqft_not_templated : row.original.sq_ft_incomplete;
                         return <span>{val?.toFixed(0) ?? '0'}</span>;
+                    } else {
+                        return <span className="text-xs">—</span>;
                     }
                 },
                 size: 140,
@@ -377,18 +444,21 @@ export function InstallationTemplateReport() {
                 cell: ({ row }) => {
                     if (row.original.type === 'job') {
                         return <span>{row.original.reason_if_not_complete || '—'}</span>;
+                    } else if (row.original.type === 'timer') {
+                        return <span className="text-muted-foreground text-xs"></span>;
                     }
                     return null;
                 },
                 size: 200,
                 enableSorting: true,
-            },
-           
-        ];
+            }
+        );
+
+        return columns;
     };
 
-    const templateColumns = useMemo(() => baseColumns('Template'), []);
-    const installColumns = useMemo(() => baseColumns('Installation'), []);
+    const templateColumns = useMemo(() => baseColumns('Template'), [canEdit]);
+    const installColumns = useMemo(() => baseColumns('Installation'), [canEdit]);
 
     // ─── Table instances ──────────────────────────────────────────────────────
     const templateTable = useReactTable({
@@ -421,6 +491,8 @@ export function InstallationTemplateReport() {
             getRowAttributes: (row) => {
                 if (row.original.type === 'installer') {
                     return { className: 'bg-[#f6ffe7] hover:bg-[#edffd4] transition-colors' };
+                } else if (row.original.type === 'timer') {
+                    return { className: 'bg-gray-50/30 hover:bg-gray-100/40 transition-colors text-xs' };
                 }
                 return { className: 'bg-white hover:bg-gray-50/50' };
             },
@@ -457,6 +529,8 @@ export function InstallationTemplateReport() {
             getRowAttributes: (row) => {
                 if (row.original.type === 'installer') {
                     return { className: 'bg-[#f6ffe7] hover:bg-[#edffd4] transition-colors' };
+                } else if (row.original.type === 'timer') {
+                    return { className: 'bg-gray-50/30 hover:bg-gray-100/40 transition-colors text-xs' };
                 }
                 return { className: 'bg-white hover:bg-gray-50/50' };
             },
@@ -472,64 +546,65 @@ export function InstallationTemplateReport() {
         setIsPdfDialogOpen(true);
     };
 
- const token = useSelector((state: any) => state.auth?.token || state.user?.token || localStorage.getItem('token'));
+    const token = useSelector((state: any) => state.auth?.token || state.user?.token || localStorage.getItem('token'));
 
-const handlePdfDownload = async () => {
-  const params: any = {};
-  if (pdfDateRange?.from) {
-    params.from_date = format(pdfDateRange.from, 'yyyy-MM-dd');
-    params.to_date = pdfDateRange.to ? format(pdfDateRange.to, 'yyyy-MM-dd') : format(pdfDateRange.from, 'yyyy-MM-dd');
-  }
-  if (pdfSearch.trim()) params.search = pdfSearch.trim();
-  if (pdfFabType !== 'all') params.fab_type = pdfFabType;
-  if (pdfSalesPerson !== 'all') params.sales_person_id = pdfSalesPerson;
+    const handlePdfDownload = async () => {
+        const params: any = {};
+        if (pdfDateRange?.from) {
+            params.from_date = format(pdfDateRange.from, 'yyyy-MM-dd');
+            params.to_date = pdfDateRange.to ? format(pdfDateRange.to, 'yyyy-MM-dd') : format(pdfDateRange.from, 'yyyy-MM-dd');
+        }
+        if (pdfSearch.trim()) params.search = pdfSearch.trim();
+        if (pdfFabType !== 'all') params.fab_type = pdfFabType;
+        if (pdfSalesPerson !== 'all') params.sales_person_id = pdfSalesPerson;
 
-  const queryString = new URLSearchParams(params).toString();
-  const url = `${baseUrl}/api/v1/reports/owner/installation-template-dashboard/pdf${queryString ? `?${queryString}` : ''}`;
- 
-  try {
-    const response = await fetch(url, {
-      headers: {
-        'Accept': 'application/pdf',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
-    });
+        const queryString = new URLSearchParams(params).toString();
+        const url = `${baseUrl}/api/v1/reports/owner/installation-template-dashboard/pdf${queryString ? `?${queryString}` : ''}`;
 
-    const contentType = response.headers.get('content-type') || '';
+        try {
+            const response = await fetch(url, {
+                headers: {
+                    'Accept': 'application/pdf',
+                    ...(token && { 'Authorization': `Bearer ${token}` }),
+                },
+            });
 
-    if (!response.ok || contentType.includes('application/json')) {
-      const errorText = await response.text();
-      let errorMessage = 'PDF generation failed';
-      try {
-        const errorJson = JSON.parse(errorText);
-        errorMessage = errorJson.message || errorJson.detail || errorText;
-      } catch (_) {
-        errorMessage = errorText || errorMessage;
-      }
-      throw new Error(errorMessage);
-    }
+            const contentType = response.headers.get('content-type') || '';
 
-    const blob = await response.blob();
-    if (!blob || blob.size === 0) {
-      throw new Error('Empty PDF file received');
-    }
+            if (!response.ok || contentType.includes('application/json')) {
+                const errorText = await response.text();
+                let errorMessage = 'PDF generation failed';
+                try {
+                    const errorJson = JSON.parse(errorText);
+                    errorMessage = errorJson.message || errorJson.detail || errorText;
+                } catch (_) {
+                    errorMessage = errorText || errorMessage;
+                }
+                throw new Error(errorMessage);
+            }
 
-    const downloadUrl = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = downloadUrl;
-    link.download = `installation-template-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(downloadUrl);
-    setIsPdfDialogOpen(false);
-    toast.success('PDF downloaded successfully');
-  } catch (error: any) {
-    console.error('PDF export failed:', error);
-    toast.error(error.message || 'Failed to download PDF. Please try again.');
-  }
-};
-    // ─── CSV Export – flatten all rows ─────────────────────────────────────
+            const blob = await response.blob();
+            if (!blob || blob.size === 0) {
+                throw new Error('Empty PDF file received');
+            }
+
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = downloadUrl;
+            link.download = `installation-template-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(downloadUrl);
+            setIsPdfDialogOpen(false);
+            toast.success('PDF downloaded successfully');
+        } catch (error: any) {
+            console.error('PDF export failed:', error);
+            toast.error(error.message || 'Failed to download PDF. Please try again.');
+        }
+    };
+
+    // ─── CSV Export helper ──────────────────────────────────────────────────
     const exportFlattenedToCSV = (table: any, filename: string) => {
         const flattenRows = (rows: any[]): any[] => {
             let result: any[] = [];

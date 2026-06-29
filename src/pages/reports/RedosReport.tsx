@@ -19,6 +19,7 @@ import { getFabIdLink, getJobNumberLink, renderLink } from '@/lib/reportLinks';
 import { FabInfoCell } from '@/components/common/fabInfo';
 import { cn } from '@/lib/utils';
 import { BackButton } from '@/components/common/BackButton';
+import { usePermission } from '@/hooks/use-permission';
 
 interface RedoItem {
     fab_created_date: string;
@@ -72,6 +73,9 @@ const formatDate = (dateStr: string) => {
 };
 
 export function RedosReport() {
+    // Permission check – allows editing only if user has update permission for 'redos'
+    const { can_create: canEditRedo } = usePermission('Redos');
+
     const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
@@ -92,11 +96,9 @@ export function RedosReport() {
     }, [dateRange]);
 
     const { data, isLoading } = useGetReportRedosQuery(queryParams);
-    // ✅ Fix: data.data is an object with 'rows' and 'summary'
     const rawRows: RedoItem[] = useMemo(() => data?.data?.rows ?? [], [data]);
     const summary = useMemo(() => data?.data?.summary ?? null, [data]);
 
-    // Compute totals from rows
     const totals = useMemo(() => {
         if (!rawRows.length) return null;
         return {
@@ -106,14 +108,12 @@ export function RedosReport() {
         };
     }, [rawRows]);
 
-    // Slice rawRows for current page
     const slicedData = useMemo(() => {
         const start = pagination.pageIndex * pagination.pageSize;
         const end = start + pagination.pageSize;
         return rawRows.slice(start, end);
     }, [rawRows, pagination.pageIndex, pagination.pageSize]);
 
-    // Prepend total row to slicedData
     const displayRows = useMemo(() => {
         if (!totals) return slicedData;
         const totalRow: any = {
@@ -131,138 +131,149 @@ export function RedosReport() {
         return [totalRow, ...slicedData];
     }, [totals, slicedData]);
 
-    const columns = useMemo<ColumnDef<RedoItem>[]>(() => [
-        // action column (optional, uncomment if needed)
-        {
-            id: 'action',
-            header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
-            cell: ({ row }) => {
-                if (row.original._isTotalRow) return null;
-                return (
-                    <Button size="sm" onClick={() => { setSelectedRow(row.original); setUpdateModalOpen(true); }}>
-                        Edit
-                    </Button>
-                );
+    // Build columns – include action column only if user can edit
+    const columns = useMemo<ColumnDef<RedoItem>[]>(() => {
+        const baseColumns: ColumnDef<RedoItem>[] = [
+            {
+                accessorKey: 'fab_created_date',
+                header: ({ column }) => <DataGridColumnHeader title="CREATED DATE" column={column} />,
+                cell: ({ row }) => {
+                    const val = row.original.fab_created_date;
+                    if (val === 'TOTAL') return '—';
+                    return formatDate(val);
+                },
+                size: 110,
+                enableSorting: true,
             },
-            size: 80,
-            enableSorting: false,
-        },
-        {
-            accessorKey: 'fab_created_date',
-            header: ({ column }) => <DataGridColumnHeader title="CREATED DATE" column={column} />,
-            cell: ({ row }) => {
-                const val = row.original.fab_created_date;
-                if (val === 'TOTAL') return '—';
-                return formatDate(val);
+            {
+                accessorKey: 'fab_type',
+                header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} />,
+                cell: ({ row }) => <span className="uppercase text-sm">{row.original.fab_type}</span>,
+                size: 120,
+                enableSorting: true,
             },
-            size: 110,
-            enableSorting: true,
-        },
-        {
-            accessorKey: 'fab_type',
-            header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} />,
-            cell: ({ row }) => <span className="uppercase text-sm">{row.original.fab_type}</span>,
-            size: 120,
-            enableSorting: true,
-        },
-        {
-            accessorKey: 'fab_id',
-            header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
-            cell: ({ row }) => {
-                const fabId = row.original.fab_id;
-                if (!fabId) return <span className="text-sm">—</span>;
-                const link = getFabIdLink(fabId);
-                return renderLink(link);
+            {
+                accessorKey: 'fab_id',
+                header: ({ column }) => <DataGridColumnHeader title="FAB ID" column={column} />,
+                cell: ({ row }) => {
+                    const fabId = row.original.fab_id;
+                    if (!fabId) return <span className="text-sm">—</span>;
+                    const link = getFabIdLink(fabId);
+                    return renderLink(link);
+                },
+                size: 80,
+                enableSorting: true,
             },
-            size: 80,
-            enableSorting: true,
-        },
-        {
-            accessorKey: 'job_number',
-            header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
-            cell: ({ row }) => {
-                const jobNumber = row.original.job_number;
-                if (!jobNumber) return <span className="text-sm">—</span>;
-                const link = getJobNumberLink(jobNumber);
-                return renderLink(link);
+            {
+                accessorKey: 'job_number',
+                header: ({ column }) => <DataGridColumnHeader title="JOB NO" column={column} />,
+                cell: ({ row }) => {
+                    const jobNumber = row.original.job_number;
+                    if (!jobNumber) return <span className="text-sm">—</span>;
+                    const link = getJobNumberLink(jobNumber);
+                    return renderLink(link);
+                },
+                size: 100,
+                enableSorting: true,
             },
-            size: 100,
-            enableSorting: true,
-        },
-        {
-            id: 'fab_info',
-            header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
-            cell: ({ row }) => {
-                if (row.original._isTotalRow) return <span className="text-sm">—</span>;
-                const hasFields = row.original.account_name || row.original.job_name || row.original.input_area || row.original.stone_type_name;
-                if (hasFields) {
-                    return <FabInfoCell data={row.original} />;
-                }
-                const info = row.original.fab_info || '';
-                return <span className="text-sm">{info}</span>;
+            {
+                id: 'fab_info',
+                header: ({ column }) => <DataGridColumnHeader title="FAB INFO" column={column} />,
+                cell: ({ row }) => {
+                    if (row.original._isTotalRow) return <span className="text-sm">—</span>;
+                    const hasFields = row.original.account_name || row.original.job_name || row.original.input_area || row.original.stone_type_name;
+                    if (hasFields) {
+                        return <FabInfoCell data={row.original} />;
+                    }
+                    const info = row.original.fab_info || '';
+                    return <span className="text-sm">{info}</span>;
+                },
+                size: 350,
+                enableSorting: false,
             },
-            size: 350,
-            enableSorting: false,
-        },
-        {
-            accessorKey: 'no_of_pieces',
-            header: ({ column }) => <DataGridColumnHeader title="NO OF PIECES" column={column} />,
-            cell: ({ row }) => row.original.no_of_pieces?.toString() ?? '-',
-            size: 80,
-            enableSorting: true,
-        },
-        {
-            accessorKey: 'sqft',
-            header: ({ column }) => <DataGridColumnHeader title="SQFT" column={column} />,
-            cell: ({ row }) => row.original.sqft.toFixed(2),
-            size: 80,
-            enableSorting: true,
-        },
-        {
-            accessorKey: 'cost_per_sqft',
-            header: ({ column }) => <DataGridColumnHeader title="COST PER SQFT" column={column} />,
-            cell: ({ row }) => row.original.cost_per_sqft !== null && row.original.cost_per_sqft !== undefined
-                ? `$${row.original.cost_per_sqft.toFixed(2)}`
-                : '-',
-            size: 120,
-            enableSorting: true,
-        },
-        {
-            accessorKey: 'total_cost',
-            header: ({ column }) => <DataGridColumnHeader title="TOTAL COST" column={column} />,
-            cell: ({ row }) => row.original.total_cost !== null ? `$${row.original.total_cost.toFixed(2)}` : '-',
-            size: 110,
-            enableSorting: true,
-        },
-        {
-            accessorKey: 'cost_of_stone',
-            header: ({ column }) => <DataGridColumnHeader title="COST OF STONE" column={column} />,
-            cell: ({ row }) => row.original.cost_of_stone !== null ? `$${row.original.cost_of_stone.toFixed(2)}` : '-',
-            size: 120,
-            enableSorting: true,
-        },
-        {
-            accessorKey: 'department',
-            header: ({ column }) => <DataGridColumnHeader title="DEPARTMENT" column={column} />,
-            cell: ({ row }) => row.original.department || '-',
-            size: 150,
-            enableSorting: true,
-        },
-        {
-            accessorKey: 'person_name',
-            header: ({ column }) => <DataGridColumnHeader title="EMPLOYEE" column={column} />,
-            cell: ({ row }) => row.original.person_name || '-',
-            size: 150,
-            enableSorting: true,
-        },
-        {
-            accessorKey: 'reason',
-            header: ({ column }) => <DataGridColumnHeader title="REASON" column={column} />,
-            cell: ({ row }) => row.original.reason || '-',
-            size: 150,
-            enableSorting: true,
-        },
-    ], []);
+            {
+                accessorKey: 'no_of_pieces',
+                header: ({ column }) => <DataGridColumnHeader title="NO OF PIECES" column={column} />,
+                cell: ({ row }) => row.original.no_of_pieces?.toString() ?? '-',
+                size: 80,
+                enableSorting: true,
+            },
+            {
+                accessorKey: 'sqft',
+                header: ({ column }) => <DataGridColumnHeader title="SQFT" column={column} />,
+                cell: ({ row }) => row.original.sqft.toFixed(2),
+                size: 80,
+                enableSorting: true,
+            },
+            {
+                accessorKey: 'cost_per_sqft',
+                header: ({ column }) => <DataGridColumnHeader title="COST PER SQFT" column={column} />,
+                cell: ({ row }) => row.original.cost_per_sqft !== null && row.original.cost_per_sqft !== undefined
+                    ? `$${row.original.cost_per_sqft.toFixed(2)}`
+                    : '-',
+                size: 120,
+                enableSorting: true,
+            },
+            {
+                accessorKey: 'total_cost',
+                header: ({ column }) => <DataGridColumnHeader title="TOTAL COST" column={column} />,
+                cell: ({ row }) => row.original.total_cost !== null ? `$${row.original.total_cost.toFixed(2)}` : '-',
+                size: 110,
+                enableSorting: true,
+            },
+            {
+                accessorKey: 'cost_of_stone',
+                header: ({ column }) => <DataGridColumnHeader title="COST OF STONE" column={column} />,
+                cell: ({ row }) => row.original.cost_of_stone !== null ? `$${row.original.cost_of_stone.toFixed(2)}` : '-',
+                size: 120,
+                enableSorting: true,
+            },
+            {
+                accessorKey: 'department',
+                header: ({ column }) => <DataGridColumnHeader title="DEPARTMENT" column={column} />,
+                cell: ({ row }) => row.original.department || '-',
+                size: 150,
+                enableSorting: true,
+            },
+            {
+                accessorKey: 'person_name',
+                header: ({ column }) => <DataGridColumnHeader title="EMPLOYEE" column={column} />,
+                cell: ({ row }) => row.original.person_name || '-',
+                size: 150,
+                enableSorting: true,
+            },
+            {
+                accessorKey: 'reason',
+                header: ({ column }) => <DataGridColumnHeader title="REASON" column={column} />,
+                cell: ({ row }) => row.original.reason || '-',
+                size: 150,
+                enableSorting: true,
+            },
+        ];
+
+        // If user can edit, prepend the action column
+        if (canEditRedo) {
+            return [
+                {
+                    id: 'action',
+                    header: ({ column }) => <DataGridColumnHeader title="ACTION" column={column} />,
+                    cell: ({ row }) => {
+                        if (row.original._isTotalRow) return null;
+                        return (
+                            <Button size="sm" onClick={() => { setSelectedRow(row.original); setUpdateModalOpen(true); }}>
+                                Edit
+                            </Button>
+                        );
+                    },
+                    size: 80,
+                    enableSorting: false,
+                },
+                ...baseColumns,
+            ];
+        }
+
+        return baseColumns;
+    }, [canEditRedo]);
 
     const table = useReactTable({
         columns,
@@ -337,10 +348,6 @@ export function RedosReport() {
                         <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Cost of Stone</p>
                         <p className="text-2xl font-semibold mt-2 text-[#4b545d]">${summary.total_cost_of_stone?.toLocaleString(undefined, { minimumFractionDigits: 2 }) ?? '0.00'}</p>
                     </div>
-                    {/* <div className="p-4 shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] border border-[#e2e4ed] rounded-[12px] bg-white">
-                        <p className="text-xs text-[#7c8689] font-medium uppercase tracking-wider">Number of Redos</p>
-                        <p className="text-2xl font-semibold mt-2 text-[#4b545d]">{rawRows.length}</p>
-                    </div> */}
                 </div>
             )}
 

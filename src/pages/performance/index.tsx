@@ -8,8 +8,9 @@ const REPORTS = [
     { title: 'Installation & Template ', path: '/performance/installation-template', permissionKey: 'installation_template' },
    
     { title: 'Redos', path: '/performance/redos', permissionKey: 'redos' },
+    { title: 'SLA Settings', path: '/performance/sla-settings', permissionKey: 'sla_settings' },
 
-    {title:'SLA Settings', path: '/performance/sla-settings', PermsissionKey: 'sla_settings' }
+    {title: 'SLA Settings', path: '/performance/sla-settings', permsissionKey: 'sla_settings' },
   
 ];
 

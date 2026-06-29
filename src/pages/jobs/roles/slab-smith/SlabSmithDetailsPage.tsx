@@ -597,6 +597,7 @@ export function SlabSmithDetailsPage() {
                   {/* Submit button */}
                   <div className="flex justify-end gap-2 pt-2">
                     <BackButton fallbackUrl="/job/slab-smith" label="Cancel" />
+                    <Can action="create" on="SlabSmith Request">
                     <Button
                       onClick={handleOpenSubmissionModal}
                       className="bg-green-600 hover:bg-green-700"
@@ -604,6 +605,7 @@ export function SlabSmithDetailsPage() {
                     >
                       Submit SlabSmith Work
                     </Button>
+                    </Can>
                   </div>
                 </CardContent>
               </Card>

@@ -7,59 +7,101 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { LoaderCircle } from 'lucide-react';
 import { BackButton } from '@/components/common/BackButton';
+import { useIsSuperAdmin, usePermission } from '@/hooks/use-permission';
+
+// Extend the rule type to allow null for numeric fields (to represent empty input)
+type EditableRule = Omit<SlaRule, 'target_days' | 'at_risk_days'> & {
+  target_days: number | null;
+  at_risk_days: number | null;
+};
 
 export function SlaSettings() {
-  const { data: rules = [], isLoading, refetch } = useGetSlaSettingsQuery();
-  const [updateRule, { isLoading: isUpdating }] = useUpdateSlaRuleMutation();
+  const permissions = usePermission('SLA Settings');
+  const isSuperAdmin = useIsSuperAdmin();
+  const canEdit = isSuperAdmin || permissions.can_create;
 
-  const [editableRules, setEditableRules] = useState<SlaRule[]>([]);
+  const { data: rules = [], isLoading, refetch } = useGetSlaSettingsQuery();
+  const [updateRule] = useUpdateSlaRuleMutation();
+
+  const [editableRules, setEditableRules] = useState<EditableRule[]>([]);
   const [modifiedIds, setModifiedIds] = useState<Set<number>>(new Set());
+  const [savingId, setSavingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (rules.length) {
-      setEditableRules(rules.map(r => ({ ...r })));
+      setEditableRules(
+        rules.map((r) => ({
+          ...r,
+          target_days: r.target_days ?? null,   // can be null for empty
+          at_risk_days: r.at_risk_days ?? null,
+        }))
+      );
       setModifiedIds(new Set());
     }
   }, [rules]);
 
-  const handleFieldChange = (id: number, field: keyof SlaRule, value: any) => {
-    setEditableRules(prev =>
-      prev.map(rule =>
-        rule.id === id ? { ...rule, [field]: value } : rule
-      )
+  const handleFieldChange = (
+    id: number,
+    field: 'target_days' | 'at_risk_days' | 'is_applicable',
+    value: any
+  ) => {
+    if (!canEdit) return;
+
+    setEditableRules((prev) =>
+      prev.map((rule) => {
+        if (rule.id !== id) return rule;
+
+        let newValue = value;
+        if (field === 'target_days' || field === 'at_risk_days') {
+          // If the input is empty, store null; otherwise parse as number
+          newValue = value === '' ? null : parseFloat(value);
+          if (isNaN(newValue as number)) newValue = null;
+        }
+        return { ...rule, [field]: newValue };
+      })
     );
-    setModifiedIds(prev => new Set(prev).add(id));
+    setModifiedIds((prev) => new Set(prev).add(id));
   };
 
   const handleSaveRule = async (id: number) => {
-    const rule = editableRules.find(r => r.id === id);
+    if (!canEdit || savingId !== null) return;
+    const rule = editableRules.find((r) => r.id === id);
     if (!rule) return;
 
+    setSavingId(id);
     try {
-      // Send the full updated rule (never empty)
       await updateRule({
         id,
         data: {
-          target_days: rule.target_days,
-          at_risk_days: rule.at_risk_days,
+          // Convert null to 0 before sending
+          target_days: rule.target_days ?? 0,
+          at_risk_days: rule.at_risk_days ?? 0,
           is_applicable: rule.is_applicable,
         },
       }).unwrap();
 
-      toast.success(`Rule #${id} updated successfully`);
-      setModifiedIds(prev => {
+      toast.success(`Service level setting updated No ${id} successfully`);
+      setModifiedIds((prev) => {
         const next = new Set(prev);
         next.delete(id);
         return next;
       });
       refetch();
     } catch (error: any) {
-      toast.error(error?.data?.message || 'Failed to update rule');
+      // toast.error(error?.data?.message || 'Failed to update rule');
+    } finally {
+      setSavingId(null);
     }
   };
 
   const handleReset = () => {
-    setEditableRules(rules.map(r => ({ ...r })));
+    setEditableRules(
+      rules.map((r) => ({
+        ...r,
+        target_days: r.target_days ?? null,
+        at_risk_days: r.at_risk_days ?? null,
+      }))
+    );
     setModifiedIds(new Set());
   };
 
@@ -76,9 +118,15 @@ export function SlaSettings() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold text-[#4b545d]">SLA Settings</h1>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleReset} disabled={modifiedIds.size === 0}>
-            Discard Changes
-          </Button>
+          {canEdit && (
+            <Button
+              variant="outline"
+              onClick={handleReset}
+              disabled={modifiedIds.size === 0}
+            >
+              Discard Changes
+            </Button>
+          )}
           <BackButton />
         </div>
       </div>
@@ -101,12 +149,13 @@ export function SlaSettings() {
                   <th className="px-4 py-2 text-left text-xs font-semibold text-[#7c8689]">Target Days</th>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-[#7c8689]">At‑Risk Days</th>
                   <th className="px-4 py-2 text-left text-xs font-semibold text-[#7c8689]">Applicable</th>
-                  <th className="px-4 py-2 text-left text-xs font-semibold text-[#7c8689]">Actions</th>
+                  {canEdit && <th className="px-4 py-2 text-left text-xs font-semibold text-[#7c8689]">Actions</th>}
                 </tr>
               </thead>
               <tbody>
                 {editableRules.map((rule) => {
                   const isModified = modifiedIds.has(rule.id);
+                  const isSaving = savingId === rule.id;
                   return (
                     <tr key={rule.id} className={`border-b hover:bg-gray-50/50 ${isModified ? 'bg-yellow-50' : ''}`}>
                       <td className="px-4 py-2 text-sm uppercase">{rule.fab_type}</td>
@@ -114,25 +163,27 @@ export function SlaSettings() {
                       <td className="px-4 py-2">
                         <Input
                           type="number"
-                          value={rule.target_days}
+                          value={rule.target_days ?? ''}
                           onChange={(e) =>
-                            handleFieldChange(rule.id, 'target_days', parseFloat(e.target.value) || 0)
+                            handleFieldChange(rule.id, 'target_days', e.target.value)
                           }
                           className="w-20 h-8"
                           min={0}
                           step={0.5}
+                          disabled={!canEdit || isSaving}
                         />
                       </td>
                       <td className="px-4 py-2">
                         <Input
                           type="number"
-                          value={rule.at_risk_days}
+                          value={rule.at_risk_days ?? ''}
                           onChange={(e) =>
-                            handleFieldChange(rule.id, 'at_risk_days', parseFloat(e.target.value) || 0)
+                            handleFieldChange(rule.id, 'at_risk_days', e.target.value)
                           }
                           className="w-20 h-8"
                           min={0}
                           step={0.5}
+                          disabled={!canEdit || isSaving}
                         />
                       </td>
                       <td className="px-4 py-2">
@@ -141,18 +192,20 @@ export function SlaSettings() {
                           onCheckedChange={(checked) =>
                             handleFieldChange(rule.id, 'is_applicable', checked)
                           }
+                          disabled={!canEdit || isSaving}
                         />
                       </td>
-                      <td className="px-4 py-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSaveRule(rule.id)}
-                          disabled={isUpdating || !isModified}
-                        >
-                          {isUpdating ? <LoaderCircle className="h-4 w-4 animate-spin" /> : 'Save'}
-                        </Button>
-                      </td>
+                      {canEdit && (
+                        <td className="px-4 py-2">
+                          <Button
+                            size="sm"
+                            onClick={() => handleSaveRule(rule.id)}
+                            disabled={!isModified || isSaving || savingId !== null}
+                          >
+                            {isSaving ? <LoaderCircle className="h-4 w-4 animate-spin" /> : 'Save'}
+                          </Button>
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
