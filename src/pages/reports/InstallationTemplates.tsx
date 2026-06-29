@@ -231,6 +231,7 @@ export function InstallationTemplateReport() {
                             pause_duration: ts.total_pause_seconds,
                             sqft: ts.sqft_templated ?? ts.sqft_installed ?? 0,
                             status: ts.status,
+                            
                             // Keep the original timer session ID as `timer_session_id`
                         })),
                     })),
@@ -371,7 +372,7 @@ export function InstallationTemplateReport() {
                         }
                         return null;
                     } else {
-                        return <span className="text-muted-foreground text-xs">Timer session</span>;
+                        return <span className="text-muted-foreground text-xs"></span>;
                     }
                 },
                 size: 250,
@@ -410,7 +411,7 @@ export function InstallationTemplateReport() {
                 header: ({ column }) => <DataGridColumnHeader title="DURATION" column={column} />,
                 cell: ({ row }) => {
                     if (row.original.type === 'job') {
-                        return <span className="whitespace-pre-wrap">{row.original.total_work_seconds || '—'}</span>;
+                        return <span className="whitespace-pre-wrap">{formatDuration(row.original.total_work_seconds) || '—'}</span>;
                     } else if (row.original.type === 'timer') {
                         const seconds = row.original.total_work_seconds || 0;
                         return <span className="text-xs">{formatDuration(seconds)}</span>;
@@ -472,7 +473,7 @@ export function InstallationTemplateReport() {
                     if (row.original.type === 'job') {
                         return <span>{row.original.reason_if_not_complete || '—'}</span>;
                     } else if (row.original.type === 'timer') {
-                        return <span className="text-muted-foreground text-xs">—</span>;
+                        return <span className=" text-xs">{row.original.note}</span>;
                     }
                     return null;
                 },

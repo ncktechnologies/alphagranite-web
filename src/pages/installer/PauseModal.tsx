@@ -46,7 +46,7 @@ export const InstallerPauseModal = ({ open, onClose, jobId, fabId, jobNumber, in
                 installer_id: installerId,
                 sqft_installed: undefined,   // explicitly not sent
                 sqft_not_installed: undefined,
-                note: "Lunch break",
+                note: "",
                 fab_id:fabId
             }).unwrap();
             toast.success(t('INSTALLER.PAUSE.SUCCESS'));

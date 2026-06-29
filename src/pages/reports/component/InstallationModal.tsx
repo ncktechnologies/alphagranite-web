@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUpdateInstallationTemplateReportMutation } from '@/store/api/report';
 import { toast } from 'sonner';
 
@@ -24,11 +25,9 @@ const formatDuration = (seconds: number): string => {
 const parseDurationToSeconds = (input: string): number | null => {
     const trimmed = input.trim();
     if (!trimmed) return null;
-    // Try to parse as number (seconds)
     if (/^\d+$/.test(trimmed)) {
         return parseInt(trimmed, 10);
     }
-    // Try format: [Xd ]HH:MM:SS
     const match = trimmed.match(/^(?:(\d+)d\s*)?(\d{1,2}):(\d{1,2}):(\d{1,2})$/);
     if (match) {
         const days = parseInt(match[1] || '0', 10);
@@ -37,7 +36,6 @@ const parseDurationToSeconds = (input: string): number | null => {
         const seconds = parseInt(match[4], 10);
         return days * 86400 + hours * 3600 + minutes * 60 + seconds;
     }
-    // Try format: HH:MM (no seconds)
     const match2 = trimmed.match(/^(?:(\d+)d\s*)?(\d{1,2}):(\d{1,2})$/);
     if (match2) {
         const days = parseInt(match2[1] || '0', 10);
@@ -45,14 +43,14 @@ const parseDurationToSeconds = (input: string): number | null => {
         const minutes = parseInt(match2[3], 10);
         return days * 86400 + hours * 3600 + minutes * 60;
     }
-    return null; // invalid format
+    return null;
 };
 
 interface UpdateInstallationTemplateModalProps {
   open: boolean;
   onClose: () => void;
   rowData: {
-    id?: string;                  // React Table key, e.g. "timer-19"
+    id?: string;
     timer_session_id?: number;
     job_id?: number;
     fab_id?: number;
@@ -64,6 +62,7 @@ interface UpdateInstallationTemplateModalProps {
     sqft_not_installed?: number;
     reason_if_not_complete?: string | null;
     total_work_seconds?: number;
+    note: string | null;
   };
   onUpdateSuccess?: () => void;
 }
@@ -76,24 +75,45 @@ export const UpdateInstallationTemplateModal: React.FC<UpdateInstallationTemplat
 }) => {
   const [sqftTemplated, setSqftTemplated] = useState<string>('');
   const [sqftNotTemplated, setSqftNotTemplated] = useState<string>('');
+  const [sqftInstalled, setSqftInstalled] = useState<string>('');
+  const [sqftNotInstalled, setSqftNotInstalled] = useState<string>('');
   const [reason, setReason] = useState<string>('');
-  const [durationDisplay, setDurationDisplay] = useState<string>('');
+  const [durationDays, setDurationDays] = useState<number>(0);
+  const [durationHours, setDurationHours] = useState<number>(0);
+  const [durationMinutes, setDurationMinutes] = useState<number>(0);
+  const [durationSeconds, setDurationSeconds] = useState<number>(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [updateReport] = useUpdateInstallationTemplateReportMutation();
 
   const timerSessionId = rowData?.timer_session_id ?? rowData?.id?.replace('timer-', '');
 
+  const isTemplate = rowData?.activity_type === 'Template';
+  const isInstallation = rowData?.activity_type === 'Installation';
+
   useEffect(() => {
     if (open && rowData) {
       setSqftTemplated(rowData.sqft_templated?.toString() ?? '');
       setSqftNotTemplated(rowData.sqft_not_templated?.toString() ?? '');
-      setReason(rowData.reason_if_not_complete ?? '');
+      setSqftInstalled(rowData.sqft_installed?.toString() ?? '');
+      setSqftNotInstalled(rowData.sqft_not_installed?.toString() ?? '');
+      setReason(rowData.note ?? '');
       if (rowData.total_work_seconds !== undefined && rowData.total_work_seconds !== null) {
-        // Show formatted duration
-        setDurationDisplay(formatDuration(rowData.total_work_seconds));
+        const seconds = rowData.total_work_seconds;
+        const days = Math.floor(seconds / 86400);
+        const remainder = seconds % 86400;
+        const hours = Math.floor(remainder / 3600);
+        const minutes = Math.floor((remainder % 3600) / 60);
+        const secs = remainder % 60;
+        setDurationDays(days);
+        setDurationHours(hours);
+        setDurationMinutes(minutes);
+        setDurationSeconds(secs);
       } else {
-        setDurationDisplay('');
+        setDurationDays(0);
+        setDurationHours(0);
+        setDurationMinutes(0);
+        setDurationSeconds(0);
       }
     }
   }, [open, rowData]);
@@ -104,19 +124,16 @@ export const UpdateInstallationTemplateModal: React.FC<UpdateInstallationTemplat
       return;
     }
 
-    // Map activity_type to backend expected value
     const typeMap: Record<string, string> = {
-      'Template': 'Templater',    // Swagger expects "Templater" (capitalized) or "Installer"
+      'Template': 'Templater',
       'Installation': 'Installer',
     };
-    const activityType = rowData?.activity_type || '';
-    const mappedType = typeMap[activityType] || '';
+    const mappedType = typeMap[rowData?.activity_type || ''] || '';
     if (!mappedType) {
       toast.error('Unknown activity type');
       return;
     }
 
-    // Build payload
     const payload: any = {
       type: mappedType,
       job_id: rowData.job_id,
@@ -124,22 +141,22 @@ export const UpdateInstallationTemplateModal: React.FC<UpdateInstallationTemplat
       timer_session_id: Number(timerSessionId),
     };
 
-    if (sqftTemplated !== '') payload['sqft templated'] = parseFloat(sqftTemplated);
-    if (sqftNotTemplated !== '') payload['sqft not templated'] = parseFloat(sqftNotTemplated);
-    if (reason.trim()) payload.reason = reason.trim();
-
-    // Parse duration from display string to seconds
-    if (durationDisplay.trim()) {
-      const seconds = parseDurationToSeconds(durationDisplay.trim());
-      if (seconds !== null) {
-        payload.duration = seconds;
-      } else {
-        toast.error('Invalid duration format. Use HH:MM:SS or Xd HH:MM:SS');
-        return;
-      }
+    if (isTemplate) {
+      if (sqftTemplated !== '') payload['sqft templated'] = parseFloat(sqftTemplated);
+      if (sqftNotTemplated !== '') payload['sqft not templated'] = parseFloat(sqftNotTemplated);
+    } else if (isInstallation) {
+      if (sqftInstalled !== '') payload['sqft installed'] = parseFloat(sqftInstalled);
+      if (sqftNotInstalled !== '') payload['sqft not installed'] = parseFloat(sqftNotInstalled);
     }
 
-    // Check if any extra fields changed
+    if (reason.trim()) payload.note = reason.trim();
+
+    // ✅ Send as "total work seconds" (with spaces) per Swagger
+    const totalSeconds = durationDays * 86400 + durationHours * 3600 + durationMinutes * 60 + durationSeconds;
+    if (totalSeconds > 0) {
+      payload['total work seconds'] = totalSeconds;
+    }
+
     const changedFields = Object.keys(payload).filter(
       key => !['type', 'job_id', 'installer_id', 'timer_session_id'].includes(key)
     );
@@ -169,31 +186,65 @@ export const UpdateInstallationTemplateModal: React.FC<UpdateInstallationTemplat
           <DialogTitle>Update Timer Session</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
-          <div>
-            <Label htmlFor="sqftTemplated">SQFT Templated</Label>
-            <Input
-              id="sqftTemplated"
-              type="number"
-              min="0"
-              step="0.01"
-              value={sqftTemplated}
-              onChange={(e) => setSqftTemplated(e.target.value)}
-              placeholder="Square feet templated"
-            />
-          </div>
-          <div>
-            <Label htmlFor="sqftNotTemplated">SQFT Not Templated</Label>
-            <Input
-              id="sqftNotTemplated"
-              type="number"
-              min="0"
-              step="0.01"
-              value={sqftNotTemplated}
-              onChange={(e) => setSqftNotTemplated(e.target.value)}
-              placeholder="Square feet not templated"
-            />
-          </div>
-          <div>
+          {isTemplate && (
+            <>
+              <div>
+                <Label htmlFor="sqftTemplated">SQFT Templated</Label>
+                <Input
+                  id="sqftTemplated"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={sqftTemplated}
+                  onChange={(e) => setSqftTemplated(e.target.value)}
+                  placeholder="Square feet templated"
+                />
+              </div>
+              <div>
+                <Label htmlFor="sqftNotTemplated">SQFT Not Templated</Label>
+                <Input
+                  id="sqftNotTemplated"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={sqftNotTemplated}
+                  onChange={(e) => setSqftNotTemplated(e.target.value)}
+                  placeholder="Square feet not templated"
+                />
+              </div>
+            </>
+          )}
+
+          {isInstallation && (
+            <>
+              <div>
+                <Label htmlFor="sqftInstalled">SQFT Installed</Label>
+                <Input
+                  id="sqftInstalled"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={sqftInstalled}
+                  onChange={(e) => setSqftInstalled(e.target.value)}
+                  placeholder="Square feet installed"
+                />
+              </div>
+              <div>
+                <Label htmlFor="sqftNotInstalled">SQFT Not Installed</Label>
+                <Input
+                  id="sqftNotInstalled"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={sqftNotInstalled}
+                  onChange={(e) => setSqftNotInstalled(e.target.value)}
+                  placeholder="Square feet not installed"
+                />
+              </div>
+            </>
+          )}
+
+          {/* <div>
             <Label htmlFor="reason">Reason</Label>
             <Input
               id="reason"
@@ -201,15 +252,64 @@ export const UpdateInstallationTemplateModal: React.FC<UpdateInstallationTemplat
               onChange={(e) => setReason(e.target.value)}
               placeholder="Reason for incompletion"
             />
-          </div>
+          </div> */}
+
           <div>
-            <Label htmlFor="duration">Duration (HH:MM:SS or Xd HH:MM:SS)</Label>
-            <Input
-              id="duration"
-              value={durationDisplay}
-              onChange={(e) => setDurationDisplay(e.target.value)}
-              placeholder="e.g., 02:30:00 or 5d 03:01:34"
-            />
+            <Label>Duration</Label>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <label className="text-xs text-muted-foreground mb-1 block">Days</label>
+                <Select value={durationDays.toString()} onValueChange={(val) => setDurationDays(parseInt(val) || 0)}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 31 }, (_, i) => (
+                      <SelectItem key={i} value={i.toString()}>{i}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <label className="text-xs text-muted-foreground mb-1 block">Hours</label>
+                <Select value={durationHours.toString()} onValueChange={(val) => setDurationHours(parseInt(val) || 0)}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 24 }, (_, i) => (
+                      <SelectItem key={i} value={i.toString()}>{i.toString().padStart(2, '0')}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <label className="text-xs text-muted-foreground mb-1 block">Mins</label>
+                <Select value={durationMinutes.toString()} onValueChange={(val) => setDurationMinutes(parseInt(val) || 0)}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 60 }, (_, i) => (
+                      <SelectItem key={i} value={i.toString()}>{i.toString().padStart(2, '0')}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-1">
+                <label className="text-xs text-muted-foreground mb-1 block">Secs</label>
+                <Select value={durationSeconds.toString()} onValueChange={(val) => setDurationSeconds(parseInt(val) || 0)}>
+                  <SelectTrigger className="h-8 text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 60 }, (_, i) => (
+                      <SelectItem key={i} value={i.toString()}>{i.toString().padStart(2, '0')}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
         </div>
         <div className="flex justify-end space-x-3 pt-4 border-t">
