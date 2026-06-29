@@ -91,7 +91,7 @@ export function InstallCompletionPage() {
     const isSuperAdmin = useIsSuperAdmin();
 
 
-    const permissions = usePermission('Install Completion');
+    const permissions = usePermission('Install Scheduled');
 
     // Determine what actions the user is allowed to do
     const canAddNote = isSuperAdmin || permissions.can_create;      // Add Note menu item

@@ -412,7 +412,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
     <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <Can action="update" on="Pre-draft Review">
+          {/* <Can action="update" on="Pre-draft Review"> */}
             {showCompletionFields && (
               <FormField
                 control={form.control}
@@ -513,12 +513,12 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
                 </FormItem>
               )}
             />
-          </Can>
+          {/* </Can> */}
 
           <Separator className="my-4" />
 
           <div className="space-y-3 mt-6">
-            <Can action="update" on="Pre-draft Review">
+            {/* <Can action="update" on="Pre-draft Review"> */}
               <Button className="w-full py-6 text-base" type="submit" disabled={isSubmitting}>
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
@@ -529,7 +529,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
                   "Save Changes"
                 )}
               </Button>
-            </Can>
+            {/* </Can> */}
             <Button variant="outline" type="button" className="w-full text-secondary font-bold py-6 text-base" onClick={() => navigate(-1)}>
               Cancel
             </Button>

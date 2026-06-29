@@ -31,7 +31,7 @@ export function InstallSchedulingDetailsPage() {
     const isCompletionRoute = location.pathname.includes('install-scheduled');
 
     // 👇 Determine which permission menu to use based on the route
-    const permissionMenu = isCompletionRoute ? 'Install Completion' : 'Install Scheduling';
+    const permissionMenu = isCompletionRoute ? 'Install Scheduled' : 'Install to Schedule';
 
     // Prepare clickable links
     const jobNameLink = fab?.job_details?.id ? `/job/details/${fab.job_details.id}` : '#';

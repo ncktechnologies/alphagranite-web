@@ -90,7 +90,7 @@ export function InstallSchedulingPage() {
     const isSuperAdmin = useIsSuperAdmin();
 
     // 👇 Get permissions for the 'install_scheduling' menu
-    const permissions = usePermission('Install Scheduling');
+    const permissions = usePermission('Install to Schedule');
 
     // Determine what actions the user is allowed to do
     const canAddNote = isSuperAdmin || permissions.can_create;
