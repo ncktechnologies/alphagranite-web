@@ -121,7 +121,7 @@ export const shopRevisionApi = createApi({
         if (stage_name) formData.append('stage_name', stage_name);
         if (file_design) formData.append('file_design', file_design);
         return {
-          url: `/api/v1/shop-revision/${revisionId}/add-files`, 
+          url: `/api/v1/shop-revisions/${revisionId}/files`, 
           method: 'POST',
           data: formData,
           headers: { 'Content-Type': 'multipart/form-data' },

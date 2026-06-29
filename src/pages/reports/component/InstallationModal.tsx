@@ -3,23 +3,67 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { useUpdateInstallationTemplateReportMutation } from '@/store/api/report';
 import { toast } from 'sonner';
+
+// ─── Helper: format duration with days ────────────────────────────────────
+const formatDuration = (seconds: number): string => {
+    if (seconds < 0) seconds = 0;
+    const days = Math.floor(seconds / 86400);
+    const remainder = seconds % 86400;
+    const hrs = Math.floor(remainder / 3600);
+    const mins = Math.floor((remainder % 3600) / 60);
+    const secs = remainder % 60;
+    if (days > 0) {
+        return `${days}d ${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+// ─── Helper: parse duration string to seconds ────────────────────────────
+const parseDurationToSeconds = (input: string): number | null => {
+    const trimmed = input.trim();
+    if (!trimmed) return null;
+    // Try to parse as number (seconds)
+    if (/^\d+$/.test(trimmed)) {
+        return parseInt(trimmed, 10);
+    }
+    // Try format: [Xd ]HH:MM:SS
+    const match = trimmed.match(/^(?:(\d+)d\s*)?(\d{1,2}):(\d{1,2}):(\d{1,2})$/);
+    if (match) {
+        const days = parseInt(match[1] || '0', 10);
+        const hours = parseInt(match[2], 10);
+        const minutes = parseInt(match[3], 10);
+        const seconds = parseInt(match[4], 10);
+        return days * 86400 + hours * 3600 + minutes * 60 + seconds;
+    }
+    // Try format: HH:MM (no seconds)
+    const match2 = trimmed.match(/^(?:(\d+)d\s*)?(\d{1,2}):(\d{1,2})$/);
+    if (match2) {
+        const days = parseInt(match2[1] || '0', 10);
+        const hours = parseInt(match2[2], 10);
+        const minutes = parseInt(match2[3], 10);
+        return days * 86400 + hours * 3600 + minutes * 60;
+    }
+    return null; // invalid format
+};
 
 interface UpdateInstallationTemplateModalProps {
   open: boolean;
   onClose: () => void;
   rowData: {
-    fab_id: number;
+    id?: string;                  // React Table key, e.g. "timer-19"
+    timer_session_id?: number;
     job_id?: number;
+    fab_id?: number;
     installer_id?: number;
-    activity_type?: string; // 'Template' or 'Installation' from report
-    activity_complete?: boolean;
+    activity_type?: string;       // 'Template' or 'Installation'
     sqft_templated?: number;
     sqft_not_templated?: number;
+    sqft_installed?: number;
+    sqft_not_installed?: number;
     reason_if_not_complete?: string | null;
-    duration?: string; // e.g., "2:30" or "150"
+    total_work_seconds?: number;
   };
   onUpdateSuccess?: () => void;
 }
@@ -30,71 +74,76 @@ export const UpdateInstallationTemplateModal: React.FC<UpdateInstallationTemplat
   rowData,
   onUpdateSuccess,
 }) => {
-  const [activityComplete, setActivityComplete] = useState<boolean>(false);
   const [sqftTemplated, setSqftTemplated] = useState<string>('');
   const [sqftNotTemplated, setSqftNotTemplated] = useState<string>('');
   const [reason, setReason] = useState<string>('');
-  const [duration, setDuration] = useState<string>('');
+  const [durationDisplay, setDurationDisplay] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [updateReport] = useUpdateInstallationTemplateReportMutation();
 
+  const timerSessionId = rowData?.timer_session_id ?? rowData?.id?.replace('timer-', '');
+
   useEffect(() => {
     if (open && rowData) {
-      setActivityComplete(rowData.activity_complete ?? false);
       setSqftTemplated(rowData.sqft_templated?.toString() ?? '');
       setSqftNotTemplated(rowData.sqft_not_templated?.toString() ?? '');
       setReason(rowData.reason_if_not_complete ?? '');
-      setDuration(rowData.duration ?? '');
+      if (rowData.total_work_seconds !== undefined && rowData.total_work_seconds !== null) {
+        // Show formatted duration
+        setDurationDisplay(formatDuration(rowData.total_work_seconds));
+      } else {
+        setDurationDisplay('');
+      }
     }
   }, [open, rowData]);
 
-  // ─── Helper: convert duration string to minutes (integer) ─────────────
-  const parseDurationToMinutes = (dur: string): number => {
-    if (!dur) return 0;
-    const trimmed = dur.trim();
-    if (/^\d+$/.test(trimmed)) return parseInt(trimmed, 10);
-    const parts = trimmed.split(':');
-    if (parts.length === 2) {
-      const hours = parseInt(parts[0], 10) || 0;
-      const minutes = parseInt(parts[1], 10) || 0;
-      return hours * 60 + minutes;
-    }
-    return parseInt(trimmed, 10) || 0;
-  };
-
   const handleSubmit = async () => {
-    // ─── Map activity_type to backend expected values ────────────────────
+    if (!timerSessionId) {
+      toast.error('No timer session ID found');
+      return;
+    }
+
+    // Map activity_type to backend expected value
     const typeMap: Record<string, string> = {
-      'Template': 'templater',
-      'Installation': 'installer',
+      'Template': 'Templater',    // Swagger expects "Templater" (capitalized) or "Installer"
+      'Installation': 'Installer',
     };
     const activityType = rowData?.activity_type || '';
     const mappedType = typeMap[activityType] || '';
-
     if (!mappedType) {
       toast.error('Unknown activity type');
       return;
     }
 
-    // ─── Build payload ────────────────────────────────────────────────────
+    // Build payload
     const payload: any = {
       type: mappedType,
-      fab_id: rowData.fab_id,
       job_id: rowData.job_id,
       installer_id: rowData.installer_id,
+      timer_session_id: Number(timerSessionId),
     };
 
-    if (sqftTemplated !== '') payload.sqft_templated = parseFloat(sqftTemplated);
-    if (sqftNotTemplated !== '') payload.sqft_not_templated = parseFloat(sqftNotTemplated);
+    if (sqftTemplated !== '') payload['sqft templated'] = parseFloat(sqftTemplated);
+    if (sqftNotTemplated !== '') payload['sqft not templated'] = parseFloat(sqftNotTemplated);
     if (reason.trim()) payload.reason = reason.trim();
-    if (duration.trim()) {
-      payload.duration = parseDurationToMinutes(duration.trim());
-    }
-    payload.activity_complete = activityComplete;
 
-    // Only send if there's at least one extra field
-    if (Object.keys(payload).length === 4) {
+    // Parse duration from display string to seconds
+    if (durationDisplay.trim()) {
+      const seconds = parseDurationToSeconds(durationDisplay.trim());
+      if (seconds !== null) {
+        payload.duration = seconds;
+      } else {
+        toast.error('Invalid duration format. Use HH:MM:SS or Xd HH:MM:SS');
+        return;
+      }
+    }
+
+    // Check if any extra fields changed
+    const changedFields = Object.keys(payload).filter(
+      key => !['type', 'job_id', 'installer_id', 'timer_session_id'].includes(key)
+    );
+    if (changedFields.length === 0) {
       toast.error('Please change at least one field');
       return;
     }
@@ -102,12 +151,12 @@ export const UpdateInstallationTemplateModal: React.FC<UpdateInstallationTemplat
     setIsSubmitting(true);
     try {
       await updateReport(payload).unwrap();
-      toast.success('Record updated successfully');
+      toast.success('Timer session updated successfully');
       onUpdateSuccess?.();
       onClose();
     } catch (error: any) {
       console.error('Update failed:', error);
-      toast.error(error?.data?.message || 'Failed to update record');
+      toast.error(error?.data?.message || 'Failed to update timer session');
     } finally {
       setIsSubmitting(false);
     }
@@ -117,17 +166,9 @@ export const UpdateInstallationTemplateModal: React.FC<UpdateInstallationTemplat
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Update {rowData?.activity_type || ''} Record</DialogTitle>
+          <DialogTitle>Update Timer Session</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="activityComplete">Activity Complete</Label>
-            <Switch
-              id="activityComplete"
-              checked={activityComplete}
-              onCheckedChange={setActivityComplete}
-            />
-          </div>
           <div>
             <Label htmlFor="sqftTemplated">SQFT Templated</Label>
             <Input
@@ -162,12 +203,12 @@ export const UpdateInstallationTemplateModal: React.FC<UpdateInstallationTemplat
             />
           </div>
           <div>
-            <Label htmlFor="duration">Duration</Label>
+            <Label htmlFor="duration">Duration (HH:MM:SS or Xd HH:MM:SS)</Label>
             <Input
               id="duration"
-              value={duration}
-              onChange={(e) => setDuration(e.target.value)}
-              placeholder="e.g., 150 or 2:30"
+              value={durationDisplay}
+              onChange={(e) => setDurationDisplay(e.target.value)}
+              placeholder="e.g., 02:30:00 or 5d 03:01:34"
             />
           </div>
         </div>

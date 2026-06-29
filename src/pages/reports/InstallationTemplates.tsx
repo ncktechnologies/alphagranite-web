@@ -107,6 +107,20 @@ interface ReportData {
     rows: ReportRow[];
 }
 
+// ─── Helper: format duration with days ────────────────────────────────────
+const formatDuration = (seconds: number): string => {
+    if (seconds < 0) seconds = 0;
+    const days = Math.floor(seconds / 86400);
+    const remainder = seconds % 86400;
+    const hrs = Math.floor(remainder / 3600);
+    const mins = Math.floor((remainder % 3600) / 60);
+    const secs = remainder % 60;
+    if (days > 0) {
+        return `${days}d ${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
 // ─── Component ──────────────────────────────────────────────────────────────
 export function InstallationTemplateReport() {
     const baseUrl = `${(import.meta as any).env?.VITE_ALPHA_GRANITE_BASE_URL || ''}`;
@@ -206,7 +220,10 @@ export function InstallationTemplateReport() {
                         subRows: (r.timer_sessions || []).map((ts) => ({
                             ...ts,
                             type: 'timer',
-                            id: `timer-${ts.id}`,
+                            id: `timer-${ts.id}`,                     // table key
+                            timer_session_id: ts.id,                  // numeric ID
+                            job_id: r.job_id,                         // job ID
+                            activity_type: r.activity_type,
                             // map fields for display
                             session_start: ts.session_start_at,
                             session_end: ts.stopped_at,
@@ -214,6 +231,7 @@ export function InstallationTemplateReport() {
                             pause_duration: ts.total_pause_seconds,
                             sqft: ts.sqft_templated ?? ts.sqft_installed ?? 0,
                             status: ts.status,
+                            // Keep the original timer session ID as `timer_session_id`
                         })),
                     })),
                 };
@@ -248,9 +266,10 @@ export function InstallationTemplateReport() {
         }
     }, [templateData, installData, hasInitialized]);
 
-    // ─── Handle edit action ─────────────────────────────────────────────────
-    const handleEditJob = (row: any) => {
-        setSelectedRowData(row);
+    // ─── Handle edit actions ─────────────────────────────────────────────────
+    // For editing timer sessions – passes the timer session data (which includes id as timer_session_id)
+    const handleEditTimer = (timerData: any) => {
+        setSelectedRowData(timerData); // the modal will receive the timer session info
         setIsUpdateModalOpen(true);
     };
 
@@ -284,15 +303,15 @@ export function InstallationTemplateReport() {
             },
         ];
 
-        // Actions column – only if user has edit permission
+        // ── Actions column – only on timer rows, if user has edit permission ──
         if (canEdit) {
             columns.push({
                 id: 'actions',
                 header: () => null,
                 cell: ({ row }) => {
-                    if (row.original.type === 'job') {
+                    if (row.original.type === 'timer') {
                         return (
-                            <Button size="sm" onClick={() => handleEditJob(row.original)}>
+                            <Button size="sm" onClick={() => handleEditTimer(row.original)}>
                                 Edit
                             </Button>
                         );
@@ -304,7 +323,7 @@ export function InstallationTemplateReport() {
             });
         }
 
-        // Main columns
+        // ── Main columns ──────────────────────────────────────────────────────
         columns.push(
             {
                 id: 'installer',
@@ -313,7 +332,7 @@ export function InstallationTemplateReport() {
                     if (row.original.type === 'installer') {
                         return <span className="font-medium">{row.original.installer}</span>;
                     } else if (row.original.type === 'timer') {
-                        return <span className="text-muted-foreground text-xs"></span>;
+                        return <span className="text-muted-foreground text-xs">—</span>;
                     }
                     return null;
                 },
@@ -329,7 +348,7 @@ export function InstallationTemplateReport() {
                     } else if (row.original.type === 'job') {
                         return <span>{row.original.account_name}</span>;
                     } else {
-                        return <span className="text-muted-foreground text-xs"></span>;
+                        return <span className="text-muted-foreground text-xs">—</span>;
                     }
                 },
                 size: 200,
@@ -352,7 +371,7 @@ export function InstallationTemplateReport() {
                         }
                         return null;
                     } else {
-                        return <span className="text-muted-foreground text-xs"></span>;
+                        return <span className="text-muted-foreground text-xs">Timer session</span>;
                     }
                 },
                 size: 250,
@@ -391,13 +410,10 @@ export function InstallationTemplateReport() {
                 header: ({ column }) => <DataGridColumnHeader title="DURATION" column={column} />,
                 cell: ({ row }) => {
                     if (row.original.type === 'job') {
-                        return <span className="whitespace-pre-wrap">{row.original.duration || '—'}</span>;
+                        return <span className="whitespace-pre-wrap">{row.original.total_work_seconds || '—'}</span>;
                     } else if (row.original.type === 'timer') {
                         const seconds = row.original.total_work_seconds || 0;
-                        const hrs = Math.floor(seconds / 3600);
-                        const mins = Math.floor((seconds % 3600) / 60);
-                        const secs = seconds % 60;
-                        return <span className="text-xs">{`${hrs.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`}</span>;
+                        return <span className="text-xs">{formatDuration(seconds)}</span>;
                     }
                     return null;
                 },
@@ -431,9 +447,20 @@ export function InstallationTemplateReport() {
                     } else if (row.original.type === 'job') {
                         const val = isTemplate ? row.original.sqft_not_templated : row.original.sq_ft_incomplete;
                         return <span>{val?.toFixed(0) ?? '0'}</span>;
-                    } else {
-                        return <span className="text-xs">—</span>;
+                    } else if (row.original.type === 'timer') {
+                        const actType = row.original.activity_type;
+                        let val = 0;
+                        if (actType === 'Template') {
+                            val = row.original.sqft_not_templated ?? 0;
+                        } else if (actType === 'Installation') {
+                            val = row.original.sqft_not_installed ?? 0;
+                        } else {
+                            // fallback: try both
+                            val = row.original.sqft_not_templated ?? row.original.sqft_not_installed ?? 0;
+                        }
+                        return <span className="text-xs">{val.toFixed(0)}</span>;
                     }
+                    return null;
                 },
                 size: 140,
                 enableSorting: true,
@@ -445,7 +472,7 @@ export function InstallationTemplateReport() {
                     if (row.original.type === 'job') {
                         return <span>{row.original.reason_if_not_complete || '—'}</span>;
                     } else if (row.original.type === 'timer') {
-                        return <span className="text-muted-foreground text-xs"></span>;
+                        return <span className="text-muted-foreground text-xs">—</span>;
                     }
                     return null;
                 },
@@ -863,7 +890,7 @@ export function InstallationTemplateReport() {
                     setIsUpdateModalOpen(false);
                     setSelectedRowData(null);
                 }}
-                rowData={selectedRowData}
+                rowData={selectedRowData}   // now contains timer session data with `timer_session_id`
                 onUpdateSuccess={refetch}
             />
 

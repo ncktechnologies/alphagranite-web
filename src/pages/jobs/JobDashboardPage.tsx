@@ -46,8 +46,8 @@ export function JobDashboardPage() {
       'Cut List': '/job/cut-list',
       'Resurface Scheduling': '/job/resurfacing',
       'Revisions': '/job/revision',
-      'Install Scheduling': '/job/install-to-schedule',
-      'Install Completion': '/job/install-scheduled',
+      'Install to Schedule': '/job/install-to-schedule',
+      'Install Scheduled': '/job/install-scheduled',
       'CNC': '/job/cnc',
       'Cost Of Stone': '/job/cost-of-stone',
     };
@@ -72,8 +72,8 @@ export function JobDashboardPage() {
       'Cut List': 'cut_list',
       'Resurface Scheduling': 'resurface_scheduling',
       'Revisions': 'revision',
-      'Install Scheduling': 'install_scheduling',
-      'Install Completion': 'install_completion',
+      'Install to Schedule': 'install_scheduling',
+      'Install Scheduled': 'install_completion',
       'FAB IDs': 'fab_created',
     };
 
