@@ -403,7 +403,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                   </p>
                 )}
                 <p className="text-[11px] truncate mt-0.5" style={{ color: text, opacity: 0.7 }}>
-                  {event.fab_type || event.percent_complete != null ? `${event.percent_complete ?? 0}%` : ''}
+                  {event.fab_type || event.percent_complete != null ? `${event.work_percentage ?? 0}%` : ''}
                 </p>
                 {event._height > 60 && (
                   <p className="text-[10px] truncate mt-1" style={{ color: text, opacity: 0.6 }}>
@@ -419,7 +419,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
               <p><span className="font-semibold">Operator:</span> {event.operator_name || 'N/A'}</p>
               <p><span className="font-semibold">Workstation:</span> {event.workstation_name || 'N/A'}</p>
               <p><span className="font-semibold">Est. Hours:</span> {event.estimated_hours ?? 'N/A'}</p>
-              <p><span className="font-semibold">% Complete:</span> {event.percent_complete ?? 0}%</p>
+              <p><span className="font-semibold">% Complete:</span> {event.work_percentage ?? 0}%</p>
               <p><span className="font-semibold">Job:</span> {`${event.job_name}-${event.job_number}` || 'N/A'}</p>
               <p><span className="font-semibold">Job No:</span> {event.job_number || 'N/A'}</p>
               <p><span className="font-semibold">Account Name:</span> {event.account_name || 'N/A'}</p>
@@ -1032,7 +1032,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                                         >
                                           <div className="px-2 py-1 h-full flex flex-col justify-center overflow-hidden">
                                             <p className="text-[12px] font-semibold truncate" style={{ color: text }}> {ev.fab_id} {ev.plan_name ? `• ${ev.plan_name}` : ''} {ev.operator_name ? `• ${ev.operator_name}` : ''}</p>
-                                            <p className="text-[10px] truncate" style={{ color: text, opacity: 0.7 }}>{ev.percent_complete ?? 0}%</p>
+                                            <p className="text-[10px] truncate" style={{ color: text, opacity: 0.7 }}>{ev.work_percentage ?? 0}%</p>
                                           </div>
                                         </div>
                                       </TooltipTrigger>

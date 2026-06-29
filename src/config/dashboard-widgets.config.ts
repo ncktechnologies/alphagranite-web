@@ -147,9 +147,9 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
   },
   // Install to schedule (11)
   {
-    id: 'Install Scheduling',
+    id: 'Install To Schedule',
     title: 'INSTALL TO SCHEDULE',
-    requiredPermission: 'Install Scheduling',
+    requiredPermission: 'Install To Schedule',
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
@@ -159,9 +159,9 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
   },
   // Install Scheduled (12)
   {
-    id: 'Install Completion',
+    id: 'Install Scheduled',
     title: ' INSTALL SCHEDULED',
-    requiredPermission: 'Install Completion',
+    requiredPermission: 'Install Scheduled',
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
