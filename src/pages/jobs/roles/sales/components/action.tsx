@@ -108,7 +108,7 @@ function ActionsCell({ row, onView, pageRole, canAddNote = false }: ActionsCellP
             <DropdownMenuItem onClick={handleViewDetails}>
               View details
             </DropdownMenuItem>
-            {/* 👇 Only show Add Note if user has permission */}
+            {/*  Only show Add Note if user has permission */}
             {canAddNote && (
               <DropdownMenuItem onClick={(e) => {
                 e.stopPropagation();
@@ -130,7 +130,7 @@ function ActionsCell({ row, onView, pageRole, canAddNote = false }: ActionsCellP
                   <Eye className="mr-2 h-4 w-4" />
                   Move Stage
                 </DropdownMenuItem>
-                {bulletin.install_details?.is_completed && (
+                {/* {bulletin.install_details?.is_completed && ( */}
                   <DropdownMenuItem
                     onClick={(e) => {
                       e.stopPropagation();
@@ -141,7 +141,7 @@ function ActionsCell({ row, onView, pageRole, canAddNote = false }: ActionsCellP
                     <Undo className="mr-2 h-4 w-4" />
                     Unmark Install Completion
                   </DropdownMenuItem>
-                )}
+                {/* )} */}
               </>
             )}
           </DropdownMenuContent>
