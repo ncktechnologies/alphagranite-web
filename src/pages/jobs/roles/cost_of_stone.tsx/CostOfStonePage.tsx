@@ -85,12 +85,13 @@ const CostOfStonePage = () => {
         if (tableState.searchType) params.type = tableState.searchType;
         if (tableState.fabTypeFilter && tableState.fabTypeFilter !== 'all')
             params.fab_type = tableState.fabTypeFilter;
-        if (tableState.dateFilter && tableState.dateFilter !== 'all') {
-            if (tableState.dateFilter === 'custom' && tableState.dateRange?.from) {
-                params.start_date = format(tableState.dateRange.from, 'yyyy-MM-dd');
-                if (tableState.dateRange.to)
-                    params.end_date = format(tableState.dateRange.to, 'yyyy-MM-dd');
-            } else if (tableState.dateFilter !== 'custom') {
+          if (tableState.dateFilter && tableState.dateFilter !== 'all') {
+            if (tableState.dateFilter === 'custom') {
+                if (tableState.dateRange?.from)
+                    params.sct_completed_start = format(tableState.dateRange.from, 'yyyy-MM-dd');
+                if (tableState.dateRange?.to)
+                    params.sct_completed_end = format(tableState.dateRange.to, 'yyyy-MM-dd');
+            } else {
                 params.date_filter = tableState.dateFilter;
             }
         }

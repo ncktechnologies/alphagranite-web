@@ -555,7 +555,7 @@ export function OperatorDashboard() {
                             <p className="text-2xl font-semibold text-black">{totalTasksCount}</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-3 p-4 rounded-[8px] border border-[#e2e4ed] bg-white">
+                    {/* <div className="flex items-center gap-3 p-4 rounded-[8px] border border-[#e2e4ed] bg-white">
                         <div className="h-10 w-10 rounded-[6px] bg-[#caf2d7] flex items-center justify-center">
                             <Clock className="w-5 h-5 text-[#16a34a]" />
                         </div>
@@ -563,7 +563,7 @@ export function OperatorDashboard() {
                             <p className="text-[13px] text-[#4b545d]">{t('OPERATOR.ACTIVE_JOBS')}</p>
                             <p className="text-2xl font-semibold text-black">{activeJobsCount}</p>
                         </div>
-                    </div>
+                    </div> */}
                     <div className="flex items-center gap-3 p-4 rounded-[8px] border border-[#e2e4ed] bg-white">
                         <div className="h-10 w-10 rounded-[6px] bg-[#f3e8ff] flex items-center justify-center">
                             <MapPin className="w-5 h-5 text-[#7c3aed]" />
