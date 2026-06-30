@@ -2513,7 +2513,7 @@ export const jobApi = createApi({
             }),
             unMarkInstallCompleted: build.mutation<any, { fab_id: number }>({
                 query: ({ fab_id }) => ({
-                    url: `/install-completion/fab/${fab_id}/unmark`,
+                    url: `/install-scheduling/fab/${fab_id}/unmark`,
                     method: "PATCH",
                     // no body
                 }),

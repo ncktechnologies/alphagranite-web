@@ -24,7 +24,6 @@ export function OperatorMediaUpload({ jobId, onUploadComplete, onClose }: Operat
 
   const stages = [
     { value: 'fabrication', label: 'Fabrication' },
-    {value :'shop revision', label : "Shop Revision"}
   ];
 
   const fileTypes = [

@@ -3,7 +3,7 @@ import { useMemo, useState } from 'react';
 import { flexRender, ColumnDef, getCoreRowModel, getPaginationRowModel, getSortedRowModel, PaginationState, SortingState, useReactTable } from '@tanstack/react-table';
 import { format } from 'date-fns';
 import { DateRange } from 'react-day-picker';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, Search, X } from 'lucide-react';
 import { useGetRevisionReportQuery } from '@/store/api/report';
 import { DataGridColumnHeader } from '@/components/ui/data-grid-column-header';
 import { DataGrid } from '@/components/ui/data-grid';
@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { getFabIdLink, getJobNumberLink, getJobNameLink, renderLink } from '@/lib/reportLinks';
 import { BackButton } from '@/components/common/BackButton';
 import { FabInfoCell } from '@/components/common/fabInfo';
+import { Input } from '@/components/ui/input';
 
 // ─── Fab type color mapping ──────────────────────────────────────────────
 const fabTypeColorMap: Record<string, string> = {
@@ -67,7 +68,6 @@ const SHOP_COLUMNS = [
     { key: 'revision_notes', label: 'NOTES' },
     { key: 'revision_feedback', label: 'FEEDBACK' },
     { key: 'requested_by_name', label: 'REQUESTED BY' },
-    // { key: 'assigned_to_name', label: 'ASSIGNED TO' },
     { key: 'created_at', label: 'CREATED AT', isDate: true },
     { key: 'revision_completed', label: 'COMPLETED', isBoolean: true },
     { key: 'completed_at', label: 'COMPLETED AT', isDate: true },
@@ -162,6 +162,10 @@ export function RevisionReport() {
     const [tempDateRange, setTempDateRange] = useState<DateRange | undefined>(undefined);
     const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
+    // ─── Table‑specific search ─────────────────────────────────────────────
+    const [sctSearchQuery, setSctSearchQuery] = useState('');
+    const [shopSearchQuery, setShopSearchQuery] = useState('');
+
     // ─── Pagination & sorting ──────────────────────────────────────────────
     const [salesPagination, setSalesPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
     const [shopPagination, setShopPagination] = useState<PaginationState>({ pageIndex: 0, pageSize: 50 });
@@ -219,24 +223,41 @@ export function RevisionReport() {
         return Array.from(types).sort();
     }, [shopRevisions]);
 
-    // ─── Apply filters ──────────────────────────────────────────────────────
+    // ─── Apply filters and search ──────────────────────────────────────────
     const filteredSalesRevisions = useMemo(() => {
         return salesRevisions.filter(row => {
             const matchFab = sctFabTypeFilter === 'all' || row.fab_type === sctFabTypeFilter;
             const matchRevType = sctRevisionTypeFilter === 'all' ||
                 (row.revision_type_label && REVISION_TYPE_MAP[row.revision_type_label] === sctRevisionTypeFilter) ||
                 row.revision_type_label === sctRevisionTypeFilter;
-            return matchFab && matchRevType;
+
+            let matchSearch = true;
+            if (sctSearchQuery.trim()) {
+                const q = sctSearchQuery.toLowerCase().trim();
+                const account = (row.account_name || '').toLowerCase();
+                const jobNum = (row.job_number || '').toLowerCase();
+                matchSearch = account.includes(q) || jobNum.includes(q);
+            }
+            return matchFab && matchRevType && matchSearch;
         });
-    }, [salesRevisions, sctFabTypeFilter, sctRevisionTypeFilter]);
+    }, [salesRevisions, sctFabTypeFilter, sctRevisionTypeFilter, sctSearchQuery]);
 
     const filteredShopRevisions = useMemo(() => {
         return shopRevisions.filter(row => {
-            return shopFabTypeFilter === 'all' || row.fab_type === shopFabTypeFilter;
-        });
-    }, [shopRevisions, shopFabTypeFilter]);
+            const matchFab = shopFabTypeFilter === 'all' || row.fab_type === shopFabTypeFilter;
 
-    // Reset pagination when filters change
+            let matchSearch = true;
+            if (shopSearchQuery.trim()) {
+                const q = shopSearchQuery.toLowerCase().trim();
+                const account = (row.account_name || '').toLowerCase();
+                const jobNum = (row.job_number || '').toLowerCase();
+                matchSearch = account.includes(q) || jobNum.includes(q);
+            }
+            return matchFab && matchSearch;
+        });
+    }, [shopRevisions, shopFabTypeFilter, shopSearchQuery]);
+
+    // Reset pagination when filters or search change
     useMemo(() => {
         setSalesPagination(prev => ({ ...prev, pageIndex: 0 }));
     }, [filteredSalesRevisions]);
@@ -293,14 +314,37 @@ export function RevisionReport() {
         table: any,
         title: string,
         exportName: string,
-        filterComponent?: React.ReactNode
+        filterComponent?: React.ReactNode,
+        searchValue?: string,
+        onSearchChange?: (value: string) => void,
     ) => (
         <DataGrid table={table} recordCount={table.getCoreRowModel().rows.length} tableLayout={{ columnsPinnable: true, columnsMovable: true, columnsVisibility: true, columnsResizable: true, cellBorder: true }}>
             <Card className="border border-[#e2e4ed] rounded-[12px] shadow-[0px_4px_5px_0px_rgba(0,0,0,0.03)] overflow-hidden">
                 <CardHeader className="py-3 px-5 border-b border-[#e2e4ed] flex flex-row items-center justify-between bg-white flex-wrap gap-2">
                     <div className="flex items-center gap-3 flex-wrap">
                         <p className="text-base font-semibold text-[#4b545d]">{title}</p>
-                        {filterComponent && filterComponent}
+                        {filterComponent}
+                        {onSearchChange && (
+                            <div className="relative">
+                                <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                                <Input
+                                    placeholder="Search by account or job #"
+                                    value={searchValue || ''}
+                                    onChange={(e) => onSearchChange(e.target.value)}
+                                    className="ps-9 w-auto min-w-[180px] h-[34px]"
+                                />
+                                {searchValue && (
+                                    <Button
+                                        mode="icon"
+                                        variant="ghost"
+                                        className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                                        onClick={() => onSearchChange('')}
+                                    >
+                                        <X className="h-4 w-4" />
+                                    </Button>
+                                )}
+                            </div>
+                        )}
                     </div>
                     <CardToolbar>
                         <Button variant="outline" size="sm" className="h-[34px]" onClick={() => exportTableToCSV(table, exportName)}>Export CSV</Button>
@@ -420,16 +464,6 @@ export function RevisionReport() {
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <h1 className="text-2xl font-semibold text-[#4b545d]">Revision Analysis</h1>
                 <div className="flex items-center gap-2 flex-wrap">
-                    {/* <Select value={dateMode} onValueChange={(v) => setDateMode(v as 'monthly' | 'custom')}>
-                        <SelectTrigger className="w-[120px] h-[34px] border-[#e2e4ed]">
-                            <SelectValue placeholder="Period" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="monthly">Monthly</SelectItem>
-                            <SelectItem value="custom">Custom Range</SelectItem>
-                        </SelectContent>
-                    </Select> */}
-
                     {dateMode === 'monthly' ? (
                         <>
                             <Select value={String(year)} onValueChange={(v) => setYear(parseInt(v))}>
@@ -511,13 +545,17 @@ export function RevisionReport() {
                     salesTable,
                     `SCT Revisions – ${getTitle()}`,
                     'sales-ct-revisions',
-                    sctFilters
+                    sctFilters,
+                    sctSearchQuery,
+                    setSctSearchQuery
                 )}
                 {filteredShopRevisions.length > 0 && renderTable(
                     shopTable,
                     `Shop Revisions – ${getTitle()}`,
                     'shop-revisions',
-                    shopFilters
+                    shopFilters,
+                    shopSearchQuery,
+                    setShopSearchQuery
                 )}
                 {filteredSalesRevisions.length === 0 && filteredShopRevisions.length === 0 && (
                     <div className="text-center py-8 text-[#7c8689]">No revisions found for the selected period.</div>

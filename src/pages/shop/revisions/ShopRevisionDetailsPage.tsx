@@ -1,4 +1,4 @@
-// ShopRevisionDetailsPage.tsx
+// ShopRevisionDetailsPage.tsx – simplified to show only shop revision files
 import { BackButton } from '@/components/common/BackButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,7 +13,6 @@ import {
   useAddFilesToShopRevisionMutation,
 } from '@/store/api/shopRevision';
 import { useGetFabByIdQuery, useDeleteFileMutation } from '@/store/api/job';
-import { useGetOperatorQaFilesQuery } from '@/store/api/operator';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { format } from 'date-fns';
 import { useMemo, useState } from 'react';
@@ -63,7 +62,7 @@ const ShopRevisionDetailsPage = () => {
   const { data: fabResponse, refetch: refetchFab } = useGetFabByIdQuery(numericFabId, { skip: !numericFabId });
   const [completeRevision, { isLoading: isCompleting }] = useCompleteShopRevisionMutation();
 
-  // ✅ Upload to shop revision
+  // Upload to shop revision
   const [uploadToShopRevision, { isLoading: isUploading }] = useAddFilesToShopRevisionMutation();
 
   // Delete mutation
@@ -81,47 +80,7 @@ const ShopRevisionDetailsPage = () => {
     return revisions[0];
   }, [revisions, selectedRevisionId]);
 
-  const selectedRequesterId = selectedRevision?.requested_by || 0;
-
-  // QA files for the selected revision's requester
-  const { data: qaFilesData, refetch: refetchQaFiles } = useGetOperatorQaFilesQuery(
-    { operator_id: selectedRequesterId, job_id: numericFabId },
-    { skip: !numericFabId || !selectedRequesterId }
-  );
-
-  // All FAB shop‑revision files (any operator)
-  const allFabRevisionFiles: ExtendedUnifiedFile[] = useMemo(() => {
-    if (!fab) return [];
-    const rawFiles = [
-      ...(fab.files || []),
-      ...(fab.draft_data?.files || []),
-      ...(fab.slabsmith_data?.files || []),
-      ...(fab.sales_ct_data?.files || []),
-      ...(fab.cnc_data?.files || []),
-    ];
-    return rawFiles
-      .filter((f: any) => {
-        const stage = (f.stage_name || f.stage || '').toLowerCase();
-        return stage === 'shop_revision' || stage === 'shop revision';
-      })
-      .map((f: any): ExtendedUnifiedFile => ({
-        id: String(f.id),
-        name: f.name || f.filename || `File_${f.id}`,
-        size: parseInt(f.file_size) || f.size || 0,
-        type: f.file_type || f.mime_type || 'application/octet-stream',
-        url: f.file_url || f.url || '',
-        stage_name: f.stage_name ?? f.stage,
-        stage: f.stage_name ?? f.stage,
-        file_design: f.file_design,
-        uploaded_by_name: f.uploaded_by_name ?? f.uploader_name,
-        uploadedBy: f.uploaded_by_name ?? f.uploader_name,
-        uploaded_by_id: f.uploaded_by ?? f.operator_id ?? f.uploaded_by_id,
-        uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
-        _raw: f,
-      }));
-  }, [fab]);
-
-  // Files directly attached to the selected revision (from the revision's `files` array)
+  // ─── Files directly attached to the selected revision ──────────────────────
   const revisionDirectFiles: ExtendedUnifiedFile[] = useMemo(() => {
     if (!selectedRevision?.files || !Array.isArray(selectedRevision.files)) return [];
     return selectedRevision.files.map((f: any): ExtendedUnifiedFile => ({
@@ -141,33 +100,9 @@ const ShopRevisionDetailsPage = () => {
     }));
   }, [selectedRevision]);
 
-  const qaFilesForSelected: ExtendedUnifiedFile[] = useMemo(() => {
-    if (!qaFilesData?.data) return [];
-    return (qaFilesData.data as any[])
-      .filter((file: any) => {
-        const stage = (file.stage_name || file.stage || '').toLowerCase();
-        return stage === 'shop_revision' || stage === 'shop revision';
-      })
-      .map((file: any): ExtendedUnifiedFile => ({
-        id: String(file.id),
-        name: file.name || file.file_name,
-        size: file.file_size || file.size || 0,
-        type: file.file_type || file.mime_type || 'application/octet-stream',
-        url: file.file_url || file.url,
-        stage: file.stage_name || file.stage,
-        uploadedBy: file.uploaded_by_name || 'Operator',
-        uploaded_by_id: file.uploaded_by ?? file.operator_id ?? file.uploaded_by_id,
-        uploadedAt: file.created_at ? new Date(file.created_at) : undefined,
-        _raw: file,
-      }));
-  }, [qaFilesData]);
-
-  // Merge all sources: revision direct files + fab files + QA files
-  const mergedFiles = useMemo(
-    () => [...revisionDirectFiles, ...allFabRevisionFiles, ...qaFilesForSelected],
-    [revisionDirectFiles, allFabRevisionFiles, qaFilesForSelected]
-  );
-  const fileSources: FileSource[] = mergedFiles.length > 0 ? [{ kind: 'raw', data: mergedFiles }] : [];
+  const fileSources: FileSource[] = revisionDirectFiles.length > 0
+    ? [{ kind: 'raw', data: revisionDirectFiles }]
+    : [];
 
   const handleSelectRevision = (id: number) => {
     setSelectedRevisionId(id);
@@ -199,9 +134,6 @@ const ShopRevisionDetailsPage = () => {
     setShowUploadModal(false);
     refetchRevisions(); // Refresh to get the newly attached files
     refetchFab();
-    if (selectedRequesterId) {
-      refetchQaFiles();
-    }
     toast.success('Shop revision files uploaded successfully');
   };
 
@@ -218,9 +150,6 @@ const ShopRevisionDetailsPage = () => {
       toast.success('File deleted successfully');
       refetchRevisions();
       refetchFab();
-      if (selectedRequesterId) {
-        refetchQaFiles();
-      }
     } catch (error: any) {
       toast.error(error?.data?.message || 'Failed to delete file');
     } finally {
@@ -335,8 +264,8 @@ const ShopRevisionDetailsPage = () => {
                 emptyMessage={
                   !selectedRevision
                     ? 'No revision selected.'
-                    : mergedFiles.length === 0
-                      ? `No files uploaded yet for this revision by ${selectedRevision.requested_by_name || 'requester'}.`
+                    : revisionDirectFiles.length === 0
+                      ? `No files have been uploaded to this revision yet.`
                       : 'No shop revision files found.'
                 }
               />
@@ -482,13 +411,13 @@ const ShopRevisionDetailsPage = () => {
         </Card>
       </div>
 
-      {/* ✅ Upload Modal – uses selected revision ID */}
+      {/* Upload Modal – uses selected revision ID */}
       {canUpload && (
         <UniversalUploadModal
           open={showUploadModal}
           onOpenChange={setShowUploadModal}
           title="Upload Shop Revision Files"
-          entityId={selectedRevision.id}               // kept for compatibility
+          entityId={selectedRevision.id}
           uploadMutation={uploadToShopRevision}
           disabled={isUploading}
           stages={[{ value: 'shop revision', label: 'Shop Revision' }]}
@@ -500,7 +429,7 @@ const ShopRevisionDetailsPage = () => {
             { value: 'photo_media', label: 'Photo Media' },
           ]}
           additionalParams={{
-            revision_id: selectedRevision.id,   // ✅ explicitly pass the ID here
+            revision_id: selectedRevision.id,
             operator_id: currentOperatorId,
           }}
           onUploadComplete={handleUploadComplete}

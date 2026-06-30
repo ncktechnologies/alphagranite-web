@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import {
     AlertCircle, Pencil, X, LoaderCircle,
     CheckCircle2, Clock, CalendarDays, ChevronDown,
-    MessageSquare, Save, Plus,
+    MessageSquare, Save, Plus, Upload,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +28,11 @@ import {
     useUpdateFabMutation,
     useCreateFabNoteMutation,
 } from '@/store/api/job';
-import { useCreateShopRevisionMutation, useGetShopRevisionsByFabIdQuery } from '@/store/api/shopRevision';
+import {
+    useCreateShopRevisionMutation,
+    useGetShopRevisionsByFabIdQuery,
+    useAddFilesToShopRevisionMutation,
+} from '@/store/api/shopRevision';
 import { useUpdateShopPlanMutation } from '@/store/api';
 import { useGetWorkstationsQuery, useGetWorkStationByPlanningSectionsQuery } from '@/store/api/workstation';
 import { useGetEmployeesQuery } from '@/store/api/employee';
@@ -40,12 +44,12 @@ import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { FileGallery, type FileSource, type UnifiedFile } from '@/pages/jobs/components/FileGallery';
 import { FileViewer } from '@/pages/jobs/roles/drafters/components';
 import CreatePlanSheet from './createEvent';
-import DialogContent, { Dialog, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission';
+import { UniversalUploadModal } from '@/components/universal-upload';
+import { Input } from '@/components/ui/input';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Constants & Helpers
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Constants & Helpers ──────────────────────────────────────────────────────
 
 const TIME_SLOTS = (() => {
     const slots: { value: string; label: string }[] = [];
@@ -142,9 +146,8 @@ const getFabStatusInfo = (statusId: number | undefined) => {
     return { className: 'bg-gray-100 text-gray-800', text: 'LOADING' };
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Mini Progress Bar
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Subcomponents ──────────────────────────────────────────────────────────
+
 const MiniProgress: React.FC<{ percent: number }> = ({ percent }) => {
     const p = Math.min(percent || 0, 100);
     const color =
@@ -162,9 +165,6 @@ const MiniProgress: React.FC<{ percent: number }> = ({ percent }) => {
     );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Info Row
-// ─────────────────────────────────────────────────────────────────────────────
 const InfoRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, value }) => (
     <div className="flex flex-col gap-0.5">
         <span className="text-xs text-muted-foreground uppercase tracking-wide font-medium">{label}</span>
@@ -172,9 +172,6 @@ const InfoRow: React.FC<{ label: string; value: React.ReactNode }> = ({ label, v
     </div>
 );
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Editable Shop Est. Completion Date
-// ─────────────────────────────────────────────────────────────────────────────
 const ShopEstDateField: React.FC<{ value: string | undefined; fabId: number; onSaved: () => void }> = ({
     value, fabId, onSaved,
 }) => {
@@ -234,9 +231,6 @@ const ShopEstDateField: React.FC<{ value: string | undefined; fabId: number; onS
     );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// PlanStageCard (with permission prop)
-// ─────────────────────────────────────────────────────────────────────────────
 interface PlanStageCardProps {
     plan: any;
     workstations: any[];
@@ -244,7 +238,7 @@ interface PlanStageCardProps {
     totalPlans: number;
     onSaved: () => void;
     disabled?: boolean;
-    canEdit?: boolean;          // ← new: whether the user can edit this plan
+    canEdit?: boolean;
 }
 
 const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, employees, totalPlans, onSaved, disabled = false, canEdit = false }) => {
@@ -375,7 +369,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
     })();
 
     const planPct = plan.work_percentage || 0;
-    const effectiveDisabled = disabled || !canEdit;   // block editing when no permission
+    const effectiveDisabled = disabled || !canEdit;
 
     return (
         <Card className="border border-[#e2e4ed] shadow-sm">
@@ -428,7 +422,6 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
             <CardContent className="pt-4 px-4 pb-4">
                 {isEditing ? (
                     <div className="flex flex-col gap-4">
-                        {/* Workstation */}
                         <div className="flex flex-col gap-1.5">
                             <Label className="text-xs text-muted-foreground uppercase tracking-wide">Workstation</Label>
                             <Select
@@ -463,7 +456,6 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                             </Select>
                         </div>
 
-                        {/* Operator */}
                         <div className="flex flex-col gap-1.5">
                             <Label className="text-xs text-muted-foreground uppercase tracking-wide">Operator</Label>
                             <Select
@@ -498,7 +490,6 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                             </Select>
                         </div>
 
-                        {/* Scheduled Date */}
                         <div className="flex flex-col gap-1.5">
                             <Label className="text-xs text-muted-foreground uppercase tracking-wide">Scheduled Date</Label>
                             <DateTimePicker
@@ -509,7 +500,6 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                             />
                         </div>
 
-                        {/* End Date */}
                         <div className="flex flex-col gap-1.5">
                             <Label className="text-xs text-muted-foreground uppercase tracking-wide">End Date</Label>
                             <DateTimePicker
@@ -520,7 +510,6 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                             />
                         </div>
 
-                        {/* Start / End Time */}
                         <div className="">
                             <div className="flex flex-col gap-1.5">
                                 <Label className="text-xs text-muted-foreground uppercase tracking-wide">Start Time</Label>
@@ -552,7 +541,6 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                             </div>
                         </div>
 
-                        {/* Notes */}
                         <div className="flex flex-col gap-1.5">
                             <Label className="text-xs text-muted-foreground uppercase tracking-wide">Notes</Label>
                             <Textarea
@@ -564,7 +552,6 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                             />
                         </div>
 
-                        {/* Save / Cancel */}
                         <div className="flex gap-2 pt-1">
                             <Button size="sm" className="flex-1" onClick={handleSave} disabled={isSaving || effectiveDisabled}>
                                 {isSaving
@@ -606,9 +593,55 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
     );
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main Page (with canManagePlans prop)
+// ─── Loading / Error helpers ──────────────────────────────────────────────
 
+const LoadingSkeleton = () => (
+    <div className="flex flex-col min-h-screen">
+        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+            <Skeleton className="h-8 w-72 mb-1" />
+            <Skeleton className="h-4 w-48" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6 px-4 sm:px-6 lg:px-8">
+            <div className="lg:col-span-2 space-y-6">
+                <Card><CardHeader><Skeleton className="h-6 w-40" /></CardHeader><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
+                <div className="grid grid-cols-3 gap-4">{Array(3).fill(null).map((_, i) => <Skeleton key={i} className="h-64 w-full rounded-lg" />)}</div>
+            </div>
+            <Skeleton className="h-[600px] w-full" />
+        </div>
+    </div>
+);
+
+const ErrorAlert = ({ error }: { error: any }) => (
+    <div className="flex flex-col min-h-screen">
+        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+            <ToolbarHeading title="Error loading FAB" description="Could not load Fab details" />
+        </div>
+        <div className="p-6">
+            <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error ? `Failed to load FAB data: ${JSON.stringify(error)}` : 'Failed to load FAB data'}</AlertDescription>
+            </Alert>
+        </div>
+    </div>
+);
+
+const NotFoundAlert = () => (
+    <div className="flex flex-col min-h-screen">
+        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
+            <ToolbarHeading title="Not Found" description="FAB record not found" />
+        </div>
+        <div className="p-6">
+            <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Not Found</AlertTitle>
+                <AlertDescription>FAB record not found.</AlertDescription>
+            </Alert>
+        </div>
+    </div>
+);
+
+// ─── Main Component ─────────────────────────────────────────────────────────
 
 const FabDetailsPage = () => {
     const { fabId } = useParams<{ fabId: string }>();
@@ -618,7 +651,7 @@ const FabDetailsPage = () => {
     );
     const [createFabNote] = useCreateFabNoteMutation();
     const [createShopRevision] = useCreateShopRevisionMutation();
-
+    const [uploadToShopRevision] = useAddFilesToShopRevisionMutation();
 
     const currentUser = useSelector((s: any) => s.user.user);
     const currentOperatorId = currentUser?.employee_id || currentUser?.id || 0;
@@ -633,16 +666,15 @@ const FabDetailsPage = () => {
 
     const fab = fabResponse?.data ?? fabResponse;
     const numericFabId = Number(fabId);
-    const { data: fabRevisionsData, isLoading: isRevisionsLoading } = useGetShopRevisionsByFabIdQuery(numericFabId, {
+    const { data: fabRevisionsData, isLoading: isRevisionsLoading, refetch: refetchRevisions } = useGetShopRevisionsByFabIdQuery(numericFabId, {
         skip: !numericFabId,
     });
     const revisions: any[] = Array.isArray(fabRevisionsData) ? fabRevisionsData : [];
     const hasPendingShopRevision = revisions.some((rev: any) => !rev.revision_completed);
 
     const isSuperAdmin = useIsSuperAdmin();
-    const permissions = usePermission('Shop Planning');  
+    const permissions = usePermission('Shop Planning');
     const canManagePlans = isSuperAdmin || permissions.can_create;
-
     const canEditPlans = canManagePlans && !hasPendingShopRevision;
 
     const [selectedRevisionId, setSelectedRevisionId] = useState<number | null>(null);
@@ -652,9 +684,17 @@ const FabDetailsPage = () => {
     const [revisionNote, setRevisionNote] = useState('');
     const [isCreatingRevision, setIsCreatingRevision] = useState(false);
 
+    const [showShopUploadModal, setShowShopUploadModal] = useState(false);
+
     const [activeFile, setActiveFile] = useState<UnifiedFile | null>(null);
     const [showCreatePlanModal, setShowCreatePlanModal] = useState(false);
 
+    const [fabNotesOpen, setFabNotesOpen] = useState(false);
+    const [showNoteInput, setShowNoteInput] = useState(false);
+    const [noteText, setNoteText] = useState('');
+    const [isSubmittingNote, setIsSubmittingNote] = useState(false);
+
+    // ─── File sources ──────────────────────────────────────────────────────
     const fileSources: FileSource[] = (() => {
         if (!fab) return [];
         const sources: FileSource[] = [];
@@ -673,24 +713,35 @@ const FabDetailsPage = () => {
                 uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
                 _raw: f,
             }));
+
         if (fab.draft_data?.files?.length) sources.push({ kind: 'raw', data: toUnifiedFiles(fab.draft_data.files) });
         if (fab.slabsmith_data?.files?.length) sources.push({ kind: 'raw', data: toUnifiedFiles(fab.slabsmith_data.files) });
         if (fab.sales_ct_data?.files?.length) sources.push({ kind: 'raw', data: toUnifiedFiles(fab.sales_ct_data.files) });
         if (fab.cnc_data?.files?.length) sources.push({ kind: 'raw', data: toUnifiedFiles(fab.cnc_data.files) });
         if (fab.files?.length) sources.push({ kind: 'raw', data: toUnifiedFiles(fab.files) });
+
+        // Operator files
+        if (fab.operator_files?.length) {
+            sources.push({ kind: 'raw', data: toUnifiedFiles(fab.operator_files) });
+        }
+
+        // Shop revision files – collect from all revisions
+        const shopRevisionFiles: any[] = [];
+        (fab.shop_revisions || []).forEach((rev: any) => {
+            if (rev.files?.length) {
+                shopRevisionFiles.push(...rev.files);
+            }
+        });
+        if (shopRevisionFiles.length) {
+            sources.push({ kind: 'raw', data: toUnifiedFiles(shopRevisionFiles) });
+        }
+
         return sources;
     })();
 
     const totalFileCount = fileSources.reduce((count, source) => count + (source.kind === 'raw' ? source.data.length : 0), 0);
 
-    const handleFileClick = (file: UnifiedFile) => {
-        setActiveFile(file);
-    };
-
-    const [fabNotesOpen, setFabNotesOpen] = useState(false);
-    const [showNoteInput, setShowNoteInput] = useState(false);
-    const [noteText, setNoteText] = useState('');
-    const [isSubmittingNote, setIsSubmittingNote] = useState(false);
+    // ─── Handlers ──────────────────────────────────────────────────────────
 
     const handleAddNote = async () => {
         if (!noteText.trim()) { toast.warning('Note cannot be empty.'); return; }
@@ -726,12 +777,24 @@ const FabDetailsPage = () => {
             setRevisionNote('');
             setShowRevisionDialog(false);
             refetch();
-        } catch {
-            // toast.error('Failed to create shop revision.');
+            refetchRevisions();
+        } catch (error: any) {
+            toast.error(error?.data?.message || 'Failed to create shop revision.');
         } finally {
             setIsCreatingRevision(false);
         }
     };
+
+    const handleUploadComplete = () => {
+        setShowShopUploadModal(false);
+        refetchRevisions();
+        refetch();
+        toast.success('Files uploaded successfully');
+    };
+
+    const handleFileClick = (file: UnifiedFile) => setActiveFile(file);
+
+    const canUpload = !!selectedRevision && !selectedRevision.revision_completed && canManagePlans && !!selectedRevision.id;
 
     const jobNameLink = fab?.job_details?.id ? `/job/details/${fab.job_details.id}` : '#';
     const jobNumberLink = fab?.job_details?.job_number
@@ -766,7 +829,7 @@ const FabDetailsPage = () => {
 
     return (
         <div className="flex flex-col min-h-screen bg-gray-50">
-            {/* Sticky toolbar (unchanged) */}
+            {/* Sticky toolbar */}
             <div className="sticky top-0 z-10 bg-white border-b shadow-sm">
                 <div className="px-3 sm:px-4 lg:px-6">
                     <Toolbar className="py-2 sm:py-3">
@@ -797,7 +860,7 @@ const FabDetailsPage = () => {
 
             {/* Main content grid */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6 px-4 sm:px-6 lg:px-8">
-                {/* LEFT 2/3 – same as before, but Plan cards now receive canEdit */}
+                {/* LEFT 2/3 */}
                 <div className="lg:col-span-2 space-y-6">
                     {/* Job Information Card */}
                     <Card>
@@ -816,7 +879,9 @@ const FabDetailsPage = () => {
                                 FAB Files
                                 {totalFileCount > 0 && <span className="ml-2 text-base font-normal text-gray-400">({totalFileCount})</span>}
                             </CardTitle>
-                            <p className="text-sm text-[#4B5563]">Drafting, SlabSmith, CNC, Sales CT, and all other files for this fabrication</p>
+                            <p className="text-sm text-[#4B5563]">
+                                Drafting, SlabSmith, CNC, Sales CT, Operator, and Shop Revision files
+                            </p>
                         </CardHeader>
                         <CardContent>
                             <FileGallery
@@ -828,7 +893,7 @@ const FabDetailsPage = () => {
                         </CardContent>
                     </Card>
 
-                    {/* Plans Card (with permission control) */}
+                    {/* Plans Card */}
                     <Card>
                         <CardHeader className="border-b pb-4">
                             <div className="flex items-center justify-between w-full">
@@ -878,7 +943,7 @@ const FabDetailsPage = () => {
                         </CardContent>
                     </Card>
 
-                    {/* FAB Notes Card (unchanged) */}
+                    {/* FAB Notes Card */}
                     <Card>
                         <Collapsible open={fabNotesOpen} onOpenChange={setFabNotesOpen}>
                             <CollapsibleTrigger asChild>
@@ -948,9 +1013,9 @@ const FabDetailsPage = () => {
                     </Card>
                 </div>
 
-                {/* RIGHT SIDEBAR – unchanged except tooltip/disabled messages */}
+                {/* RIGHT SIDEBAR */}
                 <div className="border-l space-y-6">
-                    {/* Estimated Completion Date (always editable, not permission‑controlled) */}
+                    {/* Estimated Completion Date */}
                     <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
                         <CardHeader className="pb-3 border-b border-[#e2e4ed]">
                             <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
@@ -976,7 +1041,7 @@ const FabDetailsPage = () => {
                         </CardContent>
                     </Card>
 
-                    {/* Schedule Dates – read only */}
+                    {/* Schedule Dates */}
                     <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
                         <CardHeader className="pb-3 border-b border-[#e2e4ed]">
                             <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
@@ -1054,7 +1119,13 @@ const FabDetailsPage = () => {
                                 <p className="text-sm text-muted-foreground">Select a revision to view details.</p>
                             ) : (
                                 <>
-                                    <SCTTimer startTime={selectedRevision.created_at || null} endTime={selectedRevision.revision_completed ? selectedRevision.completed_at || null : null} text="Time in Shop Revision:" />
+                                    {selectedRevision.created_at && (
+                                        <SCTTimer
+                                            startTime={selectedRevision.created_at}
+                                            endTime={selectedRevision.revision_completed ? selectedRevision.completed_at || null : null}
+                                            text="Time in Shop Revision:"
+                                        />
+                                    )}
                                     <InfoRow label="FAB ID" value={selectedRevision.fab_id || '—'} />
                                     <InfoRow label="Revision Note" value={selectedRevision.revision_note || '—'} />
                                     <InfoRow label="Requested By" value={selectedRevision.requested_by_name || selectedRevision.requested_by || '—'} />
@@ -1064,6 +1135,24 @@ const FabDetailsPage = () => {
                                     )}
                                     <InfoRow label="Status" value={selectedRevision.revision_completed ? <span className="text-green-700">Completed</span> : <span className="text-orange-700">Pending</span>} />
                                     {selectedRevision.revision_feedback && <InfoRow label="Feedback" value={selectedRevision.revision_feedback} />}
+
+                                    {/* Upload button – only for pending revisions */}
+                                    {canUpload && (
+                                        <Button
+                                            onClick={() => {
+                                                if (!selectedRevision || !selectedRevision.id) {
+                                                    toast.error('No valid revision selected');
+                                                    return;
+                                                }
+                                                setShowShopUploadModal(true);
+                                            }}
+                                            className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white"
+                                            size="sm"
+                                        >
+                                            <Upload className="h-4 w-4 mr-2" />
+                                            Upload Files to Revision
+                                        </Button>
+                                    )}
                                 </>
                             )}
                         </CardContent>
@@ -1071,30 +1160,85 @@ const FabDetailsPage = () => {
                 </div>
             </div>
 
-            {/* Modals (unchanged) */}
+            {/* ─── Modals ────────────────────────────────────────────────────── */}
+
+            {/* File Viewer */}
             {activeFile && (
                 <div className="fixed inset-0 z-50 bg-white overflow-auto">
                     <FileViewer file={activeFile} onClose={() => setActiveFile(null)} />
                 </div>
             )}
 
+            {/* Create Revision Dialog */}
             <Dialog open={showRevisionDialog} onOpenChange={setShowRevisionDialog}>
                 <DialogContent>
                     <DialogHeader><DialogTitle>Create Shop Revision</DialogTitle></DialogHeader>
                     <div className="space-y-4 pt-2">
-                        <p className="text-sm text-muted-foreground">Create a shop revision request for this FAB. New revisions are blocked while another revision is pending.</p>
+                        <p className="text-sm text-muted-foreground">
+                            Enter a note describing the revision request.
+                        </p>
                         <div className="space-y-2">
-                            <Label htmlFor="revision-note" className="text-xs uppercase tracking-wide text-muted-foreground">Revision Note</Label>
-                            <Textarea id="revision-note" value={revisionNote} onChange={e => setRevisionNote(e.target.value)} placeholder="Describe the issue or revision request..." className="min-h-[120px]" />
+                            <Label htmlFor="revision-note" className="text-xs uppercase tracking-wide text-muted-foreground">
+                                Revision Note
+                            </Label>
+                            <Textarea
+                                id="revision-note"
+                                value={revisionNote}
+                                onChange={(e) => setRevisionNote(e.target.value)}
+                                placeholder="Describe the issue or revision request..."
+                                className="min-h-[100px]"
+                            />
                         </div>
                         <div className="flex justify-end gap-2">
-                            <Button variant="outline" onClick={() => setShowRevisionDialog(false)}>Cancel</Button>
-                            <Button onClick={handleCreateShopRevision} disabled={isCreatingRevision}>{isCreatingRevision ? 'Creating…' : 'Create Revision'}</Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setShowRevisionDialog(false);
+                                    setRevisionNote('');
+                                }}
+                                disabled={isCreatingRevision}
+                            >
+                                Cancel
+                            </Button>
+                            {canManagePlans &&
+                                <Button
+                                    onClick={handleCreateShopRevision}
+                                    disabled={isCreatingRevision || !revisionNote.trim()}
+                                >
+                                    {isCreatingRevision ? 'Creating…' : 'Create Revision'}
+                                </Button>
+                            }
                         </div>
                     </div>
                 </DialogContent>
             </Dialog>
 
+            {/* Upload modal for shop revisions */}
+            {showShopUploadModal && selectedRevision && selectedRevision.id && (
+                <UniversalUploadModal
+                    open={showShopUploadModal}
+                    onOpenChange={setShowShopUploadModal}
+                    title="Upload Files to Shop Revision"
+                    entityId={selectedRevision.id}   // make sure this is a number
+                    uploadMutation={uploadToShopRevision}
+                    disabled={false}
+                    stages={[{ value: 'shop revision', label: 'Shop Revision' }]}
+                    fileTypes={[
+                        { value: 'block_drawing', label: 'Block Drawing' },
+                        { value: 'layout', label: 'Layout' },
+                        { value: 'ss_layout', label: 'SS Layout' },
+                        { value: 'shop_drawing', label: 'Shop Drawing' },
+                        { value: 'photo_media', label: 'Photo Media' },
+                    ]}
+                    additionalParams={{
+                        revision_id: selectedRevision.id,
+                        operator_id: currentOperatorId,
+                    }}
+                    onUploadComplete={handleUploadComplete}
+                />
+            )}
+
+            {/* Create Plan Sheet */}
             <CreatePlanSheet
                 open={showCreatePlanModal}
                 onOpenChange={setShowCreatePlanModal}
@@ -1105,52 +1249,5 @@ const FabDetailsPage = () => {
         </div>
     );
 };
-
-// Helper components for loading/error states
-const LoadingSkeleton = () => (
-    <div className="flex flex-col min-h-screen">
-        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
-            <Skeleton className="h-8 w-72 mb-1" />
-            <Skeleton className="h-4 w-48" />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start mt-6 px-4 sm:px-6 lg:px-8">
-            <div className="lg:col-span-2 space-y-6">
-                <Card><CardHeader><Skeleton className="h-6 w-40" /></CardHeader><CardContent><Skeleton className="h-48 w-full" /></CardContent></Card>
-                <div className="grid grid-cols-3 gap-4">{Array(3).fill(null).map((_, i) => <Skeleton key={i} className="h-64 w-full rounded-lg" />)}</div>
-            </div>
-            <Skeleton className="h-[600px] w-full" />
-        </div>
-    </div>
-);
-
-const ErrorAlert = ({ error }: { error: any }) => (
-    <div className="flex flex-col min-h-screen">
-        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
-            <ToolbarHeading title="Error loading FAB" description="Could not load Fab details" />
-        </div>
-        <div className="p-6">
-            <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error ? `Failed to load FAB data: ${JSON.stringify(error)}` : 'Failed to load FAB data'}</AlertDescription>
-            </Alert>
-        </div>
-    </div>
-);
-
-const NotFoundAlert = () => (
-    <div className="flex flex-col min-h-screen">
-        <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
-            <ToolbarHeading title="Not Found" description="FAB record not found" />
-        </div>
-        <div className="p-6">
-            <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Not Found</AlertTitle>
-                <AlertDescription>FAB record not found.</AlertDescription>
-            </Alert>
-        </div>
-    </div>
-);
 
 export { FabDetailsPage };

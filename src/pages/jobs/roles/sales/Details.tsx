@@ -14,7 +14,6 @@ import GraySidebar from '@/pages/jobs/components/job-details.tsx/GraySidebar';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { Can } from '@/components/permission';
 import { stageConfig } from '@/utils/note-utils';
-import { useGetOperatorQaFilesQuery } from '@/store/api/operator';
 
 // Helper function to get FAB status display
 const getFabStatusInfo = (statusId: number | undefined) => {
@@ -30,10 +29,6 @@ export function SalesDetailsPage() {
 
   const { data: response, isLoading, isError, error } = useGetFabByIdQuery(Number(id));
   const fab = (response as any)?.data ?? response;
-  //  const { data: qaFilesData, isLoading: isQaLoading, refetch: refetchQaFiles } = useGetOperatorQaFilesQuery(
-  //          { operator_id: operatorId, job_id: currentTask?.fab_id || 0 },
-  //          { skip: !currentTask?.fab_id || !operatorId }
-  //      );
 
   // Prepare clickable links
   const jobNameLink = fab?.job_details?.id ? `/job/details/${fab.job_details.id}` : '#';
@@ -41,21 +36,7 @@ export function SalesDetailsPage() {
     ? `https://alphagraniteaustin.moraware.net/sys/search?search=${fab.job_details.job_number}`
     : '#';
 
-  // Build file sources from actual API shape
-  // Inside SalesDetailsPage, replace the fileSources building block:
-  // Map QA files to UnifiedFile format for FileGallery
-  // const qaFiles: UnifiedFile[] = (qaFilesData?.data || []).map((file: any) => ({
-  //   id: String(file.id),
-  //   name: file.name || file.file_name,
-  //   size: file.file_size || file.size || 0,
-  //   type: file.file_type || file.mime_type || 'application/octet-stream',
-  //   url: file.file_url || file.url,
-  //   stage: 'QA',
-  //   uploadedBy: file.uploaded_by_name || 'Operator',
-  //   uploadedAt: file.created_at ? new Date(file.created_at) : undefined,
-  //   _raw: file,
-  // }));
-
+  // ─── Build file sources from FAB response ──────────────────────────────
   const fileSources: FileSource[] = (() => {
     if (!fab) return [];
     const sources: FileSource[] = [];
@@ -68,7 +49,7 @@ export function SalesDetailsPage() {
         size: parseInt(f.file_size) || f.size || 0,
         type: f.file_type || f.mime_type || 'application/octet-stream',
         url: f.file_url || f.url || '',
-        stage_name: f.stage_name ?? f.stage,   // ← keep backend's stage_name
+        stage_name: f.stage_name ?? f.stage,
         stage: f.stage_name ?? f.stage,
         file_design: f.file_design,
         uploaded_by_name: f.uploaded_by_name ?? f.uploader_name,
@@ -77,34 +58,49 @@ export function SalesDetailsPage() {
         _raw: f,
       }));
 
-    // Drafting files (from draft_data.files)
+    // 1. Drafting files
     if (fab.draft_data?.files?.length) {
       sources.push({ kind: 'raw', data: toUnifiedFiles(fab.draft_data.files) });
     }
-    // SlabSmith files
+    // 2. SlabSmith files
     if (fab.slabsmith_data?.files?.length) {
       sources.push({ kind: 'raw', data: toUnifiedFiles(fab.slabsmith_data.files) });
     }
-    // Sales CT files
+    // 3. Sales CT files
     if (fab.sales_ct_data?.files?.length) {
       sources.push({ kind: 'raw', data: toUnifiedFiles(fab.sales_ct_data.files) });
     }
-    // CNC files (if you later add cnc_data)
+    // 4. CNC files (if you later add cnc_data)
     if (fab.cnc_data?.files?.length) {
       sources.push({ kind: 'raw', data: toUnifiedFiles(fab.cnc_data.files) });
     }
-    // Top-level files
+    // 5. Top-level fab files
     if (fab.files?.length) {
       sources.push({ kind: 'raw', data: toUnifiedFiles(fab.files) });
     }
-    //  if (qaFiles.length > 0) sources.push({ kind: 'raw', data: qaFiles });
+
+    // 6. Operator files (from `operator_files` array)
+    if (fab.operator_files?.length) {
+      sources.push({ kind: 'raw', data: toUnifiedFiles(fab.operator_files) });
+    }
+
+    // 7. Shop revision files – collect from all revisions
+    const shopRevisionFiles: any[] = [];
+    (fab.shop_revisions || []).forEach((rev: any) => {
+      if (rev.files?.length) {
+        shopRevisionFiles.push(...rev.files);
+      }
+    });
+    if (shopRevisionFiles.length) {
+      sources.push({ kind: 'raw', data: toUnifiedFiles(shopRevisionFiles) });
+    }
 
     return sources;
   })();
 
   const totalFileCount = fileSources.reduce((sum, s) => sum + (s.kind === 'raw' ? s.data.length : 0), 0);
 
-  // Prepare sidebar sections (Job Details + FAB Notes)
+  // ─── Sidebar sections ─────────────────────────────────────────────────────
   const sidebarSections = fab
     ? [
       {
@@ -112,14 +108,7 @@ export function SalesDetailsPage() {
         type: 'details',
         items: [
           { label: 'Account', value: fab.account_name || '—' },
-          {
-            label: 'Fab ID',
-            value:
-              // <Link to={`/sales/${fab.id}`} target="_blank" rel="noreferrer" className="text-primary hover:underline">
-              fab.id
-            // </Link>
-
-          },
+          { label: 'Fab ID', value: fab.id },
           { label: 'Area', value: fab.input_area || '—' },
           {
             label: 'Material',
@@ -155,7 +144,6 @@ export function SalesDetailsPage() {
         type: 'notes',
         notes: Array.isArray(fab.fab_notes)
           ? fab.fab_notes.map((note: any) => {
-
             const stage = note?.stage || 'general';
             const config = stageConfig[stage] || stageConfig.general;
             return {
@@ -175,7 +163,7 @@ export function SalesDetailsPage() {
 
   const handleFileClick = (file: UnifiedFile) => setActiveFile(file);
 
-  // Loading skeleton (mirror drafter details structure)
+  // ─── Loading skeleton ────────────────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -196,7 +184,7 @@ export function SalesDetailsPage() {
     );
   }
 
-  // Error state
+  // ─── Error state ─────────────────────────────────────────────────────────
   if (isError || !fab) {
     return (
       <div className="flex flex-col min-h-screen">
@@ -216,7 +204,7 @@ export function SalesDetailsPage() {
     );
   }
 
-  // Full-screen file viewer
+  // ─── Full‑screen file viewer ─────────────────────────────────────────────
   if (activeFile) {
     return (
       <div className="fixed inset-0 z-50 bg-white overflow-auto">
@@ -237,10 +225,7 @@ export function SalesDetailsPage() {
               <ToolbarHeading
                 title={
                   <div className="text-base sm:text-lg lg:text-2xl font-bold leading-tight">
-                    <a href={jobNameLink} className="hover:underline"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
+                    <a href={jobNameLink} className="hover:underline" target="_blank" rel="noreferrer">
                       {fab?.job_details?.name || `Job ${fab?.job_id}`}
                     </a>
                     <span className="mx-1 text-gray-400">·</span>
@@ -299,7 +284,7 @@ export function SalesDetailsPage() {
                   )}
                 </CardTitle>
                 <p className="text-sm text-[#4B5563]">
-                  Drafting, SlabSmith, and all other files for this fabrication
+                  Drafting, SlabSmith, Sales CT, CNC, Operator, and Shop Revision files
                 </p>
               </CardHeading>
               <Can on='View all FABS' action='create'>
@@ -311,7 +296,6 @@ export function SalesDetailsPage() {
                     <Pencil className="h-4 w-4" />
                     Edit FAB Details
                   </Button>
-                  {/* <BackButton label="Back" className="w-full" /> */}
                 </div>
               </Can>
             </CardHeader>
@@ -324,9 +308,6 @@ export function SalesDetailsPage() {
               />
             </CardContent>
           </Card>
-
-          {/* Actions Card */}
-
         </main>
       </div>
     </div>

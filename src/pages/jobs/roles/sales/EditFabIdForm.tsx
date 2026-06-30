@@ -183,11 +183,11 @@ const fabIdFormSchema = z.object({
     edge: z.string().min(1, 'Edge is required'),
     totalSqFt: z.string().min(1, 'Total Sq Ft is required'),
     revenue: z.string().optional(),
-        // .refine((val) => {
-        //     const num = parseFloat(val);
-        //     return !isNaN(num) && num >= 0;
-        // }, { message: 'Revenue must be a valid number' }),
-        // .refine((val) => val === '' || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), { message: 'Revenue must be a valid number' }),
+    // .refine((val) => {
+    //     const num = parseFloat(val);
+    //     return !isNaN(num) && num >= 0;
+    // }, { message: 'Revenue must be a valid number' }),
+    // .refine((val) => val === '' || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), { message: 'Revenue must be a valid number' }),
     cost_of_stone: z.string().optional()
         .refine((val) => val === '' || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), { message: 'Cost of Stone must be a valid number' }),
     selectedSalesPerson: z.string().min(1, 'Sales Person is required'),
@@ -529,25 +529,25 @@ const EditFabIdForm = () => {
         }
     }, [fabTypeValue]);
     useEffect(() => {
-  const fabTypeLower = fabTypeValue?.toLowerCase();
-  if (fabTypeLower !== 'ag redo') {
-    // Clear AG REDO fields
-    setCostPerSqft('');
-    setRedoDepartment('');
-    setRedoRequestedBy('');
-    form.setValue('cost_per_sqft', '');
-    form.setValue('redo_department', '');
-    form.setValue('redo_requested_by', '');
-    if (showAgRedoModal) {
-      setShowAgRedoModal(false);
-    }
-  }
-}, [fabTypeValue]);
+        const fabTypeLower = fabTypeValue?.toLowerCase();
+        if (fabTypeLower !== 'ag redo') {
+            // Clear AG REDO fields
+            setCostPerSqft('');
+            setRedoDepartment('');
+            setRedoRequestedBy('');
+            form.setValue('cost_per_sqft', '');
+            form.setValue('redo_department', '');
+            form.setValue('redo_requested_by', '');
+            if (showAgRedoModal) {
+                setShowAgRedoModal(false);
+            }
+        }
+    }, [fabTypeValue]);
     const handleAgRedoSave = () => {
         form.setValue('cost_per_sqft', costPerSqft);
         form.setValue('redo_department', redoDepartment);
         form.setValue('redo_requested_by', redoRequestedBy);
-        
+
         // Calculate revenue based on cost_per_sqft and total_sqft
         if (costPerSqft) {
             const costPerSqftNum = parseFloat(costPerSqft);
@@ -558,7 +558,7 @@ const EditFabIdForm = () => {
                 form.setValue('revenue', calculatedRevenue.toString());
             }
         }
-        
+
         setShowAgRedoModal(false);
     };
 
@@ -707,8 +707,8 @@ const EditFabIdForm = () => {
                 stone_thickness_id: selectedStoneThickness.id,
                 edge_id: selectedEdge.id,
                 input_area: values.area,
-                total_sqft: parseFloat(values.totalSqFt) || 0,
-                revenue: parseFloat(values.revenue) || 0,
+                total_sqft: parseFloat(values.totalSqFt) || null,
+                revenue: values.revenue && values.revenue.trim() !== '' ? parseFloat(values.revenue) : null,
                 cost_of_stone: values.cost_of_stone && values.cost_of_stone.trim() !== '' ? parseFloat(values.cost_of_stone) : null,
                 notes: values.notes?.trim() || undefined,
                 template_needed: !values.templateNotNeeded,
@@ -717,7 +717,7 @@ const EditFabIdForm = () => {
                 slab_smith_ag_needed: !values.slabSmithAGNotNeeded,
                 sct_needed: !values.sctNotNeeded,
                 final_programming_needed: !values.finalProgrammingNotNeeded,
-                redo_total_sqft: parseFloat(values.totalSqFt) || 0,
+                redo_total_sqft: parseFloat(values.totalSqFt) || null,
                 cost_per_sqft: values.cost_per_sqft ? parseFloat(values.cost_per_sqft) : undefined,
                 redo_department: values.redo_department ? parseInt(values.redo_department) : undefined,
                 redo_requested_by: values.redo_requested_by ? parseInt(values.redo_requested_by) : undefined,

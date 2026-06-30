@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useParams, useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { format } from 'date-fns';
-import { Camera, CheckCircle2, Play, Pause, Square, AlertTriangle } from 'lucide-react';
+import { Camera, CheckCircle2, Play, Pause, Square, AlertTriangle, Upload } from 'lucide-react';
 import { useSelector } from 'react-redux';
 import { toast } from 'sonner';
 
@@ -31,8 +31,13 @@ import { FileGallery, type FileSource, type UnifiedFile } from '@/pages/jobs/com
 import { WorkPercentageModal } from './components/WorkPercentageModal';
 import { useIsSuperAdmin } from '@/hooks/use-permission';
 import { Textarea } from '@/components/ui/textarea';
-import { useCreateShopRevisionMutation } from '@/store/api/shopRevision';
-import { useGetShopRevisionFabsQuery, useGetShopRevisionsByFabIdQuery } from '@/store/api/shopRevision';
+import {
+    useCreateShopRevisionMutation,
+    useGetShopRevisionsByFabIdQuery,
+    useAddFilesToShopRevisionMutation,
+    useGetShopRevisionFabsQuery,
+} from '@/store/api/shopRevision';
+import { UniversalUploadModal } from '@/components/universal-upload';
 import { SCTTimer } from '@/pages/jobs/roles/back-to-sales/components/SCTTimer';
 
 // Helper for status display
@@ -65,6 +70,7 @@ export function OperatorTaskDetails() {
 
     const [workPercentage, setWorkPercentage] = useState(0);
     const [showUploadDialog, setShowUploadDialog] = useState(false);
+    const [showShopUploadModal, setShowShopUploadModal] = useState(false);
     const [showRevisionDialog, setShowRevisionDialog] = useState(false);
     const [selectedRevisionId, setSelectedRevisionId] = useState<number | null>(null);
     const [revisionNote, setRevisionNote] = useState('');
@@ -87,8 +93,9 @@ export function OperatorTaskDetails() {
     const currentFabId = Number(currentTask?.fab_id || 0);
 
     const [createShopRevision, { isLoading: isCreatingRevision }] = useCreateShopRevisionMutation();
+    const [uploadToShopRevision] = useAddFilesToShopRevisionMutation();
     const { data: revisionFabsData } = useGetShopRevisionFabsQuery();
-    const { data: fabRevisionsData, isLoading: isRevisionsLoading } = useGetShopRevisionsByFabIdQuery(currentFabId, {
+    const { data: fabRevisionsData, isLoading: isRevisionsLoading, refetch: refetchRevisions } = useGetShopRevisionsByFabIdQuery(currentFabId, {
         skip: !currentFabId,
     });
 
@@ -114,13 +121,11 @@ export function OperatorTaskDetails() {
 
     const hasPendingShopRevision = (() => {
         if (!currentFabId) return false;
-
         const revisionFabs = Array.isArray(revisionFabsData) ? revisionFabsData : [];
         const fabFromSummary = revisionFabs.find((row: any) => Number(row.fab_id) === currentFabId);
         if (fabFromSummary?.has_pending_shop_revision !== undefined) {
             return Boolean(fabFromSummary.has_pending_shop_revision);
         }
-
         const revisions = Array.isArray(fabRevisionsData) ? fabRevisionsData : [];
         return revisions.some((rev: any) => !rev.revision_completed);
     })();
@@ -153,12 +158,11 @@ export function OperatorTaskDetails() {
     const { data: fabResponse } = useGetFabByIdQuery(currentTask?.fab_id || 0, { skip: !currentTask?.fab_id });
     const fabData = (fabResponse as any)?.data ?? fabResponse;
 
-    // Build file sources from actual API shape (following sales Details.tsx pattern)
+    // ─── Build file sources ──────────────────────────────────────────────────────
     const fileSources: FileSource[] = (() => {
         if (!fabData) return [];
         const sources: FileSource[] = [];
 
-        // Helper to convert API file array into UnifiedFile[]
         const toUnifiedFiles = (files: any[]): UnifiedFile[] =>
             (files ?? []).map((f): UnifiedFile => ({
                 id: String(f.id),
@@ -175,7 +179,7 @@ export function OperatorTaskDetails() {
                 _raw: f,
             }));
 
-        // Drafting files (from draft_data.files)
+        // Drafting files
         if (fabData.draft_data?.files?.length) {
             sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.draft_data.files) });
         }
@@ -187,7 +191,7 @@ export function OperatorTaskDetails() {
         if (fabData.sales_ct_data?.files?.length) {
             sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.sales_ct_data.files) });
         }
-        // CNC files (if you later add cnc_data)
+        // CNC files
         if (fabData.cnc_data?.files?.length) {
             sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.cnc_data.files) });
         }
@@ -195,7 +199,29 @@ export function OperatorTaskDetails() {
         if (fabData.files?.length) {
             sources.push({ kind: 'raw', data: toUnifiedFiles(fabData.files) });
         }
-        if (qaFiles.length > 0) sources.push({ kind: 'raw', data: qaFiles });
+        // QA files
+        if (qaFiles.length > 0) {
+            sources.push({ kind: 'raw', data: qaFiles });
+        }
+
+        // Shop revision files – from the selected revision
+        if (selectedRevision?.files?.length) {
+            const revisionFiles = selectedRevision.files.map((f: any): UnifiedFile => ({
+                id: String(f.id),
+                name: f.name || f.filename || `File_${f.id}`,
+                size: parseInt(f.file_size) || f.size || 0,
+                type: f.file_type || f.mime_type || 'application/octet-stream',
+                url: f.file_url || f.url || '',
+                stage_name: f.stage_name ?? f.stage,
+                stage: f.stage_name ?? f.stage,
+                file_design: f.file_design,
+                uploaded_by_name: f.uploaded_by_name ?? f.uploader_name,
+                uploadedBy: f.uploaded_by_name ?? f.uploader_name,
+                uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
+                _raw: f,
+            }));
+            sources.push({ kind: 'raw', data: revisionFiles });
+        }
 
         return sources;
     })();
@@ -208,7 +234,7 @@ export function OperatorTaskDetails() {
         }
     }, [currentTask]);
 
-    // ─── Timer query — uses plan_id and workstation_id ────────────────────────────
+    // ─── Timer query ──────────────────────────────────────────────────────────────
     const { data: timerData, isLoading: isTimerLoading, refetch: refetchTimer } =
         useShopPlanTimerState(
             { plan_id: planId, workstation_id: workstationId, scheduled_start_date: scheduledStartDate ?? undefined },
@@ -225,14 +251,13 @@ export function OperatorTaskDetails() {
         }
     }, [timerData]);
 
-    // Also update work percentage from timer data if available
     useEffect(() => {
         if (timerData?.work_percentage !== undefined) {
             setWorkPercentage(timerData.work_percentage);
         }
     }, [timerData]);
 
-    // ─── Timer action helpers — all use plan_id ────────────────────────────────
+    // ─── Timer action handlers ──────────────────────────────────────────────────
     const handleStart = async () => {
         try {
             await manageTimer({
@@ -249,18 +274,15 @@ export function OperatorTaskDetails() {
             toast.success(t('OPERATOR.TIMER.START_SUCCESS', 'Timer started successfully'));
         } catch (error: any) {
             console.error('Failed to start timer:', error);
-            // toast.error(error?.data?.message || t('OPERATOR.TIMER.START_FAILED', 'Failed to start timer'));
         }
     };
 
     const handlePause = async () => {
-        // Show work percentage modal first, user will enter percentage and notes
         setShowWorkPercentageModal(true);
     };
 
     const handleWorkPercentageSaved = async (percentage: number, notes?: string) => {
         try {
-            // Send pause action with work percentage and notes directly to timer API
             await manageTimer({
                 plan_id: planId,
                 data: {
@@ -275,10 +297,7 @@ export function OperatorTaskDetails() {
             setTimerState('paused');
             setServerSynced(false);
             await refetchTimer();
-
-            // Refetch task data to update the UI
             refetchTask();
-
             setShowWorkPercentageModal(false);
             toast.success(t('OPERATOR.TIMER.PAUSED', 'Timer paused'));
         } catch (error: any) {
@@ -303,7 +322,6 @@ export function OperatorTaskDetails() {
             toast.success(t('OPERATOR.TIMER.RESUME_SUCCESS', 'Timer resumed'));
         } catch (error: any) {
             console.error('Failed to resume timer:', error);
-            // toast.error(error?.data?.message || t('OPERATOR.TIMER.RESUME_FAILED', 'Failed to resume timer'));
         }
     };
 
@@ -321,11 +339,9 @@ export function OperatorTaskDetails() {
             setTimerState('stopped');
             setServerSynced(false);
             await refetchTimer();
-            // toast.success(t('OPERATOR.SUBMIT_WORK_SUCCESS', 'Work submitted successfully!'));
             setTimeout(() => navigate('/operator/dashboard'), 2000);
         } catch (error: any) {
             console.error('Failed to submit work:', error);
-            // toast.error(error?.data?.message || t('OPERATOR.SUBMIT_WORK_FAILED', 'Failed to submit work'));
         }
     };
 
@@ -369,9 +385,17 @@ export function OperatorTaskDetails() {
             setRevisionNote('');
             setShowRevisionDialog(false);
             await refetchTimer();
+            refetchRevisions();
         } catch (error: any) {
             toast.error(error?.data?.message || 'Failed to create shop revision.');
         }
+    };
+
+    // ─── Upload handlers ──────────────────────────────────────────────────────
+    const handleUploadComplete = () => {
+        setShowShopUploadModal(false);
+        refetchRevisions();
+        toast.success('Files uploaded to shop revision successfully');
     };
 
     // Prepare data for toolbar
@@ -383,7 +407,6 @@ export function OperatorTaskDetails() {
         : '#';
     const statusInfo = getStatusInfo(currentTask?.fab_status_id, t);
 
-    // Task information fields
     const taskInfo = [
         { label: t('LABEL.ACCOUNT_NAME'), value: currentTask?.account_name || '—' },
         { label: t('LABEL.JOB_NAME'), value: currentTask?.job_name || '—' },
@@ -443,6 +466,8 @@ export function OperatorTaskDetails() {
         );
     }
 
+    const canUploadToShop = selectedRevision && !selectedRevision.revision_completed && selectedRevision.id;
+
     return (
         <>
             {/* Sticky toolbar */}
@@ -487,7 +512,6 @@ export function OperatorTaskDetails() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 p-3 sm:p-4 lg:p-5">
                 {/* Left column (8 columns) */}
                 <div className="lg:col-span-8 space-y-6">
-                    {/* Task Information Card */}
                     <Card>
                         <CardContent>
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -505,7 +529,6 @@ export function OperatorTaskDetails() {
                         </CardContent>
                     </Card>
 
-                    {/* Timer Display (without buttons) */}
                     <OperatorTimerComponent
                         totalTime={totalTime}
                         isRunning={timerState === 'running'}
@@ -518,7 +541,6 @@ export function OperatorTaskDetails() {
                         hideControls={true}
                     />
 
-                    {/* FAB Files Card - All files from all stages */}
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-lg font-semibold">
@@ -530,7 +552,7 @@ export function OperatorTaskDetails() {
                                 )}
                             </CardTitle>
                             <p className="text-sm text-muted-foreground">
-                                Drafting, SlabSmith, Sales CT, QA, and all other files for this fabrication
+                                Drafting, SlabSmith, Sales CT, QA, and shop revision files
                             </p>
                         </CardHeader>
                         <CardContent>
@@ -550,7 +572,6 @@ export function OperatorTaskDetails() {
                         </CardContent>
                     </Card>
 
-                    {/* Timer History Card */}
                     <OperatorTimerHistory planId={planId} workstationId={workstationId} />
 
                     <Card>
@@ -591,7 +612,6 @@ export function OperatorTaskDetails() {
 
                 {/* Right column (4 columns) – Timer Controls */}
                 <div className="lg:col-span-4">
-                    {/* Pending Revision Warning Banner (prominent) */}
                     {hasPendingShopRevision && (
                         <div className="mb-4 p-3 bg-amber-50 border-l-4 border-amber-500 rounded-md flex items-start gap-2">
                             <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
@@ -609,7 +629,6 @@ export function OperatorTaskDetails() {
                             <CardTitle className="text-lg font-semibold">Timer</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4 pt-6">
-                            {/* Start button (idle state) */}
                             {timerState === 'idle' && (
                                 <Button
                                     onClick={handleStart}
@@ -621,7 +640,6 @@ export function OperatorTaskDetails() {
                                 </Button>
                             )}
 
-                            {/* Running state buttons */}
                             {timerState === 'running' && (
                                 <>
                                     <Button
@@ -644,7 +662,6 @@ export function OperatorTaskDetails() {
                                 </>
                             )}
 
-                            {/* Paused state button */}
                             {timerState === 'paused' && (
                                 <Button
                                     onClick={handleResume}
@@ -656,7 +673,6 @@ export function OperatorTaskDetails() {
                                 </Button>
                             )}
 
-                            {/* Submit button (always visible when timer is not idle) */}
                             {timerState !== 'idle' && timerState !== 'paused' && (
                                 <Button
                                     onClick={() => setShowSubmitModal(true)}
@@ -722,12 +738,23 @@ export function OperatorTaskDetails() {
                                             )}
                                         </p>
                                     </div>
+
+                                    {/* ✅ Upload to Shop Revision button */}
+                                    {canUploadToShop && (
+                                        <Button
+                                            onClick={() => setShowShopUploadModal(true)}
+                                            className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white"
+                                            size="sm"
+                                        >
+                                            <Upload className="h-4 w-4 mr-2" />
+                                            Upload Files to Revision
+                                        </Button>
+                                    )}
                                 </>
                             )}
                         </CardContent>
                     </Card>
 
-                    {/* Extra QA card */}
                     <Card className="mt-6">
                         <CardHeader>
                             <CardTitle className="text-lg font-semibold">{t('QA.SHOP_UPLOADS')}</CardTitle>
@@ -740,7 +767,6 @@ export function OperatorTaskDetails() {
                                 className="w-full gap-2 mb-3"
                                 size="lg"
                                 disabled={hasPendingShopRevision}
-                                title={hasPendingShopRevision ? "Cannot create a new revision while a pending revision exists" : ""}
                             >
                                 Create Shop Revision
                             </Button>
@@ -749,7 +775,6 @@ export function OperatorTaskDetails() {
                                 className="w-full gap-2 bg-[#7a9705] hover:bg-[#6a8505] text-white"
                                 size="lg"
                                 disabled={hasPendingShopRevision}
-                                title={hasPendingShopRevision ? "Cannot upload files while a pending revision exists" : ""}
                             >
                                 <Camera className="h-5 w-5" /> Upload Shop Files
                             </Button>
@@ -790,7 +815,6 @@ export function OperatorTaskDetails() {
                             {t('UPLOAD.QA.TITLE')} {currentTask?.fab_id ? `FAB-${currentTask.fab_id}` : ''}
                         </DialogTitle>
                     </DialogHeader>
-                    {/* OperatorMediaUpload — jobId prop receives fab_id per API spec */}
                     <OperatorMediaUpload
                         jobId={currentTask?.fab_id || 0}
                         onUploadComplete={() => {
@@ -802,6 +826,31 @@ export function OperatorTaskDetails() {
                     />
                 </DialogContent>
             </Dialog>
+
+            {canUploadToShop && (
+                <UniversalUploadModal
+                    key={selectedRevision.id}
+                    open={showShopUploadModal}
+                    onOpenChange={setShowShopUploadModal}
+                    title="Upload Files to Shop Revision"
+                    entityId={selectedRevision.id}
+                    uploadMutation={uploadToShopRevision}
+                    disabled={false}
+                    stages={[{ value: 'shop revision', label: 'Shop Revision' }]}
+                    fileTypes={[
+                        { value: 'block_drawing', label: 'Block Drawing' },
+                        { value: 'layout', label: 'Layout' },
+                        { value: 'ss_layout', label: 'SS Layout' },
+                        { value: 'shop_drawing', label: 'Shop Drawing' },
+                        { value: 'photo_media', label: 'Photo Media' },
+                    ]}
+                    additionalParams={{
+                        revision_id: selectedRevision.id,
+                        operator_id: operatorId,
+                    }}
+                    onUploadComplete={handleUploadComplete}
+                />
+            )}
 
             <Dialog open={showRevisionDialog} onOpenChange={setShowRevisionDialog}>
                 <DialogContent className="max-w-lg">
