@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from '@/hooks/useTranslation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -99,25 +99,36 @@ export function OperatorTaskDetails() {
         skip: !currentFabId,
     });
 
-    const revisions: any[] = Array.isArray(fabRevisionsData) ? fabRevisionsData : [];
-    const selectedRevision: any = revisions.find((rev: any) => rev.id === selectedRevisionId) || revisions[0] || null;
+ const revisions = useMemo(() => {
+        const raw = Array.isArray(fabRevisionsData) ? fabRevisionsData : [];
+        return [...raw].sort((a, b) => {
+            if (!a.created_at) return 1;
+            if (!b.created_at) return -1;
+            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
+    }, [fabRevisionsData]);
 
-    useEffect(() => {
-        if (!currentFabId) {
-            setSelectedRevisionId(null);
-            return;
+    // ─── Selected revision ──────────────────────────────────────────────
+    const selectedRevision = useMemo(() => {
+        if (!revisions.length) return null;
+        if (selectedRevisionId) {
+            return revisions.find((r) => r.id === selectedRevisionId) ?? revisions[0];
         }
+        return revisions[0];
+    }, [revisions, selectedRevisionId]);
 
+    // ─── Auto‑select latest revision when list changes ──────────────────
+    useEffect(() => {
         if (revisions.length === 0) {
             setSelectedRevisionId(null);
             return;
         }
-
-        const selectedExists = selectedRevisionId !== null && revisions.some((rev: any) => rev.id === selectedRevisionId);
-        if (!selectedExists) {
+        const exists = selectedRevisionId !== null && revisions.some((r) => r.id === selectedRevisionId);
+        if (!exists) {
             setSelectedRevisionId(revisions[0].id);
         }
-    }, [currentFabId, revisions, selectedRevisionId]);
+    }, [revisions, selectedRevisionId]);
+
 
     const hasPendingShopRevision = (() => {
         if (!currentFabId) return false;
@@ -374,18 +385,27 @@ export function OperatorTaskDetails() {
                 setServerSynced(false);
             }
 
-            await createShopRevision({
+            const result = await createShopRevision({
                 fab_id: Number(currentTask.fab_id),
                 revision_note: revisionNote.trim(),
                 requested_by: Number(operatorId),
                 assigned_to: null,
                 revision_completed: false,
             }).unwrap();
+
             toast.success('Shop revision created successfully.');
             setRevisionNote('');
             setShowRevisionDialog(false);
             await refetchTimer();
-            refetchRevisions();
+            
+            // ✅ Refetch revisions and wait for it to complete before selecting
+            await refetchRevisions().then(() => {
+                // Extract the new revision ID and set it as selected
+                const newRevisionId = result?.data?.id || result?.id;
+                if (newRevisionId) {
+                    setSelectedRevisionId(newRevisionId);
+                }
+            });
         } catch (error: any) {
             toast.error(error?.data?.message || 'Failed to create shop revision.');
         }
