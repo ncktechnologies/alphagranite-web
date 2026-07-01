@@ -357,7 +357,6 @@ const RoleFormView = ({ mode, role, onBack }: { mode: 'new' | 'edit', role: Role
   };
 
   const handleSave = () => {
-    console.log('Saving role:', { roleName, description, isActive, selectedUsers, permissions });
     onBack();
   };
 

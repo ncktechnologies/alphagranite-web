@@ -123,7 +123,7 @@ export const SubmissionModal = ({
         submittedAt: new Date().toISOString(),
       };
 
-      console.log('Submitting draft:', submissionData);
+      // console.log('Submitting draft:', submissionData);
 
       // Fake delay for API simulation
       await new Promise((res) => setTimeout(res, 2000));

@@ -29,7 +29,6 @@ const EditRoleModal = ({ open, onOpenChange, role }: EditRoleModalProps) => {
 
   const handleSave = () => {
     // Handle save logic here
-    console.log('Saving role:', { roleName, description, isActive });
     onOpenChange(false);
   };
 

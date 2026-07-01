@@ -36,6 +36,7 @@ const employeeSchema = z.object({
   ),
   gender: z.string().optional(),
   role_id: z.string().optional(),
+  hcp_employee_id: z.string().optional(),
 });
 
 type EmployeeFormType = z.infer<typeof employeeSchema>;
@@ -109,7 +110,7 @@ const EmployeeFormSheet = ({
         role_id: employee.role_id ? String(employee.role_id) : "",
       };
 
-      console.log('Form reset data:', resetData);
+      // console.log('Form reset data:', resetData);
       form.reset(resetData);
     } else if (isSheetOpen && !employee) {
       // Reset to empty for create mode
@@ -122,6 +123,7 @@ const EmployeeFormSheet = ({
         phone: "",
         gender: "",
         role_id: "",
+        hcp_employee_id: "",
       });
     }
   }, [employee, form, isSheetOpen, departmentsData]);
@@ -150,7 +152,7 @@ const EmployeeFormSheet = ({
       formData.append('department', values.department);
       formData.append('home_address', values.home_address || '');
       formData.append('phone', values.phone || '');
-
+      formData.append('hcp_employee_id', values.hcp_employee_id || '');
       if (values.gender) {
         formData.append('gender', values.gender);
       }
@@ -334,6 +336,20 @@ const EmployeeFormSheet = ({
                           </FormItem>
                         )}
                       /> */}
+
+                    <FormField
+                      control={form.control}
+                      name="hcp_employee_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>HCP Employee ID</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Enter HCP Employee ID" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
 
                     <FormField
                       control={form.control}

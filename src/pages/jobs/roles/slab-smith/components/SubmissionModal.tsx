@@ -77,7 +77,7 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
 
         // Response is already transformed to the data object
         currentSlabSmithId = createResponse.id;
-        console.log('Created slab smith with ID:', currentSlabSmithId);
+        // console.log('Created slab smith with ID:', currentSlabSmithId);
         toast.success("SlabSmith entry created successfully");
       } catch (createError) {
         console.error('Failed to create slab smith:', createError);
@@ -91,7 +91,7 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
       return;
     }
 
-    console.log('Submitting slab smith with ID:', currentSlabSmithId, 'Files:', uploadedFiles);
+    // console.log('Submitting slab smith with ID:', currentSlabSmithId, 'Files:', uploadedFiles);
 
     setIsSubmitting(true);
     try {
@@ -116,7 +116,7 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
         f.file instanceof File // Has File object (not yet uploaded)
       );
 
-      console.log('Files to upload:', filesToUpload);
+      // console.log('Files to upload:', filesToUpload);
 
       let fileIds: number[] = [];
 
@@ -125,14 +125,14 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
         const fileDesignToUpload = filesToUpload[0]?.file_design;
 
         try {
-          console.log('Uploading files:', fileObjects);
+          // console.log('Uploading files:', fileObjects);
           const response = await addFilesToSlabSmith({
             slabsmith_id: currentSlabSmithId,
             files: fileObjects,
             stage_name: 'slab_smith',
             file_design: fileDesignToUpload,
           }).unwrap();
-          console.log('File upload response:', response);
+          // console.log('File upload response:', response);
 
           // Extract file IDs from the response
           if (response && Array.isArray(response)) {
@@ -155,22 +155,17 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
         status_id: 1
       };
 
-      console.log('Updating slab smith with payload:', payload);
       await updateSlabSmith({ slabsmith_id: currentSlabSmithId, data: payload }).unwrap();
-      console.log('Slab smith update successful');
 
       // Call the complete endpoint
-      console.log('Marking slab smith as completed');
       await markSlabSmithCompleted({
         slabsmith_id: currentSlabSmithId,
         updated_by: userId
       }).unwrap();
-      console.log('Slab smith marked as completed');
 
       toast.success('Slab smith work submitted successfully');
       onClose(true);
     } catch (err: any) {
-      console.error('Failed to submit slab smith:', err);
       toast.error(err?.data?.message || 'Failed to submit slab smith work');
       onClose(false);
     } finally {

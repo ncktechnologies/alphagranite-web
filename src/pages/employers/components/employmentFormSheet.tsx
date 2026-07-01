@@ -56,6 +56,7 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
             home_address: '',
             phone: '',
             gender: '',
+            hcp_employee_id: '',
         },
     });
 
@@ -72,6 +73,7 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
             formData.append('department', values.department || ''); 
             formData.append('home_address', values.home_address || '');
             formData.append('phone', values.phone || '');
+            formData.append('hcp_employee_id', values.hcp_employee_id || '');   
             if (values.gender) {
                 formData.append('gender', values.gender);
             }
@@ -240,6 +242,19 @@ const EmploymentFormSheet = ({ trigger }: { trigger: ReactNode }) => {
                                                     </FormItem>
                                                 )}
                                             /> */}
+                                            <FormField
+                                                control={form.control}
+                                                name="hcp_employee_id"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>HCP Employee ID</FormLabel>
+                                                        <FormControl>
+                                                            <Input placeholder="Enter HCP Employee ID" {...field} />
+                                                        </FormControl>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
                                         </div>
                                     </div>
                                 </ScrollArea>

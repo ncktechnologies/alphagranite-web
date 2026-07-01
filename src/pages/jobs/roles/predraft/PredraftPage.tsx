@@ -124,7 +124,7 @@ export function PredraftPage() {
                 params.date_filter = tableState.dateFilter;
             }
         }
-        console.log('Pre-draft Query Params:', params);
+      
         return params;
     }, [
         skip,

@@ -158,7 +158,7 @@ export function InstallCompletionPage() {
                 params.date_filter = tableState.dateFilter;
             }
         }
-        console.log('Install Completion Query Params:', params);
+        // console.log('Install Completion Query Params:', params);
         return params;
     }, [
         skip,

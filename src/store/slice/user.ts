@@ -132,7 +132,7 @@ const userSlice = createSlice({
         
         // Store updated permissions in localStorage
         localStorage.setItem('permissions', JSON.stringify(state.permissions));
-        console.log('Permissions updated in localStorage:', state.permissions);
+        // console.log('Permissions updated in localStorage:', state.permissions);
       } else {
         console.log('Invalid permissions payload:', action.payload);
       }

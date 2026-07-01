@@ -52,7 +52,6 @@ const ShopDetailsPage = () => {
     ];
 
     const handleSubmitDraft = (submissionData: any) => {
-        console.log('Draft submitted:', submissionData);
         setShowSubmissionModal(false);
         setIsDrafting(false);
         setIsPaused(false);

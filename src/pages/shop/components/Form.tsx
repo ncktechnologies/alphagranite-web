@@ -57,7 +57,6 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
     const planningSections = Array.isArray(planningSectionsData) ? planningSectionsData : (planningSectionsData && (planningSectionsData as any).data ? (planningSectionsData as any).data : []);
     const [planningSectionId, setPlanningSectionId] = useState<number | undefined>(undefined);
     
-    console.log('Planning Sections:', planningSections, 'isLoading:', isPlanningSectionsLoading);
 
     const form = useForm<WorkstationFormType & { planning_section_id?: string }>({
         resolver: zodResolver(workstationSchema),
@@ -77,8 +76,8 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
             // Get the original operator IDs from the raw role data
             const operatorIds = rawRole.operator_ids || [];
             
-            console.log('Operator IDs from role:', operatorIds);
-            console.log('Planning section ID from role:', rawRole.planning_section_id);
+            // console.log('Operator IDs from role:', operatorIds);
+            // console.log('Planning section ID from role:', rawRole.planning_section_id);
             
             form.reset({
                 workstationName: role.workstationName || '',
@@ -95,7 +94,6 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
                 ? Number(rawRole.planning_section_id) 
                 : undefined;
             setPlanningSectionId(psId);
-            console.log('Set planningSectionId to:', psId);
         } else if (mode === 'new') {
             form.reset({
                 workstationName: '',
@@ -182,7 +180,7 @@ export const WorkStationForm = ({ mode, role, onCancel }: StationFormProps) => {
                         <Select 
                             value={planningSectionId !== undefined ? String(planningSectionId) : ''} 
                             onValueChange={(v) => {
-                                console.log('Select changed to:', v);
+                               
                                 setPlanningSectionId(v ? Number(v) : undefined);
                             }}
                         >

@@ -69,7 +69,7 @@ export const ScheduleCuttingModal = ({
   const handleSubmit = async (values: CuttingFormValues) => {
     try {
       setIsSubmitting(true);
-      console.log("Scheduling cutting:", values);
+     
       await new Promise((r) => setTimeout(r, 1500));
       toast.custom(
         () => (

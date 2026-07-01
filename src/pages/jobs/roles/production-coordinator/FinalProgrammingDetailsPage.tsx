@@ -141,7 +141,7 @@ export function FinalProgrammingDetailsPage() {
   const handleStart = useCallback(async (startTime: Date) => {
     // Read the latest fabData directly
     const hasDraftingAssignment = fabData?.draft_data?.id;
-    console.log('Attempting to start session with drafting assignment:', hasDraftingAssignment);
+    // console.log('Attempting to start session with drafting assignment:', hasDraftingAssignment);
     if (!hasDraftingAssignment) {
       toast.error('Cannot start final programming session - no drafter found');
       return;

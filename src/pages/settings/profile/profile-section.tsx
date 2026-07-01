@@ -29,7 +29,6 @@ const ProfileSection = () => {
   );
 
   const handleSave = (data: any) => {
-    console.log('Updated profile data:', data);
     setSuccess(true);
     setViewMode('details');
     setTimeout(() => setSuccess(false), 3000);

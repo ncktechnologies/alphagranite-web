@@ -56,7 +56,6 @@ export const OperatorTimerHistory = ({ planId, workstationId }: OperatorTimerHis
         { plan_id: planId, workstation_id: workstationId },
         { skip: !planId }
     );
-console.log(history, "unirfmf")
     if (isLoading) {
         return (
             <Card className="mt-4">

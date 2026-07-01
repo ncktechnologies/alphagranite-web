@@ -308,7 +308,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
 
       // 3. COMPLETION – ensure we have a record with an ID
       let completionId = completionData?.data?.id;
-      console.log("Completion ID:", completionData?.data?.id);
+      // console.log("Completion ID:", completionData?.data?.id);
       // If no completion record exists, create a stub (incomplete)
       if (installId && !completionId) {
         const stubPayload = {

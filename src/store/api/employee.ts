@@ -35,7 +35,9 @@ export interface Employee {
     status_name?: string;
     role_name?: string;
     profile_image_url?: string;
+    hcp_employee_id?: string; // 
 }
+
 
 export interface EmployeeCreatePayload {
     first_name: string;

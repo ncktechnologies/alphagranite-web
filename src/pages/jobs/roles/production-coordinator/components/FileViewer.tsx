@@ -56,7 +56,7 @@ export function FileViewer({ file, onClose }: FileViewerProps) {
 
   const handleDownload = async () => {
     if (!file.url) return;
-    console.log('fileName:', file);
+    // console.log('fileName:', file);
     
     try {
       // Determine the best filename to use

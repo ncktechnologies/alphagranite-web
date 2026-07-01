@@ -70,7 +70,7 @@ export function OtpVerifyPage() {
     const handleSubmit = async (otp: string) => {
         setIsSubmitting(true);
         try {
-            console.log('Submitting OTP:', otp);
+            // console.log('Submitting OTP:', otp);
             
             // For password reset flow, navigate to reset password confirm page
             if (from === 'reset-password' && username) {

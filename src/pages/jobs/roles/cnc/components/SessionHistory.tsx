@@ -79,9 +79,9 @@ export const SessionHistory = ({ fabId }: SessionHistoryProps) => {
     });
 
     useEffect(() => {
-        if (historyData) {
-            console.log('SessionHistory Data Received:', historyData);
-        }
+        // if (historyData) {
+        //     console.log('SessionHistory Data Received:', historyData);
+        // }
         if (error) {
             console.error('SessionHistory API Error:', error);
         }

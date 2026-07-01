@@ -11,18 +11,18 @@ export const PermissionManager = ({ checkInterval = 1 }: { checkInterval?: numbe
   
   useEffect(() => {
     const handlePermissionsUpdated = (event: CustomEvent) => {
-      console.log('Permissions updated event received:', event.detail);
+      // console.log('Permissions updated event received:', event.detail);
       const { permissions } = event.detail;
-      console.log('Dispatching updatePermissions with:', permissions);
+      // console.log('Dispatching updatePermissions with:', permissions);
       // Pass the permissions array directly as the payload
       dispatch(updatePermissions(permissions));
     };
     
-    console.log('Adding permissionsUpdated event listener');
+    // console.log('Adding permissionsUpdated event listener');
     window.addEventListener('permissionsUpdated', handlePermissionsUpdated as EventListener);
     
     return () => {
-      console.log('Removing permissionsUpdated event listener');
+      // console.log('Removing permissionsUpdated event listener');
       window.removeEventListener('permissionsUpdated', handlePermissionsUpdated as EventListener);
     };
   }, [dispatch]);

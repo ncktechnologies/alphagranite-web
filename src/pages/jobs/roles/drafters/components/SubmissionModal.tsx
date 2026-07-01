@@ -129,7 +129,7 @@ export const SubmissionModal = ({
         }
       }).unwrap();
 
-      console.log('Session ended successfully:', sessionResponse);
+      // console.log('Session ended successfully:', sessionResponse);
       
       // Extract session data for later use
       const extractedData = extractSessionData(sessionResponse);
@@ -187,7 +187,7 @@ export const SubmissionModal = ({
 
       
 
-      console.log('Updating draft with payload:', payload);
+      // console.log('Updating draft with payload:', payload);
       await updateDrafting({ 
         id: draftingId, 
         data: payload 

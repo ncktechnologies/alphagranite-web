@@ -70,7 +70,7 @@ export function ResetPasswordPage() {
       setIsProcessing(true);
       setError(null);
 
-      console.log('Submitting password reset for:', values.email);
+      // console.log('Submitting password reset for:', values.email);
 
       // Call the API to request password reset with correct payload
       await requestPasswordReset({ username_or_email: values.email }).unwrap();

@@ -154,7 +154,7 @@ function SettingsPage() {
     const handleToggleWorkstationStatus = async (role: Station) => {
         const newIsActive = role.is_active !== true; // true = activate, false = deactivate
         const action = newIsActive ? 'activate' : 'deactivate';
-        console.log(newIsActive, "kkkkk");
+        
 
     };
 

@@ -52,7 +52,7 @@ export function Demo1LightSidebarPage() {
   const isInstaller = userRoles.some((r: any) =>
     r.name === 'Install Scheduler'
   );
-console.log(userRoles)
+
   const handleDateRangeApply = () => {
     setDate(tempDateRange);
     setIsOpen(false);

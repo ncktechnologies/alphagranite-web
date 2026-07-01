@@ -147,19 +147,16 @@ const Employees = () => {
 
     const columns = useMemo<ColumnDef<Employee>[]>(
         () => [
-            // {
-            //     accessorKey: 'id',
-            //     accessorFn: (row) => row.id,
-            //     header: () => <DataGridTableRowSelectAll />,
-            //     cell: ({ row }) => <DataGridTableRowSelect row={row} />,
-            //     enableSorting: false,
-            //     enableHiding: false,
-            //     enableResizing: false,
-            //     size: 51,
-            //     meta: {
-            //         cellClassName: '',
-            //     },
-            // },
+           {
+            id: 'hcp_employee_id',
+            accessorFn: (row) => row.hcp_employee_id,
+            header: ({ column }) => (
+                <DataGridColumnHeader title="HCP EMPLOYEE ID" column={column} />
+            ),
+            cell: ({ row }) => (
+                <span className="text-sm text-text truncate block max-w-[150px]">{row.original.hcp_employee_id || ''}</span>
+            ),
+           },
             {
                 id: 'name',
                 accessorFn: (row) => row.name,

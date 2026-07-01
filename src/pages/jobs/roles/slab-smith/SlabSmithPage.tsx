@@ -135,7 +135,7 @@ const SlabSmithPage = () => {
                 params.date_filter = tableState.dateFilter;
             }
         }
-        console.log('Slab Smith Query Params:', params);
+        // console.log('Slab Smith Query Params:', params);
         return params;
     }, [
         skip,
@@ -231,7 +231,7 @@ const SlabSmithPage = () => {
                     value={{
                         currentStage: 'slab_smith_request',
                         openCurrentStageView: (fabId, jobName) => {
-                            console.log('openCurrentStageView called', fabId, jobName);
+                            // console.log('openCurrentStageView called', fabId, jobName);
                         }
                     }}
                 >

@@ -109,7 +109,6 @@ export const ProfileFormSection = ({ onSave, onCancel }: ProfileFormSectionProps
         }
     };
     const handleUploadComplete = (file: { id: number; url: string; filename: string }) => {
-  console.log('ProfileFormSection: Upload complete with file:', file);
   setProfileImageMeta(file);
 };
 

@@ -50,7 +50,6 @@ export function AvatarInput({ onUploadComplete, onUploadError, onUploadStatusCha
             formData.append('file', fileData.file);
 
             const result = await uploadImage(formData).unwrap();
-            console.log('Upload successful:', result);
             onUploadComplete?.(result);
 
             // Optional: Update with server URL
@@ -65,7 +64,6 @@ export function AvatarInput({ onUploadComplete, onUploadError, onUploadStatusCha
                 url: result.data.url,
                 filename: result.data.name
               };
-              console.log('Transformed data for onUploadComplete:', transformedData);
               onUploadComplete?.(transformedData);
             } else {
               throw new Error(result.message || 'Upload failed');

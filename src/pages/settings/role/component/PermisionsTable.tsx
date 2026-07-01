@@ -38,7 +38,7 @@ export const PermissionsTable = ({
   // ─── Debug: log the action menus ──────────────────────────────────────
   useEffect(() => {
     if (actionMenus) {
-      console.log('[PermissionsTable] Action menus received:', actionMenus);
+      // console.log('[PermissionsTable] Action menus received:', actionMenus);
     }
   }, [actionMenus]);
 
@@ -130,7 +130,7 @@ export const PermissionsTable = ({
 
     const allTopLevel = [...parents, ...standalone];
     allTopLevel.sort((a, b) => a.name.localeCompare(b.name));
-    console.log('[PermissionsTable] Top-level items:', allTopLevel);
+    // console.log('[PermissionsTable] Top-level items:', allTopLevel);
     return allTopLevel;
   }, [actionMenus]);
 

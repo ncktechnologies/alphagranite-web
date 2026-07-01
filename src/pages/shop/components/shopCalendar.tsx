@@ -213,66 +213,64 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     return weeks;
   }, [currentDate, viewMode]);
 
-  const eventsByDay = useMemo(() => {
-    const grouped: Record<string, any[]> = {};
-    const allDays = viewMode === 'month' ? monthWeeks.flat() : displayDays;
-    allDays.forEach((d) => { grouped[format(d, 'yyyy-MM-dd')] = []; });
+ const eventsByDay = useMemo(() => {
+  const grouped: Record<string, any[]> = {};
+  const allDays = viewMode === 'month' ? monthWeeks.flat() : displayDays;
+  allDays.forEach((d) => { grouped[format(d, 'yyyy-MM-dd')] = []; });
 
-    const plans = plansResponse?.data?.grouped_plans ?? plansResponse?.grouped_plans ?? [];
-    plans.forEach((gp: any) => {
-      // Parse date in local timezone to match calendar display
-      let dateKey: string;
-      if (gp.date && typeof gp.date === 'string') {
-        const datePart = gp.date.split('T')[0];
-        dateKey = datePart || format(new Date(gp.date), 'yyyy-MM-dd');
-      } else {
-        dateKey = format(new Date(gp.date), 'yyyy-MM-dd');
-      }
-      
-      if (dateKey in grouped) {
-        const events = gp.plans ?? [];
-        // Split events that extend beyond DAY_END_HOUR to next day
-        events.forEach((event: any) => {
-          const startDate = new Date(event.scheduled_start_date);
-          const startHour = startDate.getHours() + startDate.getMinutes() / 60;
-          const endHour = startHour + event.estimated_hours;
-          
-          // If event ends after day end, split it
-          if (endHour > DAY_END_HOUR) {
-            // Add first part to current day (truncated at DAY_END_HOUR)
-            const hoursOnCurrentDay = DAY_END_HOUR - startHour;
-            grouped[dateKey].push({
-              ...event,
-              estimated_hours: hoursOnCurrentDay,
-              _isSplitPart: true,
-              _originalHours: event.estimated_hours,
-            });
-            
-            // Add second part to next day
-            const nextDayDate = addDays(startDate, 1);
-            const nextDayDateKey = format(nextDayDate, 'yyyy-MM-dd');
-            const hoursOnNextDay = endHour - DAY_END_HOUR;
-            
-            if (nextDayDateKey in grouped) {
-              // Create a new event starting at DAY_START_HOUR on next day
-              grouped[nextDayDateKey].push({
-                ...event,
-                scheduled_start_date: format(nextDayDate, 'yyyy-MM-dd') + 'T' + String(DAY_START_HOUR).padStart(2, '0') + ':00:00',
-                estimated_hours: hoursOnNextDay,
-                _isSplitPart: true,
-                _originalHours: event.estimated_hours,
-              });
-            }
-          } else {
-            // Event fits in one day, add normally
-            grouped[dateKey].push(event);
-          }
+  // Use flat plans (not grouped_plans)
+  const flatPlans = plansResponse?.data?.plans ?? plansResponse?.plans ?? [];
+
+  flatPlans.forEach((event: any) => {
+    const startDate = new Date(event.scheduled_start_date);
+    const startHour = startDate.getHours() + startDate.getMinutes() / 60;
+    const endHour = startHour + (event.estimated_hours ?? 0);
+    const dateKey = format(startDate, 'yyyy-MM-dd');
+
+    // If event fits within the day, add it as is
+    if (endHour <= DAY_END_HOUR) {
+      if (dateKey in grouped) grouped[dateKey].push(event);
+      return;
+    }
+
+    // ─── Split event across days ──────────────────────────────
+    // Part 1: current day (from startHour to DAY_END_HOUR)
+    const hoursOnFirstDay = DAY_END_HOUR - startHour;
+    if (hoursOnFirstDay > 0 && dateKey in grouped) {
+      grouped[dateKey].push({
+        ...event,
+        _isSplitPart: true,
+        _originalHours: event.estimated_hours,
+        estimated_hours: hoursOnFirstDay,
+        // Keep the same scheduled_start_date for the first part
+      });
+    }
+
+    // Remaining hours after the first day
+    let remainingHours = event.estimated_hours - hoursOnFirstDay;
+    let currentDate = addDays(startDate, 1);
+    let currentDayKey = format(currentDate, 'yyyy-MM-dd');
+
+    while (remainingHours > 0) {
+      const hoursOnThisDay = Math.min(remainingHours, DAY_END_HOUR - DAY_START_HOUR);
+      if (hoursOnThisDay > 0 && currentDayKey in grouped) {
+        grouped[currentDayKey].push({
+          ...event,
+          _isSplitPart: true,
+          _originalHours: event.estimated_hours,
+          estimated_hours: hoursOnThisDay,
+          // Set scheduled_start_date to the beginning of the day for this part
+          scheduled_start_date: format(currentDate, 'yyyy-MM-dd') + 'T' + String(DAY_START_HOUR).padStart(2, '0') + ':00:00',
         });
       }
-    });
-    return grouped;
-  }, [plansResponse, displayDays, monthWeeks, viewMode]);
+      remainingHours -= hoursOnThisDay;
+      currentDate = addDays(currentDate, 1);
+      currentDayKey = format(currentDate, 'yyyy-MM-dd');
+    }
+  });
 
+  return grouped;
+}, [plansResponse, displayDays, monthWeeks, viewMode]);
   const totalPlans = useMemo(
     () => Object.values(eventsByDay).reduce((acc, evs) => acc + evs.length, 0),
     [eventsByDay],
@@ -370,395 +368,395 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     };
   }, []);
 
-    // Memoize event card rendering
-    const renderEventCard = useCallback((event: any) => {
-      const col = event._maxCol ?? 1;
-      const { bg, border, text } = getColorForFab(event.fab_id, event.fab_type);
-      const PAD = 4;
-      const colW = `calc(${100 / col}% - ${PAD}px)`;
-      const colLeft = `calc(${(event._col / col) * 100}% + ${PAD / 2}px)`;
-
-      return (
-        <Tooltip key={event.id} delayDuration={300}>
-          <TooltipTrigger asChild>
-            <div
-              className="absolute cursor-pointer rounded-[12px] border overflow-hidden transition-opacity hover:opacity-90"
-              style={{
-                top: event._top + PAD,
-                height: event._height - PAD,
-                left: colLeft,
-                width: colW,
-                backgroundColor: bg,
-                borderColor: border,
-              }}
-              onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(event); }}
-            >
-              <div className="px-3 py-2 h-full flex flex-col justify-start overflow-hidden">
-                <p className="text-[13px] font-semibold truncate" style={{ color: text }}>
-                   {event.fab_id} {event.plan_name ? `• ${event.plan_name}` : ''} {event.operator_name ? `• ${event.operator_name}` : ''}
-                </p>
-                {event._isSplitPart && (
-                  <p className="text-[9px] italic mt-0.5" style={{ color: text, opacity: 0.6 }}>
-                    (Continued from previous day)
-                  </p>
-                )}
-                <p className="text-[11px] truncate mt-0.5" style={{ color: text, opacity: 0.7 }}>
-                  {event.fab_type || event.percent_complete != null ? `${event.work_percentage ?? 0}%` : ''}
-                </p>
-                {event._height > 60 && (
-                  <p className="text-[10px] truncate mt-1" style={{ color: text, opacity: 0.6 }}>
-                    {event.workstation_name || ''}
-                  </p>
-                )}
-              </div>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent side="right" className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700">
-            <div className="space-y-1">
-              <p><span className="font-semibold">FAB ID:</span> {event.fab_id}</p>
-              <p><span className="font-semibold">Operator:</span> {event.operator_name || 'N/A'}</p>
-              <p><span className="font-semibold">Workstation:</span> {event.workstation_name || 'N/A'}</p>
-              <p><span className="font-semibold">Est. Hours:</span> {event.estimated_hours ?? 'N/A'}</p>
-              <p><span className="font-semibold">% Complete:</span> {event.work_percentage ?? 0}%</p>
-              <p><span className="font-semibold">Job:</span> {`${event.job_name}-${event.job_number}` || 'N/A'}</p>
-              <p><span className="font-semibold">Job No:</span> {event.job_number || 'N/A'}</p>
-              <p><span className="font-semibold">Account Name:</span> {event.account_name || 'N/A'}</p>
-              <p><span className="font-semibold">Plan:</span> {event.plan_name}</p>
-              {event.notes && <p><span className="font-semibold">Notes:</span> {event.notes}</p>}
-            </div>
-          </TooltipContent>
-        </Tooltip>
-      );
-    }, [handleOpenEditPlan]);
-
-    if (activePage === 'create-plan') {
-      return (
-        <CreatePlanPage
-          onBack={handleBackToCalendar}
-          // selectedDate={selectedPlan ? new Date(selectedPlan.scheduled_start_date) : selectedDate}
-          // selectedTimeSlot={selectedPlan ? format(new Date(selectedPlan.scheduled_start_date), 'HH:mm') : selectedTimeSlot}
-          selectedDate={null}
-          selectedTimeSlot={null}
-          selectedEvent={selectedPlan ?? null}
-          prefillFabId={createPlanFabId}
-          onEventCreated={handleBackToCalendar}
-        />
-      );
-    }
-
-    const calLabel =
-      viewMode === 'day'
-        ? format(currentDate, 'EEEE, MMMM d, yyyy')
-        : viewMode === 'week'
-          ? `${format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d')} – ${format(addDays(startOfWeek(currentDate, { weekStartsOn: 1 }), 6), 'MMM d, yyyy')}`
-          : format(currentDate, 'MMMM yyyy');
+  // Memoize event card rendering
+  const renderEventCard = useCallback((event: any) => {
+    const col = event._maxCol ?? 1;
+    const { bg, border, text } = getColorForFab(event.fab_id, event.fab_type);
+    const PAD = 4;
+    const colW = `calc(${100 / col}% - ${PAD}px)`;
+    const colLeft = `calc(${(event._col / col) * 100}% + ${PAD / 2}px)`;
 
     return (
-      <div className="bg-white min-h-screen">
-        {/* FAB Picker Dialog */}
-        {fabPickerOpen && (
+      <Tooltip key={event.id} delayDuration={300}>
+        <TooltipTrigger asChild>
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
-            onClick={() => setFabPickerOpen(false)}
+            className="absolute cursor-pointer rounded-[12px] border overflow-hidden transition-opacity hover:opacity-90"
+            style={{
+              top: event._top + PAD,
+              height: event._height - PAD,
+              left: colLeft,
+              width: colW,
+              backgroundColor: bg,
+              borderColor: border,
+            }}
+            onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(event); }}
           >
-            <div
-              className="bg-white rounded-[16px] border border-[#ecedf0] shadow-xl w-[420px] p-6 flex flex-col gap-5"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-semibold text-[20px] text-black">Select FAB ID</p>
-                  <p className="text-[13px] text-[#7c8689] mt-1">Enter the FAB ID to create a plan for</p>
-                </div>
-                <button onClick={() => setFabPickerOpen(false)} className="h-8 w-8 rounded-[6px] border border-[#e2e4ed] flex items-center justify-center hover:bg-gray-50">
-                  <X className="h-4 w-4 text-[#7c8689]" />
-                </button>
-              </div>
-
-              <div className="flex items-center gap-3 bg-[#f0f4e8] rounded-[8px] px-4 py-3">
-                <CalendarIcon className="h-4 w-4 text-[#7a9705]" />
-                <span className="font-semibold text-[13px] text-[#4b545d]">
-                  {selectedDate ? format(selectedDate, 'EEEE, MMMM d, yyyy') : format(currentDate, 'EEEE, MMMM d, yyyy')}
-                </span>
-              </div>
-
-              <div>
-                <label className="font-semibold text-[13px] text-[#4b545d] block mb-2">FAB ID *</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#78829d]" />
-                  <input
-                    type="number"
-                    placeholder="e.g. 2390"
-                    value={fabPickerInput}
-                    onChange={(e) => setFabPickerInput(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter' && fabPickerInput.trim()) handleOpenCreatePlanWithFab(fabPickerInput.trim()); }}
-                    autoFocus
-                    className="w-full h-[44px] bg-white border border-[#e2e4ed] rounded-[8px] pl-9 pr-4 text-[14px] text-[#4b545d] placeholder:text-[#78829d] outline-none focus:border-[#9cc15e] focus:ring-1 focus:ring-[#9cc15e]"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setFabPickerOpen(false)}
-                  className="flex-1 h-[44px] border border-[#e2e4ed] rounded-[8px] text-[14px] text-[#4b545d] hover:bg-gray-50 font-semibold"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => fabPickerInput.trim() && handleOpenCreatePlanWithFab(fabPickerInput.trim())}
-                  disabled={!fabPickerInput.trim()}
-                  className="flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold disabled:opacity-40"
-                  style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
-                >
-                  Continue
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Page Header */}
-        <div className="border-b border-[#dfdfdf]">
-          <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
-            <div className="flex flex-col gap-2">
-              <p className="font-semibold text-[28px] leading-[32px] text-black">Shop Plan</p>
-              <p className="font-semibold text-[20px] leading-[24px] text-[#4a4d59]">{calLabel}</p>
-            </div>
-            <button
-              onClick={() => navigate('/shop/create-plan')}
-              className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px] tracking-[-0.56px]"
-              style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
-            >
-              <Plus className="h-4 w-4" />
-              Create Plan
-            </button>
-          </div>
-
-          <div className="flex items-center px-10 h-[65px]">
-            <div className="bg-[#f9f9f9] h-[45px] rounded-[6px] flex items-start pt-[4px] px-[4px] gap-2">
-              {(['day', 'week', 'month'] as const).map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => setViewMode(mode)}
-                  className={`px-[15px] py-[8px] rounded-[4px] font-semibold text-[14px] leading-[21px] capitalize transition-all ${viewMode === mode
-                    ? 'bg-white text-black shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]'
-                    : 'text-[#78829d]'
-                    }`}
-                >
-                  {mode}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between px-10 h-[65px]">
-            <div className="flex items-center gap-[10px]">
-              {isSearchLocked ? (
-                <div className="flex items-center gap-2 h-[36px] bg-[#f0f4e8] border border-[#9cc15e] rounded-[6px] px-3">
-                  <Lock className="size-3.5 text-[#7a9705]" />
-                  <span className="font-semibold text-[13px] text-[#4b545d]">{lockedFabId}</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-0">
-                  <Select value={searchType} onValueChange={(v) => setSearchType(v as 'fab_id' | 'job_number')}>
-                    <SelectTrigger className="w-[130px] h-[36px] bg-white border border-[#e2e4ed] rounded-[6px] rounded-e-none border-r-0 text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
-                      <SelectValue placeholder="Search by" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="fab_id">FAB ID</SelectItem>
-                      <SelectItem value="job_number">Job Number</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#78829d]" />
-                    <input
-                      placeholder={`Search by ${searchType === 'fab_id' ? 'FAB ID' : 'Job Number'}...`}
-                      value={searchFabId}
-                      onChange={(e) => setSearchFabId(e.target.value)}
-                      className="w-[194px] h-[36px] bg-white border border-[#e2e4ed] rounded-[6px] rounded-s-none pl-9 pr-3 text-[13px] text-[#4b545d] placeholder:text-[#78829d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] outline-none focus:ring-1 focus:ring-[#e2e4ed]"
-                    />
-                    {searchFabId && (
-                      <button className="absolute right-2 top-1/2 -translate-y-1/2" onClick={() => setSearchFabId('')}>
-                        <X className="size-3.5 text-[#78829d]" />
-                      </button>
-                    )}
-                  </div>
-                </div>
+            <div className="px-3 py-2 h-full flex flex-col justify-start overflow-hidden">
+              <p className="text-[13px] font-semibold truncate" style={{ color: text }}>
+                {event.fab_id} {event.plan_name ? `• ${event.plan_name}` : ''} {event.operator_name ? `• ${event.operator_name}` : ''}
+              </p>
+              {event._isSplitPart && (
+                <p className="text-[9px] italic mt-0.5" style={{ color: text, opacity: 0.6 }}>
+                  (Continued from previous day)
+                </p>
               )}
+              <p className="text-[11px] truncate mt-0.5" style={{ color: text, opacity: 0.7 }}>
+                {event.fab_type || event.percent_complete != null ? `${event.work_percentage ?? 0}%` : ''}
+              </p>
+              {event._height > 60 && (
+                <p className="text-[10px] truncate mt-1" style={{ color: text, opacity: 0.6 }}>
+                  {event.workstation_name || ''}
+                </p>
+              )}
+            </div>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700">
+          <div className="space-y-1">
+            <p><span className="font-semibold">FAB ID:</span> {event.fab_id}</p>
+            <p><span className="font-semibold">Operator:</span> {event.operator_name || 'N/A'}</p>
+            <p><span className="font-semibold">Workstation:</span> {event.workstation_name || 'N/A'}</p>
+            <p><span className="font-semibold">Est. Hours:</span> {event.estimated_hours ?? 'N/A'}</p>
+            <p><span className="font-semibold">% Complete:</span> {event.work_percentage ?? 0}%</p>
+            <p><span className="font-semibold">Job:</span> {`${event.job_name}-${event.job_number}` || 'N/A'}</p>
+            <p><span className="font-semibold">Job No:</span> {event.job_number || 'N/A'}</p>
+            <p><span className="font-semibold">Account Name:</span> {event.account_name || 'N/A'}</p>
+            <p><span className="font-semibold">Plan:</span> {event.plan_name}</p>
+            {event.notes && <p><span className="font-semibold">Notes:</span> {event.notes}</p>}
+          </div>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }, [handleOpenEditPlan]);
 
-              <>
-                <Select value={filterFabType || 'all'} onValueChange={(v) => setFilterFabType(v === 'all' ? '' : v)}>
-                  <SelectTrigger className="min-w-[133px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
-                    <SelectValue placeholder="All FAB Types" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px] overflow-y-auto">
-                    <SelectItem value="all">All FAB Types</SelectItem>
-                    {fabTypes.map((t: string) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+  if (activePage === 'create-plan') {
+    return (
+      <CreatePlanPage
+        onBack={handleBackToCalendar}
+        // selectedDate={selectedPlan ? new Date(selectedPlan.scheduled_start_date) : selectedDate}
+        // selectedTimeSlot={selectedPlan ? format(new Date(selectedPlan.scheduled_start_date), 'HH:mm') : selectedTimeSlot}
+        selectedDate={null}
+        selectedTimeSlot={null}
+        selectedEvent={selectedPlan ?? null}
+        prefillFabId={createPlanFabId}
+        onEventCreated={handleBackToCalendar}
+      />
+    );
+  }
 
-                <Select value={filterWorkstation || 'all'} onValueChange={(v) => setFilterWorkstation(v === 'all' ? '' : v)}>
-                  <SelectTrigger className="min-w-[146px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
-                    <SelectValue placeholder="All Workstations" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px] overflow-y-auto">
-                    <SelectItem value="all">All Workstations</SelectItem>
-                    {workstations.map((w: any) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+  const calLabel =
+    viewMode === 'day'
+      ? format(currentDate, 'EEEE, MMMM d, yyyy')
+      : viewMode === 'week'
+        ? `${format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d')} – ${format(addDays(startOfWeek(currentDate, { weekStartsOn: 1 }), 6), 'MMM d, yyyy')}`
+        : format(currentDate, 'MMMM yyyy');
 
-                <Popover open={operatorPopoverOpen} onOpenChange={setOperatorPopoverOpen}>
-                  <PopoverTrigger asChild>
-                    <button className="min-w-[137px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
-                      <span className="truncate">
-                        {filterOperator.length === 0 ? 'All Operators' : `${filterOperator.length} selected`}
-                      </span>
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[220px] p-0" align="start">
-                    <Command>
-                      <CommandInput placeholder="Search operators..." />
-                      <CommandList>
-                        <CommandEmpty>No operators found.</CommandEmpty>
-                        <CommandGroup>
-                          {operators.map((o: any) => {
-                            const isSelected = filterOperator.includes(o.id);
-                            return (
-                              <CommandItem
-                                key={o.id}
-                                onSelect={() => {
-                                  if (isSelected) {
-                                    setFilterOperator(filterOperator.filter((id) => id !== o.id));
-                                  } else {
-                                    setFilterOperator([...filterOperator, o.id]);
-                                  }
-                                }}
-                              >
-                                <div
-                                  className={cn(
-                                    "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                                    isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
-                                  )}
-                                >
-                                  <Check className={cn("h-4 w-4")} />
-                                </div>
-                                <span className="truncate">{o.name}</span>
-                              </CommandItem>
-                            );
-                          })}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-
-                <Select value={filterPlanningSection || 'all'} onValueChange={(v) => setFilterPlanningSection(v === 'all' ? '' : v)}>
-                  <SelectTrigger className="min-w-[150px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
-                    <SelectValue placeholder="All Sections" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px] overflow-y-auto">
-                    <SelectItem value="all">All Plans</SelectItem>
-                    {planningSections.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name || s.plan_name || s.title || ''}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </>
+  return (
+    <div className="bg-white min-h-screen">
+      {/* FAB Picker Dialog */}
+      {fabPickerOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+          onClick={() => setFabPickerOpen(false)}
+        >
+          <div
+            className="bg-white rounded-[16px] border border-[#ecedf0] shadow-xl w-[420px] p-6 flex flex-col gap-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-[20px] text-black">Select FAB ID</p>
+                <p className="text-[13px] text-[#7c8689] mt-1">Enter the FAB ID to create a plan for</p>
+              </div>
+              <button onClick={() => setFabPickerOpen(false)} className="h-8 w-8 rounded-[6px] border border-[#e2e4ed] flex items-center justify-center hover:bg-gray-50">
+                <X className="h-4 w-4 text-[#7c8689]" />
+              </button>
             </div>
 
-            {viewMode !== 'month' && (
-              <div className="bg-[#eaebe7] rounded-[8px] flex items-center gap-[2px] p-[2px]">
-                <button
-                  onClick={() => setIsAxisSwapped(false)}
-                  className={`p-[8px] rounded-[6px] transition-all ${!isAxisSwapped ? 'bg-white shadow-sm' : ''}`}
-                  title="Column view"
-                >
-                  <Columns3 className="size-6 text-black" strokeWidth={2} />
-                </button>
-                <button
-                  onClick={() => setIsAxisSwapped(true)}
-                  className={`p-[8px] rounded-[6px] transition-all ${isAxisSwapped ? 'bg-white shadow-sm' : ''}`}
-                  title="Row view"
-                >
-                  <Rows3 className="size-6 text-[#93948e]" strokeWidth={2} />
-                </button>
+            <div className="flex items-center gap-3 bg-[#f0f4e8] rounded-[8px] px-4 py-3">
+              <CalendarIcon className="h-4 w-4 text-[#7a9705]" />
+              <span className="font-semibold text-[13px] text-[#4b545d]">
+                {selectedDate ? format(selectedDate, 'EEEE, MMMM d, yyyy') : format(currentDate, 'EEEE, MMMM d, yyyy')}
+              </span>
+            </div>
+
+            <div>
+              <label className="font-semibold text-[13px] text-[#4b545d] block mb-2">FAB ID *</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#78829d]" />
+                <input
+                  type="number"
+                  placeholder="e.g. 2390"
+                  value={fabPickerInput}
+                  onChange={(e) => setFabPickerInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && fabPickerInput.trim()) handleOpenCreatePlanWithFab(fabPickerInput.trim()); }}
+                  autoFocus
+                  className="w-full h-[44px] bg-white border border-[#e2e4ed] rounded-[8px] pl-9 pr-4 text-[14px] text-[#4b545d] placeholder:text-[#78829d] outline-none focus:border-[#9cc15e] focus:ring-1 focus:ring-[#9cc15e]"
+                />
               </div>
-            )}
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setFabPickerOpen(false)}
+                className="flex-1 h-[44px] border border-[#e2e4ed] rounded-[8px] text-[14px] text-[#4b545d] hover:bg-gray-50 font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => fabPickerInput.trim() && handleOpenCreatePlanWithFab(fabPickerInput.trim())}
+                disabled={!fabPickerInput.trim()}
+                className="flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold disabled:opacity-40"
+                style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Page Header */}
+      <div className="border-b border-[#dfdfdf]">
+        <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
+          <div className="flex flex-col gap-2">
+            <p className="font-semibold text-[28px] leading-[32px] text-black">Shop Plan</p>
+            <p className="font-semibold text-[20px] leading-[24px] text-[#4a4d59]">{calLabel}</p>
+          </div>
+          <button
+            onClick={() => navigate('/shop/create-plan')}
+            className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px] tracking-[-0.56px]"
+            style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
+          >
+            <Plus className="h-4 w-4" />
+            Create Plan
+          </button>
+        </div>
+
+        <div className="flex items-center px-10 h-[65px]">
+          <div className="bg-[#f9f9f9] h-[45px] rounded-[6px] flex items-start pt-[4px] px-[4px] gap-2">
+            {(['day', 'week', 'month'] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={`px-[15px] py-[8px] rounded-[4px] font-semibold text-[14px] leading-[21px] capitalize transition-all ${viewMode === mode
+                  ? 'bg-white text-black shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]'
+                  : 'text-[#78829d]'
+                  }`}
+              >
+                {mode}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Calendar Card */}
-        <div className="p-4 md:p-6">
-          <div className="border border-[#ecedf0] rounded-[16px] px-4 py-6 flex flex-col gap-4">
-            <div className="flex items-center justify-between pl-4">
-              <div className="flex items-center gap-4">
-                <button
-                  onClick={handlePrevious}
-                  className="bg-white h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] flex items-center justify-center hover:bg-gray-50"
-                >
-                  <ChevronLeft className="h-5 w-5 text-[#74798b]" />
-                </button>
-
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button className="flex items-center gap-3">
-                      <CalendarIcon className="size-6 text-[#4b545d]" strokeWidth={2} />
-                      <span className="font-semibold text-[20px] leading-[24px] text-[#4a4d59] whitespace-nowrap">{calLabel}</span>
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={currentDate} onSelect={(d) => d && setCurrentDate(d)} />
-                  </PopoverContent>
-                </Popover>
-
-                <button
-                  onClick={handleNext}
-                  className="bg-white h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] flex items-center justify-center hover:bg-gray-50"
-                >
-                  <ChevronRight className="h-5 w-5 text-[#74798b]" />
-                </button>
+        <div className="flex items-center justify-between px-10 h-[65px]">
+          <div className="flex items-center gap-[10px]">
+            {isSearchLocked ? (
+              <div className="flex items-center gap-2 h-[36px] bg-[#f0f4e8] border border-[#9cc15e] rounded-[6px] px-3">
+                <Lock className="size-3.5 text-[#7a9705]" />
+                <span className="font-semibold text-[13px] text-[#4b545d]">{lockedFabId}</span>
               </div>
+            ) : (
+              <div className="flex items-center gap-0">
+                <Select value={searchType} onValueChange={(v) => setSearchType(v as 'fab_id' | 'job_number')}>
+                  <SelectTrigger className="w-[130px] h-[36px] bg-white border border-[#e2e4ed] rounded-[6px] rounded-e-none border-r-0 text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
+                    <SelectValue placeholder="Search by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fab_id">FAB ID</SelectItem>
+                    <SelectItem value="job_number">Job Number</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#78829d]" />
+                  <input
+                    placeholder={`Search by ${searchType === 'fab_id' ? 'FAB ID' : 'Job Number'}...`}
+                    value={searchFabId}
+                    onChange={(e) => setSearchFabId(e.target.value)}
+                    className="w-[194px] h-[36px] bg-white border border-[#e2e4ed] rounded-[6px] rounded-s-none pl-9 pr-3 text-[13px] text-[#4b545d] placeholder:text-[#78829d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] outline-none focus:ring-1 focus:ring-[#e2e4ed]"
+                  />
+                  {searchFabId && (
+                    <button className="absolute right-2 top-1/2 -translate-y-1/2" onClick={() => setSearchFabId('')}>
+                      <X className="size-3.5 text-[#78829d]" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
-              <div className="flex flex-col items-end gap-1">
-                <p className="font-semibold text-[16px] leading-[24px] text-[#7c8689] whitespace-nowrap">
-                  Total Scheduled Plans
-                  {isSearchLocked && <span className="ml-2 text-[#7a9705]">. {lockedFabId}</span>}
-                  {isFetching && !isLoading && (
-                    <span className="ml-2 inline-flex items-center gap-1.5">
-                      <svg className="animate-spin h-3.5 w-3.5 text-[#7a9705]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <>
+              <Select value={filterFabType || 'all'} onValueChange={(v) => setFilterFabType(v === 'all' ? '' : v)}>
+                <SelectTrigger className="min-w-[133px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
+                  <SelectValue placeholder="All FAB Types" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px] overflow-y-auto">
+                  <SelectItem value="all">All FAB Types</SelectItem>
+                  {fabTypes.map((t: string) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
+
+              <Select value={filterWorkstation || 'all'} onValueChange={(v) => setFilterWorkstation(v === 'all' ? '' : v)}>
+                <SelectTrigger className="min-w-[146px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
+                  <SelectValue placeholder="All Workstations" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px] overflow-y-auto">
+                  <SelectItem value="all">All Workstations</SelectItem>
+                  {workstations.map((w: any) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+
+              <Popover open={operatorPopoverOpen} onOpenChange={setOperatorPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <button className="min-w-[137px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
+                    <span className="truncate">
+                      {filterOperator.length === 0 ? 'All Operators' : `${filterOperator.length} selected`}
+                    </span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[220px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search operators..." />
+                    <CommandList>
+                      <CommandEmpty>No operators found.</CommandEmpty>
+                      <CommandGroup>
+                        {operators.map((o: any) => {
+                          const isSelected = filterOperator.includes(o.id);
+                          return (
+                            <CommandItem
+                              key={o.id}
+                              onSelect={() => {
+                                if (isSelected) {
+                                  setFilterOperator(filterOperator.filter((id) => id !== o.id));
+                                } else {
+                                  setFilterOperator([...filterOperator, o.id]);
+                                }
+                              }}
+                            >
+                              <div
+                                className={cn(
+                                  "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                                  isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
+                                )}
+                              >
+                                <Check className={cn("h-4 w-4")} />
+                              </div>
+                              <span className="truncate">{o.name}</span>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              <Select value={filterPlanningSection || 'all'} onValueChange={(v) => setFilterPlanningSection(v === 'all' ? '' : v)}>
+                <SelectTrigger className="min-w-[150px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
+                  <SelectValue placeholder="All Sections" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px] overflow-y-auto">
+                  <SelectItem value="all">All Plans</SelectItem>
+                  {planningSections.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name || s.plan_name || s.title || ''}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </>
+          </div>
+
+          {viewMode !== 'month' && (
+            <div className="bg-[#eaebe7] rounded-[8px] flex items-center gap-[2px] p-[2px]">
+              <button
+                onClick={() => setIsAxisSwapped(false)}
+                className={`p-[8px] rounded-[6px] transition-all ${!isAxisSwapped ? 'bg-white shadow-sm' : ''}`}
+                title="Column view"
+              >
+                <Columns3 className="size-6 text-black" strokeWidth={2} />
+              </button>
+              <button
+                onClick={() => setIsAxisSwapped(true)}
+                className={`p-[8px] rounded-[6px] transition-all ${isAxisSwapped ? 'bg-white shadow-sm' : ''}`}
+                title="Row view"
+              >
+                <Rows3 className="size-6 text-[#93948e]" strokeWidth={2} />
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Calendar Card */}
+      <div className="p-4 md:p-6">
+        <div className="border border-[#ecedf0] rounded-[16px] px-4 py-6 flex flex-col gap-4">
+          <div className="flex items-center justify-between pl-4">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={handlePrevious}
+                className="bg-white h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] flex items-center justify-center hover:bg-gray-50"
+              >
+                <ChevronLeft className="h-5 w-5 text-[#74798b]" />
+              </button>
+
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="flex items-center gap-3">
+                    <CalendarIcon className="size-6 text-[#4b545d]" strokeWidth={2} />
+                    <span className="font-semibold text-[20px] leading-[24px] text-[#4a4d59] whitespace-nowrap">{calLabel}</span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={currentDate} onSelect={(d) => d && setCurrentDate(d)} />
+                </PopoverContent>
+              </Popover>
+
+              <button
+                onClick={handleNext}
+                className="bg-white h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] flex items-center justify-center hover:bg-gray-50"
+              >
+                <ChevronRight className="h-5 w-5 text-[#74798b]" />
+              </button>
+            </div>
+
+            <div className="flex flex-col items-end gap-1">
+              <p className="font-semibold text-[16px] leading-[24px] text-[#7c8689] whitespace-nowrap">
+                Total Scheduled Plans
+                {isSearchLocked && <span className="ml-2 text-[#7a9705]">. {lockedFabId}</span>}
+                {isFetching && !isLoading && (
+                  <span className="ml-2 inline-flex items-center gap-1.5">
+                    <svg className="animate-spin h-3.5 w-3.5 text-[#7a9705]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span className="text-[12px] font-medium text-[#7a9705]">Refreshing...</span>
+                  </span>
+                )}
+              </p>
+              <p className="font-semibold text-[20px] leading-[24px] text-black">
+                {isLoading ? '–' : totalPlans}
+              </p>
+            </div>
+          </div>
+
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <p className="text-[#7c8689]">Loading calendar events…</p>
+            </div>
+          ) : (
+            <>
+              {/* Refetch indicator overlay */}
+              {isFetching && !isLoading && (
+                <div className="relative">
+                  <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none rounded-[8px]">
+                    <div className="bg-white border border-[#e2e4ed] rounded-[8px] px-4 py-2 shadow-sm flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4 text-[#7a9705]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
-                      <span className="text-[12px] font-medium text-[#7a9705]">Refreshing...</span>
-                    </span>
-                  )}
-                </p>
-                <p className="font-semibold text-[20px] leading-[24px] text-black">
-                  {isLoading ? '–' : totalPlans}
-                </p>
-              </div>
-            </div>
-
-            {isLoading ? (
-              <div className="flex items-center justify-center py-16">
-                <p className="text-[#7c8689]">Loading calendar events…</p>
-              </div>
-            ) : (
-              <>
-                {/* Refetch indicator overlay */}
-                {isFetching && !isLoading && (
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none rounded-[8px]">
-                      <div className="bg-white border border-[#e2e4ed] rounded-[8px] px-4 py-2 shadow-sm flex items-center gap-2">
-                        <svg className="animate-spin h-4 w-4 text-[#7a9705]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span className="text-[13px] font-medium text-[#4b545d]">Updating calendar...</span>
-                      </div>
+                      <span className="text-[13px] font-medium text-[#4b545d]">Updating calendar...</span>
                     </div>
                   </div>
-                )}
-                <TooltipProvider>
+                </div>
+              )}
+              <TooltipProvider>
                 <div className="border border-[#ecedf0] rounded-[8px] overflow-x-auto">
                   {/* Month view */}
                   {viewMode === 'month' && (
@@ -822,19 +820,19 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                         <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] relative">
                           {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                             const hour = DAY_START_HOUR + i;
-                            
+
                             // Skip rendering labels inside break time
                             if (hour > BREAK_START_HOUR && hour < BREAK_END_HOUR) {
                               return null;
                             }
-                            
+
                             const label = is12HourFormat
                               ? `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
                               : `${String(hour).padStart(2, '0')}:00`;
-                            
+
                             // Calculate position accounting for break
                             const position = getTimePosition(hour);
-                            
+
                             return (
                               <div
                                 key={hour}
@@ -872,20 +870,20 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                                   <div key={i} className="absolute w-full border-t border-[#ecedf0]" style={{ top: position }} />
                                 );
                               })}
-                              
+
                               {/* Break time indicator */}
-                              <div 
+                              <div
                                 className="absolute left-0 right-0 bg-gradient-to-b from-orange-100/50 to-orange-200/50 border-y-2 border-orange-300 pointer-events-none flex items-center justify-center"
-                                style={{ 
+                                style={{
                                   top: getTimePosition(BREAK_START_HOUR),
-                                  height: BREAK_DURATION * HOUR_HEIGHT 
+                                  height: BREAK_DURATION * HOUR_HEIGHT
                                 }}
                               >
                                 <span className="text-[11px] font-semibold text-orange-600 uppercase tracking-wide">
                                   Break Time
                                 </span>
                               </div>
-                              
+
                               {isToday && <div className="absolute inset-0 bg-[#7a9705]/[0.02] pointer-events-none" />}
                               {positioned.map((ev) => renderEventCard(ev))}
                               {isToday && showTimeIndicator && (
@@ -915,24 +913,24 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                       <div className="flex border-b border-[#e2e4ed] bg-white sticky top-0 z-10">
                         {/* Day column header */}
                         <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0]" />
-                        
+
                         {/* Time header row */}
                         <div className="relative" style={{ minWidth: DISPLAY_HOURS * HOUR_WIDTH, height: 50 }}>
                           {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                             const hour = DAY_START_HOUR + i;
-                            
+
                             // Skip rendering labels inside break time
                             if (hour >= BREAK_START_HOUR && hour < BREAK_END_HOUR) {
                               return null;
                             }
-                            
+
                             const label = is12HourFormat
                               ? `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
                               : `${String(hour).padStart(2, '0')}:00`;
-                            
+
                             // Calculate position accounting for break
                             const position = getHorizontalPosition(hour);
-                            
+
                             return (
                               <div
                                 key={hour}
@@ -1002,18 +1000,18 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                                   const startDt = new Date(ev.scheduled_start_date);
                                   const startH = startDt.getHours() + startDt.getMinutes() / 60;
                                   const endH = startH + ev.estimated_hours;
-                                  
+
                                   // Calculate positions accounting for break
                                   const left = getHorizontalPosition(startH);
                                   const right = getHorizontalPosition(endH);
-                                  
+
                                   // If event spans across the break, add break width to the calculation
                                   let width = right - left;
                                   if (startH < BREAK_START_HOUR && endH > BREAK_START_HOUR) {
                                     // Event spans across break - add break width
                                     width += BREAK_DURATION * HOUR_WIDTH;
                                   }
-                                  
+
                                   const { bg, border, text } = getColorForFab(ev.fab_id, ev.fab_type);
                                   return (
                                     <Tooltip key={ev.id} delayDuration={300}>
@@ -1061,14 +1059,14 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                     </div>
                   )}
                 </div>
-                </TooltipProvider>
-              </>
-            )}
-          </div>
+              </TooltipProvider>
+            </>
+          )}
         </div>
       </div>
-    );
+    </div>
+  );
 
-  };
+};
 
-  export default ShopCalendarPage;
+export default ShopCalendarPage;

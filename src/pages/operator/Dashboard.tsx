@@ -21,19 +21,29 @@ import { WorkstationToggle } from './components/WorkstationToggle';
 import { useGetCurrentOperatorTasksQuery, useGetOperatorWorkstationsQuery } from '@/store/api/operator';
 import { useSelector } from 'react-redux';
 
-// Layout constants (unchanged)
-const DAY_START_HOUR = 7;
-const DAY_END_HOUR = 19;
-const TOTAL_HOURS = DAY_END_HOUR - DAY_START_HOUR;
+// ─── Constants ──────────────────────────────────────────────────────────────
+const DAY_START_HOUR = 7;          // 7 AM
+const DAY_END_HOUR = 18;           // 6 PM
+const BREAK_START_HOUR = 12;       // 12 PM
+const BREAK_END_HOUR = 13;         // 1 PM
+const BREAK_DURATION = BREAK_END_HOUR - BREAK_START_HOUR; // 1 hour
+const TOTAL_WORK_HOURS = DAY_END_HOUR - DAY_START_HOUR - BREAK_DURATION; // 10 hours
 const HOUR_WIDTH = 120;
 const ROW_HEIGHT = 80;
 const TIME_LABEL_HEIGHT = 40;
 const DATE_LABEL_WIDTH = 80;
+const GRID_WIDTH = DATE_LABEL_WIDTH + TOTAL_WORK_HOURS * HOUR_WIDTH;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Color mapping based on fab type (deterministic, not random)
-// Colors are derived from the CSS rules provided by the user.
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Helper: calculate horizontal position accounting for break ──────────
+const getTimePosition = (hour: number): number => {
+    if (hour < BREAK_START_HOUR) {
+        return (hour - DAY_START_HOUR) * HOUR_WIDTH;
+    }
+    // At or after break, subtract break duration to close the gap
+    return (hour - DAY_START_HOUR - BREAK_DURATION) * HOUR_WIDTH;
+};
+
+// ─── Color mapping (unchanged) ────────────────────────────────────────────
 const FAB_TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
     'standard': { bg: '#9eeb47', border: '#7bc62e', text: '#2c5a0e' },
     'fab only': { bg: '#5bd1d7', border: '#2fa7ae', text: '#0a5c62' },
@@ -51,8 +61,6 @@ function getColorForFabType(fabType?: string) {
     return FAB_TYPE_COLORS[normalized] ?? DEFAULT_COLOR;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helper functions (unchanged)
 const isSameDay = (d1: Date, d2: Date) =>
     format(d1, 'yyyy-MM-dd') === format(d2, 'yyyy-MM-dd');
 
@@ -84,12 +92,12 @@ export function OperatorDashboard() {
             { skip: !currentEmployeeId }
         );
 
-    // Display days (unchanged)
+    // ─── Display days ────────────────────────────────────────────────────────
     const displayDays = useMemo(() => {
         if (viewMode === 'day') return [currentDate];
         if (viewMode === 'week') {
             const ws = startOfWeek(currentDate, { weekStartsOn: 1 });
-            return Array.from({ length: 7}, (_, i) => addDays(ws, i));
+            return Array.from({ length: 7 }, (_, i) => addDays(ws, i));
         }
         return eachDayOfInterval({ start: startOfMonth(currentDate), end: endOfMonth(currentDate) });
     }, [currentDate, viewMode]);
@@ -104,14 +112,13 @@ export function OperatorDashboard() {
         return weeks;
     }, [currentDate, viewMode]);
 
-
     const shouldShowToday = useMemo(() => {
         if (viewMode === 'day') {
             return isSameDay(currentDate, new Date());
         }
         if (viewMode === 'week') {
             const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-            const weekEnd = addDays(weekStart, 4); // 7 days (Mon-Sun)
+            const weekEnd = addDays(weekStart, 6);
             const today = new Date();
             return today >= weekStart && today <= weekEnd;
         }
@@ -124,7 +131,7 @@ export function OperatorDashboard() {
         return false;
     }, [currentDate, viewMode]);
 
-    // Events grouped by day (unchanged, but ensure we pass fab_type)
+    // ─── Events grouped by day with splitting across days ──────────────────
     const eventsByDay = useMemo(() => {
         const grouped: Record<string, any[]> = {};
         const allDays = viewMode === 'month' ? monthWeeks.flat() : displayDays;
@@ -138,22 +145,68 @@ export function OperatorDashboard() {
                 selectedWorkstation === null || selectedWorkstation === task.workstation_id
             )
             .forEach((task: any) => {
-                const scheduledDate = task.scheduled_start_date
-                    ? format(new Date(task.scheduled_start_date), 'yyyy-MM-dd')
-                    : null;
-                if (scheduledDate && scheduledDate in grouped) {
-                    grouped[scheduledDate].push({
+                const startDate = new Date(task.scheduled_start_date);
+                if (!startDate) return;
+                const startHour = startDate.getHours() + startDate.getMinutes() / 60;
+                const estimatedHours = task.estimated_hours || 1;
+                const endHour = startHour + estimatedHours;
+
+                const dateKey = format(startDate, 'yyyy-MM-dd');
+
+                // ─── If event fits within the day ──────────────────────────────
+                if (endHour <= DAY_END_HOUR) {
+                    if (dateKey in grouped) {
+                        grouped[dateKey].push({
+                            ...task,
+                            work_percentage: task.work_percentage || 0,
+                            plan_name: task.planning_section_name || task.current_stage || '',
+                            _isSplitPart: false,
+                            _originalHours: estimatedHours,
+                        });
+                    }
+                    return;
+                }
+
+                // ─── Split event across days ──────────────────────────────────────
+                const hoursOnFirstDay = DAY_END_HOUR - startHour;
+                if (hoursOnFirstDay > 0 && dateKey in grouped) {
+                    grouped[dateKey].push({
                         ...task,
                         work_percentage: task.work_percentage || 0,
                         plan_name: task.planning_section_name || task.current_stage || '',
+                        _isSplitPart: true,
+                        _originalHours: estimatedHours,
+                        estimated_hours: hoursOnFirstDay,
                     });
+                }
+
+                let remainingHours = estimatedHours - hoursOnFirstDay;
+                let currentDate = addDays(startDate, 1);
+                let currentDayKey = format(currentDate, 'yyyy-MM-dd');
+
+                while (remainingHours > 0) {
+                    const hoursOnThisDay = Math.min(remainingHours, DAY_END_HOUR - DAY_START_HOUR);
+                    if (hoursOnThisDay > 0 && currentDayKey in grouped) {
+                        grouped[currentDayKey].push({
+                            ...task,
+                            work_percentage: task.work_percentage || 0,
+                            plan_name: task.planning_section_name || task.current_stage || '',
+                            _isSplitPart: true,
+                            _originalHours: estimatedHours,
+                            estimated_hours: hoursOnThisDay,
+                            scheduled_start_date: format(currentDate, 'yyyy-MM-dd') + 'T' + String(DAY_START_HOUR).padStart(2, '0') + ':00:00',
+                        });
+                    }
+                    remainingHours -= hoursOnThisDay;
+                    currentDate = addDays(currentDate, 1);
+                    currentDayKey = format(currentDate, 'yyyy-MM-dd');
                 }
             });
 
         return grouped;
     }, [tasksData, displayDays, monthWeeks, viewMode, selectedWorkstation]);
 
-    // Navigation (unchanged)
+    // ─── Navigation ──────────────────────────────────────────────────────────
     const handlePrevious = () => {
         if (viewMode === 'day') setCurrentDate(addDays(currentDate, -1));
         else if (viewMode === 'week') setCurrentDate(addDays(currentDate, -7));
@@ -174,7 +227,7 @@ export function OperatorDashboard() {
         navigate(`/operator/task/${task.job_id}?${params.toString()}`);
     }, [navigate]);
 
-    // Event positioning (unchanged)
+    // ─── Event positioning with break support ──────────────────────────────
     const getEventsWithXPositions = useCallback((events: any[]) => {
         if (!events.length) return [];
 
@@ -201,7 +254,7 @@ export function OperatorDashboard() {
         return sorted.map((ev, i) => {
             const start = new Date(ev.scheduled_start_date);
             const startH = start.getHours() + start.getMinutes() / 60;
-            const left = Math.max(0, (startH - DAY_START_HOUR) * HOUR_WIDTH);
+            const left = Math.max(0, getTimePosition(startH));
             const width = Math.max(HOUR_WIDTH * 0.5, (ev.estimated_hours || 1) * HOUR_WIDTH);
             const laneH = ROW_HEIGHT / maxLane;
             const top = lanes[i] * laneH;
@@ -211,9 +264,7 @@ export function OperatorDashboard() {
         });
     }, []);
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Render a single event card – uses fab_type for colors
-    // ─────────────────────────────────────────────────────────────────────────
+    // ─── Render a single event card ──────────────────────────────────────────
     const renderEventCard = useCallback((event: any) => {
         const { bg, border, text } = getColorForFabType(event.fab_type);
         const finalBorderColor = event.has_pending_shop_revision ? '#ff0000' : border;
@@ -221,8 +272,8 @@ export function OperatorDashboard() {
         const startTime = event.scheduled_start_date
             ? format(new Date(event.scheduled_start_date), 'h:mma')
             : null;
-        const endTime = event.scheduled_end_date
-            ? format(new Date(event.scheduled_end_date), 'h:mma')
+        const endTime = event.scheduled_start_date && event.estimated_hours
+            ? format(new Date(new Date(event.scheduled_start_date).getTime() + event.estimated_hours * 3_600_000), 'h:mma')
             : null;
 
         return (
@@ -241,6 +292,11 @@ export function OperatorDashboard() {
                 onClick={(e) => { e.stopPropagation(); handleEventClick(event); }}
             >
                 <div className="px-2 py-1 h-full flex flex-col justify-start overflow-hidden gap-0.5">
+                    {/* {event._isSplitPart && (
+                        <div className="text-[8px] font-semibold uppercase" style={{ color: text, opacity: 0.6 }}>
+                            (Continued)
+                        </div>
+                    )} */}
                     <div className="flex items-center gap-1">
                         <p className="text-[12px] font-bold truncate leading-tight shrink-0" style={{ color: text }}>
                             {event.fab_id}
@@ -252,7 +308,7 @@ export function OperatorDashboard() {
                         )}
                     </div>
 
-                    {event._height > 30 && event.account_name && (
+                    {event.account_name && (
                         <p className="text-[10px] truncate leading-tight" style={{ color: text, opacity: 0.7 }}>
                             {event.account_name}
                         </p>
@@ -277,6 +333,11 @@ export function OperatorDashboard() {
                         <p className="text-[9px] leading-tight" style={{ color: text, opacity: 0.6 }}>
                             {startTime}{endTime ? ` – ${endTime}` : ''}
                             {event.estimated_hours ? ` · ${event.estimated_hours}h` : ''}
+                            {event._isSplitPart && event._originalHours && (
+                                <span className="text-[8px] ml-1" style={{ opacity: 0.5 }}>
+                                    (of {event._originalHours}h)
+                                </span>
+                            )}
                         </p>
                     )}
 
@@ -298,7 +359,7 @@ export function OperatorDashboard() {
         );
     }, [handleEventClick]);
 
-    // Calendar label (unchanged)
+    // ─── Calendar label ──────────────────────────────────────────────────────
     const calLabel =
         viewMode === 'day'
             ? format(currentDate, 'EEEE, MMMM d, yyyy')
@@ -306,12 +367,16 @@ export function OperatorDashboard() {
                 ? `${format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d')} – ${format(addDays(startOfWeek(currentDate, { weekStartsOn: 1 }), 6), 'MMM d, yyyy')}`
                 : format(currentDate, 'MMMM yyyy');
 
-    // Stats (unchanged)
+    // ─── Stats ──────────────────────────────────────────────────────────────
     const totalTasksCount = Object.values(eventsByDay).reduce((acc, evs) => acc + evs.length, 0);
-    const activeJobsCount = Object.values(eventsByDay).flat().filter((e: any) => e.estimated_hours).length;
     const workstationCount = selectedWorkstation ? 1 : (workstationsData as any)?.data?.length || 0;
 
-    const gridWidth = DATE_LABEL_WIDTH + TOTAL_HOURS * HOUR_WIDTH;
+    // Generate hours to display (skip break hour)
+    const hoursToRender = [];
+    for (let h = DAY_START_HOUR; h < DAY_END_HOUR; h++) {
+        if (h === BREAK_START_HOUR) continue;
+        hoursToRender.push(h);
+    }
 
     if (isTasksLoading) {
         return (
@@ -332,7 +397,7 @@ export function OperatorDashboard() {
 
     return (
         <div className="bg-white min-h-screen">
-            {/* Header (unchanged) */}
+            {/* Header */}
             <div className="border-b border-[#dfdfdf]">
                 <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
                     <div className="flex flex-col gap-2">
@@ -366,7 +431,6 @@ export function OperatorDashboard() {
                             </button>
                         )}
 
-                        {/* View toggle */}
                         <div className="flex items-center gap-1 border border-[#e2e4ed] rounded-[8px] p-1 bg-white">
                             {(['day', 'week', 'month'] as const).map((mode) => (
                                 <button
@@ -388,7 +452,7 @@ export function OperatorDashboard() {
             </div>
 
             <div className="p-6 space-y-4">
-                {/* Workstation filter (unchanged) */}
+                {/* Workstation filter */}
                 {!isWorkstationsLoading && workstationsData && (
                     <WorkstationToggle
                         workstations={Array.isArray(workstationsData) ? workstationsData : (workstationsData as any)?.data || []}
@@ -402,22 +466,39 @@ export function OperatorDashboard() {
 
                     {/* Day / Week view */}
                     {(viewMode === 'day' || viewMode === 'week') && (
-                        <div style={{ minWidth: gridWidth }}>
-                            {/* Time header row */}
-                            <div className="flex sticky top-0 z-10 bg-[#f9fafb] border-b border-[#e2e4ed]">
+                        <div style={{ minWidth: GRID_WIDTH }}>
+                            {/* Time header row with 6 PM label */}
+                            <div className="flex sticky top-0 z-10 bg-[#f9fafb] border-b border-[#e2e4ed]" style={{ minWidth: GRID_WIDTH }}>
                                 <div
                                     className="flex-shrink-0 border-r border-[#e2e4ed]"
                                     style={{ width: DATE_LABEL_WIDTH, height: TIME_LABEL_HEIGHT }}
                                 />
-                                {Array.from({ length: TOTAL_HOURS }, (_, i) => DAY_START_HOUR + i).map((hour) => (
+                                <div className="relative" style={{ height: TIME_LABEL_HEIGHT, flex: 1 }}>
+                                    {hoursToRender.map((hour) => (
+                                        <div
+                                            key={hour}
+                                            className="absolute text-[11px] text-[#7c8689] flex items-center justify-center font-medium"
+                                            style={{
+                                                left: getTimePosition(hour),
+                                                width: HOUR_WIDTH,
+                                                height: TIME_LABEL_HEIGHT,
+                                            }}
+                                        >
+                                            {format(setHoursLocal(new Date(), hour), 'h a')}
+                                        </div>
+                                    ))}
+                                    {/* 6 PM label at the end */}
                                     <div
-                                        key={hour}
-                                        className="flex-shrink-0 text-[11px] text-[#7c8689] flex items-center justify-center border-r border-[#e2e4ed] font-medium"
-                                        style={{ width: HOUR_WIDTH, height: TIME_LABEL_HEIGHT }}
+                                        className="absolute text-[11px] text-[#7c8689] flex items-center justify-center font-medium"
+                                        style={{
+                                            left: getTimePosition(DAY_END_HOUR),
+                                            width: HOUR_WIDTH,
+                                            height: TIME_LABEL_HEIGHT,
+                                        }}
                                     >
-                                        {format(setHoursLocal(new Date(), hour), 'h a')}
+                                        {format(setHoursLocal(new Date(), DAY_END_HOUR), 'h a')}
                                     </div>
-                                ))}
+                                </div>
                             </div>
 
                             {/* One row per day */}
@@ -450,13 +531,21 @@ export function OperatorDashboard() {
                                             className="relative flex-1"
                                             style={{ height: ROW_HEIGHT }}
                                         >
-                                            {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
-                                                <div
-                                                    key={i}
-                                                    className="absolute top-0 bottom-0 border-r border-[#e2e4ed]"
-                                                    style={{ left: i * HOUR_WIDTH }}
-                                                />
-                                            ))}
+                                            {hoursToRender.map((hour, idx) => {
+                                                const left = getTimePosition(hour);
+                                                return (
+                                                    <div
+                                                        key={idx}
+                                                        className="absolute top-0 bottom-0 border-r border-[#e2e4ed]"
+                                                        style={{ left }}
+                                                    />
+                                                );
+                                            })}
+                                            {/* Final grid line at 6 PM */}
+                                            <div
+                                                className="absolute top-0 bottom-0 border-r border-[#e2e4ed]"
+                                                style={{ left: getTimePosition(DAY_END_HOUR) }}
+                                            />
                                             {eventsWithPositions.map((event: any) => renderEventCard(event))}
                                         </div>
                                     </div>
@@ -465,7 +554,7 @@ export function OperatorDashboard() {
                         </div>
                     )}
 
-                    {/* Month view – also uses fab_type colors */}
+                    {/* Month view */}
                     {viewMode === 'month' && (
                         <div className="grid grid-cols-7 gap-px bg-[#e2e4ed]">
                             {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day) => (
@@ -544,7 +633,7 @@ export function OperatorDashboard() {
                     )}
                 </div>
 
-                {/* Quick stats (unchanged) */}
+                {/* Quick stats */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6">
                     <div className="flex items-center gap-3 p-4 rounded-[8px] border border-[#e2e4ed] bg-white">
                         <div className="h-10 w-10 rounded-[6px] bg-[#d5e7ff] flex items-center justify-center">
@@ -555,15 +644,6 @@ export function OperatorDashboard() {
                             <p className="text-2xl font-semibold text-black">{totalTasksCount}</p>
                         </div>
                     </div>
-                    {/* <div className="flex items-center gap-3 p-4 rounded-[8px] border border-[#e2e4ed] bg-white">
-                        <div className="h-10 w-10 rounded-[6px] bg-[#caf2d7] flex items-center justify-center">
-                            <Clock className="w-5 h-5 text-[#16a34a]" />
-                        </div>
-                        <div>
-                            <p className="text-[13px] text-[#4b545d]">{t('OPERATOR.ACTIVE_JOBS')}</p>
-                            <p className="text-2xl font-semibold text-black">{activeJobsCount}</p>
-                        </div>
-                    </div> */}
                     <div className="flex items-center gap-3 p-4 rounded-[8px] border border-[#e2e4ed] bg-white">
                         <div className="h-10 w-10 rounded-[6px] bg-[#f3e8ff] flex items-center justify-center">
                             <MapPin className="w-5 h-5 text-[#7c3aed]" />

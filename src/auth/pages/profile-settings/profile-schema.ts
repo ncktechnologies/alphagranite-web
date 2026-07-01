@@ -8,6 +8,7 @@ export const getCompleteProfileSchema = () => {
     department: z.string().min(1, { message: 'Please select a department.' }),
     home_address: z.string().optional(),
     gender: z.string().optional(),
+    hcp_employee_id: z.string().optional(),
     phone: z
       .string(),
       // .min(1, { message: 'Phone Number is required.' })
