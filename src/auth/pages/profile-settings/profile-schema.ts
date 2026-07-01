@@ -9,11 +9,11 @@ export const getCompleteProfileSchema = () => {
     home_address: z.string().optional(),
     gender: z.string().optional(),
     phone: z
-      .string()
-      .min(1, { message: 'Phone Number is required.' })
-      .refine((val) => !val || val.length === 0 || /^[\d\s\-\+\(\)]+$/.test(val), {
-        message: 'Please enter a valid phone number.',
-      }),  
+      .string(),
+      // .min(1, { message: 'Phone Number is required.' })
+      // .refine((val) => !val || val.length === 0 || /^[\d\s\-\+\(\)]+$/.test(val), {
+      //   message: 'Please enter a valid phone number.',
+      // }),  
   }
   );
 };
