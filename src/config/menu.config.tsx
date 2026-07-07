@@ -143,11 +143,12 @@ export const MENU_SIDEBAR: MenuConfig = [
     //   { title: 'Weekly Installer Cost', path: '/report/weekly-installer-cost', permissionKey: 'weekly_installer_cost' },
     // ],
   },
-  // {
-  //   title: 'Operator',
-  //   icon: 'shop.svg',
-  //   path: '/operator/dashboard',
-  // },
+  {
+    title: 'Audit Logs',
+    icon: 'shop.svg',
+    path: '/audit',
+    superAdminOnly: true,
+  },
 
   {
     title: 'Settings',

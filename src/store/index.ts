@@ -18,6 +18,7 @@ import { shopRevisionApi } from "./api/shopRevision";
 import { operatorApi } from "./api/operator";
 import { installerTimerApi, templaterTimerApi } from "./api/jobTimers";
 import { reportApi } from "./api/report";
+import {auditApi} from "./api/audit";
 
 
 
@@ -44,6 +45,7 @@ const rootReducer = combineReducers({
     [templaterTimerApi.reducerPath]: templaterTimerApi.reducer,
     [installerTimerApi.reducerPath]: installerTimerApi.reducer,
     [reportApi.reducerPath]: reportApi.reducer,
+    [auditApi.reducerPath]: auditApi.reducer,
 });
 
 export type RootState = ReturnType<typeof rootReducer>;
@@ -73,6 +75,7 @@ const store = configureStore({
                 templaterTimerApi.middleware,
                 installerTimerApi.middleware,
                 reportApi.middleware,
+                auditApi.middleware
             ),
 
 });

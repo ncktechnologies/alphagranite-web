@@ -86,6 +86,8 @@ import { RevisionReport } from '@/pages/reports/RevisionReport';
 import { ReportsPage } from '@/pages/reports';
 import { PerformancePage } from '@/pages/performance';
 import { SlaSettings } from '@/pages/reports/SlaSettings';
+import { R } from 'node_modules/react-router/dist/development/index-react-server-client-2EDmGlsZ.d.mts';
+import { AuditTrails } from '@/pages/audit/auditTails';
 
 export function AppRoutingSetup() {
   return (
@@ -526,6 +528,12 @@ export function AppRoutingSetup() {
             path='jobs/:job_id/installer/timer'
             element={
               <InstallerTimerPage />
+            }
+          />
+          <Route
+            path="/audit"
+            element={
+              <AuditTrails />
             }
           />
         </Route>
