@@ -122,7 +122,7 @@ export function TemplatingDetailsPage() {
         return {
           id: note.id,
           avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
-          avatarUrl: note.profile_image_url,
+          avatarUrl: note.created_by_profile_image_url,
           content: note?.note || '',
           author: note.created_by_name || 'Unknown',
           timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
