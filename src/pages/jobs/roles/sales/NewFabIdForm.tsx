@@ -787,7 +787,7 @@ const NewFabIdForm = () => {
                     <CardHeader>
                       <CardTitle className='text-[#111827] flex items-center gap-2 font-semibold'>
                         <RiInformationFill className='text-primary' />
-                        Job Information
+                        Fab Information
                       </CardTitle>
                     </CardHeader>
                     <CardContent className='space-y-6'>

@@ -19,6 +19,7 @@ interface SidebarSection {
         timestamp: string
         category?: string
         categoryColor?: string
+        avatarUrl?: string
     }[]
     finalNote?: string
     className?: string
@@ -117,9 +118,13 @@ export default function GraySidebar({ sections, className = '', jobId }: GraySid
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <Avatar className="h-8 w-8 flex-shrink-0">
-                                                <AvatarFallback className="text-sm bg-[#B85C5C] text-white font-medium">
-                                                    {note.avatar}
-                                                </AvatarFallback>
+                                                {note.avatarUrl ? (
+                                                    <img src={note.avatarUrl} alt={note.author} className="h-full w-full object-cover rounded-full" />
+                                                ) : (
+                                                    <AvatarFallback className="text-sm bg-[#B85C5C] text-white font-medium">
+                                                        {note.avatar}
+                                                    </AvatarFallback>
+                                                )}
                                             </Avatar>
                                             <span className="text-sm font-normal text-[#111827]">{note.author}</span>
                                         </div>

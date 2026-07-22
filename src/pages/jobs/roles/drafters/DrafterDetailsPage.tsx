@@ -469,6 +469,7 @@ export function DrafterDetailsPage() {
         ? fabData.notes.map((note: string, index: number) => ({
           id: index,
           avatar: 'N',
+          avatarUrl: note.profile_image_url,
           content: note,
           author: '',
           timestamp: '',
@@ -484,6 +485,7 @@ export function DrafterDetailsPage() {
         return {
           id: note.id,
           avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+          avatarUrl: note.profile_image_url,
           content: note?.note || '',
           author: note.created_by_name || 'Unknown',
           timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
@@ -665,25 +667,25 @@ export function DrafterDetailsPage() {
               <Card>
                 <CardContent className="p-3 sm:p-4 lg:p-5 space-y-5">
                   <Can action="create" on="Drafting">
-                  <TimeTrackingComponent
-                    isDrafting={isDrafting}
-                    isPaused={isPaused}
-                    totalTime={totalTime}
-                    draftStart={draftStart}
-                    draftEnd={draftEnd}
-                    sessionData={sessionData}
-                    isFabOnHold={fabData?.status_id === 0}
-                    onStart={handleStart}
-                    onPause={handlePause}
-                    onResume={handleResume}
-                    onEnd={handleEnd}
-                    onOnHold={handleOnHold}
-                    onTimeUpdate={setTotalTime}
-                    hasEnded={hasEnded}
-                    uploadedFilesCount={allFilesForDisplay.length}
-                  />
+                    <TimeTrackingComponent
+                      isDrafting={isDrafting}
+                      isPaused={isPaused}
+                      totalTime={totalTime}
+                      draftStart={draftStart}
+                      draftEnd={draftEnd}
+                      sessionData={sessionData}
+                      isFabOnHold={fabData?.status_id === 0}
+                      onStart={handleStart}
+                      onPause={handlePause}
+                      onResume={handleResume}
+                      onEnd={handleEnd}
+                      onOnHold={handleOnHold}
+                      onTimeUpdate={setTotalTime}
+                      hasEnded={hasEnded}
+                      uploadedFilesCount={allFilesForDisplay.length}
+                    />
 
-                  <Separator />
+                    <Separator />
                   </Can>
 
                   {/* File upload section */}
@@ -693,16 +695,16 @@ export function DrafterDetailsPage() {
                         <div className="flex items-center justify-between">
                           <h3 className="font-semibold text-sm">Uploaded files</h3>
                           <Can action="create" on="Drafting">
-                          <Button
-                            variant="dashed"
-                            size="sm"
-                            onClick={() => setShowUploadModal(true)}
-                            disabled={!isDrafting || isPaused || hasEnded || isOnHold}
-                            className="flex items-center gap-1.5 text-xs"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            Add Files
-                          </Button>
+                            <Button
+                              variant="dashed"
+                              size="sm"
+                              onClick={() => setShowUploadModal(true)}
+                              disabled={!isDrafting || isPaused || hasEnded || isOnHold}
+                              className="flex items-center gap-1.5 text-xs"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                              Add Files
+                            </Button>
                           </Can>
                         </div>
                         <Documents
@@ -725,13 +727,13 @@ export function DrafterDetailsPage() {
                     <div className="flex justify-end gap-2 pt-2">
                       <BackButton fallbackUrl="/job/draft" label="Cancel" />
                       <Can action="create" on="Drafting">
-                      <Button
-                        onClick={handleOpenSubmissionModal}
-                        className="bg-green-600 hover:bg-green-700"
-                        disabled={!canOpenSubmit}
-                      >
-                        Submit Draft
-                      </Button>
+                        <Button
+                          onClick={handleOpenSubmissionModal}
+                          className="bg-green-600 hover:bg-green-700"
+                          disabled={!canOpenSubmit}
+                        >
+                          Submit Draft
+                        </Button>
                       </Can>
                     </div>
                   )}

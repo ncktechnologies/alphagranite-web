@@ -403,6 +403,7 @@ export function SlabSmithDetailsPage() {
           return {
             id: note.id,
             avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+            avatarUrl: note.profile_image_url,
             content: note?.note || '',
             author: note.created_by_name || 'Unknown',
             timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
@@ -598,13 +599,13 @@ export function SlabSmithDetailsPage() {
                   <div className="flex justify-end gap-2 pt-2">
                     <BackButton fallbackUrl="/job/slab-smith" label="Cancel" />
                     <Can action="create" on="SlabSmith Request">
-                    <Button
-                      onClick={handleOpenSubmissionModal}
-                      className="bg-green-600 hover:bg-green-700"
-                      disabled={!canOpenSubmit}
-                    >
-                      Submit SlabSmith Work
-                    </Button>
+                      <Button
+                        onClick={handleOpenSubmissionModal}
+                        className="bg-green-600 hover:bg-green-700"
+                        disabled={!canOpenSubmit}
+                      >
+                        Submit SlabSmith Work
+                      </Button>
                     </Can>
                   </div>
                 </CardContent>

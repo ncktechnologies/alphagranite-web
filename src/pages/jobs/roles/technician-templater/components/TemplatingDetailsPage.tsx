@@ -116,12 +116,13 @@ export function TemplatingDetailsPage() {
       title: "FAB Notes",
       type: "notes",
       notes: getAllFabNotes(fab.fab_notes || []).map(note => {
-        
+
         const stage = note.stage || 'general';
         const config = stageConfig[stage] || stageConfig.general;
         return {
           id: note.id,
           avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+          avatarUrl: note.profile_image_url,
           content: note?.note || '',
           author: note.created_by_name || 'Unknown',
           timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',

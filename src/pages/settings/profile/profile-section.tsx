@@ -20,13 +20,20 @@ const ProfileSection = () => {
   const isSuperAdmin = useIsSuperAdmin();
   const { data: profile, isLoading, error } = useGetProfileQuery();
 
-  const image = (
+  const imageNode = profile?.profile_image_url ? (
+    <img
+      src={profile.profile_image_url}
+      alt={`${profile?.first_name || ''} ${profile?.last_name || ''}`}
+      className="rounded-full size-[100px] shrink-0 object-cover border-2 border-green-500"
+    />
+  ) : (
     <img
       src={toAbsoluteUrl('/images/app/user-line.svg')}
       className="rounded-full size-[100px] shrink-0 shadow p-3 object-cover"
       alt="image"
     />
   );
+
 
   const handleSave = (data: any) => {
     setSuccess(true);
@@ -99,7 +106,7 @@ const ProfileSection = () => {
 
             <UserHero
               name={`${profile?.first_name || ''} ${profile?.last_name || ''}`}
-              image={image}
+              image={imageNode}
               username={`@${profile?.username || 'user'}`}
               role={profile?.department_name || 'Nil'}
               info={[]}

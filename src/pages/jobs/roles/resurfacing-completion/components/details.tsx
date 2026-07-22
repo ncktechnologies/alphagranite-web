@@ -79,6 +79,7 @@ export function ResurfacingStatusDetailsPage() {
         ? fab.notes.map((note: string, index: number) => ({
           id: index,
           avatar: 'N',
+          avatarUrl: note.profile_image_url,
           content: note,
           author: '',
           timestamp: '',
@@ -90,7 +91,7 @@ export function ResurfacingStatusDetailsPage() {
       type: 'notes',
       notes: Array.isArray(fab?.notes)
         ? fab.notes.map((noteItem: any, index: number) => {
-         
+
           const stage = noteItem?.stage || 'general';
           const config = stageConfig[stage] || stageConfig.general;
 
@@ -100,6 +101,7 @@ export function ResurfacingStatusDetailsPage() {
           return {
             id: noteItem?.id ?? index,
             avatar: fabAuthorName?.charAt(0).toUpperCase() || 'U',
+            avatarUrl: note.profile_image_url,
             content: note?.note || '',
             author: fabAuthorName || 'Unknown',
             timestamp: fab?.created_at ? new Date(fab.created_at).toLocaleDateString() : 'Unknown date',

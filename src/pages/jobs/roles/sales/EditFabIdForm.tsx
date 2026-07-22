@@ -47,6 +47,7 @@ import { useGetDepartmentsQuery } from '@/store/api/department';
 import { useGetSalesPersonsQuery } from '@/store/api/employee';
 import { getCheckboxRuleError, isCurrentStateImpossible } from './NewFabIdForm';
 import DialogContent, { Dialog, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { useIsSuperAdmin } from '@/hooks/use-permission';
 
 // Custom Currency Input Component
 interface CurrencyInputProps {
@@ -218,6 +219,7 @@ const EditFabIdForm = () => {
     const [isLoadingFormData, setIsLoadingFormData] = useState(false);
     const lastProcessedJobRef = useRef<{ name: string; number: string } | null>(null);
     const isInitialLoadCompleteRef = useRef(false);
+    const isSuperAdmin = useIsSuperAdmin()
 
     // API hooks for dropdown data
     const { data: fabTypesData = [], isLoading: isLoadingFabTypes } = useGetFabTypesQuery();
@@ -794,7 +796,7 @@ const EditFabIdForm = () => {
                                     <CardHeader>
                                         <CardTitle className='text-[#111827] flex items-center gap-2 font-semibold'>
                                             <RiInformationFill className='text-primary' />
-                                            Job Information
+                                            Fab Information
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent className='space-y-6'>
@@ -1124,7 +1126,7 @@ const EditFabIdForm = () => {
                                                                     onCheckedChange={(checked) =>
                                                                         handleCheckboxToggle('templateNotNeeded', checked === true, field.onChange)
                                                                     }
-                                                                    disabled={true}
+                                                                    disabled={!isSuperAdmin}
                                                                 />
                                                             </FormControl>
                                                             <FormLabel className="font-normal">Template not needed</FormLabel>
@@ -1142,7 +1144,7 @@ const EditFabIdForm = () => {
                                                                     onCheckedChange={(checked) =>
                                                                         handleCheckboxToggle('draftNotNeeded', checked === true, field.onChange)
                                                                     }
-                                                                    disabled={true}
+                                                                    disabled={!isSuperAdmin}
                                                                 />
                                                             </FormControl>
                                                             <FormLabel className="font-normal">Draft not needed</FormLabel>
@@ -1160,7 +1162,7 @@ const EditFabIdForm = () => {
                                                                     onCheckedChange={(checked) =>
                                                                         handleCheckboxToggle('slabSmithCustNotNeeded', checked === true, field.onChange)
                                                                     }
-                                                                    disabled={true}
+                                                                    disabled={!isSuperAdmin}
                                                                 />
                                                             </FormControl>
                                                             <FormLabel className="font-normal">SlabSmith (Cust) not needed</FormLabel>
@@ -1179,7 +1181,7 @@ const EditFabIdForm = () => {
                                                                     onCheckedChange={(checked) =>
                                                                         handleCheckboxToggle('slabSmithAGNotNeeded', checked === true, field.onChange)
                                                                     }
-                                                                    disabled={true}
+                                                                    disabled={!isSuperAdmin}
                                                                 />
                                                             </FormControl>
                                                             <FormLabel className="font-normal">Slab smith (AG) not needed</FormLabel>
@@ -1197,7 +1199,7 @@ const EditFabIdForm = () => {
                                                                     onCheckedChange={(checked) =>
                                                                         handleCheckboxToggle('sctNotNeeded', checked === true, field.onChange)
                                                                     }
-                                                                    disabled={true}
+                                                                    disabled={!isSuperAdmin}
                                                                 />
                                                             </FormControl>
                                                             <FormLabel className="font-normal">SCT not needed</FormLabel>
@@ -1215,7 +1217,7 @@ const EditFabIdForm = () => {
                                                                     onCheckedChange={(checked) =>
                                                                         handleCheckboxToggle('finalProgrammingNotNeeded', checked === true, field.onChange)
                                                                     }
-                                                                    disabled={true}
+                                                                    disabled={!isSuperAdmin}
                                                                 />
                                                             </FormControl>
                                                             <FormLabel className="font-normal">Final programing not needed</FormLabel>

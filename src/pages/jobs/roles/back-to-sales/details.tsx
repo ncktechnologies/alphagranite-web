@@ -221,6 +221,7 @@ export const DraftReviewDetailsPage = () => {
                 ? fabData.notes.map((note: string, index: number) => ({
                     id: index,
                     avatar: 'N',
+                    avatarUrl: note.profile_image_url,
                     content: note,
                     author: '',
                     timestamp: '',
@@ -238,6 +239,7 @@ export const DraftReviewDetailsPage = () => {
                     return {
                         id: note?.id,
                         avatar: note?.created_by_name?.charAt(0).toUpperCase() || 'U',
+                        avatarUrl: note.profile_image_url,
                         content: note?.note || '',
                         author: note?.created_by_name || 'Unknown',
                         timestamp: note?.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
@@ -355,17 +357,17 @@ export const DraftReviewDetailsPage = () => {
                                             </Badge>
                                         )}
                                         <Can action="create" on="SCT">
-                                        <Button onClick={() => setShowMarkAsCompleteModal(true)}>
-                                            Mark as Complete
-                                        </Button>
+                                            <Button onClick={() => setShowMarkAsCompleteModal(true)}>
+                                                Mark as Complete
+                                            </Button>
                                         </Can>
                                         <Can action="create" on="SCT">
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => setShowSubmissionModal(true)}
-                                        >
-                                            Create Revision
-                                        </Button>
+                                            <Button
+                                                variant="outline"
+                                                onClick={() => setShowSubmissionModal(true)}
+                                            >
+                                                Create Revision
+                                            </Button>
                                         </Can>
                                     </div>
                                 </CardHeader>

@@ -42,7 +42,7 @@ import { getUserInitials } from '@/utils/userUtils';
 export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
   // const { logout, user } = useAuth();
   const user = useSelector((state: any) => state.user.user);
- 
+
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -57,7 +57,7 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
       : user?.username || 'User');
 
   const displayEmail = user?.email || '';
-  const displayAvatar = user?.profile_picture || toAbsoluteUrl('/media/avatars/300-2.png');
+  const displayAvatar = user?.profile_image_url || toAbsoluteUrl('/media/avatars/300-2.png');
   // const displayAvatar = toAbsoluteUrl('/media/avatars/300-2.png');
 
   const handleLanguage = (lang: Language) => {
@@ -80,10 +80,17 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
         {/* Header */}
         <div className="flex items-center justify-between p-3">
           <div className="flex items-center gap-2">
-            {/* User Initials Avatar */}
-            <div className="size-9 rounded-full border-2 border-green-500 flex items-center justify-center bg-green-100 text-green-800 font-semibold">
-              {getUserInitials(user)}
-            </div>
+            {user?.profile_image_url ? (
+              <img
+                src={user.profile_image_url}
+                alt={displayName}
+                className="size-9 rounded-full border-2 border-green-500 object-cover"
+              />
+            ) : (
+              <div className="size-9 rounded-full border-2 border-green-500 flex items-center justify-center bg-green-100 text-green-800 font-semibold">
+                {getUserInitials(user)}
+              </div>
+            )}
             <div className="flex flex-col">
               <Link
                 to=""

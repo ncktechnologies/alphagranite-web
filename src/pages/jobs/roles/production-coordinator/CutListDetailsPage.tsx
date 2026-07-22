@@ -95,18 +95,18 @@ export function CutListDetailsPage() {
           },
           { label: 'Drafter Assigned', value: draftData?.drafter_name || 'Unassigned' },
           { label: 'Sales Person', value: fabData.sales_person_name || '—' },
-          { 
-            label: 'SlabSmith Needed', 
+          {
+            label: 'SlabSmith Needed',
             value: (() => {
               const custNeeded = fabData.slab_smith_cust_needed;
               const agNeeded = fabData.slab_smith_ag_needed;
-              
+
               if (custNeeded === false && agNeeded === false) return 'Not Needed';
-              
+
               const types = [];
               if (custNeeded === true) types.push('Cust');
               if (agNeeded === true) types.push('AG');
-              
+
               return types.join(' & ') || 'Unknown';
             })()
           },
@@ -120,6 +120,7 @@ export function CutListDetailsPage() {
             {
               id: 1,
               avatar: draftData.drafter_name?.substring(0, 2).toUpperCase() || 'DR',
+              avatarUrl: note.profile_image_url,
               content:
                 draftData.draft_note ||
                 `Drafting completed with ${draftData.no_of_piece_drafted || 0} pieces, ${draftData.total_sqft_drafted || 0} sq ft`,
@@ -136,6 +137,7 @@ export function CutListDetailsPage() {
           ? fabData.notes.map((note: string, index: number) => ({
             id: index,
             avatar: 'N',
+            avatarUrl: note.profile_image_url,
             content: note,
             author: 'System',
             timestamp: new Date().toLocaleDateString(),
@@ -152,6 +154,7 @@ export function CutListDetailsPage() {
             return {
               id: note?.id,
               avatar: note?.created_by_name?.charAt(0).toUpperCase() || 'U',
+              avatarUrl: note.profile_image_url,
               content: note?.note || '',
               author: note?.created_by_name || 'Unknown',
               timestamp: note?.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',

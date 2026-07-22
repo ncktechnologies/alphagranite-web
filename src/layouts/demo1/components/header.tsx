@@ -56,6 +56,20 @@ export function Header() {
     setIsMegaMenuSheetOpen(false);
   }, [pathname]);
 
+
+  // Build the trigger dynamically based on user's profile image
+  const triggerNode = user?.profile_image_url ? (
+    <img
+      src={user.profile_image_url}
+      alt={user?.fullname || 'User'}
+      className="size-9 rounded-full border-2 border-green-500 object-cover cursor-pointer shrink-0"
+    />
+  ) : (
+    <div className="size-9 rounded-full border-2 border-green-500 shrink-0 cursor-pointer flex items-center justify-center bg-green-100 text-green-800 font-semibold">
+      {getUserInitials(user)}
+    </div>
+  );
+
   return (
     <header
       className={cn(
@@ -179,13 +193,7 @@ export function Header() {
                 }
               /> */}
               <TemplaterTimerWidget />
-              <UserDropdownMenu
-                trigger={
-                  <div className="size-9 rounded-full border-2 border-green-500 shrink-0 cursor-pointer flex items-center justify-center bg-green-100 text-green-800 font-semibold">
-                    {getUserInitials(user)}
-                  </div>
-                }
-              />
+             <UserDropdownMenu trigger={triggerNode} />
             </>
           )}
         </div>

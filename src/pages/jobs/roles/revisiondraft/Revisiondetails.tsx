@@ -119,9 +119,9 @@ const getRevisionInfo = (fabData: any, sctData: any, revisionsData: any) => {
 
   if (salesCTData?.revision_reason) {
     revisionReason = salesCTData.revision_reason;
-  // } else if (revisionNote?.note) {
-  //   revisionReason = revisionNote.note.replace('[REVISION REQUEST] ', '');
-  } 
+    // } else if (revisionNote?.note) {
+    //   revisionReason = revisionNote.note.replace('[REVISION REQUEST] ', '');
+  }
   // else if (salesCTData?.note) {
   //   revisionReason = salesCTData.note;
   // } else if (salesCTData?.sales_ct_notes) {
@@ -479,7 +479,7 @@ export function RevisionDetailsPage() {
             fab_id: fabId,
             revision_type: revisionInfo.salesCTData?.revision_type || revisionInfo.revisionType,
             requested_by: currentEmployeeId,
-            revision_notes: data.notes  || '',
+            revision_notes: data.notes || '',
             is_completed: false,
             sales_ct_id: revisionInfo.salesCTId || null,
             revision_reason: revisionInfo.revisionReason
@@ -666,6 +666,7 @@ export function RevisionDetailsPage() {
         return {
           id: note.id,
           avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+          avatarUrl: note.profile_image_url,
           content: note?.note || '',
           author: note.created_by_name || 'Unknown',
           timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
