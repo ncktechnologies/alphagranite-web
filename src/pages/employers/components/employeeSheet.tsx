@@ -92,35 +92,36 @@ const EmployeeFormSheet = ({
   });
 
   // Prefill form when editing or viewing - FIXED VERSION
- useEffect(() => {
-  if (!isSheetOpen) return;
-  if (employee) {
-    const resetData = {
-      first_name: employee.first_name || "",
-      last_name: employee.last_name || "",
-      email: employee.email || "",
-      department: employee.department ? String(employee.department) : "",
-      home_address: employee.home_address || "",
-      phone: employee.phone || "",
-      gender: employee.gender || "",
-      role_id: employee.role_id ? String(employee.role_id) : "",
-      hcp_employee_id: employee.hcp_employee_id ? String(employee.hcp_employee_id) : "",
-    };
-    form.reset(resetData);
-  } else {
-    form.reset({
-      first_name: "",
-      last_name: "",
-      email: "",
-      department: "",
-      home_address: "",
-      phone: "",
-      gender: "",
-      role_id: "",
-      hcp_employee_id: "",
-    });
-  }
-}, [isSheetOpen, employee]); 
+  useEffect(() => {
+    if (!isSheetOpen) return;
+    if (employee) {
+      const resetData = {
+        first_name: employee.first_name || "",
+        last_name: employee.last_name || "",
+        email: employee.email || "",
+        department: employee.department ? String(employee.department) : "",
+        home_address: employee.home_address || "",
+        phone: employee.phone || "",
+        gender: employee.gender || "",
+        role_id: employee.role_id ? String(employee.role_id) : "",
+        hcp_employee_id: employee.hcp_employee_id ? String(employee.hcp_employee_id) : "",
+        profile_image_url: employee.profile_image_url || "",
+      };
+      form.reset(resetData);
+    } else {
+      form.reset({
+        first_name: "",
+        last_name: "",
+        email: "",
+        department: "",
+        home_address: "",
+        phone: "",
+        gender: "",
+        role_id: "",
+        hcp_employee_id: "",
+      });
+    }
+  }, [isSheetOpen, employee]);
   // Debug current form values
   useEffect(() => {
     if (isSheetOpen) {
@@ -207,14 +208,18 @@ const EmployeeFormSheet = ({
                 <div className="space-y-6">
 
 
-                  {!isViewMode && (
+                  {/* {!isViewMode && ( */}
                     <div className="space-y-2">
                       <FormLabel>Upload image</FormLabel>
                       <div className="flex items-center gap-4">
-                        <AvatarInput onFileChange={(file) => setProfileImage(file)} />
+                        <AvatarInput
+                          onFileChange={(file) => setProfileImage(file)}
+                          defaultImageUrl={employee?.profile_image_url || ''}
+                          disabled={isViewMode}
+                        />
                       </div>
                     </div>
-                  )}
+                  {/* )} */}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
