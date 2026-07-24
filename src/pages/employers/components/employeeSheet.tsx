@@ -87,47 +87,40 @@ const EmployeeFormSheet = ({
       phone: "",
       gender: "",
       role_id: "",
+      hcp_employee_id: "",
     },
   });
 
   // Prefill form when editing or viewing - FIXED VERSION
-  useEffect(() => {
-    if (isSheetOpen && employee) {
-      let phoneValue = employee.phone || "";
-      const placeholderValues = ["N/A", "NA", "NONE", "NULL"];
-      if (placeholderValues.includes(phoneValue.trim().toUpperCase())) {
-        phoneValue = "";
-      }
-      // Use employee.department (which contains the ID) instead of employee.department_id
-      const resetData = {
-        first_name: employee.first_name || "",
-        last_name: employee.last_name || "",
-        email: employee.email || "",
-        department: employee.department ? String(employee.department) : "",
-        home_address: employee.home_address || "",
-        phone: phoneValue,
-        gender: employee.gender || "",
-        role_id: employee.role_id ? String(employee.role_id) : "",
-      };
-
-      // console.log('Form reset data:', resetData);
-      form.reset(resetData);
-    } else if (isSheetOpen && !employee) {
-      // Reset to empty for create mode
-      form.reset({
-        first_name: "",
-        last_name: "",
-        email: "",
-        department: "",
-        home_address: "",
-        phone: "",
-        gender: "",
-        role_id: "",
-        hcp_employee_id: "",
-      });
-    }
-  }, [employee, form, isSheetOpen, departmentsData]);
-
+ useEffect(() => {
+  if (!isSheetOpen) return;
+  if (employee) {
+    const resetData = {
+      first_name: employee.first_name || "",
+      last_name: employee.last_name || "",
+      email: employee.email || "",
+      department: employee.department ? String(employee.department) : "",
+      home_address: employee.home_address || "",
+      phone: employee.phone || "",
+      gender: employee.gender || "",
+      role_id: employee.role_id ? String(employee.role_id) : "",
+      hcp_employee_id: employee.hcp_employee_id ? String(employee.hcp_employee_id) : "",
+    };
+    form.reset(resetData);
+  } else {
+    form.reset({
+      first_name: "",
+      last_name: "",
+      email: "",
+      department: "",
+      home_address: "",
+      phone: "",
+      gender: "",
+      role_id: "",
+      hcp_employee_id: "",
+    });
+  }
+}, [isSheetOpen, employee]); 
   // Debug current form values
   useEffect(() => {
     if (isSheetOpen) {
@@ -344,7 +337,7 @@ const EmployeeFormSheet = ({
                         <FormItem>
                           <FormLabel>HCP Employee ID</FormLabel>
                           <FormControl>
-                            <Input placeholder="Enter HCP Employee ID" {...field} />
+                            <Input placeholder="Enter HCP Employee ID" {...field} disabled={isViewMode} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
