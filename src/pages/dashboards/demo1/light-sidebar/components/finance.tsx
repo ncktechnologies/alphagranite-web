@@ -42,7 +42,7 @@ const FinanceStats = ({ financeData }: IFinanceStatsProps) => {
             title: 'Revenue Installed', 
             path: '', 
             desc: '+1', 
-            bgColor: 'bg-[#9CC15E]' 
+            bgColor: 'bg-[#233A50]' 
         },
         { 
             logo: 'dollar-exchange.svg', 

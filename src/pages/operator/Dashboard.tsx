@@ -425,7 +425,7 @@ export function OperatorDashboard() {
                             <button
                                 onClick={() => setCurrentDate(new Date())}
                                 className="h-[44px] px-6 rounded-[8px] text-[14px] font-semibold text-white"
-                                style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #9cc15e 100%)' }}
+                                style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #233A50 100%)' }}
                             >
                                 {t('COMMON.TODAY')}
                             </button>

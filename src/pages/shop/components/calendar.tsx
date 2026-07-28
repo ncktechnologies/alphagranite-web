@@ -290,7 +290,7 @@ const ShopCalendarPage = () => {
           <button
             onClick={() => handleCreateEvent(currentDate)}
             className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-['Proxima_Nova:Semibold',sans-serif] text-[14px] leading-[20px] font-semibold tracking-[-0.56px]"
-            style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #9cc15e 100%)' }}
+            style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #233A50 100%)' }}
           >
             <Plus className="h-4 w-4" />
             Create Plan

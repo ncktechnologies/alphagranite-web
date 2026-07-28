@@ -491,7 +491,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                   onChange={(e) => setFabPickerInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && fabPickerInput.trim()) handleOpenCreatePlanWithFab(fabPickerInput.trim()); }}
                   autoFocus
-                  className="w-full h-[44px] bg-white border border-[#e2e4ed] rounded-[8px] pl-9 pr-4 text-[14px] text-[#4b545d] placeholder:text-[#78829d] outline-none focus:border-[#9cc15e] focus:ring-1 focus:ring-[#9cc15e]"
+                  className="w-full h-[44px] bg-white border border-[#e2e4ed] rounded-[8px] pl-9 pr-4 text-[14px] text-[#4b545d] placeholder:text-[#78829d] outline-none focus:border-[#233A50] focus:ring-1 focus:ring-[#233A50]"
                 />
               </div>
             </div>
@@ -507,7 +507,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                 onClick={() => fabPickerInput.trim() && handleOpenCreatePlanWithFab(fabPickerInput.trim())}
                 disabled={!fabPickerInput.trim()}
                 className="flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold disabled:opacity-40"
-                style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #9cc15e 100%)' }}
+                style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #233A50 100%)' }}
               >
                 Continue
               </button>
@@ -526,7 +526,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
           <button
             onClick={() => navigate('/shop/create-plan')}
             className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px] tracking-[-0.56px]"
-            style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #9cc15e 100%)' }}
+            style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #233A50 100%)' }}
           >
             <Plus className="h-4 w-4" />
             Create Plan
@@ -553,7 +553,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
         <div className="flex items-center justify-between px-10 h-[65px]">
           <div className="flex items-center gap-[10px]">
             {isSearchLocked ? (
-              <div className="flex items-center gap-2 h-[36px] bg-[#f0f4e8] border border-[#9cc15e] rounded-[6px] px-3">
+              <div className="flex items-center gap-2 h-[36px] bg-[#f0f4e8] border border-[#233A50] rounded-[6px] px-3">
                 <Lock className="size-3.5 text-[#233A50]" />
                 <span className="font-semibold text-[13px] text-[#4b545d]">{lockedFabId}</span>
               </div>

@@ -895,7 +895,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               {isEditing ? 'Edit Plan' : 'Create Plan'}
             </p>
             {entries[0]?.fab_id && (
-              <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2">
+              <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#233A50] rounded-[8px] px-4 py-2">
                 <span className="text-[13px] text-[#4a4d59]">FAB ID</span>
                 <span className="text-[20px] text-[#233A50] font-semibold">#{entries[0].fab_id}</span>
               </div>
@@ -906,7 +906,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
             <button
               onClick={() => navigate(`/shop/auto-schedule?fabId=${entries[0]?.fab_id || ''}`)}
               className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px]"
-              style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #9cc15e 100%)' }}
+              style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #233A50 100%)' }}
             >
               <Plus className="h-4 w-4" />
               Auto Schedule
@@ -927,7 +927,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       <div className="px-10 py-8 max-w-6xl mx-auto">
         {!isFormReady ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <LoaderCircle className="h-8 w-8 animate-spin text-[#9cc15e]" />
+            <LoaderCircle className="h-8 w-8 animate-spin text-[#233A50]" />
             <p className="text-[14px] text-[#7c8689]">Loading plan data…</p>
           </div>
         ) : (
@@ -985,7 +985,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               <button
                 type="button"
                 onClick={addEntry}
-                className="w-full h-[44px] border border-dashed border-[#e2e4ed] rounded-[8px] flex items-center justify-center gap-2 text-[#78829d] hover:border-[#9cc15e] hover:text-[#233A50] hover:bg-[#f0f4e8] transition-all"
+                className="w-full h-[44px] border border-dashed border-[#e2e4ed] rounded-[8px] flex items-center justify-center gap-2 text-[#78829d] hover:border-[#233A50] hover:text-[#233A50] hover:bg-[#f0f4e8] transition-all"
               >
                 <Plus className="h-4 w-4" />
                 <span className="text-[14px] font-semibold">Add Another Stage</span>
@@ -1004,7 +1004,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               <button
                 type="submit"
                 className="flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold disabled:opacity-60"
-                style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #9cc15e 100%)' }}
+                style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #233A50 100%)' }}
                 disabled={isLoading || isAutoScheduling}
               >
                 {isLoading

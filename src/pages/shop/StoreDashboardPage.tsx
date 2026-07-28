@@ -109,7 +109,7 @@ export function StoreDashboardPage() {
     // Extract data properties safely
     const data = widget.data;
     const icon = data?.icon || 'h119.svg';
-    const bgColor = data?.bgColor || 'bg-[#9CC15E]';
+    const bgColor = data?.bgColor || 'bg-[#233A50]';
     
     // Get FAB count for this widget's stage
     const fabCount = getFabCountForStage(widget.id);

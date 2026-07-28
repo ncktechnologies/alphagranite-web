@@ -50,7 +50,7 @@ const Contributions = ({ title, overallStats }: IContributionsProps) => {
     });
   }
   const labels: string[] = ['Completed', 'In Progress', 'Paused'];
-  const colors: string[] = ['#9CC15E', '#51BCF4', '#EA3DB1'];
+  const colors: string[] = ['#233A50', '#51BCF4', '#EA3DB1'];
 
   // Updated for larger chart - increased radius and center
   const getLabelPosition = (index: number, radius: number = 120) => {
@@ -221,7 +221,7 @@ const Contributions = ({ title, overallStats }: IContributionsProps) => {
         <div className="flex-shrink-0 mt-auto pt-6"> {/* Increased padding top */}
           <div className="flex flex-row gap-6 justify-between">
             <div className="flex items-center gap-2">
-              <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#9CC15E'}}></div>
+              <div className="w-3 h-3 rounded-full" style={{backgroundColor: '#233A50'}}></div>
               <span className="text-sm text-text">Completed</span>
             </div>
             <div className="flex items-center gap-2">

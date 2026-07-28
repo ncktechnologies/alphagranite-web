@@ -198,7 +198,7 @@ export function SalesPage() {
                         </Can>
                         {/* <Can action="rea" on="View all FABS"> */}
                             <Link to="/create-jobs">
-                                <Button className="">
+                                <Button className="bg-[#FFDA99]">
                                     <Eye />
                                     View Jobs
                                 </Button>
