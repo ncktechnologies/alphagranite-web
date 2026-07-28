@@ -227,9 +227,9 @@ export function SidebarMenu() {
     group: 'gap-px',
     label: 'uppercase text-xs font-medium text-muted-foreground/70 py-2.25 pb-px',
     separator: '',
-    item: 'h-8 hover:bg-transparent text-white hover:text-white/50 data-[selected=true]:text-white data-[selected=true]:bg-[#667F01]! data-[selected=true]:py-6',
+    item: 'h-8 hover:bg-transparent text-white hover:text-white/50 data-[selected=true]:text-white data-[selected=true]:bg-sidbar-muted! data-[selected=true]:py-6',
     sub: '',
-    subTrigger: 'h-8 hover:bg-transparent text-white hover:text-white/50 data-[selected=true]:text-primary data-[selected=true]:bg-[#667F01]! data-[selected=true]:font-medium [&_svg]:text-white [&_svg]:w-6 [&_svg]:h-6',
+    subTrigger: 'h-8 hover:bg-transparent text-white hover:text-white/50 data-[selected=true]:text-primary data-[selected=true]:bg-sidbar-muted! data-[selected=true]:font-medium [&_svg]:text-white [&_svg]:w-6 [&_svg]:h-6',
     subContent: 'py-0 [&_svg]:text-white [&_svg]:w-5 [&_svg]:h-5',
     indicator: 'text-white',
   };
@@ -271,7 +271,7 @@ export function SidebarMenu() {
               <Badge
                 variant="secondary"
                 size="sm"
-                className="ms-auto bg-[#667F01] text-white"
+                className="ms-auto bg-sidbar-muted text-white"
               >
                 {badgeText}
               </Badge>
@@ -397,7 +397,7 @@ export function SidebarMenu() {
             <Badge
               variant="secondary"
               size="sm"
-              className="ms-auto me-[-10px] bg-[#667F01] text-white"
+              className="ms-auto me-[-10px] bg-sidbar-muted text-white"
             >
               {badgeText}
             </Badge>

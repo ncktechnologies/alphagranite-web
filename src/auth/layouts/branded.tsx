@@ -16,18 +16,20 @@ export function BrandedLayout() {
           }
         `}
       </style>
-      <div className="branded-bg bg-no-repeat bg-cover min-h-screen bg-blend-overlay bg-black/70 flex flex-col justify-center items-center p-4">
-        <div className="w-full max-w-5xl mx-auto flex flex-col items-center gap-6">
-          {/* ── Top Odyssey Logo ── */}
+      <div className="branded-bg bg-no-repeat bg-cover min-h-screen bg-blend-overlay bg-black/70 flex flex-col items-center p-4">
+        {/* ── Top Odyssey Logo (hidden on mobile) ── */}
+        <div className="w-full max-w-5xl mx-auto flex justify-center ">
           <Link to="/">
             <img
-              src={toAbsoluteUrl('/images/logo/white-odyssey-logo.svg')}
-              className="h-[60px] max-w-none"
+              src={toAbsoluteUrl('/images/logo/ody/white-odyssey-logo.png')}
+              className="h-[180px] max-w-none hidden md:flex"
               alt=""
             />
           </Link>
+        </div>
 
-          {/* ── Main Two‑Column Grid ── */}
+        {/* ── Main Two‑Column Grid – vertically centered ── */}
+        <div className="flex-1 flex items-center justify-center w-full max-w-5xl mx-auto">
           <div className="grid lg:grid-cols-3 w-full items-stretch gap-6">
             {/* Left Column – hidden on mobile */}
             <div className="hidden lg:flex flex-col justify-end w-full max-w-[341px]">
@@ -41,7 +43,7 @@ export function BrandedLayout() {
                 </Link>
 
                 <div className="flex flex-col space-y-2 mt-4">
-                  <h3 className="text-4xl text-white font-proxima">
+                  <h3 className="text-4xl text-white font-oswald">
                     Welcome back!
                   </h3>
 
@@ -72,8 +74,8 @@ export function BrandedLayout() {
               {/* Mobile: show Odyssey logo above card */}
               <Link to="/">
                 <img
-                  src={toAbsoluteUrl('/images/logo/white-odyssey-logo.svg')}
-                  className="max-w-none md:hidden mb-5"
+                  src={toAbsoluteUrl('/images/logo/ody/white-odyssey-logo.png')}
+                  className="max-w-none md:hidden h-[100px] mb-5"
                   alt=""
                 />
               </Link>

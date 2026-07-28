@@ -289,7 +289,7 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
               <Popover>
                 <PopoverTrigger asChild>
                   <button type="button" className={cn('mt-2 w-full h-[44px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[14px] flex items-center gap-2', !entry.date && 'text-muted-foreground')}>
-                    <Calendar className="h-4 w-4 text-[#7a9705]" />
+                    <Calendar className="h-4 w-4 text-[#233A50]" />
                     {entry.date ? format(entry.date, 'MMM d, yyyy') : <span className="text-[#b0b7bc]">Auto-filled</span>}
                   </button>
                 </PopoverTrigger>
@@ -820,7 +820,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
             {entries[0]?.fab_id && (
               <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2">
                 <span className="text-[14px] text-[#4a4d59]">FAB ID</span>
-                <span className="text-[20px] text-[#7a9705] font-semibold">#{entries[0].fab_id}</span>
+                <span className="text-[20px] text-[#233A50] font-semibold">#{entries[0].fab_id}</span>
               </div>
             )}
           </div>
@@ -931,7 +931,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
           <button
             type="button"
             onClick={addEntry}
-            className="w-full h-[44px] border border-dashed border-[#e2e4ed] rounded-[8px] flex items-center justify-center gap-2 text-[#78829d] hover:border-[#9cc15e] hover:text-[#7a9705] hover:bg-[#f0f4e8] transition-all"
+            className="w-full h-[44px] border border-dashed border-[#e2e4ed] rounded-[8px] flex items-center justify-center gap-2 text-[#78829d] hover:border-[#9cc15e] hover:text-[#233A50] hover:bg-[#f0f4e8] transition-all"
           >
             <Plus className="h-4 w-4" />
             <span className="text-[14px] font-semibold">Add Another Stage</span>
@@ -978,7 +978,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
             <button
               type="submit"
               className="flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold disabled:opacity-60 cursor-pointer"
-              style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
+              style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #9cc15e 100%)' }}
               disabled={isLoading || isAutoScheduling}
             >
               {isLoading

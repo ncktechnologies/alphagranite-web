@@ -23,6 +23,7 @@ import { useTableState } from '@/hooks/use-table-state';
 import { useGetFabsQuery } from '@/store/api/job';
 import { formatForDisplay } from '@/utils/date-utils';
 import { IJob } from '../jobs/components/job';
+import { DateRange } from 'react-day-picker';
 
 // Helper: format date to "08 Oct, 2025"
 const formatDate = (dateString?: string): string => {
@@ -302,7 +303,7 @@ export function InstallerScheduleCards() {
                     <div
                         key={job.id}
                         onClick={() => handleCardClick(job.job_id, job.fab_id)}
-                        className="bg-white rounded-xl border border-[#e6e8f0] shadow-sm p-5 cursor-pointer transition-all hover:shadow-md hover:border-[#667f01]/30"
+                        className="bg-white rounded-xl border border-[#e6e8f0] shadow-sm p-5 cursor-pointer transition-all hover:shadow-md hover:border-sidbar-muted/30"
                     >
                         <div className="flex gap-4 justify-between mb-2">
                             <div

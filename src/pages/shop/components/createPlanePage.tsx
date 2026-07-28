@@ -381,7 +381,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
                       !entry.start_date && 'text-muted-foreground'
                     )}
                   >
-                    <Calendar className="h-4 w-4 text-[#7a9705]" />
+                    <Calendar className="h-4 w-4 text-[#233A50]" />
                     {entry.start_date ? format(entry.start_date, 'PPP') : <span>Pick start date</span>}
                   </button>
                 </PopoverTrigger>
@@ -407,7 +407,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
                       !entry.end_date && 'text-muted-foreground'
                     )}
                   >
-                    <Calendar className="h-4 w-4 text-[#7a9705]" />
+                    <Calendar className="h-4 w-4 text-[#233A50]" />
                     {entry.end_date ? format(entry.end_date, 'PPP') : <span>Pick end date</span>}
                   </button>
                 </PopoverTrigger>
@@ -897,7 +897,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
             {entries[0]?.fab_id && (
               <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2">
                 <span className="text-[13px] text-[#4a4d59]">FAB ID</span>
-                <span className="text-[20px] text-[#7a9705] font-semibold">#{entries[0].fab_id}</span>
+                <span className="text-[20px] text-[#233A50] font-semibold">#{entries[0].fab_id}</span>
               </div>
             )}
           </div>
@@ -906,7 +906,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
             <button
               onClick={() => navigate(`/shop/auto-schedule?fabId=${entries[0]?.fab_id || ''}`)}
               className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px]"
-              style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
+              style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #9cc15e 100%)' }}
             >
               <Plus className="h-4 w-4" />
               Auto Schedule
@@ -985,7 +985,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               <button
                 type="button"
                 onClick={addEntry}
-                className="w-full h-[44px] border border-dashed border-[#e2e4ed] rounded-[8px] flex items-center justify-center gap-2 text-[#78829d] hover:border-[#9cc15e] hover:text-[#7a9705] hover:bg-[#f0f4e8] transition-all"
+                className="w-full h-[44px] border border-dashed border-[#e2e4ed] rounded-[8px] flex items-center justify-center gap-2 text-[#78829d] hover:border-[#9cc15e] hover:text-[#233A50] hover:bg-[#f0f4e8] transition-all"
               >
                 <Plus className="h-4 w-4" />
                 <span className="text-[14px] font-semibold">Add Another Stage</span>
@@ -1004,7 +1004,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               <button
                 type="submit"
                 className="flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold disabled:opacity-60"
-                style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
+                style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #9cc15e 100%)' }}
                 disabled={isLoading || isAutoScheduling}
               >
                 {isLoading

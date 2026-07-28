@@ -27,7 +27,7 @@ const ChannelStats = ({ dashboardData }: IChannelStatsProps) => {
       title: 'Total Jobs', 
       path: '', 
       desc: '+1', 
-      bgColor: 'bg-[#9CC15E]' 
+      bgColor: 'bg-[#FFDA99]' 
     },
     { 
       logo: 'h131.svg', 
@@ -55,7 +55,7 @@ const ChannelStats = ({ dashboardData }: IChannelStatsProps) => {
       bgColor: 'bg-[#0BC33F]'
     },
   ] : [
-    { logo: 'h119.svg', info: '240', title: 'Total Jobs', path: '', desc: '+1', bgColor: 'bg-[#9CC15E]' },
+    { logo: 'h119.svg', info: '240', title: 'Total Jobs', path: '', desc: '+1', bgColor: 'bg-[#FFDA99]' },
     { logo: 'h131.svg', info: '24%', title: 'Pending Installations', path: '', desc: '+4', bgColor: 'bg-[#EA3DB1]' },
     {
       logo: 'h143.svg',

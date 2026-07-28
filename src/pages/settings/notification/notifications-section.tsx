@@ -41,7 +41,7 @@ const getNotificationIcon = (notification: any) => {
   const { type = '', tag = '', title = '' } = notification;
   const normalized = (type || tag || title).toLowerCase();
 
-  if (normalized.includes('job')) return <div className='bg-[#7A9705] p-[10px] rounded-[8px]'><RiBriefcaseLine className="size-[18px] font-semibold text-white" /></div>;
+  if (normalized.includes('job')) return <div className='bg-[#233A50] p-[10px] rounded-[8px]'><RiBriefcaseLine className="size-[18px] font-semibold text-white" /></div>;
   if (normalized.includes('approval')) return <div className='bg-[#16A34A] p-[10px] rounded-[8px]'><RiCheckboxCircleFill className="size-[18px] font-semibold text-white" /></div>;
   if (normalized.includes('draft')) return <div className='bg-text-foreground p-[10px] rounded-[8px]'><RiPenNibLine className="size-[18px] font-semibold text-white" /></div>;
   if (normalized.includes('revision')) return <div className='bg-[] p-[10px] rounded-[8px]'><FileWarning className="size-[18px] font-semibold text-white " /></div>;
@@ -77,7 +77,7 @@ const FilteredData = ({ data }: { data: Notification[] }) => {
                     variant="secondary"
                     className={cn(
                       'rounded-[24px] py-0.5 px-[10px] leading-[24px] text-xs font-medium',
-                      n.tag === 'JOB' && 'bg-[#7A9705] text-white',
+                      n.tag === 'JOB' && 'bg-[#233A50] text-white',
                       n.tag === 'APPROVED' && 'bg-[#16A34A] text-white',
                       n.tag === 'DRAFT' && 'bg-text-foreground text-white',
                     )}
@@ -100,7 +100,7 @@ const FilteredData = ({ data }: { data: Notification[] }) => {
               <div className="flex items-center gap-4 mt-5">
                 <Button
                   variant="link"
-                  className="p-0 text-[#7A9705] text-sm font-semibold"
+                  className="p-0 text-[#233A50] text-sm font-semibold"
                 >
                   View details
                 </Button>

@@ -84,10 +84,10 @@ export function UserDropdownMenu({ trigger }: { trigger: ReactNode }) {
               <img
                 src={user.profile_image_url}
                 alt={displayName}
-                className="size-9 rounded-full border-2 border-green-500 object-cover"
+                className="size-9 rounded-full border-2 border-[#FFDA99] object-cover"
               />
             ) : (
-              <div className="size-9 rounded-full border-2 border-green-500 flex items-center justify-center bg-green-100 text-green-800 font-semibold">
+              <div className="size-9 rounded-full border-2 border-[#FFDA99] flex items-center justify-center bg-[#FFDA99] text-[#233A50] font-semibold">
                 {getUserInitials(user)}
               </div>
             )}

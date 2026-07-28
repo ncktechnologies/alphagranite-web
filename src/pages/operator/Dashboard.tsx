@@ -425,7 +425,7 @@ export function OperatorDashboard() {
                             <button
                                 onClick={() => setCurrentDate(new Date())}
                                 className="h-[44px] px-6 rounded-[8px] text-[14px] font-semibold text-white"
-                                style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
+                                style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #9cc15e 100%)' }}
                             >
                                 {t('COMMON.TODAY')}
                             </button>
@@ -437,7 +437,7 @@ export function OperatorDashboard() {
                                     key={mode}
                                     onClick={() => setViewMode(mode)}
                                     className={`flex items-center gap-1.5 px-3 py-2 rounded-[6px] text-[13px] font-medium transition-all capitalize ${viewMode === mode
-                                        ? 'bg-[#7a9705] text-white'
+                                        ? 'bg-[#233A50] text-white'
                                         : 'text-[#4b545d] hover:bg-gray-50'
                                         }`}
                                 >
@@ -519,10 +519,10 @@ export function OperatorDashboard() {
                                                 }`}
                                             style={{ width: DATE_LABEL_WIDTH }}
                                         >
-                                            <span className={`text-[11px] font-semibold ${isToday ? 'text-[#7a9705]' : 'text-[#4b545d]'}`}>
+                                            <span className={`text-[11px] font-semibold ${isToday ? 'text-[#233A50]' : 'text-[#4b545d]'}`}>
                                                 {format(day, 'EEE')}
                                             </span>
-                                            <span className={`text-[18px] font-bold leading-tight ${isToday ? 'text-[#7a9705]' : 'text-[#111827]'}`}>
+                                            <span className={`text-[18px] font-bold leading-tight ${isToday ? 'text-[#233A50]' : 'text-[#111827]'}`}>
                                                 {format(day, 'd')}
                                             </span>
                                         </div>
@@ -575,7 +575,7 @@ export function OperatorDashboard() {
                                                 key={dayIdx}
                                                 className={`min-h-[120px] bg-white p-2 ${!isCurrentMonth ? 'bg-[#f9fafb]' : ''}`}
                                             >
-                                                <div className={`text-[13px] mb-2 ${isToday ? 'text-[#7a9705] font-bold'
+                                                <div className={`text-[13px] mb-2 ${isToday ? 'text-[#233A50] font-bold'
                                                     : isCurrentMonth ? 'text-[#4b545d]'
                                                         : 'text-[#9ca3af]'
                                                     }`}>

@@ -185,7 +185,7 @@ export function FileViewer({ file, onClose }: FileViewerProps) {
                   onClick={handleDownload}
                   variant="outline"
                   size="sm"
-                  className='text-[#7A9705] font-semibold'
+                  className='text-[#233A50] font-semibold'
                 >
                   <Download className="w-4 h-4 mr-2" />
                   Download

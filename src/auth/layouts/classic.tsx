@@ -9,7 +9,7 @@ export function ClassicLayout() {
         <div className="m-2">
           <Link to="/">
             <img
-              src={toAbsoluteUrl('/images/logo/alpha-logo.svg')}
+              src={toAbsoluteUrl('/images/logo/ody-logo.png')}
               className=""
               alt=""
             />

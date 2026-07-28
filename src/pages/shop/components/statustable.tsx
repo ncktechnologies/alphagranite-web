@@ -1088,8 +1088,8 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                                                                     <td className="px-4 py-2" colSpan={colCount}>
                                                                         <div className="flex items-center gap-2 pl-4">
                                                                             {dayCollapsed
-                                                                                ? <ChevronRightIcon className="h-3.5 w-3.5 text-[#7a9705]" />
-                                                                                : <ChevronDown className="h-3.5 w-3.5 text-[#7a9705]" />}
+                                                                                ? <ChevronRightIcon className="h-3.5 w-3.5 text-[#233A50]" />
+                                                                                : <ChevronDown className="h-3.5 w-3.5 text-[#233A50]" />}
                                                                             <span className="text-xs font-semibold text-[#4b545d]">
                                                                                 {dayGroup.dayDisplay}
                                                                             </span>
