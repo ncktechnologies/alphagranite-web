@@ -21,12 +21,12 @@ export function SidebarHeader() {
         <div className="dark:hidden">
           <img
             src={toAbsoluteUrl('/images/logo/ody-logo.png')}
-            className="default-logo w-[141px] h-[41px] max-w-none object-cover"
+            className="default-logo w-[140px] h-auto max-w-none object-cover"
             alt="Default Logo"
           />
           <img
             src={toAbsoluteUrl('/images/logo/mini-logo.png')}
-            className="small-logo h-[41px] max-w-none"
+            className="small-logo h-[40px] max-w-none"
             alt="Mini Logo"
           />
         </div>
