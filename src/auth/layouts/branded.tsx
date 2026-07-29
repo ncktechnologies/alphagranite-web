@@ -43,7 +43,7 @@ export function BrandedLayout() {
                 </Link>
 
                 <div className="flex flex-col space-y-2 mt-4">
-                  <h3 className="text-4xl text-white font-oswald">
+                  <h3 className="text-4xl text-white ">
                     Welcome back!
                   </h3>
 

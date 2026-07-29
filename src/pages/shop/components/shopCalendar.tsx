@@ -474,7 +474,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
             </div>
 
             <div className="flex items-center gap-3 bg-[#f0f4e8] rounded-[8px] px-4 py-3">
-              <CalendarIcon className="h-4 w-4 text-[#233A50]" />
+              <CalendarIcon className="h-4 w-4 text-[#7a9705]" />
               <span className="font-semibold text-[13px] text-[#4b545d]">
                 {selectedDate ? format(selectedDate, 'EEEE, MMMM d, yyyy') : format(currentDate, 'EEEE, MMMM d, yyyy')}
               </span>
@@ -491,7 +491,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                   onChange={(e) => setFabPickerInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && fabPickerInput.trim()) handleOpenCreatePlanWithFab(fabPickerInput.trim()); }}
                   autoFocus
-                  className="w-full h-[44px] bg-white border border-[#e2e4ed] rounded-[8px] pl-9 pr-4 text-[14px] text-[#4b545d] placeholder:text-[#78829d] outline-none focus:border-[#233A50] focus:ring-1 focus:ring-[#233A50]"
+                  className="w-full h-[44px] bg-white border border-[#e2e4ed] rounded-[8px] pl-9 pr-4 text-[14px] text-[#4b545d] placeholder:text-[#78829d] outline-none focus:border-[#9cc15e] focus:ring-1 focus:ring-[#9cc15e]"
                 />
               </div>
             </div>
@@ -507,7 +507,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                 onClick={() => fabPickerInput.trim() && handleOpenCreatePlanWithFab(fabPickerInput.trim())}
                 disabled={!fabPickerInput.trim()}
                 className="flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold disabled:opacity-40"
-                style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #233A50 100%)' }}
+                style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
               >
                 Continue
               </button>
@@ -526,7 +526,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
           <button
             onClick={() => navigate('/shop/create-plan')}
             className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px] tracking-[-0.56px]"
-            style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #233A50 100%)' }}
+            style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
           >
             <Plus className="h-4 w-4" />
             Create Plan
@@ -553,8 +553,8 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
         <div className="flex items-center justify-between px-10 h-[65px]">
           <div className="flex items-center gap-[10px]">
             {isSearchLocked ? (
-              <div className="flex items-center gap-2 h-[36px] bg-[#f0f4e8] border border-[#233A50] rounded-[6px] px-3">
-                <Lock className="size-3.5 text-[#233A50]" />
+              <div className="flex items-center gap-2 h-[36px] bg-[#f0f4e8] border border-[#9cc15e] rounded-[6px] px-3">
+                <Lock className="size-3.5 text-[#7a9705]" />
                 <span className="font-semibold text-[13px] text-[#4b545d]">{lockedFabId}</span>
               </div>
             ) : (
@@ -719,14 +719,14 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
             <div className="flex flex-col items-end gap-1">
               <p className="font-semibold text-[16px] leading-[24px] text-[#7c8689] whitespace-nowrap">
                 Total Scheduled Plans
-                {isSearchLocked && <span className="ml-2 text-[#233A50]">. {lockedFabId}</span>}
+                {isSearchLocked && <span className="ml-2 text-[#7a9705]">. {lockedFabId}</span>}
                 {isFetching && !isLoading && (
                   <span className="ml-2 inline-flex items-center gap-1.5">
-                    <svg className="animate-spin h-3.5 w-3.5 text-[#233A50]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-3.5 w-3.5 text-[#7a9705]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span className="text-[12px] font-medium text-[#233A50]">Refreshing...</span>
+                    <span className="text-[12px] font-medium text-[#7a9705]">Refreshing...</span>
                   </span>
                 )}
               </p>
@@ -747,7 +747,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                 <div className="relative">
                   <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none rounded-[8px]">
                     <div className="bg-white border border-[#e2e4ed] rounded-[8px] px-4 py-2 shadow-sm flex items-center gap-2">
-                      <svg className="animate-spin h-4 w-4 text-[#233A50]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <svg className="animate-spin h-4 w-4 text-[#7a9705]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
@@ -808,7 +808,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                           >
                             <span className="text-[12px] text-[#7c8689] uppercase tracking-wide">{format(day, 'EEE')}</span>
                             <span
-                              className={`text-[22px] font-semibold w-9 h-9 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#233A50] text-white' : 'text-[#4b545d]'}`}
+                              className={`text-[22px] font-semibold w-9 h-9 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'}`}
                             >
                               {format(day, 'd')}
                             </span>
@@ -884,7 +884,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                                 </span>
                               </div>
 
-                              {isToday && <div className="absolute inset-0 bg-[#233A50]/[0.02] pointer-events-none" />}
+                              {isToday && <div className="absolute inset-0 bg-[#7a9705]/[0.02] pointer-events-none" />}
                               {positioned.map((ev) => renderEventCard(ev))}
                               {isToday && showTimeIndicator && (
                                 <div className="absolute left-0 right-0 z-10 pointer-events-none" style={{ top: getTimePosition(currentTime.getHours() + currentTime.getMinutes() / 60) }}>
@@ -971,7 +971,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                             <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] flex flex-col justify-center items-center py-2 gap-0 bg-white">
                               <span className="text-[10px] text-[#7c8689] uppercase tracking-wide">{format(day, 'EEE')}</span>
                               <span
-                                className={`text-[18px] font-semibold w-8 h-8 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#233A50] text-white' : 'text-[#4b545d]'}`}
+                                className={`text-[18px] font-semibold w-8 h-8 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'}`}
                               >
                                 {format(day, 'd')}
                               </span>

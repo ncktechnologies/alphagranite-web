@@ -1071,7 +1071,7 @@ const FabDetailsPage = () => {
                         <CardContent className="pt-4 space-y-4">
                             <Button
                                 onClick={() => setShowRevisionDialog(true)}
-                                className="w-full bg-[#233A50] hover:bg-[#6a8505] text-white"
+                                className="w-full bg-[#7a9705] hover:bg-[#6a8505] text-white"
                                 size="sm"
                                 disabled={hasPendingShopRevision}
                             >

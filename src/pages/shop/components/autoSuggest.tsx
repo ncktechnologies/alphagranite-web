@@ -204,7 +204,7 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
               {stageName || `Plan Section ${idx + 1}`}
             </CardTitle>
             {stageName && (
-              <span className={cn('px-2 py-0.5 rounded-full text-xs font-semibold shrink-0 border', entry.isTouchup ? 'bg-orange-50 border-orange-300 text-orange-700' : 'bg-[#f0f4e8] border-[#233A50] text-[#5a7a00]')}>
+              <span className={cn('px-2 py-0.5 rounded-full text-xs font-semibold shrink-0 border', entry.isTouchup ? 'bg-orange-50 border-orange-300 text-orange-700' : 'bg-[#f0f4e8] border-[#9cc15e] text-[#5a7a00]')}>
                 {stageName}
               </span>
             )}
@@ -289,7 +289,7 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
               <Popover>
                 <PopoverTrigger asChild>
                   <button type="button" className={cn('mt-2 w-full h-[44px] px-3 text-left border border-[#e2e4ed] rounded-[6px] text-[14px] flex items-center gap-2', !entry.date && 'text-muted-foreground')}>
-                    <Calendar className="h-4 w-4 text-[#233A50]" />
+                    <Calendar className="h-4 w-4 text-[#7a9705]" />
                     {entry.date ? format(entry.date, 'MMM d, yyyy') : <span className="text-[#b0b7bc]">Auto-filled</span>}
                   </button>
                 </PopoverTrigger>
@@ -332,7 +332,7 @@ const AutoPlanEntryCard: React.FC<AutoPlanEntryCardProps> = ({
               <div className="flex flex-wrap gap-2">
                 {proposals.map((proposal, pIdx) => {
                   const isActive = entry.scheduled_time ? entry.scheduled_time === proposal.scheduled_time : (entry.start_time === format(new Date(proposal.start), 'HH:mm') && entry.date && format(entry.date, 'yyyy-MM-dd') === format(new Date(proposal.start), 'yyyy-MM-dd'));
-                  return (<button key={pIdx} type="button" onClick={() => onApplyProposal(proposal)} className={cn('px-3 py-1.5 rounded-[6px] border text-[13px] font-medium transition-colors', isActive ? 'bg-[#f0f4e8] border-[#233A50] text-[#5a7a00]' : 'bg-white border-[#e2e4ed] text-[#4b545d] hover:border-[#233A50] hover:bg-[#f0f4e8]')}>
+                  return (<button key={pIdx} type="button" onClick={() => onApplyProposal(proposal)} className={cn('px-3 py-1.5 rounded-[6px] border text-[13px] font-medium transition-colors', isActive ? 'bg-[#f0f4e8] border-[#9cc15e] text-[#5a7a00]' : 'bg-white border-[#e2e4ed] text-[#4b545d] hover:border-[#9cc15e] hover:bg-[#f0f4e8]')}>
                     {proposal.scheduled_time || `${format(new Date(proposal.start), 'MMM d · hh:mm a')}–${format(new Date(proposal.end), 'hh:mm a')}`}
                   </button>);
                 })}
@@ -818,9 +818,9 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
               {isEditing ? 'Edit Plan' : 'Auto Schedule Plan'}
             </p>
             {entries[0]?.fab_id && (
-              <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#233A50] rounded-[8px] px-4 py-2">
+              <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2">
                 <span className="text-[14px] text-[#4a4d59]">FAB ID</span>
-                <span className="text-[20px] text-[#233A50] font-semibold">#{entries[0].fab_id}</span>
+                <span className="text-[20px] text-[#7a9705] font-semibold">#{entries[0].fab_id}</span>
               </div>
             )}
           </div>
@@ -894,7 +894,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
                         className={cn(
                           'inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[13px] font-medium border',
                           active
-                            ? 'bg-[#f0f4e8] border-[#233A50] text-[#5a7a00]'
+                            ? 'bg-[#f0f4e8] border-[#9cc15e] text-[#5a7a00]'
                             : 'bg-gray-50 border-[#e2e4ed] text-[#b0b7bc]'
                         )}
                       >
@@ -931,7 +931,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
           <button
             type="button"
             onClick={addEntry}
-            className="w-full h-[44px] border border-dashed border-[#e2e4ed] rounded-[8px] flex items-center justify-center gap-2 text-[#78829d] hover:border-[#233A50] hover:text-[#233A50] hover:bg-[#f0f4e8] transition-all"
+            className="w-full h-[44px] border border-dashed border-[#e2e4ed] rounded-[8px] flex items-center justify-center gap-2 text-[#78829d] hover:border-[#9cc15e] hover:text-[#7a9705] hover:bg-[#f0f4e8] transition-all"
           >
             <Plus className="h-4 w-4" />
             <span className="text-[14px] font-semibold">Add Another Stage</span>
@@ -946,7 +946,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
                     type="button"
                     onClick={handleAutoPopulate}
                     disabled={isAutoScheduling || hasExistingPlans || isCheckingPlans}
-                    className="w-full h-[44px] border border-[#233A50] rounded-[8px] flex items-center justify-center gap-2 text-[#5a7a00] bg-[#f0f4e8] hover:bg-[#e6f0d4] transition-colors disabled:opacity-60 text-[14px] font-semibold"
+                    className="w-full h-[44px] border border-[#9cc15e] rounded-[8px] flex items-center justify-center gap-2 text-[#5a7a00] bg-[#f0f4e8] hover:bg-[#e6f0d4] transition-colors disabled:opacity-60 text-[14px] font-semibold"
                   >
                     {isAutoScheduling ? (
                       <><LoaderCircle className="h-4 w-4 animate-spin" />Finding earliest slots…</>
@@ -978,7 +978,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
             <button
               type="submit"
               className="flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold disabled:opacity-60 cursor-pointer"
-              style={{ backgroundImage: 'linear-gradient(90deg, #233A50 0%, #233A50 100%)' }}
+              style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
               disabled={isLoading || isAutoScheduling}
             >
               {isLoading

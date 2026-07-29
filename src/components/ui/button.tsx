@@ -9,7 +9,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-[linear-gradient(90deg,_#233A50_0%,_#233A50_100%,_#2C2D41_96.86%,_#2C2D41_10%)] text-primary-foreground hover:bg-primary/90 data-[state=open]:bg-primary/90',
+        primary: 'bg-[linear-gradient(90deg,_#7A9705_0%,_#7A9705_10.2%,_#9CC15E_96.86%,_#9CC15E_100%)] text-primary-foreground hover:bg-primary/90 data-[state=open]:bg-primary/90',
         mono: 'bg-zinc-950 text-white dark:bg-zinc-300 dark:text-black hover:bg-zinc-950/90 dark:hover:bg-zinc-300/90 data-[state=open]:bg-zinc-950/90 dark:data-[state=open]:bg-zinc-300/90',
         destructive:
           'bg-destructive text-destructive-foreground hover:bg-destructive/90 data-[state=open]:bg-destructive/90',

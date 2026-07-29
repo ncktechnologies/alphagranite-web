@@ -62,10 +62,10 @@ export function Header() {
     <img
       src={user.profile_image_url}
       alt={user?.fullname || 'User'}
-      className="size-9 rounded-full border-2  border-[#FFDA99]  object-cover cursor-pointer shrink-0"
+      className="size-9 rounded-full border-2 border-green-500 object-cover cursor-pointer shrink-0"
     />
   ) : (
-    <div className="size-9 rounded-full border-2 border-[#FFDA99] shrink-0 cursor-pointer flex items-center justify-center bg-[#FFDA99] text-[#233A50] font-semibold">
+    <div className="size-9 rounded-full border-2 border-green-500 shrink-0 cursor-pointer flex items-center justify-center bg-green-100 text-green-800 font-semibold">
       {getUserInitials(user)}
     </div>
   );

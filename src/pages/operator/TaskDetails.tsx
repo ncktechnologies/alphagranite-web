@@ -652,7 +652,7 @@ export function OperatorTaskDetails() {
                             {timerState === 'idle' && (
                                 <Button
                                     onClick={handleStart}
-                                    className="w-full gap-2 bg-[#233A50] hover:bg-[#6a8505] text-white"
+                                    className="w-full gap-2 bg-[#7a9705] hover:bg-[#6a8505] text-white"
                                     size="lg"
                                     disabled={hasPendingShopRevision}
                                 >
@@ -685,7 +685,7 @@ export function OperatorTaskDetails() {
                             {timerState === 'paused' && (
                                 <Button
                                     onClick={handleResume}
-                                    className="w-full gap-2 bg-[#233A50] hover:bg-[#6a8505] text-white"
+                                    className="w-full gap-2 bg-[#7a9705] hover:bg-[#6a8505] text-white"
                                     size="lg"
                                     disabled={hasPendingShopRevision}
                                 >
@@ -792,7 +792,7 @@ export function OperatorTaskDetails() {
                             </Button>
                             <Button
                                 onClick={() => setShowUploadDialog(true)}
-                                className="w-full gap-2 bg-[#233A50] hover:bg-[#6a8505] text-white"
+                                className="w-full gap-2 bg-[#7a9705] hover:bg-[#6a8505] text-white"
                                 size="lg"
                                 disabled={hasPendingShopRevision}
                             >

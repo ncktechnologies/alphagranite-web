@@ -17,7 +17,7 @@
   /* --color-white */
   --popover-foreground: oklch(27.4% 0.006 286.033);
   /* --color-zinc-800 */
-  --primary: #233A50;
+  --primary: #9CC15E;
   /* custom color  */
   --primary-foreground: oklch(1 0 0);
   /* --color-white */
@@ -47,15 +47,15 @@
   /* between --color-zinc-100 and --color-zinc-200 */
   --input: #DFDFDF;
   /* --color-zinc-200 */
-  --ring: #233A50;
+  --ring: #9CC15E;
   /* --color-zinc-400 */
   --radius: 0.5rem;
-  --sidbar-muted: #FFDA99;
+  --sidbar-muted: #667F01;
 }
 
 @font-face {
-  font-family: 'Oswald';
-  src: url('/fonts/static/Oswald-Regular.ttf') format('truetype');
+  font-family: 'Proxima Nova';
+  src: url('/fonts/ProximaNova-Regular.otf') format('otf');
   font-weight: normal;
   font-style: normal;
 }
@@ -74,7 +74,7 @@
   /* --color-zinc-950 */
   --popover-foreground: oklch(98.5% 0 0);
   /* --color-zinc-50 */
-  --primary: #233A50;
+  --primary: #7A9705;
   /* custom color  */
   --primary-foreground: oklch(1 0 0);
   /* --color-white */
@@ -259,14 +259,14 @@
 }
 
 @theme {
-  --font-oswald: "Oswald", sans-serif;
+  --font-proxima: "Proxima Nova", sans-serif;
   /* For local or Google Fonts */
   /* Or for Google Fonts directly: */
   /* --font-heading: "Roboto", sans-serif; */
 }
  
 body {
-  font-family: var(--font-oswald);
+  font-family: var(--font-proxima);
   /* --font-sans */
   background-color: white;
   /* color: var(--color-text); */

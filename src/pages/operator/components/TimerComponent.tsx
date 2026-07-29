@@ -83,7 +83,7 @@ export function OperatorTimerComponent({
     };
 
     const getStatusColor = () => {
-        if (isRunning) return 'text-[#233A50]';
+        if (isRunning) return 'text-[#7a9705]';
         if (isPaused) return 'text-[#f5cd4b]';
         return 'text-[#4b545d]';
     };
@@ -166,7 +166,7 @@ export function OperatorTimerComponent({
                                 className={`h-2 rounded-full transition-all duration-500 ${
                                     timeUsedPercentage >= 90 ? 'bg-red-500' :
                                     timeUsedPercentage >= 70 ? 'bg-yellow-500' :
-                                    'bg-[#233A50]'
+                                    'bg-[#7a9705]'
                                 }`}
                                 style={{ width: `${timeUsedPercentage}%` }}
                             />
@@ -182,7 +182,7 @@ export function OperatorTimerComponent({
                             <button
                                 onClick={onStart}
                                 disabled={disabled}
-                                className="bg-[#233A50] disabled:opacity-50 content-stretch flex gap-[8px] items-center justify-center px-[24px] py-[16px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[#6a8505] transition-colors"
+                                className="bg-[#7a9705] disabled:opacity-50 content-stretch flex gap-[8px] items-center justify-center px-[24px] py-[16px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[#6a8505] transition-colors"
                             >
                                 <Play className="relative shrink-0 size-[24px] text-white fill-white" />
                                 <p className="font-['Proxima_Nova:Semibold',sans-serif] leading-[16px] not-italic relative shrink-0 text-white text-[16px] tracking-[-0.32px] whitespace-nowrap">
@@ -224,7 +224,7 @@ export function OperatorTimerComponent({
                             <button
                                 onClick={onResume}
                                 disabled={disabled}
-                                className="bg-[#233A50] disabled:opacity-50 content-stretch flex gap-[8px] items-center justify-center px-[24px] py-[16px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[#6a8505] transition-colors"
+                                className="bg-[#7a9705] disabled:opacity-50 content-stretch flex gap-[8px] items-center justify-center px-[24px] py-[16px] relative rounded-[6px] shrink-0 cursor-pointer hover:bg-[#6a8505] transition-colors"
                             >
                                 <Play className="relative shrink-0 size-[24px] text-white fill-white" />
                                 <p className="font-['Proxima_Nova:Semibold',sans-serif] leading-[16px] not-italic relative shrink-0 text-white text-[16px] tracking-[-0.32px] whitespace-nowrap">
