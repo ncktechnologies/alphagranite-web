@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Can } from '@/components/permission';
 import { useTableState } from '@/hooks';
-import { useGetSalesPersonsQuery } from '@/store/api';
+import { useGetEmployeeSalesPersonsQuery, useGetSalesPersonsQuery } from '@/store/api';
 import { JobSalesTable } from './components/Table';
 
 // Format date to "08 Oct, 2025" format
@@ -62,13 +62,14 @@ const transformFabToJob = (fab: Fab): IJob => {
         job_id: fab.job_id,
         status_id: fab.status_id,
         on_hold: fab.on_hold,
+        sales_person_name: fab.sales_person_name || '',
+
     };
 };
 
 export function SalesPage() {
     const location = useLocation();
     const isNewFabForm = location.pathname.includes('/new-fab-id');
-    const { data: salesPersonsData } = useGetSalesPersonsQuery();
     const isSuperAdmin = useIsSuperAdmin();
     const permissions = usePermission('View all FABS'); 
 
@@ -78,14 +79,16 @@ export function SalesPage() {
     const canExport = isSuperAdmin || permissions.can_read;
 
     // Extract sales persons
-    const salesPersons = useMemo(() => {
-        if (!salesPersonsData) return [];
-        let rawData: any[] = [];
-        if (Array.isArray(salesPersonsData)) rawData = salesPersonsData;
-        else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData)
-            rawData = (salesPersonsData as any).data || [];
-        return rawData;
-    }, [salesPersonsData]);
+     const { data: salesPersonsData } = useGetEmployeeSalesPersonsQuery();
+         const salesPersons = useMemo(() => {
+            if (!salesPersonsData) return [];
+            return Array.isArray(salesPersonsData)
+              ? salesPersonsData.map((sp: any) => ({
+                id: sp.id || sp.user_id,
+                name: sp.name || `${sp.first_name} ${sp.last_name}`,
+              }))
+              : [];
+          }, [salesPersonsData]);
 
     const tableState = useTableState({
         tableId: 'sct-table',

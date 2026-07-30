@@ -3,7 +3,7 @@ import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
 import { useGetFabsQuery, Fab } from '@/store/api/job';
-import { useGetSalesPersonsQuery } from '@/store/api/employee';
+import { useGetEmployeeSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
 import { useMemo } from 'react';
 import { format } from 'date-fns';
@@ -83,26 +83,18 @@ export function AfterDraftSalesPage() {
 
 
     // Fetch sales persons data for filter dropdown
-    const { data: salesPersonsData } = useGetSalesPersonsQuery();
+    const { data: salesPersonsData } = useGetEmployeeSalesPersonsQuery();
 
     // Extract sales persons
-    const salesPersons = useMemo(() => {
-        if (!salesPersonsData) {
-            return [];
-        }
-
-        // Handle both possible response formats
-        let rawData: any[] = [];
-        if (Array.isArray(salesPersonsData)) {
-            rawData = salesPersonsData;
-        } else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData) {
-            rawData = (salesPersonsData as any).data || [];
-        }
-
-        // Extract sales persons - keep full objects with id and name
-        return rawData;
-    }, [salesPersonsData]);
-
+   const salesPersons = useMemo(() => {
+    if (!salesPersonsData) return [];
+    return Array.isArray(salesPersonsData)
+      ? salesPersonsData.map((sp: any) => ({
+        id: sp.id || sp.user_id,
+        name: sp.name || `${sp.first_name} ${sp.last_name}`,
+      }))
+      : [];
+  }, [salesPersonsData]);
     // Extract just names for display
     const salesPersonNames = useMemo(() => {
         return salesPersons.map((sp: any) => sp.name || String(sp));

@@ -5,7 +5,7 @@ import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { FinalProgrammingTable } from './FinalProgrammingTable';
 import { IJob } from '@/pages/jobs/components/job';
 import { Fab, useGetFabsInFinalProgrammingPendingQuery, useGetFabsQuery } from '@/store/api/job';
-import { useGetSalesPersonsQuery } from '@/store/api/employee';
+import { useGetEmployeeSalesPersonsQuery, useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useIsSuperAdmin, usePermission } from '@/hooks/use-permission';
 import { JobTable } from '../../components/JobTable';
 import { useJobStageFilter } from '@/hooks/use-job-stage';
@@ -63,17 +63,16 @@ const FinalProgrammingPage = () => {
     const canReassignDrafter = isSuperAdmin || permissions.can_create;  // Reassign button inside drafter column
 
     // Fetch sales persons data for filter dropdown
-    const { data: salesPersonsData } = useGetSalesPersonsQuery();
-
-    // Extract sales persons
-    const salesPersons = useMemo(() => {
-        if (!salesPersonsData) return [];
-        let rawData: any[] = [];
-        if (Array.isArray(salesPersonsData)) rawData = salesPersonsData;
-        else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData)
-            rawData = (salesPersonsData as any).data || [];
-        return rawData;
-    }, [salesPersonsData]);
+    const { data: salesPersonsData } = useGetEmployeeSalesPersonsQuery();
+         const salesPersons = useMemo(() => {
+            if (!salesPersonsData) return [];
+            return Array.isArray(salesPersonsData)
+              ? salesPersonsData.map((sp: any) => ({
+                id: sp.id || sp.user_id,
+                name: sp.name || `${sp.first_name} ${sp.last_name}`,
+              }))
+              : [];
+          }, [salesPersonsData]);
 
     // Extract just names for display
     const salesPersonNames = useMemo(() => {

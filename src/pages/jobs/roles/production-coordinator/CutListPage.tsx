@@ -4,7 +4,7 @@ import { Container } from '@/components/common/container';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
 import { CutListTableWithCalculations } from './CutListTableWithCalculations';
 import { useGetFabsQuery, useGetFabTypesQuery, useCreateFabNoteMutation } from '@/store/api/job';
-import { useGetSalesPersonsQuery } from '@/store/api/employee';
+import { useGetEmployeeSalesPersonsQuery, useGetSalesPersonsQuery } from '@/store/api/employee';
 import { DateRange } from 'react-day-picker';
 import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission'; // 👈 import permission hooks
 
@@ -28,7 +28,8 @@ const CutListPage = () => {
     const [createFabNote] = useCreateFabNoteMutation();
 
     const { data: fabTypesData } = useGetFabTypesQuery();
-    const { data: salesPersonsData } = useGetSalesPersonsQuery();
+    // const { data: salesPersonsData } = useGetSalesPersonsQuery();
+    const { data: salesPersonsData } = useGetEmployeeSalesPersonsQuery();
 
     const fabTypes = useMemo(() => {
         if (!fabTypesData) return [];
@@ -54,12 +55,12 @@ const CutListPage = () => {
 
     const salesPersons = useMemo(() => {
         if (!salesPersonsData) return [];
-        let rawData: any[] = Array.isArray(salesPersonsData)
-            ? salesPersonsData
-            : (salesPersonsData as any).data || [];
-        return rawData.map((item: any) =>
-            typeof item === 'string' ? item : item.name || String(item)
-        );
+        return Array.isArray(salesPersonsData)
+            ? salesPersonsData.map((sp: any) => ({
+                id: sp.id || sp.user_id,
+                name: sp.name || `${sp.first_name} ${sp.last_name}`,
+            }))
+            : [];
     }, [salesPersonsData]);
 
     const buildQueryParams = useMemo(() => {
@@ -73,9 +74,12 @@ const CutListPage = () => {
             params.type = searchType;
         }
         if (fabTypeFilter !== 'all') params.fab_type = fabTypeFilter;
-        if (salesPersonFilter !== 'all' && salesPersonFilter !== 'no_sales_person') {
-            const salesPersonId = salesPersonMap.get(salesPersonFilter);
-            if (salesPersonId) params.sales_person_id = salesPersonId;
+        if (salesPersonFilter && salesPersonFilter !== 'all') {
+            if (salesPersonFilter === 'no_sales_person') params.sales_person_name = '';
+            else {
+                const selectedSalesPerson = salesPersons.find((sp: any) => sp.name === salesPersonFilter);
+                if (selectedSalesPerson?.id) params.sales_person_id = selectedSalesPerson.id;
+            }
         }
         if (dateFilter !== 'all') params.date_filter = dateFilter;
         if (dateFilter === 'custom' && dateRange?.from && dateRange?.to) {
@@ -83,7 +87,7 @@ const CutListPage = () => {
             params.shop_date_end = format(dateRange.to, 'yyyy-MM-dd');
         }
         return params;
-    }, [searchQuery, searchType, dateFilter, fabTypeFilter, salesPersonFilter, salesPersonMap, dateRange, pagination]);
+    }, [searchQuery, searchType, dateFilter, fabTypeFilter, salesPersonFilter, salesPersons, dateRange, pagination]);
 
     const { data: fabsData, isLoading: isFabsLoading, refetch } = useGetFabsQuery(buildQueryParams);
 

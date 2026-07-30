@@ -32,7 +32,7 @@ import {
   useGetAccountsQuery,
   useCreateAccountMutation,
 } from "@/store/api/job";
-import { useGetSalesPersonsQuery } from "@/store/api/employee";
+import { useGetSalesPersonsQuery, useGetEmployeeSalesPersonsQuery } from "@/store/api/employee";
 import { toast } from "sonner";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -94,7 +94,7 @@ const JobFormSheet = ({
     useGetAccountsQuery();
   const [createAccount] = useCreateAccountMutation();
   const { data: salesPersonsData, isLoading: salesPersonsLoading } =
-    useGetSalesPersonsQuery();
+    useGetEmployeeSalesPersonsQuery();
 
   const isSubmitting = isCreating || isUpdating;
 
@@ -164,6 +164,7 @@ const JobFormSheet = ({
   // =======================
   // Sales persons
   // =======================
+  
   const salesPersons = useMemo(() => {
     if (!salesPersonsData) return [];
     return Array.isArray(salesPersonsData)

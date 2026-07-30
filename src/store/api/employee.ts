@@ -204,7 +204,7 @@ export const employeeApi = createApi({
                 }),
                 transformResponse: (response: any) => response.data || response,
             }),
-            
+
             // Get sales persons
             getSalesPersons: build.query<any, void>({
                 query: () => ({
@@ -220,7 +220,15 @@ export const employeeApi = createApi({
                 },
                 providesTags: ["Employee"],
             }),
-              getTemplaters: build.query<any, void>({
+            getEmployeeSalesPersons: build.query<any, void>({
+                query: () => ({
+                    url: "/employees/department/sales",
+                    method: "get"
+                }),
+                transformResponse: (response: any) => response.data.data || response,
+                providesTags: ["Employee"],
+            }),
+            getTemplaters: build.query<any, void>({
                 query: () => ({
                     url: "/api/v1/templaters",
                     method: "get"
@@ -252,5 +260,6 @@ export const {
     useCheckEmailUniqueQuery,
     useLazyCheckEmailUniqueQuery,
     useGetSalesPersonsQuery,
+    useGetEmployeeSalesPersonsQuery,
     useGetTemplatersQuery,
 } = employeeApi;

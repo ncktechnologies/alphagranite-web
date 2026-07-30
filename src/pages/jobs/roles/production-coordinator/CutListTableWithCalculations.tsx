@@ -229,8 +229,16 @@ export const CutListTableWithCalculations = ({
     // ── Derived data ──────────────────────────────────────────────────────────
     const calculatedCutLists = useMemo(() => fabs.map(calculateCutListData), [fabs]);
     const uniqueFabTypes = useMemo(() => [...fabTypes].sort(), [fabTypes]);
-    const uniqueSalesPersons = useMemo(() => [...salesPersons].sort(), [salesPersons]);
-
+    const uniqueSalesPersons = useMemo(() => {
+        if (salesPersons && salesPersons.length > 0) {
+            return salesPersons.map((sp: any) => {
+                if (typeof sp === 'string') return sp;
+                if (typeof sp === 'object' && sp !== null) return sp.name || String(sp);
+                return String(sp);
+            }).filter(Boolean).sort();
+        }
+        // return Array.from(new Set(jobs.map(job => job.sales_person_name).filter(Boolean))).sort();
+    }, [ salesPersons]);
     // ── Filtered data - NO client-side filtering, backend handles everything ──
     const filteredData = useMemo(() => {
         if (!calculatedCutLists || !Array.isArray(calculatedCutLists)) return [];
@@ -648,9 +656,9 @@ export const CutListTableWithCalculations = ({
                                     <SelectContent className="max-h-[200px] overflow-y-auto">
                                         <SelectItem value="all">All Sales Persons</SelectItem>
                                         <SelectItem value="no_sales_person">No Sales Person</SelectItem>
-                                        {uniqueSalesPersons.map((person) => (
-                                            <SelectItem key={person || 'N/A'} value={person || ''}>{person || 'N/A'}</SelectItem>
-                                        ))}
+                                         {uniqueSalesPersons?.map(person => (
+                                        <SelectItem key={person || 'N/A'} value={person || ''}>{person || 'N/A'}</SelectItem>
+                                    ))}
                                     </SelectContent>
                                 </Select>
 

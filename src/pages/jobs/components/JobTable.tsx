@@ -533,7 +533,27 @@ export const JobTable = ({
             size: 100,
             enableSorting: true,
         },
+        // sales person
+        {
+            id: "sales_person_name",
+            accessorKey: "sales_person_name",
+            header: ({ column }) => <DataGridColumnHeader title="Sales Person" column={column} />,
+            cell: ({ row }) => <span className="text-xs">{row.original.sales_person_name}</span>,
+            size: 130,
+            enableSorting: true,
+        },
+
+        // sales person
+        {
+            id: "sales_person_name",
+            accessorKey: "sales_person_name",
+            header: ({ column }) => <DataGridColumnHeader title="Sales Person" column={column} />,
+            cell: ({ row }) => <span className="text-xs">{row.original.sales_person_name}</span>,
+            size: 130,
+            enableSorting: true,
+        },
         // Templater
+
         {
             id: "templater",
             accessorKey: "templater",

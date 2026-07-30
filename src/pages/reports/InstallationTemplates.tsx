@@ -29,6 +29,7 @@ import { Label } from '@/components/ui/label';
 import { UpdateInstallationTemplateModal } from './component/InstallationModal';
 import { useSelector } from 'react-redux';
 import { usePermission } from '@/hooks/use-permission';
+import { useGetEmployeeSalesPersonsQuery } from '@/store/api';
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface TimerSession {
@@ -180,6 +181,16 @@ export function InstallationTemplateReport() {
     }, [dateRange, searchQuery, fabTypeFilter, salesPersonId]);
 
     const { data, isLoading, refetch } = useGetInstallationTemplateReportQuery(queryParams);
+    const { data: salesPersonsData } = useGetEmployeeSalesPersonsQuery();
+         const salesPersons = useMemo(() => {
+            if (!salesPersonsData) return [];
+            return Array.isArray(salesPersonsData)
+              ? salesPersonsData.map((sp: any) => ({
+                id: sp.id || sp.user_id,
+                name: sp.name || `${sp.first_name} ${sp.last_name}`,
+              }))
+              : [];
+          }, [salesPersonsData]);
     const reportData = data?.data as ReportData | undefined;
 
     const fabTypes = useMemo(() => reportData?.filter_options?.fab_types ?? [], [reportData]);
@@ -827,14 +838,14 @@ export function InstallationTemplateReport() {
                         {fabTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                     </SelectContent>
                 </Select>
-                <Select value={String(salesPersonId)} onValueChange={(v) => setSalesPersonId(v === 'all' ? 'all' : Number(v))}>
+                {/* <Select value={String(salesPersonId)} onValueChange={(v) => setSalesPersonId(v === 'all' ? 'all' : Number(v))}>
                     <SelectTrigger className="w-auto min-w-[150px] h-[34px]"><SelectValue placeholder="Sales Person" /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Sales Persons</SelectItem>
                         <SelectItem value="no_sales_person">No Sales Person</SelectItem>
-                        {salesPersonOptions.map(sp => <SelectItem key={sp.id} value={String(sp.id)}>{sp.name}</SelectItem>)}
+                        {salesPersons.map(sp => <SelectItem key={sp.id} value={String(sp.id)}>{sp.name}</SelectItem>)}
                     </SelectContent>
-                </Select>
+                </Select> */}
             </div>
 
             {/* ── Summary Cards ── */}
@@ -953,7 +964,7 @@ export function InstallationTemplateReport() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div>
+                        {/* <div>
                             <Label>Sales Person</Label>
                             <Select value={String(pdfSalesPerson)} onValueChange={(v) => setPdfSalesPerson(v === 'all' ? 'all' : Number(v))}>
                                 <SelectTrigger className="h-[34px]">
@@ -962,10 +973,10 @@ export function InstallationTemplateReport() {
                                 <SelectContent>
                                     <SelectItem value="all">All Sales Persons</SelectItem>
                                     <SelectItem value="no_sales_person">No Sales Person</SelectItem>
-                                    {salesPersonOptions.map(sp => <SelectItem key={sp.id} value={String(sp.id)}>{sp.name}</SelectItem>)}
+                                    {salesPersons.map(sp => <SelectItem key={sp.id} value={String(sp.id)}>{sp.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
-                        </div>
+                        </div> */}
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsPdfDialogOpen(false)}>Cancel</Button>

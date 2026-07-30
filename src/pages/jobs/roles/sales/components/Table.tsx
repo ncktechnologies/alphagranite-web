@@ -185,8 +185,15 @@ export const JobSalesTable = ({
     }, [jobs]);
 
     const uniqueSalesPersons = useMemo(() => {
+        if (salesPersons && salesPersons.length > 0) {
+            return salesPersons.map((sp: any) => {
+                if (typeof sp === 'string') return sp;
+                if (typeof sp === 'object' && sp !== null) return sp.name || String(sp);
+                return String(sp);
+            }).filter(Boolean).sort();
+        }
         return Array.from(new Set(jobs.map(job => job.sales_person_name).filter(Boolean))).sort();
-    }, [jobs]);
+    }, [jobs, salesPersons]);
 
     const filteredData = useMemo(() => {
         if (useBackendPagination) return jobs;
@@ -708,13 +715,13 @@ export const JobSalesTable = ({
                 const custNeeded = (row as any).slab_smith_cust_needed ?? (row as any)._rawFabData?.slab_smith_cust_needed;
                 const agNeeded = (row as any).slab_smith_ag_needed ?? (row as any)._rawFabData?.slab_smith_ag_needed;
                 const completed = (row as any).slabsmith_completed_date ?? (row as any)._rawFabData?.slabsmith_completed_date;
-                
+
                 if (custNeeded === false && agNeeded === false) return 'Not Needed';
-                
+
                 const types = [];
                 if (custNeeded === true) types.push('Cust');
                 if (agNeeded === true) types.push('AG');
-                
+
                 const neededType = types.join(' & ');
                 if (neededType) return completed ? `Completed (${neededType})` : `${neededType} - Not Completed`;
                 return 'Unknown';
@@ -724,17 +731,17 @@ export const JobSalesTable = ({
                 const custNeeded = (row.original as any).slab_smith_cust_needed ?? (row.original as any)._rawFabData?.slab_smith_cust_needed;
                 const agNeeded = (row.original as any).slab_smith_ag_needed ?? (row.original as any)._rawFabData?.slab_smith_ag_needed;
                 const completed = (row.original as any).slabsmith_completed_date ?? (row.original as any)._rawFabData?.slabsmith_completed_date;
-                
+
                 if (custNeeded === false && agNeeded === false) {
                     return <span className="text-sm text-gray-500">Not Needed</span>;
                 }
-                
+
                 const types = [];
                 if (custNeeded === true) types.push('Cust');
                 if (agNeeded === true) types.push('AG');
-                
+
                 const neededType = types.join(' & ');
-                
+
                 if (neededType) {
                     return completed
                         ? <span className="text-sm text-green-600 font-medium">Completed ({neededType})</span>

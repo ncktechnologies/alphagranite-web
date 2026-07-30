@@ -1,5 +1,5 @@
 // RevisionForm.tsx - Simplified like drafting modal
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -25,7 +25,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
-import { useGetSalesPersonsQuery } from '@/store/api/employee';
+import { useGetEmployeeSalesPersonsQuery, useGetSalesPersonsQuery } from '@/store/api/employee';
 import { Can } from '@/components/permission';
 
 // Simplified schema - only what's needed for revision submission
@@ -62,9 +62,17 @@ export const RevisionForm = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
 
-  const { data: employeesData } = useGetSalesPersonsQuery();
-  const salesPersons = Array.isArray(employeesData) ? employeesData : [];
-
+  const { data: salesPersonsData } = useGetEmployeeSalesPersonsQuery();
+    const salesPersons = useMemo(() => {
+       if (!salesPersonsData) return [];
+       return Array.isArray(salesPersonsData)
+         ? salesPersonsData.map((sp: any) => ({
+           id: sp.id || sp.user_id,
+           name: sp.name || `${sp.first_name} ${sp.last_name}`,
+         }))
+         : [];
+     }, [salesPersonsData]);
+     
   const form = useForm<RevisionData>({
     resolver: zodResolver(revisionSchema),
     mode: 'onChange',

@@ -1,5 +1,5 @@
 // SubmissionModal.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,7 +12,7 @@ import { useUpdateDraftingMutation, useManageDraftingSessionMutation } from '@/s
 import { toast } from 'sonner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useGetSalesPersonsQuery } from '@/store/api/employee';
+import { useGetEmployeeSalesPersonsQuery, useGetSalesPersonsQuery } from '@/store/api/employee';
 import { Can } from '@/components/permission';
 import { useNavigate } from 'react-router';
 
@@ -67,8 +67,16 @@ export const SubmissionModal = ({
   const [updateDrafting] = useUpdateDraftingMutation();
   const [manageDraftingSession] = useManageDraftingSessionMutation();
 
-  const { data: employeesData } = useGetSalesPersonsQuery();
-  const salesPersons = Array.isArray(employeesData) ? employeesData : [];
+ const { data: salesPersonsData } = useGetEmployeeSalesPersonsQuery();
+   const salesPersons = useMemo(() => {
+      if (!salesPersonsData) return [];
+      return Array.isArray(salesPersonsData)
+        ? salesPersonsData.map((sp: any) => ({
+          id: sp.id || sp.user_id,
+          name: sp.name || `${sp.first_name} ${sp.last_name}`,
+        }))
+        : [];
+    }, [salesPersonsData]);
 
   const navigate = useNavigate();
 

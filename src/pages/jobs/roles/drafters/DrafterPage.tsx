@@ -5,7 +5,7 @@ import { JobTable } from '../../components/JobTable';
 import { IJob } from '../../components/job';
 import { Container } from '@/components/common/container';
 import { useGetFabsQuery, Fab } from '@/store/api/job';
-import { useGetSalesPersonsQuery } from '@/store/api/employee';
+import { useGetEmployeeSalesPersonsQuery, useGetSalesPersonsQuery } from '@/store/api/employee';
 import { useTableState } from '@/hooks/use-table-state';
 import { useMemo, useState } from 'react';
 import { AssignDrafterModal } from './components/AssignDrafterModal';
@@ -58,15 +58,16 @@ const DrafterPage = () => {
     const canAssignDrafter = isSuperAdmin || permissions.can_create;   
 
     // Fetch sales persons
-    const { data: salesPersonsData } = useGetSalesPersonsQuery();
-    const salesPersons = useMemo(() => {
-        if (!salesPersonsData) return [];
-        let rawData: any[] = [];
-        if (Array.isArray(salesPersonsData)) rawData = salesPersonsData;
-        else if (typeof salesPersonsData === 'object' && 'data' in salesPersonsData)
-            rawData = (salesPersonsData as any).data || [];
-        return rawData;
-    }, [salesPersonsData]);
+    const { data: salesPersonsData } = useGetEmployeeSalesPersonsQuery();
+      const salesPersons = useMemo(() => {
+         if (!salesPersonsData) return [];
+         return Array.isArray(salesPersonsData)
+           ? salesPersonsData.map((sp: any) => ({
+             id: sp.id || sp.user_id,
+             name: sp.name || `${sp.first_name} ${sp.last_name}`,
+           }))
+           : [];
+       }, [salesPersonsData]);
 
     // Extract just names for display
     const salesPersonNames = useMemo(() => {
