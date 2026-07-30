@@ -16,13 +16,14 @@ export function BrandedLayout() {
           }
         `}
       </style>
-      <div className="branded-bg bg-no-repeat bg-cover min-h-screen bg-blend-overlay bg-black/70 flex flex-col items-center p-4">
-        {/* ── Top Odyssey Logo (hidden on mobile) ── */}
-        <div className="w-full max-w-5xl mx-auto flex justify-center ">
-          <Link to="/">
+
+      <div className="branded-bg bg-no-repeat bg-cover min-h-screen bg-blend-overlay bg-black/70 relative flex flex-col items-center p-4">
+        {/* ── Top Odyssey Logo – absolutely positioned ── */}
+        <div className="absolute top-4 left-0 right-0 flex justify-center pointer-events-none">
+          <Link to="/" className="pointer-events-auto">
             <img
               src={toAbsoluteUrl('/images/logo/ody/white-odyssey-logo.png')}
-              className="h-[180px] max-w-none hidden md:flex"
+              className="h-[220px] 3xl:w-[650px] 3xl:h-auto max-w-none hidden md:block"
               alt=""
             />
           </Link>
@@ -43,10 +44,7 @@ export function BrandedLayout() {
                 </Link>
 
                 <div className="flex flex-col space-y-2 mt-4">
-                  <h3 className="text-4xl text-white ">
-                    Welcome back!
-                  </h3>
-
+                  <h3 className="text-4xl text-white">Welcome back!</h3>
                   <span className="text-white/80 text-[16px]">
                     Please enter your login details to continue
                   </span>
@@ -70,8 +68,8 @@ export function BrandedLayout() {
             </div>
 
             {/* Right Column – Card */}
-            <div className="flex flex-col justify-start items-center lg:col-span-2">
-              {/* Mobile: show Odyssey logo above card */}
+            <div className="flex flex-col justify-start items-center lg:col-span-2 mt-34 3xl:mt-20 ">
+              {/* Mobile: show Odyssey logo above card (remains in flow) */}
               <Link to="/">
                 <img
                   src={toAbsoluteUrl('/images/logo/ody/white-odyssey-logo.png')}

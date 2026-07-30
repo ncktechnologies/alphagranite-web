@@ -1144,7 +1144,7 @@ const NewFabIdForm = () => {
                                   <div className="p-2">
                                     <div className="flex items-center justify-between mb-2">
                                       <span className="text-sm font-medium">Stone Types</span>
-                                      <Popover open={showAddStoneType} onOpenChange={setShowAddStoneType}>
+                                      {/* <Popover open={showAddStoneType} onOpenChange={setShowAddStoneType}>
                                         <PopoverTrigger asChild>
                                           <Button variant="ghost" size="sm" className="h-7 px-2">
                                             <Plus className="w-3 h-3 mr-1" />
@@ -1172,7 +1172,7 @@ const NewFabIdForm = () => {
                                             </div>
                                           </div>
                                         </PopoverContent>
-                                      </Popover>
+                                      </Popover> */}
                                     </div>
                                     <div className="relative mb-2">
                                       <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />
@@ -1244,7 +1244,7 @@ const NewFabIdForm = () => {
                                   <div className="p-2">
                                     <div className="flex items-center justify-between mb-2">
                                       <span className="text-sm font-medium">Stone Colors</span>
-                                      <Popover open={showAddStoneColor} onOpenChange={setShowAddStoneColor}>
+                                      {/* <Popover open={showAddStoneColor} onOpenChange={setShowAddStoneColor}>
                                         <PopoverTrigger asChild>
                                           <Button variant="ghost" size="sm" className="h-7 px-2">
                                             <Plus className="w-3 h-3 mr-1" />
@@ -1272,7 +1272,7 @@ const NewFabIdForm = () => {
                                             </div>
                                           </div>
                                         </PopoverContent>
-                                      </Popover>
+                                      </Popover> */}
                                     </div>
                                     <div className="relative mb-2">
                                       <Search className="absolute top-1/2 left-3 -translate-y-1/2 h-4 w-4 text-text-foreground" />

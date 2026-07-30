@@ -112,58 +112,56 @@ export function CutListDetailsPage() {
           },
         ],
       },
+      // {
+      //   title: 'Drafting Notes',
+      //   type: 'notes',
+      //   notes: draftData
+      //     ? [
+      //       {
+      //         id: 1,
+      //         avatar: draftData.drafter_name?.substring(0, 2).toUpperCase() || 'DR',
+      //         avatarUrl: draftData.draft_note?.created_by_profile_image_url,
+      //         content:
+      //           draftData.draft_note ||
+      //           `Drafting completed with ${draftData.no_of_piece_drafted || 0} pieces, ${draftData.total_sqft_drafted || 0} sq ft`,
+      //         author: draftData.drafter_name || 'Unknown Drafter',
+      //         timestamp: draftData.updated_at ? new Date(draftData.updated_at).toLocaleDateString() : 'N/A',
+      //       },
+      //     ]
+      //     : [],
+      // },
       {
-        title: 'Drafting Notes',
-        type: 'notes',
-        notes: draftData
-          ? [
-            {
-              id: 1,
-              avatar: draftData.drafter_name?.substring(0, 2).toUpperCase() || 'DR',
-              avatarUrl: note.created_by_profile_image_url,
-              content:
-                draftData.draft_note ||
-                `Drafting completed with ${draftData.no_of_piece_drafted || 0} pieces, ${draftData.total_sqft_drafted || 0} sq ft`,
-              author: draftData.drafter_name || 'Unknown Drafter',
-              timestamp: draftData.updated_at ? new Date(draftData.updated_at).toLocaleDateString() : 'N/A',
-            },
-          ]
-          : [],
-      },
-      {
-        title: 'Notes',
-        type: 'notes',
-        notes: Array.isArray(fabData.notes)
-          ? fabData.notes.map((note: string, index: number) => ({
-            id: index,
-            avatar: 'N',
-            avatarUrl: note.created_by_profile_image_url,
-            content: note,
-            author: 'System',
-            timestamp: new Date().toLocaleDateString(),
-          }))
-          : [],
-      },
-      {
-        title: 'FAB Notes',
-        type: 'notes',
-        notes: Array.isArray(fabData.fab_notes)
-          ? fabData.fab_notes.map((note: any) => {
-            const stage = note?.stage || 'general';
-            const config = stageConfig[stage] || stageConfig.general;
-            return {
-              id: note?.id,
-              avatar: note?.created_by_name?.charAt(0).toUpperCase() || 'U',
-              avatarUrl: note.created_by_profile_image_url,
-              content: note?.note || '',
-              author: note?.created_by_name || 'Unknown',
-              timestamp: note?.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
-              category: config.label,
-              categoryColor: config.color,
-            };
-          })
-          : [],
-      },
+           title: 'Notes',
+           type: 'notes',
+           notes: Array.isArray(fabData?.notes)
+             ? fabData.notes.map((note: string, index: number) => ({
+               id: index,
+               avatar: 'N',
+               avatarUrl: note.created_by_profile_image_url,
+               content: note,
+               author: '',
+               timestamp: '',
+             }))
+             : [],
+         },
+         {
+           title: 'FAB Notes',
+           type: 'notes',
+           notes: getAllFabNotes(fabData?.fab_notes || []).map((note: any) => {
+             const stage = note.stage || 'general';
+             const config = stageConfig[stage] || stageConfig.general;
+             return {
+               id: note.id,
+               avatar: note.created_by_name?.charAt(0).toUpperCase() || 'U',
+               avatarUrl: note.created_by_profile_image_url,
+               content: note?.note || '',
+               author: note.created_by_name || 'Unknown',
+               timestamp: note.created_at ? new Date(note.created_at).toLocaleDateString() : 'Unknown date',
+               category: config.label,
+               categoryColor: config.color,
+             };
+           })
+         }
     ];
   }, [fabData, cuttingScheduleDate]);
 

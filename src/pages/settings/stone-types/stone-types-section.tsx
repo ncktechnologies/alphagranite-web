@@ -390,14 +390,14 @@ export function StoneTypesSection() {
                                                     placeholder="e.g., Absolute Black, Bianco Romano"
                                                 />
                                             </div>
-                                            <div className="space-y-2">
+                                            {/* <div className="space-y-2">
                                                 <Label>Color Code (Hex)</Label>
                                                 <Input
                                                     value={newStoneColorCode}
                                                     onChange={(e) => setNewStoneColorCode(e.target.value)}
                                                     placeholder="#000000"
                                                 />
-                                            </div>
+                                            </div> */}
                                             <div className="flex justify-end gap-2">
                                                 <Button
                                                     variant="outline"

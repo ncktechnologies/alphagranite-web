@@ -401,7 +401,16 @@ export function ServiceLevelReport() {
                     <Card className="p-4"><div className="text-sm text-[#7c8689]">Overdue (Red)</div><div className="text-2xl font-semibold text-red-600">{widgets.overdue_red}</div></Card>
                     <Card className="p-4"><div className="text-sm text-[#7c8689]">Avg Cycle Time</div><div className="text-2xl font-semibold">{widgets.avg_cycle_time_days?.toFixed(1)} days</div></Card>
                     {widgets.oldest_open_job && (
-                        <Card className="p-4"><div className="text-sm text-[#7c8689]">Oldest Open Job</div><div className="text-lg font-semibold">FAB Id{widgets.oldest_open_job.fab_id}</div><div className="text-xs">{formatStage(widgets.oldest_open_job.current_stage)} – {widgets.oldest_open_job.age_days} days</div></Card>
+                        // <Card className="p-4"><div className="text-sm text-[#7c8689]">Oldest Open Job</div><div className="text-lg font-semibold">Fab ID  {widgets.oldest_open_job.fab_id}</div><div className="text-xs">{formatStage(widgets.oldest_open_job.current_stage)} – {widgets.oldest_open_job.age_days} days</div></Card>
+                        <Card className="p-4">
+                            <div className="text-sm text-[#7c8689]">Oldest Open Job</div>
+                            <div className="flex flex-col">
+                                <span className="text-xs font-medium text-[#7c8689]">Fab ID</span>
+                                <span className="text-xl font-bold">{widgets.oldest_open_job.fab_id}</span>
+                            </div>
+
+                            <div className="text-xs">{formatStage(widgets.oldest_open_job.current_stage)} – {widgets.oldest_open_job.age_days} days</div>
+                        </Card>
                     )}
                 </div>
             )}
@@ -417,92 +426,92 @@ export function ServiceLevelReport() {
                         <CardHeader className="py-3 px-5 border-b flex flex-wrap items-center gap-2 bg-white">
                             <p className="font-semibold mr-2">Fab Status Details</p>
                             <CardToolbar>
-                            <div className="flex flex-wrap items-center gap-2">
-                                {/* Fab Type Filter */}
-                                <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
-                                    <SelectTrigger className="w-[140px] h-[34px] border-[#e2e4ed]">
-                                        <SelectValue placeholder="Fab Type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Types</SelectItem>
-                                        {fabTypeOptions.map(type => (
-                                            <SelectItem key={type} value={type}>{type}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {/* Fab Type Filter */}
+                                    <Select value={fabTypeFilter} onValueChange={setFabTypeFilter}>
+                                        <SelectTrigger className="w-[140px] h-[34px] border-[#e2e4ed]">
+                                            <SelectValue placeholder="Fab Type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Types</SelectItem>
+                                            {fabTypeOptions.map(type => (
+                                                <SelectItem key={type} value={type}>{type}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
 
-                                {/* Stage Filter */}
-                                <Select value={stageFilter} onValueChange={setStageFilter}>
-                                    <SelectTrigger className="w-[140px] h-[34px] border-[#e2e4ed]">
-                                        <SelectValue placeholder="Stage" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Stages</SelectItem>
-                                        {stageOptions.map(stage => (
-                                            <SelectItem key={stage} value={stage}>{formatStage(stage)}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                    {/* Stage Filter */}
+                                    <Select value={stageFilter} onValueChange={setStageFilter}>
+                                        <SelectTrigger className="w-[140px] h-[34px] border-[#e2e4ed]">
+                                            <SelectValue placeholder="Stage" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Stages</SelectItem>
+                                            {stageOptions.map(stage => (
+                                                <SelectItem key={stage} value={stage}>{formatStage(stage)}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
 
-                                {/* Risk Filter */}
-                                <Select value={riskFilter} onValueChange={setRiskFilter}>
-                                    <SelectTrigger className="w-[120px] h-[34px] border-[#e2e4ed]">
-                                        <SelectValue placeholder="Risk" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Risks</SelectItem>
-                                        {riskOptions.map(risk => (
-                                            <SelectItem key={risk} value={risk}>{risk.toUpperCase()}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                    {/* Risk Filter */}
+                                    <Select value={riskFilter} onValueChange={setRiskFilter}>
+                                        <SelectTrigger className="w-[120px] h-[34px] border-[#e2e4ed]">
+                                            <SelectValue placeholder="Risk" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Risks</SelectItem>
+                                            {riskOptions.map(risk => (
+                                                <SelectItem key={risk} value={risk}>{risk.toUpperCase()}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
 
-                                {/* ✅ Status Filter */}
-                                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                    <SelectTrigger className="w-[140px] h-[34px] border-[#e2e4ed]">
-                                        <SelectValue placeholder="Status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Statuses</SelectItem>
-                                        {statusOptions.map(status => (
-                                            <SelectItem key={status} value={status}>{status}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                    {/* ✅ Status Filter */}
+                                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                        <SelectTrigger className="w-[140px] h-[34px] border-[#e2e4ed]">
+                                            <SelectValue placeholder="Status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Statuses</SelectItem>
+                                            {statusOptions.map(status => (
+                                                <SelectItem key={status} value={status}>{status}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
 
-                                {/* ─── Search Input ────────────────────────────────────────────── */}
-                                <div className="relative">
-                                    <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
-                                    <Input
-                                        placeholder="Search by Job No"
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        className="ps-9 w-[220px] h-[34px]"
-                                    />
-                                    {searchQuery && (
-                                        <Button
-                                            mode="icon"
-                                            variant="ghost"
-                                            className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
-                                            onClick={() => setSearchQuery('')}
-                                        >
-                                            <X className="h-4 w-4" />
+                                    {/* ─── Search Input ────────────────────────────────────────────── */}
+                                    <div className="relative">
+                                        <Search className="size-4 text-muted-foreground absolute start-3 top-1/2 -translate-y-1/2" />
+                                        <Input
+                                            placeholder="Search by Job No"
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="ps-9 w-[220px] h-[34px]"
+                                        />
+                                        {searchQuery && (
+                                            <Button
+                                                mode="icon"
+                                                variant="ghost"
+                                                className="absolute end-1.5 top-1/2 -translate-y-1/2 h-6 w-6"
+                                                onClick={() => setSearchQuery('')}
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                    </div>
+
+                                    {/* Clear All */}
+                                    {(fabTypeFilter !== 'all' || stageFilter !== 'all' || riskFilter !== 'all' || statusFilter !== 'all' || searchQuery) && (
+                                        <Button variant="ghost" size="sm" onClick={clearAll} className="h-[34px]">
+                                            Clear All
                                         </Button>
                                     )}
                                 </div>
-
-                                {/* Clear All */}
-                                {(fabTypeFilter !== 'all' || stageFilter !== 'all' || riskFilter !== 'all' || statusFilter !== 'all' || searchQuery) && (
-                                    <Button variant="ghost" size="sm" onClick={clearAll} className="h-[34px]">
-                                        Clear All
+                                <div className="ml-auto">
+                                    <Button variant="outline" size="sm" onClick={() => exportTableToCSV(fabTable, 'service-level-fabs')} className="h-[34px]">
+                                        Export CSV
                                     </Button>
-                                )}
-                            </div>
-                            <div className="ml-auto">
-                                <Button variant="outline" size="sm" onClick={() => exportTableToCSV(fabTable, 'service-level-fabs')} className="h-[34px]">
-                                    Export CSV
-                                </Button>
-                            </div>
+                                </div>
                             </CardToolbar>
                         </CardHeader>
                         <CardTable>
