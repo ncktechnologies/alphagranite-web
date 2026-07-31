@@ -120,7 +120,7 @@ export function WeeklyInstallerCostReport() {
                         average_sqft_per_day: 'Average Sq. Ft. per Day',
                         gross_revenue: 'Gross Revenue',
                         gross_profit: 'Gross Profit',
-                        average_revenue_per_day: 'Ave Revenue per Day',
+                        average_revenue_per_day: 'Avg Revenue per Day',
                         total_head_count: 'Total Head Count',
                         wages_basic_installer: 'Wages Basic Installer',
                         overtime_installer: 'Overtime Installer',
