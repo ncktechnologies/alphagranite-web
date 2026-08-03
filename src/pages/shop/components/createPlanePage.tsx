@@ -67,23 +67,17 @@ interface PlanEntry {
   sequence: string;
 }
 
-// -----------------------------------------------------------------------------
-// Helper: create a Date object that represents the local datetime
-// (no UTC conversion – the date will be interpreted as local time)
-// -----------------------------------------------------------------------------
+// Helper: create a Date object that represents the local datetime (no UTC conversion)
 function createLocalDateTime(date: Date | undefined, time: string): Date | null {
   if (!date || !time) return null;
   const [hours, minutes] = time.split(':').map(Number);
   const year = date.getFullYear();
   const month = date.getMonth();
   const day = date.getDate();
-  // Using the local‑time constructor: year, monthIndex, day, hours, minutes
   return new Date(year, month, day, hours, minutes);
 }
 
-// -----------------------------------------------------------------------------
-// Helper: parse an API datetime string (e.g., "2025-03-15T10:30:00") as local time
-// -----------------------------------------------------------------------------
+// Helper: parse an API datetime string as local time
 function parseLocalDateTime(dateTimeStr: string): Date | null {
   if (!dateTimeStr) return null;
   const [datePart, timePart] = dateTimeStr.split('T');
@@ -94,7 +88,7 @@ function parseLocalDateTime(dateTimeStr: string): Date | null {
 }
 
 // -----------------------------------------------------------------------------
-// PlanEntryCard component (unchanged except using the new helper)
+// PlanEntryCard component (unchanged)
 // -----------------------------------------------------------------------------
 interface PlanEntryCardProps {
   entry: PlanEntry;
@@ -167,7 +161,6 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
 
   const hasSlot = !!(entry.start_date && entry.start_time && entry.end_date && entry.end_time);
 
-  // Recalculate estimated hours using local datetime helper
   const recalcEstimatedHours = useCallback((startDate: Date | undefined, startTime: string, endDate: Date | undefined, endTime: string): string => {
     const startDateTime = createLocalDateTime(startDate, startTime);
     const endDateTime = createLocalDateTime(endDate, endTime);
@@ -299,7 +292,6 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
               </Select>
             </div>
 
-            {/* Estimated hours hidden – read‑only, calculated automatically */}
             <div className="hidden">
               <Label className="text-[13px] text-[#4b545d]">Est. Hours (auto)</Label>
               <Input
@@ -505,12 +497,44 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
   const [entries, setEntries] = useState<PlanEntry[]>([]);
 
-  const { data: fabData } = useGetFabByIdQuery(
+  // ── Fetch FAB details (includes plans with sequences) ──
+  const { data: fabData, isLoading: isLoadingFab } = useGetFabByIdQuery(
     effectivePrefillFabId ? Number(effectivePrefillFabId) : 0,
     { skip: !effectivePrefillFabId }
   );
   const fabDetails = fabData?.data ?? fabData;
 
+  // ── Extract existing sequences from fabDetails.plans ──
+  const usedSequencesFromBackend = useMemo(() => {
+    if (!fabDetails?.plans || !Array.isArray(fabDetails.plans)) return new Set<number>();
+    const sequences = new Set<number>();
+    fabDetails.plans.forEach((plan: any) => {
+      if (plan.sequence != null) {
+        sequences.add(Number(plan.sequence));
+      }
+    });
+    return sequences;
+  }, [fabDetails]);
+
+  const maxUsedSequence = useMemo(() => {
+    const used = usedSequencesFromBackend;
+    if (used.size === 0) return 0;
+    return Math.max(...Array.from(used));
+  }, [usedSequencesFromBackend]);
+
+  // ── Helper to get next available sequence (backend + local) ──
+  const getNextAvailableSequence = useCallback((localEntries: PlanEntry[]) => {
+    const used = new Set(usedSequencesFromBackend);
+    localEntries.forEach(e => {
+      const seq = Number(e.sequence);
+      if (!isNaN(seq)) used.add(seq);
+    });
+    let seq = 1;
+    while (used.has(seq)) seq++;
+    return seq;
+  }, [usedSequencesFromBackend]);
+
+  // ── Other data hooks ──
   const { data: planningSectionsData } = useGetPlanningSectionsQuery();
   const planningSections: any[] = planningSectionsData?.data || (Array.isArray(planningSectionsData) ? planningSectionsData : []);
 
@@ -613,15 +637,17 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     };
   }, [effectivePrefillFabId, selectedTimeSlot, prefillSectionIdStr, propSelectedDate, allFabsList, planningSections, isResurfaceFab, getResurfaceSection]);
 
+  // ── Initialize entries ──
   useEffect(() => {
     if (!effectiveEvent && dataReady && entries.length === 0) {
       if (effectivePrefillFabId && fabDetails && !hideAddStageButton) {
         const activeStages = getActiveStagesFromFab(fabDetails);
         if (activeStages.length > 0) {
+          const firstAvailable = getNextAvailableSequence([]);
           const autoEntries = activeStages.map((s, i) => ({
             ...createEmptyEntry(effectivePrefillFabId),
             planning_section_id: String(s.section_id),
-            sequence: String(i + 1),
+            sequence: String(firstAvailable + i),
           }));
           setEntries(autoEntries);
           const expandedState: Record<number, boolean> = {};
@@ -630,9 +656,11 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
           return;
         }
       }
-      setEntries([createEmptyEntry(effectivePrefillFabId)]);
+      const initialEntry = createEmptyEntry(effectivePrefillFabId);
+      initialEntry.sequence = String(getNextAvailableSequence([]));
+      setEntries([initialEntry]);
     }
-  }, [effectiveEvent, dataReady, entries.length, createEmptyEntry, effectivePrefillFabId, fabDetails, hideAddStageButton, getActiveStagesFromFab]);
+  }, [effectiveEvent, dataReady, entries.length, createEmptyEntry, effectivePrefillFabId, fabDetails, hideAddStageButton, getActiveStagesFromFab, getNextAvailableSequence]);
 
   // Edit mode: parse API datetime strings as local
   useEffect(() => {
@@ -681,12 +709,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     setExpandedCards({ 0: true });
   }, [effectiveEvent, employeesLoaded, workstationsLoaded, sectionsLoaded, fabsLoaded, allFabsList, planningSections, isResurfaceFab, getResurfaceSection, prefillSectionIdStr]);
 
-  const getNextAvailableSequence = useCallback((used: Set<number>) => {
-    let seq = 1;
-    while (used.has(seq)) seq++;
-    return seq;
-  }, []);
-
   const selectedFab = useMemo(() => {
     if (!allFabsList.length || !entries[0]?.fab_id) return null;
     return allFabsList.find(f => String(f.id) === entries[0].fab_id) || null;
@@ -731,10 +753,11 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
         if (newFab && !hideAddStageButton) {
           const activeStages = getActiveStagesFromFab(newFab);
           if (activeStages.length > 0) {
+            const firstAvailable = getNextAvailableSequence([]);
             const autoEntries = activeStages.map((s, i) => ({
               ...createEmptyEntry(patch.fab_id),
               planning_section_id: String(s.section_id),
-              sequence: String(i + 1),
+              sequence: String(firstAvailable + i),
             }));
             const expandedState: Record<number, boolean> = {};
             autoEntries.forEach((_, i) => { expandedState[i] = true; });
@@ -758,13 +781,12 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       newEntries[idx] = updatedEntry;
       return newEntries;
     });
-  }, [allFabsList, planningSections, isResurfaceFab, getResurfaceSection, prefillSectionIdStr, hideAddStageButton, getActiveStagesFromFab, createEmptyEntry, recalcEntryHours]);
+  }, [allFabsList, planningSections, isResurfaceFab, getResurfaceSection, prefillSectionIdStr, hideAddStageButton, getActiveStagesFromFab, createEmptyEntry, recalcEntryHours, getNextAvailableSequence]);
 
   const addEntry = useCallback(() => {
     if (currentIsResurface) return;
     setEntries(prev => {
-      const usedSequences = new Set(prev.map(e => Number(e.sequence)).filter(s => !isNaN(s)));
-      const nextSeq = getNextAvailableSequence(usedSequences);
+      const nextSeq = getNextAvailableSequence(prev);
       const newEntry = createEmptyEntry(prev[0]?.fab_id);
       newEntry.sequence = String(nextSeq);
       return [...prev, newEntry];
@@ -780,8 +802,10 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   }, [currentIsResurface]);
 
   const resetForm = useCallback(() => {
-    setEntries([createEmptyEntry(effectivePrefillFabId)]);
-  }, [createEmptyEntry, effectivePrefillFabId]);
+    const initialEntry = createEmptyEntry(effectivePrefillFabId);
+    initialEntry.sequence = String(getNextAvailableSequence([]));
+    setEntries([initialEntry]);
+  }, [createEmptyEntry, effectivePrefillFabId, getNextAvailableSequence]);
 
   const handleBack = useCallback(() => {
     resetForm();
@@ -794,9 +818,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const [updateShopPlan] = useUpdateShopPlanMutation();
   const [, { isLoading: isAutoScheduling }] = useCreateShopSuggestionMutation();
 
-  // ---------------------------------------------------------------------------
-  // Submit: format datetimes as local ISO string WITHOUT timezone offset
-  // ---------------------------------------------------------------------------
+  // ── Submit ──
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     for (const entry of entries) {
@@ -829,7 +851,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
           const endDateTime = createLocalDateTime(entry.end_date, entry.end_time)!;
           const hrs = parseFloat(entry.estimated_hours);
           totalEst += hrs;
-          // Format as local datetime without 'Z' (e.g., "2025-03-15T10:30:00")
           const scheduledStart = format(startDateTime, "yyyy-MM-dd'T'HH:mm:ss");
           const scheduledEnd = format(endDateTime, "yyyy-MM-dd'T'HH:mm:ss");
           return {
@@ -879,10 +900,12 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   };
 
   const isEditing = !!effectiveEvent;
-  const sequenceOptions = useMemo(
-    () => Array.from({ length: Math.max(3, entries.length) }, (_, i) => i + 1),
-    [entries.length]
-  );
+  const sequenceOptions = useMemo(() => {
+    const localCount = entries.length;
+    // Ensure we have at least 3 options and enough to cover backend max + local + buffer
+    const maxOption = Math.max(3, maxUsedSequence + localCount + 1, localCount + 1);
+    return Array.from({ length: maxOption }, (_, i) => i + 1);
+  }, [entries.length, maxUsedSequence]);
 
   const isFormReady = effectiveEvent ? entries.length > 0 : (dataReady && entries.length > 0);
 

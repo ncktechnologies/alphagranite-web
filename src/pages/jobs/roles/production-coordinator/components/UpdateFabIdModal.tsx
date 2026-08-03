@@ -126,6 +126,25 @@ export function UpdateFabIdModal({
     });
   }, [open, cutListData, fabData, form]);
 
+
+  const cncLinFtValue = form.watch('cncLinFt');
+  const cncLinFtNum = parseFloat(cncLinFtValue) || 0;
+
+  // ── Read required fields from backend ──────────────────────────────────
+  const finalProgrammingComplete =
+    cutListData?.data?.final_programming_complete ??
+    fabData?.final_programming_complete ??
+    false;
+
+  const cncDataExists = !!(
+    cutListData?.data?.cnc_data ?? fabData?.cnc_data
+  );
+
+  // ── Determine if checkbox should be disabled ──────────────────────────
+  const isCutlistCompleteDisabled =
+    !finalProgrammingComplete || (cncLinFtNum > 0 && !cncDataExists);
+
+
   // ── Job info display ──────────────────────────────────────────────────────
   const jobInfo = [
     { label: "Job #", value: fabData?.job_details?.job_number || "-" },
@@ -389,11 +408,13 @@ export function UpdateFabIdModal({
                         <Checkbox
                           checked={field.value === true}
                           onCheckedChange={field.onChange}
+                          disabled={isCutlistCompleteDisabled}   // ✅ added
                         />
                       </FormControl>
                     </FormItem>
                   )}
                 />
+             
               </div>
             </form>
           </Form>
