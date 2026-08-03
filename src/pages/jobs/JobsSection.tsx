@@ -53,6 +53,7 @@ import { Can } from '@/components/permission';
 import JobFormSheet from './components/JobFormSheet';
 import { Link } from 'react-router';
 import { useToggleNeedToInvoiceMutation, useMarkJobInvoicedMutation, useAddJobNotesMutation } from '@/store/api/job';
+import { exportTableToCSV } from '@/lib/exportToCsv';
 
 interface ExtendedJob extends Omit<Job, 'project_value'> {
   sales_person_name?: string;
@@ -556,6 +557,11 @@ export const JobsSection = ({ canToggleInvoice = true }: JobsSectionProps) => {
                   <Button onClick={handleCreateNew}>
                     <Plus className="mr-2 h-4 w-4" />
                     New Job
+                  </Button>
+                </Can>
+                <Can action="read" on="Manage Jobs">
+                  <Button variant="outline" onClick={() => exportTableToCSV(table, "jobs")}>
+                    Export CSV
                   </Button>
                 </Can>
               </CardToolbar>

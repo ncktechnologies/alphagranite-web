@@ -256,7 +256,7 @@ const DepartmentTable = ({ employees }: employeeProps) => {
                     </CardHeading>
                     <CardToolbar>
                         <Can action="read" on="department">
-                            <Button variant="outline" onClick={() => exportTableToCSV(table, "dapartment-employees")}>
+                            <Button variant="outline" onClick={() => exportTableToCSV(table, "department-employees")}>
                                 Export CSV
                             </Button>
                         </Can>

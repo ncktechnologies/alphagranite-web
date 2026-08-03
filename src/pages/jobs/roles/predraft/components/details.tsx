@@ -158,7 +158,7 @@ export function PreDraftDetailsPage() {
                                         </a>
                                     </div>
                                 }
-                                description="Pre-Draft Review"
+                                description="Pre-draft Review"
                             />
                             <div className="flex items-center gap-2 flex-shrink-0">
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
@@ -206,9 +206,9 @@ export function PreDraftDetailsPage() {
                                 </>
                             ) : (
                                 <>
-                                    <CardTitle className="text-text text-lg sm:text-xl">Predraft Review</CardTitle>
+                                    <CardTitle className="text-text text-lg sm:text-xl">Pre-draft Review</CardTitle>
                                     <p className="text-sm text-text-foreground leading-[20px]">
-                                        Review and approve completed Predraft
+                                        Review and approve completed Pre-draft
                                     </p>
                                 </>
                             )}

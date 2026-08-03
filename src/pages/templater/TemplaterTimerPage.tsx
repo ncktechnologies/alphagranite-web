@@ -63,8 +63,8 @@ export function TemplaterTimerPage() {
             pollingInterval: isRunning ? 5000 : 0, // Poll every 5s when running
         }
     );
-      const [deleteJobMedia, { isLoading: isDeleting }] = useDeleteJobMediaMutation();
-    
+    const [deleteJobMedia, { isLoading: isDeleting }] = useDeleteJobMediaMutation();
+
 
     const [startTimer] = useStartTemplaterTimerMutation();
     const [pauseTimer] = usePauseTemplaterTimerMutation();
@@ -269,24 +269,25 @@ export function TemplaterTimerPage() {
 
                             <CardToolbar>
                                 {/* <Can action="create" on="jobs"> */}
-                                    <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-                                        <DialogTrigger asChild>
-                                            <Button>
-                                                <Camera className="h-4 w-4 mr-2" />
-                                                Upload Media
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                                            <DialogHeader>
-                                                <DialogTitle>Upload Media Files</DialogTitle>
-                                            </DialogHeader>
-                                            <JobMediaUpload
-                                                jobId={job_id}
-                                                onUploadComplete={refetchMedia}
-                                                onClose={() => setShowUploadDialog(false)}
-                                            />
-                                        </DialogContent>
-                                    </Dialog>
+                                <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+                                    <DialogTrigger asChild>
+                                        <Button>
+                                            <Camera className="h-4 w-4 mr-2" />
+                                            Upload Media
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                                        <DialogHeader>
+                                            <DialogTitle>Upload Media Files</DialogTitle>
+                                        </DialogHeader>
+                                        <JobMediaUpload
+                                            jobId={job_id}
+                                            onUploadComplete={refetchMedia}
+                                            onClose={() => setShowUploadDialog(false)}
+                                            comStages={[{ value: 'templating', label: 'Templating' }]}
+                                        />
+                                    </DialogContent>
+                                </Dialog>
                                 {/* </Can> */}
                             </CardToolbar>
                         </CardHeader>

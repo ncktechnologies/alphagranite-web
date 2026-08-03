@@ -427,6 +427,8 @@ const ShopRevisionDetailsPage = () => {
             { value: 'ss_layout', label: 'SS Layout' },
             { value: 'shop_drawing', label: 'Shop Drawing' },
             { value: 'photo_media', label: 'Photo Media' },
+            { value: 'cnc_est', label: 'CNC Est' },
+
           ]}
           additionalParams={{
             revision_id: selectedRevision.id,

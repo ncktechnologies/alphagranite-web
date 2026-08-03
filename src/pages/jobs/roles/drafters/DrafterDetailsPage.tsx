@@ -774,6 +774,7 @@ export function DrafterDetailsPage() {
           { value: 'layout', label: 'Layout' },
           { value: 'ss_layout', label: 'SS Layout' },
           { value: 'shop_drawing', label: 'Shop Drawing' },
+          { value: 'media', label: 'Media' },
         ]}
         additionalParams={{
           drafting_id: draftingData?.id || fabData?.draft_data?.id,

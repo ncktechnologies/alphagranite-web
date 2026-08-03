@@ -21,7 +21,7 @@ import {
     useManageShopPlanTimerMutation as useShopPlanTimerAction,
     useGetShopPlanTimerHistoryQuery as useShopPlanTimerHistory,
 } from '@/store/api/shopCutPlanning';
-import { useGetFabByIdQuery } from '@/store/api/job';
+import { useDeleteFileMutation, useGetFabByIdQuery } from '@/store/api/job';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { OperatorMediaUpload } from './components/OperatorMediaUpload';
 import { Toolbar, ToolbarHeading } from '@/layouts/demo1/components/toolbar';
@@ -82,6 +82,9 @@ export function OperatorTaskDetails() {
             { skip: !taskId || !operatorId || !workstationId }
         );
 
+    // ─── Use the new delete mutation ───────────────────────────────────────────
+    const [deleteFile] = useDeleteFileMutation();
+
     const currentTask: any = Array.isArray(taskData)
         ? taskData[0]
         : (taskData as any)?.data
@@ -99,7 +102,7 @@ export function OperatorTaskDetails() {
         skip: !currentFabId,
     });
 
- const revisions = useMemo(() => {
+    const revisions = useMemo(() => {
         const raw = Array.isArray(fabRevisionsData) ? fabRevisionsData : [];
         return [...raw].sort((a, b) => {
             if (!a.created_at) return 1;
@@ -360,6 +363,24 @@ export function OperatorTaskDetails() {
         setActiveFile(file);
     };
 
+    // ─── Handle file deletion using the new mutation ──────────────────────
+    const handleDeleteFile = async (file: any) => {
+        const fileId = typeof file === 'string' ? file : (file?.id || file?.file_id);
+        if (!fileId) {
+            toast.error('Could not determine file ID');
+            return;
+        }
+        try {
+            // Assumes mutation expects { file_id: number }
+            await deleteFile({ file_id: Number(fileId) }).unwrap();
+            toast.success('File deleted successfully');
+            refetchQaFiles();
+            refetchTask();
+            refetchRevisions();
+        } catch (error: any) {
+            toast.error(error?.data?.message || 'Failed to delete file');
+        }
+    };
     const handleCreateShopRevision = async () => {
         if (!currentTask?.fab_id || !operatorId) {
             toast.error('Missing FAB or operator information.');
@@ -397,10 +418,7 @@ export function OperatorTaskDetails() {
             setRevisionNote('');
             setShowRevisionDialog(false);
             await refetchTimer();
-            
-            // ✅ Refetch revisions and wait for it to complete before selecting
             await refetchRevisions().then(() => {
-                // Extract the new revision ID and set it as selected
                 const newRevisionId = result?.data?.id || result?.id;
                 if (newRevisionId) {
                     setSelectedRevisionId(newRevisionId);
@@ -587,6 +605,8 @@ export function OperatorTaskDetails() {
                                     onFileClick={handleFileClick}
                                     defaultLayout="card"
                                     emptyMessage="No files have been uploaded for this FAB yet."
+                                    onDeleteFile={handleDeleteFile}
+                                    showDeleteButton={true}
                                 />
                             )}
                         </CardContent>
@@ -759,7 +779,7 @@ export function OperatorTaskDetails() {
                                         </p>
                                     </div>
 
-                                    {/* ✅ Upload to Shop Revision button */}
+                                    {/* Upload to Shop Revision button */}
                                     {canUploadToShop && (
                                         <Button
                                             onClick={() => setShowShopUploadModal(true)}

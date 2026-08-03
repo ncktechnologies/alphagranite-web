@@ -6,7 +6,7 @@ import { Container } from '@/components/common/container';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle, CardToolbar } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
@@ -785,9 +785,24 @@ const EditFabIdForm = () => {
                 <div className="py-6">
                     <Card className="max-w-4xl mx-auto mb-4 py-6">
                         <CardHeader className='flex flex-col justify-start items-start'>
-                            <CardTitle className='text-2xl font-bold text-[#111827]'>Edit FAB ID</CardTitle>
+                            <div className="flex  items-center gap-4 ">
+
+                                <CardTitle className='text-2xl font-bold text-[#111827]'>Edit FAB ID</CardTitle>
+                                <CardToolbar>
+                                    {existingFab?.id && (
+                                        <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 ">
+                                            <span className="text-[13px] text-[#4a4d59]">FAB ID</span>
+                                            <span className="text-[20px] text-[#7a9705] font-semibold">#{existingFab.id}</span>
+                                        </div>
+                                    )}
+                                </CardToolbar>
+
+
+                            </div>
+
                             <CardDescription className='text-sm text-[#4B5563]'>Edit the Standard Fabrication Form with project specifications.</CardDescription>
                         </CardHeader>
+
                     </Card>
                     <div className="max-w-4xl mx-auto">
                         <Form {...form}>
