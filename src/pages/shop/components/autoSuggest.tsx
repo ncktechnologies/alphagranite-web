@@ -498,7 +498,11 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
         (selectedFab.shop_revisions && selectedFab.shop_revisions.some((r: any) => r.revision_completed === false));
       setHasPendingRevision(!!pending);
       if (pending) {
-        toast.warning('This FAB has pending shop revision(s). Auto-scheduling and creation are disabled until revisions are completed.');
+       toast.warning('This FAB has pending shop revision(s). Auto-scheduling and creation are disabled until revisions are completed.', {
+  style: { backgroundColor: '#fef9e7', borderColor: '#f0c000', color: '#7a6a00' },
+  duration: 5000,
+});
+
       }
     }
   }, [selectedFab]);
@@ -953,7 +957,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
             type="button"
             onClick={addEntry}
             className="w-full h-[44px] border border-dashed border-[#e2e4ed] rounded-[8px] flex items-center justify-center gap-2 text-[#78829d] hover:border-[#9cc15e] hover:text-[#7a9705] hover:bg-[#f0f4e8] transition-all"
-              disabled={isLoading || isAutoScheduling || hasExistingPlans || isCheckingPlans}
+            disabled={isLoading || isAutoScheduling || hasExistingPlans || isCheckingPlans}
 
           >
             <Plus className="h-4 w-4" />

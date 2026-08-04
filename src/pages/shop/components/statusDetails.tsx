@@ -1035,9 +1035,150 @@ const FabDetailsPage = () => {
                     </Card>
                 </div>
 
-                {/* RIGHT SIDEBAR (unchanged) */}
+                {/* RIGHT SIDEBAR */}
                 <div className="border-l space-y-6">
-                    {/* ... existing sidebar content ... */}
+                    {/* Estimated Completion Date */}
+                    <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
+                        <CardHeader className="pb-3 border-b border-[#e2e4ed]">
+                            <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
+                                <CalendarDays className="h-4 w-4 text-[#7c8689]" />
+                                Estimated Completion Date
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4">
+                            <ShopEstDateField value={fab.shop_est_completion_date} fabId={Number(fabId)} onSaved={refetch} />
+                        </CardContent>
+                    </Card>
+
+                    {/* Shop Suggested Date */}
+                    <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
+                        <CardHeader className="pb-3 border-b border-[#e2e4ed]">
+                            <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
+                                <CalendarDays className="h-4 w-4 text-[#7c8689]" />
+                                Shop Suggested Date
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4">
+                            <InfoRow label="Shop Suggested Date" value={safeFormatDate(fab.estimated_completion_date, 'MMM dd, yyyy')} />
+                        </CardContent>
+                    </Card>
+
+                    {/* Schedule Dates */}
+                    <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
+                        <CardHeader className="pb-3 border-b border-[#e2e4ed]">
+                            <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-[#7c8689]" />
+                                Schedule Dates
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4 flex flex-col gap-3">
+                            <InfoRow label="Shop Date Schedule" value={safeFormatDate(fab.shop_date_schedule, 'MMM dd, yyyy')} />
+                            <InfoRow label="Install Date" value={safeFormatDate(fab.installation_date, 'MMM dd, yyyy')} />
+                            {plans.map((plan: any) => {
+                                const section = planSections.find(s => s.id === plan.planning_section_id);
+                                if (!section || !plan.scheduled_start_date) return null;
+                                return <InfoRow key={plan.id} label={`${section.plan_name} Date`} value={safeFormatDate(plan.scheduled_start_date, 'MMM dd, yyyy')} />;
+                            })}
+                        </CardContent>
+                    </Card>
+
+                    {/* Shop Revision History */}
+                    <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
+                        <CardHeader className="pb-3 border-b border-[#e2e4ed]">
+                            <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
+                                <CalendarDays className="h-4 w-4 text-[#7c8689]" />
+                                Shop Revisions
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4 space-y-4">
+                            <Button
+                                onClick={() => setShowRevisionDialog(true)}
+                                className="w-full bg-[#7a9705] hover:bg-[#6a8505] text-white"
+                                size="sm"
+                                disabled={hasPendingShopRevision}
+                            >
+                                <Plus className="h-4 w-4 mr-2" /> Create Shop Revision
+                            </Button>
+
+                            {isRevisionsLoading ? (
+                                <p className="text-sm text-muted-foreground">Loading revision history...</p>
+                            ) : revisions.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">No revisions exist for this FAB yet.</p>
+                            ) : (
+                                <div className="space-y-2">
+                                    {revisions.map((revision: any) => (
+                                        <button
+                                            key={revision.id}
+                                            type="button"
+                                            className={`w-full text-left border rounded-md p-3 transition ${selectedRevision?.id === revision.id ? 'border-green-600 bg-green-50/50' : 'border-border'}`}
+                                            onClick={() => setSelectedRevisionId(revision.id)}
+                                        >
+                                            <div className="flex items-center justify-between gap-2">
+                                                <p className="font-medium text-sm">Revision #{revision.id}</p>
+                                                <span className={`text-xs ${revision.revision_completed ? 'text-green-700' : 'text-orange-700'}`}>
+                                                    {revision.revision_completed ? 'Completed' : 'Pending'}
+                                                </span>
+                                            </div>
+                                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{revision.revision_note || 'No note provided.'}</p>
+                                            <p className="text-xs text-gray-400 mt-1">Requested by: {revision.requested_by_name || revision.requested_by || 'Unknown'}</p>
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Shop Revision Details */}
+                    <Card className="border border-[#e2e4ed] shadow-sm rounded-none border-l-0 border-t-0 border-r-0">
+                        <CardHeader className="pb-3 border-b border-[#e2e4ed]">
+                            <CardTitle className="text-sm font-semibold text-[#4b545d] flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-[#7c8689]" />
+                                Revision Details
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-4 space-y-4">
+                            {!selectedRevision ? (
+                                <p className="text-sm text-muted-foreground">Select a revision to view details.</p>
+                            ) : (
+                                <>
+                                    {selectedRevision.created_at && (
+                                        <SCTTimer
+                                            startTime={selectedRevision.created_at}
+                                            endTime={selectedRevision.revision_completed ? selectedRevision.completed_at || null : null}
+                                            text="Time in Shop Revision:"
+                                        />
+                                    )}
+                                    <InfoRow label="FAB ID" value={selectedRevision.fab_id || '—'} />
+                                    <InfoRow label="Revision Note" value={selectedRevision.revision_note || '—'} />
+                                    <InfoRow label="Requested By" value={selectedRevision.requested_by_name || selectedRevision.requested_by || '—'} />
+                                    <InfoRow label="Created At" value={selectedRevision.created_at ? format(new Date(selectedRevision.created_at), 'MMM dd, yyyy h:mm a') : '—'} />
+                                    {selectedRevision.revision_completed && selectedRevision.completed_at && (
+                                        <InfoRow label="Completed At" value={format(new Date(selectedRevision.completed_at), 'MMM dd, yyyy h:mm a')} />
+                                    )}
+                                    <InfoRow label="Status" value={selectedRevision.revision_completed ? <span className="text-green-700">Completed</span> : <span className="text-orange-700">Pending</span>} />
+                                    {selectedRevision.revision_feedback && <InfoRow label="Feedback" value={selectedRevision.revision_feedback} />}
+
+                                    {/* Upload button – only for pending revisions */}
+                                    {canUpload && (
+                                        <Button
+                                            onClick={() => {
+                                                if (!selectedRevision || !selectedRevision.id) {
+                                                    toast.error('No valid revision selected');
+                                                    return;
+                                                }
+                                                setShowShopUploadModal(true);
+                                            }}
+                                            className="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white"
+                                            size="sm"
+                                        >
+                                            <Upload className="h-4 w-4 mr-2" />
+                                            Upload Files to Revision
+                                        </Button>
+                                    )}
+                                </>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
 
@@ -1088,7 +1229,7 @@ const FabDetailsPage = () => {
                                 >
                                     {isCreatingRevision ? 'Creating…' : 'Create Revision'}
                                 </Button>
-                            }
+                            } 
                         </div>
                     </div>
                 </DialogContent>

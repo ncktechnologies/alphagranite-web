@@ -24,7 +24,7 @@ const formatTimestamp = (date: Date) => {
 const submissionSchema = z.object({
   totalSqFt: z
   .string()
-  .min(1, 'Total Sq Ft is required')
+  .min(1, 'Total LinFt is required')
   .trim(),
   numberOfPieces: z.string().optional(),
   draftNotes: z.string().optional(),
