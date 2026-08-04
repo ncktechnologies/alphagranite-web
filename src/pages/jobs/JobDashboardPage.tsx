@@ -38,7 +38,7 @@ export function JobDashboardPage() {
     const routeMap: Record<string, string> = {
       'FAB IDs': '/sales',
       'Templating': '/job/templating',
-      'Pre-draft Review': '/job/predraft',
+      'Pre-Draft Review': '/job/predraft',
       'Drafting': '/job/draft',
       'SCT': '/job/draft-review',
       'SlabSmith Request': '/job/slab-smith',
@@ -63,7 +63,7 @@ export function JobDashboardPage() {
     // Create a mapping of widget IDs to stage names
     const stageNameMap: Record<string, string> = {
       'Templating': 'templating',
-      'Pre-draft Review': 'pre_draft_review',
+      'Pre-Draft Review': 'pre_draft_review',
       'Drafting': 'drafting',
       'SCT': 'sales_ct',
       'SlabSmith Request': 'slab_smith_request',

@@ -379,7 +379,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
         <Separator className="my-4" />
 
         <div className="space-y-3 mt-6">
-          <Can action="update" on="Pre-draft Review">
+          <Can action="update" on="Pre-Draft Review">
             <Button
               className="w-full py-6 text-base"
               type="submit"

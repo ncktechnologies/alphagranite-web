@@ -217,7 +217,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
         <>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                    <Can action="create" on="Pre-draft Review">
+                    <Can action="create" on="Pre-Draft Review">
 
                         {templateNeeded ? (
                             // ── Template flow ─────────────────────────────────
@@ -276,7 +276,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                                             />
                                         </FormControl>
                                         <FormLabel className="text-base font-semibold text-text">
-                                            Pre-draft review complete
+                                            Pre-Draft review complete
                                         </FormLabel>
                                     </FormItem>
                                 )}
@@ -318,7 +318,7 @@ export function ReviewChecklistForm({ fabId }: ReviewChecklistFormProps) {
                     <Separator className="my-4" />
 
                     <div className="space-y-3 mt-6">
-                        <Can action="create" on="Pre-draft Review">
+                        <Can action="create" on="Pre-Draft Review">
                             <div className="mb-2">
                                 <Button
                                     className="w-full py-6 text-base"

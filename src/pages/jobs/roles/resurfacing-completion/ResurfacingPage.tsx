@@ -153,7 +153,7 @@ export function ResurfacingPage() {
             }
         }
 
-        console.log('Pre-draft Query Params:', params); // Debug log
+        console.log('Pre-Draft Query Params:', params); // Debug log
         return params;
     }, [
         skip,

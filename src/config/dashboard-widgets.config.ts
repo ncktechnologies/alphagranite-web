@@ -37,9 +37,9 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
   },
   // Pre-Draft (2)
   {
-    id: 'Pre-draft Review',
-    title: 'Pre-draft Review',
-    requiredPermission: 'Pre-draft Review',
+    id: 'Pre-Draft Review',
+    title: 'Pre-Draft Review',
+    requiredPermission: 'Pre-Draft Review',
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
@@ -300,7 +300,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
  */
 export const stageNameMap: Record<string, string> = {
   'templating': 'Templating',
-  'pre_draft_review': 'Pre-draft Review',
+  'pre_draft_review': 'Pre-Draft Review',
   'drafting': 'Drafting',
   'sales_ct': 'SCT',
   'slab_smith_request': 'SlabSmith Request',

@@ -67,7 +67,7 @@ export function PredraftPage() {
     const navigate = useNavigate();
     const isSuperAdmin = useIsSuperAdmin();
 
-    const permissions = usePermission('Pre-draft Review');
+    const permissions = usePermission('Pre-Draft Review');
 
     // Determine what actions the user is allowed to do
     const canAddNote = isSuperAdmin || permissions.can_create;      // Add Note menu item
@@ -149,7 +149,7 @@ export function PredraftPage() {
         return (
             <Container>
                 <Toolbar>
-                    <ToolbarHeading title="Pre-draft review" description="" />
+                    <ToolbarHeading title="Pre-Draft review" description="" />
                 </Toolbar>
                 <div className="space-y-4 mt-4">
                     <Skeleton className="h-16 w-full" />
@@ -164,7 +164,7 @@ export function PredraftPage() {
         return (
             <Container>
                 <Toolbar>
-                    <ToolbarHeading title="Pre-draft review" description="" />
+                    <ToolbarHeading title="Pre-Draft review" description="" />
                 </Toolbar>
                 <Alert variant="destructive" className="mt-4">
                     <AlertCircle className="h-4 w-4" />
@@ -181,8 +181,8 @@ export function PredraftPage() {
         <Container>
             <Toolbar>
                 <ToolbarHeading
-                    title="Pre-draft review"
-                    description="View and manage pre-draft review tasks"
+                    title="Pre-Draft review"
+                    description="View and manage pre-Draft review tasks"
                 />
             </Toolbar>
             <JobTable

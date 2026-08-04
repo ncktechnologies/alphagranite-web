@@ -113,7 +113,7 @@ export function PreDraftDetailsPage() {
         return (
             <div className="flex flex-col min-h-screen">
                 <div className="sticky top-0 z-10 bg-white border-b px-4 sm:px-6 lg:px-8 py-3">
-                    <ToolbarHeading title="Error loading FAB" description="Could not load pre-draft details" />
+                    <ToolbarHeading title="Error loading FAB" description="Could not load pre-Draft details" />
                 </div>
                 <div className="p-6">
                     <Alert variant="destructive">
@@ -158,7 +158,7 @@ export function PreDraftDetailsPage() {
                                         </a>
                                     </div>
                                 }
-                                description="Pre-draft Review"
+                                description="Pre-Draft Review"
                             />
                             <div className="flex items-center gap-2 flex-shrink-0">
                                 <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusInfo.className}`}>
@@ -206,9 +206,9 @@ export function PreDraftDetailsPage() {
                                 </>
                             ) : (
                                 <>
-                                    <CardTitle className="text-text text-lg sm:text-xl">Pre-draft Review</CardTitle>
+                                    <CardTitle className="text-text text-lg sm:text-xl">Pre-Draft Review</CardTitle>
                                     <p className="text-sm text-text-foreground leading-[20px]">
-                                        Review and approve completed Pre-draft
+                                        Review and approve completed Pre-Draft
                                     </p>
                                 </>
                             )}
