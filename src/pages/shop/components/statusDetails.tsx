@@ -6,6 +6,7 @@ import {
     AlertCircle, Pencil, X, LoaderCircle,
     CheckCircle2, Clock, CalendarDays, ChevronDown,
     MessageSquare, Save, Plus, Upload,
+    Trash2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +35,7 @@ import {
     useGetShopRevisionsByFabIdQuery,
     useAddFilesToShopRevisionMutation,
 } from '@/store/api/shopRevision';
-import { useUpdateShopPlanMutation } from '@/store/api';
+import { useUpdateShopPlanMutation, useDeleteShopPlanMutation } from '@/store/api';
 import { useGetWorkstationsQuery, useGetWorkStationByPlanningSectionsQuery } from '@/store/api/workstation';
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { BackButton } from '@/components/common/BackButton';
@@ -49,6 +50,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { usePermission, useIsSuperAdmin } from '@/hooks/use-permission';
 import { UniversalUploadModal } from '@/components/universal-upload';
 import { Input } from '@/components/ui/input';
+import Popup from '@/components/ui/popup';
 
 // ─── Constants & Helpers (unchanged) ──────────────────────────────────────
 
@@ -246,6 +248,9 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
     const [updateShopPlan] = useUpdateShopPlanMutation();
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [deleteShopPlan] = useDeleteShopPlanMutation();
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
     const { sections: planSections } = usePlanSections();
     const sectionInfo = planSections.find(s => s.id === plan.planning_section_id);
@@ -359,6 +364,23 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
             setIsSaving(false);
         }
     };
+    const handleDeleteClick = () => {
+        setDeleteConfirmOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        setIsDeleting(true);
+        try {
+            await deleteShopPlan(plan.id).unwrap();
+            toast.success('Plan deleted successfully.');
+            onSaved(); // refreshes parent
+        } catch (error: any) {
+            // toast.error(error?.data?.message || 'Failed to delete plan.');
+        } finally {
+            setIsDeleting(false);
+            setDeleteConfirmOpen(false);
+        }
+    };
 
     const wsName = workstations.find(w => String(w.id) === String(plan.workstation_id))?.name
         || workstations.find(w => String(w.id) === String(plan.workstation_id))?.workstation_name
@@ -373,6 +395,7 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
     const effectiveDisabled = disabled || !canEdit;
 
     return (
+        <>
         <Card className="border border-[#e2e4ed] shadow-sm">
             <CardHeader className="py-3 px-4 border-b border-[#e2e4ed] flex flex-row items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -413,6 +436,17 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                                     onClick={() => setIsEditing(true)}
                                 >
                                     <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                            )}
+                            {!isEditing && !effectiveDisabled && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-red-500 hover:text-red-700"
+                                    onClick={handleDeleteClick}
+                                    disabled={isDeleting}
+                                >
+                                    {isDeleting ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
                                 </Button>
                             )}
                         </>
@@ -591,6 +625,34 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
                 )}
             </CardContent>
         </Card>
+        
+         <Popup
+                isOpen={deleteConfirmOpen}
+                onClose={() => setDeleteConfirmOpen(false)}
+                title="Delete Plan"
+                description={`Are you sure you want to delete the plan for stage "${sectionLabel}"? This action cannot be undone.`}
+                centered
+                className="h-auto"
+            >
+                <div className="flex justify-end space-x-3 my-3">
+                    <Button
+                        variant="outline"
+                        onClick={() => setDeleteConfirmOpen(false)}
+                        className="w-[200px]"
+                    >
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        onClick={handleDeleteConfirm}
+                        disabled={isDeleting}
+                        className="w-[140px]"
+                    >
+                        {isDeleting ? 'Deleting…' : 'Delete'}
+                    </Button>
+                </div>
+            </Popup>
+        </>
     );
 };
 
@@ -697,7 +759,7 @@ const FabDetailsPage = () => {
     const [isSubmittingNote, setIsSubmittingNote] = useState(false);
 
     // ─── File deletion handler ──────────────────────────────────────────────
- const handleDeleteFile = async (file: any) => {
+    const handleDeleteFile = async (file: any) => {
         const fileId = typeof file === 'string' ? file : (file?.id || file?.file_id);
         if (!fileId) {
             toast.error('Could not determine file ID');
@@ -707,7 +769,7 @@ const FabDetailsPage = () => {
             // Assumes mutation expects { file_id: number }
             await deleteFile({ file_id: Number(fileId) }).unwrap();
             toast.success('File deleted successfully');
-           
+
             refetchRevisions();
         } catch (error: any) {
             toast.error(error?.data?.message || 'Failed to delete file');
@@ -1229,7 +1291,7 @@ const FabDetailsPage = () => {
                                 >
                                     {isCreatingRevision ? 'Creating…' : 'Create Revision'}
                                 </Button>
-                            } 
+                            }
                         </div>
                     </div>
                 </DialogContent>
@@ -1268,6 +1330,7 @@ const FabDetailsPage = () => {
                 hideAddStageButton={true}
                 onEventCreated={() => refetch()}
             />
+           
         </div>
     );
 };
