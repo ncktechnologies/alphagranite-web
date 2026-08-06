@@ -154,7 +154,7 @@ export const MENU_SIDEBAR: MenuConfig = [
     title: 'Settings',
     icon: 'settings.svg',
     path: '/settings/profile',
-    permissionKey: 'settings',
+    // permissionKey: 'settings',
   },
 ];
 

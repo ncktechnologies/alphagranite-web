@@ -162,7 +162,7 @@ export function SidebarMenu() {
         return filtered;
       }
 
-      if (!isSuperAdmin && ['Employees', 'Department'].includes(item.title || '')) {
+      if (!isSuperAdmin && ['Reports'].includes(item.title || '')) {
         return filtered;
       }
 

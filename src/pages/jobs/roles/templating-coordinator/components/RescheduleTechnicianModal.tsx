@@ -38,8 +38,8 @@ const rescheduleTechnicianSchema = z.object({
         .string()
         .min(1, { message: "date is required." })
         .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Date must be in YYYY-MM-DD format." }),
-    revenue: z.string().optional()
-        .refine((val) => val === "" || !isNaN(parseFloat(val)), { message: "Revenue must be a valid number" }),
+    revenue: z.string().optional(),
+        // .refine((val) => val === "" || !isNaN(parseFloat(val)), { message: "Revenue must be a valid number" }),
     notes: z.string().optional(),
     // total_sqft: z.string().optional(),
 });
