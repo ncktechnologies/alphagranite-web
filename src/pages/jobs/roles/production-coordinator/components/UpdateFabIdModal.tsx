@@ -142,7 +142,7 @@ export function UpdateFabIdModal({
 
   // ── Determine if checkbox should be disabled ──────────────────────────
   const isCutlistCompleteDisabled =
-    !finalProgrammingComplete ;
+    !finalProgrammingComplete || (cncLinFtNum > 0 && !cncDataExists);
 
 
   // ── Job info display ──────────────────────────────────────────────────────

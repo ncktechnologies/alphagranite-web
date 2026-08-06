@@ -7,6 +7,7 @@ import {
     CheckCircle2, Clock, CalendarDays, ChevronDown,
     MessageSquare, Save, Plus, Upload,
     Trash2,
+    Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -396,237 +397,237 @@ const PlanStageCard: React.FC<PlanStageCardProps> = ({ plan, workstations, emplo
 
     return (
         <>
-        <Card className="border border-[#e2e4ed] shadow-sm">
-            <CardHeader className="py-3 px-4 border-b border-[#e2e4ed] flex flex-row items-center justify-between">
-                <div className="flex items-center gap-2">
-                    <Badge
-                        className="text-xs font-semibold px-2 py-0.5"
-                        style={{
-                            backgroundColor: planPct === 100 ? '#dcfce7' : '#f0f4e8',
-                            color: planPct === 100 ? '#166534' : '#4b6a05',
-                            border: 'none',
-                        }}
-                    >
-                        {sectionLabel}
-                    </Badge>
-                    {planPct === 100 && <CheckCircle2 className="h-4 w-4 text-green-500" />}
-                </div>
-
-                <div className="flex items-center gap-2">
-                    {isEditing ? (
-                        <Select value={String(draft.sequence)} onValueChange={v => patch({ sequence: v })}>
-                            <SelectTrigger className="h-7 w-auto text-xs border-[#e2e4ed]">
-                                <SelectValue placeholder="Seq" />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-[200px] overflow-y-auto">
-                                {sequenceOptions.map(num => (
-                                    <SelectItem key={num} value={String(num)}>Seq: {num}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    ) : (
-                        <>
-                            <Badge variant="outline" className="text-xs font-normal">
-                                Seq: {plan.sequence ?? null}
-                            </Badge>
-                            {!effectiveDisabled && (
-                                <Button
-                                    variant="ghost" size="icon"
-                                    className="h-7 w-7 text-[#7c8689] hover:text-[#4b545d]"
-                                    onClick={() => setIsEditing(true)}
-                                >
-                                    <Pencil className="h-3.5 w-3.5" />
-                                </Button>
-                            )}
-                            {!isEditing && !effectiveDisabled && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 text-red-500 hover:text-red-700"
-                                    onClick={handleDeleteClick}
-                                    disabled={isDeleting}
-                                >
-                                    {isDeleting ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-                                </Button>
-                            )}
-                        </>
-                    )}
-                </div>
-            </CardHeader>
-
-            <CardContent className="pt-4 px-4 pb-4">
-                {isEditing ? (
-                    <div className="flex flex-col gap-4">
-                        <div className="flex flex-col gap-1.5">
-                            <Label className="text-xs text-muted-foreground uppercase tracking-wide">Workstation</Label>
-                            <Select
-                                value={draft.workstation_id}
-                                onValueChange={v => patch({ workstation_id: v, operator_id: '' })}
-                                disabled={isLoadingWorkstations || effectiveDisabled}
-                            >
-                                <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
-                                    <SelectValue
-                                        placeholder={
-                                            isLoadingWorkstations
-                                                ? 'Loading workstations…'
-                                                : workstationsForSection.length === 0
-                                                    ? 'No workstations for this stage'
-                                                    : 'Select workstation'
-                                        }
-                                    />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-[200px] overflow-y-auto">
-                                    {workstationsForSection.length === 0 ? (
-                                        <div className="px-3 py-2 text-sm text-muted-foreground">
-                                            No workstations assigned to this stage
-                                        </div>
-                                    ) : (
-                                        workstationsForSection.map((ws: any) => (
-                                            <SelectItem key={ws.id} value={String(ws.id)}>
-                                                {ws.name}
-                                            </SelectItem>
-                                        ))
-                                    )}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="flex flex-col gap-1.5">
-                            <Label className="text-xs text-muted-foreground uppercase tracking-wide">Operator</Label>
-                            <Select
-                                value={draft.operator_id}
-                                onValueChange={v => patch({ operator_id: v })}
-                                disabled={!draft.workstation_id || effectiveDisabled}
-                            >
-                                <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
-                                    <SelectValue
-                                        placeholder={
-                                            !draft.workstation_id
-                                                ? 'Select a workstation first'
-                                                : filteredEmployees.length === 0
-                                                    ? 'No operators assigned to this workstation'
-                                                    : 'Select operator'
-                                        }
-                                    />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-[200px] overflow-y-auto">
-                                    {filteredEmployees.length === 0 ? (
-                                        <div className="px-3 py-2 text-sm text-muted-foreground">
-                                            No operators assigned to this workstation
-                                        </div>
-                                    ) : (
-                                        filteredEmployees.map((emp: any) => (
-                                            <SelectItem key={emp.id} value={String(emp.id)}>
-                                                {`${emp.first_name || emp.name || ''} ${emp.last_name || ''}`.trim() || emp.email}
-                                            </SelectItem>
-                                        ))
-                                    )}
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        <div className="flex flex-col gap-1.5">
-                            <Label className="text-xs text-muted-foreground uppercase tracking-wide">Scheduled Date</Label>
-                            <DateTimePicker
-                                mode="date"
-                                value={draft.start_date}
-                                onChange={date => patch({ start_date: date })}
-                                disabled={effectiveDisabled}
-                            />
-                        </div>
-
-                        <div className="flex flex-col gap-1.5">
-                            <Label className="text-xs text-muted-foreground uppercase tracking-wide">End Date</Label>
-                            <DateTimePicker
-                                mode="date"
-                                value={draft.end_date}
-                                onChange={date => patch({ end_date: date })}
-                                disabled={effectiveDisabled}
-                            />
-                        </div>
-
-                        <div className="">
-                            <div className="flex flex-col gap-1.5">
-                                <Label className="text-xs text-muted-foreground uppercase tracking-wide">Start Time</Label>
-                                <Select value={draft.start_time} onValueChange={v => patch({ start_time: v })} disabled={effectiveDisabled}>
-                                    <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
-                                        <SelectValue placeholder="Start" />
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-[200px] overflow-y-auto">
-                                        {TIME_SLOTS.map(s => (
-                                            <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                                <Label className="text-xs text-muted-foreground uppercase tracking-wide">End Time</Label>
-                                <Select value={draft.end_time} onValueChange={v => patch({ end_time: v })} disabled={effectiveDisabled}>
-                                    <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
-                                        <SelectValue placeholder="End" />
-                                    </SelectTrigger>
-                                    <SelectContent className="max-h-[200px] overflow-y-auto">
-                                        {TIME_SLOTS
-                                            .filter(s => !draft.start_time || s.value > draft.start_time)
-                                            .map(s => (
-                                                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
-                                            ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-
-                        <div className="flex flex-col gap-1.5">
-                            <Label className="text-xs text-muted-foreground uppercase tracking-wide">Notes</Label>
-                            <Textarea
-                                value={draft.notes}
-                                onChange={e => patch({ notes: e.target.value })}
-                                placeholder="Add notes..."
-                                className="min-h-[72px] resize-none text-sm border-[#e2e4ed]"
-                                disabled={effectiveDisabled}
-                            />
-                        </div>
-
-                        <div className="flex gap-2 pt-1">
-                            <Button size="sm" className="flex-1" onClick={handleSave} disabled={isSaving || effectiveDisabled}>
-                                {isSaving
-                                    ? <><LoaderCircle className="h-3.5 w-3.5 mr-1.5 animate-spin" />Saving…</>
-                                    : <><Save className="h-3.5 w-3.5 mr-1.5" />Save</>}
-                            </Button>
-                            <Button variant="outline" size="sm" className="flex-1" onClick={handleCancel} disabled={isSaving}>
-                                <X className="h-3.5 w-3.5 mr-1.5" />Cancel
-                            </Button>
-                        </div>
+            <Card className="border border-[#e2e4ed] shadow-sm">
+                <CardHeader className="py-3 px-4 border-b border-[#e2e4ed] flex flex-row items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Badge
+                            className="text-xs font-semibold px-2 py-0.5"
+                            style={{
+                                backgroundColor: planPct === 100 ? '#dcfce7' : '#f0f4e8',
+                                color: planPct === 100 ? '#166534' : '#4b6a05',
+                                border: 'none',
+                            }}
+                        >
+                            {sectionLabel}
+                        </Badge>
+                        {planPct === 100 && <CheckCircle2 className="h-4 w-4 text-green-500" />}
                     </div>
-                ) : (
-                    <div className="flex flex-col gap-3">
-                        <MiniProgress percent={planPct} />
-                        <Separator className="my-0.5" />
-                        <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
-                            <InfoRow label="Workstation" value={wsName} />
-                            <InfoRow label="Operator" value={opName} />
-                            <InfoRow
-                                label="Scheduled Start"
-                                value={plan.scheduled_start_date
-                                    ? format(new Date(plan.scheduled_start_date), 'MMM dd, yyyy HH:mm')
-                                    : '—'}
-                            />
-                            <InfoRow
-                                label="Est. Hours"
-                                value={plan.estimated_hours ? `${plan.estimated_hours}h` : '—'}
-                            />
-                        </div>
-                        {plan.notes && (
-                            <p className="text-xs text-muted-foreground bg-[#f9f9f9] border border-[#e2e4ed] rounded px-2.5 py-1.5 mt-0.5">
-                                {plan.notes}
-                            </p>
+
+                    <div className="flex items-center gap-2">
+                        {isEditing ? (
+                            <Select value={String(draft.sequence)} onValueChange={v => patch({ sequence: v })}>
+                                <SelectTrigger className="h-7 w-auto text-xs border-[#e2e4ed]">
+                                    <SelectValue placeholder="Seq" />
+                                </SelectTrigger>
+                                <SelectContent className="max-h-[200px] overflow-y-auto">
+                                    {sequenceOptions.map(num => (
+                                        <SelectItem key={num} value={String(num)}>Seq: {num}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        ) : (
+                            <>
+                                <Badge variant="outline" className="text-xs font-normal">
+                                    Seq: {plan.sequence ?? null}
+                                </Badge>
+                                {!effectiveDisabled && (
+                                    <Button
+                                        variant="ghost" size="icon"
+                                        className="h-7 w-7 text-[#7c8689] hover:text-[#4b545d]"
+                                        onClick={() => setIsEditing(true)}
+                                    >
+                                        <Pencil className="h-3.5 w-3.5" />
+                                    </Button>
+                                )}
+                                {!isEditing && !effectiveDisabled && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-red-500 hover:text-red-700"
+                                        onClick={handleDeleteClick}
+                                        disabled={isDeleting}
+                                    >
+                                        {isDeleting ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
+                                    </Button>
+                                )}
+                            </>
                         )}
                     </div>
-                )}
-            </CardContent>
-        </Card>
-        
-         <Popup
+                </CardHeader>
+
+                <CardContent className="pt-4 px-4 pb-4">
+                    {isEditing ? (
+                        <div className="flex flex-col gap-4">
+                            <div className="flex flex-col gap-1.5">
+                                <Label className="text-xs text-muted-foreground uppercase tracking-wide">Workstation</Label>
+                                <Select
+                                    value={draft.workstation_id}
+                                    onValueChange={v => patch({ workstation_id: v, operator_id: '' })}
+                                    disabled={isLoadingWorkstations || effectiveDisabled}
+                                >
+                                    <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
+                                        <SelectValue
+                                            placeholder={
+                                                isLoadingWorkstations
+                                                    ? 'Loading workstations…'
+                                                    : workstationsForSection.length === 0
+                                                        ? 'No workstations for this stage'
+                                                        : 'Select workstation'
+                                            }
+                                        />
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-[200px] overflow-y-auto">
+                                        {workstationsForSection.length === 0 ? (
+                                            <div className="px-3 py-2 text-sm text-muted-foreground">
+                                                No workstations assigned to this stage
+                                            </div>
+                                        ) : (
+                                            workstationsForSection.map((ws: any) => (
+                                                <SelectItem key={ws.id} value={String(ws.id)}>
+                                                    {ws.name}
+                                                </SelectItem>
+                                            ))
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <Label className="text-xs text-muted-foreground uppercase tracking-wide">Operator</Label>
+                                <Select
+                                    value={draft.operator_id}
+                                    onValueChange={v => patch({ operator_id: v })}
+                                    disabled={!draft.workstation_id || effectiveDisabled}
+                                >
+                                    <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
+                                        <SelectValue
+                                            placeholder={
+                                                !draft.workstation_id
+                                                    ? 'Select a workstation first'
+                                                    : filteredEmployees.length === 0
+                                                        ? 'No operators assigned to this workstation'
+                                                        : 'Select operator'
+                                            }
+                                        />
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-[200px] overflow-y-auto">
+                                        {filteredEmployees.length === 0 ? (
+                                            <div className="px-3 py-2 text-sm text-muted-foreground">
+                                                No operators assigned to this workstation
+                                            </div>
+                                        ) : (
+                                            filteredEmployees.map((emp: any) => (
+                                                <SelectItem key={emp.id} value={String(emp.id)}>
+                                                    {`${emp.first_name || emp.name || ''} ${emp.last_name || ''}`.trim() || emp.email}
+                                                </SelectItem>
+                                            ))
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <Label className="text-xs text-muted-foreground uppercase tracking-wide">Scheduled Date</Label>
+                                <DateTimePicker
+                                    mode="date"
+                                    value={draft.start_date}
+                                    onChange={date => patch({ start_date: date })}
+                                    disabled={effectiveDisabled}
+                                />
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <Label className="text-xs text-muted-foreground uppercase tracking-wide">End Date</Label>
+                                <DateTimePicker
+                                    mode="date"
+                                    value={draft.end_date}
+                                    onChange={date => patch({ end_date: date })}
+                                    disabled={effectiveDisabled}
+                                />
+                            </div>
+
+                            <div className="">
+                                <div className="flex flex-col gap-1.5">
+                                    <Label className="text-xs text-muted-foreground uppercase tracking-wide">Start Time</Label>
+                                    <Select value={draft.start_time} onValueChange={v => patch({ start_time: v })} disabled={effectiveDisabled}>
+                                        <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
+                                            <SelectValue placeholder="Start" />
+                                        </SelectTrigger>
+                                        <SelectContent className="max-h-[200px] overflow-y-auto">
+                                            {TIME_SLOTS.map(s => (
+                                                <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <Label className="text-xs text-muted-foreground uppercase tracking-wide">End Time</Label>
+                                    <Select value={draft.end_time} onValueChange={v => patch({ end_time: v })} disabled={effectiveDisabled}>
+                                        <SelectTrigger className="h-[38px] border-[#e2e4ed] text-sm">
+                                            <SelectValue placeholder="End" />
+                                        </SelectTrigger>
+                                        <SelectContent className="max-h-[200px] overflow-y-auto">
+                                            {TIME_SLOTS
+                                                .filter(s => !draft.start_time || s.value > draft.start_time)
+                                                .map(s => (
+                                                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                                                ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-1.5">
+                                <Label className="text-xs text-muted-foreground uppercase tracking-wide">Notes</Label>
+                                <Textarea
+                                    value={draft.notes}
+                                    onChange={e => patch({ notes: e.target.value })}
+                                    placeholder="Add notes..."
+                                    className="min-h-[72px] resize-none text-sm border-[#e2e4ed]"
+                                    disabled={effectiveDisabled}
+                                />
+                            </div>
+
+                            <div className="flex gap-2 pt-1">
+                                <Button size="sm" className="flex-1" onClick={handleSave} disabled={isSaving || effectiveDisabled}>
+                                    {isSaving
+                                        ? <><LoaderCircle className="h-3.5 w-3.5 mr-1.5 animate-spin" />Saving…</>
+                                        : <><Save className="h-3.5 w-3.5 mr-1.5" />Save</>}
+                                </Button>
+                                <Button variant="outline" size="sm" className="flex-1" onClick={handleCancel} disabled={isSaving}>
+                                    <X className="h-3.5 w-3.5 mr-1.5" />Cancel
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-3">
+                            <MiniProgress percent={planPct} />
+                            <Separator className="my-0.5" />
+                            <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                                <InfoRow label="Workstation" value={wsName} />
+                                <InfoRow label="Operator" value={opName} />
+                                <InfoRow
+                                    label="Scheduled Start"
+                                    value={plan.scheduled_start_date
+                                        ? format(new Date(plan.scheduled_start_date), 'MMM dd, yyyy HH:mm')
+                                        : '—'}
+                                />
+                                <InfoRow
+                                    label="Est. Hours"
+                                    value={plan.estimated_hours ? `${plan.estimated_hours}h` : '—'}
+                                />
+                            </div>
+                            {plan.notes && (
+                                <p className="text-xs text-muted-foreground bg-[#f9f9f9] border border-[#e2e4ed] rounded px-2.5 py-1.5 mt-0.5">
+                                    {plan.notes}
+                                </p>
+                            )}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Popup
                 isOpen={deleteConfirmOpen}
                 onClose={() => setDeleteConfirmOpen(false)}
                 title="Delete Plan"
@@ -733,6 +734,9 @@ const FabDetailsPage = () => {
     const { data: fabRevisionsData, isLoading: isRevisionsLoading, refetch: refetchRevisions } = useGetShopRevisionsByFabIdQuery(numericFabId, {
         skip: !numericFabId,
     });
+    const cncLinFtNum = fab?.cnc_linft || 0;         
+    const cncDataExists = !!fab?.cnc_data;
+    const showCncWarning = cncLinFtNum > 0 && !cncDataExists;
     const revisions: any[] = Array.isArray(fabRevisionsData) ? fabRevisionsData : [];
     const hasPendingShopRevision = revisions.some((rev: any) => !rev.revision_completed);
 
@@ -992,6 +996,12 @@ const FabDetailsPage = () => {
                                         <p className="text-sm text-amber-700 mt-2">
                                             A pending shop revision exists. Plan edits and new plan creation are disabled until the revision is resolved.
                                         </p>
+                                    )}
+                                    {showCncWarning && (
+                                        <div className="mt-2 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 p-2 text-sm text-blue-800">
+                                            <Info className="h-4 w-4 shrink-0" />
+                                            <span>CNC data is not yet available for this FAB. Please ensure CNC processing is completed.</span>
+                                        </div>
                                     )}
                                 </div>
                                 <Button
@@ -1330,7 +1340,7 @@ const FabDetailsPage = () => {
                 hideAddStageButton={true}
                 onEventCreated={() => refetch()}
             />
-           
+
         </div>
     );
 };
