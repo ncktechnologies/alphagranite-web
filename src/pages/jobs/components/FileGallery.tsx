@@ -235,6 +235,17 @@ function FileCard({
   const fileType   = raw.file_type   ?? '';
   const fileDesign = raw.file_design ?? file.file_design ?? '';
 
+  // Format date with both date and time
+  const formattedDate = file.uploadedAt
+    ? new Date(file.uploadedAt).toLocaleString(undefined, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : null;
+
   return (
     <div className="relative rounded-lg border border-[#e2e4ed] p-4 transition-colors hover:border-gray-400 bg-white">
       {/* Top row: icon centred + delete top-right */}
@@ -261,15 +272,8 @@ function FileCard({
                 <span className="text-xs text-muted-foreground">{formatBytes(file.size)}</span>
               ) : null}
 
-              {/* ✅ Stage — stage_name → stage → 'general' */}
+              {/* Stage */}
               <span className={cn('w-fit', stageCls)}>{stageLabel}</span>
-
-              {/* File type (qa, etc.) */}
-              {/* {fileType && (
-                <span className="text-xs font-medium text-gray-700 bg-gray-100 px-2 py-0.5 rounded uppercase">
-                  {fileType}
-                </span>
-              )} */}
 
               {/* File design */}
               {fileDesign && (
@@ -285,10 +289,10 @@ function FileCard({
                 </span>
               )}
 
-              {/* Date */}
-              {file.uploadedAt && (
+              {/* Date + Time (NEW) */}
+              {formattedDate && (
                 <span className="text-xs text-muted-foreground">
-                  {new Date(file.uploadedAt).toLocaleDateString()}
+                  {formattedDate}
                 </span>
               )}
             </div>
@@ -296,25 +300,25 @@ function FileCard({
         </div>
 
         {/* Delete — top right */}
-         {onDelete && (
-        deletePermissionSubject ? (
-          <Can action="delete" on={deletePermissionSubject}>
+        {onDelete && (
+          deletePermissionSubject ? (
+            <Can action="delete" on={deletePermissionSubject}>
+              <button
+                className="absolute top-4 right-4 size-6 flex items-center justify-center text-muted-foreground hover:text-destructive shrink-0"
+                onClick={(e) => { e.stopPropagation(); onDelete(file); }}
+              >
+                <X className="size-6" />
+              </button>
+            </Can>
+          ) : (
             <button
               className="absolute top-4 right-4 size-6 flex items-center justify-center text-muted-foreground hover:text-destructive shrink-0"
               onClick={(e) => { e.stopPropagation(); onDelete(file); }}
             >
               <X className="size-3" />
             </button>
-          </Can>
-        ) : (
-          <button
-            className="absolute top-4 right-4 size-6 flex items-center justify-center text-muted-foreground hover:text-destructive shrink-0"
-            onClick={(e) => { e.stopPropagation(); onDelete(file); }}
-          >
-            <X className="size-3" />
-          </button>
-        )
-      )}
+          )
+        )}
       </div>
 
       {/* View button */}
@@ -376,7 +380,7 @@ function FileRow({
         </div>
       </td>
 
-      {/* ✅ Stage */}
+      {/* Stage */}
       <td className="py-3 px-4">
         <span className={cn('w-fit whitespace-nowrap', stageCls)}>{stageLabel}</span>
       </td>
@@ -405,7 +409,7 @@ function FileRow({
         </span>
       </td>
 
-      {/* Date + time */}
+      {/* Date + time (two-line) */}
       <td className="py-3 px-4 whitespace-nowrap">
         {file.uploadedAt ? (
           <div className="flex flex-col gap-0.5">
@@ -625,7 +629,7 @@ export function FileGallery({
 
       {/* ── Card grid ──────────────────────────────────────────────────────── */}
       {filtered.length > 0 && layout === 'card' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3  gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filtered.map((file) => (
             <FileCard
               key={String(file.id)}

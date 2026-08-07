@@ -382,7 +382,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     // ------------------ Transform API data → ShopStatusRow tree ------------------
     const tableData: ShopStatusRow[] = useMemo(() => {
         return fabs.map((fab: any): ShopStatusRow => {
-            const rawDate = fab.shop_est_completion_date || fab.estimated_completion_date || fab.shop_date_schedule || fab.installation_date;
+            const rawDate = fab.shop_est_completion_date;
             const dayKey = rawDate ? format(new Date(rawDate), 'yyyy-MM-dd') : 'unscheduled';
             const monthKey = rawDate ? format(new Date(rawDate), 'yyyy-MM') : 'unscheduled';
 
