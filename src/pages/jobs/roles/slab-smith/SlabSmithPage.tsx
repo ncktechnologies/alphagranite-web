@@ -190,7 +190,7 @@ const SlabSmithPage = () => {
             <div className="">
                 <Container>
                     <Toolbar className=' '>
-                        <ToolbarHeading title="SlabSmith" description="" />
+                        <ToolbarHeading title="SlabSmith" description="View and manage slabsmith " />
                     </Toolbar>
                     <div className="space-y-4 mt-4">
                         <Skeleton className="h-16 w-full" />

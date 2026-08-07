@@ -186,7 +186,7 @@ const FinalProgrammingPage = () => {
             <div className="">
                 <Container>
                     <Toolbar className=' '>
-                        <ToolbarHeading title="Final Programming" description="" />
+                        <ToolbarHeading title="Final Programming" description="View and manage jobs in final programming stage" />
                     </Toolbar>
                     <div className="space-y-4 mt-4">
                         <Skeleton className="h-16 w-full" />
@@ -203,7 +203,7 @@ const FinalProgrammingPage = () => {
             <div className="">
                 <Container>
                     <Toolbar className=' '>
-                        <ToolbarHeading title="Final Programming" description="" />
+                        <ToolbarHeading title="Final Programming" description="View and manage jobs in final programming stage" />
                     </Toolbar>
                     <Alert variant="destructive" className="mt-4">
                         <AlertCircle className="h-4 w-4" />
@@ -221,7 +221,7 @@ const FinalProgrammingPage = () => {
         <>
             <Container className="lg:mx-0">
                 <Toolbar className=" ">
-                    <ToolbarHeading title="Final Programming" description="Jobs in final programming stage" />
+                    <ToolbarHeading title="Final Programming" description="View and manage jobs in final programming stage" />
                 </Toolbar>
 
                 <JobTable

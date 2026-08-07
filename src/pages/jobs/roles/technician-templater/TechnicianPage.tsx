@@ -115,7 +115,7 @@ export function TechnicianPage() {
         <div className="">
             <Container>
                 <Toolbar className=' '>
-                    <ToolbarHeading title="Templating" description="" />
+                    <ToolbarHeading title="Templating" description="View and Manage Templates and Template Schedule" />
                 </Toolbar>
                 <JobTable jobs={transformedJobs} path='templating-details' isLoading={isLoading} />
             </Container>

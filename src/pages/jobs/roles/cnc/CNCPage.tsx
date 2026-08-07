@@ -174,7 +174,7 @@ const CNCPage = () => {
     return (
         <Container>
             <Toolbar>
-                <ToolbarHeading title="CNC Programming" description="View and manage CNC tasks" />
+                <ToolbarHeading title="CNC Programming" description="View and manage CNC Programming tasks" />
             </Toolbar>
             <JobTable
                 jobs={jobsData}

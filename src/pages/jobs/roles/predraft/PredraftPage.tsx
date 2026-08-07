@@ -149,7 +149,7 @@ export function PredraftPage() {
         return (
             <Container>
                 <Toolbar>
-                    <ToolbarHeading title="Pre-Draft review" description="" />
+                    <ToolbarHeading title="Pre-Draft Review" description="View and manage pre-draft review tasks" />
                 </Toolbar>
                 <div className="space-y-4 mt-4">
                     <Skeleton className="h-16 w-full" />
@@ -182,7 +182,7 @@ export function PredraftPage() {
             <Toolbar>
                 <ToolbarHeading
                     title="Pre-Draft review"
-                    description="View and manage pre-Draft review tasks"
+                    description="View and manage pre-draft review tasks"
                 />
             </Toolbar>
             <JobTable

@@ -184,7 +184,7 @@ export function TemplatingPage() {
         return (
             <Container>
                 <Toolbar>
-                    <ToolbarHeading title="Template Scheduling" description="Manage and track all Alpha Granite templating jobs" />
+                    <ToolbarHeading title="Template Scheduling" description="View and Manage Templates and Template Schedule" />
                 </Toolbar>
                 <div className="space-y-4 mt-4">
                     <Skeleton className="h-16 w-full" />
@@ -199,7 +199,7 @@ export function TemplatingPage() {
         return (
             <Container>
                 <Toolbar>
-                    <ToolbarHeading title="Template Scheduling" description="Manage and track all Alpha Granite templating jobs" />
+                    <ToolbarHeading title="Template Scheduling" description="View and Manage Templates and Template Schedule" />
                 </Toolbar>
                 <Alert variant="destructive" className="mt-4">
                     <AlertCircle className="h-4 w-4" />
@@ -215,7 +215,7 @@ export function TemplatingPage() {
     return (
         <Container>
             <Toolbar>
-                <ToolbarHeading title="Template Scheduling" description="" />
+                <ToolbarHeading title="Template Scheduling" description="View and Manage Templates and Template Schedule" />
             </Toolbar>
 
             <Tabs defaultValue="all" className="mt-4">
