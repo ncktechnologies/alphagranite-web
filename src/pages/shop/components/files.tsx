@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatBytes } from '@/hooks/use-file-upload';
@@ -19,6 +19,7 @@ import {
 } from '@/utils/file-labeling';
 import { toast } from 'sonner';
 import { useTranslation } from '@/hooks/useTranslation';
+import Popup from '@/components/ui/popup'; // 👈 new import
 
 // Helper function to convert file_design value to label
 const getFileDesignLabel = (value: string): string => {
@@ -98,6 +99,10 @@ export function Documents({
   showDeleteButton = true,
 }: UploadBoxProps) {
   const { t } = useTranslation();
+
+  // ─── Delete confirmation state ─────────────────────────────────────────────
+  const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState<{ id: string; name: string } | null>(null);
 
   // useMemo to compute files
   const files = useMemo(() => {
@@ -251,19 +256,35 @@ export function Documents({
     if (onFileClick) onFileClick(file);
   }, [onFileClick]);
 
-  const [deleteFile] = useDeleteFileMutation();
+  const [deleteFile, { isLoading: isDeleting }] = useDeleteFileMutation();
 
-  const handleDeleteInternal = useCallback(async (fileId: string) => {
+  // ─── Delete handlers with confirmation ─────────────────────────────────────
+  const handleDeleteClick = (fileId: string, fileName: string) => {
+    setFileToDelete({ id: fileId, name: fileName });
+    setDeleteConfirmationOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!fileToDelete) return;
     try {
-      await deleteFile({ file_id: fileId }).unwrap();
+      await deleteFile({ file_id: fileToDelete.id }).unwrap();
       toast.success('File deleted successfully');
       if (onDeleteFile) {
-        onDeleteFile(fileId);
+        onDeleteFile(fileToDelete.id);
       }
     } catch (error) {
       console.error('Failed to delete file:', error);
+      toast.error('Failed to delete file');
+    } finally {
+      setDeleteConfirmationOpen(false);
+      setFileToDelete(null);
     }
-  }, [deleteFile, onDeleteFile]);
+  };
+
+  const handleDeleteCancel = () => {
+    setDeleteConfirmationOpen(false);
+    setFileToDelete(null);
+  };
 
   if (files.length === 0) {
     return (
@@ -273,11 +294,24 @@ export function Documents({
     );
   }
 
+  // Format date with both date and time
+  const formatDateTime = (date?: Date) => {
+    if (!date) return null;
+    return date.toLocaleString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   return (
     <div className="border-none">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {files.map((file) => {
           const { label: stageLabel, className: stageCls } = resolveStage(file);
+          const dateTime = formatDateTime(file.uploadedAt);
           return (
             <div
               key={file.id}
@@ -291,11 +325,11 @@ export function Documents({
                   className="absolute top-4 right-4 size-6 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-md hover:bg-gray-100"
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDeleteInternal(file.id);
+                    handleDeleteClick(file.id, file.name);
                   }}
                   title="Delete file"
                 >
-                  <X className="size-3" />
+                  <X className="size-6" />
                 </button>
               )}
 
@@ -323,6 +357,11 @@ export function Documents({
                         {file.uploaded_by_name}
                       </span>
                     )}
+                    {dateTime && (
+                      <span className="text-xs text-muted-foreground">
+                        {dateTime}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -343,6 +382,30 @@ export function Documents({
           );
         })}
       </div>
+
+      {/* ─── Delete Confirmation Popup ───────────────────────────────────────── */}
+      <Popup
+        isOpen={deleteConfirmationOpen}
+        onClose={handleDeleteCancel}
+        title="Delete File"
+        description={`Are you sure you want to delete "${fileToDelete?.name}"? This action cannot be undone.`}
+        centered
+        className="h-auto"
+      >
+        <div className="flex justify-end space-x-3 my-3">
+          <Button variant="outline" onClick={handleDeleteCancel} className="w-[200px]">
+            Cancel
+          </Button>
+          <Button
+            variant="destructive"
+            onClick={handleDeleteConfirm}
+            disabled={isDeleting}
+            className="w-[140px]"
+          >
+            {isDeleting ? 'Deleting…' : 'Delete'}
+          </Button>
+        </div>
+      </Popup>
     </div>
   );
 }

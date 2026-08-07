@@ -1,4 +1,4 @@
-// ShopRevisionDetailsPage.tsx – simplified to show only shop revision files
+// ShopRevisionDetailsPage.tsx – with separate Fab Files & Shop Revision Files sections
 import { BackButton } from '@/components/common/BackButton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -80,7 +80,48 @@ const ShopRevisionDetailsPage = () => {
     return revisions[0];
   }, [revisions, selectedRevisionId]);
 
-  // ─── Files directly attached to the selected revision ──────────────────────
+  // ─── Convert API files to UnifiedFile ─────────────────────────────────────
+  const toUnifiedFiles = (files: any[]): UnifiedFile[] =>
+    (files ?? []).map((f): UnifiedFile => ({
+      id: String(f.id),
+      name: f.name || f.filename || `File_${f.id}`,
+      size: parseInt(f.file_size) || f.size || 0,
+      type: f.file_type || f.mime_type || 'application/octet-stream',
+      url: f.file_url || f.url || '',
+      stage_name: f.stage_name ?? f.stage,
+      stage: f.stage_name ?? f.stage,
+      file_design: f.file_design,
+      uploaded_by_name: f.uploaded_by_name ?? f.uploader_name,
+      uploadedBy: f.uploaded_by_name ?? f.uploader_name,
+      uploadedAt: f.created_at ? new Date(f.created_at) : undefined,
+      _raw: f,
+    }));
+
+  // ─── Fab Files (all non‑revision files) ──────────────────────────────────
+  const fabFiles: UnifiedFile[] = useMemo(() => {
+    if (!fab) return [];
+    const list: UnifiedFile[] = [];
+
+    // Helper to add files from a source
+    const addFiles = (source: any[]) => {
+      if (source?.length) list.push(...toUnifiedFiles(source));
+    };
+
+    addFiles(fab.draft_data?.files);
+    addFiles(fab.slabsmith_data?.files);
+    addFiles(fab.sales_ct_data?.files);
+    addFiles(fab.cnc_data?.files);
+    addFiles(fab.files);
+    addFiles(fab.operator_files);
+
+    return list;
+  }, [fab]);
+
+  const fabFileSources: FileSource[] = fabFiles.length > 0
+    ? [{ kind: 'raw', data: fabFiles }]
+    : [];
+
+  // ─── Revision Direct Files (files attached to the selected revision) ────
   const revisionDirectFiles: ExtendedUnifiedFile[] = useMemo(() => {
     if (!selectedRevision?.files || !Array.isArray(selectedRevision.files)) return [];
     return selectedRevision.files.map((f: any): ExtendedUnifiedFile => ({
@@ -100,7 +141,7 @@ const ShopRevisionDetailsPage = () => {
     }));
   }, [selectedRevision]);
 
-  const fileSources: FileSource[] = revisionDirectFiles.length > 0
+  const revisionFileSources: FileSource[] = revisionDirectFiles.length > 0
     ? [{ kind: 'raw', data: revisionDirectFiles }]
     : [];
 
@@ -132,7 +173,7 @@ const ShopRevisionDetailsPage = () => {
 
   const handleUploadComplete = () => {
     setShowUploadModal(false);
-    refetchRevisions(); // Refresh to get the newly attached files
+    refetchRevisions();
     refetchFab();
     toast.success('Shop revision files uploaded successfully');
   };
@@ -195,7 +236,6 @@ const ShopRevisionDetailsPage = () => {
     );
   }
 
-  // Permission‑derived UI flags
   const canUpload = !!selectedRevision && !selectedRevision.revision_completed && canManageRevisions && !!selectedRevision.id;
   const canComplete = canManageRevisions && !selectedRevision?.revision_completed;
 
@@ -220,7 +260,7 @@ const ShopRevisionDetailsPage = () => {
         <div className="lg:col-span-8 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>FAB Details</CardTitle>
+              <CardTitle>Fab Details</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-4 gap-y-5">
@@ -234,13 +274,34 @@ const ShopRevisionDetailsPage = () => {
             </CardContent>
           </Card>
 
+          {/* ─── NEW: Fab Files Card (non‑revision) ─────────────────────────── */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Fab Files</CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Drafting, SlabSmith, Sales CT, CNC, Operator, and other FAB files
+              </p>
+            </CardHeader>
+            <CardContent>
+              <FileGallery
+                sources={fabFileSources}
+                onFileClick={(file) => setActiveFile(file)}
+                onDeleteFile={handleDeleteClick}
+                deletePermissionSubject="file"
+                defaultLayout="card"
+                emptyMessage="No fab files have been uploaded for this FAB yet."
+              />
+            </CardContent>
+          </Card>
+
+          {/* ─── Shop Revision Files Card ────────────────────────────────────── */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Shop Revision Files</CardTitle>
                 <p className="text-sm text-muted-foreground">
                   {selectedRevision
-                    ? `Files uploaded by ${selectedRevision.requested_by_name || `Operator ${selectedRevision.requested_by}`}`
+                    ? `Files uploaded for revision #${selectedRevision.id}`
                     : 'Select a revision to view its files'}
                 </p>
               </div>
@@ -256,7 +317,7 @@ const ShopRevisionDetailsPage = () => {
             </CardHeader>
             <CardContent>
               <FileGallery
-                sources={fileSources}
+                sources={revisionFileSources}
                 onFileClick={(file) => setActiveFile(file)}
                 onDeleteFile={handleDeleteClick}
                 deletePermissionSubject="file"
@@ -428,7 +489,6 @@ const ShopRevisionDetailsPage = () => {
             { value: 'shop_drawing', label: 'Shop Drawing' },
             { value: 'photo_media', label: 'Photo Media' },
             { value: 'cnc_est', label: 'CNC Est' },
-
           ]}
           additionalParams={{
             revision_id: selectedRevision.id,
