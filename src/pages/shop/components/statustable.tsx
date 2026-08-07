@@ -158,7 +158,7 @@ const stageMapping = [
     { id: 9, name: 'edging', unit: 'LF' },
     { id: 2, name: 'miter', unit: 'LF' },
     { id: 1, name: 'cnc', unit: 'LF' },
-    { id: 6, name: 'touchup', unit: 'SF' },
+    { id: 6, name: 'handwork', unit: 'SF' },
 ];
 
 const getStageInfo = (id: number) => stageMapping.find(s => s.id === id) || null;
@@ -364,7 +364,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
         return fabTypeColorMap[fabType.toLowerCase()] || '#e2e4ed';
     };
 
-    const stageColumnIds = new Set(['cut', 'wj', 'edging', 'miter', 'cnc', 'touchup', 'percent_complete']);
+    const stageColumnIds = new Set(['cut', 'wj', 'edging', 'miter', 'cnc', 'handwork', 'percent_complete']);
 
     const getStagePercent = (fab: ShopStatusFab, columnId: string): number => {
         switch (columnId) {
@@ -373,7 +373,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             case 'edging': return fab.edging_progress.percent;
             case 'miter': return fab.miter_progress.percent;
             case 'cnc': return fab.cnc_progress.percent;
-            case 'touchup': return fab.touchup_progress.percent;
+            case 'handwork': return fab.touchup_progress.percent;
             case 'percent_complete': return fab.percent_complete;
             default: return 0;
         }
@@ -818,8 +818,8 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             size: 130,
         },
         {
-            id: 'touchup',
-            header: ({ column }) => <DataGridColumnHeader title="TOUCHUP QA" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            id: 'handwork',
+            header: ({ column }) => <DataGridColumnHeader title="handwork QA" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
                 if (row.original.type === 'fab') {
                     const p = row.original.data.touchup_progress;

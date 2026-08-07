@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,12 +27,13 @@ import { toast } from "sonner";
 import { DateTimePicker, formatDateToString } from "@/components/ui/date-time-picker";
 import { useScheduleTemplatingMutation, useCreateFabNoteMutation } from "@/store/api/job";
 import { useNavigate, useParams } from "react-router";
-import { useGetEmployeesQuery, useGetSalesPersonsQuery } from "@/store/api/employee";
+import { useGetEmployeesQuery } from "@/store/api/employee";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Can } from "@/components/permission";
+import { useGetRolesQuery } from "@/store/api";
 
 const assignTechnicianSchema = z.object({
   technician: z.string().min(1, "Please select a technician"),
@@ -64,7 +65,37 @@ export function AssignTechnicianModal({
   const navigate = useNavigate();
   const [scheduleTemplating] = useScheduleTemplatingMutation();
   const [createFabNote] = useCreateFabNoteMutation();
-  const { data: employeesData, isLoading, isError, error } = useGetSalesPersonsQuery();
+  const { data: rolesData, isLoading: rolesLoading } = useGetRolesQuery();
+
+  const templaterId = useMemo(() => {
+    if (!rolesData) return null;
+    const roles = rolesData?.data?.data ?? rolesData?.data ?? rolesData;
+    if (!Array.isArray(roles)) return null;
+    const templaterRole = roles.find((role: any) =>
+      (role.name || '').toLowerCase()=== 'template scheduler'
+    );
+    return templaterRole?.id ?? null;
+  }, [rolesData]);
+  
+  const { data: employeesData, isLoading: employeesLoading, isError, error } = useGetEmployeesQuery(
+    {
+      role_id: templaterId ?? undefined,
+      sort_by: 'first_name',
+      sort_order: 'asc',
+      limit: 500, // or whatever limit you need
+    },
+    {
+      skip: !templaterId, // don't fetch until we have the role ID
+    }
+  );
+ const technicians = useMemo(() => {
+    if (!employeesData) return [];
+    const employees = employeesData?.data ?? employeesData;
+    if (!Array.isArray(employees)) return [];
+    // Already sorted by API; but we can also sort again for safety
+    return employees;
+  }, [employeesData]);
+
 
   const form = useForm<AssignTechnicianData>({
     resolver: zodResolver(assignTechnicianSchema),
@@ -73,6 +104,9 @@ export function AssignTechnicianModal({
       revenue: "",
     },
   });
+
+  const isLoading = rolesLoading || employeesLoading;
+
 
   // Auto-populate revenue from FAB data when available
   useEffect(() => {
@@ -212,7 +246,7 @@ export function AssignTechnicianModal({
     );
   }
 
-  const technicians = Array.isArray(employeesData) ? employeesData : [];;
+  // const technicians = Array.isArray(employeesData) ? employeesData : [];;
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -294,7 +328,7 @@ export function AssignTechnicianModal({
                     <SelectContent className="max-h-[200px] overflow-y-auto">
                       {technicians.map((technician: any) => (
                         <SelectItem key={technician.id} value={`${technician.id}`}>
-                          {technician.name}
+                          {technician.first_name} {technician.last_name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -343,7 +377,7 @@ export function AssignTechnicianModal({
               <Button type="button" variant="outline" onClick={onClose}>
                 Cancel
               </Button>
-               <Can action="create" on="templating">
+              <Can action="create" on="templating">
                 <Button type="submit" disabled={isSubmitting}>
                   {isSubmitting ? (
                     <span className="flex items-center gap-2">
@@ -354,7 +388,7 @@ export function AssignTechnicianModal({
                     "Assign Technician"
                   )}
                 </Button>
-                </Can>
+              </Can>
             </DialogFooter>
           </form>
         </Form>

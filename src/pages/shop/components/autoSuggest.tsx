@@ -46,7 +46,7 @@ const FAB_STAGE_FIELDS: { keyword: string; field: string; label: string }[] = [
   { keyword: 'resurface', field: 'resurface_linft', label: 'Resurfacing' },
 ];
 
-const TOUCHUP_KEYWORD = 'touch';
+const TOUCHUP_KEYWORD = 'handwork';
 const RESURFACE_KEYWORD = 'resurfac';
 
 interface AutoPlanEntry {
@@ -522,7 +522,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
       ? {
         ...emptyEntry({
           section_id: touchupSection.id,
-          stageName: touchupSection.name || touchupSection.plan_name || touchupSection.title || 'Touchup',
+          stageName: touchupSection.name || touchupSection.plan_name || touchupSection.title || 'handwork',
           fab_id: String(selectedFab.id),
           isTouchup: true,
         }),

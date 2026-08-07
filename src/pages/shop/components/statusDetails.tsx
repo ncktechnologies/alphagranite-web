@@ -997,13 +997,14 @@ const FabDetailsPage = () => {
                                             A pending shop revision exists. Plan edits and new plan creation are disabled until the revision is resolved.
                                         </p>
                                     )}
-                                    {showCncWarning && (
-                                        <div className="mt-2 flex items-center gap-2 rounded-md border border-blue-200 bg-blue-50 p-2 text-sm text-blue-800">
-                                            <Info className="h-4 w-4 shrink-0" />
-                                            <span>CNC data is not yet available for this FAB. Please ensure CNC processing is completed.</span>
-                                        </div>
-                                    )}
+                                   
                                 </div>
+                                 {showCncWarning && (
+                                        <Badge variant="destructive">
+                                            <Info className="h-4 w-4 shrink-0" />
+                                            <span>CNC not completed.</span>
+                                        </Badge>
+                                    )}
                                 <Button
                                     size="sm"
                                     onClick={() => setShowCreatePlanModal(true)}

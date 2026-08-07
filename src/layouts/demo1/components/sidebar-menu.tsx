@@ -67,14 +67,14 @@ export function SidebarMenu() {
 
   // ─── Handle open/close from accordion ──────────────────────────────────
   const handleOpenChange = (value: string | string[]) => {
-  const newOpen = new Set(Array.isArray(value) ? value : [value]);
-  pinnedItems.forEach(pinned => {
-    if (!newOpen.has(pinned)) {
-      newOpen.add(pinned);
-    }
-  });
-  setOpenItems(newOpen);
-};
+    const newOpen = new Set(Array.isArray(value) ? value : [value]);
+    pinnedItems.forEach(pinned => {
+      if (!newOpen.has(pinned)) {
+        newOpen.add(pinned);
+      }
+    });
+    setOpenItems(newOpen);
+  };
 
   // ─── Permission logic (unchanged) ──────────────────────────────────────
   const matchPath = useCallback(
@@ -109,10 +109,10 @@ export function SidebarMenu() {
     if (permissionKey === 'stone_types_colors') {
       const stoneTypeKeysToTry = ['stone_type', 'Stone Type', 'stone_types'];
       const stoneColorKeysToTry = ['stone_color', 'Stone Color', 'stone_colors'];
-      
+
       let hasStoneTypeRead = false;
       let hasStoneColorRead = false;
-      
+
       for (const key of stoneTypeKeysToTry) {
         const perm = permissions[normalizePermissionKey(key) as keyof typeof permissions];
         if (perm?.can_read === true) {
@@ -120,7 +120,7 @@ export function SidebarMenu() {
           break;
         }
       }
-      
+
       for (const key of stoneColorKeysToTry) {
         const perm = permissions[normalizePermissionKey(key) as keyof typeof permissions];
         if (perm?.can_read === true) {
@@ -128,7 +128,7 @@ export function SidebarMenu() {
           break;
         }
       }
-      
+
       return hasStoneTypeRead || hasStoneColorRead;
     }
 
@@ -162,7 +162,7 @@ export function SidebarMenu() {
         return filtered;
       }
 
-      if (!isSuperAdmin && ['Reports'].includes(item.title || '')) {
+      if (!isSuperAdmin && [].includes(item.title || '')) {
         return filtered;
       }
 
@@ -175,15 +175,18 @@ export function SidebarMenu() {
         const currentPermKey = getPermissionKey(item);
         children = filterMenuByPermissions(item.children, currentPermKey);
       }
-
+      const isSettings = item.title === 'Settings' || item.path === '/settings';
       let itemHasPermission: boolean;
-      if (parentPermissionKey === 'stone_types_colors') {
+      if (isSettings) {
+      // Settings is always visible, regardless of permissions
+      itemHasPermission = true;
+    }else if (parentPermissionKey === 'stone_types_colors') {
         const stoneTypeKeysToTry = ['stone_type', 'Stone Type', 'stone_types'];
         const stoneColorKeysToTry = ['stone_color', 'Stone Color', 'stone_colors'];
-        
+
         let hasStoneTypeRead = false;
         let hasStoneColorRead = false;
-        
+
         for (const key of stoneTypeKeysToTry) {
           const perm = permissions[normalizePermissionKey(key) as keyof typeof permissions];
           if (perm?.can_read === true) {
@@ -191,7 +194,7 @@ export function SidebarMenu() {
             break;
           }
         }
-        
+
         for (const key of stoneColorKeysToTry) {
           const perm = permissions[normalizePermissionKey(key) as keyof typeof permissions];
           if (perm?.can_read === true) {
@@ -199,7 +202,7 @@ export function SidebarMenu() {
             break;
           }
         }
-        
+
         itemHasPermission = hasStoneTypeRead || hasStoneColorRead;
       } else {
         itemHasPermission = hasReadPermission(item);
@@ -257,7 +260,7 @@ export function SidebarMenu() {
         <AccordionMenuSub
           key={index}
           value={itemPath}
-          // No defaultOpen – controlled by parent via value
+        // No defaultOpen – controlled by parent via value
         >
           <AccordionMenuSubTrigger className="text-[18px] font-medium group">
             {item.icon && (typeof item.icon === 'string' ? (
@@ -266,7 +269,7 @@ export function SidebarMenu() {
               <item.icon data-slot="accordion-menu-icon" />
             ))}
             <span data-slot="accordion-menu-title">{item.title}</span>
-            
+
             {badgeText !== undefined && (
               <Badge
                 variant="secondary"
@@ -285,8 +288,8 @@ export function SidebarMenu() {
               className="ms-2 opacity-0 group-hover:opacity-100 transition-opacity"
               title={isPinned ? 'Unpin' : 'Pin'}
             >
-              <Pin 
-                size={18} 
+              <Pin
+                size={18}
                 className={isPinned ? 'fill-current text-white' : 'text-white opacity-50'}
               />
             </button>

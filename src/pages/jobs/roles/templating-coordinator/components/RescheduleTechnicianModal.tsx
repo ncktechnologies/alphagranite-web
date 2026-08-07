@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,10 +27,10 @@ import { toast } from "sonner";
 import { DateTimePicker, formatDateToString } from "@/components/ui/date-time-picker";
 import { useScheduleTemplatingMutation, useCreateFabNoteMutation, useUnscheduleTemplatingMutation } from "@/store/api/job";
 import { useNavigate, useParams } from "react-router";
-import { useGetSalesPersonsQuery } from "@/store/api/employee";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
+import { useGetEmployeesQuery, useGetRolesQuery } from "@/store/api";
 
 const rescheduleTechnicianSchema = z.object({
     technician: z.string().min(1, "Please select a technician"),
@@ -39,7 +39,7 @@ const rescheduleTechnicianSchema = z.object({
         .min(1, { message: "date is required." })
         .regex(/^\d{4}-\d{2}-\d{2}$/, { message: "Date must be in YYYY-MM-DD format." }),
     revenue: z.string().optional(),
-        // .refine((val) => val === "" || !isNaN(parseFloat(val)), { message: "Revenue must be a valid number" }),
+    // .refine((val) => val === "" || !isNaN(parseFloat(val)), { message: "Revenue must be a valid number" }),
     notes: z.string().optional(),
     // total_sqft: z.string().optional(),
 });
@@ -72,7 +72,36 @@ export function RescheduleTechnicianModal({
     const [scheduleTemplating] = useScheduleTemplatingMutation();
     const [unscheduleTemplating] = useUnscheduleTemplatingMutation();
     const [createFabNote] = useCreateFabNoteMutation();
-    const { data: employeesData, isLoading, isError, error } = useGetSalesPersonsQuery();
+    const { data: rolesData, isLoading: rolesLoading } = useGetRolesQuery();
+
+    const templaterId = useMemo(() => {
+        if (!rolesData) return null;
+        const roles = rolesData?.data?.data ?? rolesData?.data ?? rolesData;
+        if (!Array.isArray(roles)) return null;
+        const templaterRole = roles.find((role: any) =>
+            (role.name || '').toLowerCase() === 'template scheduler'
+        );
+        return templaterRole?.id ?? null;
+    }, [rolesData]);
+
+    const { data: employeesData, isLoading: employeesLoading, isError, error } = useGetEmployeesQuery(
+        {
+            role_id: templaterId ?? undefined,
+            sort_by: 'first_name',
+            sort_order: 'asc',
+            limit: 500, // or whatever limit you need
+        },
+        {
+            skip: !templaterId, // don't fetch until we have the role ID
+        }
+    );
+    const technicians = useMemo(() => {
+        if (!employeesData) return [];
+        const employees = employeesData?.data ?? employeesData;
+        if (!Array.isArray(employees)) return [];
+        // Already sorted by API; but we can also sort again for safety
+        return employees;
+    }, [employeesData]);
 
     const form = useForm<RescheduleTechnicianData>({
         resolver: zodResolver(rescheduleTechnicianSchema),
@@ -176,6 +205,9 @@ export function RescheduleTechnicianModal({
         }
     };
 
+    const isLoading = rolesLoading || employeesLoading;
+
+
     // Loading state
     if (isLoading) {
         return (
@@ -242,7 +274,6 @@ export function RescheduleTechnicianModal({
         );
     }
 
-    const technicians = Array.isArray(employeesData) ? employeesData : [];
 
     return (
         <Dialog open={open} onOpenChange={onClose}>
@@ -301,7 +332,7 @@ export function RescheduleTechnicianModal({
                                         <SelectContent className="max-h-[200px] overflow-y-auto">
                                             {technicians.map((technician: any) => (
                                                 <SelectItem key={technician.id} value={`${technician.id}`}>
-                                                    {technician.name}
+                                                    {technician.first_name} {technician.last_name}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
