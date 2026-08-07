@@ -131,7 +131,7 @@ export const PermissionsTable = ({
     const allTopLevel = [...parents, ...standalone];
     allTopLevel.sort((a, b) => a.name.localeCompare(b.name));
     // console.log('[PermissionsTable] Top-level items:', allTopLevel);
-    return allTopLevel;
+     return allTopLevel.filter((item) => item.name.toLowerCase() !== 'settings');
   }, [actionMenus]);
 
   // ─── All items for select-all ──────────────────────────────────────────

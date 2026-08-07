@@ -176,7 +176,7 @@ export const RevisionForm = ({
           name="mentions"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Notify Sales Person</FormLabel>
+              <FormLabel>Sales Person</FormLabel>
               <Select
                 onValueChange={field.onChange}
                 value={field.value || ''}
