@@ -716,7 +716,9 @@ const FabDetailsPage = () => {
     const [createFabNote] = useCreateFabNoteMutation();
     const [createShopRevision] = useCreateShopRevisionMutation();
     const [uploadToShopRevision] = useAddFilesToShopRevisionMutation();
-    const [deleteFile] = useDeleteFileMutation(); // <--- NEW
+    const [deleteConfirmationOpen, setDeleteConfirmationOpen] = useState(false);
+    const [fileToDelete, setFileToDelete] = useState<{ id: string; name: string } | null>(null);
+    const [deleteFile, { isLoading: isDeleting }] = useDeleteFileMutation();
 
     const currentUser = useSelector((s: any) => s.user.user);
     const currentOperatorId = currentUser?.employee_id || currentUser?.id || 0;
@@ -734,8 +736,8 @@ const FabDetailsPage = () => {
     const { data: fabRevisionsData, isLoading: isRevisionsLoading, refetch: refetchRevisions } = useGetShopRevisionsByFabIdQuery(numericFabId, {
         skip: !numericFabId,
     });
-    const cncLinFtNum = fab?.cnc_linft || 0;         
-    const cncDataExists = !!fab?.cnc_data;
+    const cncLinFtNum = fab?.cnc_linft || 0;
+    const cncDataExists = fab?.cnc_data?.is_completed;
     const showCncWarning = cncLinFtNum > 0 && !cncDataExists;
     const revisions: any[] = Array.isArray(fabRevisionsData) ? fabRevisionsData : [];
     const hasPendingShopRevision = revisions.some((rev: any) => !rev.revision_completed);
@@ -778,6 +780,29 @@ const FabDetailsPage = () => {
         } catch (error: any) {
             toast.error(error?.data?.message || 'Failed to delete file');
         }
+    };
+    const handleDeleteClick = (file: UnifiedFile) => {
+        setFileToDelete({ id: String(file.id), name: file.name });
+        setDeleteConfirmationOpen(true);
+    };
+
+    const handleDeleteConfirm = async () => {
+        if (!fileToDelete) return;
+        try {
+            await deleteFile({ file_id: fileToDelete.id }).unwrap();
+            toast.success('File deleted successfully');
+            refetch(); // refresh all data
+        } catch (error: any) {
+            toast.error(error?.data?.message || 'Failed to delete file');
+        } finally {
+            setDeleteConfirmationOpen(false);
+            setFileToDelete(null);
+        }
+    };
+
+    const handleDeleteCancel = () => {
+        setDeleteConfirmationOpen(false);
+        setFileToDelete(null);
     };
 
     // ─── File sources ──────────────────────────────────────────────────────
@@ -975,7 +1000,7 @@ const FabDetailsPage = () => {
                                 onFileClick={handleFileClick}
                                 defaultLayout="card"
                                 emptyMessage="No files have been uploaded for this FAB yet."
-                                onDeleteFile={handleDeleteFile}      // <--- NEW
+                                onDeleteFile={handleDeleteClick}      // <--- NEW
                                 showDeleteButton={true}               // <--- NEW
                             />
                         </CardContent>
@@ -997,14 +1022,14 @@ const FabDetailsPage = () => {
                                             A pending shop revision exists. Plan edits and new plan creation are disabled until the revision is resolved.
                                         </p>
                                     )}
-                                   
+
                                 </div>
-                                 {showCncWarning && (
-                                        <Badge variant="destructive">
-                                            <Info className="h-4 w-4 shrink-0" />
-                                            <span>CNC not completed.</span>
-                                        </Badge>
-                                    )}
+                                {showCncWarning && (
+                                    <Badge variant="destructive">
+                                        <Info className="h-4 w-4 shrink-0" />
+                                        <span>CNC not completed.</span>
+                                    </Badge>
+                                )}
                                 <Button
                                     size="sm"
                                     onClick={() => setShowCreatePlanModal(true)}
@@ -1341,6 +1366,28 @@ const FabDetailsPage = () => {
                 hideAddStageButton={true}
                 onEventCreated={() => refetch()}
             />
+            <Popup
+                isOpen={deleteConfirmationOpen}
+                onClose={handleDeleteCancel}
+                title="Delete File"
+                description={`Are you sure you want to delete "${fileToDelete?.name}"? This action cannot be undone.`}
+                centered
+                className="h-auto"
+            >
+                <div className="flex justify-end space-x-3 my-3">
+                    <Button variant="outline" onClick={handleDeleteCancel} className="w-[200px]">
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        onClick={handleDeleteConfirm}
+                        disabled={isDeleting}
+                        className="w-[140px]"
+                    >
+                        {isDeleting ? 'Deleting…' : 'Delete'}
+                    </Button>
+                </div>
+            </Popup>
 
         </div>
     );

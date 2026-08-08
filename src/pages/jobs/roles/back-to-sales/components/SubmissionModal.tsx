@@ -19,6 +19,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox"; // 👈 added
 import { Upload, Plus, Check, X, Eye, Download } from "lucide-react";
 import { Alert, AlertIcon, AlertTitle } from "@/components/ui/alert";
 import { toast } from "sonner";
@@ -44,6 +45,10 @@ const revisionSchema = z.object({
   revisionType: z.string().min(1, "Select revision type"),
   reason: z.string().min(1, "Revision reason is required"),
   files: z.array(z.any()).optional(),
+  // 👇 New field: confirmation that SCT files have been uploaded
+  sctFilesUploaded: z.boolean().refine(val => val === true, {
+    message: "Please confirm you have uploaded SCT files.",
+  }),
 });
 
 type RevisionData = z.infer<typeof revisionSchema>;
@@ -94,6 +99,7 @@ export const RevisionModal = ({
       revisionType: "",
       reason: "",
       files: [],
+      sctFilesUploaded: false, // 👈 default unchecked
     },
     mode: "onChange",
   });
@@ -338,8 +344,27 @@ export const RevisionModal = ({
               />
             </div>
             
-            {/* File Upload */}
-           
+            {/* ─── NEW: Confirmation checkbox ──────────────────────────────── */}
+            <FormField
+              control={form.control}
+              name="sctFilesUploaded"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                  <div className="space-y-1 leading-none">
+                    <FormLabel>
+                      I confirm that I have uploaded the required SCT files for this revision.
+                    </FormLabel>
+                    <FormMessage />
+                  </div>
+                </FormItem>
+              )}
+            />
 
             {/* Action Buttons */}
             <div className="flex justify-end gap-3 pt-4">

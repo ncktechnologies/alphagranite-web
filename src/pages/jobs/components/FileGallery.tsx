@@ -315,7 +315,7 @@ function FileCard({
               className="absolute top-4 right-4 size-6 flex items-center justify-center text-muted-foreground hover:text-destructive shrink-0"
               onClick={(e) => { e.stopPropagation(); onDelete(file); }}
             >
-              <X className="size-3" />
+              <X className="size-6" />
             </button>
           )
         )}
