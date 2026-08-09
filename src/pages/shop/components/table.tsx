@@ -266,8 +266,6 @@ const ShopTable: React.FC<ShopTableProps> = ({
                             : undefined,
                         shop_est_completion_date: fab.shop_est_completion_date
                             ? format(new Date(fab.shop_est_completion_date), 'MM/dd/yyyy')
-                            : fab.estimated_completion_date
-                                ? format(new Date(fab.estimated_completion_date), 'MM/dd/yyyy')
                                 : undefined,
                     });
                 });
