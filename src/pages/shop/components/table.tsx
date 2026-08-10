@@ -40,6 +40,7 @@ import { Link } from 'react-router';
 import PlanSectionCell from './planSectionCell';
 import { useTableState } from '@/hooks/use-table-state';
 import { NotesModal } from '@/components/common/NotesModal';
+import { toast } from 'sonner';
 // import { toast 
 // } from 'sonner';
 
@@ -600,14 +601,14 @@ const ShopTable: React.FC<ShopTableProps> = ({
             enableSorting: false,
             size: 220,
         },
-        {
-            id: 'notes',
-            accessorFn: r => r.plan_notes,
-            header: ({ column }) => <DataGridColumnHeader title="NOTES" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-text">{row.original.plan_notes || '-'}</span>,
-            enableSorting: true,
-            size: 300,
-        },
+        // {
+        //     id: 'notes',
+        //     accessorFn: r => r.plan_notes,
+        //     header: ({ column }) => <DataGridColumnHeader title="NOTES" column={column} />,
+        //     cell: ({ row }) => <span className="text-sm text-text">{row.original.plan_notes || '-'}</span>,
+        //     enableSorting: true,
+        //     size: 300,
+        // },
     ], [canManageShopPlans, canAddNote, handleViewCalendar, handleCreatePlan, handleAutoSchedule, handleAddNote, refetch]);
 
     const table = useReactTable({

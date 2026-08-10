@@ -157,7 +157,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             setSelectedFabId(null);
         } catch (error) {
             console.error('Error adding note:', error);
-            toast.error('Failed to add note');
+            // toast.error('Failed to add note');
             throw error;
         }
     };
@@ -572,14 +572,14 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             enableSorting: false,
             size: 220,
         },
-        {
-            id: 'notes',
-            accessorFn: r => r.plan_notes,
-            header: ({ column }) => <DataGridColumnHeader title="NOTES" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-text">{row.original.plan_notes || '-'}</span>,
-            enableSorting: true,
-            size: 300,
-        },
+        // {
+        //     id: 'notes',
+        //     accessorFn: r => r.plan_notes,
+        //     header: ({ column }) => <DataGridColumnHeader title="NOTES" column={column} />,
+        //     cell: ({ row }) => <span className="text-sm text-text">{row.original.plan_notes || '-'}</span>,
+        //     enableSorting: true,
+        //     size: 300,
+        // },
     ], []);
 
     const table = useReactTable({
