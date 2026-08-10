@@ -189,12 +189,14 @@ export function SlabSmithDetailsPage() {
       return;
     }
 
+    const noteText = data?.note?.trim();
+
     try {
       await manageSlabSmithSession({
         fab_id: fabId,
         data: {
           action: 'pause',
-          note: data?.note,
+          note: noteText,
           sqft_completed: data?.sqft_drafted,
           timestamp: new Date().toISOString(),
         },
@@ -216,12 +218,14 @@ export function SlabSmithDetailsPage() {
       return;
     }
 
+    const noteText = data?.note?.trim();
+
     try {
       await manageSlabSmithSession({
         fab_id: fabId,
         data: {
           action: 'resume',
-          note: data?.note,
+          note: noteText,
           sqft_completed: data?.sqft_drafted,
           timestamp: new Date().toISOString(),
         },
@@ -243,6 +247,8 @@ export function SlabSmithDetailsPage() {
       return;
     }
 
+    const noteText = data?.note?.trim();
+
     try {
       await toggleFabOnHold({ fab_id: fabId, on_hold: true }).unwrap();
       if (data?.note) {
@@ -256,7 +262,7 @@ export function SlabSmithDetailsPage() {
         fab_id: fabId,
         data: {
           action: 'pause',
-          note: data?.note ? `[On Hold] ${data.note}` : '[On Hold]',
+          note: noteText,
           sqft_completed: data?.sqft_drafted,
           timestamp: new Date().toISOString(),
         },
