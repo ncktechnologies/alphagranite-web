@@ -40,7 +40,6 @@ import CreatePlanSheet from './createEvent';
 import { useTableState } from '@/hooks/use-table-state';
 import { NotesModal } from '@/components/common/NotesModal';
 import { toast } from 'sonner';
-import { toast } from 'sonner';
 
 export interface ShopPlanRow {
     fab_id: string;
