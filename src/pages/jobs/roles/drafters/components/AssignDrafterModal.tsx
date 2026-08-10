@@ -1,11 +1,12 @@
 // AssignDrafterModal.tsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useGetSalesPersonsQuery } from '@/store/api/employee';
+import { useGetRolesQuery } from '@/store/api/role';
+import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useBulkAssignDraftingMutation, useUpdateDraftingMutation, useGetDraftingByFabIdQuery } from '@/store/api/job';
 import { toast } from 'sonner';
 
@@ -40,7 +41,43 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const initializedRef = useRef(false);
 
-  const { data: employeesData, isLoading: employeesLoading } = useGetSalesPersonsQuery();
+  // 1. Fetch roles to get the "CAD" / "Drafter" role ID
+  const { data: rolesData, isLoading: rolesLoading } = useGetRolesQuery();
+
+  // Find the role ID for "CAD" (or "Drafter")
+  const drafterRoleId = useMemo(() => {
+    if (!rolesData) return null;
+    // rolesData may be nested; adapt to your actual structure
+    const roles = rolesData?.data?.data ?? rolesData?.data ?? rolesData;
+    if (!Array.isArray(roles)) return null;
+    const role = roles.find((r: any) => {
+      const name = (r.name || '').toLowerCase().trim();
+      return name === 'cad' || name === 'drafter';
+    });
+    return role?.id ?? null;
+  }, [rolesData]);
+
+  // 2. Fetch employees filtered by drafterRoleId
+  const { data: employeesData, isLoading: employeesLoading } = useGetEmployeesQuery(
+    {
+      role_id: drafterRoleId ?? undefined,
+      sort_by: 'first_name',
+      sort_order: 'asc',
+      limit: 500,
+    },
+    {
+      skip: !drafterRoleId, // don't fetch until we have the role ID
+    }
+  );
+
+  // Extract employees from response
+  const drafters = useMemo(() => {
+    if (!employeesData) return [];
+    const employees = employeesData?.data ?? employeesData;
+    if (!Array.isArray(employees)) return [];
+    return employees;
+  }, [employeesData]);
+
   const [bulkAssignDrafting] = useBulkAssignDraftingMutation();
   const [updateDrafting] = useUpdateDraftingMutation();
 
@@ -49,9 +86,9 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
     { skip: !reassignFabId || !open }
   );
 
-  const drafters = Array.isArray(employeesData) ? employeesData : [];
   const isReassign = !!reassignFabId;
   const fabIds = isReassign ? [reassignFabId] : selectedFabIds;
+  const isLoading = rolesLoading || employeesLoading;
 
   // Reset when modal closes
   useEffect(() => {
@@ -72,7 +109,6 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
     if (isReassign && draftingData) {
       const drafting = draftingData?.data || draftingData;
       setDrafterId(String(drafting.drafter_id || ''));
-      // Use existing dates if available, otherwise fallback to today
       setStartDate(drafting.scheduled_start_date || getTodayDate());
       setEndDate(drafting.scheduled_end_date || getTodayDate());
       setSqftPerFab({
@@ -80,15 +116,11 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
       });
       initializedRef.current = true;
     } else if (!isReassign && fabIds.length > 0) {
-      // Bulk assign: default dates are already today (state initialised)
-      // Pre-fill sqft per FAB
       const initialSqft: { [key: string]: string } = {};
       fabIds.forEach((id) => {
         initialSqft[id] = initialSqftValues[id] || '';
       });
       setSqftPerFab(initialSqft);
-      // Optionally pre-fill dates from first FAB's existing schedule? 
-      // Not needed – we use common dates from state.
       initializedRef.current = true;
     }
   }, [open, isReassign, draftingData, reassignFabId, fabIds, initialSqftValues]);
@@ -126,7 +158,6 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
         }).unwrap();
         toast.success(`Drafter reassigned for FAB ${reassignFabId}`);
       } else {
-        // Bulk assign – use the common startDate and endDate for all selected FABs
         const requestData = {
           drafter_id: parseInt(drafterId, 10),
           items: fabIds.map((fabId) => ({
@@ -163,20 +194,23 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
             <Label>Select Drafter</Label>
             <Select value={drafterId} onValueChange={setDrafterId}>
               <SelectTrigger>
-                <SelectValue placeholder="Select drafter" />
+                <SelectValue placeholder={isLoading ? "Loading drafters..." : "Select drafter"} />
               </SelectTrigger>
               <SelectContent className="max-h-[200px] overflow-y-auto">
-                {!employeesLoading &&
+                {!isLoading &&
                   drafters.map((drafter) => (
                     <SelectItem key={drafter.id} value={drafter.id.toString()}>
-                      {drafter.name}
+                      {drafter.first_name} {drafter.last_name}
                     </SelectItem>
                   ))}
+                {!isLoading && drafters.length === 0 && (
+                  <div className="px-2 py-1 text-sm text-muted-foreground">No CAD/Drafter employees found</div>
+                )}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Date inputs – always visible, defaulted to today or existing data */}
+          {/* Date inputs – commented out, but you can uncomment if needed */}
           {/* <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Scheduled Start Date</Label>
@@ -196,7 +230,7 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
             </div>
           </div> */}
 
-          {/* Square footage per FAB */}
+          {/* Square footage per FAB – commented out, but you can uncomment if needed */}
           {/* <div>
             <h3 className="font-semibold mb-3">{isReassign ? 'FAB Details' : `Selected FABs (${fabIds.length})`}</h3>
             <div className="border rounded-md max-h-60 overflow-y-auto">
@@ -213,7 +247,7 @@ export const AssignDrafterModal: React.FC<AssignDrafterModalProps> = ({
                       onChange={(e) => handleSqftChange(fabId, e.target.value)}
                       placeholder="Enter sq ft"
                       className="w-32"
-                      onWheel={(e) => e.currentTarget.blur()} // prevent accidental scroll changes
+                      onWheel={(e) => e.currentTarget.blur()}
                     />
                   </div>
                 </div>

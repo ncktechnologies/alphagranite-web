@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { getTodayDate } from '../../drafters/components/AssignDrafterModal';
 import { useCreateSlabSmithMutation, useGetEmployeesQuery, useGetSlabSmithByFabIdQuery, useUpdateSlabSmithMutation } from '@/store/api';
+import { useGetRolesQuery } from '@/store/api/role';
 import { toast } from 'sonner';
 
 interface AssignSlabSmithOperatorModalProps {
@@ -27,7 +28,42 @@ const AssignSlabSmithOperatorModal: React.FC<AssignSlabSmithOperatorModalProps> 
   const [selectedOperator, setSelectedOperator] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: employeesData, isLoading: employeesLoading } = useGetEmployeesQuery();
+  // 1. Fetch roles to get the "CAD" / "Drafter" role ID
+  const { data: rolesData, isLoading: rolesLoading } = useGetRolesQuery();
+
+  // Find the role ID for "CAD" (or "Drafter")
+  const drafterRoleId = useMemo(() => {
+    if (!rolesData) return null;
+    const roles = rolesData?.data?.data ?? rolesData?.data ?? rolesData;
+    if (!Array.isArray(roles)) return null;
+    const role = roles.find((r: any) => {
+      const name = (r.name || '').toLowerCase().trim();
+      return name === 'cad' || name === 'drafter';
+    });
+    return role?.id ?? null;
+  }, [rolesData]);
+
+  // 2. Fetch employees filtered by drafterRoleId
+  const { data: employeesData, isLoading: employeesLoading } = useGetEmployeesQuery(
+    {
+      role_id: drafterRoleId ?? undefined,
+      sort_by: 'first_name',
+      sort_order: 'asc',
+      limit: 500,
+    },
+    {
+      skip: !drafterRoleId, // don't fetch until we have the role ID
+    }
+  );
+
+  // Extract employees from response
+  const operators = useMemo(() => {
+    if (!employeesData) return [];
+    const employees = employeesData?.data ?? employeesData;
+    if (!Array.isArray(employees)) return [];
+    return employees;
+  }, [employeesData]);
+
   const [createSlabSmith] = useCreateSlabSmithMutation();
   const [updateSlabSmith] = useUpdateSlabSmithMutation();
 
@@ -36,13 +72,9 @@ const AssignSlabSmithOperatorModal: React.FC<AssignSlabSmithOperatorModalProps> 
     { skip: !reassignFabId || !open }
   );
 
-  // Extract employees from the response
-  const operators = Array.isArray(employeesData)
-    ? employeesData
-    : employeesData?.data || [];
-
   const fabIdsToAssign = reassignFabId ? [reassignFabId] : selectedFabIds;
   const isReassignMode = !!reassignFabId;
+  const isLoading = rolesLoading || employeesLoading;
 
   // Reset form when modal opens
   useEffect(() => {
@@ -129,10 +161,10 @@ const AssignSlabSmithOperatorModal: React.FC<AssignSlabSmithOperatorModalProps> 
             <Label>Select SlabSmith Drafter</Label>
             <Select value={selectedOperator} onValueChange={setSelectedOperator}>
               <SelectTrigger>
-                <SelectValue placeholder="Select SlabSmith Drafter" />
+                <SelectValue placeholder={isLoading ? "Loading drafters..." : "Select SlabSmith Drafter"} />
               </SelectTrigger>
               <SelectContent className="max-h-[200px] overflow-y-auto">
-                {!employeesLoading &&
+                {!isLoading &&
                   operators.map((operator: any) => {
                     const operatorId = String(operator.id);
                     const operatorName = `${operator.first_name || ''} ${operator.last_name || ''}`.trim() || operator.email;
@@ -143,6 +175,9 @@ const AssignSlabSmithOperatorModal: React.FC<AssignSlabSmithOperatorModalProps> 
                       </SelectItem>
                     );
                   })}
+                {!isLoading && operators.length === 0 && (
+                  <div className="px-2 py-1 text-sm text-muted-foreground">No CAD/Drafter employees found</div>
+                )}
               </SelectContent>
             </Select>
           </div>

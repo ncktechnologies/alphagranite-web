@@ -873,7 +873,7 @@ GET /fabs?current_stage=sales_check
 
 **Endpoint:** `POST /slabsmith/{slabsmith_id}/complete`
 
-**Description:** Mark slab smith work as complete
+**Description:** Mark slabsmith work as complete
 
 **Response:** `200 OK`
 

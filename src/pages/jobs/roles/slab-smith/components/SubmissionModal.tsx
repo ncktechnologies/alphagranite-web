@@ -80,14 +80,14 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
         // console.log('Created slab smith with ID:', currentSlabSmithId);
         toast.success("SlabSmith entry created successfully");
       } catch (createError) {
-        console.error('Failed to create slab smith:', createError);
+        console.error('Failed to create slabsmith:', createError);
         // toast.error('Failed to create slab smith entry');
         return;
       }
     }
 
     if (!isConfirmed) {
-      toast.error('Please confirm the slab smith work is completed by checking the box.');
+      toast.error('Please confirm the slabsmith work is completed by checking the box.');
       return;
     }
 
@@ -166,7 +166,7 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
       toast.success('Slab smith work submitted successfully');
       onClose(true);
     } catch (err: any) {
-      toast.error(err?.data?.message || 'Failed to submit slab smith work');
+      toast.error(err?.data?.message || 'Failed to submit slabsmith work');
       onClose(false);
     } finally {
       setIsSubmitting(false);
@@ -202,7 +202,7 @@ export const SubmissionModal = ({ open, onClose, drafting, uploadedFiles, draftS
                   <FormLabel>Notes</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="Add notes about the slab smith work..."
+                      placeholder="Add notes about the slabsmith work..."
                       className="resize-none"
                       {...field}
                     />

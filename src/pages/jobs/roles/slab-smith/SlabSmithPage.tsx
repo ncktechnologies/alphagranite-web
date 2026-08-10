@@ -225,7 +225,7 @@ const SlabSmithPage = () => {
         <div className="">
             <Container>
                 <Toolbar className=' '>
-                    <ToolbarHeading title="SlabSmith" description="View and manage slab smith requests" />
+                    <ToolbarHeading title="SlabSmith" description="View and manage slabsmith requests" />
                 </Toolbar>
                 <CurrentStageProvider
                     value={{
