@@ -40,7 +40,8 @@ import { Link } from 'react-router';
 import PlanSectionCell from './planSectionCell';
 import { useTableState } from '@/hooks/use-table-state';
 import { NotesModal } from '@/components/common/NotesModal';
-import { toast } from 'sonner';
+// import { toast 
+// } from 'sonner';
 
 export interface ShopPlanRow {
     fab_id: string;
@@ -71,6 +72,7 @@ export interface ShopPlanRow {
     shop_est_completion_date?: string;
     estimated_completion_date?: string;
     plan_notes: string | null;
+    fab_notes?: any[];
     date_group: string;
     shop_office_date_scheduled?: string;
     _rawPlans: any[];
@@ -166,6 +168,7 @@ const ShopTable: React.FC<ShopTableProps> = ({
     const handleNoteSubmit = async (note: string, fabId: string) => {
         try {
             await createFabNote({ fab_id: parseInt(fabId), note, stage: 'shop' }).unwrap();
+            await refetch();
             toast.success('Note added successfully');
             setIsNoteModalOpen(false);
             setSelectedFabId(null);
@@ -244,6 +247,11 @@ const ShopTable: React.FC<ShopTableProps> = ({
                 milter_ln_ft: fab.miter_linft || 0,
                 total_cut_ln_ft: fab.total_cut_lnft || 0,
                 percent_complete: fab.percentage_completion || 0,
+                fab_notes: Array.isArray(fab.fab_notes)
+                    ? fab.fab_notes
+                    : Array.isArray(fab.notes)
+                        ? fab.notes
+                        : [],
                 _rawPlans: plans,
             };
 
@@ -562,6 +570,35 @@ const ShopTable: React.FC<ShopTableProps> = ({
             header: ({ column }) => <DataGridColumnHeader title="HOURS SCHEDULED" column={column} />,
             cell: ({ row }) => <span className="text-sm text-text">{row.original.estimated_hours.toFixed(1)}</span>,
             enableSorting: true,
+        },
+        {
+            id: 'shop_fab_notes',
+            accessorFn: r => {
+                const shopNotes = Array.isArray(r.fab_notes)
+                    ? r.fab_notes.filter((note: any) => note.stage === 'shop')
+                    : [];
+                return shopNotes.map((note: any) => note.note).join(' | ');
+            },
+            header: ({ column }) => <DataGridColumnHeader title="SHOP NOTES" column={column} />,
+            cell: ({ row }) => {
+                const shopNotes = Array.isArray(row.original.fab_notes)
+                    ? row.original.fab_notes.filter((note: any) => note.stage === 'shop')
+                    : [];
+
+                if (shopNotes.length === 0) {
+                    return <span className="text-xs text-gray-500 italic">No notes</span>;
+                }
+
+                const latest = shopNotes[0];
+                return (
+                    <div className="text-xs max-w-xs" title={latest.note}>
+                        <div className="font-medium truncate">{latest.note}</div>
+                        <div className="text-gray-500 text-xs">by {latest.created_by_name || 'Unknown'}</div>
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 220,
         },
         {
             id: 'notes',

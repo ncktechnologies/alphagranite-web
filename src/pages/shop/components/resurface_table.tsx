@@ -39,6 +39,8 @@ import { Link } from 'react-router';
 import CreatePlanSheet from './createEvent';
 import { useTableState } from '@/hooks/use-table-state';
 import { NotesModal } from '@/components/common/NotesModal';
+import { toast } from 'sonner';
+import { toast } from 'sonner';
 
 export interface ShopPlanRow {
     fab_id: string;
@@ -70,6 +72,7 @@ export interface ShopPlanRow {
     shop_est_completion_date?: string;
     estimated_completion_date?: string;
     plan_notes: string | null;
+    fab_notes?: any[];
     date_group: string;
     shop_office_date_scheduled?: string;
 }
@@ -149,6 +152,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
     const handleNoteSubmit = async (note: string, fabId: string) => {
         try {
             await createFabNote({ fab_id: parseInt(fabId), note, stage: 'shop' }).unwrap();
+            await refetch();
             toast.success('Note added successfully');
             setIsNoteModalOpen(false);
             setSelectedFabId(null);
@@ -241,6 +245,11 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
                 milter_ln_ft: fab.miter_linft || 0,
                 total_cut_ln_ft: (fab.wj_linft || 0) + (fab.saw_cut_lnft || 0),
                 percent_complete: 0,
+                fab_notes: Array.isArray(fab.fab_notes)
+                    ? fab.fab_notes
+                    : Array.isArray(fab.notes)
+                        ? fab.notes
+                        : [],
                 shop_office_date_scheduled: fab.shop_date_schedule
                     ? format(new Date(fab.shop_date_schedule), 'MM/dd/yyyy')
                     : undefined,
@@ -534,6 +543,35 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             header: ({ column }) => <DataGridColumnHeader title="TOTAL CUT LN FT" column={column} />,
             cell: ({ row }) => <span className="text-sm text-text">{row.original.total_cut_ln_ft.toFixed(2)}</span>,
             enableSorting: true,
+        },
+        {
+            id: 'shop_fab_notes',
+            accessorFn: r => {
+                const shopNotes = Array.isArray(r.fab_notes)
+                    ? r.fab_notes.filter((note: any) => note.stage === 'shop')
+                    : [];
+                return shopNotes.map((note: any) => note.note).join(' | ');
+            },
+            header: ({ column }) => <DataGridColumnHeader title="SHOP NOTES" column={column} />,
+            cell: ({ row }) => {
+                const shopNotes = Array.isArray(row.original.fab_notes)
+                    ? row.original.fab_notes.filter((note: any) => note.stage === 'shop')
+                    : [];
+
+                if (shopNotes.length === 0) {
+                    return <span className="text-xs text-gray-500 italic">No notes</span>;
+                }
+
+                const latest = shopNotes[0];
+                return (
+                    <div className="text-xs max-w-xs" title={latest.note}>
+                        <div className="font-medium truncate">{latest.note}</div>
+                        <div className="text-gray-500 text-xs">by {latest.created_by_name || 'Unknown'}</div>
+                    </div>
+                );
+            },
+            enableSorting: false,
+            size: 220,
         },
         {
             id: 'notes',

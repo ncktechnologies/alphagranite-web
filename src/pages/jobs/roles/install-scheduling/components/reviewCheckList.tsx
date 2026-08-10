@@ -38,7 +38,8 @@ import {
 } from "@/store/api/job";
 import { Can } from "@/components/permission";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
-import { useGetSalesPersonsQuery } from "@/store/api";
+import { useGetRolesQuery } from "@/store/api/role";
+import { useGetEmployeesQuery } from "@/store/api/employee";
 import Popup from "@/components/ui/popup";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -165,16 +166,48 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
   // Extra crew state
   const [selectedExtraCrewIds, setSelectedExtraCrewIds] = useState<Set<string>>(new Set());
 
-  // Fetch employers (installers)
-  const { data: employersData } = useGetSalesPersonsQuery();
-  const employers = Array.isArray(employersData) ? employersData : [];
+  // ─── Fetch installer role ID ──────────────────────────────────────────────
+  const { data: rolesData, isLoading: rolesLoading } = useGetRolesQuery();
+  const installerRoleId = useMemo(() => {
+    if (!rolesData) return null;
+    const roles = rolesData?.data?.data ?? rolesData?.data ?? rolesData;
+    if (!Array.isArray(roles)) return null;
+    const role = roles.find((r: any) => {
+      const name = (r.name || '').toLowerCase().trim();
+      return name === 'installer';
+    });
+    return role?.id ?? null;
+  }, [rolesData]);
 
-  const extraCrewOptions = useMemo(() =>
-    employers.map((emp: any) => ({
+  // ─── Fetch employees filtered by installerRoleId ────────────────────────
+  const { data: employeesData, isLoading: employeesLoading } = useGetEmployeesQuery(
+    {
+      role_id: installerRoleId ?? undefined,
+      sort_by: 'first_name',
+      sort_order: 'asc',
+      limit: 500,
+    },
+    {
+      skip: !installerRoleId,
+    }
+  );
+
+  const installers = useMemo(() => {
+    if (!employeesData) return [];
+    const employees = employeesData?.data ?? employeesData;
+    if (!Array.isArray(employees)) return [];
+    return employees;
+  }, [employeesData]);
+
+  const isLoading = rolesLoading || employeesLoading;
+
+  // Build options for dropdowns
+  const installerOptions = useMemo(() =>
+    installers.map((emp: any) => ({
       id: String(emp.id),
-      name: emp.name ?? emp.full_name ?? `Crew #${emp.id}`,
+      name: `${emp.first_name || ''} ${emp.last_name || ''}`.trim() || emp.email,
     })),
-    [employers]
+    [installers]
   );
 
   // Mutations
@@ -308,7 +341,6 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
 
       // 3. COMPLETION – ensure we have a record with an ID
       let completionId = completionData?.data?.id;
-      // console.log("Completion ID:", completionData?.data?.id);
       // If no completion record exists, create a stub (incomplete)
       if (installId && !completionId) {
         const stubPayload = {
@@ -338,7 +370,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
         someSuccess = true;
       }
 
-      // 5. COMPLETION – if marked completed, update OR create (never call update without ID)
+      // 5. COMPLETION – if marked completed, update OR create
       if (isCompleted) {
         const completionPayload = {
           fab_id: fabId,
@@ -349,18 +381,15 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
         };
 
         if (completionId) {
-          // Safe: we have an ID – update
           await updateInstallCompletion({ fab_id: completionId, data: completionPayload }).unwrap();
           someSuccess = true;
         } else {
-          // No ID found – create a completed record directly
           const createCompRes = await createInstallCompletion(completionPayload).unwrap();
           completionId = createCompRes?.data?.id ?? createCompRes?.id;
           someSuccess = true;
         }
       }
 
-      // 6. Stage transition
       // 6. Stage transition – only if stage is not already install_completion
       if (hasInstallDate && fabData?.data?.current_stage !== "install_completion") {
         await updateFabStage({ fab_id: fabId, data: { current_stage: "install_completion" } }).unwrap();
@@ -375,10 +404,12 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
       }
     } catch (error) {
       console.error("ERROR in doSubmit:", error);
+      toast.error("Failed to save changes");
     } finally {
       setIsSubmitting(false);
     }
   }, [fabId, selectedExtraCrewIds, createFabNote, createInstallScheduling, updateInstallScheduling, updateFabStage, createInstallCompletion, updateInstallCompletion, installData, completionData, getExtraCrewPayload, navigate, refetchInstall, refetchCompletion]);
+
   const onSubmit = useCallback(async (values: InstallChecklistData) => {
     if (values.install_completed) {
       setPendingValues(values);
@@ -437,15 +468,19 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger className="h-[34px]">
-                        <SelectValue placeholder="Select an installer" />
+                        <SelectValue placeholder={isLoading ? "Loading installers..." : "Select an installer"} />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent className="max-h-[200px] overflow-y-auto">
-                      {employers.map((employer: any) => (
-                        <SelectItem key={employer.id} value={String(employer.id)}>
-                          {employer.name ?? employer.full_name ?? `Employer #${employer.id}`}
-                        </SelectItem>
-                      ))}
+                      {!isLoading &&
+                        installerOptions.map((option) => (
+                          <SelectItem key={option.id} value={option.id}>
+                            {option.name}
+                          </SelectItem>
+                        ))}
+                      {!isLoading && installerOptions.length === 0 && (
+                        <div className="px-2 py-1 text-sm text-muted-foreground">No installers found</div>
+                      )}
                     </SelectContent>
                   </Select>
                   <FormMessage />
@@ -456,7 +491,7 @@ export function InstallChecklistForm({ fabId, showCompletionFields = false }: In
             <FormItem>
               <FormLabel>Extra Crew (max 3)</FormLabel>
               <ExtraCrewList
-                options={extraCrewOptions}
+                options={installerOptions}
                 selectedIds={selectedExtraCrewIds}
                 onToggle={toggleExtraCrew}
                 maxSelections={3}
