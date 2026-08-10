@@ -48,7 +48,7 @@ const CNCPage = () => {
     const navigate = useNavigate();
     const isSuperAdmin = useIsSuperAdmin();
 
-    const permissions = usePermission('CNC');
+    const permissions = usePermission('CNC Programming'); // Fetch permissions for CNC Programming
 
     const canAddNote = isSuperAdmin || permissions.can_create;          // Add Note menu item
     const canToggleOnHold = isSuperAdmin || permissions.can_create;     // On Hold toggle column

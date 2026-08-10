@@ -676,7 +676,7 @@ export function CNCDetailsPage() {
                             {/* ── Time tracking + files ──────────────────────────────────── */}
                             <Card>
                                 <CardContent className="p-3 sm:p-4 lg:p-5 space-y-5">
-                                    <Can action="create" on="CNC">
+                                    <Can action="create" on="CNC Programming">
                                         <TimeTrackingComponent
                                             isDrafting={isDrafting}
                                             isPaused={isPaused}
@@ -739,7 +739,7 @@ export function CNCDetailsPage() {
                                     {viewMode === 'activity' && (
                                         <div className="flex justify-end gap-2 pt-2">
                                             <BackButton fallbackUrl="/job/draft" label="Cancel" />
-                                            <Can action="create" on="CNC">
+                                            <Can action="create" on="CNC Programming">
                                                 <Button
                                                     onClick={handleOpenSubmissionModal}
                                                     className="bg-green-600 hover:bg-green-700"

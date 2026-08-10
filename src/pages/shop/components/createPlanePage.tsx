@@ -972,6 +972,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
                       { label: 'Edging LinFt', val: selectedFab.edging_linft?.toFixed(2) || '0.00' },
                       { label: 'CNC LinFt', val: selectedFab.cnc_linft?.toFixed(2) || '0.00' },
                       { label: 'Miter LinFt', val: selectedFab.miter_linft?.toFixed(2) || '0.00' },
+                      { label: 'Saw Cut LinFt', val: selectedFab.saw_cut_lnft?.toFixed(2) || '0.00' },
                     ].map(({ label, val }) => (
                       <div key={label}>
                         <Label className="text-xs text-[#7c8689]">{label}</Label>

@@ -224,7 +224,7 @@ export function AfterDraftSalesPage() {
             <Toolbar>
                 <ToolbarHeading
                     title="SCT"
-                    description="View and manage SCT (Sales to Client Transfer) tasks"
+                    description="View and manage SCT (Sales Check Template) tasks"
                 />
             </Toolbar>
             <JobTable

@@ -66,7 +66,7 @@ export function ActivityDetailsView({ activity, onEdit, onDelete, onToggleStatus
           <div className="space-y-2">
             <h3 className="text-sm font-medium text-gray-700">Description</h3>
             <p className="text-base text-gray-900 bg-gray-50 p-4 rounded-lg">
-              {activity.plan_description || 'No description provided'}
+              {activity.plan_description || ''}
             </p>
           </div>
         </div>

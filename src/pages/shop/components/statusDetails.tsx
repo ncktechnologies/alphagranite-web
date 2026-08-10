@@ -1027,7 +1027,7 @@ const FabDetailsPage = () => {
                                 {showCncWarning && (
                                     <Badge variant="destructive">
                                         <Info className="h-4 w-4 shrink-0" />
-                                        <span>CNC not completed.</span>
+                                        <span>CNC Programming not complete.</span>
                                     </Badge>
                                 )}
                                 <Button

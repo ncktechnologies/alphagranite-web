@@ -137,7 +137,7 @@ export const DASHBOARD_WIDGETS: WidgetConfig[] = [
   {
     id: 'CNC',
     title: 'CNC Programming',
-    requiredPermission: 'CNC',
+    requiredPermission: 'CNC Programming',
     requiredAction: 'read',
     component: 'StatWidget',
     category: 'stats',
@@ -306,7 +306,7 @@ export const stageNameMap: Record<string, string> = {
   'slab_smith_request': 'SlabSmith Request',
   'final_programming': 'Final Programming',
   'cut_list': 'Cut List',
-  'cnc': 'CNC Manufacturing',
+  'cnc': 'CNC Programming',
   'resurface_scheduling': 'Resurface Scheduling',
   'revision': 'Revisions',
   'install_scheduling': 'Install Scheduling',
