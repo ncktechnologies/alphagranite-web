@@ -40,7 +40,7 @@ export const ActivityCard = ({
             </Badge>
           </div>
           
-          <p className="text-sm text-text">{plan_description || 'No description'}</p>
+          <p className="text-sm text-text">{plan_description || ''}</p>
         </div>
       </CardContent>
     </Card>

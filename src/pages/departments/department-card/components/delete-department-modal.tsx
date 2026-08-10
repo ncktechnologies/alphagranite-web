@@ -80,7 +80,7 @@ const DeleteDepartmentModal = ({ open, onOpenChange, department }: DeleteDepartm
             
             <div className="bg-gray-50 p-3 rounded-lg">
               <p className="text-sm font-medium text-gray-900">{department.name}</p>
-              <p className="text-xs text-gray-600">{department.description || 'No description'}</p>
+              <p className="text-xs text-gray-600">{department.description || ''}</p>
               {department.total_members !== undefined && (
                 <p className="text-xs text-gray-500 mt-1">Members: {department.total_members}</p>
               )}

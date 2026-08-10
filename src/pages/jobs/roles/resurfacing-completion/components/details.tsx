@@ -209,7 +209,7 @@ export function ResurfacingStatusDetailsPage() {
                 </a>
               </div>
             }
-            description={fab?.job_details?.description || 'No description available'}
+            description={fab?.job_details?.description || ''}
           />
           <span
             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${{

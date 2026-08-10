@@ -90,7 +90,7 @@ const DepartmentCard = () => {
                                     </Link>
                                 </div>
                                 <p className="text-xs text-text-foreground flex-grow">
-                                    {dept.description || 'No description available'}
+                                    {dept.description || ''}
                                 </p>
                             </div>
 

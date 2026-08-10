@@ -49,7 +49,7 @@ export function DepartmentDetailsPage() {
                 <Toolbar className="">
                     <ToolbarHeading 
                         title={department.name} 
-                        description={department.description || 'No description available'} 
+                        description={department.description || ''} 
                     />
                     <ToolbarActions>
                         <BackButton />
