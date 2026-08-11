@@ -462,7 +462,7 @@ const JobFormSheet = ({
                               <SelectValue
                                 placeholder={
                                   salesPersonsLoading
-                                    ? "Loading sales persons..."
+                                    ? "Loading sales person..."
                                     : "Select Sales Person"
                                 }
                               >
@@ -489,7 +489,7 @@ const JobFormSheet = ({
 
                             {!salesPersonsLoading && salesPersons.length === 0 && (
                               <div className="px-2 py-1.5 text-sm text-muted-foreground text-center">
-                                No sales persons available
+                                No sales person available
                               </div>
                             )}
                           </SelectContent>

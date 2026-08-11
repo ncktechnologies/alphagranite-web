@@ -274,7 +274,7 @@ export const SubmissionModal = ({
               name="mentions"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Sales persons</FormLabel>
+                  <FormLabel>Sales person</FormLabel>
                   <Select onValueChange={field.onChange} value={field.value || (fabData?.sales_person_id ? String(fabData.sales_person_id) : '')}>
                     <FormControl>
                       <SelectTrigger>

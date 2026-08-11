@@ -95,6 +95,7 @@ interface JobTableProps {
     canToggleOnHold?: boolean;
     canViewTemplaterTimer?: boolean;
     canViewInstallerTimer?: boolean;
+    noteStage?: string;
 }
 
 export const JobTable = ({
@@ -151,6 +152,7 @@ export const JobTable = ({
     canToggleOnHold = false,
     canViewTemplaterTimer = false,
     canViewInstallerTimer = false,
+    noteStage,
 }: JobTableProps) => {
     const [localSelectedRows, setLocalSelectedRows] = useState<string[]>([]);
     const [localPagination, setLocalPagination] = useState<PaginationState>({
@@ -356,6 +358,12 @@ export const JobTable = ({
         }
     };
 
+    const resolvedNoteStage = useMemo(() => {
+        if (noteStage) return noteStage;
+        if (path === 'final-programming') return 'final_programming';
+        return undefined;
+    }, [noteStage, path]);
+
     const baseColumns = useMemo<ColumnDef<IJob>[]>(() => [
         // Checkbox column
         {
@@ -392,7 +400,7 @@ export const JobTable = ({
             header: '',
             cell: ({ row }) => customActionsColumn
                 ? customActionsColumn(row.original)
-                : <ActionsCell row={row} onView={() => handleView(row.original)} pageRole={pageRole} canAddNote={canAddNote} />,
+                : <ActionsCell row={row} onView={() => handleView(row.original)} pageRole={pageRole} canAddNote={canAddNote} noteStage={resolvedNoteStage} />,
             enableSorting: false,
             size: 60,
         },

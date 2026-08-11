@@ -580,7 +580,7 @@ export const CutListTable = ({
                                         <SelectValue placeholder="Sales Person" />
                                     </SelectTrigger>
                                     <SelectContent className="max-h-[200px] overflow-y-auto">
-                                        <SelectItem value="all">All Sales Persons</SelectItem>
+                                        <SelectItem value="all">All Sales Person</SelectItem>
                                         <SelectItem value="no_sales_person">No Sales Person</SelectItem>
                                         {salesPersons.map((person) => (
                                             <SelectItem key={person || 'unknown'} value={person || 'unknown'}>

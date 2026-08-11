@@ -45,9 +45,10 @@ interface ActionsCellProps {
   onView?: () => void;
   pageRole?: 'templater' | 'installer';
   canAddNote?: boolean;
+  noteStage?: string;
 }
 
-function ActionsCell({ row, onView, pageRole, canAddNote = false}: ActionsCellProps) {
+function ActionsCell({ row, onView, pageRole, canAddNote = false, noteStage }: ActionsCellProps) {
   const bulletin = row.original;
   const isSuperAdmin = useIsSuperAdmin();
   const navigate = useNavigate();
@@ -78,7 +79,7 @@ function ActionsCell({ row, onView, pageRole, canAddNote = false}: ActionsCellPr
       await createFabNote({
         fab_id: parseInt(fabId),
         note,
-        stage: currentStage,
+        stage: noteStage ?? currentStage,
       }).unwrap();
     } catch (error) {
       console.error('Error creating note:', error);

@@ -1,6 +1,6 @@
 import { Row } from '@tanstack/react-table';
 import { toast } from 'sonner';
-import { EllipsisVertical, Eye, MessageSquare, CalendarDays, Plus, Sparkles } from 'lucide-react';
+import { EllipsisVertical, Eye, MessageSquare, CalendarDays, Plus, Sparkles, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -9,12 +9,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useState } from 'react';
-import { ShopData } from './shop';
 import { useNavigate } from 'react-router';
+import { useCompleteFinalProgrammingMutation } from '@/store/api/job';
 
 interface ActionsCellProps {
-  row: Row<ShopData>;
+  row: Row<any>;
   onView?: () => void;
   /** Navigate to the calendar page locked to this fab's ID */
   onViewCalendar?: (fabId: string) => void;
@@ -25,9 +24,32 @@ interface ActionsCellProps {
   onAutoSchedule?: (fabId: string) => void;
 }
 
-function ActionsCell({ row, onView, onViewCalendar, onCreatePlan, onAddNote, onAutoSchedule }: ActionsCellProps) {
+function ActionsCell({ row, onViewCalendar, onCreatePlan, onAddNote, onAutoSchedule }: ActionsCellProps) {
   const fabId = String(row.original.id ?? row.original.fab_id ?? '');
   const navigate = useNavigate();
+  const [completeFinalProgramming] = useCompleteFinalProgrammingMutation();
+  const rowData = row.original as any;
+  const isFinalProgrammingCompleted = Boolean(
+    rowData?.final_programming_complete ||
+    rowData?.final_programming_completed_date ||
+    rowData?.fp_completed === 'Yes'
+  );
+
+  const handleUnmarkFinalProgrammingComplete = async () => {
+    if (!fabId) return;
+
+    try {
+      await completeFinalProgramming({
+        fab_id: Number(fabId),
+        data: { final_programming_complete: false },
+      }).unwrap();
+      toast.success('Final programming marked as not complete');
+    } catch (error) {
+      console.error('Failed to unmark final programming complete:', error);
+      toast.error('Failed to unmark final programming complete');
+    }
+  };
+
   return (
     <div className="flex space-x-1">
       <DropdownMenu>
@@ -71,6 +93,21 @@ function ActionsCell({ row, onView, onViewCalendar, onCreatePlan, onAddNote, onA
               <Sparkles className="mr-2 h-4 w-4" />
               Auto Schedule
             </DropdownMenuItem>
+          )}
+
+          {isFinalProgrammingCompleted && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleUnmarkFinalProgrammingComplete();
+                }}
+              >
+                <Undo2 className="mr-2 h-4 w-4" />
+                Unmark Final Programming Complete
+              </DropdownMenuItem>
+            </>
           )}
 
           {onAddNote && (
