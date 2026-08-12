@@ -1,6 +1,6 @@
 import { Row } from '@tanstack/react-table';
 import { toast } from 'sonner';
-import { EllipsisVertical, Eye, MessageSquare, CalendarDays, Plus, Sparkles, Undo2 } from 'lucide-react';
+import { EllipsisVertical, Eye, MessageSquare, CalendarDays, Plus, Sparkles, Undo2, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,12 +15,9 @@ import { useCompleteFinalProgrammingMutation } from '@/store/api/job';
 interface ActionsCellProps {
   row: Row<any>;
   onView?: () => void;
-  /** Navigate to the calendar page locked to this fab's ID */
   onViewCalendar?: (fabId: string) => void;
-  /** Open the Create Plan page pre-filled with this fab's ID */
   onCreatePlan?: (fabId: string) => void;
   onAddNote?: (fabId: string) => void;
-  /** Auto-schedule the fab based on its current cut stages and shop availability */
   onAutoSchedule?: (fabId: string) => void;
 }
 
@@ -29,14 +26,30 @@ function ActionsCell({ row, onViewCalendar, onCreatePlan, onAddNote, onAutoSched
   const navigate = useNavigate();
   const [completeFinalProgramming] = useCompleteFinalProgrammingMutation();
   const rowData = row.original as any;
+
+  // Determine current stage (normalise to lowercase for comparison)
+  const currentStage = rowData?.current_stage?.toLowerCase() || '';
+
+  // Check if already completed
   const isFinalProgrammingCompleted = Boolean(
     rowData?.final_programming_complete ||
     rowData?.final_programming_completed_date ||
     rowData?.fp_completed === 'Yes'
   );
 
-  const handleUnmarkFinalProgrammingComplete = async () => {
+  // Allowed stages for marking as complete
+  const allowedStagesForComplete = ['cutlist', 'final_programming'];
+
+ 
+  // Handler: Unmark (set back to incomplete)
+  const handleUnmarkComplete = async () => {
     if (!fabId) return;
+
+    // Stricter rule: only allow unmark if current stage is 'cutlist'
+    if (currentStage !== 'cutlist') {
+      toast.error('Only jobs in Cutlist stage can be unmarked as complete.');
+      return;
+    }
 
     try {
       await completeFinalProgramming({
@@ -59,6 +72,7 @@ function ActionsCell({ row, onViewCalendar, onCreatePlan, onAddNote, onAutoSched
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          {/* View Details */}
           <DropdownMenuItem
             onClick={(e) => {
               e.stopPropagation();
@@ -69,6 +83,7 @@ function ActionsCell({ row, onViewCalendar, onCreatePlan, onAddNote, onAutoSched
             View Details
           </DropdownMenuItem>
 
+          {/* View Calendar */}
           {onViewCalendar && (
             <DropdownMenuItem
               onClick={(e) => { e.stopPropagation(); onViewCalendar(fabId); }}
@@ -78,6 +93,7 @@ function ActionsCell({ row, onViewCalendar, onCreatePlan, onAddNote, onAutoSched
             </DropdownMenuItem>
           )}
 
+          {/* Create Plan */}
           {onCreatePlan && (
             <DropdownMenuItem
               onClick={(e) => { e.stopPropagation(); onCreatePlan(fabId); }}
@@ -86,6 +102,8 @@ function ActionsCell({ row, onViewCalendar, onCreatePlan, onAddNote, onAutoSched
               Create Plan
             </DropdownMenuItem>
           )}
+
+          {/* Auto Schedule */}
           {onAutoSchedule && (
             <DropdownMenuItem
               onClick={(e) => { e.stopPropagation(); onAutoSchedule(fabId); }}
@@ -95,13 +113,13 @@ function ActionsCell({ row, onViewCalendar, onCreatePlan, onAddNote, onAutoSched
             </DropdownMenuItem>
           )}
 
-          {isFinalProgrammingCompleted && (
+          {isFinalProgrammingCompleted && currentStage === 'cutlist' && (
             <>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleUnmarkFinalProgrammingComplete();
+                  handleUnmarkComplete();
                 }}
               >
                 <Undo2 className="mr-2 h-4 w-4" />
@@ -110,6 +128,7 @@ function ActionsCell({ row, onViewCalendar, onCreatePlan, onAddNote, onAutoSched
             </>
           )}
 
+          {/* Add Note (always visible) */}
           {onAddNote && (
             <>
               <DropdownMenuSeparator />

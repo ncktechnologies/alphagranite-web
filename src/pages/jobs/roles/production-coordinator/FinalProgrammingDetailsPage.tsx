@@ -171,7 +171,7 @@ export function FinalProgrammingDetailsPage() {
     }
   }, [fabData, fabId, currentEmployeeId, isSuperAdmin, manageFinalProgrammingSession, refetchFPSession]);
 
-  const handlePause = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
+  const handlePause = useCallback(async (data?: { note?: string; sqft_completed?: string }) => {
     // Authorization check: must be drafter_id or super admin
     const assignedDrafterId = fabData?.draft_data?.drafter_id;
     if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
@@ -184,7 +184,7 @@ export function FinalProgrammingDetailsPage() {
     try {
       await manageFinalProgrammingSession({
         fab_id: fabId,
-        data: { action: 'pause', note: noteText, sqft_drafted: data?.sqft_drafted, timestamp: new Date().toISOString() }
+        data: { action: 'pause', note: noteText, sqft_completed: data?.sqft_completed, timestamp: new Date().toISOString() }
       }).unwrap();
       setIsPaused(true);
       await refetchFPSession();
@@ -195,7 +195,7 @@ export function FinalProgrammingDetailsPage() {
     }
   }, [fabData, fabId, currentEmployeeId, isSuperAdmin, manageFinalProgrammingSession, refetchFPSession]);
 
-  const handleResume = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
+  const handleResume = useCallback(async (data?: { note?: string; sqft_completed?: string }) => {
     // Authorization check: must be drafter_id or super admin
     const assignedDrafterId = fabData?.draft_data?.drafter_id;
     if (!isSuperAdmin && currentEmployeeId !== assignedDrafterId) {
@@ -208,7 +208,7 @@ export function FinalProgrammingDetailsPage() {
     try {
       await manageFinalProgrammingSession({
         fab_id: fabId,
-        data: { action: 'resume', note: noteText, sqft_drafted: data?.sqft_drafted, timestamp: new Date().toISOString() }
+        data: { action: 'resume', note: noteText, sqft_completed: data?.sqft_completed, timestamp: new Date().toISOString() }
       }).unwrap();
       setIsPaused(false);
       await refetchFPSession();
@@ -243,7 +243,7 @@ export function FinalProgrammingDetailsPage() {
     }
   }, [fabData, fabId, currentEmployeeId, isSuperAdmin, manageFinalProgrammingSession, refetchFPSession]);
 
-  const handleOnHold = useCallback(async (data?: { note?: string; sqft_drafted?: string }) => {
+  const handleOnHold = useCallback(async (data?: { note?: string; sqft_completed?: string }) => {
     const noteText = data?.note?.trim();
 
     try {
@@ -253,7 +253,7 @@ export function FinalProgrammingDetailsPage() {
       }
       await manageFinalProgrammingSession({
         fab_id: fabId,
-        data: { action: 'pause', note: data?.note ? `[On Hold] ${data.note}` : '[On Hold]', sqft_drafted: data?.sqft_drafted, timestamp: new Date().toISOString() }
+        data: { action: 'pause', note: data?.note ? `[On Hold] ${data.note}` : '[On Hold]', sqft_completed: data?.sqft_completed, timestamp: new Date().toISOString() }
       }).unwrap();
       setIsPaused(true);
       await refetchFPSession();
