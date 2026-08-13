@@ -289,7 +289,7 @@ export const RevisionModal = ({
             <p className="font-semibold leading-[28px] text-base text-text">{totalSqFt}</p>
           </div>
           <div>
-            <p className="text-text-foreground">Sales person</p>
+            <p className="text-text-foreground">Sales Person</p>
             <p className="font-semibold leading-[28px] text-base text-text">
               {fabSalesPerson || 'Not assigned'}
             </p>
@@ -358,7 +358,7 @@ export const RevisionModal = ({
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel>
-                      I confirm that I have uploaded the required SCT files for this revision.
+                      Files uploaded (or check if none)
                     </FormLabel>
                     <FormMessage />
                   </div>

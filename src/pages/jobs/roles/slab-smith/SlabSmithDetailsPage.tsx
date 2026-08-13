@@ -197,7 +197,7 @@ export function SlabSmithDetailsPage() {
         data: {
           action: 'pause',
           note: noteText,
-          sqft_completed: data?.sqft_drafted,
+          sqft_completed: Number(data?.sqft_drafted),
           timestamp: new Date().toISOString(),
         },
       }).unwrap();
@@ -226,7 +226,7 @@ export function SlabSmithDetailsPage() {
         data: {
           action: 'resume',
           note: noteText,
-          sqft_completed: data?.sqft_drafted,
+          sqft_completed: Number(data?.sqft_drafted),
           timestamp: new Date().toISOString(),
         },
       }).unwrap();
@@ -263,7 +263,7 @@ export function SlabSmithDetailsPage() {
         data: {
           action: 'pause',
           note: noteText,
-          sqft_completed: data?.sqft_drafted,
+          sqft_completed: Number(data?.sqft_drafted),
           timestamp: new Date().toISOString(),
         },
       }).unwrap();
