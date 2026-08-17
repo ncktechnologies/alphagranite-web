@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from '@/hooks/useTranslation';
-import { ChevronLeft, ChevronRight, Clock, MapPin, FileText, Rows3, Columns3 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, MapPin, FileText, Rows3, Columns3, Calendar as CalendarIcon } from 'lucide-react';
 import {
     format,
     addDays,
@@ -14,9 +14,16 @@ import {
     endOfMonth,
     eachDayOfInterval,
     getMonth,
-    isToday,
 } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+    TooltipProvider,
+} from '@/components/ui/tooltip';
+import { Calendar } from '@/components/ui/calendar';
 import { WorkstationToggle } from './components/WorkstationToggle';
 import { useGetCurrentOperatorTasksQuery, useGetOperatorWorkstationsQuery } from '@/store/api/operator';
 import { useSelector } from 'react-redux';
@@ -73,12 +80,41 @@ const setHoursLocal = (date: Date, hours: number) => {
 export function OperatorDashboard() {
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const currentUser = useSelector((s: any) => s.user.user);
     const currentEmployeeId = currentUser?.employee_id || currentUser?.id;
 
-    const [currentDate, setCurrentDate] = useState(new Date());
-    const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
+    const getInitialDate = () => {
+        const dateParam = searchParams.get('date');
+        if (dateParam) {
+            const parsed = new Date(dateParam);
+            if (!Number.isNaN(parsed.getTime())) return parsed;
+        }
+        return new Date();
+    };
+
+    const getInitialViewMode = (): 'day' | 'week' | 'month' => {
+        const viewParam = searchParams.get('view');
+        return viewParam === 'day' || viewParam === 'week' || viewParam === 'month' ? viewParam : 'day';
+    };
+
+    const [currentDate, setCurrentDate] = useState(getInitialDate);
+    const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>(getInitialViewMode);
     const [selectedWorkstation, setSelectedWorkstation] = useState<number | null>(null);
+
+    useEffect(() => {
+        const nextView = viewMode;
+        const nextDate = format(currentDate, 'yyyy-MM-dd');
+        const currentView = searchParams.get('view');
+        const currentDateValue = searchParams.get('date');
+
+        if (currentView !== nextView || currentDateValue !== nextDate) {
+            const nextParams = new URLSearchParams(searchParams);
+            nextParams.set('view', nextView);
+            nextParams.set('date', nextDate);
+            setSearchParams(nextParams, { replace: true });
+        }
+    }, [currentDate, viewMode, searchParams, setSearchParams]);
 
     const { data: workstationsData, isLoading: isWorkstationsLoading } =
         useGetOperatorWorkstationsQuery(
@@ -86,7 +122,7 @@ export function OperatorDashboard() {
             { skip: !currentEmployeeId }
         );
 
-    const { data: tasksData, isLoading: isTasksLoading } =
+    const { data: tasksData, isLoading: isTasksLoading, isFetching: isTasksFetching } =
         useGetCurrentOperatorTasksQuery(
             { view: viewMode, reference_date: format(currentDate, 'yyyy-MM-dd') },
             { skip: !currentEmployeeId }
@@ -276,86 +312,85 @@ export function OperatorDashboard() {
             ? format(new Date(new Date(event.scheduled_start_date).getTime() + event.estimated_hours * 3_600_000), 'h:mma')
             : null;
 
+        // Use percentage-based left/width so tooltip positioning matches shop calendar
         return (
-            <div
-                key={`${event.task_id || event.id}`}
-                className="absolute cursor-pointer rounded-[8px] border overflow-hidden transition-opacity hover:opacity-90 select-none"
-                style={{
-                    left: event._left + 2,
-                    width: event._width - 4,
-                    top: event._top + 2,
-                    height: event._height,
-                    backgroundColor: bg,
-                    borderColor: finalBorderColor,
-                    borderWidth: event.has_pending_shop_revision ? 2 : 1,
-                }}
-                onClick={(e) => { e.stopPropagation(); handleEventClick(event); }}
-            >
-                <div className="px-2 py-1 h-full flex flex-col justify-start overflow-hidden gap-0.5">
-                    {/* {event._isSplitPart && (
-                        <div className="text-[8px] font-semibold uppercase" style={{ color: text, opacity: 0.6 }}>
-                            (Continued)
-                        </div>
-                    )} */}
-                    <div className="flex items-center gap-1">
-                        <p className="text-[12px] font-bold truncate leading-tight shrink-0" style={{ color: text }}>
-                            {event.fab_id}
-                        </p>
-                        {event.job_name && (
-                            <p className="text-[11px] font-medium truncate leading-tight" style={{ color: text, opacity: 0.85 }}>
-                                · {event.job_name}
-                            </p>
-                        )}
-                    </div>
-
-                    {event.account_name && (
-                        <p className="text-[10px] truncate leading-tight" style={{ color: text, opacity: 0.7 }}>
-                            {event.account_name}
-                        </p>
-                    )}
-
-                    {event._height > 44 && (
-                        <div className="flex items-center gap-1.5">
-                            {event.workstation_name && (
-                                <span className="text-[9px] font-semibold px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.5)', color: text }}>
-                                    {event.workstation_name}
-                                </span>
-                            )}
-                            {event.planning_section_name && (
-                                <span className="text-[9px] truncate" style={{ color: text, opacity: 0.65 }}>
-                                    {event.planning_section_name}
-                                </span>
-                            )}
-                        </div>
-                    )}
-
-                    {event._height > 58 && startTime && (
-                        <p className="text-[9px] leading-tight" style={{ color: text, opacity: 0.6 }}>
-                            {startTime}{endTime ? ` – ${endTime}` : ''}
-                            {event.estimated_hours ? ` · ${event.estimated_hours}h` : ''}
-                            {event._isSplitPart && event._originalHours && (
-                                <span className="text-[8px] ml-1" style={{ opacity: 0.5 }}>
-                                    (of {event._originalHours}h)
-                                </span>
-                            )}
-                        </p>
-                    )}
-
-                    {event._height > 68 && event.work_percentage > 0 && (
-                        <div className="flex items-center gap-1 mt-0.5">
-                            <div className="flex-1 bg-white/50 rounded-full h-1">
-                                <div
-                                    className="h-1 rounded-full"
-                                    style={{ width: `${event.work_percentage}%`, backgroundColor: text }}
-                                />
+            <Tooltip key={`${event.task_id || event.id}`} delayDuration={300}>
+                <TooltipTrigger asChild>
+                    <div
+                        className="absolute cursor-pointer rounded-[8px] border overflow-hidden transition-opacity hover:opacity-90 select-none"
+                        style={{
+                            left: event._left + 'px',
+                            width: Math.max(event._width, 20) + 'px',
+                            top: event._top + 2,
+                            height: event._height,
+                            backgroundColor: bg,
+                            borderColor: finalBorderColor,
+                            borderWidth: event.has_pending_shop_revision ? 2 : 1,
+                        }}
+                        onClick={(e) => { e.stopPropagation(); handleEventClick(event); }}
+                    >
+                        <div className="px-2 py-1 h-full flex flex-col justify-start overflow-hidden gap-0.5">
+                            <div className="flex items-center gap-1">
+                                <p className="text-[12px] font-bold truncate leading-tight shrink-0" style={{ color: text }}>
+                                    {event.fab_id}
+                                </p>
+                                {event.job_name && (
+                                    <p className="text-[11px] font-medium truncate leading-tight" style={{ color: text, opacity: 0.85 }}>
+                                        · {event.job_name}
+                                    </p>
+                                )}
                             </div>
-                            <span className="text-[9px] font-medium" style={{ color: text }}>
-                                {event.work_percentage}%
-                            </span>
+                            {event.account_name && (
+                                <p className="text-[10px] truncate leading-tight" style={{ color: text, opacity: 0.7 }}>
+                                    {event.account_name}
+                                </p>
+                            )}
+                            {event._height > 44 && (
+                                <div className="flex items-center gap-1.5">
+                                    {event.workstation_name && (
+                                        <span className="text-[9px] font-semibold px-1 py-0.5 rounded" style={{ backgroundColor: 'rgba(255,255,255,0.5)', color: text }}>
+                                            {event.workstation_name}
+                                        </span>
+                                    )}
+                                    {event.planning_section_name && (
+                                        <span className="text-[9px] truncate" style={{ color: text, opacity: 0.65 }}>
+                                            {event.planning_section_name}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+                            {event._height > 58 && startTime && (
+                                <p className="text-[9px] leading-tight" style={{ color: text, opacity: 0.6 }}>
+                                    {startTime}{endTime ? ` – ${endTime}` : ''}
+                                    {event.estimated_hours ? ` · ${event.estimated_hours}h` : ''}
+                                </p>
+                            )}
+                            {event._height > 68 && event.work_percentage > 0 && (
+                                <div className="flex items-center gap-1 mt-0.5">
+                                    <div className="flex-1 bg-white/50 rounded-full h-1">
+                                        <div className="h-1 rounded-full" style={{ width: `${event.work_percentage}%`, backgroundColor: text }} />
+                                    </div>
+                                    <span className="text-[9px] font-medium" style={{ color: text }}>{event.work_percentage}%</span>
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
-            </div>
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent side="center" sideOffset={6} className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700">
+                    <div className="space-y-1">
+                        <p><span className="font-semibold">FAB ID:</span> {event.fab_id}</p>
+                        <p><span className="font-semibold">Operator:</span> {event.operator_name || 'N/A'}</p>
+                        <p><span className="font-semibold">Workstation:</span> {event.workstation_name || 'N/A'}</p>
+                        <p><span className="font-semibold">Est. Hours:</span> {event.estimated_hours ?? 'N/A'}</p>
+                        <p><span className="font-semibold">% Complete:</span> {event.work_percentage ?? 0}%</p>
+                        <p><span className="font-semibold">Job:</span> {`${event.job_name}-${event.job_number}` || 'N/A'}</p>
+                        <p><span className="font-semibold">Job No:</span> {event.job_number || 'N/A'}</p>
+                        <p><span className="font-semibold">Account Name:</span> {event.account_name || 'N/A'}</p>
+                        <p><span className="font-semibold">Plan:</span> {event.planning_section_name}</p>
+                        {event.notes && <p><span className="font-semibold">Notes:</span> {event.notes}</p>}
+                    </div>
+                </TooltipContent>
+            </Tooltip>
         );
     }, [handleEventClick]);
 
@@ -372,13 +407,13 @@ export function OperatorDashboard() {
     const workstationCount = selectedWorkstation ? 1 : (workstationsData as any)?.data?.length || 0;
 
     // Generate hours to display (skip break hour)
-    const hoursToRender = [];
+    const hoursToRender: number[] = [];
     for (let h = DAY_START_HOUR; h < DAY_END_HOUR; h++) {
         if (h === BREAK_START_HOUR) continue;
         hoursToRender.push(h);
     }
 
-    if (isTasksLoading) {
+    if (isTasksLoading || isTasksFetching) {
         return (
             <div className="bg-white min-h-screen">
                 <div className="border-b border-[#dfdfdf]">
@@ -387,25 +422,59 @@ export function OperatorDashboard() {
                         <Skeleton className="h-[24px] w-[400px]" />
                     </div>
                 </div>
-                <div className="p-6 space-y-4">
-                    <Skeleton className="h-[100px] w-full" />
-                    <Skeleton className="h-[600px] w-full" />
+                <div className="p-6">
+                    <div className="flex items-center justify-center py-12">
+                        <p className="text-[#7c8689]">Loading calendar events...</p>
+                    </div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="bg-white min-h-screen">
-            {/* Header */}
-            <div className="border-b border-[#dfdfdf]">
-                <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
-                    <div className="flex flex-col gap-2">
-                        <p className="text-[28px] leading-[32px] text-black font-semibold">
-                            {t('OPERATOR.MY_SCHEDULE')}
-                        </p>
-                        <p className="text-[20px] leading-[24px] text-[#4a4d59] font-semibold">{calLabel}</p>
+        <TooltipProvider>
+            <div className="bg-white min-h-screen">
+                {/* Header */}
+                <div className="border-b border-[#dfdfdf]">
+                    <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
+                        <div className="flex flex-col gap-2">
+                            <p className="text-[28px] leading-[32px] text-black font-semibold">
+                                {t('OPERATOR.MY_SCHEDULE')}
+                            </p>
+                        </div>
+
+                        {!isWorkstationsLoading && workstationsData && (
+                            <WorkstationToggle
+                                workstations={Array.isArray(workstationsData) ? workstationsData : (workstationsData as any)?.data || []}
+                                selectedWorkstation={selectedWorkstation}
+                                onSelect={setSelectedWorkstation}
+                            />
+                        )}
                     </div>
+
+                    <div className="flex items-center px-10 h-[65px]">
+                        <div className="bg-[#f9f9f9] h-[45px] rounded-[6px] flex items-start pt-[4px] px-[4px] gap-2">
+                            {(['day', 'week', 'month'] as const).map((mode) => (
+                                <button
+                                    key={mode}
+                                    onClick={() => setViewMode(mode)}
+                                    className={`px-[15px] py-[8px] rounded-[4px] font-['Proxima_Nova:Semibold',sans-serif] text-[14px] leading-[21px] font-semibold capitalize transition-all ${viewMode === mode
+                                        ? 'bg-white text-black shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]'
+                                        : 'text-[#78829d]'
+                                        }`}
+                                >
+                                    {mode === 'day' && <Columns3 className="w-4 h-4 inline-block mr-1" />}
+                                    {mode === 'week' && <Rows3 className="w-4 h-4 inline-block mr-1" />}
+                                    {mode}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="p-6 space-y-4">
+                    {/* Workstation filter */}
+
 
                     <div className="flex items-center gap-3">
                         <button
@@ -414,6 +483,25 @@ export function OperatorDashboard() {
                         >
                             <ChevronLeft className="h-4 w-4" />
                         </button>
+
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <button className="flex items-center gap-3 rounded-[6px] border border-[#e2e4ed] bg-white px-3 py-2 hover:bg-gray-50">
+                                    <CalendarIcon className="size-5 text-[#4b545d]" strokeWidth={2} />
+                                    <span className="text-[20px] leading-[24px] text-[#4a4d59] font-semibold whitespace-nowrap">
+                                        {calLabel}
+                                    </span>
+                                </button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={currentDate}
+                                    onSelect={(date) => date && setCurrentDate(date)}
+                                />
+                            </PopoverContent>
+                        </Popover>
+
                         <button
                             onClick={handleNext}
                             className="h-8 w-8 rounded-[6px] border border-[#e2e4ed] flex items-center justify-center hover:bg-gray-50"
@@ -430,231 +518,203 @@ export function OperatorDashboard() {
                                 {t('COMMON.TODAY')}
                             </button>
                         )}
-
-                        <div className="flex items-center gap-1 border border-[#e2e4ed] rounded-[8px] p-1 bg-white">
-                            {(['day', 'week', 'month'] as const).map((mode) => (
-                                <button
-                                    key={mode}
-                                    onClick={() => setViewMode(mode)}
-                                    className={`flex items-center gap-1.5 px-3 py-2 rounded-[6px] text-[13px] font-medium transition-all capitalize ${viewMode === mode
-                                        ? 'bg-[#7a9705] text-white'
-                                        : 'text-[#4b545d] hover:bg-gray-50'
-                                        }`}
-                                >
-                                    {mode === 'day' && <Columns3 className="w-4 h-4" />}
-                                    {mode === 'week' && <Rows3 className="w-4 h-4" />}
-                                    {t(`CALENDAR.VIEW.${mode.toUpperCase()}`)}
-                                </button>
-                            ))}
-                        </div>
                     </div>
-                </div>
-            </div>
 
-            <div className="p-6 space-y-4">
-                {/* Workstation filter */}
-                {!isWorkstationsLoading && workstationsData && (
-                    <WorkstationToggle
-                        workstations={Array.isArray(workstationsData) ? workstationsData : (workstationsData as any)?.data || []}
-                        selectedWorkstation={selectedWorkstation}
-                        onSelect={setSelectedWorkstation}
-                    />
-                )}
+                    {/* Calendar grid */}
+                    <div className="bg-white border border-[#e2e4ed] rounded-[8px] overflow-auto">
 
-                {/* Calendar grid */}
-                <div className="bg-white border border-[#e2e4ed] rounded-[8px] overflow-auto">
-
-                    {/* Day / Week view */}
-                    {(viewMode === 'day' || viewMode === 'week') && (
-                        <div style={{ minWidth: GRID_WIDTH }}>
-                            {/* Time header row with 6 PM label */}
-                            <div className="flex sticky top-0 z-10 bg-[#f9fafb] border-b border-[#e2e4ed]" style={{ minWidth: GRID_WIDTH }}>
-                                <div
-                                    className="flex-shrink-0 border-r border-[#e2e4ed]"
-                                    style={{ width: DATE_LABEL_WIDTH, height: TIME_LABEL_HEIGHT }}
-                                />
-                                <div className="relative" style={{ height: TIME_LABEL_HEIGHT, flex: 1 }}>
-                                    {hoursToRender.map((hour) => (
+                        {/* Day / Week view */}
+                        {(viewMode === 'day' || viewMode === 'week') && (
+                            <div style={{ minWidth: GRID_WIDTH }}>
+                                {/* Time header row with 6 PM label */}
+                                <div className="flex sticky top-0 z-10 bg-[#f9fafb] border-b border-[#e2e4ed]" style={{ minWidth: GRID_WIDTH }}>
+                                    <div
+                                        className="flex-shrink-0 border-r border-[#e2e4ed]"
+                                        style={{ width: DATE_LABEL_WIDTH, height: TIME_LABEL_HEIGHT }}
+                                    />
+                                    <div className="relative" style={{ height: TIME_LABEL_HEIGHT, flex: 1 }}>
+                                        {hoursToRender.map((hour) => (
+                                            <div
+                                                key={hour}
+                                                className="absolute text-[11px] text-[#7c8689] flex items-center justify-center font-medium"
+                                                style={{
+                                                    left: getTimePosition(hour),
+                                                    width: HOUR_WIDTH,
+                                                    height: TIME_LABEL_HEIGHT,
+                                                }}
+                                            >
+                                                {format(setHoursLocal(new Date(), hour), 'h a')}
+                                            </div>
+                                        ))}
+                                        {/* 6 PM label at the end */}
                                         <div
-                                            key={hour}
                                             className="absolute text-[11px] text-[#7c8689] flex items-center justify-center font-medium"
                                             style={{
-                                                left: getTimePosition(hour),
+                                                left: getTimePosition(DAY_END_HOUR),
                                                 width: HOUR_WIDTH,
                                                 height: TIME_LABEL_HEIGHT,
                                             }}
                                         >
-                                            {format(setHoursLocal(new Date(), hour), 'h a')}
+                                            {format(setHoursLocal(new Date(), DAY_END_HOUR), 'h a')}
                                         </div>
-                                    ))}
-                                    {/* 6 PM label at the end */}
-                                    <div
-                                        className="absolute text-[11px] text-[#7c8689] flex items-center justify-center font-medium"
-                                        style={{
-                                            left: getTimePosition(DAY_END_HOUR),
-                                            width: HOUR_WIDTH,
-                                            height: TIME_LABEL_HEIGHT,
-                                        }}
-                                    >
-                                        {format(setHoursLocal(new Date(), DAY_END_HOUR), 'h a')}
                                     </div>
                                 </div>
-                            </div>
 
-                            {/* One row per day */}
-                            {displayDays.map((day, dayIdx) => {
-                                const dateKey = format(day, 'yyyy-MM-dd');
-                                const events = eventsByDay[dateKey] || [];
-                                const eventsWithPositions = getEventsWithXPositions(events);
-                                const isToday = isSameDay(day, new Date());
+                                {/* One row per day */}
+                                {displayDays.map((day, dayIdx) => {
+                                    const dateKey = format(day, 'yyyy-MM-dd');
+                                    const events = eventsByDay[dateKey] || [];
+                                    const eventsWithPositions = getEventsWithXPositions(events);
+                                    const isToday = isSameDay(day, new Date());
 
-                                return (
-                                    <div
-                                        key={dayIdx}
-                                        className="flex border-b border-[#e2e4ed] last:border-b-0"
-                                        style={{ height: ROW_HEIGHT }}
-                                    >
+                                    return (
                                         <div
-                                            className={`flex-shrink-0 flex flex-col items-center justify-center border-r border-[#e2e4ed] px-2 ${isToday ? 'bg-[#f0f4e8]' : 'bg-[#f9fafb]'
-                                                }`}
-                                            style={{ width: DATE_LABEL_WIDTH }}
-                                        >
-                                            <span className={`text-[11px] font-semibold ${isToday ? 'text-[#7a9705]' : 'text-[#4b545d]'}`}>
-                                                {format(day, 'EEE')}
-                                            </span>
-                                            <span className={`text-[18px] font-bold leading-tight ${isToday ? 'text-[#7a9705]' : 'text-[#111827]'}`}>
-                                                {format(day, 'd')}
-                                            </span>
-                                        </div>
-
-                                        <div
-                                            className="relative flex-1"
+                                            key={dayIdx}
+                                            className="flex border-b border-[#e2e4ed] last:border-b-0"
                                             style={{ height: ROW_HEIGHT }}
                                         >
-                                            {hoursToRender.map((hour, idx) => {
-                                                const left = getTimePosition(hour);
-                                                return (
-                                                    <div
-                                                        key={idx}
-                                                        className="absolute top-0 bottom-0 border-r border-[#e2e4ed]"
-                                                        style={{ left }}
-                                                    />
-                                                );
-                                            })}
-                                            {/* Final grid line at 6 PM */}
                                             <div
-                                                className="absolute top-0 bottom-0 border-r border-[#e2e4ed]"
-                                                style={{ left: getTimePosition(DAY_END_HOUR) }}
-                                            />
-                                            {eventsWithPositions.map((event: any) => renderEventCard(event))}
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
-
-                    {/* Month view */}
-                    {viewMode === 'month' && (
-                        <div className="grid grid-cols-7 gap-px bg-[#e2e4ed]">
-                            {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day) => (
-                                <div key={day} className="bg-[#f9fafb] py-2 text-center text-[13px] font-semibold text-[#4b545d]">
-                                    {t(`CALENDAR.DAYS.${day}`)}
-                                </div>
-                            ))}
-                            {monthWeeks.map((week, weekIdx) => (
-                                <React.Fragment key={weekIdx}>
-                                    {week.map((day, dayIdx) => {
-                                        const dateKey = format(day, 'yyyy-MM-dd');
-                                        const events = eventsByDay[dateKey] || [];
-                                        const isCurrentMonth = day.getMonth() === getMonth(currentDate);
-                                        const isToday = isSameDay(day, new Date());
-
-                                        return (
-                                            <div
-                                                key={dayIdx}
-                                                className={`min-h-[120px] bg-white p-2 ${!isCurrentMonth ? 'bg-[#f9fafb]' : ''}`}
+                                                className={`flex-shrink-0 flex flex-col items-center justify-center border-r border-[#e2e4ed] px-2 ${isToday ? 'bg-[#f0f4e8]' : 'bg-[#f9fafb]'
+                                                    }`}
+                                                style={{ width: DATE_LABEL_WIDTH }}
                                             >
-                                                <div className={`text-[13px] mb-2 ${isToday ? 'text-[#7a9705] font-bold'
-                                                    : isCurrentMonth ? 'text-[#4b545d]'
-                                                        : 'text-[#9ca3af]'
-                                                    }`}>
+                                                <span className={`text-[11px] font-semibold ${isToday ? 'text-[#7a9705]' : 'text-[#4b545d]'}`}>
+                                                    {format(day, 'EEE')}
+                                                </span>
+                                                <span className={`text-[18px] font-bold leading-tight ${isToday ? 'text-[#7a9705]' : 'text-[#111827]'}`}>
                                                     {format(day, 'd')}
-                                                </div>
-                                                <div className="space-y-1">
-                                                    {events.slice(0, 3).map((event: any) => {
-                                                        const { bg, border, text } = getColorForFabType(event.fab_type);
-                                                        const cardBorderColor = event.has_pending_shop_revision ? '#ff0000' : border;
-
-                                                        return (
-                                                            <div
-                                                                key={event.task_id || event.id}
-                                                                className="text-[11px] px-2 py-1 rounded cursor-pointer truncate"
-                                                                style={{
-                                                                    backgroundColor: bg,
-                                                                    borderColor: cardBorderColor,
-                                                                    color: text,
-                                                                    borderWidth: event.has_pending_shop_revision ? 2 : 1,
-                                                                }}
-                                                                onClick={() => handleEventClick(event)}
-                                                            >
-                                                                <div className="font-medium truncate">
-                                                                    {event.fab_number || event.fab_id}
-                                                                </div>
-                                                                {event.plan_name && (
-                                                                    <div className="text-[9px] opacity-70 truncate">{event.plan_name}</div>
-                                                                )}
-                                                                {event.work_percentage > 0 && (
-                                                                    <div className="flex items-center gap-1 mt-0.5">
-                                                                        <div className="flex-1 bg-white/50 rounded-full h-1">
-                                                                            <div
-                                                                                className="h-1 rounded-full"
-                                                                                style={{ width: `${event.work_percentage}%`, backgroundColor: text }}
-                                                                            />
-                                                                        </div>
-                                                                        <span className="text-[8px] font-medium">{event.work_percentage}%</span>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        );
-                                                    })}
-                                                    {events.length > 3 && (
-                                                        <div className="text-[10px] text-[#7c8689] pl-2">
-                                                            {t('COMMON.MORE_COUNT', { count: events.length - 3 })}
-                                                        </div>
-                                                    )}
-                                                </div>
+                                                </span>
                                             </div>
-                                        );
-                                    })}
-                                </React.Fragment>
-                            ))}
-                        </div>
-                    )}
-                </div>
 
-                {/* Quick stats */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6">
-                    <div className="flex items-center gap-3 p-4 rounded-[8px] border border-[#e2e4ed] bg-white">
-                        <div className="h-10 w-10 rounded-[6px] bg-[#d5e7ff] flex items-center justify-center">
-                            <FileText className="w-5 h-5 text-[#2563eb]" />
-                        </div>
-                        <div>
-                            <p className="text-[13px] text-[#4b545d]">{t('OPERATOR.TOTAL_TASKS')}</p>
-                            <p className="text-2xl font-semibold text-black">{totalTasksCount}</p>
-                        </div>
+                                            <div
+                                                className="relative flex-1"
+                                                style={{ height: ROW_HEIGHT }}
+                                            >
+                                                {hoursToRender.map((hour, idx) => {
+                                                    const left = getTimePosition(hour);
+                                                    return (
+                                                        <div
+                                                            key={idx}
+                                                            className="absolute top-0 bottom-0 border-r border-[#e2e4ed]"
+                                                            style={{ left }}
+                                                        />
+                                                    );
+                                                })}
+                                                {/* Final grid line at 6 PM */}
+                                                <div
+                                                    className="absolute top-0 bottom-0 border-r border-[#e2e4ed]"
+                                                    style={{ left: getTimePosition(DAY_END_HOUR) }}
+                                                />
+                                                {eventsWithPositions.map((event: any) => renderEventCard(event))}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {/* Month view */}
+                        {viewMode === 'month' && (
+                            <div className="grid grid-cols-7 gap-px bg-[#e2e4ed]">
+                                {['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'].map((day) => (
+                                    <div key={day} className="bg-[#f9fafb] py-2 text-center text-[13px] font-semibold text-[#4b545d]">
+                                        {t(`CALENDAR.DAYS.${day}`)}
+                                    </div>
+                                ))}
+                                {monthWeeks.map((week, weekIdx) => (
+                                    <React.Fragment key={weekIdx}>
+                                        {week.map((day, dayIdx) => {
+                                            const dateKey = format(day, 'yyyy-MM-dd');
+                                            const events = eventsByDay[dateKey] || [];
+                                            const isCurrentMonth = day.getMonth() === getMonth(currentDate);
+                                            const isToday = isSameDay(day, new Date());
+
+                                            return (
+                                                <div
+                                                    key={dayIdx}
+                                                    className={`min-h-[120px] bg-white p-2 ${!isCurrentMonth ? 'bg-[#f9fafb]' : ''}`}
+                                                >
+                                                    <div className={`text-[13px] mb-2 ${isToday ? 'text-[#7a9705] font-bold'
+                                                        : isCurrentMonth ? 'text-[#4b545d]'
+                                                            : 'text-[#9ca3af]'
+                                                        }`}>
+                                                        {format(day, 'd')}
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        {events.slice(0, 3).map((event: any) => {
+                                                            const { bg, border, text } = getColorForFabType(event.fab_type);
+                                                            const cardBorderColor = event.has_pending_shop_revision ? '#ff0000' : border;
+
+                                                            return (
+                                                                <div
+                                                                    key={event.task_id || event.id}
+                                                                    className="text-[11px] px-2 py-1 rounded cursor-pointer truncate"
+                                                                    style={{
+                                                                        backgroundColor: bg,
+                                                                        borderColor: cardBorderColor,
+                                                                        color: text,
+                                                                        borderWidth: event.has_pending_shop_revision ? 2 : 1,
+                                                                    }}
+                                                                    onClick={() => handleEventClick(event)}
+                                                                >
+                                                                    <div className="font-medium truncate">
+                                                                        {event.fab_number || event.fab_id}
+                                                                    </div>
+                                                                    {event.plan_name && (
+                                                                        <div className="text-[9px] opacity-70 truncate">{event.plan_name}</div>
+                                                                    )}
+                                                                    {event.work_percentage > 0 && (
+                                                                        <div className="flex items-center gap-1 mt-0.5">
+                                                                            <div className="flex-1 bg-white/50 rounded-full h-1">
+                                                                                <div
+                                                                                    className="h-1 rounded-full"
+                                                                                    style={{ width: `${event.work_percentage}%`, backgroundColor: text }}
+                                                                                />
+                                                                            </div>
+                                                                            <span className="text-[8px] font-medium">{event.work_percentage}%</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            );
+                                                        })}
+                                                        {events.length > 3 && (
+                                                            <div className="text-[10px] text-[#7c8689] pl-2">
+                                                                {t('COMMON.MORE_COUNT', { count: events.length - 3 })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </React.Fragment>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                    <div className="flex items-center gap-3 p-4 rounded-[8px] border border-[#e2e4ed] bg-white">
-                        <div className="h-10 w-10 rounded-[6px] bg-[#f3e8ff] flex items-center justify-center">
-                            <MapPin className="w-5 h-5 text-[#7c3aed]" />
+
+                    {/* Quick stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-6">
+                        <div className="flex items-center gap-3 p-4 rounded-[8px] border border-[#e2e4ed] bg-white">
+                            <div className="h-10 w-10 rounded-[6px] bg-[#d5e7ff] flex items-center justify-center">
+                                <FileText className="w-5 h-5 text-[#2563eb]" />
+                            </div>
+                            <div>
+                                <p className="text-[13px] text-[#4b545d]">{t('OPERATOR.TOTAL_TASKS')}</p>
+                                <p className="text-2xl font-semibold text-black">{totalTasksCount}</p>
+                            </div>
                         </div>
-                        <div>
-                            <p className="text-[13px] text-[#4b545d]">{t('OPERATOR.WORKSTATIONS')}</p>
-                            <p className="text-2xl font-semibold text-black">{workstationCount}</p>
+                        <div className="flex items-center gap-3 p-4 rounded-[8px] border border-[#e2e4ed] bg-white">
+                            <div className="h-10 w-10 rounded-[6px] bg-[#f3e8ff] flex items-center justify-center">
+                                <MapPin className="w-5 h-5 text-[#7c3aed]" />
+                            </div>
+                            <div>
+                                <p className="text-[13px] text-[#4b545d]">{t('OPERATOR.WORKSTATIONS')}</p>
+                                <p className="text-2xl font-semibold text-black">{workstationCount}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </TooltipProvider>
     );
 }

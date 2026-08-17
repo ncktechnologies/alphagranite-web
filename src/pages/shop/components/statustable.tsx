@@ -544,8 +544,8 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 };
 
                 const dayDisplay = dk !== 'unscheduled'
-                    ? format(new Date(dk), 'EEEE, MMMM d yyyy').toUpperCase()
-                    : 'UNSCHEDULED';
+                    ? format(new Date(dk), 'EEE MM/dd/yyyy')
+                    : '';
 
                 return { dayKey: dk, dayDisplay, parents, totals: dayTotals };
             });
@@ -597,12 +597,12 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             accessorFn: (r) => r.type === 'fab' ? r.data.shop_est_completion_date : null,
             header: ({ column }) => <DataGridColumnHeader title="EST. COMPLETION DATE" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
             cell: ({ row }) => {
-                if (row.original.type === 'fab') {
-                    const date = row.original.data.shop_est_completion_date;
-                    return <span className="text-sm text-[#4b545d]">{date ? format(new Date(date), 'MM/dd/yyyy') : '-'}</span>;
-                }
+                // if (row.original.type === 'fab') {
+                //     const date = row.original.data.shop_est_completion_date;
+                //     return <span className="text-sm text-[#4b545d] font-semibold">{date ? format(new Date(date), 'EEE MM/dd/yyyy') : '-'}</span>;
+                // }
                 if (row.original.type === 'plan') {
-                    return <span className="text-xs text-gray-500 pl-4">{row.original.plan.plan_name} · {row.original.plan.workstation_name} · {row.original.plan.operator_name}</span>;
+                    return <span className="text-xs text-gray-500 pl-4 font-semibold">{row.original.plan.plan_name} · {row.original.plan.workstation_name} · {row.original.plan.operator_name}</span>;
                 }
                 return null;
             },
@@ -639,19 +639,9 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 return null;
             },
             enableSorting: true,
-            size: 130,
+            size: 100,
         },
-        {
-            id: 'fab_type',
-            accessorFn: (r) => r.type === 'fab' ? r.data.fab_type : null,
-            header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
-            cell: ({ row }) => {
-                if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d] whitespace-nowrap">{row.original.data.fab_type}</span>;
-                return null;
-            },
-            enableSorting: true,
-            size: 130,
-        },
+        
         {
             id: 'fab_id',
             accessorFn: (r) => r.type === 'fab' ? r.data.fab_id : null,
@@ -667,7 +657,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
                 return null;
             },
             enableSorting: true,
-            size: 100,
+            size: 80,
         },
         {
             id: 'job_no',
@@ -720,17 +710,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             },
             size: 400,
         },
-        {
-            id: 'pieces',
-            accessorFn: (r) => r.type === 'fab' ? r.data.pieces : null,
-            header: ({ column }) => <DataGridColumnHeader title="NO. OF PIECES" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
-            cell: ({ row }) => {
-                if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d]">{row.original.data.pieces}</span>;
-                return null;
-            },
-            enableSorting: true,
-            size: 130,
-        },
+       
         {
             id: 'total_sq_ft',
             accessorFn: (r) => r.type === 'fab' ? r.data.total_sq_ft : null,
@@ -843,6 +823,28 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
             },
             enableSorting: true,
             size: 140,
+        },
+         {
+            id: 'fab_type',
+            accessorFn: (r) => r.type === 'fab' ? r.data.fab_type : null,
+            header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d] whitespace-nowrap">{row.original.data.fab_type}</span>;
+                return null;
+            },
+            enableSorting: true,
+            size: 130,
+        },
+        {
+            id: 'pieces',
+            accessorFn: (r) => r.type === 'fab' ? r.data.pieces : null,
+            header: ({ column }) => <DataGridColumnHeader title="NO. OF PIECES" column={column} className="text-[#7c8689] text-[15px] font-normal" />,
+            cell: ({ row }) => {
+                if (row.original.type === 'fab') return <span className="text-sm text-[#4b545d]">{row.original.data.pieces}</span>;
+                return null;
+            },
+            enableSorting: true,
+            size: 130,
         },
     ], [canAddNote]);
 
@@ -1058,7 +1060,7 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
 
                                     <tbody>
                                         {/* Overall totals */}
-                                        {renderTotalsRow('ALL TOTALS', overallTotals, 'bg-[#eef0f6]')}
+                                        {/* {renderTotalsRow('ALL TOTALS', overallTotals, 'bg-[#eef0f6]')} */}
 
                                         {monthGroups.map(monthGroup => {
                                             const monthCollapsed = collapsedMonths.has(monthGroup.monthKey);

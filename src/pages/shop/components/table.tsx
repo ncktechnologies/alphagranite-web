@@ -329,8 +329,8 @@ const ShopTable: React.FC<ShopTableProps> = ({
             accessorFn: r => r.shop_est_completion_date,
             header: ({ column }) => <DataGridColumnHeader title="Shop EST Completion Date" column={column} />,
             cell: ({ row }) => (
-                <span className="text-sm text-text">
-                    {row.original.shop_est_completion_date ? format(new Date(row.original.shop_est_completion_date), 'MM/dd/yyyy') : '-'}
+                <span className="text-sm text-text font-semibold">
+                    {row.original.shop_est_completion_date ? format(new Date(row.original.shop_est_completion_date), ' MM/dd/yyyy') : '-'}
                 </span>
             ),
             enableSorting: true,
@@ -346,7 +346,7 @@ const ShopTable: React.FC<ShopTableProps> = ({
                 </span>
             ),
             enableSorting: true,
-            size: 150,
+            size: 110,
         },
         {
             id: 'shop_office_date_scheduled',
@@ -358,14 +358,7 @@ const ShopTable: React.FC<ShopTableProps> = ({
             enableSorting: true,
             size: 150,
         },
-        {
-            id: 'fab_type',
-            accessorFn: r => r.fab_type,
-            header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-text whitespace-nowrap">{row.original.fab_type}</span>,
-            enableSorting: true,
-            size: 100,
-        },
+
         {
             id: 'fab_id',
             accessorFn: r => r.fab_id,
@@ -376,7 +369,7 @@ const ShopTable: React.FC<ShopTableProps> = ({
                 </button>
             ),
             enableSorting: true,
-            size: 100,
+            size: 80,
         },
         {
             id: 'job_no',
@@ -441,19 +434,14 @@ const ShopTable: React.FC<ShopTableProps> = ({
             enableSorting: false,
             size: 400,
         },
-        {
-            id: 'pieces',
-            accessorFn: r => r.pieces,
-            header: ({ column }) => <DataGridColumnHeader title="NO. OF PIECES" column={column} />,
-            cell: ({ row }) => <span className="text-sm text-text">{row.original.pieces}</span>,
-            enableSorting: true,
-        },
+        
         {
             id: 'total_sq_ft',
             accessorFn: r => r.total_sq_ft,
             header: ({ column }) => <DataGridColumnHeader title="TOTAL SQ FT" column={column} />,
             cell: ({ row }) => <span className="text-sm text-text">{row.original.total_sq_ft.toFixed(2)}</span>,
             enableSorting: true,
+            size: 90,
         },
         {
             id: 'wl_ln_ft',
@@ -571,6 +559,22 @@ const ShopTable: React.FC<ShopTableProps> = ({
             header: ({ column }) => <DataGridColumnHeader title="HOURS SCHEDULED" column={column} />,
             cell: ({ row }) => <span className="text-sm text-text">{row.original.estimated_hours.toFixed(1)}</span>,
             enableSorting: true,
+        },
+        {
+            id: 'fab_type',
+            accessorFn: r => r.fab_type,
+            header: ({ column }) => <DataGridColumnHeader title="FAB TYPE" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text uppercase">{row.original.fab_type}</span>,
+            enableSorting: true,
+            size: 90,
+        },
+        {
+            id: 'pieces',
+            accessorFn: r => r.pieces,
+            header: ({ column }) => <DataGridColumnHeader title="NO. OF PIECES" column={column} />,
+            cell: ({ row }) => <span className="text-sm text-text">{row.original.pieces}</span>,
+            enableSorting: true,
+            size: 80,
         },
         {
             id: 'shop_fab_notes',
