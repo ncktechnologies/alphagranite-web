@@ -84,7 +84,7 @@ export function OtpVerifyPage() {
             } else {
                 // For other flows, just simulate verification
                 await new Promise((res) => setTimeout(res, 1000));
-                toast.success(`OTP Verified: ${otp}`);
+                toast.success(` Verified: ${otp}`);
             }
         } catch (error: any) {
             console.error('OTP Error', error);
@@ -105,7 +105,7 @@ export function OtpVerifyPage() {
     
     return (
         <div className="w-full flex flex-col items-center justify-center">
-            <FormHeader title="Verify OTP" caption={`Enter the code sent to ${username} to verify password reset`} />
+            <FormHeader title="Verification Code" caption={`Enter the code sent to ${username} to verify password reset`} />
             {/* Form content goes here */}
             <Card className="w-full max-w-[398px] overflow-y-auto flex flex-wrap border-[#DFDFDF]">
                 <CardContent className="px-6 py-12">
@@ -138,7 +138,7 @@ export function OtpVerifyPage() {
                         onClick={() => handleSubmit(codeInputs.join(''))}
                     // loading={isSubmitting}
                     >
-                        Verify OTP
+                        Verify Code
                     </Button>
                     <div className="flex items-center justify-center text-sm text-foreground gap-1.5">
                         <span>Didn’t receive a code?</span>

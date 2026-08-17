@@ -10,11 +10,12 @@ export function ClassicLayout() {
           <Link to="/">
             <img
               src={toAbsoluteUrl('/images/logo/ody-logo.png')}
-              className=""
+              className="h-[220px] 3xl:w-[650px] 3xl:h-auto max-w-none  md:block"
+
               alt=""
             />
           </Link>
-          
+
         </div>
         <Outlet />
 

@@ -12,7 +12,7 @@ import { ChangePasswordPage } from '../change-password-page';
 
 export default function LoginStepper() {
     const steps = [
-        { title: 'Verify OTP', step: 1 },
+        { title: 'Verification Code', step: 1 },
         { title: 'Set New Password', step: 2 },
     ];
 
