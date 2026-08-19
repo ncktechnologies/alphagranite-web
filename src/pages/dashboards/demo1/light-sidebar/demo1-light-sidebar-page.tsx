@@ -50,7 +50,7 @@ export function Demo1LightSidebarPage() {
     r.name?.toLowerCase() === 'operator'
   );
   const isInstaller = userRoles.some((r: any) =>
-    r.name === 'Install Scheduler'
+    r.name === 'Installer'
   );
 
   const handleDateRangeApply = () => {

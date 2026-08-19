@@ -37,24 +37,25 @@ import CreatePlanPage from './createPlanePage';
 
 // ─── Constants (unchanged) ──────────────────────────────────────────────────
 const DAY_START_HOUR = 7;
-const DAY_END_HOUR = 19;
+const DAY_END_HOUR = 16;
 const BREAK_START_HOUR = 12;
 const BREAK_END_HOUR = 13;
 const BREAK_DURATION = BREAK_END_HOUR - BREAK_START_HOUR;
 const TOTAL_HOURS = DAY_END_HOUR - DAY_START_HOUR;
-const DISPLAY_HOURS = TOTAL_HOURS - BREAK_DURATION;
+// Keep the noon break as a visible calendar slot so 12 PM and 1 PM remain
+// aligned to their real clock positions. Work is still paused during this slot.
+const DISPLAY_HOURS = TOTAL_HOURS;
 const HOUR_HEIGHT = 80;
 const HOUR_WIDTH = 220;
 
 // ─── Helper functions (unchanged) ──────────────────────────────────────────
-const getTimePosition = (hour: number) => {
-  if (hour < BREAK_START_HOUR) return (hour - DAY_START_HOUR) * HOUR_HEIGHT;
-  return (hour - DAY_START_HOUR - BREAK_DURATION) * HOUR_HEIGHT;
-};
+const getTimePosition = (hour: number) => (hour - DAY_START_HOUR) * HOUR_HEIGHT;
+const getHorizontalPosition = (hour: number) => (hour - DAY_START_HOUR) * HOUR_WIDTH;
 
-const getHorizontalPosition = (hour: number) => {
-  if (hour < BREAK_START_HOUR) return (hour - DAY_START_HOUR) * HOUR_WIDTH;
-  return (hour - DAY_START_HOUR - BREAK_DURATION) * HOUR_WIDTH;
+const getVisualEndPosition = (startHour: number, duration: number, unit: number) => {
+  const endHour = startHour + duration;
+  const crossesBreak = startHour < BREAK_START_HOUR && endHour > BREAK_START_HOUR;
+  return (endHour - DAY_START_HOUR) * unit + (crossesBreak ? BREAK_DURATION * unit : 0);
 };
 
 const FAB_TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
@@ -221,31 +222,53 @@ const ShopCalendarPage: React.FC = () => {
 
     flatPlans.forEach((event: any) => {
       const startDate = new Date(event.scheduled_start_date);
-      const startHour = startDate.getHours() + startDate.getMinutes() / 60;
+      const rawStartHour = startDate.getHours() + startDate.getMinutes() / 60;
+      // A plan cannot begin during the break; resume it at 1 PM instead.
+      const startHour = rawStartHour >= BREAK_START_HOUR && rawStartHour < BREAK_END_HOUR
+        ? BREAK_END_HOUR
+        : rawStartHour;
+      if (startHour !== rawStartHour) startDate.setHours(BREAK_END_HOUR, 0, 0, 0);
       const endHour = startHour + (event.estimated_hours ?? 0);
       const dateKey = format(startDate, 'yyyy-MM-dd');
 
-      if (endHour <= DAY_END_HOUR) {
-        if (dateKey in grouped) grouped[dateKey].push(event);
+      // Treat noon as a non-working hour. A plan that crosses noon resumes at 1 PM,
+      // and anything that reaches 4 PM continues on the next working day.
+      const workHoursUntilEndOfDay = (hour: number) => {
+        if (hour >= DAY_END_HOUR) return 0;
+        const end = DAY_END_HOUR - Math.max(hour, DAY_START_HOUR);
+        const breakOverlap = Math.max(0, Math.min(DAY_END_HOUR, BREAK_END_HOUR) - Math.max(hour, BREAK_START_HOUR));
+        return Math.max(0, end - breakOverlap);
+      };
+
+      const firstDayHours = Math.min(event.estimated_hours ?? 0, workHoursUntilEndOfDay(startHour));
+      const finishesToday = (event.estimated_hours ?? 0) <= firstDayHours && startHour + (event.estimated_hours ?? 0) <= DAY_END_HOUR;
+
+      if (finishesToday) {
+        if (dateKey in grouped) {
+          grouped[dateKey].push(
+            startHour !== rawStartHour
+              ? { ...event, scheduled_start_date: startDate.toISOString() }
+              : event,
+          );
+        }
         return;
       }
 
-      const hoursOnFirstDay = DAY_END_HOUR - startHour;
-      if (hoursOnFirstDay > 0 && dateKey in grouped) {
+      if (firstDayHours > 0 && dateKey in grouped) {
         grouped[dateKey].push({
           ...event,
           _isSplitPart: true,
           _originalHours: event.estimated_hours,
-          estimated_hours: hoursOnFirstDay,
+          estimated_hours: firstDayHours,
         });
       }
 
-      let remainingHours = event.estimated_hours - hoursOnFirstDay;
+      let remainingHours = (event.estimated_hours ?? 0) - firstDayHours;
       let currentDate = addDays(startDate, 1);
       let currentDayKey = format(currentDate, 'yyyy-MM-dd');
 
       while (remainingHours > 0) {
-        const hoursOnThisDay = Math.min(remainingHours, DAY_END_HOUR - DAY_START_HOUR);
+        const hoursOnThisDay = Math.min(remainingHours, DAY_END_HOUR - DAY_START_HOUR - BREAK_DURATION);
         if (hoursOnThisDay > 0 && currentDayKey in grouped) {
           grouped[currentDayKey].push({
             ...event,
@@ -334,7 +357,7 @@ const ShopCalendarPage: React.FC = () => {
         const start = new Date(ev.scheduled_start_date);
         const startH = start.getHours() + start.getMinutes() / 60;
         const top = getTimePosition(startH);
-        const height = Math.max(HOUR_HEIGHT * 0.5, ev.estimated_hours * HOUR_HEIGHT);
+        const height = Math.max(HOUR_HEIGHT * 0.5, getVisualEndPosition(startH, ev.estimated_hours, HOUR_HEIGHT) - top);
         return { ...ev, _top: Math.max(0, top), _height: height, _col: cols[i], _maxCol: maxCol };
       });
     };
@@ -860,7 +883,7 @@ const ShopCalendarPage: React.FC = () => {
                         <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] relative">
                           {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                             const hour = DAY_START_HOUR + i;
-                            if (hour > BREAK_START_HOUR && hour < BREAK_END_HOUR) return null;
+
                             const label = is12HourFormat
                               ? `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
                               : `${String(hour).padStart(2, '0')}:00`;
@@ -893,7 +916,7 @@ const ShopCalendarPage: React.FC = () => {
                               {/* Hour grid lines */}
                               {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                                 const hour = DAY_START_HOUR + i;
-                                if (hour > BREAK_START_HOUR && hour < BREAK_END_HOUR) return null;
+    
                                 const position = getTimePosition(hour);
                                 return (
                                   <div key={i} className="absolute w-full border-t border-[#ecedf0]" style={{ top: position }} />
@@ -902,7 +925,7 @@ const ShopCalendarPage: React.FC = () => {
 
                               {/* Break time indicator */}
                               <div
-                                className="absolute left-0 right-0 bg-gradient-to-b from-orange-100/50 to-orange-200/50 border-y-2 border-orange-300 pointer-events-none flex items-center justify-center"
+                                className="absolute left-0 right-0 z-10 bg-gradient-to-b from-orange-100/50 to-orange-200/50 border-y-2 border-orange-300 pointer-events-none flex items-center justify-center"
                                 style={{
                                   top: getTimePosition(BREAK_START_HOUR),
                                   height: BREAK_DURATION * HOUR_HEIGHT
@@ -944,7 +967,7 @@ const ShopCalendarPage: React.FC = () => {
                         <div className="relative" style={{ minWidth: DISPLAY_HOURS * HOUR_WIDTH, height: 50 }}>
                           {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                             const hour = DAY_START_HOUR + i;
-                            if (hour >= BREAK_START_HOUR && hour < BREAK_END_HOUR) return null;
+
                             const label = is12HourFormat
                               ? `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
                               : `${String(hour).padStart(2, '0')}:00`;
@@ -1003,7 +1026,7 @@ const ShopCalendarPage: React.FC = () => {
                               {/* Hour grid lines */}
                               {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                                 const hour = DAY_START_HOUR + i;
-                                if (hour >= BREAK_START_HOUR && hour < BREAK_END_HOUR) return null;
+    
                                 const position = getHorizontalPosition(hour);
                                 return (
                                   <div key={i} className="absolute top-0 bottom-0 border-l border-[#ecedf0]" style={{ left: position }} />
@@ -1017,12 +1040,11 @@ const ShopCalendarPage: React.FC = () => {
                                   const endH = startH + ev.estimated_hours;
 
                                   const left = getHorizontalPosition(startH);
-                                  const right = getHorizontalPosition(endH);
+                                  const right = getVisualEndPosition(startH, ev.estimated_hours, HOUR_WIDTH);
 
-                                  let width = right - left;
-                                  if (startH < BREAK_START_HOUR && endH > BREAK_START_HOUR) {
-                                    width += BREAK_DURATION * HOUR_WIDTH;
-                                  }
+                                  // Include the visible noon break in the span, while
+                                  // keeping 12 PM and 1 PM as separate calendar columns.
+                                  const width = right - left;
 
                                   const { bg, border, text } = getColorForFab(ev.fab_id, ev.fab_type);
                                   return (
