@@ -35,29 +35,22 @@ import { useGetAllShopPlansQuery, useGetFabTypesQuery, useGetWorkstationsQuery, 
 import { formatTime } from '@/utils/date-utils';
 import CreatePlanPage from './createPlanePage';
 
-// ─── Constants (unchanged) ──────────────────────────────────────────────────
+// ─── Constants ──────────────────────────────────────────────────────────────
 const DAY_START_HOUR = 7;
 const DAY_END_HOUR = 16;
 const BREAK_START_HOUR = 12;
 const BREAK_END_HOUR = 13;
 const BREAK_DURATION = BREAK_END_HOUR - BREAK_START_HOUR;
 const TOTAL_HOURS = DAY_END_HOUR - DAY_START_HOUR;
-// Keep the noon break as a visible calendar slot so 12 PM and 1 PM remain
-// aligned to their real clock positions. Work is still paused during this slot.
 const DISPLAY_HOURS = TOTAL_HOURS;
 const HOUR_HEIGHT = 80;
 const HOUR_WIDTH = 220;
 
-// ─── Helper functions (unchanged) ──────────────────────────────────────────
+// ─── Helper functions ──────────────────────────────────────────────────────
 const getTimePosition = (hour: number) => (hour - DAY_START_HOUR) * HOUR_HEIGHT;
 const getHorizontalPosition = (hour: number) => (hour - DAY_START_HOUR) * HOUR_WIDTH;
 
-const getVisualEndPosition = (startHour: number, duration: number, unit: number) => {
-  const endHour = startHour + duration;
-  const crossesBreak = startHour < BREAK_START_HOUR && endHour > BREAK_START_HOUR;
-  return (endHour - DAY_START_HOUR) * unit + (crossesBreak ? BREAK_DURATION * unit : 0);
-};
-
+// ─── Color mapping (unchanged) ──────────────────────────────────────────────
 const FAB_TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
   'standard': { bg: '#9eeb47', border: '#6b9e2f', text: '#1e293b' },
   'fab only': { bg: '#5bd1d7', border: '#2e8b8f', text: '#1e293b' },
@@ -117,7 +110,7 @@ const ShopCalendarPage: React.FC = () => {
   const [searchFabId, setSearchFabId] = useState('');
   const [searchType, setSearchType] = useState<'fab_id' | 'job_number'>('fab_id');
   const [filterFabType, setFilterFabType] = useState('');
-  const [filterWorkstation, setFilterWorkstation] = useState<string[]>([]); // array of IDs
+  const [filterWorkstation, setFilterWorkstation] = useState<string[]>([]);
   const [filterOperator, setFilterOperator] = useState<string[]>([]);
   const [filterPlanningSections, setFilterPlanningSections] = useState<string[]>([]);
 
@@ -157,7 +150,7 @@ const ShopCalendarPage: React.FC = () => {
     return arr.map((s: any) => ({ id: String(s.id), name: s.plan_name || `Section ${s.id}` }));
   }, [planningSectionsData]);
 
-  // ── Build query parameters with repeated query params (arrays) ──
+  // ── Build query parameters ──
   const buildQueryParams = useCallback(() => {
     const qp: any = {
       view: viewMode,
@@ -173,17 +166,9 @@ const ShopCalendarPage: React.FC = () => {
     }
 
     if (filterFabType) qp.fab_type = filterFabType;
-
-    // Send arrays -> will be serialised as repeated query params (e.g. ?operator_id=1&operator_id=2)
-    if (filterWorkstation.length > 0) {
-      qp.workstation_id = filterWorkstation.map(Number);
-    }
-    if (filterOperator.length > 0) {
-      qp.operator_id = filterOperator.map(Number);
-    }
-    if (filterPlanningSections.length > 0) {
-      qp.planning_section_id = filterPlanningSections.map(Number);
-    }
+    if (filterWorkstation.length > 0) qp.workstation_id = filterWorkstation.map(Number);
+    if (filterOperator.length > 0) qp.operator_id = filterOperator.map(Number);
+    if (filterPlanningSections.length > 0) qp.planning_section_id = filterPlanningSections.map(Number);
 
     return qp;
   }, [currentDate, viewMode, lockedFabId, searchFabId, searchType, filterFabType, filterWorkstation, filterOperator, filterPlanningSections]);
@@ -191,7 +176,6 @@ const ShopCalendarPage: React.FC = () => {
   const queryParams = buildQueryParams();
   const { data: plansResponse, isLoading, isFetching } = useGetAllShopPlansQuery(queryParams);
 
-  // ── Rest of the component (display logic, calendar, etc.) ──
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
 
   const displayDays = useMemo(() => {
@@ -213,6 +197,7 @@ const ShopCalendarPage: React.FC = () => {
     return weeks;
   }, [currentDate, viewMode]);
 
+  // ─── Group events by day and ensure estimated_hours is a number ──────────
   const eventsByDay = useMemo(() => {
     const grouped: Record<string, any[]> = {};
     const allDays = viewMode === 'month' ? monthWeeks.flat() : displayDays;
@@ -221,18 +206,18 @@ const ShopCalendarPage: React.FC = () => {
     const flatPlans = plansResponse?.data?.plans ?? plansResponse?.plans ?? [];
 
     flatPlans.forEach((event: any) => {
+      const hours = Number(event.estimated_hours);
+      if (isNaN(hours)) return;
+
       const startDate = new Date(event.scheduled_start_date);
       const rawStartHour = startDate.getHours() + startDate.getMinutes() / 60;
-      // A plan cannot begin during the break; resume it at 1 PM instead.
       const startHour = rawStartHour >= BREAK_START_HOUR && rawStartHour < BREAK_END_HOUR
         ? BREAK_END_HOUR
         : rawStartHour;
       if (startHour !== rawStartHour) startDate.setHours(BREAK_END_HOUR, 0, 0, 0);
-      const endHour = startHour + (event.estimated_hours ?? 0);
+      const endHour = startHour + hours;
       const dateKey = format(startDate, 'yyyy-MM-dd');
 
-      // Treat noon as a non-working hour. A plan that crosses noon resumes at 1 PM,
-      // and anything that reaches 4 PM continues on the next working day.
       const workHoursUntilEndOfDay = (hour: number) => {
         if (hour >= DAY_END_HOUR) return 0;
         const end = DAY_END_HOUR - Math.max(hour, DAY_START_HOUR);
@@ -240,15 +225,17 @@ const ShopCalendarPage: React.FC = () => {
         return Math.max(0, end - breakOverlap);
       };
 
-      const firstDayHours = Math.min(event.estimated_hours ?? 0, workHoursUntilEndOfDay(startHour));
-      const finishesToday = (event.estimated_hours ?? 0) <= firstDayHours && startHour + (event.estimated_hours ?? 0) <= DAY_END_HOUR;
+      const firstDayHours = Math.min(hours, workHoursUntilEndOfDay(startHour));
+      const finishesToday = hours <= firstDayHours && startHour + hours <= DAY_END_HOUR;
+
+      const cleanEvent = { ...event, estimated_hours: hours };
 
       if (finishesToday) {
         if (dateKey in grouped) {
           grouped[dateKey].push(
             startHour !== rawStartHour
-              ? { ...event, scheduled_start_date: startDate.toISOString() }
-              : event,
+              ? { ...cleanEvent, scheduled_start_date: startDate.toISOString() }
+              : cleanEvent,
           );
         }
         return;
@@ -256,14 +243,14 @@ const ShopCalendarPage: React.FC = () => {
 
       if (firstDayHours > 0 && dateKey in grouped) {
         grouped[dateKey].push({
-          ...event,
+          ...cleanEvent,
           _isSplitPart: true,
-          _originalHours: event.estimated_hours,
+          _originalHours: hours,
           estimated_hours: firstDayHours,
         });
       }
 
-      let remainingHours = (event.estimated_hours ?? 0) - firstDayHours;
+      let remainingHours = hours - firstDayHours;
       let currentDate = addDays(startDate, 1);
       let currentDayKey = format(currentDate, 'yyyy-MM-dd');
 
@@ -271,9 +258,9 @@ const ShopCalendarPage: React.FC = () => {
         const hoursOnThisDay = Math.min(remainingHours, DAY_END_HOUR - DAY_START_HOUR - BREAK_DURATION);
         if (hoursOnThisDay > 0 && currentDayKey in grouped) {
           grouped[currentDayKey].push({
-            ...event,
+            ...cleanEvent,
             _isSplitPart: true,
-            _originalHours: event.estimated_hours,
+            _originalHours: hours,
             estimated_hours: hoursOnThisDay,
             scheduled_start_date: format(currentDate, 'yyyy-MM-dd') + 'T' + String(DAY_START_HOUR).padStart(2, '0') + ':00:00',
           });
@@ -333,51 +320,88 @@ const ShopCalendarPage: React.FC = () => {
 
   const showTimeIndicator = currentTime.getHours() >= DAY_START_HOUR && currentTime.getHours() < DAY_END_HOUR;
 
-  const getEventsWithPositions = useMemo(() => {
-    return (events: any[]) => {
-      if (!events.length) return [];
-      const sorted = [...events].sort(
-        (a, b) => new Date(a.scheduled_start_date).getTime() - new Date(b.scheduled_start_date).getTime(),
-      );
-      const ranges = sorted.map((ev) => {
-        const s = new Date(ev.scheduled_start_date).getTime();
-        const e = s + ev.estimated_hours * 3_600_000;
-        return { s, e };
-      });
-      const cols: number[] = new Array(sorted.length).fill(0);
-      ranges.forEach((r, i) => {
-        const used = new Set<number>();
-        for (let j = 0; j < i; j++) if (ranges[j].e > r.s) used.add(cols[j]);
-        let c = 0;
-        while (used.has(c)) c++;
-        cols[i] = c;
-      });
-      const maxCol = Math.max(...cols, 0) + 1;
-      return sorted.map((ev, i) => {
-        const start = new Date(ev.scheduled_start_date);
-        const startH = start.getHours() + start.getMinutes() / 60;
-        const top = getTimePosition(startH);
-        const height = Math.max(HOUR_HEIGHT * 0.5, getVisualEndPosition(startH, ev.estimated_hours, HOUR_HEIGHT) - top);
-        return { ...ev, _top: Math.max(0, top), _height: height, _col: cols[i], _maxCol: maxCol };
-      });
-    };
+  // ─── Column view: split events at break and compute positions ─────────────
+  const getEventsWithPositions = useCallback((events: any[]) => {
+    if (!events.length) return [];
+
+    const visualEvents: any[] = [];
+    events.forEach((ev) => {
+      const startDt = new Date(ev.scheduled_start_date);
+      const startH = startDt.getHours() + startDt.getMinutes() / 60;
+      const hours = Number(ev.estimated_hours);
+      const endH = startH + hours;
+      const EPS = 1e-9;
+      if (startH < BREAK_START_HOUR && endH > BREAK_START_HOUR + EPS) {
+        const part1 = {
+          ...ev,
+          _isBreakSplit: true,
+          _part: 1,
+          _originalId: ev.id,
+          estimated_hours: BREAK_START_HOUR - startH,
+          scheduled_start_date: startDt.toISOString(),
+        };
+        const part2Start = new Date(startDt);
+        part2Start.setHours(BREAK_END_HOUR, 0, 0, 0);
+        const part2 = {
+          ...ev,
+          _isBreakSplit: true,
+          _part: 2,
+          _originalId: ev.id,
+          estimated_hours: endH - BREAK_END_HOUR,
+          scheduled_start_date: part2Start.toISOString(),
+        };
+        if (part1.estimated_hours > 0) visualEvents.push(part1);
+        if (part2.estimated_hours > 0) visualEvents.push(part2);
+      } else {
+        visualEvents.push(ev);
+      }
+    });
+
+    const sorted = [...visualEvents].sort(
+      (a, b) => new Date(a.scheduled_start_date).getTime() - new Date(b.scheduled_start_date).getTime(),
+    );
+
+    const ranges = sorted.map((ev) => {
+      const s = new Date(ev.scheduled_start_date).getTime();
+      const e = s + Number(ev.estimated_hours) * 3_600_000;
+      return { s, e };
+    });
+
+    const cols: number[] = new Array(sorted.length).fill(0);
+    ranges.forEach((r, i) => {
+      const used = new Set<number>();
+      for (let j = 0; j < i; j++) if (ranges[j].e > r.s) used.add(cols[j]);
+      let c = 0;
+      while (used.has(c)) c++;
+      cols[i] = c;
+    });
+    const maxCol = Math.max(...cols, 0) + 1;
+
+    return sorted.map((ev, i) => {
+      const start = new Date(ev.scheduled_start_date);
+      const startH = start.getHours() + start.getMinutes() / 60;
+      const top = getTimePosition(startH);
+      const hours = Number(ev.estimated_hours);
+      const height = Math.max(HOUR_HEIGHT * 0.5, hours * HOUR_HEIGHT);
+      return { ...ev, _top: Math.max(0, top), _height: height, _col: cols[i], _maxCol: maxCol };
+    });
   }, []);
 
   const renderEventCard = useCallback((event: any) => {
     const col = event._maxCol ?? 1;
     const { bg, border, text } = getColorForFab(event.fab_id, event.fab_type);
-    const PAD = 4;
-    const colW = `calc(${100 / col}% - ${PAD}px)`;
-    const colLeft = `calc(${(event._col / col) * 100}% + ${PAD / 2}px)`;
+    // No padding – event fills the full slot
+    const colW = `calc(${100 / col}% - 4px)`;
+    const colLeft = `calc(${(event._col / col) * 100}% + 2px)`;
 
     return (
       <Tooltip key={event.id} delayDuration={300}>
         <TooltipTrigger asChild>
           <div
-            className="absolute cursor-pointer rounded-[12px] border overflow-hidden transition-opacity hover:opacity-90"
+            className="absolute z-0 cursor-pointer rounded-[8px] border overflow-hidden transition-opacity hover:opacity-90"
             style={{
-              top: event._top + PAD,
-              height: event._height - PAD,
+              top: event._top,
+              height: event._height,
               left: colLeft,
               width: colW,
               backgroundColor: bg,
@@ -392,6 +416,11 @@ const ShopCalendarPage: React.FC = () => {
               {event._isSplitPart && (
                 <p className="text-[9px] italic mt-0.5" style={{ color: text, opacity: 0.6 }}>
                   (Continued from previous day)
+                </p>
+              )}
+              {event._isBreakSplit && (
+                <p className="text-[9px] italic mt-0.5" style={{ color: text, opacity: 0.6 }}>
+                  {event._part === 1 ? 'Before break' : 'After break'}
                 </p>
               )}
               <p className="text-[11px] truncate mt-0.5" style={{ color: text, opacity: 0.7 }}>
@@ -577,7 +606,6 @@ const ShopCalendarPage: React.FC = () => {
               </div>
             )}
 
-            {/* FAB Type (single select) */}
             <Select value={filterFabType || 'all'} onValueChange={(v) => setFilterFabType(v === 'all' ? '' : v)}>
               <SelectTrigger className="min-w-[133px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
                 <SelectValue placeholder="All FAB Types" />
@@ -748,7 +776,7 @@ const ShopCalendarPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Calendar Card – identical to previous, only filter bar changed */}
+      {/* Calendar Card */}
       <div className="p-4 md:p-6">
         <div className="border border-[#ecedf0] rounded-[16px] px-4 py-6 flex flex-col gap-4">
           <div className="flex items-center justify-between pl-4">
@@ -859,7 +887,7 @@ const ShopCalendarPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Day / Week column view – unchanged */}
+                  {/* ─── Day / Week column view ─── */}
                   {viewMode !== 'month' && !isAxisSwapped && (
                     <div className="min-w-max">
                       <div className="flex sticky top-0 z-10 bg-white border-b border-[#e2e4ed]">
@@ -883,7 +911,7 @@ const ShopCalendarPage: React.FC = () => {
                         <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] relative">
                           {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                             const hour = DAY_START_HOUR + i;
-
+                            if (hour >= BREAK_START_HOUR && hour < BREAK_END_HOUR) return null;
                             const label = is12HourFormat
                               ? `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
                               : `${String(hour).padStart(2, '0')}:00`;
@@ -913,19 +941,17 @@ const ShopCalendarPage: React.FC = () => {
                               style={{ height: DISPLAY_HOURS * HOUR_HEIGHT }}
                               onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(true); } : undefined}
                             >
-                              {/* Hour grid lines */}
                               {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                                 const hour = DAY_START_HOUR + i;
-    
+                                if (hour >= BREAK_START_HOUR && hour < BREAK_END_HOUR) return null;
                                 const position = getTimePosition(hour);
                                 return (
                                   <div key={i} className="absolute w-full border-t border-[#ecedf0]" style={{ top: position }} />
                                 );
                               })}
 
-                              {/* Break time indicator */}
                               <div
-                                className="absolute left-0 right-0 z-10 bg-gradient-to-b from-orange-100/50 to-orange-200/50 border-y-2 border-orange-300 pointer-events-none flex items-center justify-center"
+                                className="absolute left-0 right-0 z-[100] bg-orange-100 border-y-2 border-orange-300 pointer-events-none flex items-center justify-center"
                                 style={{
                                   top: getTimePosition(BREAK_START_HOUR),
                                   height: BREAK_DURATION * HOUR_HEIGHT
@@ -959,7 +985,7 @@ const ShopCalendarPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Time-row view (axis swapped) – unchanged */}
+                  {/* ─── Time‑row view (axis swapped) ─── */}
                   {viewMode !== 'month' && isAxisSwapped && (
                     <div className="min-w-max">
                       <div className="flex border-b border-[#e2e4ed] bg-white sticky top-0 z-10">
@@ -967,7 +993,7 @@ const ShopCalendarPage: React.FC = () => {
                         <div className="relative" style={{ minWidth: DISPLAY_HOURS * HOUR_WIDTH, height: 50 }}>
                           {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                             const hour = DAY_START_HOUR + i;
-
+                            if (hour >= BREAK_START_HOUR && hour < BREAK_END_HOUR) return null;
                             const label = is12HourFormat
                               ? `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
                               : `${String(hour).padStart(2, '0')}:00`;
@@ -982,16 +1008,53 @@ const ShopCalendarPage: React.FC = () => {
                               </div>
                             );
                           })}
+                          <div
+                            className="absolute top-0 bottom-0 border-r border-[#ecedf0]"
+                            style={{ left: getHorizontalPosition(DAY_END_HOUR) }}
+                          />
                         </div>
                       </div>
 
                       {displayDays.map((day) => {
                         const dk = format(day, 'yyyy-MM-dd');
                         const dayEvents = eventsByDay[dk] || [];
+
+                        // ─── Split events across break ──────────────────────────
+                        const visualEvents: any[] = [];
+                        dayEvents.forEach((ev) => {
+                          const startDt = new Date(ev.scheduled_start_date);
+                          const startH = startDt.getHours() + startDt.getMinutes() / 60;
+                          const endH = startH + Number(ev.estimated_hours);
+                          const EPS = 1e-9;
+                          if (startH < BREAK_START_HOUR && endH > BREAK_START_HOUR + EPS) {
+                            const part1 = {
+                              ...ev,
+                              _isBreakSplit: true,
+                              _part: 1,
+                              _originalId: ev.id,
+                              estimated_hours: BREAK_START_HOUR - startH,
+                              scheduled_start_date: startDt.toISOString(),
+                            };
+                            const part2Start = new Date(startDt);
+                            part2Start.setHours(BREAK_END_HOUR, 0, 0, 0);
+                            const part2 = {
+                              ...ev,
+                              _isBreakSplit: true,
+                              _part: 2,
+                              _originalId: ev.id,
+                              estimated_hours: endH - BREAK_END_HOUR,
+                              scheduled_start_date: part2Start.toISOString(),
+                            };
+                            if (part1.estimated_hours > 0) visualEvents.push(part1);
+                            if (part2.estimated_hours > 0) visualEvents.push(part2);
+                          } else {
+                            visualEvents.push(ev);
+                          }
+                        });
+
                         const ROW_LANE_H = 44;
                         const GAP = 4;
-
-                        const sorted = [...dayEvents].sort(
+                        const sorted = [...visualEvents].sort(
                           (a, b) => new Date(a.scheduled_start_date).getTime() - new Date(b.scheduled_start_date).getTime(),
                         );
                         const lanes: any[][] = [];
@@ -1000,7 +1063,7 @@ const ShopCalendarPage: React.FC = () => {
                           let placed = false;
                           for (const lane of lanes) {
                             const last = lane[lane.length - 1];
-                            const lastEnd = new Date(last.scheduled_start_date).getTime() + last.estimated_hours * 3_600_000;
+                            const lastEnd = new Date(last.scheduled_start_date).getTime() + Number(last.estimated_hours) * 3_600_000;
                             if (lastEnd <= s) { lane.push(ev); placed = true; break; }
                           }
                           if (!placed) lanes.push([ev]);
@@ -1008,7 +1071,7 @@ const ShopCalendarPage: React.FC = () => {
                         const rowHeight = Math.max(lanes.length, 1) * (ROW_LANE_H + GAP) + GAP;
 
                         return (
-                          <div key={dk} className="flex border-b border-[#e2e4ed]" style={{ minHeight: rowHeight + 8 }}>
+                          <div key={dk} className="flex border-b border-[#e2e4ed]" style={{ minHeight: rowHeight }}>
                             <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] flex flex-col justify-center items-center py-2 gap-0 bg-white">
                               <span className="text-[10px] text-[#7c8689] uppercase tracking-wide">{format(day, 'EEE')}</span>
                               <span
@@ -1023,27 +1086,40 @@ const ShopCalendarPage: React.FC = () => {
                               style={{ height: rowHeight, minWidth: DISPLAY_HOURS * HOUR_WIDTH }}
                               onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(false); } : undefined}
                             >
-                              {/* Hour grid lines */}
                               {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                                 const hour = DAY_START_HOUR + i;
-    
+                                if (hour >= BREAK_START_HOUR && hour < BREAK_END_HOUR) return null;
                                 const position = getHorizontalPosition(hour);
                                 return (
                                   <div key={i} className="absolute top-0 bottom-0 border-l border-[#ecedf0]" style={{ left: position }} />
                                 );
                               })}
+                              <div
+                                className="absolute top-0 bottom-0 border-l border-[#ecedf0]"
+                                style={{ left: getHorizontalPosition(DAY_END_HOUR) }}
+                              />
+
+                              <div
+                                className="absolute left-0 z-[100] bg-orange-100 border-x-2 border-orange-300 pointer-events-none flex items-center justify-center"
+                                style={{
+                                  top: 0,
+                                  bottom: 0,
+                                  left: getHorizontalPosition(BREAK_START_HOUR),
+                                  width: BREAK_DURATION * HOUR_WIDTH,
+                                }}
+                              >
+                                <span className="text-[11px] font-semibold text-orange-600 uppercase tracking-wide [writing-mode:vertical-rl]">
+                                  Break Time
+                                </span>
+                              </div>
 
                               {lanes.map((lane, laneIdx) =>
                                 lane.map((ev) => {
                                   const startDt = new Date(ev.scheduled_start_date);
                                   const startH = startDt.getHours() + startDt.getMinutes() / 60;
-                                  const endH = startH + ev.estimated_hours;
-
+                                  const endH = startH + Number(ev.estimated_hours);
                                   const left = getHorizontalPosition(startH);
-                                  const right = getVisualEndPosition(startH, ev.estimated_hours, HOUR_WIDTH);
-
-                                  // Include the visible noon break in the span, while
-                                  // keeping 12 PM and 1 PM as separate calendar columns.
+                                  const right = getHorizontalPosition(endH);
                                   const width = right - left;
 
                                   const { bg, border, text } = getColorForFab(ev.fab_id, ev.fab_type);
@@ -1063,8 +1139,12 @@ const ShopCalendarPage: React.FC = () => {
                                           onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(ev); }}
                                         >
                                           <div className="px-2 py-1 h-full flex flex-col justify-center overflow-hidden">
-                                            <p className="text-[12px] font-semibold truncate" style={{ color: text }}> {ev.fab_id} {ev.plan_name ? `• ${ev.plan_name}` : ''} {ev.operator_name ? `• ${ev.operator_name}` : ''}</p>
-                                            <p className="text-[10px] truncate" style={{ color: text, opacity: 0.7 }}>{ev.work_percentage ?? 0}%</p>
+                                            <p className="text-[12px] font-semibold truncate" style={{ color: text }}>
+                                              {ev.fab_id} {ev.plan_name ? `• ${ev.plan_name}` : ''} {ev.operator_name ? `• ${ev.operator_name}` : ''}
+                                            </p>
+                                            <p className="text-[10px] truncate" style={{ color: text, opacity: 0.7 }}>
+                                              {ev.work_percentage ?? 0}%
+                                            </p>
                                           </div>
                                         </div>
                                       </TooltipTrigger>
