@@ -129,7 +129,7 @@ const parseDateForDisplay = (s: string | undefined): Date | undefined => {
     }
 };
 
-const safeFormatDate = (dateStr: string | undefined, formatStr: string): string => {
+export const safeFormatDate = (dateStr: string | undefined, formatStr: string): string => {
     const date = parseDateForDisplay(dateStr);
     if (!date || isNaN(date.getTime())) return '—';
     try {

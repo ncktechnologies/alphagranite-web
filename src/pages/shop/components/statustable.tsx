@@ -50,6 +50,7 @@ import {
     DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { safeFormatDate } from './statusDetails';
 
 // ------------------ Types ------------------
 export interface ShopStatusPlan {
@@ -383,8 +384,8 @@ const ShopStatusTable: React.FC<ShopStatusTableProps> = ({ isLoading: externalLo
     const tableData: ShopStatusRow[] = useMemo(() => {
         return fabs.map((fab: any): ShopStatusRow => {
             const rawDate = fab.shop_est_completion_date;
-            const dayKey = rawDate ? format(new Date(rawDate), 'yyyy-MM-dd') : 'unscheduled';
-            const monthKey = rawDate ? format(new Date(rawDate), 'yyyy-MM') : 'unscheduled';
+            const dayKey = rawDate ? safeFormatDate(rawDate, 'yyyy-MM-dd') : 'unscheduled';
+            const monthKey = rawDate ? safeFormatDate(rawDate, 'yyyy-MM') : 'unscheduled';
 
             const getPlanPercent = (sectionId: number): number => {
                 const plan = (fab.plans || []).find((p: any) => p.planning_section_id === sectionId);

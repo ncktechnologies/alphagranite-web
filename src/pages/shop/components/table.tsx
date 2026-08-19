@@ -41,6 +41,7 @@ import PlanSectionCell from './planSectionCell';
 import { useTableState } from '@/hooks/use-table-state';
 import { NotesModal } from '@/components/common/NotesModal';
 import { toast } from 'sonner';
+import { safeFormatDate } from './statusDetails';
 // import { toast 
 // } from 'sonner';
 
@@ -271,11 +272,11 @@ const ShopTable: React.FC<ShopTableProps> = ({
                         plan_notes: plan.notes,
                         date_group: dateGroup,
                         shop_office_date_scheduled: fab.shop_date_schedule
-                            ? format(new Date(fab.shop_date_schedule), 'MM/dd/yyyy')
+                            ? safeFormatDate(fab.shop_date_schedule, 'MM/dd/yyyy')
                             : undefined,
                         shop_est_completion_date: fab.shop_est_completion_date
-                            ? format(new Date(fab.shop_est_completion_date), 'MM/dd/yyyy')
-                                : undefined,
+                            ? safeFormatDate(fab.shop_est_completion_date, 'MM/dd/yyyy')
+                            : undefined,
                     });
                 });
             } else {
@@ -289,10 +290,10 @@ const ShopTable: React.FC<ShopTableProps> = ({
                     plan_notes: null,
                     date_group: 'unscheduled',
                     shop_office_date_scheduled: fab.shop_date_schedule
-                        ? format(new Date(fab.shop_date_schedule), 'MM/dd/yyyy')
+                        ? safeFormatDate(fab.shop_date_schedule, 'MM/dd/yyyy')
                         : undefined,
                     shop_est_completion_date: fab.shop_est_completion_date
-                        ? format(new Date(fab.shop_est_completion_date), 'MM/dd/yyyy')
+                        ? safeFormatDate(fab.shop_est_completion_date, 'MM/dd/yyyy')
                             : undefined,
                 });
             }
@@ -330,7 +331,7 @@ const ShopTable: React.FC<ShopTableProps> = ({
             header: ({ column }) => <DataGridColumnHeader title="Shop EST Completion Date" column={column} />,
             cell: ({ row }) => (
                 <span className="text-sm text-text font-semibold">
-                    {row.original.shop_est_completion_date ? format(new Date(row.original.shop_est_completion_date), ' MM/dd/yyyy') : '-'}
+                    {row.original.shop_est_completion_date ? safeFormatDate(row.original.shop_est_completion_date, 'MM/dd/yyyy') : '-'}
                 </span>
             ),
             enableSorting: true,
@@ -342,7 +343,7 @@ const ShopTable: React.FC<ShopTableProps> = ({
             header: ({ column }) => <DataGridColumnHeader title="SHOP CUT DATE SCHEDULED" column={column} />,
             cell: ({ row }) => (
                 <span className="text-sm text-text">
-                    {row.original.scheduled_start_date ? format(new Date(row.original.scheduled_start_date), 'MM/dd/yyyy') : '-'}
+                    {row.original.scheduled_start_date ? safeFormatDate(row.original.scheduled_start_date, 'MM/dd/yyyy') : '-'}
                 </span>
             ),
             enableSorting: true,

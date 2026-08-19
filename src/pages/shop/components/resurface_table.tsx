@@ -40,6 +40,7 @@ import CreatePlanSheet from './createEvent';
 import { useTableState } from '@/hooks/use-table-state';
 import { NotesModal } from '@/components/common/NotesModal';
 import { toast } from 'sonner';
+import { safeFormatDate } from './statusDetails';
 
 export interface ShopPlanRow {
     fab_id: string;
@@ -250,12 +251,11 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
                         ? fab.notes
                         : [],
                 shop_office_date_scheduled: fab.shop_date_schedule
-                    ? format(new Date(fab.shop_date_schedule), 'MM/dd/yyyy')
+                    ? safeFormatDate(fab.shop_date_schedule, 'MM/dd/yyyy')
                     : undefined,
                 shop_est_completion_date: fab.shop_est_completion_date
-                    ? format(new Date(fab.shop_est_completion_date), 'MM/dd/yyyy')
-                    
-                        : undefined,
+                    ? safeFormatDate(fab.shop_est_completion_date, 'MM/dd/yyyy')
+                    : undefined,
 
             };
 
@@ -384,7 +384,7 @@ const ShopTable: React.FC<ShopTableProps> = ({ isLoading: externalLoading,
             header: ({ column }) => <DataGridColumnHeader title="SHOP EST COMPLETION DATE" column={column} />,
             cell: ({ row }) => (
                 <span className="text-sm text-text">
-                    {row.original.shop_est_completion_date ? format(new Date(row.original.shop_est_completion_date), 'MM/dd/yyyy') : '-'}
+                    {row.original.shop_est_completion_date ? safeFormatDate(row.original.shop_est_completion_date, 'MM/dd/yyyy') : '-'}
                 </span>
             ),
             enableSorting: true,

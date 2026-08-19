@@ -39,6 +39,7 @@ import {
 } from '@/store/api/shopRevision';
 import { UniversalUploadModal } from '@/components/universal-upload';
 import { SCTTimer } from '@/pages/jobs/roles/back-to-sales/components/SCTTimer';
+import { safeFormatDate } from '../shop/components/statusDetails';
 
 // Helper for status display
 const getStatusInfo = (statusId: number | undefined, t: any) => {
@@ -463,7 +464,7 @@ export function OperatorTaskDetails() {
         { label: t('LABEL.STONE_THICKNESS'), value: currentTask?.stone_thickness || '—' },
         { label: t('LABEL.EDGE'), value: currentTask?.edge || '—' },
         { label: t('LABEL.PERCENT_COMPLETE'), value: currentTask?.work_percentage ? `${currentTask.work_percentage}%` : '—' },
-        { label: t('LABEL.EST_FAB_COMP_DATE'), value: fabData?.shop_est_completion_date ? format(new Date(fabData.shop_est_completion_date), 'MMM d') : '—' },
+        { label: t('LABEL.EST_FAB_COMP_DATE'), value: fabData?.shop_est_completion_date ? safeFormatDate(fabData.shop_est_completion_date, 'MM/dd/yyyy') : '—' },
         { label: t('OPERATOR.WORKSTATION'), value: currentTask?.workstation_name || '—' },
         { label: t('LABEL.EMPLOYEE'), value: currentUser?.first_name ? `${currentUser.first_name} ${currentUser.last_name}`.trim() : currentUser?.email || '—' },
         { label: t('OPERATOR.RUN_TIME'), value: formatTimeDisplay(totalTime) },

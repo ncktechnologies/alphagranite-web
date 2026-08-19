@@ -12,6 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 import { useIsSuperAdmin, usePermission } from '@/hooks/use-permission';
+import { safeFormatDate } from '@/pages/shop/components/statusDetails';
 
 const formatDate = (dateString?: string): string => {
     if (!dateString) return '-';
@@ -37,9 +38,9 @@ const transformFabToJob = (fab: Fab): IJob => {
         job_no: String(fab.job_details?.job_number),
         date: (fab as any).shop_est_completion_date ? (fab as any).shop_est_completion_date : (fab as any).estimated_completion_date,
         shop_est_completion_date: (fab as any).shop_est_completion_date
-            ? formatDate((fab as any).shop_est_completion_date)
+            ? safeFormatDate((fab as any).shop_est_completion_date, 'MM/dd/yyyy')
             : (fab as any).estimated_completion_date
-                ? formatDate((fab as any).estimated_completion_date)
+                ? safeFormatDate((fab as any).estimated_completion_date, 'MM/dd/yyyy')
                 : '-',
         current_stage: fab.current_stage,
         sales_person_name: fab.sales_person_name || '',
