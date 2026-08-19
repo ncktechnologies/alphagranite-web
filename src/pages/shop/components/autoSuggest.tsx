@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Calendar, ChevronDown, LoaderCircle, Plus, X, Sparkles, Lock } from 'lucide-react';
+import { ArrowLeft, Calendar, ChevronDown, LoaderCircle, Plus, X, Sparkles, Lock, Info } from 'lucide-react';
 import { format } from 'date-fns';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -35,6 +35,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge'; // for warnings
 
 // ── Field-to-keyword mapping ──────────────────────────────────────────────────
 const FAB_STAGE_FIELDS: { keyword: string; field: string; label: string }[] = [
@@ -406,7 +407,6 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   const [createShopPlan, { isLoading }] = useCreateShopPlansMutation();
   const [updateShopPlan] = useUpdateShopPlanMutation();
   const [createShopPlansSuggestion, { isLoading: isAutoScheduling }] = useCreateShopSuggestionMutation();
-  const [hasPendingRevision, setHasPendingRevision] = useState(false);
 
   const { data: planningSectionsData } = useGetPlanningSectionsQuery();
   const planningSections: any[] =
@@ -434,7 +434,6 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     return fabs.find((fab: any) => String(fab.id) === selectedFabId) || null;
   }, [allFabsData, selectedFabId]);
 
-  // ── NEW: Check if selected FAB already has plans ──────────────────────────
   const { data: existingPlansData, isFetching: isCheckingPlans } = useGetFabByIdQuery(
     selectedFabId,
     { skip: !selectedFabId }
@@ -442,9 +441,21 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
 
   const hasExistingPlans = useMemo(() => {
     if (!existingPlansData) return false;
-    const total = existingPlansData?.plans.length ?? 0;
+    const total = existingPlansData?.plans?.length ?? 0;
     return total > 0;
   }, [existingPlansData]);
+
+  // ── CNC warning ──
+  const cncLinFtNum = selectedFab?.cnc_linft || 0;
+  const cncDataExists = selectedFab?.cnc_data?.is_completed;
+  const showCncWarning = cncLinFtNum > 0 && !cncDataExists;
+
+  // ── Pending revision check ──
+  const hasPendingRevision = useMemo(() => {
+    if (!selectedFab) return false;
+    return selectedFab.has_pending_shop_revision === true ||
+      (selectedFab.shop_revisions && selectedFab.shop_revisions.some((r: any) => r.revision_completed === false));
+  }, [selectedFab]);
 
   const { findSectionByKeyword } = usePlanSections();
   const employeesLoaded = employees.length > 0;
@@ -496,13 +507,11 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     if (selectedFab) {
       const pending = selectedFab.has_pending_shop_revision === true ||
         (selectedFab.shop_revisions && selectedFab.shop_revisions.some((r: any) => r.revision_completed === false));
-      setHasPendingRevision(!!pending);
       if (pending) {
-       toast.warning('This FAB has pending shop revision(s). Auto-scheduling and creation are disabled until revisions are completed.', {
-  style: { backgroundColor: '#fef9e7', borderColor: '#f0c000', color: '#7a6a00' },
-  duration: 5000,
-});
-
+        toast.warning('This FAB has pending shop revision(s). Auto-scheduling and creation are disabled until revisions are completed.', {
+          style: { backgroundColor: '#fef9e7', borderColor: '#f0c000', color: '#7a6a00' },
+          duration: 5000,
+        });
       }
     }
   }, [selectedFab]);
@@ -648,6 +657,10 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (hasPendingRevision) {
+      toast.error('Cannot create plans while a shop revision is pending.');
+      return;
+    }
     for (const entry of entries) {
       if (!entry.fab_id) { toast.error('FAB ID is required'); return; }
       if (!entry.operator_id) { toast.error('Operator is required'); return; }
@@ -754,6 +767,10 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
   };
 
   const handleAutoPopulate = async () => {
+    if (hasPendingRevision) {
+      toast.error('Auto‑scheduling is disabled while a shop revision is pending.');
+      return;
+    }
     for (const entry of entries) {
       if (!entry.operator_id) { toast.error('Please select an operator for each stage'); return; }
       if (!entry.workstation_id) { toast.error('Please select a workstation for each stage'); return; }
@@ -826,6 +843,9 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
     [nonTouchupCount]
   );
 
+  // Disable submit and auto-populate if pending revision or existing plans
+  const disableActions = hasPendingRevision || hasExistingPlans || isCheckingPlans;
+
   return (
     <div className="bg-white min-h-screen">
       <div className="border-b border-[#dfdfdf]">
@@ -835,10 +855,13 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
               {isEditing ? 'Edit Plan' : 'Auto Schedule Plan'}
             </p>
             {entries[0]?.fab_id && (
-              <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2">
+              <Link
+                to={`/sales/${entries[0].fab_id}`}
+                className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2"
+              >
                 <span className="text-[14px] text-[#4a4d59]">FAB ID</span>
                 <span className="text-[20px] text-[#7a9705] font-semibold">#{entries[0].fab_id}</span>
-              </div>
+              </Link>
             )}
           </div>
 
@@ -856,13 +879,15 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
 
       <div className="px-10 py-8 max-w-5xl mx-auto">
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* ── NEW: Pending revision warning banner ── */}
+          {/* ── Pending Revision Banner ── */}
           {hasPendingRevision && (
             <div className="p-3 bg-red-50 border border-red-300 rounded-[8px] text-red-700 text-sm flex items-center gap-2">
               <Lock className="h-4 w-4" />
               Pending shop revision
             </div>
           )}
+
+
 
           <Card className="border border-[#ecedf0] rounded-[12px]">
             <CardContent className="pt-5">
@@ -888,6 +913,12 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
             <Card className="border border-[#ecedf0] rounded-[12px]">
               <CardHeader className="pb-3 border-b border-[#ecedf0]">
                 <CardTitle className="text-[16px] text-[#4b545d] font-semibold">FAB Details</CardTitle>
+                {showCncWarning && (
+                  <Badge variant="destructive" className="ml-2">
+                    <Info className="h-3 w-3 mr-1" />
+                    CNC not complete
+                  </Badge>
+                )}
               </CardHeader>
               <CardContent className="pt-5">
                 <div className="grid grid-cols-3 gap-4">
@@ -957,8 +988,7 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
             type="button"
             onClick={addEntry}
             className="w-full h-[44px] border border-dashed border-[#e2e4ed] rounded-[8px] flex items-center justify-center gap-2 text-[#78829d] hover:border-[#9cc15e] hover:text-[#7a9705] hover:bg-[#f0f4e8] transition-all"
-            disabled={isLoading || isAutoScheduling || hasExistingPlans || isCheckingPlans}
-
+            disabled={isLoading || isAutoScheduling || disableActions}
           >
             <Plus className="h-4 w-4" />
             <span className="text-[14px] font-semibold">Add Another Stage</span>
@@ -972,24 +1002,28 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
                   <button
                     type="button"
                     onClick={handleAutoPopulate}
-                    disabled={isAutoScheduling || hasExistingPlans || hasPendingRevision || isCheckingPlans}
+                    disabled={isAutoScheduling || disableActions}
                     className="w-full h-[44px] border border-[#9cc15e] rounded-[8px] flex items-center justify-center gap-2 text-[#5a7a00] bg-[#f0f4e8] hover:bg-[#e6f0d4] transition-colors disabled:opacity-60 text-[14px] font-semibold"
                   >
                     {isAutoScheduling ? (
                       <><LoaderCircle className="h-4 w-4 animate-spin" />Finding earliest slots…</>
                     ) : hasExistingPlans ? (
                       <><Lock className="h-4 w-4" />FAB already has plans</>
+                    ) : hasPendingRevision ? (
+                      <><Lock className="h-4 w-4" />Pending revision</>
                     ) : (
                       <><Sparkles className="h-4 w-4" />Auto-populate Dates</>
                     )}
                   </button>
                 </span>
               </TooltipTrigger>
-              {(hasExistingPlans || hasPendingRevision) && (
+              {(disableActions) && (
                 <TooltipContent side="top" className="bg-gray-800 text-white text-xs">
                   {hasPendingRevision
                     ? 'Pending shop revision(s) – complete them first.'
-                    : 'This FAB already has scheduled plans. Auto‑suggest is disabled.'}
+                    : hasExistingPlans
+                      ? 'This FAB already has scheduled plans. Auto‑suggest is disabled.'
+                      : 'Loading...'}
                 </TooltipContent>
               )}
             </Tooltip>
@@ -1006,9 +1040,11 @@ const CreateAutoPlanPage: React.FC<CreateAutoPlanPageProps> = ({
             </button>
             <button
               type="submit"
-              className="flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold disabled:opacity-60 cursor-pointer"
-              style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
-              disabled={isLoading || isAutoScheduling || hasExistingPlans || hasPendingRevision || isCheckingPlans}
+              className={cn(
+                "flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold",
+                (isLoading || isAutoScheduling || disableActions) ? "opacity-60 cursor-not-allowed bg-gradient-to-r from-[#7a9705] to-[#9cc15e]" : "bg-gradient-to-r from-[#7a9705] to-[#9cc15e]"
+              )}
+              disabled={isLoading || isAutoScheduling || disableActions}
             >
               {isLoading
                 ? <><LoaderCircle className="h-4 w-4 animate-spin" />Scheduling…</>

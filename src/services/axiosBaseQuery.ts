@@ -2,6 +2,9 @@ import type { BaseQueryFn } from '@reduxjs/toolkit/query';
 import axios from 'axios';
 import type { AxiosRequestConfig, AxiosError } from 'axios';
 import { toast } from 'sonner';
+import qs from 'qs';
+
+declare module 'qs';
 
 interface ErrorResponse {
   message?: string;
@@ -37,8 +40,11 @@ const processQueue = (error: any, token: string | null = null) => {
 
 const instance = axios.create({
   headers: {
-    // 'Content-Type': 'application/json',
     Accept: 'application/json',
+  },
+  paramsSerializer: (params) => {
+    // Serialize arrays as repeated params: a=1&a=2 (no brackets)
+    return qs.stringify(params, { arrayFormat: 'repeat' });
   },
 });
 

@@ -1009,7 +1009,7 @@ const FabDetailsPage = () => {
                     {/* Plans Card */}
                     <Card>
                         <CardHeader className="border-b pb-4">
-                            <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center justify-between w-full flex-wrap">
                                 <div>
                                     <CardTitle>Plans by Stage</CardTitle>
                                     {plans.length > 0 && (
@@ -1022,6 +1022,9 @@ const FabDetailsPage = () => {
                                             A pending shop revision exists. Plan edits and new plan creation are disabled until the revision is resolved.
                                         </p>
                                     )}
+
+                                </div>
+                                <div>
 
                                 </div>
                                 {showCncWarning && (

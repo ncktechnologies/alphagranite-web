@@ -35,33 +35,25 @@ import { useGetAllShopPlansQuery, useGetFabTypesQuery, useGetWorkstationsQuery, 
 import { formatTime } from '@/utils/date-utils';
 import CreatePlanPage from './createPlanePage';
 
+// ─── Constants (unchanged) ──────────────────────────────────────────────────
 const DAY_START_HOUR = 7;
 const DAY_END_HOUR = 19;
-const BREAK_START_HOUR = 12; // 12:00 PM
-const BREAK_END_HOUR = 13;   // 1:00 PM
-const BREAK_DURATION = BREAK_END_HOUR - BREAK_START_HOUR; // 1 hour
-const TOTAL_HOURS = DAY_END_HOUR - DAY_START_HOUR; // 12 hours (including break)
-const DISPLAY_HOURS = TOTAL_HOURS - BREAK_DURATION; // 11 hours (excluding break from display)
+const BREAK_START_HOUR = 12;
+const BREAK_END_HOUR = 13;
+const BREAK_DURATION = BREAK_END_HOUR - BREAK_START_HOUR;
+const TOTAL_HOURS = DAY_END_HOUR - DAY_START_HOUR;
+const DISPLAY_HOURS = TOTAL_HOURS - BREAK_DURATION;
 const HOUR_HEIGHT = 80;
 const HOUR_WIDTH = 220;
 
-// Helper function to calculate vertical position accounting for break
-// Events before break: normal position
-// Events after break: shifted down to show break gap
+// ─── Helper functions (unchanged) ──────────────────────────────────────────
 const getTimePosition = (hour: number) => {
-  if (hour < BREAK_START_HOUR) {
-    return (hour - DAY_START_HOUR) * HOUR_HEIGHT;
-  }
-  // At or after break, add break space
+  if (hour < BREAK_START_HOUR) return (hour - DAY_START_HOUR) * HOUR_HEIGHT;
   return (hour - DAY_START_HOUR - BREAK_DURATION) * HOUR_HEIGHT;
 };
 
-// Helper function to calculate horizontal position accounting for break (for swapped view)
 const getHorizontalPosition = (hour: number) => {
-  if (hour < BREAK_START_HOUR) {
-    return (hour - DAY_START_HOUR) * HOUR_WIDTH;
-  }
-  // At or after break, add break space
+  if (hour < BREAK_START_HOUR) return (hour - DAY_START_HOUR) * HOUR_WIDTH;
   return (hour - DAY_START_HOUR - BREAK_DURATION) * HOUR_WIDTH;
 };
 
@@ -97,11 +89,8 @@ function getColorForFab(fabId: string | number, fabType: string) {
   return COLOR_CYCLE[idx];
 }
 
-interface ShopCalendarPageProps {
-  onNavigateToCreatePlan?: (fabId: string, date: Date) => void;
-}
-
-const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
+// ─── Main Component ─────────────────────────────────────────────────────────
+const ShopCalendarPage: React.FC = () => {
   const navigate = useNavigate();
   const params = new URLSearchParams(location.search);
   const lockedFabId = params.get('fabId');
@@ -118,54 +107,27 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
   const [is12HourFormat] = useState(true);
   const [isAxisSwapped, setIsAxisSwapped] = useState(true);
-  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day');
+  const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
   const [activePage, setActivePage] = useState<'calendar' | 'create-plan'>('calendar');
   const [fabPickerOpen, setFabPickerOpen] = useState(false);
   const [fabPickerInput, setFabPickerInput] = useState('');
-  const [createPlanFabId, setCreatePlanFabId] = useState<string>('');
+  const [createPlanFabId, setCreatePlanFabId] = useState('');
 
   const [searchFabId, setSearchFabId] = useState('');
   const [searchType, setSearchType] = useState<'fab_id' | 'job_number'>('fab_id');
   const [filterFabType, setFilterFabType] = useState('');
-  const [filterWorkstation, setFilterWorkstation] = useState('');
+  const [filterWorkstation, setFilterWorkstation] = useState<string[]>([]); // array of IDs
   const [filterOperator, setFilterOperator] = useState<string[]>([]);
-  const [filterPlanningSection, setFilterPlanningSection] = useState('');
+  const [filterPlanningSections, setFilterPlanningSections] = useState<string[]>([]);
 
   const isSearchLocked = !!lockedFabId;
 
-  const queryParams = useMemo(() => {
-    const params: any = {
-      view: viewMode, // 'day', 'week', or 'month'
-      reference_date: format(currentDate, 'yyyy-MM-dd'), // Reference date in YYYY-MM-DD format
-      limit: 1000,
-    };
-
-    // If lockedFabId exists, always use it (overrides search)
-    if (lockedFabId) {
-      params.fab_id = Number(lockedFabId);
-    } else if (searchFabId) {
-      // Only add search when there's no lockedFabId
-      params.search = searchFabId;
-      params.type = searchType;
-    }
-
-    // Add other filters
-    if (filterFabType) params.fab_type = filterFabType;
-    if (filterWorkstation) params.workstation_id = Number(filterWorkstation);
-    if (filterOperator.length > 0) params.operator_id = filterOperator.map(id => Number(id));
-    if (filterPlanningSection) params.planning_section_id = Number(filterPlanningSection);
-
-    return params;
-  }, [currentDate, viewMode, lockedFabId, searchFabId, searchType, filterFabType, filterWorkstation, filterOperator, filterPlanningSection]);
-
-  const { data: plansResponse, isLoading, isFetching } = useGetAllShopPlansQuery(queryParams);
-
-  // Store the selected plan event directly from the calendar (no need to fetch again)
-  const [selectedPlan, setSelectedPlan] = useState<any>(null);
-
-  // Multi-select popover state for operators
+  // Popover open states
   const [operatorPopoverOpen, setOperatorPopoverOpen] = useState(false);
+  const [sectionPopoverOpen, setSectionPopoverOpen] = useState(false);
+  const [workstationPopoverOpen, setWorkstationPopoverOpen] = useState(false);
 
+  // ── Data fetching ──
   const { data: fabTypesData } = useGetFabTypesQuery();
   const { data: workstationsData } = useGetWorkstationsQuery();
   const { data: employeesData } = useGetEmployeesQuery();
@@ -194,6 +156,43 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     return arr.map((s: any) => ({ id: String(s.id), name: s.plan_name || `Section ${s.id}` }));
   }, [planningSectionsData]);
 
+  // ── Build query parameters with repeated query params (arrays) ──
+  const buildQueryParams = useCallback(() => {
+    const qp: any = {
+      view: viewMode,
+      reference_date: format(currentDate, 'yyyy-MM-dd'),
+      limit: 1000,
+    };
+
+    if (lockedFabId) {
+      qp.fab_id = Number(lockedFabId);
+    } else if (searchFabId) {
+      qp.search = searchFabId;
+      qp.type = searchType;
+    }
+
+    if (filterFabType) qp.fab_type = filterFabType;
+
+    // Send arrays -> will be serialised as repeated query params (e.g. ?operator_id=1&operator_id=2)
+    if (filterWorkstation.length > 0) {
+      qp.workstation_id = filterWorkstation.map(Number);
+    }
+    if (filterOperator.length > 0) {
+      qp.operator_id = filterOperator.map(Number);
+    }
+    if (filterPlanningSections.length > 0) {
+      qp.planning_section_id = filterPlanningSections.map(Number);
+    }
+
+    return qp;
+  }, [currentDate, viewMode, lockedFabId, searchFabId, searchType, filterFabType, filterWorkstation, filterOperator, filterPlanningSections]);
+
+  const queryParams = buildQueryParams();
+  const { data: plansResponse, isLoading, isFetching } = useGetAllShopPlansQuery(queryParams);
+
+  // ── Rest of the component (display logic, calendar, etc.) ──
+  const [selectedPlan, setSelectedPlan] = useState<any>(null);
+
   const displayDays = useMemo(() => {
     if (viewMode === 'day') return [currentDate];
     if (viewMode === 'week') {
@@ -213,64 +212,58 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     return weeks;
   }, [currentDate, viewMode]);
 
- const eventsByDay = useMemo(() => {
-  const grouped: Record<string, any[]> = {};
-  const allDays = viewMode === 'month' ? monthWeeks.flat() : displayDays;
-  allDays.forEach((d) => { grouped[format(d, 'yyyy-MM-dd')] = []; });
+  const eventsByDay = useMemo(() => {
+    const grouped: Record<string, any[]> = {};
+    const allDays = viewMode === 'month' ? monthWeeks.flat() : displayDays;
+    allDays.forEach((d) => { grouped[format(d, 'yyyy-MM-dd')] = []; });
 
-  // Use flat plans (not grouped_plans)
-  const flatPlans = plansResponse?.data?.plans ?? plansResponse?.plans ?? [];
+    const flatPlans = plansResponse?.data?.plans ?? plansResponse?.plans ?? [];
 
-  flatPlans.forEach((event: any) => {
-    const startDate = new Date(event.scheduled_start_date);
-    const startHour = startDate.getHours() + startDate.getMinutes() / 60;
-    const endHour = startHour + (event.estimated_hours ?? 0);
-    const dateKey = format(startDate, 'yyyy-MM-dd');
+    flatPlans.forEach((event: any) => {
+      const startDate = new Date(event.scheduled_start_date);
+      const startHour = startDate.getHours() + startDate.getMinutes() / 60;
+      const endHour = startHour + (event.estimated_hours ?? 0);
+      const dateKey = format(startDate, 'yyyy-MM-dd');
 
-    // If event fits within the day, add it as is
-    if (endHour <= DAY_END_HOUR) {
-      if (dateKey in grouped) grouped[dateKey].push(event);
-      return;
-    }
+      if (endHour <= DAY_END_HOUR) {
+        if (dateKey in grouped) grouped[dateKey].push(event);
+        return;
+      }
 
-    // ─── Split event across days ──────────────────────────────
-    // Part 1: current day (from startHour to DAY_END_HOUR)
-    const hoursOnFirstDay = DAY_END_HOUR - startHour;
-    if (hoursOnFirstDay > 0 && dateKey in grouped) {
-      grouped[dateKey].push({
-        ...event,
-        _isSplitPart: true,
-        _originalHours: event.estimated_hours,
-        estimated_hours: hoursOnFirstDay,
-        // Keep the same scheduled_start_date for the first part
-      });
-    }
-
-    // Remaining hours after the first day
-    let remainingHours = event.estimated_hours - hoursOnFirstDay;
-    let currentDate = addDays(startDate, 1);
-    let currentDayKey = format(currentDate, 'yyyy-MM-dd');
-
-    while (remainingHours > 0) {
-      const hoursOnThisDay = Math.min(remainingHours, DAY_END_HOUR - DAY_START_HOUR);
-      if (hoursOnThisDay > 0 && currentDayKey in grouped) {
-        grouped[currentDayKey].push({
+      const hoursOnFirstDay = DAY_END_HOUR - startHour;
+      if (hoursOnFirstDay > 0 && dateKey in grouped) {
+        grouped[dateKey].push({
           ...event,
           _isSplitPart: true,
           _originalHours: event.estimated_hours,
-          estimated_hours: hoursOnThisDay,
-          // Set scheduled_start_date to the beginning of the day for this part
-          scheduled_start_date: format(currentDate, 'yyyy-MM-dd') + 'T' + String(DAY_START_HOUR).padStart(2, '0') + ':00:00',
+          estimated_hours: hoursOnFirstDay,
         });
       }
-      remainingHours -= hoursOnThisDay;
-      currentDate = addDays(currentDate, 1);
-      currentDayKey = format(currentDate, 'yyyy-MM-dd');
-    }
-  });
 
-  return grouped;
-}, [plansResponse, displayDays, monthWeeks, viewMode]);
+      let remainingHours = event.estimated_hours - hoursOnFirstDay;
+      let currentDate = addDays(startDate, 1);
+      let currentDayKey = format(currentDate, 'yyyy-MM-dd');
+
+      while (remainingHours > 0) {
+        const hoursOnThisDay = Math.min(remainingHours, DAY_END_HOUR - DAY_START_HOUR);
+        if (hoursOnThisDay > 0 && currentDayKey in grouped) {
+          grouped[currentDayKey].push({
+            ...event,
+            _isSplitPart: true,
+            _originalHours: event.estimated_hours,
+            estimated_hours: hoursOnThisDay,
+            scheduled_start_date: format(currentDate, 'yyyy-MM-dd') + 'T' + String(DAY_START_HOUR).padStart(2, '0') + ':00:00',
+          });
+        }
+        remainingHours -= hoursOnThisDay;
+        currentDate = addDays(currentDate, 1);
+        currentDayKey = format(currentDate, 'yyyy-MM-dd');
+      }
+    });
+
+    return grouped;
+  }, [plansResponse, displayDays, monthWeeks, viewMode]);
+
   const totalPlans = useMemo(
     () => Object.values(eventsByDay).reduce((acc, evs) => acc + evs.length, 0),
     [eventsByDay],
@@ -288,9 +281,6 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     else setCurrentDate(addMonths(currentDate, 1));
   };
 
-
-
-  // Store the complete plan event directly from the calendar
   const handleOpenEditPlan = useCallback((event: any) => {
     setSelectedPlan(event);
     setCreatePlanFabId(String(event.fab_id));
@@ -318,25 +308,8 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     return () => clearInterval(t);
   }, []);
 
-  const currentTimeTop = useMemo(() => {
-    const h = currentTime.getHours() + currentTime.getMinutes() / 60;
-    return (h - DAY_START_HOUR) * HOUR_HEIGHT;
-  }, [currentTime]);
-
   const showTimeIndicator = currentTime.getHours() >= DAY_START_HOUR && currentTime.getHours() < DAY_END_HOUR;
 
-  // Calculate horizontal position accounting for break
-  const getHorizontalPosition = (hour: number): number => {
-    if (hour < BREAK_START_HOUR) {
-      // Before break - position normally
-      return (hour - DAY_START_HOUR) * HOUR_WIDTH;
-    } else {
-      // After break - shift left by break width to collapse the gap
-      return (hour - DAY_START_HOUR - BREAK_DURATION) * HOUR_WIDTH;
-    }
-  };
-
-  // Memoize event positioning calculation
   const getEventsWithPositions = useMemo(() => {
     return (events: any[]) => {
       if (!events.length) return [];
@@ -360,7 +333,6 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
       return sorted.map((ev, i) => {
         const start = new Date(ev.scheduled_start_date);
         const startH = start.getHours() + start.getMinutes() / 60;
-        // Calculate position accounting for break
         const top = getTimePosition(startH);
         const height = Math.max(HOUR_HEIGHT * 0.5, ev.estimated_hours * HOUR_HEIGHT);
         return { ...ev, _top: Math.max(0, top), _height: height, _col: cols[i], _maxCol: maxCol };
@@ -368,7 +340,6 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     };
   }, []);
 
-  // Memoize event card rendering
   const renderEventCard = useCallback((event: any) => {
     const col = event._maxCol ?? 1;
     const { bg, border, text } = getColorForFab(event.fab_id, event.fab_type);
@@ -433,8 +404,6 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
     return (
       <CreatePlanPage
         onBack={handleBackToCalendar}
-        // selectedDate={selectedPlan ? new Date(selectedPlan.scheduled_start_date) : selectedDate}
-        // selectedTimeSlot={selectedPlan ? format(new Date(selectedPlan.scheduled_start_date), 'HH:mm') : selectedTimeSlot}
         selectedDate={null}
         selectedTimeSlot={null}
         selectedEvent={selectedPlan ?? null}
@@ -453,7 +422,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
 
   return (
     <div className="bg-white min-h-screen">
-      {/* FAB Picker Dialog */}
+      {/* FAB Picker Dialog – unchanged */}
       {fabPickerOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
@@ -585,82 +554,154 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
               </div>
             )}
 
-            <>
-              <Select value={filterFabType || 'all'} onValueChange={(v) => setFilterFabType(v === 'all' ? '' : v)}>
-                <SelectTrigger className="min-w-[133px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
-                  <SelectValue placeholder="All FAB Types" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[200px] overflow-y-auto">
-                  <SelectItem value="all">All FAB Types</SelectItem>
-                  {fabTypes.map((t: string) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                </SelectContent>
-              </Select>
+            {/* FAB Type (single select) */}
+            <Select value={filterFabType || 'all'} onValueChange={(v) => setFilterFabType(v === 'all' ? '' : v)}>
+              <SelectTrigger className="min-w-[133px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
+                <SelectValue placeholder="All FAB Types" />
+              </SelectTrigger>
+              <SelectContent className="max-h-[200px] overflow-y-auto">
+                <SelectItem value="all">All FAB Types</SelectItem>
+                {fabTypes.map((t: string) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
 
-              <Select value={filterWorkstation || 'all'} onValueChange={(v) => setFilterWorkstation(v === 'all' ? '' : v)}>
-                <SelectTrigger className="min-w-[146px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
-                  <SelectValue placeholder="All Workstations" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[200px] overflow-y-auto">
-                  <SelectItem value="all">All Workstations</SelectItem>
-                  {workstations.map((w: any) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
-                </SelectContent>
-              </Select>
-
-              <Popover open={operatorPopoverOpen} onOpenChange={setOperatorPopoverOpen}>
-                <PopoverTrigger asChild>
-                  <button className="min-w-[137px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
-                    <span className="truncate">
-                      {filterOperator.length === 0 ? 'All Operators' : `${filterOperator.length} selected`}
-                    </span>
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[220px] p-0" align="start">
-                  <Command>
-                    <CommandInput placeholder="Search operators..." />
-                    <CommandList>
-                      <CommandEmpty>No operators found.</CommandEmpty>
-                      <CommandGroup>
-                        {operators.map((o: any) => {
-                          const isSelected = filterOperator.includes(o.id);
-                          return (
-                            <CommandItem
-                              key={o.id}
-                              onSelect={() => {
-                                if (isSelected) {
-                                  setFilterOperator(filterOperator.filter((id) => id !== o.id));
-                                } else {
-                                  setFilterOperator([...filterOperator, o.id]);
-                                }
-                              }}
+            {/* ── WORKSTATION multi‑select ── */}
+            <Popover open={workstationPopoverOpen} onOpenChange={setWorkstationPopoverOpen}>
+              <PopoverTrigger asChild>
+                <button className="min-w-[150px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
+                  <span className="truncate">
+                    {filterWorkstation.length === 0 ? 'All Workstations' : `${filterWorkstation.length} selected`}
+                  </span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[220px] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search workstations..." />
+                  <CommandList>
+                    <CommandEmpty>No workstations found.</CommandEmpty>
+                    <CommandGroup>
+                      {workstations.map((w: any) => {
+                        const isSelected = filterWorkstation.includes(w.id);
+                        return (
+                          <CommandItem
+                            key={w.id}
+                            onSelect={() => {
+                              if (isSelected) {
+                                setFilterWorkstation(filterWorkstation.filter(id => id !== w.id));
+                              } else {
+                                setFilterWorkstation([...filterWorkstation, w.id]);
+                              }
+                            }}
+                          >
+                            <div
+                              className={cn(
+                                "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                                isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
+                              )}
                             >
-                              <div
-                                className={cn(
-                                  "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
-                                  isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
-                                )}
-                              >
-                                <Check className={cn("h-4 w-4")} />
-                              </div>
-                              <span className="truncate">{o.name}</span>
-                            </CommandItem>
-                          );
-                        })}
-                      </CommandGroup>
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
+                              <Check className={cn("h-4 w-4")} />
+                            </div>
+                            <span className="truncate">{w.name}</span>
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
 
-              <Select value={filterPlanningSection || 'all'} onValueChange={(v) => setFilterPlanningSection(v === 'all' ? '' : v)}>
-                <SelectTrigger className="min-w-[150px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
-                  <SelectValue placeholder="All Sections" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[200px] overflow-y-auto">
-                  <SelectItem value="all">All Plans</SelectItem>
-                  {planningSections.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name || s.plan_name || s.title || ''}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </>
+            {/* ── OPERATOR multi‑select ── */}
+            <Popover open={operatorPopoverOpen} onOpenChange={setOperatorPopoverOpen}>
+              <PopoverTrigger asChild>
+                <button className="min-w-[137px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
+                  <span className="truncate">
+                    {filterOperator.length === 0 ? 'All Operators' : `${filterOperator.length} selected`}
+                  </span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[220px] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search operators..." />
+                  <CommandList>
+                    <CommandEmpty>No operators found.</CommandEmpty>
+                    <CommandGroup>
+                      {operators.map((o: any) => {
+                        const isSelected = filterOperator.includes(o.id);
+                        return (
+                          <CommandItem
+                            key={o.id}
+                            onSelect={() => {
+                              if (isSelected) {
+                                setFilterOperator(filterOperator.filter(id => id !== o.id));
+                              } else {
+                                setFilterOperator([...filterOperator, o.id]);
+                              }
+                            }}
+                          >
+                            <div
+                              className={cn(
+                                "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                                isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
+                              )}
+                            >
+                              <Check className={cn("h-4 w-4")} />
+                            </div>
+                            <span className="truncate">{o.name}</span>
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+
+            {/* ── PLANNING SECTION multi‑select ── */}
+            <Popover open={sectionPopoverOpen} onOpenChange={setSectionPopoverOpen}>
+              <PopoverTrigger asChild>
+                <button className="min-w-[150px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
+                  <span className="truncate">
+                    {filterPlanningSections.length === 0 ? 'All Plans' : `${filterPlanningSections.length} selected`}
+                  </span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[220px] p-0" align="start">
+                <Command>
+                  <CommandInput placeholder="Search sections..." />
+                  <CommandList>
+                    <CommandEmpty>No sections found.</CommandEmpty>
+                    <CommandGroup>
+                      {planningSections.map((s: any) => {
+                        const isSelected = filterPlanningSections.includes(s.id);
+                        return (
+                          <CommandItem
+                            key={s.id}
+                            onSelect={() => {
+                              if (isSelected) {
+                                setFilterPlanningSections(filterPlanningSections.filter(id => id !== s.id));
+                              } else {
+                                setFilterPlanningSections([...filterPlanningSections, s.id]);
+                              }
+                            }}
+                          >
+                            <div
+                              className={cn(
+                                "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                                isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
+                              )}
+                            >
+                              <Check className={cn("h-4 w-4")} />
+                            </div>
+                            <span className="truncate">{s.name}</span>
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {viewMode !== 'month' && (
@@ -684,7 +725,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
         </div>
       </div>
 
-      {/* Calendar Card */}
+      {/* Calendar Card – identical to previous, only filter bar changed */}
       <div className="p-4 md:p-6">
         <div className="border border-[#ecedf0] rounded-[16px] px-4 py-6 flex flex-col gap-4">
           <div className="flex items-center justify-between pl-4">
@@ -742,7 +783,6 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
             </div>
           ) : (
             <>
-              {/* Refetch indicator overlay */}
               {isFetching && !isLoading && (
                 <div className="relative">
                   <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none rounded-[8px]">
@@ -758,7 +798,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
               )}
               <TooltipProvider>
                 <div className="border border-[#ecedf0] rounded-[8px] overflow-x-auto">
-                  {/* Month view */}
+                  {/* Month view – unchanged */}
                   {viewMode === 'month' && (
                     <div className="min-w-max">
                       <div className="grid" style={{ gridTemplateColumns: 'auto repeat(7, 1fr)' }}>
@@ -796,7 +836,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                     </div>
                   )}
 
-                  {/* Day / Week column view */}
+                  {/* Day / Week column view – unchanged */}
                   {viewMode !== 'month' && !isAxisSwapped && (
                     <div className="min-w-max">
                       <div className="flex sticky top-0 z-10 bg-white border-b border-[#e2e4ed]">
@@ -820,19 +860,11 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                         <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] relative">
                           {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                             const hour = DAY_START_HOUR + i;
-
-                            // Skip rendering labels inside break time
-                            if (hour > BREAK_START_HOUR && hour < BREAK_END_HOUR) {
-                              return null;
-                            }
-
+                            if (hour > BREAK_START_HOUR && hour < BREAK_END_HOUR) return null;
                             const label = is12HourFormat
                               ? `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
                               : `${String(hour).padStart(2, '0')}:00`;
-
-                            // Calculate position accounting for break
                             const position = getTimePosition(hour);
-
                             return (
                               <div
                                 key={hour}
@@ -861,10 +893,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                               {/* Hour grid lines */}
                               {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                                 const hour = DAY_START_HOUR + i;
-                                // Skip grid lines inside break time
-                                if (hour > BREAK_START_HOUR && hour < BREAK_END_HOUR) {
-                                  return null;
-                                }
+                                if (hour > BREAK_START_HOUR && hour < BREAK_END_HOUR) return null;
                                 const position = getTimePosition(hour);
                                 return (
                                   <div key={i} className="absolute w-full border-t border-[#ecedf0]" style={{ top: position }} />
@@ -907,30 +936,19 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                     </div>
                   )}
 
-                  {/* Time-row view (axis swapped) */}
+                  {/* Time-row view (axis swapped) – unchanged */}
                   {viewMode !== 'month' && isAxisSwapped && (
                     <div className="min-w-max">
                       <div className="flex border-b border-[#e2e4ed] bg-white sticky top-0 z-10">
-                        {/* Day column header */}
                         <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0]" />
-
-                        {/* Time header row */}
                         <div className="relative" style={{ minWidth: DISPLAY_HOURS * HOUR_WIDTH, height: 50 }}>
                           {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                             const hour = DAY_START_HOUR + i;
-
-                            // Skip rendering labels inside break time
-                            if (hour >= BREAK_START_HOUR && hour < BREAK_END_HOUR) {
-                              return null;
-                            }
-
+                            if (hour >= BREAK_START_HOUR && hour < BREAK_END_HOUR) return null;
                             const label = is12HourFormat
                               ? `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
                               : `${String(hour).padStart(2, '0')}:00`;
-
-                            // Calculate position accounting for break
                             const position = getHorizontalPosition(hour);
-
                             return (
                               <div
                                 key={hour}
@@ -985,10 +1003,7 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                               {/* Hour grid lines */}
                               {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                                 const hour = DAY_START_HOUR + i;
-                                // Skip grid lines inside break time
-                                if (hour >= BREAK_START_HOUR && hour < BREAK_END_HOUR) {
-                                  return null;
-                                }
+                                if (hour >= BREAK_START_HOUR && hour < BREAK_END_HOUR) return null;
                                 const position = getHorizontalPosition(hour);
                                 return (
                                   <div key={i} className="absolute top-0 bottom-0 border-l border-[#ecedf0]" style={{ left: position }} />
@@ -1001,14 +1016,11 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
                                   const startH = startDt.getHours() + startDt.getMinutes() / 60;
                                   const endH = startH + ev.estimated_hours;
 
-                                  // Calculate positions accounting for break
                                   const left = getHorizontalPosition(startH);
                                   const right = getHorizontalPosition(endH);
 
-                                  // If event spans across the break, add break width to the calculation
                                   let width = right - left;
                                   if (startH < BREAK_START_HOUR && endH > BREAK_START_HOUR) {
-                                    // Event spans across break - add break width
                                     width += BREAK_DURATION * HOUR_WIDTH;
                                   }
 
@@ -1066,7 +1078,6 @@ const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
       </div>
     </div>
   );
-
 };
 
 export default ShopCalendarPage;

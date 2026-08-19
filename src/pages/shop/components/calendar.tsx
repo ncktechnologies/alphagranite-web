@@ -1,21 +1,23 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, Clock, X, Search, Rows3, Columns3 } from 'lucide-react';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Check, ChevronLeft, ChevronRight, Plus, Calendar as CalendarIcon, X, Search, Rows3, Columns3, Lock } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   format,
   addDays,
   startOfWeek,
   endOfWeek,
   isSameDay,
-  getMonth,
-  getYear,
   addMonths,
   startOfMonth,
   endOfMonth,
   eachDayOfInterval,
+  getMonth,
 } from 'date-fns';
 import { Calendar } from '@/components/ui/calendar';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -23,55 +25,182 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { useGetAllShopPlansQuery, useGetFabTypesQuery, useGetWorkstationsQuery, useGetEmployeesQuery } from '@/store/api';
-import CreateEventForm from './createEvent';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { useGetAllShopPlansQuery, useGetFabTypesQuery, useGetWorkstationsQuery, useGetEmployeesQuery, useGetPlanningSectionsQuery } from '@/store/api';
 import { formatTime } from '@/utils/date-utils';
+import CreatePlanPage from './createPlanePage';
 
 const DAY_START_HOUR = 7;
-const DAY_END_HOUR = 17;
-const TOTAL_HOURS = DAY_END_HOUR - DAY_START_HOUR;
-const HOUR_HEIGHT = 60;
-const HOUR_WIDTH = 100;
+const DAY_END_HOUR = 19;
+const BREAK_START_HOUR = 12; // 12:00 PM
+const BREAK_END_HOUR = 13;   // 1:00 PM
+const BREAK_DURATION = BREAK_END_HOUR - BREAK_START_HOUR; // 1 hour
+const TOTAL_HOURS = DAY_END_HOUR - DAY_START_HOUR; // 12 hours (including break)
+const DISPLAY_HOURS = TOTAL_HOURS - BREAK_DURATION; // 11 hours (excluding break from display)
+const HOUR_HEIGHT = 80;
+const HOUR_WIDTH = 220;
 
-const ShopCalendarPage = () => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [showCreateForm, setShowCreateForm] = useState(false);
+// Helper function to calculate vertical position accounting for break
+// Events before break: normal position
+// Events after break: shifted down to show break gap
+const getTimePosition = (hour: number) => {
+  if (hour < BREAK_START_HOUR) {
+    return (hour - DAY_START_HOUR) * HOUR_HEIGHT;
+  }
+  // At or after break, add break space
+  return (hour - DAY_START_HOUR - BREAK_DURATION) * HOUR_HEIGHT;
+};
+
+// Helper function to calculate horizontal position accounting for break (for swapped view)
+const getHorizontalPosition = (hour: number) => {
+  if (hour < BREAK_START_HOUR) {
+    return (hour - DAY_START_HOUR) * HOUR_WIDTH;
+  }
+  // At or after break, add break space
+  return (hour - DAY_START_HOUR - BREAK_DURATION) * HOUR_WIDTH;
+};
+
+const FAB_TYPE_COLORS: Record<string, { bg: string; border: string; text: string }> = {
+  'standard': { bg: '#9eeb47', border: '#6b9e2f', text: '#1e293b' },
+  'fab only': { bg: '#5bd1d7', border: '#2e8b8f', text: '#1e293b' },
+  'cust redo': { bg: '#f0bf4c', border: '#b88a2a', text: '#1e293b' },
+  'resurface': { bg: '#d094ea', border: '#8f5ca8', text: '#1e293b' },
+  'fast track': { bg: '#f59794', border: '#b35e5b', text: '#1e293b' },
+  'ag redo': { bg: '#f5cc94', border: '#b58f4f', text: '#1e293b' },
+};
+const DEFAULT_COLOR = { bg: '#e8f5e9', border: '#81c784', text: '#2e7d32' };
+
+function getFabTypeColor(fabType: string) {
+  return FAB_TYPE_COLORS[fabType?.toLowerCase()] ?? DEFAULT_COLOR;
+}
+
+const COLOR_CYCLE = [
+  { bg: '#d5e7ff', border: '#70a5f8', text: '#2563eb' },
+  { bg: '#caf2d7', border: '#5fd28c', text: '#16a34a' },
+  { bg: '#ffebcf', border: '#ffb84d', text: '#b45309' },
+  { bg: '#ffe0e3', border: '#ed7172', text: '#dc2626' },
+  { bg: '#c4edea', border: '#4db6ac', text: '#0f766e' },
+  { bg: '#f3e8ff', border: '#c084fc', text: '#7c3aed' },
+  { bg: '#fef9c3', border: '#fde047', text: '#854d0e' },
+  { bg: '#f1f2f4', border: '#8f929c', text: '#4b5563' },
+];
+
+function getColorForFab(fabId: string | number, fabType: string) {
+  const base = getFabTypeColor(fabType);
+  if (base !== DEFAULT_COLOR) return base;
+  const idx = Number(fabId) % COLOR_CYCLE.length;
+  return COLOR_CYCLE[idx];
+}
+
+interface ShopCalendarPageProps {
+  onNavigateToCreatePlan?: (fabId: string, date: Date) => void;
+}
+
+const ShopCalendarPage: React.FC<ShopCalendarPageProps> = () => {
+  const navigate = useNavigate();
+  const params = new URLSearchParams(location.search);
+  const lockedFabId = params.get('fabId');
+  const urlDate = params.get('date');
+
+  const [currentDate, setCurrentDate] = useState(() => {
+    if (urlDate) {
+      const parsed = new Date(urlDate);
+      if (!isNaN(parsed.getTime())) return parsed;
+    }
+    return new Date();
+  });
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState<string | null>(null);
-  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
-
-  const [is12HourFormat, setIs12HourFormat] = useState(true);
-  const [isAxisSwapped, setIsAxisSwapped] = useState(false);
+  const [is12HourFormat] = useState(true);
+  const [isAxisSwapped, setIsAxisSwapped] = useState(true);
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('day');
+  const [activePage, setActivePage] = useState<'calendar' | 'create-plan'>('calendar');
+  const [fabPickerOpen, setFabPickerOpen] = useState(false);
+  const [fabPickerInput, setFabPickerInput] = useState('');
+  const [createPlanFabId, setCreatePlanFabId] = useState<string>('');
 
-  const [filters, setFilters] = useState({
-    fabType: '',
-    workstation: '',
-    operator: '',
-    fabId: '',
-  });
+  const [searchFabId, setSearchFabId] = useState('');
+  const [searchType, setSearchType] = useState<'fab_id' | 'job_number'>('fab_id');
+  const [filterFabType, setFilterFabType] = useState('');
+  const [filterWorkstation, setFilterWorkstation] = useState('');
+  const [filterOperator, setFilterOperator] = useState<string[]>([]);
+  const [filterPlanningSection, setFilterPlanningSection] = useState('');
 
-  const { data: plansResponse, isLoading } = useGetAllShopPlansQuery({
-    month: getMonth(currentDate) + 1,
-    year: getYear(currentDate),
-    limit: 1000,
-  });
+  const isSearchLocked = !!lockedFabId;
+
+  const queryParams = useMemo(() => {
+    const params: any = {
+      view: viewMode, // 'day', 'week', or 'month'
+      reference_date: format(currentDate, 'yyyy-MM-dd'), // Reference date in YYYY-MM-DD format
+      limit: 1000,
+    };
+
+    // If lockedFabId exists, always use it (overrides search)
+    if (lockedFabId) {
+      params.fab_id = Number(lockedFabId);
+    } else if (searchFabId) {
+      // Only add search when there's no lockedFabId
+      params.search = searchFabId;
+      params.type = searchType;
+    }
+
+    // Add other filters
+    if (filterFabType) params.fab_type = filterFabType;
+    if (filterWorkstation) params.workstation_id = Number(filterWorkstation);
+    if (filterOperator.length > 0) params.operator_id = filterOperator.map(id => Number(id));
+    if (filterPlanningSection) params.planning_section_id = Number(filterPlanningSection);
+
+    return params;
+  }, [currentDate, viewMode, lockedFabId, searchFabId, searchType, filterFabType, filterWorkstation, filterOperator, filterPlanningSection]);
+
+  const { data: plansResponse, isLoading, isFetching } = useGetAllShopPlansQuery(queryParams);
+
+  // Store the selected plan event directly from the calendar (no need to fetch again)
+  const [selectedPlan, setSelectedPlan] = useState<any>(null);
+
+  // Multi-select popover state for operators
+  const [operatorPopoverOpen, setOperatorPopoverOpen] = useState(false);
 
   const { data: fabTypesData } = useGetFabTypesQuery();
   const { data: workstationsData } = useGetWorkstationsQuery();
   const { data: employeesData } = useGetEmployeesQuery();
+  const { data: planningSectionsData } = useGetPlanningSectionsQuery();
+
+  const fabTypes = useMemo(() => {
+    if (Array.isArray(fabTypesData)) return fabTypesData.map((f: any) => f.name || f).sort();
+    if (fabTypesData?.data) return fabTypesData.data.map((f: any) => f.name || f).sort();
+    return [];
+  }, [fabTypesData]);
+
+  const workstations = useMemo(() => {
+    const arr = workstationsData?.data || (Array.isArray(workstationsData) ? workstationsData : []);
+    return arr.map((w: any) => ({ id: String(w.id), name: w.name || `WS ${w.id}` }));
+  }, [workstationsData]);
+
+  const operators = useMemo(() => {
+    const arr = employeesData?.data || (Array.isArray(employeesData) ? employeesData : []);
+    return arr
+      .map((e: any) => ({ id: String(e.id), name: `${e.first_name || ''} ${e.last_name || ''}`.trim() || e.email }))
+      .sort((a: any, b: any) => a.name.localeCompare(b.name));
+  }, [employeesData]);
+
+  const planningSections = useMemo(() => {
+    const arr = (planningSectionsData as any)?.data || (Array.isArray(planningSectionsData) ? planningSectionsData : []);
+    return arr.map((s: any) => ({ id: String(s.id), name: s.plan_name || `Section ${s.id}` }));
+  }, [planningSectionsData]);
 
   const displayDays = useMemo(() => {
     if (viewMode === 'day') return [currentDate];
     if (viewMode === 'week') {
-      const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-      return Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+      const ws = startOfWeek(currentDate, { weekStartsOn: 1 });
+      return Array.from({ length: 7 }, (_, i) => addDays(ws, i));
     }
-    return eachDayOfInterval({
-      start: startOfMonth(currentDate),
-      end: endOfMonth(currentDate),
-    });
+    return eachDayOfInterval({ start: startOfMonth(currentDate), end: endOfMonth(currentDate) });
   }, [currentDate, viewMode]);
 
   const monthWeeks = useMemo(() => {
@@ -80,79 +209,72 @@ const ShopCalendarPage = () => {
     const end = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 1 });
     const days = eachDayOfInterval({ start, end });
     const weeks: Date[][] = [];
-    for (let i = 0; i < days.length; i += 7) {
-      weeks.push(days.slice(i, i + 7));
-    }
+    for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
     return weeks;
   }, [currentDate, viewMode]);
 
-  const availableFilters = useMemo(() => {
-    let fabTypesArray: string[] = [];
-    if (Array.isArray(fabTypesData)) {
-      fabTypesArray = fabTypesData.map((ft: any) => ft.name || ft).sort();
-    } else if (fabTypesData?.data && Array.isArray(fabTypesData.data)) {
-      fabTypesArray = fabTypesData.data.map((ft: any) => ft.name || ft).sort();
+ const eventsByDay = useMemo(() => {
+  const grouped: Record<string, any[]> = {};
+  const allDays = viewMode === 'month' ? monthWeeks.flat() : displayDays;
+  allDays.forEach((d) => { grouped[format(d, 'yyyy-MM-dd')] = []; });
+
+  // Use flat plans (not grouped_plans)
+  const flatPlans = plansResponse?.data?.plans ?? plansResponse?.plans ?? [];
+
+  flatPlans.forEach((event: any) => {
+    const startDate = new Date(event.scheduled_start_date);
+    const startHour = startDate.getHours() + startDate.getMinutes() / 60;
+    const endHour = startHour + (event.estimated_hours ?? 0);
+    const dateKey = format(startDate, 'yyyy-MM-dd');
+
+    // If event fits within the day, add it as is
+    if (endHour <= DAY_END_HOUR) {
+      if (dateKey in grouped) grouped[dateKey].push(event);
+      return;
     }
 
-    let workstationsArray: string[] = [];
-    if (workstationsData?.data && Array.isArray(workstationsData.data)) {
-      workstationsArray = workstationsData.data.map((ws: any) => ws.name || ws).sort();
-    } else if (Array.isArray(workstationsData)) {
-      workstationsArray = workstationsData.map((ws: any) => ws.name || ws).sort();
+    // ─── Split event across days ──────────────────────────────
+    // Part 1: current day (from startHour to DAY_END_HOUR)
+    const hoursOnFirstDay = DAY_END_HOUR - startHour;
+    if (hoursOnFirstDay > 0 && dateKey in grouped) {
+      grouped[dateKey].push({
+        ...event,
+        _isSplitPart: true,
+        _originalHours: event.estimated_hours,
+        estimated_hours: hoursOnFirstDay,
+        // Keep the same scheduled_start_date for the first part
+      });
     }
 
-    let operatorsArray: Array<{ id: string | number; first_name: string; last_name: string }> = [];
-    if (employeesData?.data && Array.isArray(employeesData.data)) {
-      operatorsArray = employeesData.data.map((emp: any) => ({
-        id: emp.id,
-        first_name: emp.first_name,
-        last_name: emp.last_name,
-      }));
-    } else if (Array.isArray(employeesData)) {
-      operatorsArray = employeesData.map((emp: any) => ({
-        id: emp.id,
-        first_name: emp.first_name,
-        last_name: emp.last_name,
-      }));
-    }
-    operatorsArray.sort((a, b) => a.first_name.localeCompare(b.first_name));
+    // Remaining hours after the first day
+    let remainingHours = event.estimated_hours - hoursOnFirstDay;
+    let currentDate = addDays(startDate, 1);
+    let currentDayKey = format(currentDate, 'yyyy-MM-dd');
 
-    return {
-      fabTypes: fabTypesArray,
-      workstations: workstationsArray,
-      operators: operatorsArray,
-    };
-  }, [fabTypesData, workstationsData, employeesData]);
-
-  const eventsByDay = useMemo(() => {
-    const grouped: Record<string, any[]> = {};
-    const allDays = viewMode === 'month' ? monthWeeks.flat() : displayDays;
-    allDays.forEach((day) => {
-      grouped[format(day, 'yyyy-MM-dd')] = [];
-    });
-
-    const plans = plansResponse?.data?.grouped_plans || plansResponse?.grouped_plans || [];
-    plans.forEach((groupedPlan: any) => {
-      const dateKey = format(new Date(groupedPlan.date), 'yyyy-MM-dd');
-      if (grouped[dateKey] !== undefined) {
-        let filtered = groupedPlan.plans || [];
-        if (filters.fabId) {
-          filtered = filtered.filter((p: any) => String(p.fab_id).includes(filters.fabId));
-        }
-        if (filters.fabType) {
-          filtered = filtered.filter((p: any) => p.fab_type === filters.fabType);
-        }
-        if (filters.workstation) {
-          filtered = filtered.filter((p: any) => String(p.workstation_id) === filters.workstation);
-        }
-        if (filters.operator) {
-          filtered = filtered.filter((p: any) => String(p.operator_id) === filters.operator);
-        }
-        grouped[dateKey] = filtered;
+    while (remainingHours > 0) {
+      const hoursOnThisDay = Math.min(remainingHours, DAY_END_HOUR - DAY_START_HOUR);
+      if (hoursOnThisDay > 0 && currentDayKey in grouped) {
+        grouped[currentDayKey].push({
+          ...event,
+          _isSplitPart: true,
+          _originalHours: event.estimated_hours,
+          estimated_hours: hoursOnThisDay,
+          // Set scheduled_start_date to the beginning of the day for this part
+          scheduled_start_date: format(currentDate, 'yyyy-MM-dd') + 'T' + String(DAY_START_HOUR).padStart(2, '0') + ':00:00',
+        });
       }
-    });
-    return grouped;
-  }, [plansResponse, displayDays, monthWeeks, viewMode, filters]);
+      remainingHours -= hoursOnThisDay;
+      currentDate = addDays(currentDate, 1);
+      currentDayKey = format(currentDate, 'yyyy-MM-dd');
+    }
+  });
+
+  return grouped;
+}, [plansResponse, displayDays, monthWeeks, viewMode]);
+  const totalPlans = useMemo(
+    () => Object.values(eventsByDay).reduce((acc, evs) => acc + evs.length, 0),
+    [eventsByDay],
+  );
 
   const handlePrevious = () => {
     if (viewMode === 'day') setCurrentDate(addDays(currentDate, -1));
@@ -166,130 +288,244 @@ const ShopCalendarPage = () => {
     else setCurrentDate(addMonths(currentDate, 1));
   };
 
-  const handleCreateEvent = (date: Date, timeSlot?: string) => {
-    setSelectedEvent(null);
-    setSelectedDate(date);
-    setSelectedTimeSlot(timeSlot || null);
-    setShowCreateForm(true);
+
+
+  // Store the complete plan event directly from the calendar
+  const handleOpenEditPlan = useCallback((event: any) => {
+    setSelectedPlan(event);
+    setCreatePlanFabId(String(event.fab_id));
+    setActivePage('create-plan');
+  }, []);
+
+  const handleOpenCreatePlanWithFab = useCallback((fabId: string) => {
+    setCreatePlanFabId(fabId);
+    setFabPickerOpen(false);
+    setActivePage('create-plan');
+  }, []);
+
+  const handleBackToCalendar = useCallback(() => {
+    setActivePage('calendar');
+    setSelectedPlan(null);
+    setCreatePlanFabId('');
+  }, []);
+
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const t = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60_000);
+    return () => clearInterval(t);
+  }, []);
+
+  const currentTimeTop = useMemo(() => {
+    const h = currentTime.getHours() + currentTime.getMinutes() / 60;
+    return (h - DAY_START_HOUR) * HOUR_HEIGHT;
+  }, [currentTime]);
+
+  const showTimeIndicator = currentTime.getHours() >= DAY_START_HOUR && currentTime.getHours() < DAY_END_HOUR;
+
+  // Calculate horizontal position accounting for break
+  const getHorizontalPosition = (hour: number): number => {
+    if (hour < BREAK_START_HOUR) {
+      // Before break - position normally
+      return (hour - DAY_START_HOUR) * HOUR_WIDTH;
+    } else {
+      // After break - shift left by break width to collapse the gap
+      return (hour - DAY_START_HOUR - BREAK_DURATION) * HOUR_WIDTH;
+    }
   };
 
-  // ✅ Define timeSlots – this must be present before the JSX that uses it
-  const timeSlots = Array.from({ length: 10 }, (_, i) => {
-    const hour = 7 + i;
-    return `${hour.toString().padStart(2, '0')}:00`;
-  });
-  
-
-
-  const getFabTypeColor = (fabType: string) => {
-    const map: Record<string, string> = {
-      standard: 'bg-[#9eeb47] text-gray-900 border-[#9eeb47]',
-      'fab only': 'bg-[#5bd1d7] text-gray-900 border-[#5bd1d7]',
-      'cust redo': 'bg-[#f0bf4c] text-gray-900 border-[#f0bf4c]',
-      "resurface": 'bg-[#d094ea] text-gray-900 border-[#d094ea]',
-      'fast track': 'bg-[#f59794] text-gray-900 border-[#f59794]',
-      'ag redo': 'bg-[#f5cc94] text-gray-900 border-[#f5cc94]',
+  // Memoize event positioning calculation
+  const getEventsWithPositions = useMemo(() => {
+    return (events: any[]) => {
+      if (!events.length) return [];
+      const sorted = [...events].sort(
+        (a, b) => new Date(a.scheduled_start_date).getTime() - new Date(b.scheduled_start_date).getTime(),
+      );
+      const ranges = sorted.map((ev) => {
+        const s = new Date(ev.scheduled_start_date).getTime();
+        const e = s + ev.estimated_hours * 3_600_000;
+        return { s, e };
+      });
+      const cols: number[] = new Array(sorted.length).fill(0);
+      ranges.forEach((r, i) => {
+        const used = new Set<number>();
+        for (let j = 0; j < i; j++) if (ranges[j].e > r.s) used.add(cols[j]);
+        let c = 0;
+        while (used.has(c)) c++;
+        cols[i] = c;
+      });
+      const maxCol = Math.max(...cols, 0) + 1;
+      return sorted.map((ev, i) => {
+        const start = new Date(ev.scheduled_start_date);
+        const startH = start.getHours() + start.getMinutes() / 60;
+        // Calculate position accounting for break
+        const top = getTimePosition(startH);
+        const height = Math.max(HOUR_HEIGHT * 0.5, ev.estimated_hours * HOUR_HEIGHT);
+        return { ...ev, _top: Math.max(0, top), _height: height, _col: cols[i], _maxCol: maxCol };
+      });
     };
-    return map[fabType?.toLowerCase()] || 'bg-gray-200 text-gray-900 border-gray-200';
-  };
+  }, []);
 
-  const getEventPosition = (event: any) => {
-    const start = new Date(event.scheduled_start_date);
-    const startHour = start.getHours() + start.getMinutes() / 60;
-    const startOffset = (startHour - DAY_START_HOUR) * HOUR_HEIGHT;
-    const durationHours = event.estimated_hours;
-    const height = durationHours * HOUR_HEIGHT;
-    return { top: Math.max(0, startOffset), height: Math.max(HOUR_HEIGHT * 0.5, height) };
-  };
+  // Memoize event card rendering
+  const renderEventCard = useCallback((event: any) => {
+    const col = event._maxCol ?? 1;
+    const { bg, border, text } = getColorForFab(event.fab_id, event.fab_type);
+    const PAD = 4;
+    const colW = `calc(${100 / col}% - ${PAD}px)`;
+    const colLeft = `calc(${(event._col / col) * 100}% + ${PAD / 2}px)`;
 
-  const getEventsWithPositions = (events: any[]) => {
-    if (!events.length) return [];
-    const sorted = [...events].sort((a, b) =>
-      new Date(a.scheduled_start_date).getTime() - new Date(b.scheduled_start_date).getTime()
-    );
-    const ranges = sorted.map((event, idx) => {
-      const start = new Date(event.scheduled_start_date);
-      const end = new Date(start.getTime() + event.estimated_hours * 60 * 60 * 1000);
-      return { start: start.getTime(), end: end.getTime(), idx, event };
-    });
-    const columns: number[] = new Array(events.length).fill(0);
-    ranges.forEach((range, i) => {
-      const overlappingCols = new Set<number>();
-      for (let j = 0; j < i; j++) {
-        if (ranges[j].end > range.start) {
-          overlappingCols.add(columns[j]);
-        }
-      }
-      let col = 0;
-      while (overlappingCols.has(col)) col++;
-      columns[i] = col;
-    });
-    const maxCol = Math.max(...columns, 0) + 1;
-    return sorted.map((event, idx) => {
-      const { top, height } = getEventPosition(event);
-      return {
-        ...event,
-        _top: top,
-        _height: height,
-        _left: (columns[idx] / maxCol) * 100,
-        _width: 100 / maxCol,
-      };
-    });
-  };
-
-  const renderEventCard = (event: any) => {
-    const startTime = formatTime(new Date(event.scheduled_start_date), is12HourFormat);
-    const endTime = formatTime(new Date(new Date(event.scheduled_start_date).getTime() + event.estimated_hours * 60 * 60 * 1000), is12HourFormat);
     return (
-      <div
-        key={event.id}
-        className={`absolute rounded border-l-4 overflow-hidden text-[10px] leading-tight p-0.5 cursor-pointer ${getFabTypeColor(event.fab_type)}`}
-        style={{
-          top: `${event._top}px`,
-          height: `${event._height}px`,
-          left: `${event._left}%`,
-          width: `${event._width}%`,
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          setSelectedEvent(event);
-          setSelectedDate(new Date(event.scheduled_start_date));
-          setSelectedTimeSlot(format(new Date(event.scheduled_start_date), 'HH:mm'));
-          setShowCreateForm(true);
-        }}
-      >
-        <div className="font-semibold truncate">{event.fab_id}</div>
-        <div className="truncate">{event.fab_type}</div>
-        <div className="truncate text-gray-700">{event.workstation_name}</div>
-        <div className="truncate">{event.operator_name}</div>
-        <div className="flex items-center gap-0.5">
-          <Clock className="h-2 w-2" />
-          <span>{startTime} - {endTime}</span>
-        </div>
-        <div>{event.estimated_hours}h</div>
-      </div>
+      <Tooltip key={event.id} delayDuration={300}>
+        <TooltipTrigger asChild>
+          <div
+            className="absolute cursor-pointer rounded-[12px] border overflow-hidden transition-opacity hover:opacity-90"
+            style={{
+              top: event._top + PAD,
+              height: event._height - PAD,
+              left: colLeft,
+              width: colW,
+              backgroundColor: bg,
+              borderColor: border,
+            }}
+            onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(event); }}
+          >
+            <div className="px-3 py-2 h-full flex flex-col justify-start overflow-hidden">
+              <p className="text-[13px] font-semibold truncate" style={{ color: text }}>
+                {event.fab_id} {event.plan_name ? `• ${event.plan_name}` : ''} {event.operator_name ? `• ${event.operator_name}` : ''}
+              </p>
+              {event._isSplitPart && (
+                <p className="text-[9px] italic mt-0.5" style={{ color: text, opacity: 0.6 }}>
+                  (Continued from previous day)
+                </p>
+              )}
+              <p className="text-[11px] truncate mt-0.5" style={{ color: text, opacity: 0.7 }}>
+                {event.fab_type || event.percent_complete != null ? `${event.work_percentage ?? 0}%` : ''}
+              </p>
+              {event._height > 60 && (
+                <p className="text-[10px] truncate mt-1" style={{ color: text, opacity: 0.6 }}>
+                  {event.workstation_name || ''}
+                </p>
+              )}
+            </div>
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="right" className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700">
+          <div className="space-y-1">
+            <p><span className="font-semibold">FAB ID:</span> {event.fab_id}</p>
+            <p><span className="font-semibold">Operator:</span> {event.operator_name || 'N/A'}</p>
+            <p><span className="font-semibold">Workstation:</span> {event.workstation_name || 'N/A'}</p>
+            <p><span className="font-semibold">Est. Hours:</span> {event.estimated_hours ?? 'N/A'}</p>
+            <p><span className="font-semibold">% Complete:</span> {event.work_percentage ?? 0}%</p>
+            <p><span className="font-semibold">Job:</span> {`${event.job_name}-${event.job_number}` || 'N/A'}</p>
+            <p><span className="font-semibold">Job No:</span> {event.job_number || 'N/A'}</p>
+            <p><span className="font-semibold">Account Name:</span> {event.account_name || 'N/A'}</p>
+            <p><span className="font-semibold">Plan:</span> {event.plan_name}</p>
+            {event.notes && <p><span className="font-semibold">Notes:</span> {event.notes}</p>}
+          </div>
+        </TooltipContent>
+      </Tooltip>
     );
-  };
+  }, [handleOpenEditPlan]);
+
+  if (activePage === 'create-plan') {
+    return (
+      <CreatePlanPage
+        onBack={handleBackToCalendar}
+        // selectedDate={selectedPlan ? new Date(selectedPlan.scheduled_start_date) : selectedDate}
+        // selectedTimeSlot={selectedPlan ? format(new Date(selectedPlan.scheduled_start_date), 'HH:mm') : selectedTimeSlot}
+        selectedDate={null}
+        selectedTimeSlot={null}
+        selectedEvent={selectedPlan ?? null}
+        prefillFabId={createPlanFabId}
+        onEventCreated={handleBackToCalendar}
+      />
+    );
+  }
+
+  const calLabel =
+    viewMode === 'day'
+      ? format(currentDate, 'EEEE, MMMM d, yyyy')
+      : viewMode === 'week'
+        ? `${format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMM d')} – ${format(addDays(startOfWeek(currentDate, { weekStartsOn: 1 }), 6), 'MMM d, yyyy')}`
+        : format(currentDate, 'MMMM yyyy');
 
   return (
     <div className="bg-white min-h-screen">
-      {/* ── Page header ── */}
+      {/* FAB Picker Dialog */}
+      {fabPickerOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+          onClick={() => setFabPickerOpen(false)}
+        >
+          <div
+            className="bg-white rounded-[16px] border border-[#ecedf0] shadow-xl w-[420px] p-6 flex flex-col gap-5"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-[20px] text-black">Select FAB ID</p>
+                <p className="text-[13px] text-[#7c8689] mt-1">Enter the FAB ID to create a plan for</p>
+              </div>
+              <button onClick={() => setFabPickerOpen(false)} className="h-8 w-8 rounded-[6px] border border-[#e2e4ed] flex items-center justify-center hover:bg-gray-50">
+                <X className="h-4 w-4 text-[#7c8689]" />
+              </button>
+            </div>
+
+            <div className="flex items-center gap-3 bg-[#f0f4e8] rounded-[8px] px-4 py-3">
+              <CalendarIcon className="h-4 w-4 text-[#7a9705]" />
+              <span className="font-semibold text-[13px] text-[#4b545d]">
+                {selectedDate ? format(selectedDate, 'EEEE, MMMM d, yyyy') : format(currentDate, 'EEEE, MMMM d, yyyy')}
+              </span>
+            </div>
+
+            <div>
+              <label className="font-semibold text-[13px] text-[#4b545d] block mb-2">FAB ID *</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#78829d]" />
+                <input
+                  type="number"
+                  placeholder="e.g. 2390"
+                  value={fabPickerInput}
+                  onChange={(e) => setFabPickerInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && fabPickerInput.trim()) handleOpenCreatePlanWithFab(fabPickerInput.trim()); }}
+                  autoFocus
+                  className="w-full h-[44px] bg-white border border-[#e2e4ed] rounded-[8px] pl-9 pr-4 text-[14px] text-[#4b545d] placeholder:text-[#78829d] outline-none focus:border-[#9cc15e] focus:ring-1 focus:ring-[#9cc15e]"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setFabPickerOpen(false)}
+                className="flex-1 h-[44px] border border-[#e2e4ed] rounded-[8px] text-[14px] text-[#4b545d] hover:bg-gray-50 font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => fabPickerInput.trim() && handleOpenCreatePlanWithFab(fabPickerInput.trim())}
+                disabled={!fabPickerInput.trim()}
+                className="flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold disabled:opacity-40"
+                style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Page Header */}
       <div className="border-b border-[#dfdfdf]">
-        {/* Title row */}
         <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
           <div className="flex flex-col gap-2">
-            <p className="font-['Proxima_Nova:Semibold',sans-serif] text-[28px] leading-[32px] text-black font-semibold">Shop Plan</p>
-            <p className="font-['Proxima_Nova:Semibold',sans-serif] text-[20px] leading-[24px] text-[#4a4d59] font-semibold">
-              {viewMode === 'day'
-                ? format(currentDate, 'EEEE, MMMM d, yyyy')
-                : viewMode === 'week'
-                ? `Week of ${format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMMM d')} – ${format(addDays(startOfWeek(currentDate, { weekStartsOn: 1 }), 6), 'MMMM d, yyyy')}`
-                : format(currentDate, 'MMMM yyyy')}
-            </p>
+            <p className="font-semibold text-[28px] leading-[32px] text-black">Shop Plan</p>
+            <p className="font-semibold text-[20px] leading-[24px] text-[#4a4d59]">{calLabel}</p>
           </div>
           <button
-            onClick={() => handleCreateEvent(currentDate)}
-            className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-['Proxima_Nova:Semibold',sans-serif] text-[14px] leading-[20px] font-semibold tracking-[-0.56px]"
+            onClick={() => navigate('/shop/create-plan')}
+            className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px] tracking-[-0.56px]"
             style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
           >
             <Plus className="h-4 w-4" />
@@ -297,121 +533,149 @@ const ShopCalendarPage = () => {
           </button>
         </div>
 
-        {/* View mode row */}
         <div className="flex items-center px-10 h-[65px]">
-          {/* Day / Month switcher */}
           <div className="bg-[#f9f9f9] h-[45px] rounded-[6px] flex items-start pt-[4px] px-[4px] gap-2">
-            <button
-              onClick={() => setViewMode('day')}
-              className={`px-[15px] py-[8px] rounded-[4px] font-['Proxima_Nova:Semibold',sans-serif] text-[14px] leading-[21px] font-semibold transition-all ${
-                viewMode === 'day'
+            {(['day', 'week', 'month'] as const).map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setViewMode(mode)}
+                className={`px-[15px] py-[8px] rounded-[4px] font-semibold text-[14px] leading-[21px] capitalize transition-all ${viewMode === mode
                   ? 'bg-white text-black shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]'
                   : 'text-[#78829d]'
-              }`}
-            >
-              Day
-            </button>
-            <button
-              onClick={() => setViewMode('month')}
-              className={`px-[12px] py-[8px] rounded-[4px] font-['Proxima_Nova:Semibold',sans-serif] text-[14px] leading-[21px] font-semibold transition-all ${
-                viewMode === 'month'
-                  ? 'bg-white text-black shadow-[0px_1px_3px_0px_rgba(0,0,0,0.1),0px_1px_2px_0px_rgba(0,0,0,0.1)]'
-                  : 'text-[#78829d]'
-              }`}
-            >
-              Month
-            </button>
+                  }`}
+              >
+                {mode}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* Filter row */}
         <div className="flex items-center justify-between px-10 h-[65px]">
-          {/* Left: filters */}
           <div className="flex items-center gap-[10px]">
-            {/* Search */}
-            <div className="relative w-[194px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#78829d]" />
-              <input
-                placeholder="Search FAB ID..."
-                value={filters.fabId}
-                onChange={(e) => setFilters({ ...filters, fabId: e.target.value })}
-                className="w-full h-[36px] bg-white border border-[#e2e4ed] rounded-[6px] pl-9 pr-3 text-[13px] font-['Proxima_Nova:Regular',sans-serif] text-[#4b545d] placeholder:text-[#78829d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] outline-none focus:ring-1 focus:ring-[#e2e4ed]"
-              />
-              {filters.fabId && (
-                <button
-                  className="absolute right-2 top-1/2 -translate-y-1/2"
-                  onClick={() => setFilters({ ...filters, fabId: '' })}
-                >
-                  <X className="size-3.5 text-[#78829d]" />
-                </button>
-              )}
-            </div>
+            {isSearchLocked ? (
+              <div className="flex items-center gap-2 h-[36px] bg-[#f0f4e8] border border-[#9cc15e] rounded-[6px] px-3">
+                <Lock className="size-3.5 text-[#7a9705]" />
+                <span className="font-semibold text-[13px] text-[#4b545d]">{lockedFabId}</span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-0">
+                <Select value={searchType} onValueChange={(v) => setSearchType(v as 'fab_id' | 'job_number')}>
+                  <SelectTrigger className="w-[130px] h-[36px] bg-white border border-[#e2e4ed] rounded-[6px] rounded-e-none border-r-0 text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
+                    <SelectValue placeholder="Search by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fab_id">FAB ID</SelectItem>
+                    <SelectItem value="job_number">Job Number</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-[#78829d]" />
+                  <input
+                    placeholder={`Search by ${searchType === 'fab_id' ? 'FAB ID' : 'Job Number'}...`}
+                    value={searchFabId}
+                    onChange={(e) => setSearchFabId(e.target.value)}
+                    className="w-[194px] h-[36px] bg-white border border-[#e2e4ed] rounded-[6px] rounded-s-none pl-9 pr-3 text-[13px] text-[#4b545d] placeholder:text-[#78829d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] outline-none focus:ring-1 focus:ring-[#e2e4ed]"
+                  />
+                  {searchFabId && (
+                    <button className="absolute right-2 top-1/2 -translate-y-1/2" onClick={() => setSearchFabId('')}>
+                      <X className="size-3.5 text-[#78829d]" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
 
-            {/* FAB Types */}
-            <Select
-              value={filters.fabType || 'all'}
-              onValueChange={(value) => setFilters({ ...filters, fabType: value === 'all' ? '' : value })}
-            >
-              <SelectTrigger className="w-[133px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
-                <SelectValue placeholder="All FAB Types" />
-              </SelectTrigger>
-              <SelectContent className="max-h-[200px] overflow-y-auto">
-                <SelectItem value="all">All FAB Types</SelectItem>
-                {availableFilters.fabTypes.map((type) => (
-                  <SelectItem key={type} value={type}>{type}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <>
+              <Select value={filterFabType || 'all'} onValueChange={(v) => setFilterFabType(v === 'all' ? '' : v)}>
+                <SelectTrigger className="min-w-[133px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
+                  <SelectValue placeholder="All FAB Types" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px] overflow-y-auto">
+                  <SelectItem value="all">All FAB Types</SelectItem>
+                  {fabTypes.map((t: string) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                </SelectContent>
+              </Select>
 
-            {/* Workstations */}
-            <Select
-              value={filters.workstation || 'all'}
-              onValueChange={(value) => setFilters({ ...filters, workstation: value === 'all' ? '' : value })}
-            >
-              <SelectTrigger className="w-[146px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
-                <SelectValue placeholder="All Workstations" />
-              </SelectTrigger>
-              <SelectContent className="max-h-[200px] overflow-y-auto">
-                <SelectItem value="all">All Workstations</SelectItem>
-                {availableFilters.workstations.map((ws) => (
-                  <SelectItem key={ws} value={ws}>{ws}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Select value={filterWorkstation || 'all'} onValueChange={(v) => setFilterWorkstation(v === 'all' ? '' : v)}>
+                <SelectTrigger className="min-w-[146px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
+                  <SelectValue placeholder="All Workstations" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px] overflow-y-auto">
+                  <SelectItem value="all">All Workstations</SelectItem>
+                  {workstations.map((w: any) => <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
 
-            {/* Operators */}
-            <Select
-              value={filters.operator || 'all'}
-              onValueChange={(value) => setFilters({ ...filters, operator: value === 'all' ? '' : value })}
-            >
-              <SelectTrigger className="w-[137px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
-                <SelectValue placeholder="All Operators" />
-              </SelectTrigger>
-              <SelectContent className="max-h-[200px] overflow-y-auto">
-                <SelectItem value="all">All Operators</SelectItem>
-                {availableFilters.operators.map((op) => (
-                  <SelectItem key={op.id} value={String(op.id)}>
-                    {op.first_name} {op.last_name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              <Popover open={operatorPopoverOpen} onOpenChange={setOperatorPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <button className="min-w-[137px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
+                    <span className="truncate">
+                      {filterOperator.length === 0 ? 'All Operators' : `${filterOperator.length} selected`}
+                    </span>
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[220px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Search operators..." />
+                    <CommandList>
+                      <CommandEmpty>No operators found.</CommandEmpty>
+                      <CommandGroup>
+                        {operators.map((o: any) => {
+                          const isSelected = filterOperator.includes(o.id);
+                          return (
+                            <CommandItem
+                              key={o.id}
+                              onSelect={() => {
+                                if (isSelected) {
+                                  setFilterOperator(filterOperator.filter((id) => id !== o.id));
+                                } else {
+                                  setFilterOperator([...filterOperator, o.id]);
+                                }
+                              }}
+                            >
+                              <div
+                                className={cn(
+                                  "mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+                                  isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"
+                                )}
+                              >
+                                <Check className={cn("h-4 w-4")} />
+                              </div>
+                              <span className="truncate">{o.name}</span>
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
+
+              <Select value={filterPlanningSection || 'all'} onValueChange={(v) => setFilterPlanningSection(v === 'all' ? '' : v)}>
+                <SelectTrigger className="min-w-[150px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
+                  <SelectValue placeholder="All Sections" />
+                </SelectTrigger>
+                <SelectContent className="max-h-[200px] overflow-y-auto">
+                  <SelectItem value="all">All Plans</SelectItem>
+                  {planningSections.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name || s.plan_name || s.title || ''}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </>
           </div>
 
-          {/* Right: row/column toggle (only in non-month view) */}
           {viewMode !== 'month' && (
             <div className="bg-[#eaebe7] rounded-[8px] flex items-center gap-[2px] p-[2px]">
               <button
                 onClick={() => setIsAxisSwapped(false)}
-                title="Day columns"
                 className={`p-[8px] rounded-[6px] transition-all ${!isAxisSwapped ? 'bg-white shadow-sm' : ''}`}
+                title="Column view"
               >
                 <Columns3 className="size-6 text-black" strokeWidth={2} />
               </button>
               <button
                 onClick={() => setIsAxisSwapped(true)}
-                title="Time rows"
                 className={`p-[8px] rounded-[6px] transition-all ${isAxisSwapped ? 'bg-white shadow-sm' : ''}`}
+                title="Row view"
               >
                 <Rows3 className="size-6 text-[#93948e]" strokeWidth={2} />
               </button>
@@ -420,17 +684,14 @@ const ShopCalendarPage = () => {
         </div>
       </div>
 
-      {/* ── Calendar card ── */}
+      {/* Calendar Card */}
       <div className="p-4 md:p-6">
         <div className="border border-[#ecedf0] rounded-[16px] px-4 py-6 flex flex-col gap-4">
-
-          {/* CalendarToolbar */}
           <div className="flex items-center justify-between pl-4">
-            {/* Left: prev + calendar icon + date + next */}
             <div className="flex items-center gap-4">
               <button
                 onClick={handlePrevious}
-                className="bg-white h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] flex items-center justify-center"
+                className="bg-white h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] flex items-center justify-center hover:bg-gray-50"
               >
                 <ChevronLeft className="h-5 w-5 text-[#74798b]" />
               </button>
@@ -439,270 +700,373 @@ const ShopCalendarPage = () => {
                 <PopoverTrigger asChild>
                   <button className="flex items-center gap-3">
                     <CalendarIcon className="size-6 text-[#4b545d]" strokeWidth={2} />
-                    <span className="font-['Proxima_Nova:Semibold',sans-serif] text-[20px] leading-[24px] text-[#4a4d59] font-semibold whitespace-nowrap">
-                      {viewMode === 'day'
-                        ? format(currentDate, 'EEEE, MMMM d, yyyy')
-                        : viewMode === 'week'
-                        ? `Week of ${format(startOfWeek(currentDate, { weekStartsOn: 1 }), 'MMMM d')} – ${format(addDays(startOfWeek(currentDate, { weekStartsOn: 1 }), 6), 'MMMM d, yyyy')}`
-                        : format(currentDate, 'MMMM yyyy')}
-                    </span>
+                    <span className="font-semibold text-[20px] leading-[24px] text-[#4a4d59] whitespace-nowrap">{calLabel}</span>
                   </button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={currentDate}
-                    onSelect={(date) => date && setCurrentDate(date)}
-                  />
+                  <Calendar mode="single" selected={currentDate} onSelect={(d) => d && setCurrentDate(d)} />
                 </PopoverContent>
               </Popover>
 
               <button
                 onClick={handleNext}
-                className="bg-white h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] flex items-center justify-center"
+                className="bg-white h-[34px] px-3 py-[7px] rounded-[6px] border border-[#e2e4e9] flex items-center justify-center hover:bg-gray-50"
               >
                 <ChevronRight className="h-5 w-5 text-[#74798b]" />
               </button>
             </div>
 
-            {/* Right: totals */}
-            <div className="flex flex-col items-end gap-[10px]">
-              <p className="font-['Proxima_Nova:Semibold',sans-serif] text-[16px] leading-[24px] text-[#7c8689] font-semibold whitespace-nowrap">
-                {viewMode === 'month' ? 'Total Monthly Plans' : 'Total Scheduled Plans'}
+            <div className="flex flex-col items-end gap-1">
+              <p className="font-semibold text-[16px] leading-[24px] text-[#7c8689] whitespace-nowrap">
+                Total Scheduled Plans
+                {isSearchLocked && <span className="ml-2 text-[#7a9705]">. {lockedFabId}</span>}
+                {isFetching && !isLoading && (
+                  <span className="ml-2 inline-flex items-center gap-1.5">
+                    <svg className="animate-spin h-3.5 w-3.5 text-[#7a9705]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span className="text-[12px] font-medium text-[#7a9705]">Refreshing...</span>
+                  </span>
+                )}
               </p>
-              <p className="font-['Proxima_Nova:Semibold',sans-serif] text-[20px] leading-[24px] text-black font-semibold">
-                {isLoading ? '-' : Object.values(eventsByDay).reduce((acc, events) => acc + events.length, 0)}
+              <p className="font-semibold text-[20px] leading-[24px] text-black">
+                {isLoading ? '–' : totalPlans}
               </p>
             </div>
           </div>
 
-          {/* Timeline / Calendar grid */}
-          {isLoading && (
-            <div className="flex items-center justify-center py-12">
-              <p className="text-[#7c8689]">Loading calendar events...</p>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16">
+              <p className="text-[#7c8689]">Loading calendar events…</p>
             </div>
-          )}
-
-          {!isLoading && (
-            <div className="border border-[#ecedf0] rounded-[8px] overflow-x-auto">
-              {viewMode === 'month' ? (
-                /* ── Month grid ── */
-                <div className="min-w-max">
-                  <div className="grid" style={{ gridTemplateColumns: 'auto repeat(7, 1fr)' }}>
-                    <div className="p-2" />
-                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                      <div key={day} className="text-center text-[12px] font-medium text-[#4b545d] uppercase p-2 border-b border-[#e2e4ed]">
-                        {day}
+          ) : (
+            <>
+              {/* Refetch indicator overlay */}
+              {isFetching && !isLoading && (
+                <div className="relative">
+                  <div className="absolute inset-0 bg-white/50 backdrop-blur-[1px] z-10 flex items-center justify-center pointer-events-none rounded-[8px]">
+                    <div className="bg-white border border-[#e2e4ed] rounded-[8px] px-4 py-2 shadow-sm flex items-center gap-2">
+                      <svg className="animate-spin h-4 w-4 text-[#7a9705]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span className="text-[13px] font-medium text-[#4b545d]">Updating calendar...</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <TooltipProvider>
+                <div className="border border-[#ecedf0] rounded-[8px] overflow-x-auto">
+                  {/* Month view */}
+                  {viewMode === 'month' && (
+                    <div className="min-w-max">
+                      <div className="grid" style={{ gridTemplateColumns: 'auto repeat(7, 1fr)' }}>
+                        <div className="p-2 border-b border-[#e2e4ed]" />
+                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => (
+                          <div key={d} className="text-center text-[12px] font-medium text-[#4b545d] uppercase p-2 border-b border-l border-[#ecedf0]">{d}</div>
+                        ))}
+                        {monthWeeks.map((week, wi) => (
+                          <React.Fragment key={wi}>
+                            <div className="text-[12px] font-medium text-[#7c8689] p-2 text-right pr-4 border-b border-[#ecedf0]">
+                              Wk {format(week[0], 'w')}
+                            </div>
+                            {week.map((day) => {
+                              const dk = format(day, 'yyyy-MM-dd');
+                              const evs = eventsByDay[dk] || [];
+                              const inMonth = getMonth(day) === getMonth(currentDate);
+                              return (
+                                <div
+                                  key={dk}
+                                  className={`border-b border-l border-[#ecedf0] p-2 min-h-[80px] cursor-pointer hover:bg-gray-50 transition-colors ${!inMonth ? 'bg-gray-50' : ''}`}
+                                  onClick={() => { setCurrentDate(day); setViewMode('day'); }}
+                                >
+                                  <div className={`text-right text-[13px] font-medium ${!inMonth ? 'text-[#c0c4cc]' : 'text-[#4b545d]'}`}>{format(day, 'd')}</div>
+                                  {evs.length > 0 && (
+                                    <Badge variant="outline" className="mt-1 text-[14px] font-semibold">
+                                      {evs.length} plan{evs.length !== 1 ? 's' : ''}
+                                    </Badge>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </React.Fragment>
+                        ))}
                       </div>
-                    ))}
-                    {monthWeeks.map((week, idx) => {
-                      const weekNumber = format(week[0], 'w');
-                      return (
-                        <React.Fragment key={idx}>
-                          <div className="text-[12px] font-medium text-[#7c8689] p-2 text-right pr-4 border-b border-[#e2e4ed]">
-                            Wk {weekNumber}
+                    </div>
+                  )}
+
+                  {/* Day / Week column view */}
+                  {viewMode !== 'month' && !isAxisSwapped && (
+                    <div className="min-w-max">
+                      <div className="flex sticky top-0 z-10 bg-white border-b border-[#e2e4ed]">
+                        <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0]" />
+                        {displayDays.map((day) => (
+                          <div
+                            key={format(day, 'yyyy-MM-dd')}
+                            className="flex-1 min-w-[160px] border-r border-[#ecedf0] flex flex-col items-center py-3 gap-1"
+                          >
+                            <span className="text-[12px] text-[#7c8689] uppercase tracking-wide">{format(day, 'EEE')}</span>
+                            <span
+                              className={`text-[22px] font-semibold w-9 h-9 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'}`}
+                            >
+                              {format(day, 'd')}
+                            </span>
                           </div>
-                          {week.map((day) => {
-                            const dateKey = format(day, 'yyyy-MM-dd');
-                            const dayEvents = eventsByDay[dateKey] || [];
-                            const isCurrentMonth = getMonth(day) === getMonth(currentDate);
+                        ))}
+                      </div>
+
+                      <div className="relative flex pt-5" style={{ height: DISPLAY_HOURS * HOUR_HEIGHT }}>
+                        <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] relative">
+                          {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
+                            const hour = DAY_START_HOUR + i;
+
+                            // Skip rendering labels inside break time
+                            if (hour > BREAK_START_HOUR && hour < BREAK_END_HOUR) {
+                              return null;
+                            }
+
+                            const label = is12HourFormat
+                              ? `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
+                              : `${String(hour).padStart(2, '0')}:00`;
+
+                            // Calculate position accounting for break
+                            const position = getTimePosition(hour);
+
                             return (
                               <div
-                                key={dateKey}
-                                className={`border-b border-r border-[#ecedf0] p-2 min-h-[80px] cursor-pointer hover:bg-gray-50 transition-colors ${!isCurrentMonth ? 'bg-gray-50 text-[#c0c4cc]' : ''}`}
-                                onClick={() => { setCurrentDate(day); setViewMode('day'); }}
+                                key={hour}
+                                className="absolute w-full pr-3 flex items-start justify-end"
+                                style={{ top: position - 9, height: HOUR_HEIGHT }}
                               >
-                                <div className="text-right text-[13px] font-medium">{format(day, 'd')}</div>
-                                {dayEvents.length > 0 && (
-                                  <div className="mt-1">
-                                    <Badge variant="outline" className="text-[11px]">
-                                      {dayEvents.length} plan{dayEvents.length !== 1 ? 's' : ''}
-                                    </Badge>
-                                  </div>
-                                )}
+                                <span className="text-[11px] font-medium text-[#7c8689] whitespace-nowrap">{label}</span>
                               </div>
                             );
                           })}
-                        </React.Fragment>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : !isAxisSwapped ? (
-                /* ── Day-column (time rows) layout ── */
-                <div className="min-w-max">
-                  {/* Time header */}
-                  <div className="flex border-b border-[#e2e4ed]">
-                    <div className="w-24 flex-shrink-0 border-r border-[#ecedf0]" />
-                    {displayDays.map((day) => (
-                      <div
-                        key={format(day, 'yyyy-MM-dd')}
-                        className="flex-1 min-w-[200px] border-r border-[#ecedf0] flex flex-col items-center py-3"
-                      >
-                        <div className="font-['Inter:Medium',sans-serif] text-[12px] text-[#4b545d] text-center">
-                          {format(day, 'EEE')}
                         </div>
-                        <div className={`font-['Inter:Medium',sans-serif] text-[20px] font-medium ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-[#4b545d]'}`}>
-                          {format(day, 'd')}
+
+                        {displayDays.map((day) => {
+                          const dk = format(day, 'yyyy-MM-dd');
+                          const events = eventsByDay[dk] || [];
+                          const positioned = getEventsWithPositions(events);
+                          const isToday = isSameDay(day, new Date());
+
+                          return (
+                            <div
+                              key={dk}
+                              className="flex-1 min-w-[160px] border-r border-[#ecedf0] relative"
+                              style={{ height: DISPLAY_HOURS * HOUR_HEIGHT }}
+                              onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(true); } : undefined}
+                            >
+                              {/* Hour grid lines */}
+                              {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
+                                const hour = DAY_START_HOUR + i;
+                                // Skip grid lines inside break time
+                                if (hour > BREAK_START_HOUR && hour < BREAK_END_HOUR) {
+                                  return null;
+                                }
+                                const position = getTimePosition(hour);
+                                return (
+                                  <div key={i} className="absolute w-full border-t border-[#ecedf0]" style={{ top: position }} />
+                                );
+                              })}
+
+                              {/* Break time indicator */}
+                              <div
+                                className="absolute left-0 right-0 bg-gradient-to-b from-orange-100/50 to-orange-200/50 border-y-2 border-orange-300 pointer-events-none flex items-center justify-center"
+                                style={{
+                                  top: getTimePosition(BREAK_START_HOUR),
+                                  height: BREAK_DURATION * HOUR_HEIGHT
+                                }}
+                              >
+                                <span className="text-[11px] font-semibold text-orange-600 uppercase tracking-wide">
+                                  Break Time
+                                </span>
+                              </div>
+
+                              {isToday && <div className="absolute inset-0 bg-[#7a9705]/[0.02] pointer-events-none" />}
+                              {positioned.map((ev) => renderEventCard(ev))}
+                              {isToday && showTimeIndicator && (
+                                <div className="absolute left-0 right-0 z-10 pointer-events-none" style={{ top: getTimePosition(currentTime.getHours() + currentTime.getMinutes() / 60) }}>
+                                  <div className="relative flex items-center">
+                                    <div
+                                      className="absolute -left-[90px] flex items-center justify-center rounded-[4px] px-1 py-0.5 z-20"
+                                      style={{ backgroundColor: '#ee1a1d' }}
+                                    >
+                                      <span className="text-[9px] font-semibold text-white whitespace-nowrap">
+                                        {formatTime(currentTime, is12HourFormat)}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Time-row view (axis swapped) */}
+                  {viewMode !== 'month' && isAxisSwapped && (
+                    <div className="min-w-max">
+                      <div className="flex border-b border-[#e2e4ed] bg-white sticky top-0 z-10">
+                        {/* Day column header */}
+                        <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0]" />
+
+                        {/* Time header row */}
+                        <div className="relative" style={{ minWidth: DISPLAY_HOURS * HOUR_WIDTH, height: 50 }}>
+                          {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
+                            const hour = DAY_START_HOUR + i;
+
+                            // Skip rendering labels inside break time
+                            if (hour >= BREAK_START_HOUR && hour < BREAK_END_HOUR) {
+                              return null;
+                            }
+
+                            const label = is12HourFormat
+                              ? `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
+                              : `${String(hour).padStart(2, '0')}:00`;
+
+                            // Calculate position accounting for break
+                            const position = getHorizontalPosition(hour);
+
+                            return (
+                              <div
+                                key={hour}
+                                className="absolute top-0 bottom-0 border-r border-[#ecedf0] flex items-center justify-center px-1"
+                                style={{ left: position, width: HOUR_WIDTH, overflow: 'visible' }}
+                              >
+                                <span className="text-[10px] font-medium text-[#7c8689] whitespace-nowrap text-center">{label}</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
-                    ))}
-                  </div>
 
-                  {/* Time grid */}
-                  <div className="flex" style={{ height: TOTAL_HOURS * HOUR_HEIGHT }}>
-                    {/* Time labels */}
-                    <div className="w-24 flex-shrink-0 border-r border-[#ecedf0] relative">
-                      {Array.from({ length: TOTAL_HOURS }, (_, i) => {
-                        const hour = DAY_START_HOUR + i;
+                      {displayDays.map((day) => {
+                        const dk = format(day, 'yyyy-MM-dd');
+                        const dayEvents = eventsByDay[dk] || [];
+                        const ROW_LANE_H = 44;
+                        const GAP = 4;
+
+                        const sorted = [...dayEvents].sort(
+                          (a, b) => new Date(a.scheduled_start_date).getTime() - new Date(b.scheduled_start_date).getTime(),
+                        );
+                        const lanes: any[][] = [];
+                        sorted.forEach((ev) => {
+                          const s = new Date(ev.scheduled_start_date).getTime();
+                          let placed = false;
+                          for (const lane of lanes) {
+                            const last = lane[lane.length - 1];
+                            const lastEnd = new Date(last.scheduled_start_date).getTime() + last.estimated_hours * 3_600_000;
+                            if (lastEnd <= s) { lane.push(ev); placed = true; break; }
+                          }
+                          if (!placed) lanes.push([ev]);
+                        });
+                        const rowHeight = Math.max(lanes.length, 1) * (ROW_LANE_H + GAP) + GAP;
+
                         return (
-                          <div
-                            key={hour}
-                            className="absolute w-full flex items-center justify-center font-['Inter:Medium',sans-serif] text-[12px] text-[#4b545d]"
-                            style={{ top: i * HOUR_HEIGHT, height: HOUR_HEIGHT }}
-                          >
-                            {formatTime(new Date().setHours(hour, 0, 0, 0), is12HourFormat)}
+                          <div key={dk} className="flex border-b border-[#e2e4ed]" style={{ minHeight: rowHeight + 8 }}>
+                            <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] flex flex-col justify-center items-center py-2 gap-0 bg-white">
+                              <span className="text-[10px] text-[#7c8689] uppercase tracking-wide">{format(day, 'EEE')}</span>
+                              <span
+                                className={`text-[18px] font-semibold w-8 h-8 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'}`}
+                              >
+                                {format(day, 'd')}
+                              </span>
+                            </div>
+
+                            <div
+                              className="relative"
+                              style={{ height: rowHeight, minWidth: DISPLAY_HOURS * HOUR_WIDTH }}
+                              onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(false); } : undefined}
+                            >
+                              {/* Hour grid lines */}
+                              {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
+                                const hour = DAY_START_HOUR + i;
+                                // Skip grid lines inside break time
+                                if (hour >= BREAK_START_HOUR && hour < BREAK_END_HOUR) {
+                                  return null;
+                                }
+                                const position = getHorizontalPosition(hour);
+                                return (
+                                  <div key={i} className="absolute top-0 bottom-0 border-l border-[#ecedf0]" style={{ left: position }} />
+                                );
+                              })}
+
+                              {lanes.map((lane, laneIdx) =>
+                                lane.map((ev) => {
+                                  const startDt = new Date(ev.scheduled_start_date);
+                                  const startH = startDt.getHours() + startDt.getMinutes() / 60;
+                                  const endH = startH + ev.estimated_hours;
+
+                                  // Calculate positions accounting for break
+                                  const left = getHorizontalPosition(startH);
+                                  const right = getHorizontalPosition(endH);
+
+                                  // If event spans across the break, add break width to the calculation
+                                  let width = right - left;
+                                  if (startH < BREAK_START_HOUR && endH > BREAK_START_HOUR) {
+                                    // Event spans across break - add break width
+                                    width += BREAK_DURATION * HOUR_WIDTH;
+                                  }
+
+                                  const { bg, border, text } = getColorForFab(ev.fab_id, ev.fab_type);
+                                  return (
+                                    <Tooltip key={ev.id} delayDuration={300}>
+                                      <TooltipTrigger asChild>
+                                        <div
+                                          className="absolute rounded-[10px] border overflow-hidden cursor-pointer transition-opacity hover:opacity-90"
+                                          style={{
+                                            left: Math.max(0, left) + GAP,
+                                            width: Math.max(HOUR_WIDTH * 0.5, width) - GAP * 2,
+                                            top: laneIdx * (ROW_LANE_H + GAP) + GAP,
+                                            height: ROW_LANE_H,
+                                            backgroundColor: bg,
+                                            borderColor: border,
+                                          }}
+                                          onClick={(e) => { e.stopPropagation(); handleOpenEditPlan(ev); }}
+                                        >
+                                          <div className="px-2 py-1 h-full flex flex-col justify-center overflow-hidden">
+                                            <p className="text-[12px] font-semibold truncate" style={{ color: text }}> {ev.fab_id} {ev.plan_name ? `• ${ev.plan_name}` : ''} {ev.operator_name ? `• ${ev.operator_name}` : ''}</p>
+                                            <p className="text-[10px] truncate" style={{ color: text, opacity: 0.7 }}>{ev.work_percentage ?? 0}%</p>
+                                          </div>
+                                        </div>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="right" className="bg-white border border-gray-200 shadow-lg rounded-md p-2 text-xs text-gray-700">
+                                        <div className="space-y-1">
+                                          <p><span className="font-semibold">FAB ID:</span> {ev.fab_id}</p>
+                                          <p><span className="font-semibold">Operator:</span> {ev.operator_name || 'N/A'}</p>
+                                          <p><span className="font-semibold">Workstation:</span> {ev.workstation_name || 'N/A'}</p>
+                                          <p><span className="font-semibold">Est. Hours:</span> {ev.estimated_hours ?? 'N/A'}</p>
+                                          <p><span className="font-semibold">% Complete:</span> {ev.work_percentage ?? 0}%</p>
+                                          <p><span className="font-semibold">Job:</span> {`${ev.job_name}-${ev.job_number}` || 'N/A'}</p>
+                                          <p><span className="font-semibold">Job No:</span> {ev.job_number || 'N/A'}</p>
+                                          <p><span className="font-semibold">Account Name:</span> {ev.account_name || 'N/A'}</p>
+                                          <p><span className="font-semibold">Plan:</span> {ev.plan_name}</p>
+                                          {ev.notes && <p><span className="font-semibold">Notes:</span> {ev.notes}</p>}
+                                        </div>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  );
+                                })
+                              )}
+                            </div>
                           </div>
                         );
                       })}
                     </div>
-
-                    {/* Day columns */}
-                    {displayDays.map((day) => {
-                      const dayEvents = eventsByDay[format(day, 'yyyy-MM-dd')] || [];
-                      const positionedEvents = getEventsWithPositions(dayEvents);
-                      return (
-                        <div
-                          key={format(day, 'yyyy-MM-dd')}
-                          className="flex-1 min-w-[200px] border-r border-[#ecedf0] relative cursor-pointer hover:bg-gray-50/50"
-                          style={{ height: TOTAL_HOURS * HOUR_HEIGHT }}
-                          onClick={() => handleCreateEvent(day)}
-                        >
-                          {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
-                            <div key={i} className="absolute w-full border-t border-[#ecedf0]" style={{ top: i * HOUR_HEIGHT }} />
-                          ))}
-                          {positionedEvents.map(renderEventCard)}
-                        </div>
-                      );
-                    })}
-                  </div>
+                  )}
                 </div>
-              ) : (
-                /* ── Time-row layout — each day is a row; events span horizontally ── */
-                <div className="min-w-max">
-                  {/* Time header */}
-                  <div className="flex border-b border-[#e2e4ed]">
-                    <div className="w-24 flex-shrink-0 border-r border-[#ecedf0]" />
-                    {Array.from({ length: TOTAL_HOURS }, (_, i) => {
-                      const hour = DAY_START_HOUR + i;
-                      return (
-                        <div
-                          key={hour}
-                          className="flex-1 border-r border-[#ecedf0] flex items-center justify-center py-3"
-                          style={{ minWidth: HOUR_WIDTH }}
-                        >
-                          <span className="font-['Inter:Medium',sans-serif] text-[12px] text-[#4b545d] text-center">
-                            {formatTime(new Date().setHours(hour, 0, 0, 0), is12HourFormat)}
-                          </span>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Day rows */}
-                  {displayDays.map((day) => {
-                    const dateKey = format(day, 'yyyy-MM-dd');
-                    const dayEvents = eventsByDay[dateKey] || [];
-                    const ROW_LANE_HEIGHT = 36;
-
-                    const sorted = [...dayEvents].sort(
-                      (a, b) => new Date(a.scheduled_start_date).getTime() - new Date(b.scheduled_start_date).getTime()
-                    );
-                    const lanes: any[][] = [];
-                    sorted.forEach((event) => {
-                      const start = new Date(event.scheduled_start_date).getTime();
-                      let placed = false;
-                      for (const lane of lanes) {
-                        const last = lane[lane.length - 1];
-                        const lastEnd = new Date(last.scheduled_start_date).getTime() + last.estimated_hours * 3600000;
-                        if (lastEnd <= start) { lane.push(event); placed = true; break; }
-                      }
-                      if (!placed) lanes.push([event]);
-                    });
-                    const numLanes = Math.max(lanes.length, 1);
-                    const rowHeight = numLanes * ROW_LANE_HEIGHT + 8;
-
-                    return (
-                      <div key={dateKey} className="flex border-b border-[#e2e4ed]">
-                        {/* Day label */}
-                        <div className="w-24 flex-shrink-0 border-r border-[#ecedf0] flex flex-col justify-center px-3 py-2">
-                          <div className="font-['Inter:Medium',sans-serif] text-[12px] text-[#4b545d]">{format(day, 'EEE')}</div>
-                          <div className={`font-['Inter:Medium',sans-serif] text-[20px] font-medium ${isSameDay(day, new Date()) ? 'text-blue-600' : 'text-[#4b545d]'}`}>
-                            {format(day, 'd')}
-                          </div>
-                        </div>
-
-                        {/* Event area */}
-                        <div
-                          className="relative cursor-pointer hover:bg-gray-50/50"
-                          style={{ height: rowHeight, minWidth: TOTAL_HOURS * HOUR_WIDTH }}
-                          onClick={() => handleCreateEvent(day)}
-                        >
-                          {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => (
-                            <div key={i} className="absolute top-0 bottom-0 border-l border-[#ecedf0]" style={{ left: i * HOUR_WIDTH }} />
-                          ))}
-                          {lanes.map((lane, laneIdx) =>
-                            lane.map((event) => {
-                              const startDt = new Date(event.scheduled_start_date);
-                              const startHour = startDt.getHours() + startDt.getMinutes() / 60;
-                              const leftOffset = (startHour - DAY_START_HOUR) * HOUR_WIDTH;
-                              const width = event.estimated_hours * HOUR_WIDTH;
-                              return (
-                                <div
-                                  key={event.id}
-                                  className={`absolute rounded-[4px] border overflow-hidden text-[10px] leading-tight px-2 cursor-pointer ${getFabTypeColor(event.fab_type)}`}
-                                  style={{
-                                    left: Math.max(0, leftOffset) + 1,
-                                    width: Math.max(HOUR_WIDTH * 0.5, width) - 3,
-                                    top: laneIdx * ROW_LANE_HEIGHT + 4,
-                                    height: ROW_LANE_HEIGHT - 6,
-                                  }}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedEvent(event);
-                                    setSelectedDate(new Date(event.scheduled_start_date));
-                                    setSelectedTimeSlot(format(new Date(event.scheduled_start_date), 'HH:mm'));
-                                    setShowCreateForm(true);
-                                  }}
-                                >
-                                  <div className="font-['Proxima_Nova:Semibold',sans-serif] font-semibold truncate">{event.fab_id}</div>
-                                  <div className="truncate text-[9px]">{event.fab_type}</div>
-                                </div>
-                              );
-                            })
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+              </TooltipProvider>
+            </>
           )}
         </div>
       </div>
-
-      {showCreateForm && (
-        <CreateEventForm
-          onClose={() => setShowCreateForm(false)}
-          selectedDate={selectedDate}
-          selectedTimeSlot={selectedTimeSlot}
-          selectedEvent={selectedEvent}
-          onEventCreated={() => setShowCreateForm(false)}
-        />
-      )}
     </div>
   );
+
 };
 
 export default ShopCalendarPage;

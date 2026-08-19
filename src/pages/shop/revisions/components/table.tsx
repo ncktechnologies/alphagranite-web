@@ -147,24 +147,24 @@ export const ShopRevisionTable = ({ canViewDetails = false, canExport = false }:
       cell: ({ row }) => <span className="text-sm uppercase">{row.original.fab_type || '—'}</span>,
       size: 130,
     },
-    {
-      id: 'pending_revision_count',
-      accessorFn: (r) => r.pending_revision_count,
-      header: ({ column }) => <DataGridColumnHeader title="PENDING REVISIONS" column={column} />,
-      cell: ({ row }) => <span className="text-sm">{row.original.pending_revision_count ?? 0}</span>,
-      size: 160,
-    },
-    {
-      id: 'has_pending_shop_revision',
-      accessorFn: (r) => r.has_pending_shop_revision,
-      header: ({ column }) => <DataGridColumnHeader title="HAS PENDING" column={column} />,
-      cell: ({ row }) => (
-        <span className={`text-sm font-medium ${row.original.has_pending_shop_revision ? 'text-orange-700' : 'text-green-700'}`}>
-          {row.original.has_pending_shop_revision ? 'Yes' : 'No'}
-        </span>
-      ),
-      size: 120,
-    },
+    // {
+    //   id: 'pending_revision_count',
+    //   accessorFn: (r) => r.pending_revision_count,
+    //   header: ({ column }) => <DataGridColumnHeader title="PENDING REVISIONS" column={column} />,
+    //   cell: ({ row }) => <span className="text-sm">{row.original.pending_revision_count ?? 0}</span>,
+    //   size: 160,
+    // },
+    // {
+    //   id: 'has_pending_shop_revision',
+    //   accessorFn: (r) => r.has_pending_shop_revision,
+    //   header: ({ column }) => <DataGridColumnHeader title="HAS PENDING" column={column} />,
+    //   cell: ({ row }) => (
+    //     <span className={`text-sm font-medium ${row.original.has_pending_shop_revision ? 'text-orange-700' : 'text-green-700'}`}>
+    //       {row.original.has_pending_shop_revision ? 'Yes' : 'No'}
+    //     </span>
+    //   ),
+    //   size: 120,
+    // },
     {
       id: 'latest_pending_revision',
       accessorFn: (r) => r.latest_pending_revision?.revision_note,

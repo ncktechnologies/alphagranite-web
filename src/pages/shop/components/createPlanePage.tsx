@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, Calendar, ChevronDown, LoaderCircle, Plus, X } from 'lucide-react';
+import { ArrowLeft, Calendar, ChevronDown, LoaderCircle, Plus, X, Info } from 'lucide-react';
 import { format, addHours, differenceInMinutes, setHours, setMinutes } from 'date-fns';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -21,6 +21,8 @@ import { useCreateShopPlansMutation, useCreateShopSuggestionMutation, useUpdateS
 import { useGetPlanningSectionsQuery, useGetWorkStationByPlanningSectionsQuery, useGetWorkstationsQuery } from '@/store/api/workstation';
 import { useGetEmployeesQuery } from '@/store/api/employee';
 import { useGetFabsQuery, useGetFabByIdQuery } from '@/store/api/job';
+import { useGetShopRevisionsByFabIdQuery } from '@/store/api/shopRevision';
+import { Badge } from '@/components/ui/badge';
 
 export const TIME_SLOTS = (() => {
   const slots: { value: string; label: string }[] = [];
@@ -39,7 +41,6 @@ export const TIME_SLOTS = (() => {
   return slots;
 })();
 
-// Field-to-keyword mapping
 const FAB_STAGE_FIELDS: { keyword: string; field: string; label: string }[] = [
   { keyword: 'cut', field: 'total_sqft', label: 'Cut' },
   { keyword: 'wj', field: 'wj_linft', label: 'WJ' },
@@ -67,7 +68,6 @@ interface PlanEntry {
   sequence: string;
 }
 
-// Helper: create a Date object that represents the local datetime (no UTC conversion)
 function createLocalDateTime(date: Date | undefined, time: string): Date | null {
   if (!date || !time) return null;
   const [hours, minutes] = time.split(':').map(Number);
@@ -77,7 +77,6 @@ function createLocalDateTime(date: Date | undefined, time: string): Date | null 
   return new Date(year, month, day, hours, minutes);
 }
 
-// Helper: parse an API datetime string as local time
 function parseLocalDateTime(dateTimeStr: string): Date | null {
   if (!dateTimeStr) return null;
   const [datePart, timePart] = dateTimeStr.split('T');
@@ -87,9 +86,7 @@ function parseLocalDateTime(dateTimeStr: string): Date | null {
   return new Date(year, month - 1, day, hours, minutes);
 }
 
-// -----------------------------------------------------------------------------
-// PlanEntryCard component (unchanged)
-// -----------------------------------------------------------------------------
+// ─── PlanEntryCard ──────────────────────────────────────────────────────────
 interface PlanEntryCardProps {
   entry: PlanEntry;
   idx: number;
@@ -461,9 +458,7 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
   );
 };
 
-// -----------------------------------------------------------------------------
-// Main component
-// -----------------------------------------------------------------------------
+// ─── Main CreatePlanPage ────────────────────────────────────────────────────
 interface CreatePlanPageProps {
   onBack?: () => void;
   selectedDate?: Date | null;
@@ -497,12 +492,28 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
   const [entries, setEntries] = useState<PlanEntry[]>([]);
 
-  // ── Fetch FAB details (includes plans with sequences) ──
+  // ── Use the first entry's fab_id as the source of truth ──
+  const selectedFabId = entries[0]?.fab_id || '';
+
+  // ── Fetch FAB details for the selected FAB ──
   const { data: fabData, isLoading: isLoadingFab } = useGetFabByIdQuery(
-    effectivePrefillFabId ? Number(effectivePrefillFabId) : 0,
-    { skip: !effectivePrefillFabId }
+    selectedFabId ? Number(selectedFabId) : 0,
+    { skip: !selectedFabId }
   );
   const fabDetails = fabData?.data ?? fabData;
+
+  // ── Fetch shop revisions for the selected FAB ──
+  const { data: revisionsData, isLoading: isRevisionsLoading } = useGetShopRevisionsByFabIdQuery(
+    Number(selectedFabId),
+    { skip: !selectedFabId }
+  );
+  const revisions: any[] = Array.isArray(revisionsData) ? revisionsData : [];
+  const hasPendingShopRevision = revisions.some((rev: any) => !rev.revision_completed);
+
+  // ── CNC warning ──
+  const cncLinFtNum = fabDetails?.cnc_linft || 0;
+  const cncDataExists = fabDetails?.cnc_data?.is_completed;
+  const showCncWarning = cncLinFtNum > 0 && !cncDataExists;
 
   // ── Extract existing sequences from fabDetails.plans ──
   const usedSequencesFromBackend = useMemo(() => {
@@ -522,7 +533,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     return Math.max(...Array.from(used));
   }, [usedSequencesFromBackend]);
 
-  // ── Helper to get next available sequence (backend + local) ──
   const getNextAvailableSequence = useCallback((localEntries: PlanEntry[]) => {
     const used = new Set(usedSequencesFromBackend);
     localEntries.forEach(e => {
@@ -601,7 +611,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       );
   }, [planningSections, isResurfaceFab, getResurfaceSection, findSectionByKeyword]);
 
-  // Recalculate estimated hours using local helper
   const recalcEntryHours = useCallback((entry: PlanEntry): string => {
     const start = createLocalDateTime(entry.start_date, entry.start_time);
     const end = createLocalDateTime(entry.end_date, entry.end_time);
@@ -821,6 +830,10 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   // ── Submit ──
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (hasPendingShopRevision) {
+      toast.error('Cannot create/update plans while a shop revision is pending.');
+      return;
+    }
     for (const entry of entries) {
       if (!entry.fab_id) { toast.error('FAB ID is required'); return; }
       if (!entry.operator_id) { toast.error('Operator is required'); return; }
@@ -902,12 +915,14 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const isEditing = !!effectiveEvent;
   const sequenceOptions = useMemo(() => {
     const localCount = entries.length;
-    // Ensure we have at least 3 options and enough to cover backend max + local + buffer
     const maxOption = Math.max(3, maxUsedSequence + localCount + 1, localCount + 1);
     return Array.from({ length: maxOption }, (_, i) => i + 1);
   }, [entries.length, maxUsedSequence]);
 
   const isFormReady = effectiveEvent ? entries.length > 0 : (dataReady && entries.length > 0);
+
+  // ── Disable submit if pending revision ──
+  const submitDisabled = isLoading || isAutoScheduling || hasPendingShopRevision;
 
   return (
     <div className="bg-white min-h-screen">
@@ -918,18 +933,24 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               {isEditing ? 'Edit Plan' : 'Create Plan'}
             </p>
             {entries[0]?.fab_id && (
-              <div className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2">
+              <Link 
+                to={`/sales/${entries[0].fab_id}`}
+                className="flex items-center gap-2 bg-[#f0f4e8] border border-[#9cc15e] rounded-[8px] px-4 py-2"
+              >
                 <span className="text-[13px] text-[#4a4d59]">FAB ID</span>
                 <span className="text-[20px] text-[#7a9705] font-semibold">#{entries[0].fab_id}</span>
-              </div>
+              </Link>
             )}
           </div>
 
           <div className="flex items-center gap-3">
             <button
               onClick={() => navigate(`/shop/auto-schedule?fabId=${entries[0]?.fab_id || ''}`)}
-              className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px]"
-              style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
+              disabled={hasPendingShopRevision}
+              className={cn(
+                "h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px]",
+                hasPendingShopRevision ? "opacity-50 cursor-not-allowed bg-gradient-to-r from-[#7a9705] to-[#9cc15e]" : "bg-gradient-to-r from-[#7a9705] to-[#9cc15e]"
+              )}
             >
               <Plus className="h-4 w-4" />
               Auto Schedule
@@ -955,10 +976,27 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* ── Pending Revision Banner ── */}
+            {hasPendingShopRevision && (
+              <div className="p-3 bg-red-50 border border-red-300 rounded-[8px] text-red-700 text-sm flex items-center gap-2">
+                <Info className="h-4 w-4" />
+                Pending shop revision 
+              </div>
+            )}
+
+            {/* ── CNC Warning Banner (does not block) ── */}
+            
+
             {selectedFab && (
               <Card className="border border-[#ecedf0] rounded-[12px] mb-6">
-                <CardHeader className="pb-3 border-b border-[#ecedf0]">
+                <CardHeader className="pb-3 border-b border-[#ecedf0] flex flex-row items-center justify-between">
                   <CardTitle className="text-[16px] text-[#4b545d] font-semibold">FAB Details</CardTitle>
+                  {showCncWarning && (
+                    <Badge variant="destructive" className="ml-2">
+                      <Info className="h-3 w-3 mr-1" />
+                      CNC not complete
+                    </Badge>
+                  )}
                 </CardHeader>
                 <CardContent className="pt-5">
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -998,14 +1036,14 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
                 effectivePrefillFabId={effectivePrefillFabId}
                 isEditing={isEditing}
                 sequenceOptions={sequenceOptions}
-                disableShopActivity={currentIsResurface}
+                disableShopActivity={currentIsResurface || hasPendingShopRevision}
                 onToggleExpand={() => setExpandedCards(p => ({ ...p, [idx]: !(p[idx] !== false) }))}
                 onUpdate={patch => updateEntry(idx, patch)}
                 onRemove={() => removeEntry(idx)}
               />
             ))}
 
-            {!currentIsResurface && !hideAddStageButton && (
+            {!currentIsResurface && !hideAddStageButton && !hasPendingShopRevision && (
               <button
                 type="button"
                 onClick={addEntry}
@@ -1027,9 +1065,11 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
               </button>
               <button
                 type="submit"
-                className="flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold disabled:opacity-60"
-                style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
-                disabled={isLoading || isAutoScheduling}
+                className={cn(
+                  "flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold bg-gradient-to-r from-[#7a9705] to-[#9cc15e]",
+                  submitDisabled ? "opacity-60 cursor-not-allowed " : "bg-gradient-to-r from-[#7a9705] to-[#9cc15e]"
+                )}
+                disabled={submitDisabled}
               >
                 {isLoading
                   ? <><LoaderCircle className="h-4 w-4 animate-spin" />Scheduling…</>
