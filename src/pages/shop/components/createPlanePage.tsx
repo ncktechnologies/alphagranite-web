@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ArrowLeft, Calendar, ChevronDown, LoaderCircle, Plus, X, Info } from 'lucide-react';
 import { format, addHours, differenceInMinutes, setHours, setMinutes } from 'date-fns';
+import { addWorkingHours, calculateEstimatedHours, normalizeEndDateTime } from '@/lib/shop-time';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
@@ -27,7 +28,8 @@ import { Badge } from '@/components/ui/badge';
 export const TIME_SLOTS = (() => {
   const slots: { value: string; label: string }[] = [];
   for (let h = 6; h <= 22; h++) {
-    if (h === 12) continue;
+    // Keep 12 PM selectable so the form can represent the reserved break slot.
+    // The calendar will render it as Break and never as working time.
     for (const m of [0, 15, 30, 45]) {
       if (h === 22 && m > 0) break;
       const hh = String(h).padStart(2, '0');
@@ -158,26 +160,66 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
 
   const hasSlot = !!(entry.start_date && entry.start_time && entry.end_date && entry.end_time);
 
+  const initializedEditRef = useRef(false);
+  useEffect(() => {
+    if (initializedEditRef.current || !isEditing || !entry.id || !entry.start_date || !entry.start_time) return;
+    const productiveHours = Number(entry.estimated_hours);
+    if (!Number.isFinite(productiveHours) || productiveHours <= 0) return;
+    initializedEditRef.current = true;
+    const start = createLocalDateTime(entry.start_date, entry.start_time);
+    if (!start) return;
+    const end = addWorkingHours(start, productiveHours);
+    onUpdate({
+      end_date: new Date(end.getFullYear(), end.getMonth(), end.getDate()),
+      end_time: `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`,
+    });
+  }, [entry.id, entry.start_date, entry.start_time, entry.estimated_hours, isEditing, onUpdate]);
+
   const recalcEstimatedHours = useCallback((startDate: Date | undefined, startTime: string, endDate: Date | undefined, endTime: string): string => {
     const startDateTime = createLocalDateTime(startDate, startTime);
     const endDateTime = createLocalDateTime(endDate, endTime);
-    if (startDateTime && endDateTime && endDateTime > startDateTime) {
-      const minutes = differenceInMinutes(endDateTime, startDateTime);
-      const hours = (minutes / 60).toFixed(2);
-      return hours;
+    if (startDateTime && endDateTime) {
+      const normalizedEnd = normalizeEndDateTime(startDateTime, endDateTime);
+      return calculateEstimatedHours(startDateTime, normalizedEnd);
     }
     return '';
   }, []);
 
   const updateFromEndDateTime = useCallback((newEndDate: Date | undefined, newEndTime: string) => {
-    const newHours = recalcEstimatedHours(entry.start_date, entry.start_time, newEndDate, newEndTime);
-    onUpdate({ end_date: newEndDate, end_time: newEndTime, estimated_hours: newHours });
+    const startDateTime = createLocalDateTime(entry.start_date, entry.start_time);
+    const selectedEnd = createLocalDateTime(newEndDate, newEndTime);
+    const normalizedEnd = startDateTime && selectedEnd
+      ? normalizeEndDateTime(startDateTime, selectedEnd)
+      : selectedEnd;
+    const normalizedEndDate = normalizedEnd && newEndDate
+      ? new Date(normalizedEnd.getFullYear(), normalizedEnd.getMonth(), normalizedEnd.getDate())
+      : newEndDate;
+    const newHours = recalcEstimatedHours(entry.start_date, entry.start_time, normalizedEndDate, newEndTime);
+    onUpdate({ end_date: normalizedEndDate, end_time: newEndTime, estimated_hours: newHours });
   }, [entry.start_date, entry.start_time, onUpdate, recalcEstimatedHours]);
 
   const handleStartDateTimeChange = useCallback((newStartDate: Date | undefined, newStartTime: string) => {
+    const newStart = createLocalDateTime(newStartDate, newStartTime);
+    const originalHours = Number(entry.estimated_hours);
+
+    // When editing the start date/time, preserve the plan's productive duration.
+    // Recalculate the end date/time from the new start so a plan originally ending
+    // on the 25th cannot accidentally collapse to the edited start date.
+    if (newStart && Number.isFinite(originalHours) && originalHours > 0) {
+      const newEnd = addWorkingHours(newStart, originalHours);
+      onUpdate({
+        start_date: newStartDate,
+        start_time: newStartTime,
+        end_date: new Date(newEnd.getFullYear(), newEnd.getMonth(), newEnd.getDate()),
+        end_time: `${String(newEnd.getHours()).padStart(2, '0')}:${String(newEnd.getMinutes()).padStart(2, '0')}`,
+        estimated_hours: originalHours.toFixed(2),
+      });
+      return;
+    }
+
     const newHours = recalcEstimatedHours(newStartDate, newStartTime, entry.end_date, entry.end_time);
     onUpdate({ start_date: newStartDate, start_time: newStartTime, estimated_hours: newHours });
-  }, [entry.end_date, entry.end_time, onUpdate, recalcEstimatedHours]);
+  }, [entry.estimated_hours, entry.end_date, entry.end_time, onUpdate, recalcEstimatedHours]);
 
   const onEndTimeChange = useCallback((value: string) => {
     updateFromEndDateTime(entry.end_date, value);
