@@ -25,13 +25,11 @@ import { useGetFabsQuery, useGetFabByIdQuery } from '@/store/api/job';
 import { useGetShopRevisionsByFabIdQuery } from '@/store/api/shopRevision';
 import { Badge } from '@/components/ui/badge';
 
+// ─── Extended TIME_SLOTS to include all hours (00:00–23:45) ──────────────
 export const TIME_SLOTS = (() => {
   const slots: { value: string; label: string }[] = [];
-  for (let h = 6; h <= 22; h++) {
-    // Keep 12 PM selectable so the form can represent the reserved break slot.
-    // The calendar will render it as Break and never as working time.
+  for (let h = 0; h < 24; h++) {
     for (const m of [0, 15, 30, 45]) {
-      if (h === 22 && m > 0) break;
       const hh = String(h).padStart(2, '0');
       const mm = String(m).padStart(2, '0');
       const value = `${hh}:${mm}`;
@@ -160,12 +158,17 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
 
   const hasSlot = !!(entry.start_date && entry.start_time && entry.end_date && entry.end_time);
 
+  // ─── Ensure end time is filled if missing ──────────────────────────────
   const initializedEditRef = useRef(false);
   useEffect(() => {
     if (initializedEditRef.current || !isEditing || !entry.id || !entry.start_date || !entry.start_time) return;
     const productiveHours = Number(entry.estimated_hours);
     if (!Number.isFinite(productiveHours) || productiveHours <= 0) return;
-    initializedEditRef.current = true;
+    // If end_time already set, skip recomputation
+    if (entry.end_time && entry.end_date) {
+      initializedEditRef.current = true;
+      return;
+    }
     const start = createLocalDateTime(entry.start_date, entry.start_time);
     if (!start) return;
     const end = addWorkingHours(start, productiveHours);
@@ -173,7 +176,8 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
       end_date: new Date(end.getFullYear(), end.getMonth(), end.getDate()),
       end_time: `${String(end.getHours()).padStart(2, '0')}:${String(end.getMinutes()).padStart(2, '0')}`,
     });
-  }, [entry.id, entry.start_date, entry.start_time, entry.estimated_hours, isEditing, onUpdate]);
+    initializedEditRef.current = true;
+  }, [entry.id, entry.start_date, entry.start_time, entry.estimated_hours, entry.end_time, entry.end_date, isEditing, onUpdate]);
 
   const recalcEstimatedHours = useCallback((startDate: Date | undefined, startTime: string, endDate: Date | undefined, endTime: string): string => {
     const startDateTime = createLocalDateTime(startDate, startTime);
@@ -202,9 +206,6 @@ const PlanEntryCard: React.FC<PlanEntryCardProps> = ({
     const newStart = createLocalDateTime(newStartDate, newStartTime);
     const originalHours = Number(entry.estimated_hours);
 
-    // When editing the start date/time, preserve the plan's productive duration.
-    // Recalculate the end date/time from the new start so a plan originally ending
-    // on the 25th cannot accidentally collapse to the edited start date.
     if (newStart && Number.isFinite(originalHours) && originalHours > 0) {
       const newEnd = addWorkingHours(newStart, originalHours);
       onUpdate({
@@ -534,17 +535,14 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
   const [entries, setEntries] = useState<PlanEntry[]>([]);
 
-  // ── Use the first entry's fab_id as the source of truth ──
   const selectedFabId = entries[0]?.fab_id || '';
 
-  // ── Fetch FAB details for the selected FAB ──
   const { data: fabData, isLoading: isLoadingFab } = useGetFabByIdQuery(
     selectedFabId ? Number(selectedFabId) : 0,
     { skip: !selectedFabId }
   );
   const fabDetails = fabData?.data ?? fabData;
 
-  // ── Fetch shop revisions for the selected FAB ──
   const { data: revisionsData, isLoading: isRevisionsLoading } = useGetShopRevisionsByFabIdQuery(
     Number(selectedFabId),
     { skip: !selectedFabId }
@@ -552,12 +550,10 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const revisions: any[] = Array.isArray(revisionsData) ? revisionsData : [];
   const hasPendingShopRevision = revisions.some((rev: any) => !rev.revision_completed);
 
-  // ── CNC warning ──
   const cncLinFtNum = fabDetails?.cnc_linft || 0;
   const cncDataExists = fabDetails?.cnc_data?.is_completed;
   const showCncWarning = cncLinFtNum > 0 && !cncDataExists;
 
-  // ── Extract existing sequences from fabDetails.plans ──
   const usedSequencesFromBackend = useMemo(() => {
     if (!fabDetails?.plans || !Array.isArray(fabDetails.plans)) return new Set<number>();
     const sequences = new Set<number>();
@@ -586,7 +582,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     return seq;
   }, [usedSequencesFromBackend]);
 
-  // ── Other data hooks ──
   const { data: planningSectionsData } = useGetPlanningSectionsQuery();
   const planningSections: any[] = planningSectionsData?.data || (Array.isArray(planningSectionsData) ? planningSectionsData : []);
 
@@ -688,7 +683,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     };
   }, [effectivePrefillFabId, selectedTimeSlot, prefillSectionIdStr, propSelectedDate, allFabsList, planningSections, isResurfaceFab, getResurfaceSection]);
 
-  // ── Initialize entries ──
   useEffect(() => {
     if (!effectiveEvent && dataReady && entries.length === 0) {
       if (effectivePrefillFabId && fabDetails && !hideAddStageButton) {
@@ -713,7 +707,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     }
   }, [effectiveEvent, dataReady, entries.length, createEmptyEntry, effectivePrefillFabId, fabDetails, hideAddStageButton, getActiveStagesFromFab, getNextAvailableSequence]);
 
-  // Edit mode: parse API datetime strings as local
+  // ─── Edit mode: compute end date/time using addWorkingHours ──────────────
   useEffect(() => {
     if (!effectiveEvent) return;
     if (!employeesLoaded || !workstationsLoaded || !sectionsLoaded || !fabsLoaded) return;
@@ -721,12 +715,24 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     const ev = effectiveEvent;
     const startDate = ev.scheduled_start_date ? parseLocalDateTime(ev.scheduled_start_date) : undefined;
     let endDate: Date | undefined = undefined;
-    if (ev.scheduled_end_date) {
+    let endTimeStr = '';
+
+    if (startDate && ev.estimated_hours) {
+      const hours = Number(ev.estimated_hours);
+      if (hours > 0) {
+        // Use addWorkingHours to respect breaks and day boundaries
+        endDate = addWorkingHours(startDate, hours);
+        endTimeStr = format(endDate, 'HH:mm');
+      } else if (ev.scheduled_end_date) {
+        endDate = parseLocalDateTime(ev.scheduled_end_date);
+        endTimeStr = endDate ? format(endDate, 'HH:mm') : '';
+      }
+    } else if (ev.scheduled_end_date) {
       endDate = parseLocalDateTime(ev.scheduled_end_date);
-    } else if (startDate && ev.estimated_hours) {
-      endDate = new Date(startDate.getTime() + ev.estimated_hours * 3_600_000);
+      endTimeStr = endDate ? format(endDate, 'HH:mm') : '';
     } else if (startDate) {
       endDate = startDate;
+      endTimeStr = format(endDate, 'HH:mm');
     }
 
     let planningSectionId = ev.planning_section_id != null ? String(ev.planning_section_id) : '';
@@ -739,7 +745,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
     }
 
     const startTimeStr = startDate ? format(startDate, 'HH:mm') : '';
-    const endTimeStr = endDate ? format(endDate, 'HH:mm') : '';
 
     const finalEntry: PlanEntry = {
       id: ev.id,
@@ -869,7 +874,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   const [updateShopPlan] = useUpdateShopPlanMutation();
   const [, { isLoading: isAutoScheduling }] = useCreateShopSuggestionMutation();
 
-  // ── Submit ──
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (hasPendingShopRevision) {
@@ -885,7 +889,8 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
       if (!entry.end_date) { toast.error('End date is required'); return; }
       if (!entry.end_time) { toast.error('End time is required'); return; }
       if (!entry.estimated_hours || parseFloat(entry.estimated_hours) <= 0) {
-        toast.error('Estimated hours must be positive (auto‑calculated from start/end)'); return;
+        toast.error('Estimated hours must be positive (auto‑calculated from start/end)');
+        return;
       }
     }
 
@@ -962,8 +967,6 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
   }, [entries.length, maxUsedSequence]);
 
   const isFormReady = effectiveEvent ? entries.length > 0 : (dataReady && entries.length > 0);
-
-  // ── Disable submit if pending revision ──
   const submitDisabled = isLoading || isAutoScheduling || hasPendingShopRevision;
 
   return (
@@ -1018,16 +1021,12 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* ── Pending Revision Banner ── */}
             {hasPendingShopRevision && (
               <div className="p-3 bg-red-50 border border-red-300 rounded-[8px] text-red-700 text-sm flex items-center gap-2">
                 <Info className="h-4 w-4" />
                 Pending shop revision 
               </div>
             )}
-
-            {/* ── CNC Warning Banner (does not block) ── */}
-            
 
             {selectedFab && (
               <Card className="border border-[#ecedf0] rounded-[12px] mb-6">
@@ -1109,7 +1108,7 @@ const CreatePlanPage: React.FC<CreatePlanPageProps> = ({
                 type="submit"
                 className={cn(
                   "flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold bg-gradient-to-r from-[#7a9705] to-[#9cc15e]",
-                  submitDisabled ? "opacity-60 cursor-not-allowed " : "bg-gradient-to-r from-[#7a9705] to-[#9cc15e]"
+                  submitDisabled ? "opacity-60 cursor-not-allowed" : ""
                 )}
                 disabled={submitDisabled}
               >

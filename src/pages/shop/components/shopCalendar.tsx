@@ -48,21 +48,16 @@ const BREAK_START_HOUR = SHOP_BREAK_START_HOUR;
 const BREAK_END_HOUR = SHOP_BREAK_END_HOUR;
 const BREAK_DURATION = BREAK_END_HOUR - BREAK_START_HOUR;
 const TOTAL_HOURS = DAY_END_HOUR - DAY_START_HOUR;
-// Keep the noon break as a visible calendar slot so 12 PM and 1 PM remain
-// aligned to their real clock positions. Work is still paused during this slot.
 const DISPLAY_HOURS = TOTAL_HOURS;
 const HOUR_HEIGHT = 80;
 const HOUR_WIDTH = 220;
 
-// ─── Helper functions (unchanged) ──────────────────────────────────────────
+// ─── Helper functions ──────────────────────────────────────────────────────
 const getTimePosition = (hour: number) => (hour - DAY_START_HOUR) * HOUR_HEIGHT;
 const getHorizontalPosition = (hour: number) => (hour - DAY_START_HOUR) * HOUR_WIDTH;
 
 const getVisualEndPosition = (startHour: number, duration: number, unit: number) => {
   const endHour = startHour + duration;
-  // estimated_hours is working time, so put the one-hour noon break back into
-  // the visual span whenever work reaches noon. This makes 7 AM + 8 hours end
-  // exactly at 4 PM instead of 3 PM.
   const crossesBreak = startHour < BREAK_START_HOUR && endHour > BREAK_START_HOUR;
   return (endHour - DAY_START_HOUR + (crossesBreak ? BREAK_DURATION : 0)) * unit;
 };
@@ -126,13 +121,12 @@ const ShopCalendarPage: React.FC = () => {
   const [searchFabId, setSearchFabId] = useState('');
   const [searchType, setSearchType] = useState<'fab_id' | 'job_number'>('fab_id');
   const [filterFabType, setFilterFabType] = useState('');
-  const [filterWorkstation, setFilterWorkstation] = useState<string[]>([]); // array of IDs
+  const [filterWorkstation, setFilterWorkstation] = useState<string[]>([]);
   const [filterOperator, setFilterOperator] = useState<string[]>([]);
   const [filterPlanningSections, setFilterPlanningSections] = useState<string[]>([]);
 
   const isSearchLocked = !!lockedFabId;
 
-  // Popover open states
   const [operatorPopoverOpen, setOperatorPopoverOpen] = useState(false);
   const [sectionPopoverOpen, setSectionPopoverOpen] = useState(false);
   const [workstationPopoverOpen, setWorkstationPopoverOpen] = useState(false);
@@ -166,7 +160,7 @@ const ShopCalendarPage: React.FC = () => {
     return arr.map((s: any) => ({ id: String(s.id), name: s.plan_name || `Section ${s.id}` }));
   }, [planningSectionsData]);
 
-  // ── Build query parameters with repeated query params (arrays) ──
+  // ── Build query parameters ──
   const buildQueryParams = useCallback(() => {
     const qp: any = {
       view: viewMode,
@@ -182,17 +176,9 @@ const ShopCalendarPage: React.FC = () => {
     }
 
     if (filterFabType) qp.fab_type = filterFabType;
-
-    // Send arrays -> will be serialised as repeated query params (e.g. ?operator_id=1&operator_id=2)
-    if (filterWorkstation.length > 0) {
-      qp.workstation_id = filterWorkstation.map(Number);
-    }
-    if (filterOperator.length > 0) {
-      qp.operator_id = filterOperator.map(Number);
-    }
-    if (filterPlanningSections.length > 0) {
-      qp.planning_section_id = filterPlanningSections.map(Number);
-    }
+    if (filterWorkstation.length > 0) qp.workstation_id = filterWorkstation.map(Number);
+    if (filterOperator.length > 0) qp.operator_id = filterOperator.map(Number);
+    if (filterPlanningSections.length > 0) qp.planning_section_id = filterPlanningSections.map(Number);
 
     return qp;
   }, [currentDate, viewMode, lockedFabId, searchFabId, searchType, filterFabType, filterWorkstation, filterOperator, filterPlanningSections]);
@@ -200,7 +186,15 @@ const ShopCalendarPage: React.FC = () => {
   const queryParams = buildQueryParams();
   const { data: plansResponse, isLoading, isFetching } = useGetAllShopPlansQuery(queryParams);
 
-  // ── Rest of the component (display logic, calendar, etc.) ──
+  const planMap = useMemo(() => {
+    const flatPlans = plansResponse?.data?.plans ?? plansResponse?.plans ?? [];
+    const map: Record<number, any> = {};
+    flatPlans.forEach((p: any) => {
+      map[p.id] = p;
+    });
+    return map;
+  }, [plansResponse]);
+
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
 
   const displayDays = useMemo(() => {
@@ -222,6 +216,7 @@ const ShopCalendarPage: React.FC = () => {
     return weeks;
   }, [currentDate, viewMode]);
 
+  // ─── Group events by day ────────────────────────────────────────────────────
   const eventsByDay = useMemo(() => {
     const grouped: Record<string, any[]> = {};
     const allDays = viewMode === 'month' ? monthWeeks.flat() : displayDays;
@@ -232,65 +227,54 @@ const ShopCalendarPage: React.FC = () => {
     flatPlans.forEach((event: any) => {
       const startDate = new Date(event.scheduled_start_date);
       const rawStartHour = startDate.getHours() + startDate.getMinutes() / 60;
-      // A plan cannot begin during the break; resume it at 1 PM instead.
       const startHour = rawStartHour >= BREAK_START_HOUR && rawStartHour < BREAK_END_HOUR
         ? BREAK_END_HOUR
         : rawStartHour;
       if (startHour !== rawStartHour) startDate.setHours(BREAK_END_HOUR, 0, 0, 0);
 
-      // Treat noon as a non-working hour. A plan that crosses noon resumes at 1 PM,
-      // and anything that reaches 4 PM continues on the next working day.
-      const workHoursUntilEndOfDay = (hour: number) => {
-        if (hour >= DAY_END_HOUR) return 0;
-        const end = DAY_END_HOUR - Math.max(hour, DAY_START_HOUR);
-        const breakOverlap = Math.max(0, Math.min(DAY_END_HOUR, BREAK_END_HOUR) - Math.max(hour, BREAK_START_HOUR));
-        return Math.max(0, end - breakOverlap);
+      let remainingHours = Number(event.estimated_hours) || 0;
+
+      const pushPart = (day: Date, hour: number, hours: number) => {
+        const key = format(day, 'yyyy-MM-dd');
+        if (hours <= 0 || !(key in grouped)) return;
+        const partStart = new Date(day);
+        partStart.setHours(hour, 0, 0, 0);
+        grouped[key].push({
+          ...event,
+          _isSplitPart: true,
+          _originalHours: event.estimated_hours,
+          estimated_hours: hours,
+          scheduled_start_date: partStart.toISOString(),
+          _planId: event.id,
+        });
       };
 
-      // estimated_hours represents productive work time, not elapsed clock time.
-      // Normalize API strings so every plan follows the same split path.
-      let remainingHours = Number(event.estimated_hours) || 0;
-  const pushPart = (day: Date, hour: number, hours: number) => {
-    const key = format(day, 'yyyy-MM-dd');
-    if (hours <= 0 || !(key in grouped)) return;
-    const partStart = new Date(day);
-    partStart.setHours(hour, 0, 0, 0);
-    grouped[key].push({
-      ...event,
-      _isSplitPart: true,
-      _originalHours: event.estimated_hours,
-      estimated_hours: hours,
-      scheduled_start_date: partStart.toISOString(),
-    });
-  };
+      // Split around break
+      const beforeBreak = startHour < BREAK_START_HOUR
+        ? Math.min(remainingHours, BREAK_START_HOUR - startHour)
+        : 0;
+      if (beforeBreak > 0) {
+        pushPart(startDate, startHour, beforeBreak);
+        remainingHours -= beforeBreak;
+      }
 
-  // Split the same plan around noon so no FAB occupies the 12 PM slot.
-  // The work before and after the break are separate visual cards.
-  const beforeBreak = startHour < BREAK_START_HOUR
-    ? Math.min(remainingHours, BREAK_START_HOUR - startHour)
-    : 0;
-  if (beforeBreak > 0) {
-    pushPart(startDate, startHour, beforeBreak);
-    remainingHours -= beforeBreak;
-  }
+      if (remainingHours > 0 && startHour < BREAK_END_HOUR) {
+        const afterBreakToday = Math.min(remainingHours, DAY_END_HOUR - BREAK_END_HOUR);
+        pushPart(startDate, BREAK_END_HOUR, afterBreakToday);
+        remainingHours -= afterBreakToday;
+      } else if (remainingHours > 0 && startHour >= BREAK_END_HOUR && startHour < DAY_END_HOUR) {
+        const today = Math.min(remainingHours, DAY_END_HOUR - startHour);
+        pushPart(startDate, startHour, today);
+        remainingHours -= today;
+      }
 
-  if (remainingHours > 0 && startHour < BREAK_END_HOUR) {
-    const afterBreakToday = Math.min(remainingHours, DAY_END_HOUR - BREAK_END_HOUR);
-    pushPart(startDate, BREAK_END_HOUR, afterBreakToday);
-    remainingHours -= afterBreakToday;
-  } else if (remainingHours > 0 && startHour >= BREAK_END_HOUR && startHour < DAY_END_HOUR) {
-    const today = Math.min(remainingHours, DAY_END_HOUR - startHour);
-    pushPart(startDate, startHour, today);
-    remainingHours -= today;
-  }
-
-  let currentDate = addDays(startDate, 1);
-  while (remainingHours > 0) {
-    const hoursOnThisDay = Math.min(remainingHours, DAY_END_HOUR - DAY_START_HOUR - BREAK_DURATION);
-    pushPart(currentDate, DAY_START_HOUR, hoursOnThisDay);
-    remainingHours -= hoursOnThisDay;
-    currentDate = addDays(currentDate, 1);
-  }
+      let currentDate = addDays(startDate, 1);
+      while (remainingHours > 0) {
+        const hoursOnThisDay = Math.min(remainingHours, DAY_END_HOUR - DAY_START_HOUR - BREAK_DURATION);
+        pushPart(currentDate, DAY_START_HOUR, hoursOnThisDay);
+        remainingHours -= hoursOnThisDay;
+        currentDate = addDays(currentDate, 1);
+      }
     });
 
     return grouped;
@@ -314,10 +298,17 @@ const ShopCalendarPage: React.FC = () => {
   };
 
   const handleOpenEditPlan = useCallback((event: any) => {
-    setSelectedPlan(event);
-    setCreatePlanFabId(String(event.fab_id));
+    const planId = event._planId || event.id;
+    const fullPlan = planMap[planId];
+    if (fullPlan) {
+      setSelectedPlan(fullPlan);
+      setCreatePlanFabId(String(fullPlan.fab_id));
+    } else {
+      setSelectedPlan(event);
+      setCreatePlanFabId(String(event.fab_id));
+    }
     setActivePage('create-plan');
-  }, []);
+  }, [planMap]);
 
   const handleOpenCreatePlanWithFab = useCallback((fabId: string) => {
     setCreatePlanFabId(fabId);
@@ -342,6 +333,7 @@ const ShopCalendarPage: React.FC = () => {
 
   const showTimeIndicator = currentTime.getHours() >= DAY_START_HOUR && currentTime.getHours() < DAY_END_HOUR;
 
+  // ─── Column view: position events ──────────────────────────────────────
   const getEventsWithPositions = useMemo(() => {
     return (events: any[]) => {
       if (!events.length) return [];
@@ -398,11 +390,11 @@ const ShopCalendarPage: React.FC = () => {
               <p className="text-[13px] font-semibold truncate" style={{ color: text }}>
                 {event.fab_id} {event.plan_name ? `• ${event.plan_name}` : ''} {event.operator_name ? `• ${event.operator_name}` : ''}
               </p>
-              {event._isSplitPart && (
+              {/* {event._isSplitPart && (
                 <p className="text-[9px] italic mt-0.5" style={{ color: text, opacity: 0.6 }}>
                   (Continued from previous day)
                 </p>
-              )}
+              )} */}
               <p className="text-[11px] truncate mt-0.5" style={{ color: text, opacity: 0.7 }}>
                 {event.fab_type || event.percent_complete != null ? `${event.work_percentage ?? 0}%` : ''}
               </p>
@@ -453,85 +445,24 @@ const ShopCalendarPage: React.FC = () => {
         : format(currentDate, 'MMMM yyyy');
 
   return (
-    <div className="bg-white min-h-screen">
-      {/* FAB Picker Dialog – unchanged */}
-      {fabPickerOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
-          onClick={() => setFabPickerOpen(false)}
-        >
-          <div
-            className="bg-white rounded-[16px] border border-[#ecedf0] shadow-xl w-[420px] p-6 flex flex-col gap-5"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-[20px] text-black">Select FAB ID</p>
-                <p className="text-[13px] text-[#7c8689] mt-1">Enter the FAB ID to create a plan for</p>
-              </div>
-              <button onClick={() => setFabPickerOpen(false)} className="h-8 w-8 rounded-[6px] border border-[#e2e4ed] flex items-center justify-center hover:bg-gray-50">
-                <X className="h-4 w-4 text-[#7c8689]" />
-              </button>
+    <div className="bg-white min-h-screen flex flex-col">
+      {/* ─── Sticky Header ─── */}
+      <div className="sticky top-0 z-50 bg-white border-b border-[#dfdfdf] shadow-sm">
+        <div className="px-10 pt-5 pb-5">
+          <div className="flex items-center justify-between gap-10">
+            <div className="flex flex-col gap-2">
+              <p className="font-semibold text-[28px] leading-[32px] text-black">Shop Plan</p>
+              <p className="font-semibold text-[20px] leading-[24px] text-[#4a4d59]">{calLabel}</p>
             </div>
-
-            <div className="flex items-center gap-3 bg-[#f0f4e8] rounded-[8px] px-4 py-3">
-              <CalendarIcon className="h-4 w-4 text-[#7a9705]" />
-              <span className="font-semibold text-[13px] text-[#4b545d]">
-                {selectedDate ? format(selectedDate, 'EEEE, MMMM d, yyyy') : format(currentDate, 'EEEE, MMMM d, yyyy')}
-              </span>
-            </div>
-
-            <div>
-              <label className="font-semibold text-[13px] text-[#4b545d] block mb-2">FAB ID *</label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#78829d]" />
-                <input
-                  type="number"
-                  placeholder="e.g. 2390"
-                  value={fabPickerInput}
-                  onChange={(e) => setFabPickerInput(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter' && fabPickerInput.trim()) handleOpenCreatePlanWithFab(fabPickerInput.trim()); }}
-                  autoFocus
-                  className="w-full h-[44px] bg-white border border-[#e2e4ed] rounded-[8px] pl-9 pr-4 text-[14px] text-[#4b545d] placeholder:text-[#78829d] outline-none focus:border-[#9cc15e] focus:ring-1 focus:ring-[#9cc15e]"
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={() => setFabPickerOpen(false)}
-                className="flex-1 h-[44px] border border-[#e2e4ed] rounded-[8px] text-[14px] text-[#4b545d] hover:bg-gray-50 font-semibold"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => fabPickerInput.trim() && handleOpenCreatePlanWithFab(fabPickerInput.trim())}
-                disabled={!fabPickerInput.trim()}
-                className="flex-1 h-[44px] rounded-[8px] flex items-center justify-center gap-2 text-white text-[14px] font-semibold disabled:opacity-40"
-                style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
-              >
-                Continue
-              </button>
-            </div>
+            <button
+              onClick={() => navigate('/shop/create-plan')}
+              className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px] tracking-[-0.56px]"
+              style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
+            >
+              <Plus className="h-4 w-4" />
+              Create Plan
+            </button>
           </div>
-        </div>
-      )}
-
-      {/* Page Header */}
-      <div className="border-b border-[#dfdfdf]">
-        <div className="flex items-center justify-between px-10 pt-5 pb-5 gap-10">
-          <div className="flex flex-col gap-2">
-            <p className="font-semibold text-[28px] leading-[32px] text-black">Shop Plan</p>
-            <p className="font-semibold text-[20px] leading-[24px] text-[#4a4d59]">{calLabel}</p>
-          </div>
-          <button
-            onClick={() => navigate('/shop/create-plan')}
-            className="h-[44px] w-[150px] rounded-[8px] flex items-center justify-center gap-2 shrink-0 text-white font-semibold text-[14px] tracking-[-0.56px]"
-            style={{ backgroundImage: 'linear-gradient(90deg, #7a9705 0%, #9cc15e 100%)' }}
-          >
-            <Plus className="h-4 w-4" />
-            Create Plan
-          </button>
         </div>
 
         <div className="flex items-center px-10 h-[65px]">
@@ -553,6 +484,7 @@ const ShopCalendarPage: React.FC = () => {
 
         <div className="flex items-center justify-between px-10 h-[65px]">
           <div className="flex items-center gap-[10px]">
+            {/* Search and filters - unchanged */}
             {isSearchLocked ? (
               <div className="flex items-center gap-2 h-[36px] bg-[#f0f4e8] border border-[#9cc15e] rounded-[6px] px-3">
                 <Lock className="size-3.5 text-[#7a9705]" />
@@ -586,7 +518,6 @@ const ShopCalendarPage: React.FC = () => {
               </div>
             )}
 
-            {/* FAB Type (single select) */}
             <Select value={filterFabType || 'all'} onValueChange={(v) => setFilterFabType(v === 'all' ? '' : v)}>
               <SelectTrigger className="min-w-[133px] w-auto h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)]">
                 <SelectValue placeholder="All FAB Types" />
@@ -597,7 +528,7 @@ const ShopCalendarPage: React.FC = () => {
               </SelectContent>
             </Select>
 
-            {/* ── WORKSTATION multi‑select ── */}
+            {/* WORKSTATION multi‑select */}
             <Popover open={workstationPopoverOpen} onOpenChange={setWorkstationPopoverOpen}>
               <PopoverTrigger asChild>
                 <button className="min-w-[150px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
@@ -643,7 +574,7 @@ const ShopCalendarPage: React.FC = () => {
               </PopoverContent>
             </Popover>
 
-            {/* ── OPERATOR multi‑select ── */}
+            {/* OPERATOR multi‑select */}
             <Popover open={operatorPopoverOpen} onOpenChange={setOperatorPopoverOpen}>
               <PopoverTrigger asChild>
                 <button className="min-w-[137px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
@@ -689,7 +620,7 @@ const ShopCalendarPage: React.FC = () => {
               </PopoverContent>
             </Popover>
 
-            {/* ── PLANNING SECTION multi‑select ── */}
+            {/* PLANNING SECTION multi‑select */}
             <Popover open={sectionPopoverOpen} onOpenChange={setSectionPopoverOpen}>
               <PopoverTrigger asChild>
                 <button className="min-w-[150px] h-[34px] bg-white border border-[#e2e4ed] rounded-[6px] text-[13px] text-[#4b545d] shadow-[0px_2px_3px_0px_rgba(0,0,0,0.05)] px-3 flex items-center justify-between gap-2">
@@ -757,8 +688,8 @@ const ShopCalendarPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Calendar Card – identical to previous, only filter bar changed */}
-      <div className="p-4 md:p-6">
+      {/* ─── Calendar body ─── */}
+      <div className="flex-1 p-4 md:p-6 overflow-auto">
         <div className="border border-[#ecedf0] rounded-[16px] px-4 py-6 flex flex-col gap-4">
           <div className="flex items-center justify-between pl-4">
             <div className="flex items-center gap-4">
@@ -829,7 +760,7 @@ const ShopCalendarPage: React.FC = () => {
                 </div>
               )}
               <TooltipProvider>
-                <div className="border border-[#ecedf0] rounded-[8px] max-h-[70vh] overflow-auto">
+                <div className="border border-[#ecedf0] rounded-[8px] overflow-auto" style={{ maxHeight: 'calc(100vh - 300px)' }}>
                   {/* Month view – unchanged */}
                   {viewMode === 'month' && (
                     <div className="min-w-max">
@@ -868,15 +799,17 @@ const ShopCalendarPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Day / Week column view – unchanged */}
+                  {/* ─── Day / Week column view with sticky headers ─── */}
                   {viewMode !== 'month' && !isAxisSwapped && (
                     <div className="min-w-max">
-                      <div className="flex sticky top-0 z-10 bg-white border-b border-[#e2e4ed]">
-                        <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0]" />
+                      {/* Top row: day headers – sticky horizontally when scrolling vertically */}
+                      <div className="flex sticky top-0 z-20 bg-white border-b border-[#e2e4ed]">
+                        {/* Left time label column – sticky left and top */}
+                        <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] sticky left-0 z-30 bg-white" />
                         {displayDays.map((day) => (
                           <div
                             key={format(day, 'yyyy-MM-dd')}
-                            className="flex-1 min-w-[160px] border-r border-[#ecedf0] flex flex-col items-center py-3 gap-1"
+                            className="flex-1 min-w-[160px] border-r border-[#ecedf0] flex flex-col items-center py-3 gap-1 bg-white"
                           >
                             <span className="text-[12px] text-[#7c8689] uppercase tracking-wide">{format(day, 'EEE')}</span>
                             <span
@@ -888,11 +821,12 @@ const ShopCalendarPage: React.FC = () => {
                         ))}
                       </div>
 
+                      {/* Body */}
                       <div className="relative flex pt-5" style={{ height: DISPLAY_HOURS * HOUR_HEIGHT }}>
-                        <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] relative">
+                        {/* Left time labels – sticky left */}
+                        <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] relative sticky left-0 z-10 bg-white">
                           {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                             const hour = DAY_START_HOUR + i;
-
                             const label = is12HourFormat
                               ? `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
                               : `${String(hour).padStart(2, '0')}:00`;
@@ -922,19 +856,18 @@ const ShopCalendarPage: React.FC = () => {
                               style={{ height: DISPLAY_HOURS * HOUR_HEIGHT }}
                               onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(true); } : undefined}
                             >
-                              {/* Hour grid lines */}
+                              {/* Grid lines */}
                               {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                                 const hour = DAY_START_HOUR + i;
-    
                                 const position = getTimePosition(hour);
                                 return (
                                   <div key={i} className="absolute w-full border-t border-[#ecedf0]" style={{ top: position }} />
                                 );
                               })}
 
-                              {/* Break time indicator */}
+                              {/* Break indicator */}
                               <div
-                                className="absolute left-0 right-0 z-[100] bg-orange-100 border-y-2 border-orange-300 pointer-events-none flex items-center justify-center"
+                                className="absolute left-0 right-0 z-[10] bg-orange-100 border-y-2 border-orange-300 pointer-events-none flex items-center justify-center"
                                 style={{
                                   top: getTimePosition(BREAK_START_HOUR),
                                   height: BREAK_DURATION * HOUR_HEIGHT
@@ -968,15 +901,15 @@ const ShopCalendarPage: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Time-row view (axis swapped) – unchanged */}
+                  {/* ─── Time-row view (axis swapped) with sticky headers ─── */}
                   {viewMode !== 'month' && isAxisSwapped && (
                     <div className="min-w-max">
-                      <div className="flex border-b border-[#e2e4ed] bg-white sticky top-0 z-10">
-                        <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0]" />
+                      {/* Top row: time header – sticky vertically */}
+                      <div className="flex border-b border-[#e2e4ed] bg-white sticky top-0 z-20">
+                        <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] sticky left-0 z-30 bg-white" />
                         <div className="relative" style={{ minWidth: DISPLAY_HOURS * HOUR_WIDTH, height: 50 }}>
                           {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                             const hour = DAY_START_HOUR + i;
-
                             const label = is12HourFormat
                               ? `${hour > 12 ? hour - 12 : hour === 0 ? 12 : hour}:00 ${hour >= 12 ? 'PM' : 'AM'}`
                               : `${String(hour).padStart(2, '0')}:00`;
@@ -994,11 +927,11 @@ const ShopCalendarPage: React.FC = () => {
                         </div>
                       </div>
 
+                      {/* Rows for each day */}
                       {displayDays.map((day) => {
                         const dk = format(day, 'yyyy-MM-dd');
                         const dayEvents = eventsByDay[dk] || [];
                         const ROW_LANE_H = 44;
-                        // Rows touch each other; only the lane itself keeps a small inset.
                         const GAP = 0;
 
                         const sorted = [...dayEvents].sort(
@@ -1019,7 +952,8 @@ const ShopCalendarPage: React.FC = () => {
 
                         return (
                           <div key={dk} className="flex border-b border-[#e2e4ed]" style={{ minHeight: rowHeight }}>
-                            <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] flex flex-col justify-center items-center py-2 gap-0 bg-white">
+                            {/* Left day label – sticky left */}
+                            <div className="w-[90px] flex-shrink-0 border-r border-[#ecedf0] sticky left-0 z-10 bg-white flex flex-col justify-center items-center py-2 gap-0">
                               <span className="text-[10px] text-[#7c8689] uppercase tracking-wide">{format(day, 'EEE')}</span>
                               <span
                                 className={`text-[18px] font-semibold w-8 h-8 flex items-center justify-center rounded-full ${isSameDay(day, new Date()) ? 'bg-[#7a9705] text-white' : 'text-[#4b545d]'}`}
@@ -1033,19 +967,18 @@ const ShopCalendarPage: React.FC = () => {
                               style={{ height: rowHeight, minWidth: DISPLAY_HOURS * HOUR_WIDTH }}
                               onClick={isSearchLocked ? () => { setSelectedDate(day); setFabPickerInput(''); setFabPickerOpen(false); } : undefined}
                             >
-                              {/* Hour grid lines */}
+                              {/* Grid lines */}
                               {Array.from({ length: TOTAL_HOURS + 1 }, (_, i) => {
                                 const hour = DAY_START_HOUR + i;
-    
                                 const position = getHorizontalPosition(hour);
                                 return (
                                   <div key={i} className="absolute top-0 bottom-0 border-l border-[#ecedf0]" style={{ left: position }} />
                                 );
                               })}
 
-                              {/* The noon column is reserved exclusively for break time. */}
+                              {/* Break column */}
                               <div
-                                className="absolute left-0 z-[100] bg-orange-100 border-x-2 border-orange-300 pointer-events-none flex items-center justify-center"
+                                className="absolute left-0 z-[10] bg-orange-100 border-x-2 border-orange-300 pointer-events-none flex items-center justify-center"
                                 style={{
                                   top: 0,
                                   bottom: 0,
@@ -1066,9 +999,6 @@ const ShopCalendarPage: React.FC = () => {
 
                                   const left = getHorizontalPosition(startH);
                                   const right = getVisualEndPosition(startH, ev.estimated_hours, HOUR_WIDTH);
-
-                                  // Include the visible noon break in the span, while
-                                  // keeping 12 PM and 1 PM as separate calendar columns.
                                   const width = right - left;
 
                                   const { bg, border, text } = getColorForFab(ev.fab_id, ev.fab_type);
